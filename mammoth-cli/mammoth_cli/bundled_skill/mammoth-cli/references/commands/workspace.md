@@ -64,6 +64,26 @@ Result: `WorkspaceDeleteResult`; mutation `high_impact`, confirmation `confirm_t
 
 Status on release: untried; no live run recorded.
 
+### `workspace.export-hosts.get`
+
+Run: `mammoth workspace export-hosts get`. Exact input fields: `mammoth schema get workspace.export-hosts.get`.
+
+Example: `mammoth workspace export-hosts get`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkspaceExportHostsGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workspace.export-hosts.set`
+
+Run: `mammoth workspace export-hosts set`. Exact input fields: `mammoth schema get workspace.export-hosts.set`.
+
+Example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkspaceExportHostsSetResult`; mutation `high_impact`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workspace.get`
 
 Run: `mammoth workspace get`. Exact input fields: `mammoth schema get workspace.get`.

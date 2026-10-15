@@ -29,7 +29,7 @@ _JOB_LOG = logging.getLogger("mammoth.jobs")
 _POLL_FIRST_DELAY = 0.2
 _POLL_GROWTH = 1.5
 #: A job still running after this long is a long one: stop checking as often.
-_POLL_SLOW_AFTER = 10.0
+_POLL_SLOW_AFTER = 60.0
 _POLL_SLOW_CAP = 5.0
 
 
@@ -148,7 +148,7 @@ class JobsAPI:
             job_id: ID of the job to wait for
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
             poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-                10 seconds of waiting)
+                60 seconds of waiting)
                 (default: ``client.job_poll_seconds``). The first check is
                 immediate and the gap then grows from ``_POLL_FIRST_DELAY`` up
                 to this bound, so a sub-second job is not held for a full
@@ -253,7 +253,7 @@ class JobsAPI:
             job_ids: List of job IDs or comma-separated string
             timeout: Maximum time to wait in seconds (default: client.job_timeout)
             poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-                10 seconds of waiting)
+                60 seconds of waiting)
                 (default: 2); gaps start short and grow to this bound.
 
         Returns:

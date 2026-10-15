@@ -278,3 +278,70 @@ def test_assess_twb_surfaces_not_a_workbook(
         dashboard_cmd.dashboard_assess_twb(_inv("dashboard.assess-twb", extra_args=[str(junk)]))
     assert caught.value.code == "not_a_workbook"
     assert fake_service.wait_log == [{"job_id": "j2"}]
+
+
+def _twbx_with_rows(path: Path, rows: int) -> None:
+    import zipfile
+
+    with zipfile.ZipFile(path, "w") as bundle:
+        bundle.writestr("a.twb", "<workbook/>")
+        csv = "day,events\n" + "".join(f"2026-10-{i + 1:02d},{i}\n" for i in range(rows))
+        bundle.writestr("Data/data.csv", csv)
+
+
+def test_import_workbook_with_synthetic_rows_is_partial_not_settled(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Bug bash 2026-10-15: 8 real rows became 4000 made-up ones and verify said settled."""
+    import json
+
+    from mammoth_cli.testing import login_default_profile, make_runner
+
+    login_default_profile()
+    book = tmp_path / "b.twbx"
+    _twbx_with_rows(book, 8)
+    fake_service.responses[_IMPORT] = {"job_id": "j1"}
+    fake_service.job_result = {
+        "dataview_id": 5,
+        "data_source": "fitted_sample",
+        "row_count": 4000,
+    }
+    result = make_runner().invoke(
+        [
+            "dashboard", "import-workbook", str(book), "--project", "3", "--yes",
+            "--confirm", "3", "--output", "json", "--no-input",
+        ]
+    )  # fmt: skip
+    assert result.exit_code == 3, result.output
+    data = json.loads(result.output)["data"]
+    assert data["verify"]["outcome"] == "partial"
+    assert data["verify"]["verified"] is False
+    warning = " ".join(data["warnings"])
+    assert "synthetic" in warning and "8" in warning and "4000" in warning
+    assert any("file upload" in step for step in data["next_steps"])
+    assert data["verify"]["warnings"] == data["warnings"]
+
+
+def test_packaged_row_count_counts_records_not_lines(tmp_path: Path) -> None:
+    """A quoted value with a line break is one row, not two."""
+    import zipfile
+
+    from mammoth_cli.commands.dashboard import _packaged_row_count
+
+    book = tmp_path / "q.twbx"
+    with zipfile.ZipFile(book, "w") as bundle:
+        bundle.writestr("Data/data.csv", 'day,note\n2026-10-01,"two\nlines"\n2026-10-02,one\n')
+    assert _packaged_row_count(str(book)) == 2
+
+
+def test_v3_generate_reads_the_canvas_once_for_the_check_and_the_numbers(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The deliverable check and the board's values need the same canvas: one read."""
+    fake_service.responses[_GENERATE] = {"id": 7, "message": "done"}
+    fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": []}])
+    body = {"body": {"params": {"dataview_id": 42, "intent": "region mix"}}}
+    dashboard_cmd.generated_dashboard(
+        _inv("dashboard.v3.generate", input_file=_doc(tmp_path, body), yes=True)
+    )
+    assert fake_service.calls.count(_CANVAS_GET) == 1

@@ -448,6 +448,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.logout",
         "auth.status",
         "calc",
+        "capabilities",
         "capability.find",
         "capability.get",
         "capability.list",
@@ -473,6 +474,7 @@ _LOCAL_COMMANDS = frozenset(
         "project.ensure",
         "resolve",
         "folder.find",
+        "how",
         "link",
         "log.path",
         "log.tail",
@@ -789,9 +791,13 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "view.update": (FieldSpec("name", required=True, annotation=str),),
     # The endpoint's own params: ``page`` is {"id"} or {"new_title"}; the handler maps
     # it onto the SDK's page_id / page_new_title.
+    # Or ``intent`` (and optional ``kind``) in place of ``figure``: the handler sends
+    # it through the figure-intent route, where the server picks the chart.
     "dashboard.figure.add": (
-        FieldSpec("dataview_id", required=True, annotation=int),
-        FieldSpec("figure", required=True, annotation=dict[str, Any]),
+        FieldSpec("dataview_id", required=False, annotation=int | None, default=None),
+        FieldSpec("figure", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("intent", required=False, annotation=str | None, default=None),
+        FieldSpec("kind", required=False, annotation=str | None, default=None),
         FieldSpec("banded", required=False, annotation=dict[str, Any] | None, default=None),
         FieldSpec("page", required=False, annotation=dict[str, Any] | None, default=None),
     ),

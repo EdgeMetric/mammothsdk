@@ -320,6 +320,66 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/collections/{}/email-updates",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.email_updates"
+      ],
+      "commands": [
+        "collection.email-updates.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/collections/{}/email-updates",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.set_email_updates"
+      ],
+      "commands": [
+        "collection.email-updates.set"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/collections/{}/email-updates/me",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.my_email_updates"
+      ],
+      "commands": [
+        "collection.email-updates.me.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/collections/{}/email-updates/me",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.set_my_email_updates"
+      ],
+      "commands": [
+        "collection.email-updates.me.set"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{}/email-updates/test",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.collections.CollectionsAPI.send_test_email_update"
+      ],
+      "commands": [
+        "collection.email-updates.test"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/collections/{}/files",
       "state": "pending_server_release",
@@ -380,6 +440,32 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/dashboards/email-updates",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_list",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_list"
+      ],
+      "commands": [
+        "dashboard.email-updates.list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/oembed",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.oembed",
+        "mammoth.api.dashboards.DashboardsAPI.oembed"
+      ],
+      "commands": [
+        "dashboard.oembed"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/dashboards/v3/attachments/{}/assess",
       "state": "pending_server_release",
@@ -405,6 +491,84 @@
       ],
       "commands": [
         "dashboard.pbix-intent"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/v3/live-charts",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_list",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_list"
+      ],
+      "commands": [
+        "dashboard.live-chart.list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/live-charts",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_create",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_create"
+      ],
+      "commands": [
+        "dashboard.live-chart.create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/v3/live-charts/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_get",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_get"
+      ],
+      "commands": [
+        "dashboard.live-chart.get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/dashboards/v3/live-charts/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_audience",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_audience"
+      ],
+      "commands": [
+        "dashboard.live-chart.audience"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/v3/live-charts/{}/placements",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_placement",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_placement"
+      ],
+      "commands": [
+        "dashboard.live-chart.placement"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/v3/live-charts/{}/usage",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.live_chart_usage",
+        "mammoth.api.dashboards.DashboardsAPI.live_chart_usage"
+      ],
+      "commands": [
+        "dashboard.live-chart.usage"
       ]
     },
     {
@@ -477,6 +641,71 @@
       ],
       "commands": [
         "dashboard.own-data.preview"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/{}/email-updates",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_get",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_get"
+      ],
+      "commands": [
+        "dashboard.email-updates.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/dashboards/{}/email-updates",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_set",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_set"
+      ],
+      "commands": [
+        "dashboard.email-updates.set"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/dashboards/{}/email-updates/me",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_me_get",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_me_get"
+      ],
+      "commands": [
+        "dashboard.email-updates.me.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/dashboards/{}/email-updates/me",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_me_set",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_me_set"
+      ],
+      "commands": [
+        "dashboard.email-updates.me.set"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/dashboards/{}/email-updates/test",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dashboard_generated.email_updates_test",
+        "mammoth.api.dashboards.DashboardsAPI.email_updates_test"
+      ],
+      "commands": [
+        "dashboard.email-updates.test"
       ]
     },
     {
@@ -833,6 +1062,30 @@
     },
     {
       "method": "GET",
+      "path": "/workspaces/{}/export-hosts",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.export_hosts"
+      ],
+      "commands": [
+        "workspace.export-hosts.get"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/workspaces/{}/export-hosts",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.set_export_hosts"
+      ],
+      "commands": [
+        "workspace.export-hosts.set"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/workspaces/{}/oauth-clients",
       "state": "removed_on_server",
       "pending_in": null,
@@ -899,7 +1152,9 @@
       "sdk_symbols": [
         "mammoth.api.datasets.DatasetsAPI.column_stats"
       ],
-      "commands": []
+      "commands": [
+        "dataset.column-stats"
+      ]
     },
     {
       "method": "GET",
@@ -909,7 +1164,9 @@
       "sdk_symbols": [
         "mammoth.api.datasets.DatasetsAPI.search"
       ],
-      "commands": []
+      "commands": [
+        "dataset.search"
+      ]
     },
     {
       "method": "GET",
@@ -933,6 +1190,42 @@
       ],
       "commands": [
         "view.optimize"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/exports/rest-fill",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.rest_fill"
+      ],
+      "commands": [
+        "view.export.rest-fill"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/exports/{}/runs",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.runs"
+      ],
+      "commands": [
+        "view.export.runs"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/summary",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.dataviews.DataviewsAPI.summary"
+      ],
+      "commands": [
+        "view.summary"
       ]
     },
     {
@@ -1008,6 +1301,18 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/duplicate",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.duplicate"
+      ],
+      "commands": [
+        "workflow.duplicate"
+      ]
+    },
+    {
       "method": "PUT",
       "path": "/workspaces/{}/projects/{}/workflows/{}/archived",
       "state": "removed_on_server",
@@ -1054,6 +1359,30 @@
       "commands": [
         "workflow.save"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/save/{}/steps/{}/cancel",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.cancel_save_step"
+      ],
+      "commands": [
+        "workflow.save-cancel-step"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/save/{}/undo",
+      "state": "pending_server_release",
+      "pending_in": "origin/master@fd7767ed5a",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.undo_save"
+      ],
+      "commands": [
+        "workflow.save-undo"
+      ]
     }
   ],
   "commands_without_route": [
@@ -1073,13 +1402,13 @@
     "agent.team.set",
     "billing.invoice.list",
     "calc",
+    "capabilities",
     "connector.connection.query",
     "dashboard.attachment-create",
-    "dataset.column-stats",
     "dataset.find",
     "dataset.schema-diff",
-    "dataset.search",
     "folder.find",
+    "how",
     "link",
     "log.path",
     "log.tail",

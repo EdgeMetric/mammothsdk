@@ -26,6 +26,9 @@ class Meta:
     #: ``{"current", "latest", "command"}`` when a newer CLI is on PyPI
     #: (from the daily cached check), else None.
     update_available: dict[str, Any] | None = None
+    #: One to three ready-to-run commands that usually come next, filled in
+    #: with this result's ids (:mod:`mammoth_cli.runtime.next_commands`).
+    next_commands: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         # Null fields are omitted: every call pays for meta, and a missing key
@@ -40,6 +43,7 @@ class Meta:
             "view": self.view,
             "opens": self.opens,
             "update_available": self.update_available,
+            "next_commands": self.next_commands,
         }
         return {key: value for key, value in document.items() if value is not None}
 

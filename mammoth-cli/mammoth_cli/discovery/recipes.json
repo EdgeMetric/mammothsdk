@@ -1,0 +1,588 @@
+{
+  "_comment": "Goal recipes for 'mammoth how'. Each step names a real command id (a unit test checks every one exists). Upper-case words in an example (VIEW_ID, DATASET_ID, ...) are ids to take from the previous step's output; {project_id} is filled from --project or the profile.",
+  "recipes": [
+    {
+      "id": "refresh-daily",
+      "title": "Refresh a dataset on a schedule (daily, weekly, hourly)",
+      "goals": [
+        "refresh daily",
+        "schedule a refresh",
+        "refresh data every day",
+        "run every week automatically",
+        "automate the refresh",
+        "keep my data up to date"
+      ],
+      "keywords": [
+        "refresh",
+        "schedule",
+        "daily",
+        "weekly",
+        "hourly",
+        "monthly",
+        "recurring",
+        "automate",
+        "automation",
+        "nightly",
+        "every",
+        "update",
+        "sync"
+      ],
+      "doc": "references/recipes/scheduling.md",
+      "steps": [
+        {
+          "command_id": "dataset.get",
+          "purpose": "Check the source: only a cloud or database dataset can be refreshed. A dataset made from an uploaded file has nothing to pull.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "automation.list",
+          "purpose": "Look for an automation that already does this. 'automation create' is not idempotent: two creates fire twice.",
+          "example": "mammoth automation list",
+          "key_flags": []
+        },
+        {
+          "command_id": "automation.create",
+          "purpose": "Create the recurring refresh: a run_data_retrieval task with an at_specific_time condition.",
+          "example": "mammoth automation create 'Daily refresh' --yes --input '{\"tasks\": [{\"task_type\": \"run_data_retrieval\", \"details\": {\"ds_details\": [{\"ds_id\": DATASET_ID}]}}], \"conditions\": [{\"condition_type\": \"at_specific_time\", \"details\": {\"frequency\": \"daily\", \"interval\": 1, \"start_at\": \"2027-01-01T02:00:00Z\"}}]}'",
+          "key_flags": [
+            "--yes",
+            "--input tasks[].task_type",
+            "--input conditions[].details.frequency",
+            "--input conditions[].details.start_at (at least 2 minutes ahead)"
+          ]
+        },
+        {
+          "command_id": "automation.get",
+          "purpose": "Read the automation back and confirm its tasks and condition.",
+          "example": "mammoth automation get AUTOMATION_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "A file dataset cannot refresh itself. Upload each new file into it with: mammoth file upload ./new.csv --input '{\"append_to_ds_id\": DATASET_ID}'. Automating that needs a cloud connector. Run 'mammoth capabilities' for the details."
+      ]
+    },
+    {
+      "id": "append-rows",
+      "title": "Add the rows of a new file to an existing dataset",
+      "goals": [
+        "append a new file to a dataset",
+        "add new rows to my dataset",
+        "upload this month's data into the same dataset",
+        "add more data to an existing dataset"
+      ],
+      "keywords": [
+        "append",
+        "add",
+        "rows",
+        "new",
+        "more",
+        "month",
+        "existing",
+        "same",
+        "data",
+        "file",
+        "dataset",
+        "upload"
+      ],
+      "doc": "references/recipes/file-import.md",
+      "steps": [
+        {
+          "command_id": "dataset.find",
+          "purpose": "Find the dataset to add the rows to, and its id.",
+          "example": "mammoth dataset find NAME",
+          "key_flags": []
+        },
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the new file into that dataset. The result reports the row count before and after.",
+          "example": "mammoth file upload ./new_rows.csv --input '{\"append_to_ds_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input append_to_ds_id"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back. Its pipeline re-ran over the new rows.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "blend-by-key",
+      "title": "Blend (join) two files on a shared key, such as the day",
+      "goals": [
+        "blend two files by day",
+        "join two datasets",
+        "combine two files on a key",
+        "merge two csv files by date",
+        "match rows from two tables",
+        "vlookup between two files"
+      ],
+      "keywords": [
+        "blend",
+        "join",
+        "merge",
+        "combine",
+        "match",
+        "key",
+        "day",
+        "date",
+        "two",
+        "files",
+        "datasets",
+        "tables",
+        "vlookup",
+        "lookup",
+        "together"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload both files. Each one becomes a dataset with a view.",
+          "example": "mammoth file upload ./left.csv ./right.csv",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.list",
+          "purpose": "Get the view id of each dataset.",
+          "example": "mammoth view list DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.get",
+          "purpose": "Compare the key column in both views: the same values need the same type (a TEXT date does not match a DATE).",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.convert-type",
+          "purpose": "Only if the key types differ: convert one side's key to the other's type.",
+          "example": "mammoth view transform convert-type VIEW_ID --input '{\"conversions\": [{\"column\": \"day\", \"to\": \"DATE\"}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input conversions[].to"
+          ]
+        },
+        {
+          "command_id": "view.transform.join",
+          "purpose": "Join the other view onto this one by the key. The result has a join_check with the match rate.",
+          "example": "mammoth view transform join VIEW_ID --input '{\"foreign_view\": OTHER_VIEW_ID, \"join_type\": \"LEFT\", \"on\": [{\"left\": \"day\", \"right\": \"day\"}], \"dataset_id\": DATASET_ID, \"foreign_dataset_id\": OTHER_DATASET_ID}'",
+          "key_flags": [
+            "--input join_type",
+            "--input on[].left / on[].right",
+            "--input select"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the joined rows back and check the match rate before you build on them.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "Use 'view transform lookup' instead when you need one value per key and the other side repeats keys."
+      ]
+    },
+    {
+      "id": "upload-dashboard",
+      "title": "Upload a file and build a dashboard from it",
+      "goals": [
+        "upload and build a dashboard",
+        "make a dashboard from a csv",
+        "visualize my file",
+        "chart my data",
+        "create charts from a spreadsheet"
+      ],
+      "keywords": [
+        "dashboard",
+        "chart",
+        "charts",
+        "visualize",
+        "visualise",
+        "graph",
+        "figure",
+        "upload",
+        "file",
+        "csv",
+        "build",
+        "make",
+        "report"
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "steps": [
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the file. The result gives the dataset id and its view id.",
+          "example": "mammoth file upload ./sales.csv",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Look at the columns and a sample before you chart them.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dashboard.v3.generate",
+          "purpose": "Generate a dashboard on the view from a plain-language intent.",
+          "example": "mammoth dashboard v3 generate --input '{\"body\": {\"params\": {\"intent\": \"Revenue by region over time\", \"dataview_id\": VIEW_ID}}}'",
+          "key_flags": [
+            "--input body.params.intent",
+            "--input body.params.dataview_id"
+          ]
+        },
+        {
+          "command_id": "dashboard.figure.add",
+          "purpose": "Optional: add one more chart, from an intent or an exact figure spec.",
+          "example": "mammoth dashboard figure add DASHBOARD_ID --input '{\"intent\": \"Top 10 products by revenue\"}'",
+          "key_flags": [
+            "--input intent",
+            "--input figure (exact spec)"
+          ]
+        },
+        {
+          "command_id": "dashboard.get",
+          "purpose": "Read the dashboard back: its figures and its link.",
+          "example": "mammoth dashboard get DASHBOARD_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "stuck-upload",
+      "title": "Fix an upload that is stuck (need_action, or no view)",
+      "goals": [
+        "fix a stuck upload",
+        "upload is stuck",
+        "dataset needs action",
+        "file is not processing",
+        "dataset has no view",
+        "upload waiting for input"
+      ],
+      "keywords": [
+        "stuck",
+        "fix",
+        "need",
+        "action",
+        "need_action",
+        "pending",
+        "processing",
+        "waiting",
+        "upload",
+        "file",
+        "dataset",
+        "no",
+        "view",
+        "error",
+        "failed"
+      ],
+      "doc": "references/recipes/need-action.md",
+      "steps": [
+        {
+          "command_id": "project.needs-attention",
+          "purpose": "List the datasets in the project that wait for input or failed.",
+          "example": "mammoth project needs-attention {project_id}",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Read the dataset's status and status_info.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.file-settings.get",
+          "purpose": "For need_action: read the detected settings (has_ambiguous_dates, delimiter, header).",
+          "example": "mammoth dataset file-settings get DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.file-settings.update",
+          "purpose": "Send the settings back unchanged, plus the missing decision (usually date_format US or UK).",
+          "example": "mammoth dataset file-settings update DATASET_ID --input '{\"delimiter\": \",\", \"has_header\": true, \"initial_skip_count\": 0, \"quotechar\": \"\\\"\", \"date_format\": \"US\"}'",
+          "key_flags": [
+            "--input date_format"
+          ]
+        },
+        {
+          "command_id": "job.wait",
+          "purpose": "Wait for the job the update returned.",
+          "example": "mammoth job wait JOB_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.create",
+          "purpose": "For needs_view (an all-text file is ready but has no view): create the view. Run it only when 'view list DATASET_ID' is empty.",
+          "example": "mammoth view create DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "If the status becomes error, read status_info and stop. Do not retry with guessed settings."
+      ]
+    },
+    {
+      "id": "export-powerbi",
+      "title": "Send a view or a dashboard to Power BI",
+      "goals": [
+        "export to power bi",
+        "send data to powerbi",
+        "publish a dashboard to power bi",
+        "use my data in power bi"
+      ],
+      "keywords": [
+        "power",
+        "bi",
+        "powerbi",
+        "export",
+        "send",
+        "publish",
+        "push",
+        "microsoft"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.export.powerbi",
+          "purpose": "Push a view's rows to a Power BI dataset table. Keep the credentials in a file, not on the command line.",
+          "example": "mammoth view export powerbi VIEW_ID DATASET_ID --input ./powerbi.json --yes",
+          "key_flags": [
+            "--input username, password, client_id, dataset, table",
+            "--yes"
+          ]
+        },
+        {
+          "command_id": "dashboard.bi-preflight",
+          "purpose": "For a dashboard: check which figures Power BI can take before you export.",
+          "example": "mammoth dashboard bi-preflight DASHBOARD_ID --input '{\"target\": \"powerbi\"}'",
+          "key_flags": [
+            "--input target"
+          ]
+        },
+        {
+          "command_id": "dashboard.bi-export",
+          "purpose": "Export the dashboard as a Power BI file.",
+          "example": "mammoth dashboard bi-export DASHBOARD_ID --input '{\"target\": \"powerbi\"}'",
+          "key_flags": [
+            "--input target"
+          ]
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "export-csv",
+      "title": "Download a view as a CSV file",
+      "goals": [
+        "download as csv",
+        "export to csv",
+        "save the data to a local file",
+        "get a csv of my view"
+      ],
+      "keywords": [
+        "download",
+        "csv",
+        "export",
+        "save",
+        "local",
+        "file",
+        "spreadsheet",
+        "excel"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Check the rows and the row count you are about to export.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.export.csv",
+          "purpose": "Write the view to a local CSV file.",
+          "example": "mammoth view export csv VIEW_ID",
+          "key_flags": [
+            "--overwrite"
+          ]
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "clean-data",
+      "title": "Clean a view: duplicates, blanks, column types, unwanted rows",
+      "goals": [
+        "clean my data",
+        "remove duplicate rows",
+        "fill blank values",
+        "fix column types",
+        "filter out rows"
+      ],
+      "keywords": [
+        "clean",
+        "duplicates",
+        "dedupe",
+        "duplicate",
+        "blank",
+        "blanks",
+        "missing",
+        "fill",
+        "fix",
+        "types",
+        "type",
+        "convert",
+        "filter",
+        "remove",
+        "rows",
+        "tidy"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view first: column_warnings lists text columns of numbers or dates, and blanks.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.convert-type",
+          "purpose": "Fix the column types column_warnings named (a text column of numbers or dates). Convert only columns whose type is wrong.",
+          "example": "mammoth view transform convert-type VIEW_ID --input '{\"conversions\": [{\"column\": \"amount\", \"to\": \"NUMERIC\"}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input conversions[].to"
+          ]
+        },
+        {
+          "command_id": "view.transform.batch",
+          "purpose": "Run several cleaning steps in one call (discard-duplicates, fill-missing, filter and the other ops '--help' lists).",
+          "example": "mammoth view transform batch VIEW_ID --input '{\"steps\": [{\"op\": \"discard-duplicates\", \"input\": {}}, {\"op\": \"fill-missing\", \"input\": {\"column\": \"region\", \"direction\": \"FIRST_VALUE\"}}, {\"op\": \"filter\", \"input\": {\"condition\": {\"column\": \"amount\", \"operator\": \"IS_NOT_EMPTY\"}}}]}'",
+          "key_flags": [
+            "--input steps[].op",
+            "--input steps[].input"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back and compare the row count with the first read.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "share-dashboard",
+      "title": "Share a dashboard",
+      "goals": [
+        "share a dashboard",
+        "give someone access to a dashboard",
+        "send a dashboard link"
+      ],
+      "keywords": [
+        "share",
+        "sharing",
+        "access",
+        "link",
+        "dashboard",
+        "someone",
+        "colleague",
+        "send"
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "steps": [
+        {
+          "command_id": "dashboard.list",
+          "purpose": "Find the dashboard id.",
+          "example": "mammoth dashboard list",
+          "key_flags": []
+        },
+        {
+          "command_id": "dashboard.share",
+          "purpose": "Share it.",
+          "example": "mammoth dashboard share DASHBOARD_ID --input '{\"type_of_auth\": \"mammoth\"}' --yes",
+          "key_flags": [
+            "--input type_of_auth",
+            "--yes"
+          ]
+        },
+        {
+          "command_id": "dashboard.get",
+          "purpose": "Read it back.",
+          "example": "mammoth dashboard get DASHBOARD_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "id": "cleanup-mine",
+      "title": "Delete what you created, safely: one id at a time",
+      "goals": [
+        "delete everything i made",
+        "clean up my test data",
+        "remove what i created",
+        "tidy up after a task"
+      ],
+      "keywords": [
+        "delete",
+        "everything",
+        "made",
+        "created",
+        "cleanup",
+        "clean",
+        "up",
+        "remove",
+        "tidy",
+        "trash",
+        "test",
+        "mine"
+      ],
+      "doc": "references/recipes/cleanup.md",
+      "steps": [
+        {
+          "command_id": "dataset.list",
+          "purpose": "List what exists now and compare it with the ids you recorded before you started. Delete only ids that are not in that baseline and that the user named as temporary.",
+          "example": "mammoth dataset list",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Read each id back first: it must return the name you created.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.delete",
+          "purpose": "Dry-run the delete: its dependents block lists the views and dashboards that read the dataset.",
+          "example": "mammoth dataset delete DATASET_ID --dry-run",
+          "key_flags": [
+            "--dry-run"
+          ]
+        },
+        {
+          "command_id": "dataset.delete",
+          "purpose": "Delete that one id. Never pass several ids to one delete.",
+          "example": "mammoth dataset delete DATASET_ID --yes",
+          "key_flags": [
+            "--yes"
+          ]
+        },
+        {
+          "command_id": "trash.list",
+          "purpose": "Check what can still be restored.",
+          "example": "mammoth trash list",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "Never delete everything you own: 'owned' does not mean 'temporary'. Keep every deliverable the user asked for."
+      ]
+    }
+  ]
+}

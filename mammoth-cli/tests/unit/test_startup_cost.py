@@ -7,6 +7,7 @@ Both exist so a CLI invocation does not parse 800 KiB of YAML and convert
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -377,3 +378,24 @@ def test_type_system_does_not_import_pydantic() -> None:
     )
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
     assert done.returncode == 0, done.stderr[-300:]
+
+
+def test_the_entry_point_turns_off_pydantic_plugin_discovery(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Plugin discovery imports every installed pydantic plugin (logfire: ~0.4 s).
+    from mammoth_cli.__main__ import main
+
+    monkeypatch.delenv("PYDANTIC_DISABLE_PLUGINS", raising=False)
+    monkeypatch.setattr("sys.argv", ["mammoth", "--version"])
+    assert main() == 0
+    assert os.environ["PYDANTIC_DISABLE_PLUGINS"] == "__all__"
+
+
+def test_an_explicit_pydantic_plugin_setting_is_kept(monkeypatch: pytest.MonkeyPatch) -> None:
+    from mammoth_cli.__main__ import main
+
+    monkeypatch.setenv("PYDANTIC_DISABLE_PLUGINS", "logfire")
+    monkeypatch.setattr("sys.argv", ["mammoth", "--version"])
+    main()
+    assert os.environ["PYDANTIC_DISABLE_PLUGINS"] == "logfire"

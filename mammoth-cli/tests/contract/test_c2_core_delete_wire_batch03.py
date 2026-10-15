@@ -148,8 +148,18 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
     )
     # The release route rejects an empty id list (4DSET025), so the CLI
     # requires dataset_ids and sends them as the ids query parameter.
-    # The bulk delete reads each dataset afterwards; deleted ones answer 404.
-    api.on("GET", r"/datasets/[78]$", 404, {"message": "not found"})
+    # The bulk delete reads each dataset before (it must exist) and after the
+    # DELETE (a deleted one answers 404).
+    def dataset_read(request: Any) -> tuple[int, Any]:
+        deleted = any(
+            r.method == "DELETE" and r.path.endswith(f"/projects/{PROJECT}/datasets")
+            for r in api.requests
+        )
+        if deleted:
+            return 404, {"message": "not found"}
+        return 200, {"id": int(request.path.rsplit("/", 1)[-1]), "name": "d"}
+
+    api.on("GET", r"/datasets/[78]$", handler=dataset_read)
     run(dataset, "dataset.bulk-delete", [], {"dataset_ids": [7, 8]})
     sent = next(r for r in reversed(api.requests) if r.method == "DELETE")
     assert (sent.path.removeprefix("/api/v2"), sent.method, sent.query, sent.json_body) == (

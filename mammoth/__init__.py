@@ -102,6 +102,10 @@ if TYPE_CHECKING:
     )
     from mammoth.models.exports import (
         BigQueryExportType,
+        ExportHostPolicy,
+        ExportHostPolicyRead,
+        ExportRun,
+        ExportRuns,
         HandlerType,
         HttpMethod,
         OdbcType,
@@ -213,6 +217,10 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DashboardShareRole": ("mammoth.models.dashboards", "DashboardShareRole"),
     "DashboardShareUser": ("mammoth.models.dashboards", "DashboardShareUser"),
     "BigQueryExportType": ("mammoth.models.exports", "BigQueryExportType"),
+    "ExportHostPolicy": ("mammoth.models.exports", "ExportHostPolicy"),
+    "ExportHostPolicyRead": ("mammoth.models.exports", "ExportHostPolicyRead"),
+    "ExportRun": ("mammoth.models.exports", "ExportRun"),
+    "ExportRuns": ("mammoth.models.exports", "ExportRuns"),
     "HandlerType": ("mammoth.models.exports", "HandlerType"),
     "HttpMethod": ("mammoth.models.exports", "HttpMethod"),
     "OdbcType": ("mammoth.models.exports", "OdbcType"),
@@ -282,7 +290,7 @@ def __dir__() -> list[str]:
     return sorted({*globals(), *_LAZY})
 
 
-__version__ = "0.8.43"
+__version__ = "0.8.44"
 __all__ = [
     # Client
     "MammothClient",
@@ -337,6 +345,10 @@ __all__ = [
     # Export enums
     "HandlerType",
     "TriggerType",
+    "ExportRun",
+    "ExportRuns",
+    "ExportHostPolicy",
+    "ExportHostPolicyRead",
     "BigQueryExportType",
     "OdbcType",
     "RestAuthType",

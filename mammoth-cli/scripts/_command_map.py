@@ -69,6 +69,25 @@ INTERNAL_ONLY: dict[str, str] = {
     "ApproveDevice": "Browser page that approves a device-code login; the terminal polls instead.",
     "DenyDevice": "Browser page that denies a device-code login.",
     "GetDeviceInfo": "Browser page that shows the device-code request before approval.",
+    # In-product agent chat surface: used by the web app's chat panel only.
+    "DismissAgentNeed": "Web chat panel: dismisses one needs-you card.",
+    "GetAgentBriefing": "Web chat panel: the briefing shown when the agent panel opens.",
+    "GetAgentChatDocument": "Web chat panel: bytes of a document attached to a chat.",
+    "GetAgentChatDocumentPage": "Web chat panel: one rendered page of an attached document.",
+    "GetAgentChatImage": "Web chat panel: bytes of an image attached to a chat.",
+    "ListAgentNeedsYou": "Web chat panel: the needs-you card list.",
+    "RecordAgentChartPlacement": "Web chat panel: records where a chat chart was placed.",
+    "RecordAgentChipFeedback": "Web chat panel: thumbs feedback on a suggestion chip.",
+    "TestAgentCredentialCard": "Web chat panel: tests the credentials typed into a chat card.",
+    "UploadAgentChatDocument": "Web chat panel: uploads a document into a chat.",
+    "UploadAgentChatImage": "Web chat panel: uploads an image into a chat.",
+    # Mammoth staff tooling: not for customers.
+    "CheckProjectMove": "Staff-only support route: dry run of a cross-workspace project move.",
+    "StartProjectMove": "Staff-only support route: starts a cross-workspace project move.",
+    "ListProjects": "Staff-only support route: lists a workspace's projects.",
+    "GetProjectMove": "Staff-only support route: status of a project move.",
+    "PurgeProjectMove": "Staff-only support route: purges the source of a finished project move.",
+    "CollectionsReach": "Web library page: the Live pill counting a collection's readers.",
 }
 
 # --- Routes the SDK calls that the server on master does not serve yet ------
@@ -148,6 +167,43 @@ PENDING_SERVER_RELEASE.update(
             "origin/feat/agent-gap-fixes-5-8@91290dfc2d"
         )
         for method, suffix in (("GET", ""), ("POST", ""), ("DELETE", "/{}"))
+    }
+)
+# On server master (and release) since the pinned master snapshot, for mammoth-io 0.8.44.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@fd7767ed5a"
+        for method, path in (
+            ("GET", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/exports/{}/runs"),
+            (
+                "POST",
+                "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/exports/rest-fill",
+            ),
+            ("GET", "/workspaces/{}/export-hosts"),
+            ("PUT", "/workspaces/{}/export-hosts"),
+            ("GET", "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/summary"),
+            ("POST", "/workspaces/{}/projects/{}/workflows/duplicate"),
+            ("POST", "/workspaces/{}/projects/{}/workflows/{}/save/{}/undo"),
+            ("POST", "/workspaces/{}/projects/{}/workflows/{}/save/{}/steps/{}/cancel"),
+            ("GET", "/dashboards/email-updates"),
+            ("GET", "/dashboards/{}/email-updates"),
+            ("PUT", "/dashboards/{}/email-updates"),
+            ("GET", "/dashboards/{}/email-updates/me"),
+            ("PUT", "/dashboards/{}/email-updates/me"),
+            ("POST", "/dashboards/{}/email-updates/test"),
+            ("GET", "/collections/{}/email-updates"),
+            ("PUT", "/collections/{}/email-updates"),
+            ("GET", "/collections/{}/email-updates/me"),
+            ("PUT", "/collections/{}/email-updates/me"),
+            ("POST", "/collections/{}/email-updates/test"),
+            ("GET", "/dashboards/v3/live-charts"),
+            ("POST", "/dashboards/v3/live-charts"),
+            ("GET", "/dashboards/v3/live-charts/{}"),
+            ("PATCH", "/dashboards/v3/live-charts/{}"),
+            ("GET", "/dashboards/v3/live-charts/{}/usage"),
+            ("POST", "/dashboards/v3/live-charts/{}/placements"),
+            ("GET", "/dashboards/oembed"),
+        )
     }
 )
 # The SDK posts every run verb through one helper whose path ends in a variable.
@@ -807,6 +863,40 @@ OVERRIDES: dict[str, str] = {
     "UpdateSubscriptionStorage": "billing.stripe.storage.set",
     "UploadFile": "collection.files.upload",
     "UseTemplate": "dashboard.templates.use",
+    # Email updates (dashboards and collections), live charts and oEmbed.
+    "ListWorkspaceEmailUpdates": "dashboard.email-updates.list",
+    "GetDashboardEmailUpdates": "dashboard.email-updates.get",
+    "SaveDashboardEmailUpdates": "dashboard.email-updates.set",
+    "GetMyDashboardEmailUpdates": "dashboard.email-updates.me.get",
+    "SetMyDashboardEmailUpdates": "dashboard.email-updates.me.set",
+    "TestDashboardEmailUpdate": "dashboard.email-updates.test",
+    "GetCollectionEmailUpdates": "collection.email-updates.get",
+    "SaveCollectionEmailUpdates": "collection.email-updates.set",
+    "GetMyCollectionEmailUpdates": "collection.email-updates.me.get",
+    "SetMyCollectionEmailUpdates": "collection.email-updates.me.set",
+    "TestCollectionEmailUpdate": "collection.email-updates.test",
+    "ListLiveCharts": "dashboard.live-chart.list",
+    "CreateLiveChart": "dashboard.live-chart.create",
+    "GetLiveChart": "dashboard.live-chart.get",
+    "ChangeAudience": "dashboard.live-chart.audience",
+    "GetUsage": "dashboard.live-chart.usage",
+    "RecordPlacement": "dashboard.live-chart.placement",
+    "Oembed": "dashboard.oembed",
+    # Exports, export hosts, view summary, dataset stats and definitions, workflow Save.
+    "ListExportRuns": "view.export.runs",
+    # "Read", "Update" and "Suggest" are the server's own (generic) operationIds; each is unique
+    # in the pinned spec today. A second route that reuses one needs a new reviewed entry.
+    "Suggest": "view.export.rest-fill",
+    "Read": "workspace.export-hosts.get",
+    "Update": "workspace.export-hosts.set",
+    "GetPanelSummary": "view.summary",
+    "GetProjectColumnStats": "dataset.column-stats",
+    "GetDatasetDefinitions": "dataset.definition.list",
+    "AddDatasetDefinition": "dataset.definition.add",
+    "RemoveDatasetDefinition": "dataset.definition.remove",
+    "DuplicateWorkflow": "workflow.duplicate",
+    "UndoWorkflowSave": "workflow.save-undo",
+    "CancelWorkflowSaveStep": "workflow.save-cancel-step",
 }
 
 

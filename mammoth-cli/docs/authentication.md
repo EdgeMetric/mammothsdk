@@ -29,7 +29,10 @@ only in that project: any other project answers HTTP 403, even a project that
 the token created. If an agent should create its own projects, create the
 token without a project. If you keep a project-limited token, give the agent
 that project's id and have it pass `--project ID` (or run
-`mammoth context project use ID` once).
+`mammoth context project use ID` once). A browser or device sign-in
+(`mammoth auth login --method oauth`) can be limited to several projects:
+check them on the sign-in page. `mammoth auth status --check` lists them in
+`token_projects`.
 
 One more input is optional. The server prefix names your Mammoth region and
 defaults to `app`. Most users leave it alone. See
@@ -110,7 +113,7 @@ stops working after 30 days. A command that uses an expired key stops with
 `cli_key_expired` (exit code 4). Run `mammoth auth login` again, then create a new
 key. Keys you create in Settings never expire.
 
-- `mammoth auth status` shows `credential: oauth` and when the token expires.
+- `mammoth auth status` shows `credential: oauth` and `access_token_expires_at`: when the one-hour access token ends (the older `expires_at` field is the same value). It is not when your login ends; `refreshes_automatically: true` says the CLI renews it on its own. `mammoth auth status --check` also names the workspace (`workspace_name`) and a pinned project (`token_project_name`).
 - If the refresh fails, commands stop with `login_expired` (exit code 4). Run
   `mammoth auth login` again.
 - `mammoth auth logout` removes the local login and asks the server to revoke

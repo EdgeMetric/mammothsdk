@@ -116,6 +116,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "dry_run_targets_unresolvable": (
         "It wasn't clear exactly which items this would change, so nothing was changed."
     ),
+    "dataset_not_refreshable": "A file-backed dataset can't be refreshed on a schedule.",
     "download_failed": "A download didn't complete.",
     "dry_run_unsupported": "That command can't be previewed, so it was not run.",
     "duplicate_input_key": _S_BAD_INPUT,
@@ -357,11 +358,20 @@ FEATURE_UNAVAILABLE_FAMILIES: dict[str, tuple[str, str, list[str]]] = {
         ["mammoth dashboard find SUBSTRING", "mammoth schema find dashboard"],
     ),
 }
+#: One answer for "refresh this dataset daily", shared by ``schedule create`` and the
+#: automation 4AUTO006 refusal so the two never send the reader round in a circle.
+REFRESH_FILE_DATASET_HINT = (
+    "A dataset made from an uploaded file has no source to pull from. To refresh it on a "
+    "schedule, run your own scheduler that uploads each new file with "
+    "`mammoth file upload FILE --input '{\"append_to_ds_id\": DATASET_ID}'` (its views "
+    "recompute); or connect a cloud source (`mammoth connector connection create`) and "
+    "automate that dataset's data retrieval with `mammoth automation create`."
+)
 FEATURE_UNAVAILABLE_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "schedule.create": (
         "Creating a schedule is not implemented by the Mammoth backend (5GENR011 NOT_IMPLEMENTED).",
-        "Use an automation to run work on a schedule.",
-        ["mammoth automation create --help", "mammoth schema get automation.create"],
+        REFRESH_FILE_DATASET_HINT,
+        ["mammoth schema get file.upload", "mammoth schema get automation.create"],
     ),
 }
 

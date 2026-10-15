@@ -221,6 +221,19 @@ def test_a_grant_carries_the_workspace_and_project_the_server_pinned() -> None:
     assert (session.workspace_id, session.project_id) == (247, 16712)
 
 
+def test_a_grant_limited_to_several_projects_carries_all_of_them() -> None:
+    grant = oauth._parse_grant({**_GRANT, "project_id": 3, "project_ids": [7, 3]})
+    assert (grant.project_id, grant.project_ids) == (3, (3, 7))
+    session = oauth.session_from_grant(grant, "oc_test")
+    assert (session.project_id, session.project_ids) == (3, (3, 7))
+
+
+@pytest.mark.parametrize("project_ids", [None, [], [16712]])
+def test_a_grant_of_one_project_or_all_has_no_project_set(project_ids: object) -> None:
+    grant = oauth._parse_grant({**_GRANT, "project_id": 16712, "project_ids": project_ids})
+    assert grant.project_ids is None
+
+
 @pytest.mark.parametrize("extra", [{}, {"workspace_id": None, "project_id": None}])
 def test_a_grant_without_scope_has_none(extra: dict[str, object]) -> None:
     grant = oauth._parse_grant({**_GRANT, **extra})

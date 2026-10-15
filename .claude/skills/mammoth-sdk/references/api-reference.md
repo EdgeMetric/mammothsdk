@@ -348,6 +348,19 @@ Every public method of the sub-clients not described above, by name. All are cor
 - `client.workflows` (WorkflowsAPI): `list`, `create`, `get`, `update`, `delete`, `graph`, `cleanup`, `from_template`, `workspace_datasets`, `workspace_exports`, `workspace_sources`, `block_add`, `block_auth`, `block_type`, `block_config`, `canvas`
 - `client.workspace` (WorkspacesAPI): `accept_invite`, `create`, `check_expression`, `llm_task`, `app_usage`, `home_summary`, `storage_breakdown`, `segment_list`, `segment_update`, `user_add`, `user_remove`, `user_remove_batch`, `user_update_batch`, `invite_list`, `invite_resend`, `invite_revoke`, `invite_role_update`, `invite_delete`
 
+### Added in v0.8.44
+
+- `client.exports.runs(dataview_id, export_id, limit=20)` -> `ExportRuns`: one export's recent runs (status, start, end, error).
+- `client.exports.rest_fill(dataview_id, docs_url, notes="", wait=True)`: builds a REST-API export from an API's docs page. **It sends data to an external host.**
+- `client.exports.export_hosts()` and `set_export_hosts(restricted, hosts=None)`: the hosts a workspace's custom export destinations may send to. Setting them is a workspace-wide change.
+- `client.dataviews.summary(dataset_id, dataview_id)`: what a view has had done to it and where its data goes.
+- `client.workflows.duplicate(name, dataset_ids, source_workflow_id=None)`, `undo_save(workflow_id, run_id)` and `cancel_save_step(workflow_id, run_id, step)`.
+- Email updates:
+  - `client.collections.email_updates`, `set_email_updates(collection_id, enabled, timezone, ...)`, `my_email_updates`, `set_my_email_updates(collection_id, subscribed)` and `send_test_email_update`.
+  - `client.dashboards.email_updates_list/get/set/me_get/me_set/test`.
+  - The `test` and `set` calls send email.
+- `client.dashboards.live_chart_list/create/get/audience/usage/placement` (v3 live charts) and `oembed(url=...)`.
+
 ### Further methods on the documented sub-clients
 
 Methods added since the sections above were written (same convention):

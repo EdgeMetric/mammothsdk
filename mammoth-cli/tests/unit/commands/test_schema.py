@@ -305,7 +305,16 @@ def test_every_export_destination_is_covered_by_this_test() -> None:
         item["command_id"]
         for item in find_schemas("export")["matches"]
         if item["command_id"].startswith("view.export.")
-        and item["command_id"].split(".")[-1] not in {"create", "get", "list", "update", "delete"}
+        and item["command_id"].split(".")[-1]
+        not in {
+            "create",
+            "get",
+            "list",
+            "update",
+            "delete",
+            "runs",
+            "rest-fill",
+        }
     }
     assert destinations <= set(_EXPORT_DESTINATION_NATURAL_QUERIES)
 

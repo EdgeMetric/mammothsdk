@@ -98,8 +98,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace check-expression --help
-  agent_example: 'mammoth workspace check-expression --input ''{"body": {"intent": "Summarize revenue by
-    region"}}'''
+  agent_example: 'mammoth workspace check-expression --input ''{"body": {"intent": "Summarize revenue
+    by region"}}'''
   unit_tests:
   - UT-WORKSPACE-CHECK-EXPRESSION
   contract_tests:
@@ -110,7 +110,7 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
-  no_readback: "generates a preview expression only; nothing is persisted to read back"
+  no_readback: generates a preview expression only; nothing is persisted to read back
 - command_id: workspace.create
   command_path: workspace create
   disposition: command
@@ -180,7 +180,8 @@ commands:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: Read-only. The workspace this token acts in, and the server (resource) and project it is fenced to.
+  known_restrictions: Read-only. The workspace this token acts in, and the server (resource) and project
+    it is fenced to.
   reviewed_by: primary
 - command_id: workspace.delete
   command_path: workspace delete
@@ -334,7 +335,8 @@ commands:
   - CT-WORKSPACE-INVITE-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Deletes pending invites for good and frees their seats. Take invite_ids from workspace invite list (a pending invite is not a workspace user; workspace user list never shows it).'
+  known_restrictions: Deletes pending invites for good and frees their seats. Take invite_ids from workspace
+    invite list (a pending invite is not a workspace user; workspace user list never shows it).
   reviewed_by: primary
   readback:
     command: workspace.invite.list
@@ -363,7 +365,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace invite list --help
-  agent_example: 'mammoth workspace invite list'
+  agent_example: mammoth workspace invite list
   unit_tests:
   - UT-WORKSPACE-INVITE-LIST
   contract_tests:
@@ -372,7 +374,8 @@ commands:
   - CT-WORKSPACE-INVITE-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Lists pending invites with id, email, status, role and invited_at. Optional project_id keeps invites that grant a role on that project.'
+  known_restrictions: Lists pending invites with id, email, status, role and invited_at. Optional project_id
+    keeps invites that grant a role on that project.
   reviewed_by: primary
   readback:
     command: workspace.invite.list
@@ -411,7 +414,7 @@ commands:
   - CT-WORKSPACE-INVITE-RESEND-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Sends the invitation email again. Take invite_ids from workspace invite list.'
+  known_restrictions: Sends the invitation email again. Take invite_ids from workspace invite list.
   reviewed_by: primary
   readback:
     command: workspace.invite.list
@@ -450,7 +453,8 @@ commands:
   - CT-WORKSPACE-INVITE-REVOKE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Marks pending invites revoked; the row stays. To remove an invite for good use workspace invite delete.'
+  known_restrictions: Marks pending invites revoked; the row stays. To remove an invite for good use workspace
+    invite delete.
   reviewed_by: primary
   readback:
     command: workspace.invite.list
@@ -465,7 +469,8 @@ commands:
   positionals: []
   options: []
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.invite_role_update
-  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_role_update with validated request fields.
+  sdk_conversion: Call mammoth.api.workspaces.WorkspacesAPI.invite_role_update with validated request
+    fields.
   request_model: WorkspaceInviteUpdateRoleRequest
   result_model: WorkspaceInviteUpdateRoleResult
   mutation_class: high_impact
@@ -480,7 +485,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace invite update-role --help
-  agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "workspace_member"}'' --yes'
+  agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "workspace_member"}''
+    --yes'
   unit_tests:
   - UT-WORKSPACE-INVITE-UPDATE-ROLE
   contract_tests:
@@ -489,7 +495,8 @@ commands:
   - CT-WORKSPACE-INVITE-UPDATE-ROLE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Changes the workspace role a pending invite will grant (workspace_member, workspace_admin, workspace_owner, workspace_guest).'
+  known_restrictions: Changes the workspace role a pending invite will grant (workspace_member, workspace_admin,
+    workspace_owner, workspace_guest).
   reviewed_by: primary
   readback:
     command: workspace.invite.list
@@ -519,7 +526,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace llm-task --help
-  agent_example: 'mammoth workspace llm-task --input ''{"task_type": "run_data_retrieval", "params": {"name": "Status"}}'''
+  agent_example: 'mammoth workspace llm-task --input ''{"task_type": "run_data_retrieval", "params": {"name":
+    "Status"}}'''
   unit_tests:
   - UT-WORKSPACE-LLM-TASK
   contract_tests:
@@ -547,7 +555,7 @@ commands:
     required: false
     metavar: WORKSPACE_ID
     falls_back_to_field: null
-    help: "ID of the workspace to act on; defaults to the client's own workspace."
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.create
   sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.create with validated request fields.
   request_model: WorkspaceOauthClientCreateRequest
@@ -564,14 +572,17 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace oauth-client create --help
-  agent_example: 'mammoth workspace oauth-client create 123 --input ''{"name": "Revenue report", "redirect_uris": ["https://example.com/data.csv"]}'' --yes'
+  agent_example: 'mammoth workspace oauth-client create 123 --input ''{"name": "Revenue report", "redirect_uris":
+    ["https://example.com/data.csv"]}'' --yes'
   unit_tests:
   - test_oauth_clients_create_sends_only_the_fields_given
   contract_tests:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: "Registers an OAuth client that can sign users in. A confidential client's client_secret is returned exactly once and shown once in this output; store it now, it cannot be fetched again. Send name and redirect_uris through --input."
+  known_restrictions: Registers an OAuth client that can sign users in. A confidential client's client_secret
+    is returned exactly once and shown once in this output; store it now, it cannot be fetched again.
+    Send name and redirect_uris through --input.
   reviewed_by: primary
   readback:
     command: workspace.oauth-client.list
@@ -595,7 +606,7 @@ commands:
     required: false
     metavar: WORKSPACE_ID
     falls_back_to_field: null
-    help: "ID of the workspace to act on; defaults to the client's own workspace."
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.delete
   sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.delete with validated request fields.
   request_model: WorkspaceOauthClientDeleteRequest
@@ -619,7 +630,8 @@ commands:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Deleting the client stops its grants working.
+  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Deleting the client stops
+    its grants working.
   reviewed_by: primary
   readback:
     command: workspace.oauth-client.list
@@ -637,7 +649,7 @@ commands:
     required: false
     metavar: WORKSPACE_ID
     falls_back_to_field: null
-    help: "ID of the workspace to act on; defaults to the client's own workspace."
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.list
   sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.list with validated request fields.
   request_model: WorkspaceOauthClientListRequest
@@ -661,7 +673,8 @@ commands:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: "Read-only. The workspace's OAuth clients (id, client_id, name, redirect URIs). No client secret is returned."
+  known_restrictions: Read-only. The workspace's OAuth clients (id, client_id, name, redirect URIs). No
+    client secret is returned.
   reviewed_by: primary
 - command_id: workspace.oauth-client.revoke-grant
   command_path: workspace oauth-client revoke-grant
@@ -681,7 +694,7 @@ commands:
     required: false
     metavar: WORKSPACE_ID
     falls_back_to_field: null
-    help: "ID of the workspace to act on; defaults to the client's own workspace."
+    help: ID of the workspace to act on; defaults to the client's own workspace.
   sdk_symbol: mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant
   sdk_conversion: Call mammoth.api.oauth_clients.OAuthClientsAPI.revoke_grant with validated request fields.
   request_model: WorkspaceOauthClientRevokeGrantRequest
@@ -705,7 +718,8 @@ commands:
   - test_the_command_is_registered_and_reachable_from_the_cli
   draft_test: null
   undo_test: null
-  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Every user who authorised this client must authorise it again.
+  known_restrictions: Exact OAuth client ID confirmation (--yes --confirm ID). Every user who authorised
+    this client must authorise it again.
   reviewed_by: primary
   readback:
     command: workspace.oauth-client.list
@@ -750,7 +764,8 @@ commands:
   - CT-WORKSPACE-REACTIVATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Turns a deactivated workspace back on; its users regain access and billing resumes. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
+  known_restrictions: Turns a deactivated workspace back on; its users regain access and billing resumes.
+    Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
   reviewed_by: primary
   readback:
     command: workspace.get
@@ -863,8 +878,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: This is a paginated per-item list of storage-consuming resources (limit/offset);
-    it carries no workspace total and can page through thousands of items. For the workspace's total
-    storage used/allowed, use `workspace app-usage` instead.
+    it carries no workspace total and can page through thousands of items. For the workspace's total storage
+    used/allowed, use `workspace app-usage` instead.
   reviewed_by: primary
 - command_id: workspace.update
   command_path: workspace update
@@ -896,7 +911,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace update --help
-  agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]}'' --yes --confirm 123'
+  agent_example: 'mammoth workspace update 123 --input ''{"patches": [{"op": "replace", "path": "name",
+    "value": "Revenue team"}]}'' --yes --confirm 123'
   unit_tests:
   - UT-WORKSPACE-UPDATE
   contract_tests:
@@ -905,7 +921,8 @@ commands:
   - CT-WORKSPACE-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Patches workspace settings that apply to every member. Read them first (`workspace get`). Needs --yes and --confirm WORKSPACE_ID.
+  known_restrictions: Patches workspace settings that apply to every member. Read them first (`workspace
+    get`). Needs --yes and --confirm WORKSPACE_ID.
   reviewed_by: primary
   readback:
     command: workspace.get
@@ -1022,7 +1039,8 @@ commands:
   - CT-WORKSPACE-USER-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Lists members only; a pending invite is not a member. For pending invites and their ids run workspace invite list. Optional project_id keeps one project''s members.'
+  known_restrictions: Lists members only; a pending invite is not a member. For pending invites and their
+    ids run workspace invite list. Optional project_id keeps one project's members.
   reviewed_by: primary
 - command_id: workspace.user.remove
   command_path: workspace user remove
@@ -1102,7 +1120,8 @@ commands:
   - CT-WORKSPACE-USER-REMOVE-BATCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Removes members (ids) and/or pending invites (invite_ids). Take invite ids from workspace invite list; workspace invite delete is the dedicated command for invites.'
+  known_restrictions: Removes members (ids) and/or pending invites (invite_ids). Take invite ids from
+    workspace invite list; workspace invite delete is the dedicated command for invites.
   reviewed_by: primary
   readback:
     command: workspace.user.list
@@ -1138,7 +1157,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace user update USER_ID --help
-  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace", "path": "role", "value": "workspace_member"}]}'' --yes --confirm resource-123'
+  agent_example: 'mammoth workspace user update resource-123 --input ''{"patches": [{"op": "replace",
+    "path": "role", "value": "workspace_member"}]}'' --yes --confirm resource-123'
   unit_tests:
   - UT-WORKSPACE-USER-UPDATE
   contract_tests:
@@ -1187,7 +1207,8 @@ commands:
   - CT-WORKSPACE-USER-UPDATE-BATCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Changes the roles of several workspace users in one JSON-patch call; each gains or loses access at once. Read `workspace user list` first. Needs --yes and --confirm WORKSPACE_ID.
+  known_restrictions: Changes the roles of several workspace users in one JSON-patch call; each gains
+    or loses access at once. Read `workspace user list` first. Needs --yes and --confirm WORKSPACE_ID.
   reviewed_by: primary
   readback:
     command: workspace.user.list
@@ -1215,7 +1236,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace home --help
-  agent_example: 'mammoth workspace home'
+  agent_example: mammoth workspace home
   unit_tests:
   - UT-WORKSPACE-HOME
   contract_tests:
@@ -1224,9 +1245,83 @@ commands:
   - CT-WORKSPACE-HOME-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'The Home read: usage_summary (storage, plan), health_issues (type, severity, occurrence_count, available_actions) and suggestions. Read-only; not a chat turn.'
+  known_restrictions: 'The Home read: usage_summary (storage, plan), health_issues (type, severity, occurrence_count,
+    available_actions) and suggestions. Read-only; not a chat turn.'
   reviewed_by: primary
   readback:
     command: workspace.home
     ids: {}
     kind: object
+- command_id: workspace.export-hosts.get
+  command_path: workspace export-hosts get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Read
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.export_hosts
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.export_hosts with validated request fields.
+  request_model: WorkspaceExportHostsGetRequest
+  result_model: WorkspaceExportHostsGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKSPACE-EXPORT-HOSTS-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace export-hosts get --help
+  agent_example: mammoth workspace export-hosts get
+  unit_tests:
+  - UT-WORKSPACE-EXPORT-HOSTS-GET
+  contract_tests:
+  - CT-WORKSPACE-EXPORT-HOSTS-GET-HUMAN
+  - CT-WORKSPACE-EXPORT-HOSTS-GET-JSON
+  - CT-WORKSPACE-EXPORT-HOSTS-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: workspace.export-hosts.set
+  command_path: workspace export-hosts set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Update
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.set_export_hosts
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.set_export_hosts with validated request fields.
+  request_model: WorkspaceExportHostsSetRequest
+  result_model: WorkspaceExportHostsSetResult
+  mutation_class: "high_impact"
+  edits_target: false
+  confirmation: "yes_always"
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: "contract_only_high_impact"
+  readback:
+    command: workspace.export-hosts.get
+    ids: {}
+    kind: object
+  live_test: None
+  live_exemption_reason: "Sends or changes outbound mail or access for real people, so it is not run against a live server; contract and unit tests cover it."
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workspace export-hosts set --help
+  agent_example: "mammoth workspace export-hosts set --input '{\"restricted\": true}' --yes"
+  unit_tests:
+  - UT-WORKSPACE-EXPORT-HOSTS-SET
+  contract_tests:
+  - CT-WORKSPACE-EXPORT-HOSTS-SET-HUMAN
+  - CT-WORKSPACE-EXPORT-HOSTS-SET-JSON
+  - CT-WORKSPACE-EXPORT-HOSTS-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: "Sets which hosts exports may send data to for the whole workspace. Admins only. Needs --yes."
+  reviewed_by: primary

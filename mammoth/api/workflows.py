@@ -14,6 +14,11 @@ _list = list  # Alias to avoid shadowing by the `list` method name
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_WORKFLOW_ID_POSITIVE = "`workflow_id` must be a positive integer, got {0}."
 ERR_BLOCK_ID_POSITIVE = "`block_id` must be a positive integer, got {0}."
+ERR_RUN_ID_EMPTY = "`run_id` must be a non-empty string."
+ERR_STEP_NEGATIVE = "`step` must be an integer >= 0, got {0!r}."
+ERR_DUPLICATE_NAME = "`name` must be 1 to 255 characters."
+ERR_DUPLICATE_DATASETS = "`dataset_ids` must be a non-empty list of positive dataset ids."
+_NAME_MAX = 255
 
 
 class WorkflowsAPI:
@@ -50,6 +55,11 @@ class WorkflowsAPI:
     def _check_workflow_id(workflow_id: int) -> None:
         if workflow_id <= 0:
             raise MammothValidationError(ERR_WORKFLOW_ID_POSITIVE.format(workflow_id))
+
+    @staticmethod
+    def _check_run_id(run_id: str) -> None:
+        if not isinstance(run_id, str) or not run_id.strip() or "/" in run_id:
+            raise MammothValidationError(ERR_RUN_ID_EMPTY)
 
     @staticmethod
     def _check_block_id(block_id: int) -> None:
@@ -537,6 +547,137 @@ class WorkflowsAPI:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/save",
             json={name: value for name, value in body.items() if value is not None},
+        )
+
+    async def duplicate(
+        self,
+        name: str,
+        dataset_ids: _list[int],
+        source_workflow_id: int | None = None,
+        wait: bool = True,
+        timeout: float | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Duplicate a workflow into the same project as a new workflow.
+
+        Copies the workflow's datasets with their rows, views and steps in one background
+        job. Send-tos between the copies are recreated; datasets the workflow only joins
+        are shared, not copied; automations and outside exports are not copied.
+
+        Args:
+            name: Name of the new workflow (1-255 characters).
+            dataset_ids: IDs of the datasets to copy (at least one, each > 0).
+            source_workflow_id: ID of the workflow being copied (optional).
+            wait: Wait for the job to finish (default True). False returns the queued job.
+            timeout: Seconds to wait (uses ``client.job_timeout`` if not provided).
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            The queued job dict (``job_id``) when *wait* is False; the finished job
+            otherwise, whose ``response`` carries ``workflow_id``.
+
+        Raises:
+            MammothValidationError: If *name* or *dataset_ids* are invalid, or *project_id*
+                or *source_workflow_id* <= 0.
+            MammothJobFailedError: If the job fails (when *wait* is True).
+            MammothJobTimeoutError: If the job does not finish in time (when *wait* is True).
+        """
+        if not isinstance(name, str) or not 1 <= len(name) <= _NAME_MAX:
+            raise MammothValidationError(ERR_DUPLICATE_NAME)
+        if not dataset_ids or any(
+            isinstance(d, bool) or not isinstance(d, int) or d <= 0 for d in dataset_ids
+        ):
+            raise MammothValidationError(ERR_DUPLICATE_DATASETS)
+        if source_workflow_id is not None:
+            self._check_workflow_id(source_workflow_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        body: dict[str, Any] = {"name": name, "dataset_ids": dataset_ids}
+        if source_workflow_id is not None:
+            body["source_workflow_id"] = source_workflow_id
+        queued = await self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{proj}/workflows/duplicate", json=body
+        )
+        job_id = queued.get("job_id")
+        if not wait or job_id is None:
+            return queued
+        return await self._client.jobs.wait_for_job(job_id, timeout=timeout)
+
+    async def undo_save(
+        self,
+        workflow_id: int,
+        run_id: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Undo a workflow's latest finished Save.
+
+        Puts back what that Save built, newest first, as a run of its own
+        (``canvas_state.save_run``, kind ``undo``). Refused while a Save runs, for an older
+        Save, or when something was built since on what it made. Unsaved changes stay
+        discarded.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: ID of the Save run to undo.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the workflow and its canvas state.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_run_id(run_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/save/{run_id}/undo",
+        )
+
+    async def cancel_save_step(
+        self,
+        workflow_id: int,
+        run_id: str,
+        step: int,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Cancel one step of the workflow's running Save.
+
+        The step ends cancelled and the steps that need it are skipped. Best effort: a
+        Mammoth job the step started may still finish, so a step that creates something
+        is held for a check.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: ID of the running Save.
+            step: Index of the step to cancel (>= 0).
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with the workflow and its canvas state.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, *run_id* is
+                empty or *step* is negative.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_run_id(run_id)
+        if isinstance(step, bool) or not isinstance(step, int) or step < 0:
+            raise MammothValidationError(ERR_STEP_NEGATIVE.format(step))
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/save/{run_id}"
+            f"/steps/{step}/cancel",
         )
 
     async def set_archived(

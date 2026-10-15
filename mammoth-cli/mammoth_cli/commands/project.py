@@ -39,7 +39,14 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
-from mammoth_cli.runtime.token_scope import pinned_project, require_unpinned_token
+from mammoth_cli.runtime.token_scope import (
+    Pins,
+    pin_details,
+    pin_names,
+    pinned_projects,
+    pins_label,
+    require_unpinned_token,
+)
 from mammoth_cli.services import job_outcome
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -118,31 +125,33 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
-def _pin_or_none(service: Any) -> int | None:
-    """The project the token is limited to; None when unlimited or the lookup fails.
+def _pin_or_none(service: Any) -> Pins | None:
+    """The projects the token is limited to; None when unlimited or the lookup fails.
 
     A failed lookup never blocks the command: the server still enforces the pin.
     """
     try:
-        return pinned_project(service)
+        return pinned_projects(service)
     except Exception:
         return None
 
 
-def _only_pinned(data: Any, pin: int) -> Any:
-    """Keep only the pinned project in a ``project list`` result and say why."""
+def _only_pinned(data: Any, pins: Pins) -> Any:
+    """Keep only the pinned projects in a ``project list`` result and say why."""
     if not isinstance(data, dict):
         return data
     key = "projects" if isinstance(data.get("projects"), list) else None
     if key is None:
         return data
-    rows = [row for row in data[key] if not isinstance(row, dict) or row.get("id") == pin]
+    rows = [row for row in data[key] if not isinstance(row, dict) or row.get("id") in pins]
+    names = {r["id"]: r.get("name") for r in rows if isinstance(r, dict) and r.get("id") in pins}
+    listed = "that project is" if len(pins) == 1 else "those projects are"
     return {
         **data,
         key: rows,
         "note": (
-            f"This token is limited to project {pin}, so only that project is listed; "
-            "the workspace has others this token cannot open."
+            f"This token is limited to {pins_label(pins, names)}, "
+            f"so only {listed} listed; the workspace has others this token cannot open."
         ),
     }
 
@@ -163,10 +172,10 @@ def project_list(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
     _forward_optional(document, kwargs, ("offset", "include_non_members"))
     with open_service(invocation) as (service, auth):
-        pin = _pin_or_none(service)
+        pins = _pin_or_none(service)
         data = service.call(_symbol(invocation), **kwargs)
-    if pin is not None:
-        data = _only_pinned(data, pin)
+    if pins is not None:
+        data = _only_pinned(data, pins)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -186,22 +195,23 @@ def project_get(invocation: Invocation) -> HandlerResult:
     """Get one project by id (positional or active project)."""
     project_id = _project_id(invocation)
     with open_service(invocation) as (service, auth):
-        pin = _pin_or_none(service)
-        if pin is not None and pin != project_id:
+        pins = _pin_or_none(service)
+        if pins is not None and project_id not in pins:
+            limited = "one project" if len(pins) == 1 else "some projects"
             raise CliError(
                 code=CODE_AUTHORIZATION_REQUIRED,
                 message=(
-                    f"This token is limited to project {pin}, so it cannot open "
-                    f"project {project_id}."
+                    f"This token is limited to {pins_label(pins, pin_names(service, pins))}"
+                    f", so it cannot open project {project_id}."
                 ),
                 exit_status=EXIT_AUTH,
                 hint=(
-                    f"An API token limited to one project is refused in every other project: "
-                    f"pass --project {pin}, or log in with a token created without a project."
+                    f"An API token limited to {limited} is refused in every other project: "
+                    f"pass --project {pins[0]}, or log in with a token created without a project."
                 ),
-                details={"pinned_project_id": pin, "project_id": project_id},
+                details={**pin_details(pins), "project_id": project_id},
                 authorization_required=True,
-                recovery_commands=[f"mammoth project get {pin}"],
+                recovery_commands=[f"mammoth project get {pins[0]}"],
             )
         data = service.call(_symbol(invocation), project=project_id)
     if isinstance(data, dict):

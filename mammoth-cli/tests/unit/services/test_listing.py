@@ -82,11 +82,13 @@ def test_a_view_summary_names_its_dataset() -> None:
     assert summary["source"] == "file: superstore.csv"
 
 
-def test_fifteen_freshly_uploaded_datasets_fit_the_tool_output_cap() -> None:
-    fresh = [{**_dataset(i), "updated_at": "2026-09-27T14:03:11Z"} for i in range(15)]
+def test_fourteen_freshly_uploaded_datasets_fit_the_tool_output_cap() -> None:
+    # Each row now carries its status (``ready`` included) so its health can be judged,
+    # which costs 18 characters a row; a real list row has no column text, so more fit.
+    fresh = [{**_dataset(i), "updated_at": "2026-09-27T14:03:11Z"} for i in range(14)]
     kept, omitted = listing.fit_budget([listing.dataset_summary(d) for d in fresh])
     assert omitted == 0
-    assert len(kept) == 15
+    assert len(kept) == 14
     assert listing.json_size({"datasets": kept}) < 4000
 
 
@@ -157,3 +159,10 @@ def test_a_view_summary_lists_every_column_when_asked() -> None:
     full = listing.view_summary(_view(1), _dataset(1), 3001, all_columns=True)
     assert "more)" not in full["columns"]
     assert full["columns"].count(":text") == 21
+
+
+def test_a_held_file_reads_need_action_in_a_list_and_a_name_search_like_dataset_get() -> None:
+    record = {"id": 5, "name": "wb.csv", "status": "has_unstructured_data"}
+
+    assert listing.dataset_summary(record)["status"] == "need_action"
+    assert listing.name_hit(record)["status"] == "need_action"

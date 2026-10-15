@@ -68,6 +68,7 @@ from mammoth_cli.services.dashboard_review import (
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
 from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.positionals import resolve_positionals
+from mammoth_cli.services.read_memo import forget, remember
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -665,14 +666,52 @@ def _figure_page_kwargs(page: Any) -> dict[str, Any]:
     return {"page_new_title": page["new_title"]}
 
 
-def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
-    """Add one figure to a dashboard. The input is the endpoint's own shape.
+_FIGURE_INTENT = "mammoth.api.dashboards.DashboardsAPI.figure_intent"
+_FIGURE_SHAPES_HINT = (
+    "Pass either an intent, and the server picks the chart: "
+    "--input '{\"intent\": \"Revenue by region\"}' (the same as 'dashboard figure-intent'), "
+    'or an exact figure: --input \'{"dataview_id": VIEW_ID, "figure": {"kind": "hbar", '
+    '"dim": "Region", "measure": "Revenue", "agg": "sum"}}\'.'
+)
 
-    ``dataview_id`` and ``figure`` are required; ``banded`` and ``page`` (``{"id": ...}``
-    or ``{"new_title": ...}``) are optional. The result carries ``bake_job_id``.
+
+def _figure_add_mode(document: dict[str, Any]) -> str:
+    """``intent`` or ``figure``: which of the two input shapes the caller sent."""
+    has_intent = document.get("intent") is not None
+    has_figure = document.get("figure") is not None
+    if has_intent != has_figure:
+        return "intent" if has_intent else "figure"
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT if has_intent else CODE_MISSING_FIELD,
+        message=(
+            "Pass 'intent' or 'figure', not both."
+            if has_intent
+            else "This command requires an 'intent' or a 'figure' input field."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=_FIGURE_SHAPES_HINT,
+    )
+
+
+def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
+    """Add one figure to a dashboard, from an intent or an exact figure spec.
+
+    ``intent`` (optional ``kind``) goes through the figure-intent route, where the
+    server picks and draws the chart. Otherwise ``dataview_id`` and ``figure`` are
+    required; ``banded`` and ``page`` (``{"id": ...}`` or ``{"new_title": ...}``) are
+    optional, and the result carries ``bake_job_id``.
     """
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = _bound_document(invocation)
+    if _figure_add_mode(document) == "intent":
+        params = {"intent": document["intent"]}
+        if document.get("kind") is not None:
+            params["kind"] = document["kind"]
+        with open_service(invocation) as (service, auth):
+            data = service.call(_FIGURE_INTENT, dashboard_id=dashboard_id, body={"params": params})
+        result = _dump_model(data)
+        result = {**result, "route": "figure-intent"} if isinstance(result, dict) else result
+        return result, _meta(invocation, auth.workspace_id)
     kwargs: dict[str, Any] = {
         "dashboard_id": dashboard_id,
         "dataview_id": _require_field(document, "dataview_id"),
@@ -863,6 +902,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
             data = _with_board_values(service, auth, positionals, data)
+        forget(service)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -955,6 +995,7 @@ def _with_deliverable_check(
     if not isinstance(data, dict):
         return data
     dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    data = _reflect_not_applied(invocation.command_id, data, dashboard_id)
     if not isinstance(dashboard_id, int):
         return {
             **data,
@@ -965,7 +1006,10 @@ def _with_deliverable_check(
             },
         }
     try:
-        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        canvas = service.call(CANVAS_GET, dashboard_id=dashboard_id)
+        # The board's numbers (next step of a build or edit) read the same canvas.
+        remember(service, CANVAS_GET, {"dashboard_id": dashboard_id}, canvas)
+        canvas_doc = _dump_model(canvas)
         warnings = _deliverable_warnings(invocation, service, auth, dashboard_id, canvas_doc)
     except Exception as exc:  # noqa: BLE001 -- advice must never fail the authoring step
         error = f"{type(exc).__name__}: {exc}"
@@ -985,6 +1029,38 @@ def _with_deliverable_check(
         "deliverable_check": check,
         **_authoring_problems(invocation, data, canvas_doc, kwargs or {}),
     }
+
+
+def _reflect_not_applied(
+    command_id: str, data: dict[str, Any], dashboard_id: Any
+) -> dict[str, Any]:
+    """A chat edit that reports ``changed: false`` was not applied, whatever its message says.
+
+    The model's own ``message`` ("I added a Total Events card") describes what it meant
+    to do. It is kept as ``model_message`` and the ``message`` says plainly that nothing
+    was applied, with the fallback that works.
+    """
+    if command_id != "dashboard.chat.edit" or data.get("changed") is not False:
+        return data
+    claim = data.get("message")
+    target = dashboard_id if dashboard_id is not None else "DASHBOARD_ID"
+    out = {
+        **data,
+        "message": (
+            "NOT APPLIED: the dashboard was not changed"
+            + (" (the board did not bake)" if data.get("bake_ok") is False else "")
+            + ". The assistant's reply below describes what it intended, not what happened."
+        ),
+        "next_steps": [
+            f"Read the board: mammoth dashboard get {target}",
+            f"Add the card directly: mammoth dashboard figure add {target} --input "
+            '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
+            '"COLUMN", "agg": "sum"}}\'',
+        ],
+    }
+    if isinstance(claim, str):
+        out["model_message"] = claim
+    return out
 
 
 def _authoring_problems(
@@ -1241,8 +1317,66 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
         )
     _refuse_rejected_workbook(data)
     if isinstance(data, dict) and data.get("data_source") == "fitted_sample":
-        data = {**data, "synthetic_data": True, "data_note": _SYNTHETIC_ROWS_NOTE}
+        data = _flag_synthetic_import(data, file_path)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _packaged_row_count(file_path: str) -> int | None:
+    """Data rows in the CSV a ``.twbx`` packages (largest one), or None when it has none."""
+    import csv
+    import io
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(file_path) as bundle:
+            sizes = []
+            for info in bundle.infolist():
+                if not info.filename.lower().endswith(".csv"):
+                    continue
+                with bundle.open(info) as raw:
+                    # csv, not line counting: a quoted value may hold a line break.
+                    text = io.TextIOWrapper(raw, encoding="utf-8", errors="replace", newline="")
+                    sizes.append(sum(1 for _ in csv.reader(text)) - 1)
+    except (zipfile.BadZipFile, OSError, csv.Error):
+        return None
+    return max(sizes) if sizes and max(sizes) >= 0 else None
+
+
+def _flag_synthetic_import(data: dict[str, Any], file_path: str) -> dict[str, Any]:
+    """Make a fitted-sample import ``partial``: its numbers are not the workbook's.
+
+    The backend importer substitutes generated rows for the workbook's data. That must
+    not read ``settled`` with no warning, so the result is partial (exit 3) and says how
+    many rows were expected and received and how to load the real data.
+    """
+    expected = _packaged_row_count(file_path)
+    received = next(
+        (data[k] for k in ("row_count", "rows", "rows_imported") if isinstance(data.get(k), int)),
+        None,
+    )
+    warning = (
+        "The imported data is synthetic: the backend replaced the workbook's data with "
+        f"generated rows. Expected {expected if expected is not None else 'the workbook'}"
+        f"{' rows' if expected is not None else chr(39) + 's own rows'}, received "
+        f"{received if received is not None else 'a generated sample'}"
+        f"{' rows' if received is not None else ''}. Do not trust any number on this dataset."
+    )
+    dataview_id = data.get("dataview_id")
+    steps = [
+        "Upload the real data as a CSV: mammoth file upload REAL.csv --project PROJECT_ID "
+        "(or add it to this dataset with --input '{\"append_to_ds_id\": DATASET_ID}').",
+        "Point the imported dashboard at the real dataset (dashboard figure add or "
+        "dashboard chat edit), then delete the synthetic one"
+        + (f" (view {dataview_id})." if dataview_id is not None else "."),
+    ]
+    return {
+        **data,
+        "synthetic_data": True,
+        "data_note": _SYNTHETIC_ROWS_NOTE,
+        "partial": True,
+        "warnings": [warning],
+        "next_steps": steps,
+    }
 
 
 # ── BI export (Power BI / Tableau) ───────────────────────────────────────────

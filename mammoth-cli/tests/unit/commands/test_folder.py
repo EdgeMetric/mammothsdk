@@ -228,9 +228,12 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    fake_service.responses[_LIST] = _folders_after({7})
     folder_cmd.folder_delete(_inv("folder.delete", project=180, extra_args=["707"], yes=True))
-    assert fake_service.call_log == [_LISTED, (_DELETE, {"folder_ids": [7], "project_id": 180})]
+    assert fake_service.call_log[:2] == [
+        _LISTED,
+        (_DELETE, {"folder_ids": [7], "project_id": 180}),
+    ]
 
 
 def test_bulk_delete_requires_folder_ids(fake_service: FakeMammothService) -> None:
@@ -242,11 +245,78 @@ def test_bulk_delete_requires_folder_ids(fake_service: FakeMammothService) -> No
 def test_bulk_delete_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps({"folder_ids": [701, 702]}), encoding="utf-8")
-    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    fake_service.responses[_LIST] = _folders_after({1, 2})
     folder_cmd.folder_bulk_delete(
         _inv("folder.bulk-delete", project=180, input_file=str(doc), yes=True)
     )
-    assert fake_service.call_log == [
+    assert fake_service.call_log[:2] == [
         _LISTED,
         (_BULK_DELETE, {"folder_ids": [1, 2], "project_id": 180}),
     ]
+
+
+def _folders_after(deleted: set[int]) -> object:
+    """A folder list that drops ``deleted`` label ids once a delete has been called."""
+
+    def respond(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        gone = deleted if any(symbol in (_DELETE, _BULK_DELETE) for symbol, _ in log) else set()
+        return {"folders": [f for f in _PROJECT_FOLDERS["folders"] if f["id"] not in gone]}
+
+    return respond
+
+
+def test_delete_reports_the_verified_result_not_null(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = _folders_after({7})
+    data, _ = folder_cmd.folder_delete(
+        _inv("folder.delete", project=180, extra_args=["707"], yes=True)
+    )
+    assert data["status"] == "deleted"
+    assert data["folder_id"] == 707
+
+
+def test_delete_that_leaves_the_folder_in_place_fails(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = _folders_after(set())
+    with pytest.raises(CliError) as excinfo:
+        folder_cmd.folder_delete(_inv("folder.delete", project=180, extra_args=["707"], yes=True))
+    assert excinfo.value.code == "delete_not_applied"
+
+
+def test_bulk_delete_reports_each_folder(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"folder_ids": [701, 99999]}), encoding="utf-8")
+    fake_service.responses[_LIST] = _folders_after({1})
+    data, _ = folder_cmd.folder_bulk_delete(
+        _inv("folder.bulk-delete", project=180, input_file=str(doc), yes=True)
+    )
+    assert data["results"] == [
+        {"folder_id": 701, "status": "deleted"},
+        {"folder_id": 99999, "status": "not_found"},
+    ]
+    assert data["partial"] is True
+    sent = [kw for symbol, kw in fake_service.call_log if symbol == _BULK_DELETE]
+    assert sent[0]["folder_ids"] == [1]
+
+
+def test_bulk_delete_of_only_unknown_folders_is_resource_not_found(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"folder_ids": [99999]}), encoding="utf-8")
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    with pytest.raises(CliError) as excinfo:
+        folder_cmd.folder_bulk_delete(
+            _inv("folder.bulk-delete", project=180, input_file=str(doc), yes=True)
+        )
+    assert excinfo.value.code == "resource_not_found"
+    assert not [1 for symbol, _ in fake_service.call_log if symbol == _BULK_DELETE]
+
+
+def test_list_drops_the_raw_next_url_and_adds_paging(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {
+        "folders": [{"id": 1, "resource_id": 701}],
+        "next": "http://api.example/folders?offset=1",
+        "total": None,
+    }
+    data, _ = folder_cmd.folder_list(_inv("folder.list", project=180))
+    assert "next" not in data
+    assert data["paging"]["next_command"] is None

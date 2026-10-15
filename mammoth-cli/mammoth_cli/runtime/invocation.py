@@ -13,7 +13,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.output.policy import OUTPUT_AUTO, SELECTABLE_OUTPUTS, resolve_output
+from mammoth_cli.output.policy import (
+    OUTPUT_AUTO,
+    SELECTABLE_OUTPUTS,
+    canonical_output,
+    resolve_output,
+)
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.strict import validate_input_fields
 from mammoth_cli.services.input_fields import (
@@ -83,6 +88,9 @@ class Invocation:
     # handler so its verify and readback reads address the view directly
     # instead of walking every dataset to find it.
     known_dataset_id: int | None = field(default=None, repr=False, compare=False)
+    #: ``--full`` on a compacted dashboard write: return the whole response
+    #: (:mod:`mammoth_cli.runtime.compact`).
+    full_output: bool = False
     #: ``last_modified_time`` of each export on the view, read before a pipeline write;
     #: verify waits for one to move (the backend re-validates exports after the run).
     exports_before: dict[int, str] | None = field(default=None, repr=False, compare=False)
@@ -92,6 +100,10 @@ class Invocation:
     #: Envelope metadata a read handler computed before its job ran out; the
     #: executor puts it on the ``--return-running`` envelope.
     read_meta: dict[str, Any] | None = field(default=None, repr=False, compare=False)
+    #: The dataview record a ``view data get`` read fetched (with column renames applied),
+    #: kept so a write's ``state`` block takes its columns and row count from the one read
+    #: instead of fetching the same view a second time.
+    read_info: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     standing_noop: bool = field(default=False, repr=False, compare=False)
     # Set on the read a write's ``state`` block issues: that read confirms the
     # write, so a command's extra evaluation (a board's numbers) is skipped.
@@ -134,9 +146,10 @@ class Invocation:
             object.__setattr__(self, "project", int(raw))
         if not self.no_input and env.get("MAMMOTH_NO_INPUT", "").strip().lower() in _TRUTHY:
             object.__setattr__(self, "no_input", True)
+        object.__setattr__(self, "output", canonical_output(self.output))
         self._apply_profile_settings(env)
         if self.output == OUTPUT_AUTO:
-            requested = env.get("MAMMOTH_OUTPUT", "").strip().lower()
+            requested = canonical_output(env.get("MAMMOTH_OUTPUT", "").strip().lower())
             if requested in SELECTABLE_OUTPUTS and requested != OUTPUT_AUTO:
                 object.__setattr__(self, "output", requested)
             else:
@@ -160,7 +173,7 @@ class Invocation:
         if not settings:
             return
         if self.output == OUTPUT_AUTO and not env.get("MAMMOTH_OUTPUT", "").strip():
-            saved_output = str(settings.get("output") or "").strip().lower()
+            saved_output = canonical_output(str(settings.get("output") or "").strip().lower())
             if saved_output in SELECTABLE_OUTPUTS and saved_output != OUTPUT_AUTO:
                 object.__setattr__(self, "output", saved_output)
         for key in ("timeout", "job_timeout", "pipeline_timeout"):

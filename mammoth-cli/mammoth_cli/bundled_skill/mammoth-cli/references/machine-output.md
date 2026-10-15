@@ -10,14 +10,33 @@ Compact single-line JSON when stdout is not a terminal (pretty when it is;
 value: `pagination` appears on paged reads, `update_available`
 (`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
 a day, after a command, never blocking). Run its `command` before starting a
-task, not in the middle of one.
+task, not in the middle of one. `next_commands` appears after a main-flow
+command that succeeded (`file upload`, `view create`, a `view transform`,
+`dashboard v3 generate`, `dashboard figure add`, ...): one to three commands
+filled in with this result's ids, usually the read-back. Run them as they are
+when they fit the task; a write that did not verify has none.
 
 ## Error envelope (stderr)
 ```json
 {"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
 
+A mistyped command, option or column carries `details.did_you_mean`: the nearest
+commands (unknown command), the nearest option (`--profle`, or `"--project 3633"`
+passed as one argument: pass the value separately) or the nearest column (`Day`
+for `day`). Use it instead of guessing again.
+
 `log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}'` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
+
+## `auth status` and token expiry
+
+`data.expires_at` is the OAuth access token's expiry (about one hour ahead), not the login's.
+`data.access_token_expires_at` is the same value under a clearer name, `data.refreshes_automatically`
+is `true` and `data.expires_at_note` says so; the CLI renews the token itself, and only a failed
+refresh (`login_expired`, exit 4) needs a new `mammoth auth login`. `auth status --check` and
+`auth login` add `workspace_name` (and `project_name` / `token_project_name` for a project-limited
+token); a name is left out when its lookup fails, and the ids are always present. A sign-in limited
+to several projects adds `project_ids` to `auth login` and `token_projects` to `auth status --check`.
 
 ## Representative result keys
 
@@ -42,8 +61,11 @@ secret. A rejected mutation remains the error envelope above; use its recovery
 command or a read-back, rather than treating a model/result type as success.
 
 ## Output modes
-`--output` accepts `auto`, `table`, `json`, `yaml`, `ndjson`, `plain`. Agents
-should use `json` (or `ndjson` for documented streams). `json` emits one
+`--output` accepts `auto`, `table`, `json`, `yaml`, `ndjson`, `plain` (`text`
+is the same as `plain`), `csv`. Agents should use `json` (or `ndjson` for
+documented streams). To read a skill file, `mammoth skill show -o plain`
+(`--input '{"file": "references/..."}'` for another file) prints the markdown
+as it is, not one escaped JSON string. `json` emits one
 complete object; `ndjson` emits one complete envelope per line. Machine modes
 never emit color or progress.
 

@@ -273,6 +273,35 @@ def workspace_storage_breakdown(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def workspace_export_hosts_get(invocation: Invocation) -> HandlerResult:
+    """Read the hosts this workspace's custom export destinations may send to."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def workspace_export_hosts_set(invocation: Invocation) -> HandlerResult:
+    """Set the hosts custom export destinations may send to. High-impact: always needs ``--yes``.
+
+    ``restricted`` (true: only ``hosts`` are allowed; false: any host is) and ``hosts`` come
+    from ``--input``. The whole policy is replaced, so read it first with
+    ``workspace export-hosts get``. Workspace admins only.
+    """
+    document = invocation.load_input()
+    restricted = _require_field(document, "restricted")
+    kwargs: dict[str, Any] = {"restricted": restricted}
+    assert document is not None
+    _forward_optional(document, kwargs, ("hosts",))
+    with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_YES_ALWAYS,
+            action=f"set the export host policy of workspace {auth.workspace_id}",
+        )
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id)
+
+
 def workspace_update(invocation: Invocation) -> HandlerResult:
     """Patch workspace settings. High-impact: ``--yes --confirm WORKSPACE_ID``."""
     explicit = _int_positional(invocation, "workspace id")

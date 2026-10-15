@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 62,
+  "route_count": 64,
   "families": {
-    "view_export": 27,
+    "view_export": 29,
     "connector": 22,
     "external-key": 4,
     "webhook": 7
@@ -3757,6 +3757,103 @@
         "method": "POST",
         "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset}/dataviews/{dataview}/exportable-config",
         "body": "items xor config plus optional insert_after_sequence/is_paste_mode",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.runs",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.runs",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "export_id": {
+          "source": "positional",
+          "destination": "export_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/{export_id}/runs",
+        "body": "query:limit",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.rest-fill",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.rest_fill",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "docs_url": {
+          "source": "input",
+          "destination": "docs_url",
+          "wire": "sdk_argument"
+        },
+        "notes": {
+          "source": "input",
+          "destination": "notes",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/rest-fill",
+        "body": "json:docs_url,notes",
         "checks": [
           "method",
           "path",

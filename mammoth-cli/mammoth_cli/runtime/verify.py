@@ -91,6 +91,10 @@ _UNSETTLED_REASON = (
 )
 
 
+#: A write the CLI skipped because it would change nothing (see ``view transform``).
+_NO_CHANGE_STATUS = "no_change"
+
+
 def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     """Return ``data`` with a ``verify`` read-back block added.
 
@@ -132,7 +136,9 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     verify["needs_user"] = _needs_user(
         data, verified=verified, rows_before=rows_before, rows_after=rows_after
     )
-    _apply_downstream_export_check(verify, invocation)
+    if data.get("status") != _NO_CHANGE_STATUS:
+        # A step that was not applied cannot have broken an export.
+        _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
     _automation_wording(verify, data, invocation)
     result = {**data, "verify": verify}
@@ -158,6 +164,10 @@ def _mark_pending(result: dict[str, Any], verify: dict[str, Any], invocation: An
     if not (isinstance(status, str) and status.lower() in _PENDING_STATUS_WORDS):
         verify["reported_status"] = status
         result["status"] = OUTCOME_PENDING
+    pipeline_error = result.get("pipeline_error")
+    if isinstance(pipeline_error, dict) and "next_command" not in verify:
+        if pipeline_error.get("job_id") is not None:
+            verify["next_command"] = f"mammoth job wait {pipeline_error['job_id']}"
     if "next_command" not in verify and invocation is not None:
         view_id = _pipeline_view_id(invocation)
         if view_id is not None:
@@ -364,6 +374,8 @@ def _verify_and_reason(
         return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
         return False, "the dashboard did not bake"
+    if data.get("synthetic_data") is True:
+        return False, "the imported data is synthetic, not the source's own; see warnings"
     if data.get("partial") is True:
         return False, "part of the request was swapped or dropped; see warnings"
     if row_count_attempted:
@@ -400,6 +412,8 @@ def _state(data: dict[str, Any]) -> str:
 
 def _warnings(data: dict[str, Any]) -> list[str]:
     notes: list[str] = []
+    if data.get("synthetic_data") is True and isinstance(data.get("warnings"), list):
+        notes.extend(str(item) for item in data["warnings"])
     for key, value in data.items():
         if not key.endswith("_check") or not isinstance(value, dict):
             continue
@@ -603,16 +617,24 @@ def read_export_ids(service: Any, view_id: int, dataset_id: int) -> set[int]:
     return set(export_stamps(listing))
 
 
+def export_stamps_read(view_id: int, dataset_id: int) -> tuple[str, dict[str, Any]]:
+    """The exports listing read whose stamps :func:`read_export_stamps` compares."""
+    return _EXPORTS_LIST_SYMBOL, {
+        "dataview_id": view_id,
+        "dataset_id": dataset_id,
+        "fields": "__standard",
+    }
+
+
 def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int, str] | None:
     """The view's exports' stamps, read before a pipeline write (see ``exports_before``).
 
     ``None`` when the read fails: the check after the write reads the exports again and
     reports a failure there, so this one only loses the wait for the backend's re-validation.
     """
+    symbol, kwargs = export_stamps_read(view_id, dataset_id)
     try:
-        listing = service.call(
-            _EXPORTS_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id, fields="__standard"
-        )
+        listing = service.call(symbol, **kwargs)
     except Exception:  # noqa: BLE001 -- see the docstring
         return None
     return export_stamps(listing)

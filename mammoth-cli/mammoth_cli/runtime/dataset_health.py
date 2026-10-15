@@ -26,11 +26,16 @@ _UNHEALTHY: dict[str, str] = {
 }
 #: Nesting to search: a result, a listing inside it, a record in the listing.
 _MAX_DEPTH = 3
+_SETTINGS_EXAMPLE = json.dumps(
+    {"delimiter": ",", "has_header": True, "initial_skip_count": 0, "quotechar": '"'},
+    separators=(",", ":"),
+)
 
 
 #: Keys under which a result carries dataset records; every record there gets a health entry.
 _DATASET_KEYS = frozenset({"datasets", "dataset"})
 _HEALTHY_STATUS = "ready"
+_FAILED_STATUSES = frozenset({"error", "failed"})
 
 
 def with_dataset_health(data: Any) -> Any:
@@ -120,6 +125,7 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
     }
     if suggestions:
         entry["stored_suggestions"] = suggestions
+    if suggestions and "report" in stored:
         entry["fix"] = (
             f"mammoth dataset interpretation preview {dataset_id} --input "
             + shlex.quote(json.dumps({"user_instruction": suggestions[0]}))
@@ -127,10 +133,14 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
             + f"{dataset_id} with the same input"
         )
     else:
+        # Without a stored interpretation report the preview answers 4DSET066; the
+        # file-settings route is the one that resolves a need_action dataset.
         entry["fix"] = (
-            f"mammoth dataset get {dataset_id} shows the suggestions the backend stored "
-            f"(additional_info.interpretation); mammoth dataset broken-rows list {dataset_id} "
-            "shows the rows that did not fit"
+            f"mammoth dataset file-settings get {dataset_id} reads the detected settings; "
+            f"send them back with mammoth dataset file-settings update {dataset_id} --input "
+            + shlex.quote(_SETTINGS_EXAMPLE)
+            + ' -y (adding date_format "US" or "UK" when dates are ambiguous); '
+            f"mammoth dataset broken-rows list {dataset_id} shows the rows that did not fit"
         )
     return entry
 
@@ -149,6 +159,12 @@ def _clean_entry(record: dict[str, Any], status: Any) -> dict[str, Any]:
     }
     if status == _HEALTHY_STATUS:
         entry.update(health="healthy", detail="Loaded and readable.")
+    elif status in _FAILED_STATUSES:
+        said = _status_info_text(record)
+        entry.update(
+            health="failed",
+            detail=f"The backend could not load this file: {said or 'no reason was given'}.",
+        )
     elif status is None:
         size = _loaded_size(record)
         if size is not None:

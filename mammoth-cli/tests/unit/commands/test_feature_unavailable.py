@@ -61,3 +61,12 @@ def test_manifest_marks_every_removed_command_blocked() -> None:
         cid = record["command_id"]
         if cid.startswith("data-app.") or cid == "schedule.create":
             assert str(record["known_restrictions"]).startswith("BLOCKED["), cid
+
+
+def test_schedule_create_says_what_to_do_for_file_datasets_without_going_in_a_circle() -> None:
+    out = make_runner().invoke(
+        ["schedule", "create", "--yes", "--input", '{"spec": {}}', "--output", "json", "--no-input"]
+    )
+    err = json.loads(out.output)["error"]
+    assert "append_to_ds_id" in err["hint"]
+    assert "cloud" in err["hint"]

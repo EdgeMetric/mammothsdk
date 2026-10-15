@@ -387,6 +387,7 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "external-key.delete": ("external-key", "key_id"),
     "schedule.delete": ("schedule", "schedule_id"),
     "workflow.delete": ("workflow", "workflow_id"),
+    "workflow.save-undo": ("workflow", "workflow_id"),
     "data-app.delete": ("data-app", "data_app_id"),
     "dashboard.delete": ("dashboard", "dashboard_id"),
     "project.delete": ("project", "project_id"),

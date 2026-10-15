@@ -37,6 +37,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import (
     resolve_command_contract,
@@ -50,7 +51,12 @@ from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapp
 _OPTION_PREFIX = "-"
 
 #: Flags a few commands take in place of the ``--input`` field of the same name.
-COMMAND_FLAGS: dict[str, frozenset[str]] = {"schema.get": frozenset({"--full"})}
+COMMAND_FLAGS: dict[str, frozenset[str]] = {
+    "schema.get": frozenset({"--full"}),
+    "schema.find": frozenset({"--unsupported"}),
+    # The compacted dashboard writes: --full returns the whole response.
+    **{command_id: frozenset({FULL_FLAG}) for command_id in COMPACT_COMMANDS},
+}
 
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
@@ -92,7 +98,14 @@ def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, An
                 f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
                 {"input_field": guessed},
             )
-    return "Check the command schema with 'mammoth schema get'.", {}
+    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.services.suggest import option_suggestion
+
+    known = sorted(_global_option_flags()[0] | COMMAND_FLAGS.get(command_id, frozenset()))
+    suggestion = option_suggestion(token, known)
+    if suggestion is not None:
+        return suggestion["hint"], {"did_you_mean": suggestion["flag"]}
+    return f"Run 'mammoth {command} --help' to list its options and input fields.", {}
 
 
 def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
@@ -135,9 +148,21 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
                 f"{', '.join(surplus)})."
             ),
             exit_status=EXIT_USAGE,
-            hint="Check the command schema with 'mammoth schema get'.",
+            hint=_surplus_hint(command_id),
             details={"surplus": surplus, "max_positionals": max_positionals},
         )
+
+
+def _surplus_hint(command_id: str) -> str:
+    """Name the input field that takes several values when the last positional has one."""
+    positionals = resolve_positionals(command_id)
+    field = positionals[-1].falls_back_to_field if positionals else None
+    if field and field.endswith("s"):
+        return (
+            f"This command takes one positional; pass several values with "
+            f"--input '{{\"{field}\": [...]}}'. Check 'mammoth schema get {command_id}'."
+        )
+    return "Check the command schema with 'mammoth schema get'."
 
 
 def _expected_phrase(expected: str) -> str:

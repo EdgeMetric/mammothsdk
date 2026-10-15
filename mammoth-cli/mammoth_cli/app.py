@@ -43,6 +43,7 @@ from mammoth_cli.output.policy import (
     OUTPUT_AUTO,
     SELECTABLE_OUTPUTS,
     VALID_OUTPUTS,
+    canonical_output,
     resolve_output,
 )
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
@@ -84,8 +85,15 @@ _GROUP_DESCRIPTIONS = {
     "data-app": "Create and manage data applications.",
     "dataset": "Create, inspect, and manage datasets.",
     "external-key": "Manage LLM provider keys (OpenAI, Anthropic, etc.) used by AI features.",
-    "file": "Upload and manage source files.",
-    "folder": "Organize folders and their contents.",
+    "file": (
+        "Upload files (file upload; a whole local directory: file upload-folder) and manage "
+        "uploaded source files. An uploaded file becomes a dataset: delete it with "
+        "'dataset delete'."
+    ),
+    "folder": (
+        "Create, rename, move and delete project folders that organize datasets, views and "
+        "dashboards. To upload a local directory use 'file upload-folder'."
+    ),
     "job": "Inspect and wait for asynchronous jobs.",
     "notification": "Manage workspace notifications.",
     "parameter": "Manage parameters and parameter groups.",
@@ -146,6 +154,8 @@ _SUBGROUP_DESCRIPTIONS = {
     "browse resources": "Browse workspace resources in bulk.",
     "collection dashboards": "Add dashboards to a collection or remove them.",
     "collection files": "Upload files to a collection.",
+    "collection email-updates": "Read and set a collection's email updates, and send a test.",
+    "collection email-updates me": "Read and set your own email updates for a collection.",
     "collection members": "Remove members from a collection.",
     "connector ai": "Chat with the connector assistant to set up a connection.",
     "connector ai session": "List connector assistant sessions and their messages.",
@@ -161,6 +171,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "dashboard data": "Read the data behind a dashboard, draft or published.",
     "dashboard embed": "Manage dashboard embedding: keys, origins, tokens and usage.",
     "dashboard embed config": "Read and set the embed configuration.",
+    "dashboard email-updates": "Read and set a dashboard's email updates, and send a test.",
+    "dashboard email-updates me": "Read and set your own email updates for a dashboard.",
+    "dashboard live-chart": "Create live charts, set their audience and see where they are used.",
     "dashboard embed key": "Rotate the embed key.",
     "dashboard embed lifetime": "Set the embed token lifetime.",
     "dashboard embed origin": "Revoke an allowed embed origin.",
@@ -245,6 +258,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "view variants": "Create view variants.",
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
+    "workspace export-hosts": "Read and set the hosts exports may send data to.",
     "workspace invite": "List, resend, revoke and delete workspace invites.",
     "workspace oauth-client": "Register, list, delete and revoke OAuth client grants.",
     "workspace segment": "List and update workspace segments.",
@@ -269,6 +283,8 @@ _ROOT_HELP_PANELS = {
     "context": "Start here",
     "doctor": "Start here",
     "project": "Start here",
+    "how": "Discover commands",
+    "capabilities": "Discover commands",
     "schema": "Discover commands",
     "capability": "Discover commands",
     "browse": "Discover commands",
@@ -357,6 +373,7 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
         elif token.startswith("-o") and len(token) > 2:
             mode = token[2:]
         index += 1
+    mode = canonical_output(mode)
     if mode not in SELECTABLE_OUTPUTS:
         # A value the command would reject (``--output xml``) must not turn the
         # error into prose: judge it by where stdout goes, like the default.
@@ -436,6 +453,76 @@ def _corrected_command(tokens: Sequence[str]) -> str | None:
     return " ".join(["mammoth", *rest, *leading])
 
 
+def _parent_words(context: Any) -> list[str]:
+    """The command words above an unknown one, without the program name."""
+    words: list[str] = []
+    while context is not None and getattr(context, "parent", None) is not None:
+        words.insert(0, str(context.info_name))
+        context = context.parent
+    return words
+
+
+def _unknown_command_report(error: Any) -> CliError | None:
+    """``No such command 'X'``: name the nearest commands and the discovery commands."""
+    from mammoth_cli.services.suggest import DISCOVERY_HINT, command_suggestions
+
+    match = _NO_SUCH_COMMAND.search(error.format_message() or "")
+    if match is None or match.group("name").startswith("-"):
+        return None
+    name = match.group("name")
+    parent = _parent_words(getattr(error, "ctx", None))
+    paths = [str(record["command_path"]).split() for record in _command_records()]
+    suggestions = command_suggestions(parent, name, paths)
+    where = f" under 'mammoth {' '.join(parent)}'" if parent else ""
+    message = f"No such command '{name}'{where}."
+    if suggestions:
+        message += f" Did you mean: {', '.join(suggestions)}?"
+    goal = name.replace('"', "")
+    return CliError(
+        code="usage_error",
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=DISCOVERY_HINT,
+        details={"command": name, "did_you_mean": suggestions},
+        recovery_commands=[
+            *(f"{suggestion} --help" for suggestion in suggestions[:2]),
+            f'mammoth how "{goal}"',
+            f'mammoth schema find "{goal}"',
+        ],
+    )
+
+
+def _unknown_option_report(error: Any, option: str) -> CliError:
+    """An unknown ``--option``: name the nearest valid one (global or the command's own)."""
+    from mammoth_cli.services.suggest import option_suggestion
+
+    command = getattr(getattr(error, "ctx", None), "command", None)
+    known = set(_global_option_flags()[0]) | {
+        flag
+        for param in getattr(command, "params", [])
+        for flag in (*param.opts, *param.secondary_opts)
+    }
+    suggestion = option_suggestion(option, sorted(known))
+    close = sorted(getattr(error, "possibilities", None) or [])
+    if suggestion is None and close:
+        # Click's own guess also catches a prefix ('--server' for '--server-prefix').
+        suggestion = {"flag": close[0], "hint": f"Did you mean {' or '.join(close)}?"}
+    details: dict[str, Any] = {"option": option}
+    if suggestion is not None:
+        details["did_you_mean"] = suggestion["flag"]
+    return CliError(
+        code="unknown_option",
+        message=f"Unknown option '{option}'.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            suggestion["hint"]
+            if suggestion is not None
+            else "Run the command with --help to list its options."
+        ),
+        details=details,
+    )
+
+
 def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
     """Classify a usage error whose own Click message is empty or misleading.
 
@@ -464,7 +551,9 @@ def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
     if match is None:
         return None
     name = match.group("name").split("=", 1)[0]
-    if not name.startswith("-") or name not in _global_option_flags()[0]:
+    if not name.startswith("-"):
+        return _unknown_command_report(error)
+    if name not in _global_option_flags()[0]:
         return None
     # Only leaf commands declare the global options, so a group reads one as a
     # subcommand name and reports a misleading "No such command '--profile'".
@@ -649,13 +738,7 @@ class _EnvelopeGroup(TyperGroup):
         report = None if is_missing_parameter else _usage_error_report(error, tokens)
         if is_missing_parameter and (option := _unknown_flag_in(error, tokens)):
             # A misspelt flag is the first thing to fix, ahead of a missing argument.
-            report = CliError(
-                code="unknown_option",
-                message=f"Unknown option '{option}'.",
-                exit_status=EXIT_USAGE,
-                hint="Check the command schema with 'mammoth schema get'.",
-                details={"option": option},
-            )
+            report = _unknown_option_report(error, option)
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
             if report is None:
                 missing = is_missing_parameter
@@ -668,18 +751,7 @@ class _EnvelopeGroup(TyperGroup):
                     )
                 elif isinstance(error, _typer_click_exceptions.NoSuchOption):
                     option = getattr(error, "option_name", None) or "unknown"
-                    close = getattr(error, "possibilities", None) or []
-                    report = CliError(
-                        code="unknown_option",
-                        message=f"Unknown option '{option}'.",
-                        exit_status=EXIT_USAGE,
-                        hint=(
-                            f"Did you mean {' or '.join(sorted(close))}?"
-                            if close
-                            else "Check the command schema with 'mammoth schema get'."
-                        ),
-                        details={"option": option},
-                    )
+                    report = _unknown_option_report(error, option)
                 elif isinstance(error, _typer_click_exceptions.BadParameter):
                     # With optional typed positionals Click may consume an
                     # unknown option token as the positional value. Only
@@ -687,13 +759,7 @@ class _EnvelopeGroup(TyperGroup):
                     # a known option's malformed value remains usage_error.
                     option = _unknown_flag_in(error, tokens)
                     if option:
-                        report = CliError(
-                            code="unknown_option",
-                            message=f"Unknown option '{option}'.",
-                            exit_status=EXIT_USAGE,
-                            hint="Check the command schema with 'mammoth schema get'.",
-                            details={"option": option},
-                        )
+                        report = _unknown_option_report(error, option)
                     else:
                         report = CliError(
                             code="usage_error",
@@ -714,12 +780,18 @@ class _EnvelopeGroup(TyperGroup):
         elif report is None:
             error.show()
         else:
-            typer.echo(f"Error: {report.message}", err=True)
             # A no-subcommand error arrives with the help text already on
             # screen, so repeating "run --help" below it would be noise.
             no_args = _NO_ARGS_ERROR is not None and isinstance(error, _NO_ARGS_ERROR)
+            ctx = getattr(error, "ctx", None)
+            if ctx is not None and not no_args:
+                # Click's own usage line first, as its prose error has it.
+                typer.echo(ctx.get_usage(), err=True)
+            typer.echo(f"Error: {report.message}", err=True)
             if report.hint and not no_args:
                 typer.echo(report.hint, err=True)
+            for command in report.recovery_commands:
+                typer.echo(f"  try: {command}", err=True)
 
 
 def _version_callback(value: bool) -> None:
@@ -1095,16 +1167,24 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, validate
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
     from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.dataset_health import with_dataset_health
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
     from mammoth_cli.runtime.locked_files import with_locked_files
     from mammoth_cli.runtime.new_data import with_new_data_path
+    from mammoth_cli.runtime.next_commands import with_next_commands
     from mammoth_cli.runtime.opens import with_opens
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
+    if invocation.command_id in COMPACT_COMMANDS and FULL_FLAG in invocation.extra_args:
+        invocation = replace(
+            invocation,
+            extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],
+            full_output=True,
+        )
 
     def producer() -> tuple[Any, dict[str, Any]]:
         refuse_hand_crafted_write(invocation.command_id)
@@ -1134,7 +1214,8 @@ def _execute(invocation: Invocation) -> None:
             return _dry_run(handler, invocation)
         data, meta = handler(invocation)
         checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        return with_new_data_path(checked), with_opens(invocation, checked, meta)
+        meta = with_next_commands(invocation, checked, with_opens(invocation, checked, meta))
+        return with_compact(invocation, with_new_data_path(checked)), meta
 
     executor.run(
         invocation.command_id,
@@ -1360,6 +1441,18 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     if fields:
         label = _INPUT_FIELDS_LABEL.get(command_id, "Input fields")
         parts.append(f"{label}: {fields}")
+    from mammoth_cli.services.field_enums import nested_choices_help
+
+    nested = nested_choices_help(command_id)
+    if nested:
+        parts.append(nested)
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+
+    if command_id in COMPACT_COMMANDS:
+        parts.append(
+            "The result is compact: ids, checks, verify and a canvas summary. "
+            f"Pass {FULL_FLAG} for the complete response."
+        )
     return "\n\n".join(parts) or None
 
 
@@ -1383,7 +1476,8 @@ def _help_input_fields(command_id: str) -> str | None:
     for field in fields:
         label = f"{field.name}*" if field.required else field.name
         enum = field.enum_values
-        kind = "|".join(str(item) for item in enum[:6]) if enum else _short_type(field.type_name)
+        # Every value: a fixed list cut short is a guess the caller cannot check.
+        kind = " | ".join(str(item) for item in enum) if enum else _short_type(field.type_name)
         rendered.append(f"{label} ({kind})" if kind else label)
         if len(rendered) == 12 and len(fields) > 12:
             rendered.append(f"... {len(fields) - 12} more (schema get {command_id})")
@@ -1396,7 +1490,8 @@ def _short_type(type_name: str) -> str:
     text = str(type_name or "")
     if "condition." in text:
         return "condition"
-    return " | ".join(part.strip().rsplit(".", 1)[-1] for part in text.split("|"))[:40]
+    # Drop each dotted module path but keep the brackets around it (``list[a.b.C]``).
+    return re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))[:60]
 
 
 def _command_records() -> list[dict[str, Any]]:
@@ -1607,6 +1702,10 @@ def _load_top_level_group(name: str) -> Any:
 # would import the handler's module (and its SDK dependencies). A test pins this
 # table to :func:`_command_help` so it cannot drift.
 _ROOT_LEAF_HELP: dict[str, str] = {
+    "capabilities": (
+        "List what the CLI cannot do yet, and what to do instead."
+        "\n\nExample: mammoth capabilities"
+    ),
     "calc": (
         "Evaluate one arithmetic expression exactly."
         "\n\nExample: mammoth calc '2063664 - 1917815'"
@@ -1614,6 +1713,10 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     "doctor": (
         "Run environment and connectivity diagnostics."
         "\n\nExample: mammoth doctor\n\nInput fields: wait (int)"
+    ),
+    "how": (
+        "Turn a plain-language goal into an ordered recipe of commands."
+        "\n\nExample: mammoth how 'refresh a dataset daily'"
     ),
     "link": (
         "Read the workspace, project, folder, dataset and view ids out of a pasted app URL."

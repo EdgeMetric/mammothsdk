@@ -8,6 +8,7 @@ launch symbol that does not change when the application wiring moves.
 
 from __future__ import annotations
 
+import os
 import sys
 from typing import Any
 
@@ -19,6 +20,10 @@ def main() -> Any:
         The value returned by the Typer application, which the runtime uses as
         the process exit code.
     """
+    # pydantic looks up installed plugins (entry points) the first time it builds a
+    # model, and imports each one it finds: with logfire in the environment that is
+    # about 0.4 s on every command that loads the SDK. The CLI uses no plugin.
+    os.environ.setdefault("PYDANTIC_DISABLE_PLUGINS", "__all__")
     if sys.argv[1:] == ["--version"]:
         # The answer needs none of the command tree; skip building it.
         from mammoth_cli import __version__

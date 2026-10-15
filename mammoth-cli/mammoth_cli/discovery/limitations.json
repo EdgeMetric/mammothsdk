@@ -1,0 +1,150 @@
+{
+  "_comment": "What the CLI cannot do yet, and what to do instead. Listed by 'mammoth capabilities' and 'mammoth schema find --unsupported'. Every workaround names a real command id (a unit test checks it). doc is a path in the bundled skill.",
+  "limitations": [
+    {
+      "id": "file-dataset-refresh",
+      "area": "schedules and automations",
+      "limitation": "A dataset made from an uploaded file (or a URL) has no source to pull from, so an automation's run_data_retrieval or a schedule cannot refresh it.",
+      "instead": "Upload each new file into the same dataset; its views re-run over the new rows. To make that automatic, connect the files' cloud storage and let an automation pull them.",
+      "workarounds": [
+        {
+          "command_id": "file.upload",
+          "example": "mammoth file upload ./new_rows.csv --input '{\"append_to_ds_id\": DATASET_ID}'"
+        },
+        {
+          "command_id": "connector.list",
+          "example": "mammoth connector list"
+        },
+        {
+          "command_id": "automation.capabilities",
+          "example": "mammoth automation capabilities"
+        }
+      ],
+      "doc": "references/recipes/scheduling.md",
+      "keywords": [
+        "schedule",
+        "automation",
+        "refresh",
+        "file",
+        "upload",
+        "recurring",
+        "daily",
+        "automate"
+      ]
+    },
+    {
+      "id": "schedule-list",
+      "area": "schedules and automations",
+      "limitation": "No Mammoth server can list a project's schedules: 'schedule list' answers not_available.",
+      "instead": "Read a schedule by its id, and use automations for recurring work: they can be listed.",
+      "workarounds": [
+        {
+          "command_id": "schedule.get",
+          "example": "mammoth schedule get SCHEDULE_ID"
+        },
+        {
+          "command_id": "automation.list",
+          "example": "mammoth automation list"
+        }
+      ],
+      "doc": "references/recipes/scheduling.md",
+      "keywords": [
+        "schedule",
+        "list",
+        "schedules"
+      ]
+    },
+    {
+      "id": "mcp-task-edit",
+      "area": "pipeline tasks",
+      "limitation": "The Mammoth MCP server cannot edit an existing pipeline task; it can only add tasks.",
+      "instead": "Edit the task with the CLI: list the view's tasks, then replace the one you want.",
+      "workarounds": [
+        {
+          "command_id": "view.task.list",
+          "example": "mammoth view task list VIEW_ID --input '{\"dataset_id\": DATASET_ID}'"
+        },
+        {
+          "command_id": "view.task.update",
+          "example": "mammoth view task update VIEW_ID TASK_ID --input '{\"task_spec\": {...}, \"dataset_id\": DATASET_ID}'"
+        }
+      ],
+      "doc": "references/commands/view.md",
+      "keywords": [
+        "mcp",
+        "edit",
+        "task",
+        "pipeline",
+        "update",
+        "change",
+        "step"
+      ]
+    },
+    {
+      "id": "multi-project-token",
+      "area": "authentication",
+      "limitation": "An API token reaches one project or every project in the workspace; a token for a chosen set of projects is not supported yet.",
+      "instead": "Use a token for every project and pass --project on each command (or set the profile's project), or keep one profile per project-limited token.",
+      "workarounds": [
+        {
+          "command_id": "auth.status",
+          "example": "mammoth auth status --check"
+        },
+        {
+          "command_id": "context.project.use",
+          "example": "mammoth context project use PROJECT_ID"
+        },
+        {
+          "command_id": "auth.login",
+          "example": "mammoth auth login --profile PROJECT_PROFILE"
+        }
+      ],
+      "doc": "references/recipes/auth-scope.md",
+      "keywords": [
+        "token",
+        "project",
+        "projects",
+        "multi",
+        "multiple",
+        "scope",
+        "auth",
+        "access"
+      ]
+    },
+    {
+      "id": "workbook-synthetic-data",
+      "area": "dashboard import",
+      "limitation": "When the backend cannot read the data packaged in a Tableau or Power BI workbook, 'dashboard import-workbook' builds the dashboard on generated sample rows (synthetic_data: true), not the workbook's data.",
+      "instead": "Upload the real data as a file, then build the board from the real view (or have chat edit point the imported board at it), and delete the synthetic dataset.",
+      "workarounds": [
+        {
+          "command_id": "file.upload",
+          "example": "mammoth file upload ./REAL.csv"
+        },
+        {
+          "command_id": "dashboard.v3.generate",
+          "example": "mammoth dashboard v3 generate --input '{\"body\": {\"params\": {\"intent\": \"Rebuild the workbook's dashboard\", \"dataview_id\": VIEW_ID}}}'"
+        },
+        {
+          "command_id": "dashboard.chat.edit",
+          "example": "mammoth dashboard chat edit DASHBOARD_ID --input '{\"body\": {\"params\": {\"prompt\": \"Use view VIEW_ID for every chart\"}}}'"
+        }
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "keywords": [
+        "workbook",
+        "import",
+        "tableau",
+        "power",
+        "bi",
+        "powerbi",
+        "synthetic",
+        "sample",
+        "data",
+        "dashboard",
+        "twbx",
+        "pbix"
+      ]
+    }
+  ]
+}

@@ -312,6 +312,7 @@
     - [`query_data(self, dataset_id: 'int', dataview_id: 'int', sequence: 'int | None' = None, offset: 'int' = 1, limit: 'int' = 400, columns: '_list[str] | None' = None, condition: 'dict[str, Any] | None' = None, sort: 'str | None' = None, workspace_id: 'int | None' = None, project_id: 'int | None' = None, raw: 'bool' = False) -> 'dict[str, Any]'`](#query_dataself-dataset_id-int-dataview_id-int-sequence-int-none-none-offset-int-1-limit-int-400-columns-_liststr-none-none-condition-dictstr-any-none-none-sort-str-none-none-workspace_id-int-none-none-project_id-int-none-none-raw-bool-false---dictstr-any)
     - [`restore(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#restoreself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`set_explore_panel(self, dataset_id: 'int', dataview_id: 'int', panel: 'dict[str, Any]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#set_explore_panelself-dataset_id-int-dataview_id-int-panel-dictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
+    - [`summary(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#summaryself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`trash(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#trashself-dataset_id-int-dataview_id-int-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
     - [`update(self, dataset_id: 'int', dataview_id: 'int', patch_data: '_list[dict[str, Any]]', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`](#updateself-dataset_id-int-dataview_id-int-patch_data-_listdictstr-any-workspace_id-int-none-none-project_id-int-none-none---dictstr-any)
 - [Pipeline](#pipeline)
@@ -383,6 +384,12 @@
     - [`delete_tag(self, tag_id: 'int') -> 'dict[str, Any] | None'`](#delete_tagself-tag_id-int---dictstr-any-none)
     - [`descriptor_data(self: 'Any', dashboard_id: 'int', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`](#descriptor_dataself-any-dashboard_id-int-body-descriptordataspec---objectjobschema-jobresponse)
     - [`duplicate(self, dashboard_id: 'int', project_id: 'int | None' = None, target_dataview_id: 'int | None' = None) -> 'DuplicateDashboardResponse'`](#duplicateself-dashboard_id-int-project_id-int-none-none-target_dataview_id-int-none-none---duplicatedashboardresponse)
+    - [`email_updates_get(self: 'Any', dashboard_id: 'int') -> 'EmailUpdatesOut'`](#email_updates_getself-any-dashboard_id-int---emailupdatesout)
+    - [`email_updates_list(self: 'Any') -> 'EmailUpdateSummaryList'`](#email_updates_listself-any---emailupdatesummarylist)
+    - [`email_updates_me_get(self: 'Any', dashboard_id: 'int') -> 'EmailUpdateSubscriptionOut'`](#email_updates_me_getself-any-dashboard_id-int---emailupdatesubscriptionout)
+    - [`email_updates_me_set(self: 'Any', dashboard_id: 'int', body: 'EmailUpdateSubscriptionBody') -> 'EmailUpdateSubscriptionOut'`](#email_updates_me_setself-any-dashboard_id-int-body-emailupdatesubscriptionbody---emailupdatesubscriptionout)
+    - [`email_updates_set(self: 'Any', dashboard_id: 'int', body: 'EmailUpdateSettingsBody') -> 'EmailUpdatesOut'`](#email_updates_setself-any-dashboard_id-int-body-emailupdatesettingsbody---emailupdatesout)
+    - [`email_updates_test(self: 'Any', dashboard_id: 'int') -> 'EmailUpdateTestOut'`](#email_updates_testself-any-dashboard_id-int---emailupdatetestout)
     - [`embed_config_get(self, dashboard_id: 'int') -> 'EmbedConfigResponse'`](#embed_config_getself-dashboard_id-int---embedconfigresponse)
     - [`embed_config_set(self, dashboard_id: 'int', mode: "Literal['key', 'signed']" = 'key', allow_any_origin: 'bool' = True, allowed_origins: '_list[str] | None' = None, appearance: 'dict[str, Any] | None' = None, snippet: 'dict[str, Any] | None' = None) -> 'EmbedConfigResponse'`](#embed_config_setself-dashboard_id-int-mode-literalkey-signed-key-allow_any_origin-bool-true-allowed_origins-_liststr-none-none-appearance-dictstr-any-none-none-snippet-dictstr-any-none-none---embedconfigresponse)
     - [`embed_key_rotate(self, dashboard_id: 'int', keep_previous: 'bool' = True) -> 'EmbedKeyResponse'`](#embed_key_rotateself-dashboard_id-int-keep_previous-bool-true---embedkeyresponse)
@@ -417,7 +424,14 @@
     - [`job_by_url(self, url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#job_by_urlself-url-str-job_id-int---dictstr-any)
     - [`list(self, project_id: 'int | None' = None) -> '_list[dict[str, Any]]'`](#listself-project_id-int-none-none---_listdictstr-any)
     - [`list_tags(self) -> 'dict[str, Any]'`](#list_tagsself---dictstr-any)
+    - [`live_chart_audience(self: 'Any', dashboard_id: 'int', body: 'ChangeAudienceSpec') -> 'LiveChartResponse'`](#live_chart_audienceself-any-dashboard_id-int-body-changeaudiencespec---livechartresponse)
+    - [`live_chart_create(self: 'Any', body: 'CreateLiveChartSpec', project_id: 'int | None' = None) -> 'CreateLiveChartResponse'`](#live_chart_createself-any-body-createlivechartspec-project_id-int-none-none---createlivechartresponse)
+    - [`live_chart_get(self: 'Any', dashboard_id: 'int') -> 'LiveChartResponse'`](#live_chart_getself-any-dashboard_id-int---livechartresponse)
+    - [`live_chart_list(self: 'Any', session_id: 'str') -> 'LiveChartListResponse'`](#live_chart_listself-any-session_id-str---livechartlistresponse)
+    - [`live_chart_placement(self: 'Any', dashboard_id: 'int', body: 'RecordPlacementSpec') -> 'dict[str, Any]'`](#live_chart_placementself-any-dashboard_id-int-body-recordplacementspec---dictstr-any)
+    - [`live_chart_usage(self: 'Any', dashboard_id: 'int') -> 'LiveChartUsageResponse'`](#live_chart_usageself-any-dashboard_id-int---livechartusageresponse)
     - [`merge_tag(self, tag_id: 'int', target_id: 'int') -> 'dict[str, Any]'`](#merge_tagself-tag_id-int-target_id-int---dictstr-any)
+    - [`oembed(self: 'Any', url: 'str | None' = None, maxwidth: 'str | None' = None, maxheight: 'str | None' = None, format: 'str | None' = None) -> 'dict[str, Any]'`](#oembedself-any-url-str-none-none-maxwidth-str-none-none-maxheight-str-none-none-format-str-none-none---dictstr-any)
     - [`og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`](#og_cardself-any-dashboard_id-int---dictstr-any)
     - [`own_data_accept(self, dashboard_id: 'int', choice: 'str' = 'proposal', exclude: '_list[str] | None' = None) -> 'ObjectJobSchema'`](#own_data_acceptself-dashboard_id-int-choice-str-proposal-exclude-_liststr-none-none---objectjobschema)
     - [`own_data_dismiss(self, dashboard_id: 'int') -> 'dict[str, Any]'`](#own_data_dismissself-dashboard_id-int---dictstr-any)
@@ -1863,7 +1877,8 @@ into that existing dataset (per *save_as_mode*).
 
 Args:
     dataset_name: Name for the new dataset (display name when writing
-        into an existing one); omit to use the product default 'Result Dataset' (what the app's Branch out form uses).
+        into an existing one); omit to use the product default 'Result Dataset'
+        (what the app's Branch out form uses).
     target_ds_id: Existing dataset to write into; None creates a new one.
     save_as_mode: Replace or append when writing the output dataset.
     column_mapping: Source -> destination column-name map (empty = all).
@@ -5975,7 +5990,8 @@ returns only once the dataset is materialised.
 
 Args:
     dataset_name: Name for the new dataset (display name when writing
-        into an existing one); omit to use the product default 'Result Dataset' (what the app's Branch out form uses).
+        into an existing one); omit to use the product default 'Result Dataset'
+        (what the app's Branch out form uses).
     target_ds_id: Existing dataset to write into; None creates a new one.
     save_as_mode: Replace or append when writing the output dataset.
     column_mapping: Source -> destination column-name map (empty = all).
@@ -6265,6 +6281,14 @@ Returns:
 Raises:
     MammothValidationError: If *dataview_id* or *export_id* ≤ 0.
 
+#### `export_hosts(self) -> 'ExportHostPolicyRead'`
+
+Get the hosts this workspace's custom export destinations may send to.
+
+Returns:
+    ExportHostPolicyRead: ``restricted`` (True: only ``hosts`` are allowed),
+    ``hosts`` and ``in_use`` (hosts saved exports already send to).
+
 #### `get(self, dataview_id: 'int', export_id: 'int', fields: 'str | None' = None, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Get a single pipeline export.
@@ -6338,6 +6362,70 @@ Returns:
 
 Raises:
     MammothValidationError: If *dataview_id* ≤ 0.
+
+#### `rest_fill(self, dataview_id: 'int', docs_url: 'str', notes: 'str' = '', wait: 'bool' = True, timeout: 'float | None' = None, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Propose REST API export settings from an API documentation page.
+
+The server reads *docs_url* and proposes form values for a REST API export
+(never credentials). Nothing is configured or sent: review the suggestion, then
+create the export yourself. The server fetches *docs_url*, so pass only a
+documentation page you are happy for Mammoth to read.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    docs_url: URL of the API documentation to read.
+    notes: Extra guidance for the suggestion (at most 2000 characters).
+    wait: Wait for the job to finish (default True). False returns the queued job.
+    timeout: Seconds to wait (uses ``client.job_timeout`` if not provided).
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    The job dict. When finished, ``response["suggestion"]`` holds the proposal.
+
+Raises:
+    MammothValidationError: If *dataview_id* <= 0, *docs_url* is empty or *notes*
+        is longer than 2000 characters.
+    MammothJobFailedError: If the job fails (when *wait* is True).
+    MammothJobTimeoutError: If the job does not finish in time (when *wait* is True).
+
+#### `runs(self, dataview_id: 'int', export_id: 'int', limit: 'int' = 20, dataset_id: 'int | None' = None, project_id: 'int | None' = None) -> 'ExportRuns'`
+
+Get the run history of a saved export, newest first.
+
+Each run says when it started, how long it took, how many rows it sent, where
+they went, what triggered it and, if it failed, the error.
+
+Args:
+    dataview_id: ID of the dataview (must be > 0).
+    export_id: ID of the export (must be > 0).
+    limit: Number of most recent runs to return (1-50, default 20).
+    dataset_id: ID of the dataset (auto-detected if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    ExportRuns with ``export_id`` and ``runs``.
+
+Raises:
+    MammothValidationError: If *dataview_id* or *export_id* <= 0, or *limit*
+        is outside 1-50.
+
+#### `set_export_hosts(self, restricted: 'bool', hosts: '_list[str] | None' = None) -> 'ExportHostPolicy'`
+
+Set the hosts this workspace's custom export destinations may send to.
+
+Replaces the whole policy. Workspace admins only.
+
+Args:
+    restricted: True to allow only *hosts*; False to allow any host.
+    hosts: Allowed hosts (at most 100, none empty).
+
+Returns:
+    ExportHostPolicy as saved.
+
+Raises:
+    MammothValidationError: If *hosts* holds more than 100 entries or an empty one.
 
 #### `to_csv(self, dataview_id: 'int', output_path: 'str | Path | None' = None, timeout: 'int' = 300, dataset_id: 'int | None' = None) -> 'Path'`
 
@@ -7009,8 +7097,8 @@ Args:
 
 Returns:
     Dict with ``datasets``, newest first: ``{id, name, rows, columns}``, each column
-    ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100). ``rows`` and ``distinct`` are
-    ``None`` when the platform has not stored them.
+    ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100).
+    ``rows`` and ``distinct`` are ``None`` when the platform has not stored them.
 
 ### `confirm_interpretation(self, dataset_id: 'int', instruction: 'str', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
@@ -7990,6 +8078,25 @@ Returns:
 Raises:
     ValueError: If ``panel`` is not a dict.
 
+### `summary(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
+
+Summarise what a view has had done to it and where it goes.
+
+Read only, from the database alone (no model call): the Summary panel of a view.
+
+Args:
+    dataset_id: ID of the dataset.
+    dataview_id: ID of the dataview (must be > 0).
+    workspace_id: ID of the workspace (uses client default if not provided).
+    project_id: ID of the project (uses client default if not provided).
+
+Returns:
+    Dict with ``transformations``, ``actions``, ``data_out`` (exports and sends),
+    ``dashboards`` (lists of dicts) and ``result`` (dict or None).
+
+Raises:
+    MammothValidationError: If *dataview_id* <= 0.
+
 ### `trash(self, dataset_id: 'int', dataview_id: 'int', workspace_id: 'int | None' = None, project_id: 'int | None' = None) -> 'dict[str, Any]'`
 
 Move a dataview to trash.
@@ -8390,7 +8497,7 @@ Args:
     job_id: ID of the job to wait for
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-        10 seconds of waiting)
+        60 seconds of waiting)
         (default: ``client.job_poll_seconds``). The first check is
         immediate and the gap then grows from ``_POLL_FIRST_DELAY`` up
         to this bound, so a sub-second job is not held for a full
@@ -8416,7 +8523,7 @@ Args:
     job_ids: List of job IDs or comma-separated string
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-        10 seconds of waiting)
+        60 seconds of waiting)
         (default: 2); gaps start short and grow to this bound.
 
 Returns:
@@ -8820,6 +8927,30 @@ Returns:
 
 Raises:
     MammothValidationError: If an id is not a positive integer.
+
+### `email_updates_get(self: 'Any', dashboard_id: 'int') -> 'EmailUpdatesOut'`
+
+A dashboard's email updates.
+
+### `email_updates_list(self: 'Any') -> 'EmailUpdateSummaryList'`
+
+Email updates in this workspace.
+
+### `email_updates_me_get(self: 'Any', dashboard_id: 'int') -> 'EmailUpdateSubscriptionOut'`
+
+Whether I get this dashboard's email updates.
+
+### `email_updates_me_set(self: 'Any', dashboard_id: 'int', body: 'EmailUpdateSubscriptionBody') -> 'EmailUpdateSubscriptionOut'`
+
+Turn my email updates for this dashboard back on, or off.
+
+### `email_updates_set(self: 'Any', dashboard_id: 'int', body: 'EmailUpdateSettingsBody') -> 'EmailUpdatesOut'`
+
+Turn a dashboard's email updates on, off, or change them.
+
+### `email_updates_test(self: 'Any', dashboard_id: 'int') -> 'EmailUpdateTestOut'`
+
+Send me a test email update.
 
 ### `embed_config_get(self, dashboard_id: 'int') -> 'EmbedConfigResponse'`
 
@@ -9241,9 +9372,37 @@ Returns:
 
 List the workspace dashboard-tag vocabulary.
 
+### `live_chart_audience(self: 'Any', dashboard_id: 'int', body: 'ChangeAudienceSpec') -> 'LiveChartResponse'`
+
+Change who can see a live chart.
+
+### `live_chart_create(self: 'Any', body: 'CreateLiveChartSpec', project_id: 'int | None' = None) -> 'CreateLiveChartResponse'`
+
+Make a chat chart live.
+
+### `live_chart_get(self: 'Any', dashboard_id: 'int') -> 'LiveChartResponse'`
+
+Read a live chart.
+
+### `live_chart_list(self: 'Any', session_id: 'str') -> 'LiveChartListResponse'`
+
+The charts one chat made live.
+
+### `live_chart_placement(self: 'Any', dashboard_id: 'int', body: 'RecordPlacementSpec') -> 'dict[str, Any]'`
+
+Record a dashboard the chart was added to.
+
+### `live_chart_usage(self: 'Any', dashboard_id: 'int') -> 'LiveChartUsageResponse'`
+
+Where a live chart is used.
+
 ### `merge_tag(self, tag_id: 'int', target_id: 'int') -> 'dict[str, Any]'`
 
 Merge one workspace tag into another using the release request shape.
+
+### `oembed(self: 'Any', url: 'str | None' = None, maxwidth: 'str | None' = None, maxheight: 'str | None' = None, format: 'str | None' = None) -> 'dict[str, Any]'`
+
+oEmbed provider — a pasted board link, as a live embed.
 
 ### `og_card(self: 'Any', dashboard_id: 'int') -> 'dict[str, Any]'`
 
@@ -10310,7 +10469,9 @@ Returns:
     token was issued for: the URI of the one server the user let it
     reach. ``resource`` is None for a token made by hand, and for a
     token issued for no server. ``read_only`` is True when the user
-    granted the connection read-only access.
+    granted the connection read-only access. ``projects`` lists the
+    projects a sign-in is limited to and ``project`` is the lowest of
+    them; both are None when it is not limited.
 
 #### `delete(self, workspace_id: 'int | None' = None) -> 'dict[str, Any]'`
 

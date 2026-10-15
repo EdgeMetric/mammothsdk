@@ -730,6 +730,14 @@ def test_login_rejects_server_and_suggests_server_prefix() -> None:
     assert "--server-prefix" in error["hint"]
 
 
+def test_a_malformed_server_prefix_is_reported_before_the_login_method() -> None:
+    # Non-interactive, no --device: the bad prefix is still the error, not "pass --device".
+    result = make_runner().invoke(["auth", "login", "--server-prefix", "", "--output", "json"])
+    assert result.exit_code == EXIT_USAGE
+    error = json.loads(result.output)["error"]
+    assert error["code"] == "invalid_server_prefix"
+
+
 @pytest.mark.parametrize("command_id", sorted(BESPOKE))
 def test_every_bespoke_command_rejects_an_unknown_option(command_id: str) -> None:
     path = next(r["command_path"] for r in load_commands() if r["command_id"] == command_id).split()
@@ -802,3 +810,176 @@ def test_a_wrong_key_then_ctrl_d_names_the_invalid_choice(isolated_cli_config: P
 def test_ctrl_d_on_a_terminal_is_a_clean_error(isolated_cli_config: Path) -> None:
     seen = _drive_login_in_a_pty("koyal", b"\x04", b"No choice was entered")
     assert b"No choice was entered" in seen, seen
+
+
+# -- bug bash 2026-10-15: names beside ids, and what expires_at means ----------------
+
+_WORKSPACE_GET = "mammoth.api.workspace.WorkspaceAPI.get"
+_PROJECT_GET = "mammoth.api.projects.ProjectsAPI.get"
+
+
+def _oauth_session(project_id: int | None = None) -> credentials.OAuthSession:
+    return credentials.OAuthSession(
+        access=_TOKEN,
+        refresh="r" * 40,
+        expires_at=4102444800,
+        client_id="cid",
+        project_id=project_id,
+    )
+
+
+def test_oauth_login_names_the_workspace_and_the_pinned_project(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.context import oauth
+
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: _oauth_session(project_id=4460))
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    fake_service.responses[_PROJECT_GET] = {"id": 4460, "name": "Sales 2026"}
+    result = make_runner().invoke(
+        [
+            "auth",
+            "login",
+            "--method",
+            "oauth",
+            "--no-browser",
+            "--storage",
+            "file",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    assert "workspace Filipe Silva (4)" in result.stderr
+    assert "project Sales 2026 (4460)" in result.stderr
+    data = json.loads(result.stdout)["data"]
+    assert data["workspace_name"] == "Filipe Silva"
+    assert data["workspace_id"] == 4
+
+
+def test_oauth_login_never_fails_when_the_name_lookup_does(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.context import oauth
+
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: _oauth_session())
+    fake_service.responses[_WORKSPACE_GET] = CliError(
+        code="api_error", message="boom", exit_status=1
+    )
+    result = make_runner().invoke(
+        [
+            "auth",
+            "login",
+            "--method",
+            "oauth",
+            "--no-browser",
+            "--storage",
+            "file",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    assert "Signed in to workspace 4." in result.stderr
+    assert "workspace_name" not in json.loads(result.stdout)["data"]
+
+
+def test_status_says_expires_at_is_the_access_token_and_that_it_refreshes(
+    isolated_cli_config: Path,
+) -> None:
+    profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4))
+    credentials.store_credentials("default", storage="file", oauth=_oauth_session())
+    profiles.set_selected("default")
+    result = make_runner().invoke(["auth", "status", "--output", "json"], env={})
+    data = json.loads(result.stdout)["data"]
+    assert data["expires_at"] == data["access_token_expires_at"]
+    assert data["refreshes_automatically"] is True
+    assert "refreshes automatically" in data["expires_at_note"]
+
+
+def test_status_check_names_the_workspace_and_the_pinned_project(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    _saved_login()
+    fake_service.responses["mammoth.api.workspace.WorkspaceAPI.current"] = {"id": 4, "project": 77}
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    fake_service.responses[_PROJECT_GET] = {"id": 77, "name": "Sales 2026"}
+    result = make_runner().invoke(["auth", "status", "--check", "--output", "json"], env={})
+    data = json.loads(result.stdout)["data"]
+    assert data["workspace_name"] == "Filipe Silva"
+    assert data["token_project_name"] == "Sales 2026"
+
+
+def test_status_check_lists_every_project_of_a_token_limited_to_several(
+    isolated_cli_config: Path, fake_service: FakeMammothService
+) -> None:
+    _saved_login()
+    fake_service.responses["mammoth.api.workspace.WorkspaceAPI.current"] = {
+        "id": 4,
+        "project": 3,
+        "projects": [3, 7],
+    }
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    result = make_runner().invoke(["auth", "status", "--check", "--output", "json"], env={})
+    data = json.loads(result.stdout)["data"]
+    assert data["token_project"] == 3
+    assert data["token_projects"] == [3, 7]
+
+
+def test_oauth_login_names_every_project_of_a_grant_limited_to_several(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from dataclasses import replace
+
+    from mammoth_cli.context import oauth
+
+    several = replace(_oauth_session(project_id=3), project_ids=(3, 7))
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: several)
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "Filipe Silva"}
+    result = make_runner().invoke(
+        [
+            "auth",
+            "login",
+            "--method",
+            "oauth",
+            "--no-browser",
+            "--storage",
+            "file",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    assert "projects 3, 7" in result.stderr
+    data = json.loads(result.stdout)["data"]
+    assert data["project_ids"] == [3, 7]
+
+
+def test_status_of_a_profile_that_does_not_exist_exits_4_with_a_login_hint(
+    isolated_cli_config: Path,
+) -> None:
+    result = make_runner().invoke(["auth", "status", "--profile", "nosuch", "-o", "json"], env={})
+    assert result.exit_code == 4, result.stdout
+    error = json.loads(result.stderr.strip().splitlines()[-1])["error"]
+    assert error["code"] == "authentication_failed"
+    assert "mammoth auth login --profile nosuch" in error["recovery_commands"]
+
+
+def test_status_with_no_profile_given_still_reports_signed_out_state(
+    isolated_cli_config: Path,
+) -> None:
+    result = make_runner().invoke(["auth", "status", "-o", "json"], env={})
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["has_credentials"] is False

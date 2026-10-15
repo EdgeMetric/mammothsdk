@@ -65,6 +65,22 @@ def test_view_transform_readback_is_kind_data(fake_service: FakeMammothService) 
     }
 
 
+def test_view_transform_readback_reuses_the_record_the_data_read_fetched(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_FIND_DATASET] = 122
+    fake_service.responses[_VIEW_GET_EXACT_PARENT] = {
+        "id": 3310,
+        "row_count": 7,
+        "metadata": [{"internal_name": "c1", "display_name": "petal_width", "type": "NUMERIC"}],
+    }
+    fake_service.responses[_VIEW_DATA_GET] = {"data": [{"petal_width": 1.4}]}
+    result = with_state(_inv("view.transform.filter", ["3310"]), {"status": "done"})
+    assert result["state"]["row_count"] == 7
+    assert result["state"]["columns"] == [{"name": "petal_width", "type": "NUMERIC"}]
+    assert _VIEW_GET not in fake_service.calls
+
+
 # ---------------------------------------------------------------------------
 # kind: object -- a plain CRUD write on a view/dataset/file reads back the
 # record itself.

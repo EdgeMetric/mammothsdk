@@ -16,6 +16,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from mammoth_cli.services.dashboard_review import _profiles
+from mammoth_cli.services.suggest import nearest_one
 
 #: Aggregations that need a numeric measure; count and count_distinct do not.
 NUMERIC_AGGS = frozenset({"sum", "avg", "mean", "average", "min", "max", "median"})
@@ -70,7 +71,7 @@ def figure_problems(
             continue
         profile = by_name.get(column)
         if profile is None:
-            near = folded.get(column.casefold())
+            near = folded.get(column.casefold()) or nearest_one(column, by_name)
             problems.append(
                 {
                     "issue": "unknown_column",

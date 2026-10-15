@@ -206,7 +206,16 @@ def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
 
 def _schema_find(invocation: Invocation) -> HandlerResult:
     from mammoth_cli.commands import schema as schema_cmd
+    from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
+    flags = COMMAND_FLAGS["schema.find"]
+    words = [str(invocation.bound_input().get("query") or ""), *map(str, invocation.extra_args)]
+    if any(word in flags for word in words):
+        # 'schema find --unsupported [WORDS]': what the CLI cannot do yet.
+        from mammoth_cli.commands.capabilities import unsupported
+
+        rest = dict.fromkeys(word for word in words if word and word not in flags)
+        return unsupported(" ".join(rest)), {}
     query = _require_arg(invocation, "search query")
     if not query.strip():
         raise _EMPTY_QUERY_ERROR
@@ -268,6 +277,8 @@ _TARGETS: dict[str, str] = {
     "calc": "mammoth_cli.commands.calc:calc",
     "link": "mammoth_cli.commands.link:link",
     "resolve": "mammoth_cli.commands.resolve:resolve",
+    "how": "mammoth_cli.commands.how:how",
+    "capabilities": "mammoth_cli.commands.capabilities:capabilities",
     "completion.show": "mammoth_cli.commands.completion:completion_show",
     "completion.install": "mammoth_cli.commands.completion:completion_install",
     "skill.agents-md.install": "mammoth_cli.commands.skill:skill_agents_md_install",
@@ -915,6 +926,32 @@ _TARGETS: dict[str, str] = {
     "view.export.delete": "mammoth_cli.commands.view:view_export_delete",
     "view.export.get": "mammoth_cli.commands.view:view_export_get",
     "view.export.list": "mammoth_cli.commands.view:view_export_list",
+    "view.export.runs": "mammoth_cli.commands.view:view_export_runs",
+    "view.export.rest-fill": "mammoth_cli.commands.view:view_export_rest_fill",
+    "view.summary": "mammoth_cli.commands.view:view_summary",
+    "workspace.export-hosts.get": "mammoth_cli.commands.workspace:workspace_export_hosts_get",
+    "workspace.export-hosts.set": "mammoth_cli.commands.workspace:workspace_export_hosts_set",
+    "workflow.duplicate": "mammoth_cli.commands.workflow:workflow_duplicate",
+    "workflow.save-undo": "mammoth_cli.commands.workflow:workflow_save_undo",
+    "workflow.save-cancel-step": "mammoth_cli.commands.workflow:workflow_save_cancel_step",
+    "dashboard.email-updates.list": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.set": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.me.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.me.set": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.test": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.email-updates.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.email-updates.set": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.email-updates.me.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.email-updates.me.set": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.email-updates.test": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.list": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.create": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.audience": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.usage": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.live-chart.placement": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.oembed": "mammoth_cli.commands.dashboard:generated_dashboard",
     "view.export.publish-db": "mammoth_cli.commands.view:view_export_publish_db",
     "view.export.publish-db-update": "mammoth_cli.commands.view:view_export_publish_db_update",
     "view.export.update": "mammoth_cli.commands.view:view_export_update",

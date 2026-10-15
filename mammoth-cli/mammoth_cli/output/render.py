@@ -61,6 +61,8 @@ def render(
         # yaml carry exactly what ``--output json`` carries.
         document = json.loads(json.dumps(envelope, ensure_ascii=False, allow_nan=False))
         yaml.safe_dump(document, stream, sort_keys=True, allow_unicode=True)
+    elif output in ("plain", "table") and (text := _document_text(envelope)) is not None:
+        stream.write(text if text.endswith("\n") else text + "\n")
     elif output == "plain":
         _render_plain(envelope.get("data"), stream)
     elif output == "csv":
@@ -69,6 +71,21 @@ def render(
         _render_table(envelope.get("data"), stream)
     else:  # pragma: no cover - guarded by option validation
         raise ValueError(f"unknown output mode: {output}")
+
+
+#: Commands whose result is one document to read: human output prints the
+#: document itself (the named ``data`` key), not an escaped string in a table.
+_DOCUMENT_COMMANDS: dict[str, str] = {"skill show": "text"}
+
+
+def _document_text(envelope: dict[str, Any]) -> str | None:
+    meta = envelope.get("meta")
+    data = envelope.get("data")
+    if not isinstance(meta, dict) or not isinstance(data, dict):
+        return None
+    key = _DOCUMENT_COMMANDS.get(str(meta.get("command") or ""))
+    value = data.get(key) if key else None
+    return value if isinstance(value, str) else None
 
 
 def _json_pretty(stream: TextIO) -> bool:
@@ -162,13 +179,42 @@ def _render_plain(data: Any, stream: TextIO) -> None:
         stream.write(f"{_scalar(data)}\n")
 
 
-def _csv_rows(data: Any) -> list[dict[str, Any]] | None:
-    """The result's rows: ``data`` itself, or the ``data`` list inside a read result."""
-    if isinstance(data, dict):
-        data = data.get("data")
-    if isinstance(data, list) and data and all(isinstance(row, dict) for row in data):
-        return data
+#: Keys a listing result keeps its records under, tried in this order.
+_LISTING_KEYS = (
+    "data",
+    "datasets",
+    "dataviews",
+    "files",
+    "folders",
+    "projects",
+    "views",
+    "items",
+    "results",
+)
+
+
+def _record_list(value: Any) -> list[dict[str, Any]] | None:
+    if isinstance(value, list) and value and all(isinstance(row, dict) for row in value):
+        return value
     return None
+
+
+def _csv_rows(data: Any) -> list[dict[str, Any]] | None:
+    """The result's rows: ``data`` itself, or the one list of records inside a result."""
+    if isinstance(data, dict):
+        for key in _LISTING_KEYS:
+            rows = _record_list(data.get(key))
+            if rows is not None:
+                return rows
+        # Otherwise the single list of records, ignoring health and warning side lists.
+        candidates = [
+            rows
+            for key, value in data.items()
+            if not str(key).endswith(("_health", "warnings", "problems"))
+            and (rows := _record_list(value)) is not None
+        ]
+        return candidates[0] if len(candidates) == 1 else None
+    return _record_list(data)
 
 
 def _render_csv(data: Any, stream: TextIO) -> None:

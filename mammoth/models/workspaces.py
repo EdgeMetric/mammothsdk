@@ -33,12 +33,18 @@ class WorkspaceSchema(BaseModel):
 
 class CurrentWorkspace(BaseModel):
     """What a credential is fenced to: its workspace, the server its token was
-    issued for, the one project it may act in, and whether the user granted it
-    read-only."""
+    issued for, the projects it may act in, and whether the user granted it
+    read-only.
+
+    ``projects`` is every project a sign-in is limited to (sorted), and ``project``
+    the lowest of them; both are None when it is not limited. A server older than
+    multi-project sign-in sends only ``project``.
+    """
 
     id: int
     resource: str | None = None
     project: int | None = None
+    projects: list[int] | None = None
     read_only: bool = False
 
 

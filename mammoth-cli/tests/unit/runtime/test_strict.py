@@ -51,7 +51,9 @@ def test_unknown_option_is_still_rejected_before_the_positional_count_check() ->
     with pytest.raises(CliError) as excinfo:
         validate_extra_args(_BULK_REPLACE, ["1039", "--nope"])
     assert excinfo.value.code == "unknown_option"
-    assert excinfo.value.hint == "Check the command schema with 'mammoth schema get'."
+    assert excinfo.value.hint == (
+        "Run 'mammoth view transform bulk-replace --help' to list its options and input fields."
+    )
 
 
 def test_option_that_names_a_positional_is_pointed_at_the_positional_form() -> None:
@@ -299,3 +301,11 @@ def test_a_wrong_condition_operator_is_named_with_the_valid_ones(
     assert error.exit_status == EXIT_USAGE
     assert "NOT_EQUALS" in error.message and "Did you mean NE?" in error.message
     assert "NE" in error.details["accepted"]
+
+
+def test_surplus_file_paths_name_the_files_input_field() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_extra_args("file.upload", ["a.csv", "b.csv"])
+    assert excinfo.value.code == "unexpected_argument"
+    assert '"files"' in (excinfo.value.hint or "")
+    assert "--input" in (excinfo.value.hint or "")

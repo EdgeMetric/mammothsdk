@@ -36,6 +36,7 @@ from mammoth_cli.runtime import embedded, updates
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
+from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
@@ -132,16 +133,21 @@ def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliErro
     if invocation is None:
         return error
 
-    def lookup() -> int | None:
+    names: dict[int, str | None] = {}
+
+    def lookup() -> tuple[int, ...] | None:
         from mammoth_cli.runtime.session import open_service
-        from mammoth_cli.runtime.token_scope import pinned_project
+        from mammoth_cli.runtime.token_scope import pin_names, pinned_projects
 
         with open_service(invocation) as (service, _auth):
-            return pinned_project(service)
+            pins = pinned_projects(service)
+            # Same session: the names cost one more read each, never a second login.
+            names.update(pin_names(service, pins))
+            return pins
 
     from mammoth_cli.runtime.token_scope import qualify_pin_hint
 
-    return qualify_pin_hint(error, lookup)
+    return qualify_pin_hint(error, lookup, names.get)
 
 
 def _verify_exit_status(data: Any) -> int:
@@ -159,6 +165,10 @@ def _verify_exit_status(data: Any) -> int:
     return 0
 
 
+#: Output modes a person reads; they get the ``Next:`` line on stderr.
+_HUMAN_OUTPUTS = frozenset({"table", "plain", "csv"})
+
+
 def emit_success(
     command_id: str,
     data: Any,
@@ -172,6 +182,7 @@ def emit_success(
     dataset: dict[str, Any] | None = None,
     view: dict[str, Any] | None = None,
     opens: list[dict[str, Any]] | None = None,
+    next_commands: list[str] | None = None,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -189,6 +200,9 @@ def emit_success(
         view: ``{"id", "name"}`` of the view a data read came from, if any.
         opens: ``{"kind", "id", "url", "created"}`` of each object a write made or
             changed, if any.
+        next_commands: Ready-to-run commands that usually come next, if any.
+            Human output (table, plain, csv) also prints them as one ``Next:``
+            line on stderr.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -200,11 +214,14 @@ def emit_success(
         dataset=dataset,
         view=view,
         opens=opens,
+        next_commands=next_commands or None,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)):
         return
     render(envelope, output=output)
+    if next_commands and output in _HUMAN_OUTPUTS:
+        sys.stderr.write(f"Next: {'; '.join(next_commands)}\n")
 
 
 def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
@@ -224,7 +241,7 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
     if machine:
         render(
             error.to_envelope(),
-            output="ndjson" if output == "ndjson" else "json",
+            output=output if output in ("ndjson", "yaml") else "json",
             stream=sys.stderr,
         )
         return
@@ -272,8 +289,10 @@ def run(
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
     # diagnostic intended for interactive troubleshooting.
-    machine_error = output in MACHINE_OUTPUTS or (
-        output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty())
+    machine_error = (
+        output in MACHINE_OUTPUTS
+        or output == "yaml"
+        or (output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty()))
     )
     run_log = _open_run_log(command_id, invocation)
 
@@ -298,7 +317,8 @@ def run(
         _refuse_if_embedded(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)
-        data, meta_extra = producer()
+        with shared_services():
+            data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the
         # cache, and its envelope must not carry the older answer.
         update = updates.available_update(command_id)

@@ -36,6 +36,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.paging import listing_with_paging
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -132,6 +133,13 @@ def file_list(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = listing_with_paging(
+        data,
+        key="files",
+        command="mammoth file list",
+        project=invocation.project,
+        requested=kwargs,
+    )
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -234,7 +242,7 @@ def file_bulk_delete(invocation: Invocation) -> HandlerResult:
 
 
 def file_upload(invocation: Invocation) -> HandlerResult:
-    """Upload one or more local files. Paths come from positionals or ``files``."""
+    """Upload local files: one path as the argument, several via the ``files`` input field."""
     document = invocation.load_input() or {}
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
@@ -244,12 +252,20 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     _require_local_files(kwargs.get("files"))
-    if kwargs.get("append_to_ds_id") is not None and not kwargs.get("files"):
+    if not kwargs.get("files"):
+        appending = kwargs.get("append_to_ds_id") is not None
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
-            message="This command requires 'files' when append_to_ds_id is set.",
+            message=(
+                "This command requires 'files' when append_to_ds_id is set."
+                if appending
+                else "A file path is required."
+            ),
             exit_status=EXIT_USAGE,
-            hint="Pass the file(s) as positional arguments or a 'files' input field.",
+            hint=(
+                "Pass one path as the argument (mammoth file upload ./data.csv), or several "
+                'with --input \'{"files": ["a.csv", "b.csv"]}\'.'
+            ),
         )
     with open_service(invocation) as (service, auth):
         # When the caller opts out of waiting (``wait_for_completion: false``)
@@ -259,8 +275,10 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
         # The SDK waits for the upload job; ``upload_result`` also returns the
         # files the server refused, which the bare id list of ``upload`` drops.
+        target = kwargs.get("append_to_ds_id")
+        rows_before = _dataset_rows(service, target) if target is not None else None
         outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
-        data = outcome["dataset_ids"]
+        data = [target] if target is not None and outcome["dataset_ids"] else outcome["dataset_ids"]
         refused = _refused_files(outcome.get("errors"))
         if outcome.get("errors") and not data:
             raise _upload_refused_error(outcome["errors"], refused)
@@ -268,13 +286,27 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
         result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+        if target is not None and data:
+            # The upload made a staging dataset the backend already deleted; the result is
+            # the dataset the rows were appended to.
+            rows_after = _dataset_rows(service, target)
+            result["appended_to"] = target
+            result["staging_dataset_ids"] = list(outcome["dataset_ids"])
+            if rows_before is not None and rows_after is not None:
+                result.update(
+                    rows_before=rows_before,
+                    rows_after=rows_after,
+                    rows_added=rows_after - rows_before,
+                )
         if refused:
             result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
             result["refused_files"] = refused
+        _mark_partial_upload(result, bool(refused))
         project_id = resolved_project(invocation)
         previewed = 0
         for entry in result["datasets"]:
-            if entry.get("status") != "ready":
+            if entry.get("status") != "ready" or target is not None:
+                # An append lands in a dataset whose views already exist; no preview.
                 continue
             if previewed >= _UPLOAD_PREVIEW_LIMIT:
                 entry["preview_skipped"] = (
@@ -296,6 +328,34 @@ def file_upload(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+_UPLOAD_FAILED_STATUSES = frozenset({"error", "failed", "failure"})
+
+
+def _mark_partial_upload(result: dict[str, Any], has_refused: bool) -> None:
+    """Make a mixed upload ``partial``: some files became datasets and some did not.
+
+    A dataset the backend marked ``error`` (an empty file, say) carries its own reason in
+    ``status_info``; that reason goes into ``warnings`` so each file's outcome is readable.
+    """
+    datasets = result["datasets"]
+    failed = [d for d in datasets if str(d.get("status")).lower() in _UPLOAD_FAILED_STATUSES]
+    if not failed and not has_refused:
+        return
+    if len(failed) == len(datasets) and not has_refused:
+        return  # nothing worked: keep the plain failure
+    warnings = list(result.get("warnings", []))
+    for entry in failed:
+        info = entry.get("status_info")
+        said = " ".join(str(v) for v in info.values()) if isinstance(info, dict) else ""
+        label = entry.get("name") or f"dataset {entry['id']}"
+        warnings.append(f"{label} failed to load: {said or 'the backend gave no reason'}.")
+    if not any(d.get("status") == "ready" for d in datasets):
+        return
+    result["partial"] = True
+    result["status"] = "partial"
+    result["warnings"] = warnings
+
+
 #: Uploaded datasets one ``file upload`` previews (several requests each).
 _UPLOAD_PREVIEW_LIMIT = 5
 
@@ -312,6 +372,14 @@ def _require_local_files(files: Any) -> None:
         if not isinstance(candidate, str):
             continue
         path = Path(candidate).expanduser()
+        if path.is_dir():
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"{candidate} is a directory, not a file.",
+                exit_status=EXIT_USAGE,
+                hint=f"Use 'mammoth file upload-folder {candidate}' to upload every file in it.",
+                details={"path": candidate},
+            )
         if not path.is_file():
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
@@ -367,23 +435,37 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 
-def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None]:
-    """Read ``(status, status_info)`` for one dataset; ``unknown`` if the read fails."""
+def _dataset_rows(service: Any, dataset_id: int) -> int | None:
+    """The dataset's stored row count, or None when it cannot be read."""
     try:
         response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
     except CliError:
-        return "unknown", None
+        return None
+    dataset = response.get("dataset", response) if isinstance(response, dict) else {}
+    stats = dataset.get("stats") if isinstance(dataset, dict) else None
+    rows = stats.get("row_count") if isinstance(stats, dict) else None
+    return rows if isinstance(rows, int) else None
+
+
+def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:
+    """Read ``(status, status_info, name)`` for one dataset; ``unknown`` if the read fails."""
+    try:
+        response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
+    except CliError:
+        return "unknown", None, None
     dataset = response.get("dataset", response) if isinstance(response, dict) else {}
     status = dataset.get("status") if isinstance(dataset, dict) else None
     status_info = dataset.get("status_info") if isinstance(dataset, dict) else None
+    name = dataset.get("name") if isinstance(dataset, dict) else None
     return (
         status if isinstance(status, str) else "unknown",
         status_info if isinstance(status_info, dict) else None,
+        name if isinstance(name, str) and name else None,
     )
 
 
 def _upload_result(
-    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None]]
+    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None, str | None]]
 ) -> dict[str, Any]:
     """Shape the SDK upload return (int | list[int] | None) into a labeled result.
 
@@ -402,7 +484,7 @@ def _upload_result(
         ids = []
     datasets: list[dict[str, Any]] = []
     for dataset_id in ids:
-        status, status_info = read_status(dataset_id)
+        status, status_info, name = read_status(dataset_id)
         # The platform reports an all-text CSV as ``ready`` with the message
         # "This file has more than one plausible way to be read.": the rows are
         # ingested, but no view is created. Confirming file settings does not
@@ -410,6 +492,8 @@ def _upload_result(
         if status == "ready" and status_info and str(status_info.get("ready") or "").strip():
             status = "needs_view"
         entry: dict[str, Any] = {"id": dataset_id, "status": status}
+        if name:
+            entry["name"] = name
         if status_info:
             entry["status_info"] = status_info
         if status == "need_action":

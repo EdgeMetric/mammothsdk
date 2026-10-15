@@ -414,7 +414,9 @@ def judge(case: Case, result: Result) -> list[str]:
         problems.append(f"--help exited {result.code}, expected 0")
     if case.must_reject and result.code == 0:
         problems.append("invalid input silently accepted (exit 0)")
-    if case.names and result.code == 2 or (case.names and case.must_reject):
+    retired = '"code":"feature_unavailable"' in result.output.replace(" ", "")
+    if (case.names and result.code == 2 or (case.names and case.must_reject)) and not retired:
+        # A retired command refuses before it reads its flags; that is the right error.
         if not names_input(case.names, result.output):
             wanted = " or ".join(repr(n[:30]) for n in case.names)
             problems.append(f"error does not name the bad input ({wanted})")

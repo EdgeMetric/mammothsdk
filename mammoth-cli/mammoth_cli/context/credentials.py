@@ -149,6 +149,8 @@ class OAuthSession:
     server-side connection id, used to revoke it on logout. ``workspace_id`` and
     ``project_id`` are the scope the server pinned the grant to at login; they are
     adopted into the profile then and are not stored with the credential.
+    ``project_ids`` lists every project of a grant limited to several (``project_id``
+    is the lowest); None for one project or All projects. It is not stored either.
     """
 
     access: str
@@ -158,6 +160,7 @@ class OAuthSession:
     grant_id: int | None = None
     workspace_id: int | None = None
     project_id: int | None = None
+    project_ids: tuple[int, ...] | None = None
 
     def document(self) -> dict[str, str | int]:
         document: dict[str, str | int] = {

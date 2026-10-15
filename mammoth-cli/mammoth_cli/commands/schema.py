@@ -210,7 +210,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"
     ),
-    "file.upload-folder": "upload source-data directory folder",
+    "file.upload-folder": (
+        "upload source-data directory folder a folder of files every file in a local folder"
+    ),
+    # A "folder" in Mammoth is a project folder that groups datasets, views and
+    # dashboards (`folder` commands); a local directory of files is `file upload-folder`.
+    # An uploaded file becomes a dataset named after it, so deleting it is `dataset delete`.
+    "folder.list": "list show folder folders directories organize project resources",
+    "folder.create": "create make new add folder directory organize project resources",
+    "folder.update": "rename folder directory",
+    "folder.move": "move put dataset view dashboard resources into a folder directory",
+    "file.delete": "delete remove uploaded source file csv",
+    "file.list": "list show uploaded source files csv",
     "view.export.csv": "export download local CSV file artifact",
     "view.export.dataset": (
         "send copy branch out create save the result rows into a new project from an "
@@ -528,7 +539,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "dashboard.delete": "delete remove permanently dashboard board",
     "view.delete": "delete remove permanently",
-    "dataset.delete": "delete remove permanently dataset",
+    "dataset.delete": "delete remove permanently dataset uploaded file csv",
     "view.list": "list all views",
     "view.task.delete": "undo remove the last step task from the pipeline revert a transformation",
     "view.data.query": "query rows with a filter condition sort columns and get rows back",
@@ -587,6 +598,14 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "link": (
         "link url pasted address app page open file dataset view folder project "
         "workspace ids selected resource parse"
+    ),
+    "capabilities": (
+        "cannot can't unsupported not supported limitation limitations gap gaps workaround "
+        "instead missing feature what the cli cannot do yet"
+    ),
+    "how": (
+        "how goal recipe steps order sequence of commands guide accomplish walkthrough "
+        "plain language"
     ),
     "resolve": (
         "resolve name what is this dataset view project called named which kind "
@@ -683,6 +702,32 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "make a dataset from each accepted sheet of a multi-sheet excel file"
     ),
     "workflow.save": "save the unsaved changes on the workflow canvas",
+    "workflow.duplicate": "duplicate copy clone a workflow onto other datasets",
+    "workflow.save-undo": "undo a workflow save roll back the last save run",
+    "workflow.save-cancel-step": "cancel one step of a running workflow save stop a save step",
+    "view.export.runs": "export run history past runs of an export rows sent errors when it ran",
+    "view.export.rest-fill": "propose REST API export settings from an API docs page url",
+    "view.summary": "summary of a dataview rows columns overview stats at a glance",
+    "workspace.export-hosts.get": "hosts exports may send data to allowed export hosts policy",
+    "workspace.export-hosts.set": "restrict or allow the hosts exports may send data to",
+    "dashboard.email-updates.list": "email updates on dashboards I subscribe to in the workspace",
+    "dashboard.email-updates.get": "email update schedule and subscribers for a dashboard",
+    "dashboard.email-updates.set": "set the email update schedule for a dashboard",
+    "dashboard.email-updates.me.get": "am I subscribed to email updates for this dashboard",
+    "dashboard.email-updates.me.set": "subscribe or unsubscribe me from dashboard email updates",
+    "dashboard.email-updates.test": "send a test email update for a dashboard",
+    "collection.email-updates.get": "email update schedule and subscribers for a collection",
+    "collection.email-updates.set": "set the email update schedule for a collection",
+    "collection.email-updates.me.get": "am I subscribed to email updates for this collection",
+    "collection.email-updates.me.set": "subscribe or unsubscribe me from collection email updates",
+    "collection.email-updates.test": "send a test email update for a collection",
+    "dashboard.live-chart.list": "list live charts shareable embeddable chart dashboards",
+    "dashboard.live-chart.create": "create a live chart embeddable chart from a figure",
+    "dashboard.live-chart.get": "get one live chart embed settings",
+    "dashboard.live-chart.audience": "change who can see a live chart audience",
+    "dashboard.live-chart.usage": "where a live chart is used embeds placements views",
+    "dashboard.live-chart.placement": "record where a live chart is placed",
+    "dashboard.oembed": "oembed embed metadata for a dashboard link",
     "workflow.archive": "archive a workflow or bring an archived workflow back",
     "workflow.attach-dataset": "add an existing dataset to a workflow",
     "workflow.resolve-held": "settle a change the workflow save held back",
@@ -1216,6 +1261,7 @@ def _representative_string(field_name: str) -> str:
         "sheets": "Sheet1",
         "version": "1",
         "as": "Total revenue",
+        "timezone": "UTC",
     }
     if name in exact:
         return exact[name]
@@ -1272,6 +1318,9 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
     """Replace generator placeholders with domain-shaped representative data."""
     if value == "example":
         return _representative_string(field_name)
+    if isinstance(value, int) and not isinstance(value, bool) and "skip" in field_name:
+        # Rows to skip: an example that skips one would drop a real first row.
+        return 0
     if isinstance(value, list):
         singular = field_name[:-1] if field_name.endswith("s") else field_name
         return [_humanize_sample(item, singular) for item in value]

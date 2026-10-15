@@ -69,7 +69,7 @@ from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.strict import validate_input_fields
-from mammoth_cli.runtime.verify import read_export_stamps
+from mammoth_cli.runtime.verify import export_stamps, export_stamps_read
 from mammoth_cli.services.column_type_guard import (
     DATE,
     NUMERIC,
@@ -80,8 +80,11 @@ from mammoth_cli.services.column_type_guard import (
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
+from mammoth_cli.services.field_enums import BATCH_OPS, allowed_values_text
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.sql_check import check_sql_binds
+from mammoth_cli.services.suggest import nearest_one
 from mammoth_cli.services.view_variants import (
     VariantPlan,
     created_entry,
@@ -335,6 +338,24 @@ def _view_row_count(service: Any, dataset_id: int, view_id: int, project_id: int
     return info.get("row_count") if isinstance(info, dict) else None
 
 
+def _read_before_write(
+    service: Any, view_id: int, dataset_id: int, project_id: int | None
+) -> dict[int, str] | None:
+    """The view's export stamps, fetched together with its record.
+
+    The record is kept (see :mod:`mammoth_cli.services.read_memo`) for the checks that read
+    it ahead of the write, so they do not each fetch it again; the write itself drops it.
+    Returns ``None`` when the exports cannot be read, like ``read_export_stamps``.
+    """
+    exports_read = export_stamps_read(view_id, dataset_id)
+    view_read = (
+        _DATAVIEW_GET_SYMBOL,
+        {"dataset_id": dataset_id, "dataview_id": view_id, "project_id": project_id},
+    )
+    exports, _view = prefetch(service, [exports_read, view_read])
+    return None if isinstance(exports, CliError) else export_stamps(exports)
+
+
 def _dispatch_view(
     invocation: Invocation,
     view_id: int,
@@ -398,8 +419,11 @@ def _dispatch_view(
             object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
         if dataset_id is not None:
+            # The checks below read the view and the write's exports; fetch both at once.
             object.__setattr__(
-                invocation, "exports_before", read_export_stamps(service, view_id, int(dataset_id))
+                invocation,
+                "exports_before",
+                _read_before_write(service, view_id, int(dataset_id), invocation.project),
             )
         if prepare is not None and dataset_id is not None:
             early = prepare(service, int(dataset_id), kwargs)
@@ -1599,6 +1623,12 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         for entry in conversions:
             name = entry.get("column") if isinstance(entry, dict) else None
             target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
+            note = f"{name} (TEXT to {target})"
+            if current.get(name) == "TEXT" and target in ("NUMERIC", "DATE") and note not in lossy:
+                lossy.append(note)
+        for entry in conversions:
+            name = entry.get("column") if isinstance(entry, dict) else None
+            target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
             if name is not None and target and current.get(name) == target:
                 skipped.append({"column": name, "type": target})
             else:
@@ -1616,10 +1646,21 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         return None
 
     skipped_record: list[dict[str, Any]] = []
+    lossy: list[str] = []
 
     def note_skipped(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
         if skipped_record and isinstance(data, dict):
             data = {**data, "skipped": skipped_record}
+        if lossy and isinstance(data, dict):
+            data = {
+                **data,
+                "warnings": [
+                    *(data.get("warnings") or []),
+                    f"Converted {', '.join(lossy)}: values that do not parse (such as N/A or "
+                    "text) become empty. Check the column with 'mammoth view data explore' "
+                    "before relying on totals or averages.",
+                ],
+            }
         return data
 
     return _dispatch_view(
@@ -2290,24 +2331,8 @@ def view_transform_window(invocation: Invocation) -> HandlerResult:
 
 # --- view transform batch --------------------------------------------------
 
-#: The ``view transform`` ops a batch takes: each one's handler only binds its input and
-#: calls one View method, so the batch binds and builds exactly as the single command does.
-#: The rest need their own checks (an impact read, a draft apply, a new dataset) or name
-#: a column an earlier step creates.
-_BATCH_OPS = (
-    "filter",
-    "sort",
-    "limit-rows",
-    "discard-duplicates",
-    "fill-missing",
-    "bulk-replace",
-    "replace",
-    "text",
-    "substring",
-    "extract-date",
-    "increment-date",
-    "copy-columns",
-)
+#: The ops a batch takes; one list for the check, the error hint and ``--help``.
+_BATCH_OPS = BATCH_OPS
 #: A sort is the view's row order (a display setting), not a pipeline task.
 _BATCH_SORT_OP = "sort"
 _ADD_TASKS_METHOD = "add_tasks"
@@ -2349,13 +2374,26 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
             and step.get("op") in _BATCH_OPS
             and isinstance(step.get("input"), dict)
         ):
+            op = step.get("op") if isinstance(step, dict) else None
+            near = nearest_one(op, _BATCH_OPS) if isinstance(op, str) else None
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
                 message=(
                     f"steps[{index}] must be {{\"op\": one of {', '.join(_BATCH_OPS)}, "
                     '"input": {...the same input as that `view transform` command}}.'
+                    + (f" Did you mean '{near}'?" if near else "")
                 ),
                 exit_status=EXIT_USAGE,
+                hint=(
+                    f"Allowed ops: {allowed_values_text(_BATCH_OPS)}. Run any other "
+                    "transform (pivot, join, math, ...) as its own `view transform` command."
+                ),
+                details={
+                    "step": index,
+                    "got": op,
+                    "allowed": list(_BATCH_OPS),
+                    "did_you_mean": near,
+                },
             )
     return steps
 
@@ -2620,7 +2658,9 @@ def view_transform_batch(invocation: Invocation) -> HandlerResult:
         object.__setattr__(invocation, "known_dataset_id", int(dataset_id))
         require_expected_task_count(service, view_id, dataset_id, document)
         object.__setattr__(
-            invocation, "exports_before", read_export_stamps(service, view_id, int(dataset_id))
+            invocation,
+            "exports_before",
+            _read_before_write(service, view_id, int(dataset_id), invocation.project),
         )
         plan = _build_batch(invocation, service, view_id, int(dataset_id), steps)
         data = _apply_batch(invocation, service, view_id, int(dataset_id), plan)

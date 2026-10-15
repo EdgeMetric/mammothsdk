@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_skill_capabilities import _CLI_VERSION, _VERIFIED, _blocker  # noqa: E402
 
 from mammoth_cli.manifest.loader import load_commands  # noqa: E402
+from mammoth_cli.skills.steering import stamp_version  # noqa: E402
 
 MATRIX = ROOT / "docs" / "release-capability-matrix.json"
 
@@ -265,6 +266,8 @@ def render() -> dict[Path, str]:
         "file or pipe; never put secrets in literal argv.\n\n"
         "Load only the applicable domain file:\n\n" + "\n".join(links) + "\n"
     )
+    # The skill's front-matter version is the CLI version it ships with.
+    output[SKILL / "SKILL.md"] = stamp_version((SKILL / "SKILL.md").read_text(encoding="utf-8"))
     return {path: text.rstrip() + "\n" for path, text in output.items()}
 
 

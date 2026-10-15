@@ -5,7 +5,7 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
-from mammoth_cli.errors.envelope import EXIT_CONFLICT, CliError
+from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_CONFLICT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 
 CODE_FILE_EXISTS = "file_exists"
@@ -17,6 +17,15 @@ def refuse_existing_file(invocation: Invocation, path: str | Path) -> None:
     Call it before the download starts, so a refusal costs no export job.
     """
     target = Path(path)
+    if target.is_dir():
+        # Before any export job starts; --overwrite could never replace a directory.
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"{target} is a directory, not a file path.",
+            exit_status=EXIT_USAGE,
+            hint=f'Give a file name inside it, for example output_path "{target}/export.csv".',
+            details={"output_path": str(target)},
+        )
     if invocation.overwrite or not (target.exists() or target.is_symlink()):
         return
     rerun = " ".join([*invocation.command_id.split("."), *invocation.extra_args])

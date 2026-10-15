@@ -24,6 +24,9 @@ OUTPUT_AUTO = "auto"
 #: ``auto`` alias. The tuple order is the order shown in help and error hints.
 SELECTABLE_OUTPUTS = (OUTPUT_AUTO, *VALID_OUTPUTS)
 
+#: Other spellings ``--output`` accepts for a mode: ``text`` is ``plain``.
+OUTPUT_ALIASES: dict[str, str] = {"text": "plain"}
+
 #: Every ``--color`` policy value. The tuple order is the order shown in help.
 COLOR_MODES = ("auto", "always", "never")
 
@@ -45,7 +48,12 @@ def resolve_output(output: str, *, is_tty: bool) -> str:
     """
     if output == OUTPUT_AUTO:
         return "table" if is_tty else "json"
-    return output
+    return canonical_output(output)
+
+
+def canonical_output(output: str) -> str:
+    """The mode an ``--output`` alias stands for (``text`` -> ``plain``); others unchanged."""
+    return OUTPUT_ALIASES.get(output, output)
 
 
 @dataclass(frozen=True)
