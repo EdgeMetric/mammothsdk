@@ -61,6 +61,8 @@ def render(
         # yaml carry exactly what ``--output json`` carries.
         document = json.loads(json.dumps(envelope, ensure_ascii=False, allow_nan=False))
         yaml.safe_dump(document, stream, sort_keys=True, allow_unicode=True)
+    elif output in ("plain", "table") and (text := _document_text(envelope)) is not None:
+        stream.write(text if text.endswith("\n") else text + "\n")
     elif output == "plain":
         _render_plain(envelope.get("data"), stream)
     elif output == "csv":
@@ -69,6 +71,21 @@ def render(
         _render_table(envelope.get("data"), stream)
     else:  # pragma: no cover - guarded by option validation
         raise ValueError(f"unknown output mode: {output}")
+
+
+#: Commands whose result is one document to read: human output prints the
+#: document itself (the named ``data`` key), not an escaped string in a table.
+_DOCUMENT_COMMANDS: dict[str, str] = {"skill show": "text"}
+
+
+def _document_text(envelope: dict[str, Any]) -> str | None:
+    meta = envelope.get("meta")
+    data = envelope.get("data")
+    if not isinstance(meta, dict) or not isinstance(data, dict):
+        return None
+    key = _DOCUMENT_COMMANDS.get(str(meta.get("command") or ""))
+    value = data.get(key) if key else None
+    return value if isinstance(value, str) else None
 
 
 def _json_pretty(stream: TextIO) -> bool:

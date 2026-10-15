@@ -85,6 +85,16 @@ def install_steering(path: str | None = None, cwd: Path | None = None) -> dict[s
     return {"path": str(target), "action": action, "skill_version": __version__}
 
 
+_FRONT_MATTER_VERSION = re.compile(r"\A(---\n(?:(?!---\n).*\n)*?)version:[^\n]*\n")
+
+
+def stamp_version(text: str, version: str = __version__) -> str:
+    """``SKILL.md`` text with its front-matter ``version`` set to ``version``."""
+    return _FRONT_MATTER_VERSION.sub(
+        lambda match: f"{match.group(1)}version: {version}\n", text, count=1
+    )
+
+
 def show(file: str | None = None) -> dict[str, object]:
     """Return the text of ``SKILL.md`` or of one bundled reference file.
 
@@ -107,5 +117,9 @@ def show(file: str | None = None) -> dict[str, object]:
         "skill": SKILL_NAME,
         "file": relative,
         "path": str(candidate),
-        "text": candidate.read_text(encoding="utf-8"),
+        "text": (
+            stamp_version(candidate.read_text(encoding="utf-8"))
+            if candidate == root / "SKILL.md"
+            else candidate.read_text(encoding="utf-8")
+        ),
     }

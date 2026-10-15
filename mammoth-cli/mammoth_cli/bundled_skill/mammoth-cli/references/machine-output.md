@@ -56,8 +56,11 @@ secret. A rejected mutation remains the error envelope above; use its recovery
 command or a read-back, rather than treating a model/result type as success.
 
 ## Output modes
-`--output` accepts `auto`, `table`, `json`, `yaml`, `ndjson`, `plain`. Agents
-should use `json` (or `ndjson` for documented streams). `json` emits one
+`--output` accepts `auto`, `table`, `json`, `yaml`, `ndjson`, `plain` (`text`
+is the same as `plain`), `csv`. Agents should use `json` (or `ndjson` for
+documented streams). To read a skill file, `mammoth skill show -o plain`
+(`--input '{"file": "references/..."}'` for another file) prints the markdown
+as it is, not one escaped JSON string. `json` emits one
 complete object; `ndjson` emits one complete envelope per line. Machine modes
 never emit color or progress.
 

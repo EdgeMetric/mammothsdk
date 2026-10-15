@@ -43,6 +43,7 @@ from mammoth_cli.output.policy import (
     OUTPUT_AUTO,
     SELECTABLE_OUTPUTS,
     VALID_OUTPUTS,
+    canonical_output,
     resolve_output,
 )
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
@@ -366,6 +367,7 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
         elif token.startswith("-o") and len(token) > 2:
             mode = token[2:]
         index += 1
+    mode = canonical_output(mode)
     if mode not in SELECTABLE_OUTPUTS:
         # A value the command would reject (``--output xml``) must not turn the
         # error into prose: judge it by where stdout goes, like the default.
