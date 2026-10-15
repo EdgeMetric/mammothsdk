@@ -15,6 +15,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from mammoth_cli.context import profiles
 from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth, resolve_project
@@ -23,6 +24,7 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.policy import resolve_policy
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.shared import SHARED
 from mammoth_cli.services import factory
 from mammoth_cli.services.protocol import MammothService
 
@@ -51,6 +53,26 @@ def default_job_timeout(command_id: str) -> float | None:
     return None
 
 
+def _share_key(
+    invocation: Invocation, auth: ResolvedAuth, project_id: int | None, progress: bool
+) -> tuple[Any, ...]:
+    """What makes two opens interchangeable: who is calling, where, and how the call is gated."""
+    return (
+        auth.workspace_id,
+        auth.base_url,
+        auth.api_token,
+        auth.api_key,
+        auth.token_provider is not None,
+        tuple(sorted((auth.headers or {}).items())),
+        invocation.timeout,
+        project_id,
+        invocation.profile or profiles.get_selected(),
+        progress,
+        # A dry run's gate is the command's own.
+        invocation.command_id if invocation.dry_run else None,
+    )
+
+
 @contextmanager
 def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, ResolvedAuth]]:
     """Yield an authenticated service and the resolved auth, closing on exit.
@@ -75,16 +97,27 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
         is_tty=sys.stderr.isatty(),
         color=invocation.color,
     )
+    project_id = resolved_project(invocation)
+    job_timeout = (
+        invocation.job_timeout
+        if invocation.job_timeout is not None
+        else default_job_timeout(invocation.command_id)
+    )
+    shared = SHARED.get()
+    key = _share_key(invocation, auth, project_id, not policy.progress_disabled)
+    if shared is not None and key in shared:
+        service = shared[key]
+        bind = getattr(service, "bind_timeouts", None)
+        if bind is not None:
+            bind(job_timeout=job_timeout, pipeline_timeout=invocation.pipeline_timeout)
+        yield service, auth
+        return
     service = factory.build_service(
         auth,
         timeout=invocation.timeout,
-        job_timeout=(
-            invocation.job_timeout
-            if invocation.job_timeout is not None
-            else default_job_timeout(invocation.command_id)
-        ),
+        job_timeout=job_timeout,
         pipeline_timeout=invocation.pipeline_timeout,
-        project_id=resolved_project(invocation),
+        project_id=project_id,
         profile=invocation.profile or profiles.get_selected(),
         progress=not policy.progress_disabled,
     )
@@ -95,6 +128,11 @@ def open_service(invocation: Invocation) -> Iterator[tuple[MammothService, Resol
             from mammoth_cli.runtime.dryrun import make_gate
 
             service.gate = make_gate(invocation.command_id)
+    if shared is not None:
+        # Closed with the block that shares it, not when this one ends.
+        shared[key] = service
+        yield service, auth
+        return
     try:
         yield service, auth
     finally:

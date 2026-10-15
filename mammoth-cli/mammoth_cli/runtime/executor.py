@@ -36,6 +36,7 @@ from mammoth_cli.runtime import embedded, updates
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
+from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
@@ -307,7 +308,8 @@ def run(
         _refuse_if_embedded(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)
-        data, meta_extra = producer()
+        with shared_services():
+            data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the
         # cache, and its envelope must not carry the older answer.
         update = updates.available_update(command_id)

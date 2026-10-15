@@ -1245,3 +1245,11 @@ def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
     assert fake_service.wait_log == [{"job_id": 55}]
     assert data["status"] == "ready"
     assert data["dataset_name"] == "wb.csv"
+
+
+def test_delete_names_the_deleted_id_and_lists_nothing(fake_service: FakeMammothService) -> None:
+    data, _ = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert data["deleted"] == [7]
+    assert all(symbol != "mammoth.api.datasets.DatasetsAPI.list" for symbol in fake_service.calls)

@@ -45,6 +45,7 @@ from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
+from mammoth_cli.services.read_memo import ReadMemo
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
 _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
@@ -155,6 +156,8 @@ class SdkMammothService:
         """
         self._progress = progress
         self._profile = profile
+        #: Reads made ahead of a write (see :mod:`mammoth_cli.services.read_memo`).
+        self.memo = ReadMemo()
         #: ``--dry-run`` hook (:mod:`mammoth_cli.runtime.dryrun`): called with
         #: the resolved symbol and arguments right before each SDK call.
         self.gate: Callable[..., None] | None = None
@@ -194,6 +197,8 @@ class SdkMammothService:
             user_agent=f"mammoth-cli/{__version__}",
             **kwargs,
         )
+        self._default_job_timeout = self._client.job_timeout
+        self._default_pipeline_timeout = self._client.pipeline_timeout
         # One loop for the process, not one per call: the client's connection
         # pool lives on the loop that opened it.
         self._loop = asyncio.new_event_loop()
@@ -214,6 +219,16 @@ class SdkMammothService:
         except BaseException:
             self._loop.close()
             raise
+
+    def bind_timeouts(self, *, job_timeout: float | None, pipeline_timeout: float | None) -> None:
+        """Set the job and pipeline waits for the next opener of this shared service.
+
+        ``None`` is the SDK default, as at construction.
+        """
+        self._client.job_timeout = self._default_job_timeout if job_timeout is None else job_timeout
+        self._client.pipeline_timeout = (
+            self._default_pipeline_timeout if pipeline_timeout is None else pipeline_timeout
+        )
 
     def _run(self, work: Any) -> Any:
         """Run one SDK coroutine to completion and hand back its result.
@@ -251,6 +266,9 @@ class SdkMammothService:
                 ``invalid_arguments`` when the supplied fields do not fit the
                 method signature; otherwise the mapped SDK exception.
         """
+        found, answer = self.memo.lookup(sdk_symbol, kwargs)
+        if found:
+            return answer
         method, kwargs = self._prepare_call(sdk_symbol, kwargs)
         try:
             with spinner(self._progress):
@@ -521,6 +539,8 @@ class SdkMammothService:
         """
         if self._client.project_id is None:
             raise missing_project_error()
+        # A write is about to change what the reads made ahead of it saw.
+        self.memo.clear()
         try:
             with spinner(self._progress):
                 # A supplied parent is part of the resource identity. Calling

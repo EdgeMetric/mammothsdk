@@ -122,6 +122,9 @@ def _build_state(
     kind = str(readback["kind"])
     ids_spec: dict[str, Any] = readback.get("ids") or {}
     resolved_ids: dict[str, Any] = {}
+    gone = _confirmed_deleted_state(invocation, data, kind)
+    if gone is not None:
+        return gone
     try:
         resolved_ids = {
             name: _resolve_source(str(source), data, invocation)
@@ -131,6 +134,10 @@ def _build_state(
         if missing:
             raise ValueError(f"could not resolve id(s) {missing} from the write's result/input")
         if kind == "data":
+            if data.get("status") == _NO_CHANGE_STATUS:
+                unchanged = _unchanged_state(resolved_ids, invocation)
+                if unchanged is not None:
+                    return unchanged
             return _data_state(resolved_ids, invocation)
         read_data = _call_read(read_command_id, resolved_ids, invocation)
         read_by = _read_by_label(read_command_id, resolved_ids)
@@ -152,6 +159,32 @@ def _build_state(
             return {"kind": "object", "read_by": read_by, "object": None, "absent": True}
         reason = exc.message if isinstance(exc, CliError) else str(exc)
         return {"kind": "unreadable", "read_by": read_by, "reason": reason or type(exc).__name__}
+
+
+def _confirmed_deleted_state(
+    invocation: Invocation, data: dict[str, Any], kind: str
+) -> dict[str, Any] | None:
+    """The state of a delete whose handler already read the resource and found it gone.
+
+    Such a handler lists the ids in ``deleted`` only after that read. Reading the whole
+    listing again would show the same thing at the cost of a round trip and a page of
+    other resources.
+    """
+    deleted = data.get("deleted")
+    if (
+        not invocation.command_id.endswith(".delete")
+        or kind != "object"
+        or not isinstance(deleted, list)
+        or not deleted
+    ):
+        return None
+    noun = invocation.command_id.split(".")[0]
+    return {
+        "kind": "object",
+        "read_by": f"{noun} get {deleted[0]}",
+        "object": None,
+        "absent": True,
+    }
 
 
 def _read_by_label(command_id: str, resolved_ids: dict[str, Any]) -> str:
@@ -255,6 +288,13 @@ def _read_invocation(command_id: str, resolved_ids: dict[str, Any], base: Invoca
 
 
 def _call_read(command_id: str, resolved_ids: dict[str, Any], base: Invocation) -> Any:
+    return _call_read_with(command_id, resolved_ids, base)[0]
+
+
+def _call_read_with(
+    command_id: str, resolved_ids: dict[str, Any], base: Invocation
+) -> tuple[Any, Invocation]:
+    """The read's data, and the invocation it ran under (which a handler may annotate)."""
     from mammoth_cli.commands.registry import HANDLERS
 
     handler = HANDLERS.get(command_id)
@@ -262,7 +302,7 @@ def _call_read(command_id: str, resolved_ids: dict[str, Any], base: Invocation) 
         raise LookupError(f"no handler registered for read command {command_id!r}")
     read_invocation = _read_invocation(command_id, resolved_ids, base)
     read_data, _meta = handler(read_invocation)
-    return read_data
+    return read_data, read_invocation
 
 
 # ---------------------------------------------------------------------------
@@ -358,8 +398,12 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     view_ids: dict[str, Any] = {"view_id": view_id}
     if dataset_id is not None:
         view_ids["dataset_id"] = dataset_id
-    info = _call_read(_VIEW_GET_COMMAND, view_ids, base)
-    page = _read_data_once_run(view_ids, base)
+    page, read = _read_data_once_run(view_ids, base)
+    # The data read already fetched the view record; a second read (``view get`` also
+    # lists every dashboard) would only repeat it.
+    info = read.read_info
+    if info is None:
+        info = _call_read(_VIEW_GET_COMMAND, view_ids, base)
     rows = page.get("data") if isinstance(page, dict) else None
     sample = [_trim_row(row) for row in (rows or [])[:_SAMPLE_ROW_CAP]]
     state: dict[str, Any] = {
@@ -376,7 +420,38 @@ def _data_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any
     return state
 
 
-def _read_data_once_run(view_ids: dict[str, Any], base: Invocation) -> Any:
+#: A write the CLI skipped because it would change nothing (see ``view transform convert-type``).
+_NO_CHANGE_STATUS = "no_change"
+
+
+def _unchanged_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str, Any] | None:
+    """The state of a view no write touched: its columns and row count, from one read.
+
+    Nothing changed, so there are no new rows to sample and the data job is not run. ``None``
+    (read the usual way) when the view or its parent is unknown or the read fails.
+    """
+    from mammoth_cli.commands.view import _dataview_info
+    from mammoth_cli.runtime.session import open_service
+
+    view_id = _as_int(resolved_ids.get("view_id") or resolved_ids.get("dataview_id"))
+    dataset_id = _as_int(resolved_ids.get("dataset_id")) or _write_parent(base, view_id)
+    if view_id is None or dataset_id is None:
+        return None
+    with open_service(base) as (service, _auth):
+        info = _dataview_info(service, dataset_id, view_id, base.project)
+    if not info:
+        return None
+    return {
+        "kind": "data",
+        "read_by": f"{_VIEW_GET_COMMAND} {view_id}",
+        "columns": _columns(info),
+        "row_count": info.get("row_count"),
+        "sample": [],
+        "unchanged": True,
+    }
+
+
+def _read_data_once_run(view_ids: dict[str, Any], base: Invocation) -> tuple[Any, Invocation]:
     """The view's data, waiting (bounded) for a step that has not run yet.
 
     Read right after a write, the new step may have no data yet; the read
@@ -385,7 +460,7 @@ def _read_data_once_run(view_ids: dict[str, Any], base: Invocation) -> Any:
     """
     for attempt in range(_DATA_READ_ATTEMPTS):
         try:
-            return _call_read(_VIEW_DATA_COMMAND, view_ids, base)
+            return _call_read_with(_VIEW_DATA_COMMAND, view_ids, base)
         except CliError as exc:
             if _STEP_NOT_RUN_YET not in exc.message or attempt == _DATA_READ_ATTEMPTS - 1:
                 raise

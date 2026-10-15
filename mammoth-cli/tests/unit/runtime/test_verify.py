@@ -444,3 +444,15 @@ def test_a_running_automation_is_waited_on_as_a_job_not_by_reading_a_view() -> N
     assert verify["outcome"] == "pending"
     assert "read the view" not in verify["reason"]
     assert verify["next_command"] == "mammoth job wait 99"
+
+
+def test_a_step_the_cli_skipped_as_a_no_op_does_not_re_read_the_exports(
+    fake_service: FakeMammothService,
+) -> None:
+    """Nothing was written, so no export can have broken: no extra round trip (about 1 s)."""
+    invocation = Invocation(
+        command_id="view.transform.convert-type", output="json", extra_args=["3388"]
+    )
+    result = with_verify({"status": "no_change", "note": "already typed"}, invocation)
+    assert fake_service.calls == []
+    assert result["verify"]["verified"] is True

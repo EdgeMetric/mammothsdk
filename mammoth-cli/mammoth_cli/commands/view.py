@@ -69,6 +69,7 @@ from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
 from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.local_time import local_time
 from mammoth_cli.services.paging import paging_block
+from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.read_queries import ReadContext
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -418,10 +419,9 @@ def _read_meta_and_info(
             raise outcome
     parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
     info = apply_column_renames(view)
-    return (
-        _finish_meta(invocation, meta, view, dataset, dataset_id, view_id),
-        info if isinstance(info, dict) else {},
-    )
+    info = info if isinstance(info, dict) else {}
+    object.__setattr__(invocation, "read_info", info)
+    return _finish_meta(invocation, meta, view, dataset, dataset_id, view_id), info
 
 
 def _finish_meta(
@@ -5164,20 +5164,42 @@ def wait_for_view_row_count(
     execution error (see :func:`_pipeline_execution_error`), if any.
     """
     job_error = wait_for_followon_job(service, write_result)
-    pipeline_error = wait_for_pipeline_to_settle(
-        service,
-        dataset_id,
-        view_id,
-        settle_timeout,
-        already_ready=sdk_saw_pipeline_ready(write_result),
-    )
-    pipeline_error = job_error or pipeline_error
-    try:
-        info = service.call(
-            _DATAVIEW_GET_SYMBOL, dataset_id=dataset_id, dataview_id=view_id, project_id=project_id
+    already_ready = sdk_saw_pipeline_ready(write_result)
+    if already_ready:
+        # The pipeline state and the row count are independent reads: take both at once.
+        prefetch(
+            service,
+            [
+                (_PIPELINE_GET_SYMBOL, {"dataview_id": view_id, "dataset_id": dataset_id}),
+                (
+                    _DATAVIEW_GET_SYMBOL,
+                    {"dataset_id": dataset_id, "dataview_id": view_id, "project_id": project_id},
+                ),
+            ],
         )
-    except Exception:  # noqa: BLE001 -- best effort; the write already ran
-        return None, pipeline_error
+    try:
+        pipeline_error = wait_for_pipeline_to_settle(
+            service,
+            dataset_id,
+            view_id,
+            settle_timeout,
+            already_ready=already_ready,
+        )
+        pipeline_error = job_error or pipeline_error
+        try:
+            info = service.call(
+                _DATAVIEW_GET_SYMBOL,
+                dataset_id=dataset_id,
+                dataview_id=view_id,
+                project_id=project_id,
+            )
+        except Exception:  # noqa: BLE001 -- best effort; the write already ran
+            return None, pipeline_error
+    finally:
+        # Nothing read ahead outlives this settle.
+        memo = getattr(service, "memo", None)
+        if memo is not None:
+            memo.clear()
     rows_after = info.get("row_count") if isinstance(info, dict) else None
     return rows_after, pipeline_error
 

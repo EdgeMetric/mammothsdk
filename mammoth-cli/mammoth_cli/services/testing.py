@@ -19,6 +19,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_NOT_FOUND,
     CliError,
 )
+from mammoth_cli.services.read_memo import ReadMemo
 
 
 @dataclass
@@ -43,6 +44,8 @@ class FakeMammothService:
     job_result: Any = None
     #: ``--dry-run`` hook, honoured like the production service does.
     gate: Callable[..., None] | None = None
+    #: Reads made ahead of a write, as the real service keeps them.
+    memo: ReadMemo = field(default_factory=ReadMemo)
 
     def call_view(self, view_id: int, method: str, /, **kwargs: Any) -> Any:
         """Record a View-method call and return a programmed response.
@@ -57,6 +60,7 @@ class FakeMammothService:
             ``view_responses[(view_id, method)]`` if programmed (raised when it
             is an exception), else an empty mapping.
         """
+        self.memo.clear()
         if self.gate is not None:
             self.gate(method, dict(kwargs), view_id=view_id, dataset_id=kwargs.get("dataset_id"))
         self.view_call_log.append((view_id, method, dict(kwargs)))
@@ -80,6 +84,9 @@ class FakeMammothService:
             ``responses[sdk_symbol]`` if programmed (raised when it is an
             exception), else an empty mapping.
         """
+        found, answer = self.memo.lookup(sdk_symbol, kwargs)
+        if found:
+            return answer
         if self.gate is not None:
             self.gate(sdk_symbol, dict(kwargs))
         self.calls.append(sdk_symbol)

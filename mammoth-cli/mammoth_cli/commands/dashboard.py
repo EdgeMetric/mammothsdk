@@ -68,6 +68,7 @@ from mammoth_cli.services.dashboard_review import (
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
 from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.positionals import resolve_positionals
+from mammoth_cli.services.read_memo import forget, remember
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -863,6 +864,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
             data = _with_board_values(service, auth, positionals, data)
+        forget(service)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -966,7 +968,10 @@ def _with_deliverable_check(
             },
         }
     try:
-        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        canvas = service.call(CANVAS_GET, dashboard_id=dashboard_id)
+        # The board's numbers (next step of a build or edit) read the same canvas.
+        remember(service, CANVAS_GET, {"dashboard_id": dashboard_id}, canvas)
+        canvas_doc = _dump_model(canvas)
         warnings = _deliverable_warnings(invocation, service, auth, dashboard_id, canvas_doc)
     except Exception as exc:  # noqa: BLE001 -- advice must never fail the authoring step
         error = f"{type(exc).__name__}: {exc}"

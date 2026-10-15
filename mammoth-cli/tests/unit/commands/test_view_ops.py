@@ -1716,3 +1716,61 @@ def test_transform_convert_type_names_a_lossy_column_once(
         )
     )
     assert " ".join(data["warnings"]).count("b (TEXT to NUMERIC)") == 1
+
+
+# --- reads before the write are made once, and together ---------------------
+
+
+def _spy_call_many(fake_service: FakeMammothService) -> list[list[str]]:
+    batches: list[list[str]] = []
+    real = fake_service.call_many
+
+    def spy(calls: Any) -> Any:
+        batches.append([symbol for symbol, _ in calls])
+        return real(calls)
+
+    fake_service.call_many = spy  # type: ignore[method-assign]
+    return batches
+
+
+_EXPORTS_LIST = "mammoth.api.exports.ExportsAPI.list"
+
+
+def test_a_no_op_convert_type_reads_the_view_and_its_exports_together_once(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The decision comes from the view record already in hand: one round trip, no write."""
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    batches = _spy_call_many(fake_service)
+    doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert data["status"] == "no_change"
+    assert batches == [[_EXPORTS_LIST, _DATAVIEW_GET]]
+    assert fake_service.calls.count(_DATAVIEW_GET) == 1
+    assert fake_service.calls.count(_EXPORTS_LIST) == 1
+
+
+def test_a_transform_reads_the_view_once_before_it_writes(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The impact check, the row count before and the type check shared three reads of it."""
+    fake_service.responses[_DATAVIEW_GET] = {**_TYPED_METADATA, "row_count": 4}
+    reads_at_write: list[int] = []
+    real = fake_service.call_view
+
+    def at_write(view_id: int, method: str, /, **kwargs: Any) -> Any:
+        reads_at_write.append(fake_service.calls.count(_DATAVIEW_GET))
+        return real(view_id, method, **kwargs)
+
+    fake_service.call_view = at_write  # type: ignore[method-assign]
+    doc = _write(tmp_path, {"conversions": [{"column": "b", "to": "NUMERIC"}]})
+    view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert reads_at_write == [1]

@@ -92,6 +92,10 @@ class Invocation:
     #: Envelope metadata a read handler computed before its job ran out; the
     #: executor puts it on the ``--return-running`` envelope.
     read_meta: dict[str, Any] | None = field(default=None, repr=False, compare=False)
+    #: The dataview record a ``view data get`` read fetched (with column renames applied),
+    #: kept so a write's ``state`` block takes its columns and row count from the one read
+    #: instead of fetching the same view a second time.
+    read_info: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     standing_noop: bool = field(default=False, repr=False, compare=False)
     # Set on the read a write's ``state`` block issues: that read confirms the
     # write, so a command's extra evaluation (a board's numbers) is skipped.
