@@ -283,7 +283,7 @@ class TestFindNewDatasets:
     def test_a_dataset_a_teammate_added_meanwhile_is_not_reported(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
-            api.answer("GET", SELF, {"name": "Asha Rao"})
+            api.answer("GET", SELF, {"first_name": "Asha", "last_name": "Rao"})
             api.answer("GET", DATASET_21, {"dataset": {"id": 21, "created_by": "Lee Chen"}})
             found = call_tool("find_new_datasets", since=SINCE, **IDS)
 
@@ -292,7 +292,7 @@ class TestFindNewDatasets:
     def test_a_dataset_the_caller_added_is_reported(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("GET", RESOURCES, {"resources": [a_dataset("processed")]})
-            api.answer("GET", SELF, {"name": "Asha Rao"})
+            api.answer("GET", SELF, {"first_name": "Asha", "last_name": "Rao"})
             api.answer("GET", DATASET_21, {"dataset": {"id": 21, "created_by": "Asha Rao"}})
             api.answer("GET", VIEWS, {"dataviews": [{"id": 8161}]})
             found = call_tool("find_new_datasets", since=SINCE, **IDS)

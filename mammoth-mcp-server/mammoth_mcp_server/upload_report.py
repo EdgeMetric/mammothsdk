@@ -176,13 +176,19 @@ async def made_by_the_caller(workspace_id: int, project_id: int, items: list[Ite
     async with build_client(workspace_id, project_id) as client:
         try:
             me = await request_api(
-                client, "GET", ApiPaths.SELF, query={UploadFields.FIELDS: UploadFields.NAME}
+                client, "GET", ApiPaths.SELF, query={UploadFields.FIELDS: UploadFields.NAMES}
             )
         except ToolError:
             return items
         makers = [await _maker_of(client, workspace_id, project_id, item) for item in items]
-    mine = me.get(UploadFields.NAME)
+    mine = full_name(me)
     return [item for item, maker in zip(items, makers, strict=True) if maker in (None, mine)]
+
+
+def full_name(user: dict[str, JsonValue]) -> str:
+    """A user's name as Mammoth writes it in `created_by`: the first name, then the last if any."""
+    first, last = user.get(UploadFields.FIRST_NAME), user.get(UploadFields.LAST_NAME)
+    return f"{first} {last}" if last else str(first)
 
 
 async def _maker_of(

@@ -123,10 +123,12 @@ UPLOAD_MEDIA_TYPES = {
 class UploadFields:
     """The upload handoff: its record, its link, and what `check_upload` reports."""
 
-    # Who made a dataset, and the caller's own name, as `/self` reports it.
+    # Who made a dataset, by name, and the caller's name as `/self` reports it.
     CREATED_BY = "created_by"
     FIELDS = "fields"
-    NAME = "name"
+    FIRST_NAME = "first_name"
+    LAST_NAME = "last_name"
+    NAMES = "first_name,last_name"
     # The kind the ticket is stored under, and the query the page is opened with.
     TICKET = "upload"
     UPLOAD_ID = "upload_id"
