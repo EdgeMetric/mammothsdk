@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from pathlib import Path
 
 from mammoth_cli.errors.envelope import EXIT_CONFLICT, CliError
@@ -19,8 +20,14 @@ def refuse_existing_file(invocation: Invocation, path: str | Path) -> None:
     if invocation.overwrite or not (target.exists() or target.is_symlink()):
         return
     rerun = " ".join([*invocation.command_id.split("."), *invocation.extra_args])
+    # The same scope the user ran it with, or the re-run lands in another project or
+    # profile (a profile only the saved selection supplied is not pinned).
+    if invocation.project is not None:
+        rerun += f" --project {invocation.project}"
+    if invocation.profile and not invocation.profile_is_default:
+        rerun += f" --profile {shlex.quote(invocation.profile)}"
     if invocation.input_file and invocation.input_file != "-":
-        rerun += f" --input {invocation.input_file}"
+        rerun += f" --input {shlex.quote(invocation.input_file)}"
     raise CliError(
         code=CODE_FILE_EXISTS,
         message=f"{target} already exists; the command would replace it.",

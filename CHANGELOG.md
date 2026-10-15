@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.85)
+
+- `file_exists` (exit 6, the global `--overwrite` from 2.2.82): the suggested recovery command keeps the `--project` and `--profile` you ran the command with (a profile that only the saved selection supplied is not pinned), and quotes `--input`. Before, it dropped them, so the re-run could land in another project or profile.
+- `automation list` never shows a deleted or trashed automation. The server already leaves them out (a permanent delete removes the row; the trash filter hides `trashed_at` rows from every list), and the CLI now also drops any record that still carries `trashed_at` or a `deleted`/`trashed` status. This closes #31, the list half of the 2.2.82 delete check.
+- Tests only: the two `test_prompt_cancel` Ctrl-C cases no longer time out when the suite runs detached (a background job starts with SIGINT ignored, and the child inherited that); the child now restores the default.
+- `docs/llms-full.txt` and `docs/full-documentation.md` are regenerated from the current sources. The generator no longer prints Python's own `str` methods under every `str`-based enum.
+
 ### Changed (mammoth-cli 2.2.84)
 
 - The bundled agent skill's `machine-output` reference describes 2.2.82's output: exit code 3 (partial), `status: failed` / `pending`, `file_exists` (exit 6) and the 0-based `paging` block with ready-to-run `next_command` / `previous_command`.
