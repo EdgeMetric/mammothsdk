@@ -32,6 +32,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dataset delete` verifies with the one targeted read it already makes and returns `deleted: [id]`; it no longer lists the project's remaining datasets.
 - `dashboard v3 generate` / `chat edit` read the canvas once for the check and the board's numbers.
 
+### Changed (mammoth-io, speed)
+
+- `jobs.wait_for_job` / `wait_for_jobs` keep polling at `poll_interval` (2 s by default) for the first 60 seconds of a wait, not 10, before the gap rises to 5 s. A typical upload or transform job finishes in 15-30 s, and the 5 s gap added up to about 3 s to each one (an upload of 30 rows went from 25.0 s to 21.8 s in the CLI's measurement).
+
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
 - `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.

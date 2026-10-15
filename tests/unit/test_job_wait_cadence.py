@@ -63,8 +63,10 @@ def test_poll_delay_grows_and_is_capped() -> None:
 
 
 def test_poll_delay_rises_to_five_seconds_for_a_long_wait() -> None:
-    assert _poll_delay(30, 2, elapsed=9.0) == 2
-    assert _poll_delay(30, 2, elapsed=10.0) == 5
+    # A typical upload or transform job (15-30 s) keeps the 2 s cap.
+    assert _poll_delay(30, 2, elapsed=30.0) == 2
+    assert _poll_delay(30, 2, elapsed=59.0) == 2
+    assert _poll_delay(30, 2, elapsed=60.0) == 5
     assert _poll_delay(30, 8, elapsed=60.0) == 8
 
 

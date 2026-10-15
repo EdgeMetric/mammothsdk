@@ -8390,7 +8390,7 @@ Args:
     job_id: ID of the job to wait for
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-        10 seconds of waiting)
+        60 seconds of waiting)
         (default: ``client.job_poll_seconds``). The first check is
         immediate and the gap then grows from ``_POLL_FIRST_DELAY`` up
         to this bound, so a sub-second job is not held for a full
@@ -8416,7 +8416,7 @@ Args:
     job_ids: List of job IDs or comma-separated string
     timeout: Maximum time to wait in seconds (default: client.job_timeout)
     poll_interval: Upper bound on the time between polls in seconds (raised to 5 after
-        10 seconds of waiting)
+        60 seconds of waiting)
         (default: 2); gaps start short and grow to this bound.
 
 Returns:
