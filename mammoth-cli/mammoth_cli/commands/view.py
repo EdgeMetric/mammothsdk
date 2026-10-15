@@ -53,7 +53,11 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.session import (
+    DEFAULT_MUTATION_JOB_TIMEOUT,
+    open_service,
+    require_project,
+)
 from mammoth_cli.runtime.verify import export_wait_budget, read_export_ids, wait_export_run
 from mammoth_cli.services import conditional_format as cf_rules
 from mammoth_cli.services import read_queries, text_dates, view_analysis
@@ -4060,6 +4064,87 @@ def view_export_list(invocation: Invocation) -> HandlerResult:
         data, invocation, f"mammoth view export list {dataview_id}", kwargs, "exports", 50
     )
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+def view_export_runs(invocation: Invocation) -> HandlerResult:
+    """Get the run history of one export, newest first: when, rows, destination, errors."""
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
+    export_id = _require_int_positional_at(invocation, 1, "export id")
+    dataset_id = _int_positional_at(invocation, 2, "dataset id")
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "dataview_id": dataview_id,
+        "export_id": export_id,
+        "project_id": project_id,
+    }
+    _forward_optional(document, kwargs, ("limit", "dataset_id"))
+    if dataset_id is not None:
+        kwargs["dataset_id"] = dataset_id
+    with open_service(invocation) as (service, auth):
+        if kwargs.get("dataset_id") is None:
+            # A remembered parent spares the SDK its scan of every dataset.
+            remembered = parents.lookup(_profile_name(invocation), auth.workspace_id, dataview_id)
+            if remembered is not None:
+                kwargs["dataset_id"] = remembered
+        data = service.call(_symbol(invocation), **kwargs)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_export_rest_fill(invocation: Invocation) -> HandlerResult:
+    """Propose REST API export settings from an API docs page. Always requires ``--yes``.
+
+    Mammoth's server fetches ``docs_url`` and reads it to propose the form values (never
+    credentials). Nothing is configured or sent: the result is a suggestion to review.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
+    document = invocation.load_input()
+    docs_url = _require_field(document, "docs_url")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"have Mammoth read {docs_url} to propose REST settings for view {dataview_id}",
+    )
+    kwargs: dict[str, Any] = {
+        "dataview_id": dataview_id,
+        "docs_url": docs_url,
+        "project_id": project_id,
+        "wait": True,
+        "timeout": invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT,
+    }
+    _forward_optional(document or {}, kwargs, ("notes", "dataset_id"))
+    explicit_dataset = _int_positional_at(invocation, 1, "dataset id")
+    if explicit_dataset is not None:
+        kwargs["dataset_id"] = explicit_dataset
+    with open_service(invocation) as (service, auth):
+        _require_exact_parent(service, invocation, dataview_id, kwargs)
+        job = service.call(_symbol(invocation), **kwargs)
+    data = dict(job) if isinstance(job, dict) else {"job": job}
+    response = data.get("response")
+    if isinstance(response, dict) and response.get("suggestion") is not None:
+        data["suggestion"] = response["suggestion"]
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_summary(invocation: Invocation) -> HandlerResult:
+    """What a view has had done to it and where it goes: steps, actions, exports, dashboards."""
+    project_id = require_project(invocation)
+    view_id = _require_int_positional_at(invocation, 0, "view id")
+    if view_id <= 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT, message="view id must be positive.", exit_status=EXIT_USAGE
+        )
+    document = invocation.load_input() or {}
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=view_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
 
 
 def view_export_publish_db(invocation: Invocation) -> HandlerResult:

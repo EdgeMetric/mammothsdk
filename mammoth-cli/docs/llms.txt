@@ -37,12 +37,12 @@
 - `capabilities` (1 commands)
 - `capability` (3 commands)
 - `client-app` (5 commands)
-- `collection` (16 commands)
+- `collection` (21 commands)
 - `completion` (2 commands)
 - `config` (4 commands)
 - `connector` (23 commands)
 - `context` (4 commands)
-- `dashboard` (144 commands)
+- `dashboard` (157 commands)
 - `data-app` (12 commands)
 - `dataset` (27 commands)
 - `doctor` (1 commands)
@@ -69,10 +69,10 @@
 - `upgrade` (1 commands)
 - `user` (8 commands)
 - `version` (1 commands)
-- `view` (138 commands)
+- `view` (141 commands)
 - `webhook` (7 commands)
-- `workflow` (20 commands)
-- `workspace` (31 commands)
+- `workflow` (23 commands)
+- `workspace` (33 commands)
 
 ## Source
 

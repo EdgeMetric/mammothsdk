@@ -213,6 +213,66 @@ class PipelineExportsModificationResp(BaseModel):
     )
 
 
+class ExportRunStatus(str, Enum):
+    """Outcome of one run of a saved export."""
+
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+class ExportRunTrigger(str, Enum):
+    """What started a run of a saved export."""
+
+    MANUAL = "manual"
+    PIPELINE = "pipeline"
+    SCHEDULE = "schedule"
+
+
+class ExportRunDestination(BaseModel):
+    """Where one export run sent its rows."""
+
+    handler_type: str | None = Field(None, description="Export handler, such as S3 or REST_API")
+    target: str | None = Field(None, description="Human-readable destination")
+
+
+class ExportRun(BaseModel):
+    """One run of a saved pipeline export."""
+
+    id: int = Field(..., description="Run ID")
+    started_at: datetime | None = Field(None, description="When the run started")
+    finished_at: datetime | None = Field(None, description="When the run finished")
+    duration_seconds: float | None = Field(None, description="How long the run took")
+    status: ExportRunStatus = Field(..., description="success or failed")
+    rows_exported: int | None = Field(None, description="Rows the run sent")
+    destination: ExportRunDestination | None = Field(None, description="Where the rows went")
+    error_message: str | None = Field(None, description="Why the run failed, if it did")
+    triggered_by: ExportRunTrigger = Field(..., description="manual, pipeline or schedule")
+
+
+class ExportRuns(BaseModel):
+    """Run history of one saved export, newest first."""
+
+    export_id: int = Field(..., description="ID of the export")
+    runs: list[ExportRun] = Field(..., description="Recent runs, newest first")
+
+
+class ExportHostPolicy(BaseModel):
+    """Which hosts custom export destinations (REST API, webhook) may send to."""
+
+    restricted: bool = Field(
+        ..., description="True: only the listed hosts are allowed; False: any host is"
+    )
+    hosts: list[str] = Field(default_factory=list, description="Allowed hosts (at most 100)")
+
+
+class ExportHostPolicyRead(ExportHostPolicy):
+    """The host policy as read back, with the hosts exports already use."""
+
+    in_use: list[str] = Field(
+        default_factory=list, description="Hosts saved exports in the workspace already send to"
+    )
+
+
 # What an export-creation call returns: either the saved trigger record
 # (synchronous handlers) or a tracking job (asynchronous handlers).
 ExportResult = PipelineExportsModificationResp | JobResponse

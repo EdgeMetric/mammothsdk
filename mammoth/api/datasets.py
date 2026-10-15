@@ -156,8 +156,8 @@ class DatasetsAPI:
 
         Returns:
             Dict with ``datasets``, newest first: ``{id, name, rows, columns}``, each column
-            ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100). ``rows`` and ``distinct`` are
-            ``None`` when the platform has not stored them.
+            ``{name, type, blank_count, blank_pct, distinct}`` (``blank_pct`` is 0-100).
+            ``rows`` and ``distinct`` are ``None`` when the platform has not stored them.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)

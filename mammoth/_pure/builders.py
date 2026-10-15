@@ -1050,8 +1050,8 @@ def build_branch_out_params(
     Branch-out copies the view's data into a Mammoth dataset via the same
     internal-dataset export handler as crosstab, but with NO transform.
 
-    ``target_ds_id`` None creates a new dataset named *dataset_name* (``DEFAULT_BRANCH_OUT_DATASET_NAME`` when
-    None); an int
+    ``target_ds_id`` None creates a new dataset named *dataset_name*
+    (``DEFAULT_BRANCH_OUT_DATASET_NAME`` when None); an int
     replaces/appends into that existing dataset (per *save_as_mode*).
     ``target_project_id`` sends the dataset into another project (the web
     app's cross-project branch-out): the backend then requires ``USER_ID``

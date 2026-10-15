@@ -140,6 +140,19 @@ def _require_int_positional_at(invocation: Invocation, index: int, name: str) ->
     return value
 
 
+def _require_positional_str(invocation: Invocation, name: str, label: str) -> str:
+    """Return the named string positional, or raise a usage error."""
+    value = invocation.positional(name)
+    if value is None or not str(value).strip():
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"This command requires a {label} argument.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass the {label} as a positional argument.",
+        )
+    return str(value)
+
+
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
@@ -441,12 +454,13 @@ def _save_is_running(workflow: Any) -> bool:
     return run is not None and run.get("status") == "running"
 
 
-def _save_failure(workflow: Any) -> CliError | None:
+def _save_failure(workflow: Any, what: str = "save") -> CliError | None:
     """The error for a Save that ended without building every change, else None.
 
     The route answers 202 and builds in the background, so a finished run is the
     only proof the changes were saved: ``done`` means all of them were, anything
-    else (``partial``) left some unbuilt, each with the reason it gives.
+    else (``partial``) left some unbuilt, each with the reason it gives. ``what`` names
+    the run in the message: ``save``, or ``undo`` for the run an undo starts.
     """
     run = _save_run(workflow)
     if run is None or run.get("status") in ("running", "done"):
@@ -457,16 +471,40 @@ def _save_failure(workflow: Any) -> CliError | None:
         if isinstance(step, dict) and step.get("error")
     ]
     reasons += [str(why) for why in (run.get("needs_setup") or {}).values()]
-    message = f"The workflow save did not build every change (status: {run.get('status')})."
+    outcome = "build every change" if what == "save" else "put back every change"
+    message = f"The workflow {what} did not {outcome} (status: {run.get('status')})."
     if reasons:
         message += " " + "; ".join(reasons)
     return CliError(
         code=CODE_JOB_FAILED,
         message=message,
         exit_status=EXIT_API,
-        hint="Fix what the message names, then run 'workflow save' again.",
+        hint=(
+            "Fix what the message names, then run 'workflow save' again."
+            if what == "save"
+            else "Fix what the message names, then read the workflow with 'workflow get'."
+        ),
         details={"save_run": run},
     )
+
+
+def _await_save_run(
+    service: Any, data: Any, workflow_id: int, project_id: int, budget: float, what: str
+) -> Any:
+    """Poll the workflow until its Save run is no longer running; return the final workflow."""
+    deadline = time.monotonic() + budget
+    while _save_is_running(data):
+        if time.monotonic() >= deadline:
+            raise CliError(
+                code="timeout",
+                message=f"The workflow {what} was still running after {budget:.0f} seconds.",
+                exit_status=EXIT_RETRYABLE,
+                hint=f"Check it with 'mammoth workflow get {workflow_id}'.",
+                retryable=True,
+            )
+        time.sleep(_SAVE_POLL_SECONDS)
+        data = service.call(_GET_SYMBOL, workflow_id=workflow_id, project_id=project_id)
+    return data
 
 
 def workflow_save(invocation: Invocation) -> HandlerResult:
@@ -482,20 +520,92 @@ def workflow_save(invocation: Invocation) -> HandlerResult:
     budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-        deadline = time.monotonic() + budget
-        while _save_is_running(data):
-            if time.monotonic() >= deadline:
-                raise CliError(
-                    code="timeout",
-                    message=f"The workflow save was still running after {budget:.0f} seconds.",
-                    exit_status=EXIT_RETRYABLE,
-                    hint=f"Check it with 'mammoth workflow get {workflow_id}'.",
-                    retryable=True,
-                )
-            time.sleep(_SAVE_POLL_SECONDS)
-            data = service.call(_GET_SYMBOL, workflow_id=workflow_id, project_id=project_id)
+        data = _await_save_run(service, data, workflow_id, project_id, budget, "save")
     if (failure := _save_failure(data)) is not None:
         raise failure
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_save_undo(invocation: Invocation) -> HandlerResult:
+    """Undo a workflow's latest finished Save and wait for the undo run. Prompt or ``--yes``.
+
+    The workflow id and the Save's run id are positional. The undo removes what that Save
+    built (datasets, views, steps), so it confirms first.
+    """
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    run_id = _require_positional_str(invocation, "run_id", "Save run id")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"undo save {run_id} of workflow {workflow_id}",
+    )
+    budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation), workflow_id=workflow_id, run_id=run_id, project_id=project_id
+        )
+        data = _await_save_run(service, data, workflow_id, project_id, budget, "undo")
+    if (failure := _save_failure(data, "undo")) is not None:
+        raise failure
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_save_cancel_step(invocation: Invocation) -> HandlerResult:
+    """Cancel one step of a workflow's running Save. Workflow id, run id and step are positional.
+
+    The step ends cancelled and the steps that need it are skipped. Best effort: a job the
+    step already started may still finish. The Save keeps running its other steps; read
+    ``workflow get`` for the outcome.
+    """
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    run_id = _require_positional_str(invocation, "run_id", "Save run id")
+    step = _require_int_positional_at(invocation, 2, "step")
+    if step is None or step < 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The step argument must be 0 or more, got {step}.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            workflow_id=workflow_id,
+            run_id=run_id,
+            step=step,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_duplicate(invocation: Invocation) -> HandlerResult:
+    """Duplicate a workflow into a new workflow of the same project and wait for the copies.
+
+    The new ``name`` and the ``dataset_ids`` to copy come from ``--input``; the source
+    workflow id is an optional positional. The copies hold the datasets' rows, views and
+    steps; automations and outside exports are not copied.
+    """
+    project_id = require_project(invocation)
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "name": _require_field(document, "name"),
+        "dataset_ids": _require_field(document, "dataset_ids"),
+        "project_id": project_id,
+        "wait": True,
+        "timeout": invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT,
+    }
+    source = _int_positional_at(invocation, 0, "workflow id")
+    if source is None:
+        source = document.get("source_workflow_id")
+    if source is not None:
+        kwargs["source_workflow_id"] = source
+    with open_service(invocation) as (service, auth):
+        job = service.call(_symbol(invocation), **kwargs)
+    response = job.get("response") if isinstance(job, dict) else None
+    data = dict(job) if isinstance(job, dict) else {"job": job}
+    if isinstance(response, dict) and response.get("workflow_id") is not None:
+        data["workflow_id"] = response["workflow_id"]
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

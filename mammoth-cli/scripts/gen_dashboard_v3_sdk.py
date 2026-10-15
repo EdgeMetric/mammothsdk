@@ -17,7 +17,13 @@ SNAPSHOT = ROOT / "mammoth-cli/spec/openapi/openapi.json"
 OUTPUT = ROOT / "mammoth/api/dashboard_generated.py"
 MODELS_OUTPUT = ROOT / "mammoth/models/dashboard_generated.py"
 METHODS = {"get", "put", "post", "delete", "patch"}
-TAGS = {"Dashboard", "Dashboard v3", "Dashboard v3 Q&A", "Dashboard v3 Surfaces"}
+TAGS = {
+    "Dashboard",
+    "Dashboard v3",
+    "Dashboard v3 Q&A",
+    "Dashboard v3 Surfaces",
+    "Dashboards v3 · live charts",
+}
 
 # First docstring line (and so the CLI help) for commands whose OpenAPI summary
 # does not say what the command does. Keyed by command id.

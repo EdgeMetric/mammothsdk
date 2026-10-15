@@ -62,6 +62,56 @@ Result: `CollectionDeleteResult`; mutation `destructive`, confirmation `prompt_o
 
 Status on release: untried; no live run recorded.
 
+### `collection.email-updates.get`
+
+Run: `mammoth collection email-updates get`. Exact input fields: `mammoth schema get collection.email-updates.get`.
+
+Example: `mammoth collection email-updates get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `CollectionEmailUpdatesGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `collection.email-updates.me.get`
+
+Run: `mammoth collection email-updates me get`. Exact input fields: `mammoth schema get collection.email-updates.me.get`.
+
+Example: `mammoth collection email-updates me get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `CollectionEmailUpdatesMeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `collection.email-updates.me.set`
+
+Run: `mammoth collection email-updates me set`. Exact input fields: `mammoth schema get collection.email-updates.me.set`.
+
+Example: `mammoth collection email-updates me set 123 --input '{"subscribed": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `CollectionEmailUpdatesMeSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `collection.email-updates.set`
+
+Run: `mammoth collection email-updates set`. Exact input fields: `mammoth schema get collection.email-updates.set`.
+
+Example: `mammoth collection email-updates set 123 --input '{"enabled": true, "timezone": "UTC"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `CollectionEmailUpdatesSetResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `collection.email-updates.test`
+
+Run: `mammoth collection email-updates test`. Exact input fields: `mammoth schema get collection.email-updates.test`.
+
+Example: `mammoth collection email-updates test 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `CollectionEmailUpdatesTestResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `collection.files.upload`
 
 Run: `mammoth collection files upload`. Exact input fields: `mammoth schema get collection.files.upload`.

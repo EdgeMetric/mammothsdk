@@ -488,6 +488,58 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Optional parent dataset ID; avoids parent discovery when supplied.",
         ),
     ),
+    "workflow.save-cancel-step": (
+        PositionalSpec(name="workflow_id", type=int, required=True, help="ID of the workflow."),
+        PositionalSpec(
+            name="run_id",
+            type=str,
+            required=True,
+            help="ID of the Save run (from 'workflow save' or 'workflow get').",
+        ),
+        PositionalSpec(
+            name="step", type=int, required=True, help="Number of the step to cancel (0 or more)."
+        ),
+    ),
+    "workflow.duplicate": (
+        PositionalSpec(
+            name="source_workflow_id",
+            type=int,
+            required=False,
+            falls_back_to_field="source_workflow_id",
+            help="ID of the workflow to copy; or pass 'source_workflow_id' in --input.",
+        ),
+    ),
+    "view.export.runs": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(name="export_id", type=int, required=True, help="ID of the export."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; avoids parent discovery when supplied.",
+        ),
+    ),
+    "view.export.rest-fill": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Exact parent dataset ID; or pass it via the 'dataset_id' input field.",
+        ),
+    ),
+    "view.summary": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
     "view.pipeline.items-all": (
         PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
         PositionalSpec(
