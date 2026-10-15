@@ -15,6 +15,7 @@ Like `upload_app`, this module imports nothing from `server`.
 """
 
 import json
+import re
 from string import Template
 
 from mcp.server.mcpserver.exceptions import ToolError
@@ -28,7 +29,10 @@ NOT_A_DATABASE = (
     "Only a database connection can be read from here. For this source, use"
     " `connect_source`: the user picks the data in Mammoth."
 )
-NOT_A_READ = "Send one query that reads: it must start with SELECT or WITH."
+NOT_A_READ = (
+    "Send one query that only reads: it must start with SELECT or WITH, be one"
+    " statement, and not insert, update, delete, create or drop anything."
+)
 
 # `$fields` is filled by `render_app`; the script uses no `$` of its own.
 DATASET_APP = Template("""\
@@ -289,11 +293,18 @@ async def preview_query(
 
 
 def check_query(connector_key: str, query: str) -> None:
-    """Refuse a source that is not a database, and a query that does not start as a read."""
+    """Refuse a source that is not a database, and a query that may write.
+
+    A query must start with SELECT or WITH, be one statement, and name no
+    word that writes, such as DELETE in a CTE or SELECT ... INTO.
+    """
     if connector_key not in ConnectionFields.DATABASES:
         raise ToolError(NOT_A_DATABASE)
-    words = query.strip().split(maxsplit=1)
-    if not words or words[0].lower() not in ConnectionFields.READING:
+    bare = re.sub(ConnectionFields.QUOTED, " ", query, flags=re.DOTALL).strip().rstrip(";")
+    words = re.findall(r"\w+", bare.lower())
+    if not words or words[0] not in ConnectionFields.READING:
+        raise ToolError(NOT_A_READ)
+    if ";" in bare or ConnectionFields.WRITES.intersection(words):
         raise ToolError(NOT_A_READ)
 
 

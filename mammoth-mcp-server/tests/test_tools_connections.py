@@ -12,6 +12,7 @@ import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.consts import ConnectionFields
+from mammoth_mcp_server.dataset_app import check_query
 from mammoth_mcp_server.server import mcp_server, register_tools
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
@@ -81,6 +82,40 @@ class TestPreviewQuery:
 
         assert "SELECT" in str(refused.value)
         assert not api.requests
+
+
+class TestTheReadCheck:
+    """A query that starts with SELECT or WITH can still write, so the check looks past the start."""
+
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "SELECT 1; DROP TABLE orders",
+            "WITH d AS (DELETE FROM orders RETURNING *) SELECT * FROM d",
+            "SELECT * INTO orders_copy FROM orders",
+            "with u as (update orders set paid = true returning id) select * from u",
+            "SELECT 1 /* a note */; insert into audit values (1)",
+        ],
+    )
+    def test_a_query_that_writes_is_refused(self, query: str) -> None:
+        with pytest.raises(ToolError) as refused:
+            check_query("postgres", query)
+
+        assert "SELECT" in str(refused.value)
+
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "select * from sales;",
+            "SELECT 'delete me' AS note, \"update\" FROM sales",
+            "SELECT region -- drop the old ones later\nFROM sales",
+            "SELECT replace(region, 'a', 'b'), created_at, updated_by FROM sales",
+            "select `insert` from sales",
+            "select [delete] from sales",
+        ],
+    )
+    def test_a_read_that_only_names_a_write_word_passes(self, query: str) -> None:
+        check_query("postgres", query)
 
 
 def add_dataset(**arguments: Any) -> dict[str, Any]:

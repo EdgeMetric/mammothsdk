@@ -102,6 +102,10 @@ async def find_new_datasets(workspace_id: int, project_id: int, since: str) -> d
     are done. `waiting` means nothing came in before the wait ran out: call
     again if they are still at it; after a couple of rounds say you are waiting.
 
+    Mammoth does not say who added a dataset, so this lists every dataset the
+    project gained, a teammate's too. When one is not what the user expected,
+    ask them before you treat it as theirs.
+
     Args:
         workspace_id: Which workspace the project is in.
         project_id: Which project.

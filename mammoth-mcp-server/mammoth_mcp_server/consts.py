@@ -540,8 +540,17 @@ class ConnectionFields:
     DATABASES = frozenset(
         {"postgres", "mysql", "mssql", "redshift", "snowflake", "databricks", "hana", "bigquery"}
     )
-    # A query that reads, and only reads, starts with one of these.
+    # A query that reads starts with one of these, is one statement, and has
+    # none of the WRITES words outside its strings, comments and quoted names.
+    # The check is a guard, not a parser: the connection's database account
+    # still decides what a query may change.
     READING = ("select", "with")
+    WRITES = frozenset({
+        "insert", "update", "delete", "merge", "into", "drop", "create", "alter",
+        "truncate", "grant", "revoke", "call", "exec", "execute",
+    })  # fmt: skip
+    # Strings, comments and quoted names, which may hold any word.
+    QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`|\[[^\]]*\]|--[^\n]*|/\*.*?\*/"
     SAMPLE = "data_sample"
     SCHEMA = "dataschema"
     ROWS = "rows"
