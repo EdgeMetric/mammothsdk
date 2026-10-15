@@ -1457,7 +1457,24 @@ def dataset_rename(invocation: Invocation) -> HandlerResult:
     if document.get("unique") is not False:
         kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        try:
+            data = service.call(_symbol(invocation), **kwargs)
+        except CliError as error:
+            if "4DSET008" not in error.message:
+                raise
+            # The backend refuses a rename to the current name; that is the state asked for.
+            current = service.call(
+                "mammoth.api.datasets.DatasetsAPI.get", dataset_id=dataset_id, project_id=project_id
+            )
+            record = current.get("dataset", current) if isinstance(current, dict) else {}
+            if not isinstance(record, dict) or record.get("name") != name:
+                raise
+            data = {
+                "dataset_id": dataset_id,
+                "name": name,
+                "changed": False,
+                "note": "The dataset already has this name; nothing was changed.",
+            }
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

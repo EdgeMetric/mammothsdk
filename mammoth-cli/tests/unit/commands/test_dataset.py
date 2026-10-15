@@ -825,6 +825,39 @@ def test_rename_forwards_name(fake_service: FakeMammothService, tmp_path: Path) 
     ]
 
 
+def test_rename_to_the_name_it_already_has_is_a_no_op_success(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_RENAME] = CliError(
+        code="api_error",
+        message="Dataset name is the same as the current name [4DSET008]",
+        exit_status=1,
+    )
+    fake_service.responses[_GET] = {"dataset": {"id": 7, "name": "Same"}}
+    input_file = _write(tmp_path, {"name": "Same"})
+    data, _ = dataset_cmd.dataset_rename(
+        _inv("dataset.rename", project=180, extra_args=["7"], input_file=input_file)
+    )
+    assert data["name"] == "Same"
+    assert data["changed"] is False
+
+
+def test_rename_error_that_is_not_the_same_name_still_raises(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_RENAME] = CliError(
+        code="api_error",
+        message="Dataset name is the same as the current name [4DSET008]",
+        exit_status=1,
+    )
+    fake_service.responses[_GET] = {"dataset": {"id": 7, "name": "Other"}}
+    input_file = _write(tmp_path, {"name": "Same"})
+    with pytest.raises(CliError):
+        dataset_cmd.dataset_rename(
+            _inv("dataset.rename", project=180, extra_args=["7"], input_file=input_file)
+        )
+
+
 # -- trash / restore --------------------------------------------------------
 
 
@@ -910,7 +943,9 @@ def _gone(code: str = "api_error") -> CliError:
     )
 
 
-def _bulk_delete_fake(fake_service: FakeMammothService, *, exists: set[int], kept: set[int]) -> None:
+def _bulk_delete_fake(
+    fake_service: FakeMammothService, *, exists: set[int], kept: set[int]
+) -> None:
     """Program the get/delete reads: ``exists`` are present before, ``kept`` survive the delete."""
     fake_service.responses[_GET] = lambda log: _bulk_get(log, exists, kept)
 
