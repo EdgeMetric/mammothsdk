@@ -1700,3 +1700,19 @@ def test_get_survives_a_failed_dashboards_read_and_raises_a_failed_view_read(
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
     assert excinfo.value.code == "not_found"
+
+
+def test_transform_convert_type_names_a_lossy_column_once(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(
+        tmp_path,
+        {"conversions": [{"column": "b", "to": "NUMERIC"}, {"column": "b", "to": "NUMERIC"}]},
+    )
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    assert " ".join(data["warnings"]).count("b (TEXT to NUMERIC)") == 1

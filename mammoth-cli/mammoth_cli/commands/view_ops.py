@@ -1599,8 +1599,9 @@ def view_transform_convert_type(invocation: Invocation) -> HandlerResult:
         for entry in conversions:
             name = entry.get("column") if isinstance(entry, dict) else None
             target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""
-            if current.get(name) == "TEXT" and target in ("NUMERIC", "DATE"):
-                lossy.append(f"{name} (TEXT to {target})")
+            note = f"{name} (TEXT to {target})"
+            if current.get(name) == "TEXT" and target in ("NUMERIC", "DATE") and note not in lossy:
+                lossy.append(note)
         for entry in conversions:
             name = entry.get("column") if isinstance(entry, dict) else None
             target = str(entry.get("to") or "").upper() if isinstance(entry, dict) else ""

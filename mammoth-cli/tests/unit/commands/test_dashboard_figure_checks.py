@@ -320,3 +320,15 @@ def test_import_workbook_with_synthetic_rows_is_partial_not_settled(
     assert "synthetic" in warning and "8" in warning and "4000" in warning
     assert any("file upload" in step for step in data["next_steps"])
     assert data["verify"]["warnings"] == data["warnings"]
+
+
+def test_packaged_row_count_counts_records_not_lines(tmp_path: Path) -> None:
+    """A quoted value with a line break is one row, not two."""
+    import zipfile
+
+    from mammoth_cli.commands.dashboard import _packaged_row_count
+
+    book = tmp_path / "q.twbx"
+    with zipfile.ZipFile(book, "w") as bundle:
+        bundle.writestr("Data/data.csv", 'day,note\n2026-10-01,"two\nlines"\n2026-10-02,one\n')
+    assert _packaged_row_count(str(book)) == 2
