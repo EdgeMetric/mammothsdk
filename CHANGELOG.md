@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (mammoth-cli 2.2.84)
+
+- The bundled agent skill's `machine-output` reference describes 2.2.82's output: exit code 3 (partial), `status: failed` / `pending`, `file_exists` (exit 6) and the 0-based `paging` block with ready-to-run `next_command` / `previous_command`.
+- Requires mammoth-io 0.8.43, which reports its own version correctly.
+
 ### Fixed (mammoth-io 0.8.43)
 
 - `mammoth.__version__` matches the published version again: mammoth-io 0.8.40 to 0.8.42 reported `0.8.39`.
