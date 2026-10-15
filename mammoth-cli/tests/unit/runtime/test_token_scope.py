@@ -76,3 +76,27 @@ def test_403_hint_is_left_alone_when_the_lookup_fails() -> None:
 
     original = _forbidden().hint
     assert qualify_pin_hint(_forbidden(), broken).hint == original
+
+
+def test_403_hint_names_the_pinned_project_by_name_when_it_is_known() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_forbidden(), lambda: 77, lambda pin: "Sales 2026")
+    assert "limited to project Sales 2026 (77)" in error.hint
+    assert "--project 77" in error.hint
+
+
+def test_403_hint_falls_back_to_the_id_when_the_name_lookup_fails() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    def broken(pin: int) -> str | None:
+        raise RuntimeError("offline")
+
+    error = qualify_pin_hint(_forbidden(), lambda: 77, broken)
+    assert "limited to project 77:" in error.hint
+
+
+def test_refusing_a_pinned_token_names_the_project() -> None:
+    with pytest.raises(CliError) as refused:
+        refuse_pinned_project(4404, "create a project", project_name="Sales 2026")
+    assert "project Sales 2026 (4404)" in refused.value.message

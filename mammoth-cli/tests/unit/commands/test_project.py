@@ -66,7 +66,8 @@ def test_project_get_of_another_project_is_refused_locally(
     assert caught.value.code == "authorization_required"
     assert caught.value.authorization_required is True
     assert "--project 7" in (caught.value.hint or "")
-    assert _GET_SYMBOL not in fake_service.calls
+    # Project 8 is never read; only the pinned project 7 is looked up, for its name.
+    assert [kw for sym, kw in fake_service.call_log if sym == _GET_SYMBOL] == [{"project": 7}]
 
 
 def test_project_get_of_the_pinned_project_goes_through(

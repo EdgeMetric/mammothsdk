@@ -34,7 +34,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.output.policy import MACHINE_OUTPUTS
-from mammoth_cli.runtime import executor
+from mammoth_cli.runtime import executor, labels
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
@@ -226,7 +226,14 @@ def _prompt_blockers(invocation: Invocation) -> list[str]:
     return reasons
 
 
-def _verify_login(invocation: Invocation, *, base_url: str, api_token: str) -> int:
+def _verify_login(
+    invocation: Invocation,
+    *,
+    base_url: str,
+    api_token: str,
+    names: dict[str, Any] | None = None,
+    project_id: int | None = None,
+) -> int:
     """Learn the token's workspace from the server and run the connection check.
 
     Nothing is saved here; a failure leaves existing profile state unchanged.
@@ -253,6 +260,11 @@ def _verify_login(invocation: Invocation, *, base_url: str, api_token: str) -> i
         )
         try:
             service.check_connection()
+            if names is not None:
+                # Best effort: a name is a courtesy and never fails the login.
+                names["workspace"] = labels.workspace_name(service, workspace_id)
+                if project_id is not None:
+                    names["project"] = labels.project_name(service, project_id)
         finally:
             service.close()
     except CliError as exc:
@@ -373,6 +385,26 @@ def _iso(epoch: int) -> str:
     return datetime.fromtimestamp(epoch, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+#: What ``expires_at`` is. Users read it as the login expiring; it is only the short-lived
+#: access token, which the CLI renews from the refresh token on its own.
+EXPIRY_NOTE = (
+    "expires_at is when the short-lived access token ends, not when the login does: "
+    "the token refreshes automatically. Only a revoked or expired refresh token needs "
+    "a new 'mammoth auth login'."
+)
+
+
+def _expiry_fields(epoch: int) -> dict[str, Any]:
+    """``expires_at`` kept for compatibility, with the clearer names beside it."""
+    stamp = _iso(epoch)
+    return {
+        "expires_at": stamp,
+        "access_token_expires_at": stamp,
+        "refreshes_automatically": True,
+        "expires_at_note": EXPIRY_NOTE,
+    }
+
+
 def _login_server_prefix(profile_name: str, server_prefix: str | None) -> str | None:
     """An explicit --server-prefix wins, else the profile's stored prefix, else None."""
     profiles.validate_profile_name(profile_name)
@@ -425,14 +457,21 @@ def _run_oauth_login(
             say=say,
             profile=profile_name,
         )
-    # The server-verified workspace wins over the grant's own workspace_id.
-    workspace_id = _verify_login(invocation, base_url=base_url, api_token=session.access)
-
     existing = profiles.get_profile(profile_name)
+    project_id: int | None
     if session.project_id is not None:
         project_id = session.project_id
     else:
         project_id = existing.project_id if existing is not None else None
+    # The server-verified workspace wins over the grant's own workspace_id.
+    names: dict[str, Any] = {}
+    workspace_id = _verify_login(
+        invocation,
+        base_url=base_url,
+        api_token=session.access,
+        names=names,
+        project_id=project_id,
+    )
     profiles.save_profile(
         profiles.ProfileRecord(
             name=profile_name,
@@ -449,19 +488,26 @@ def _run_oauth_login(
         oauth=session,
     )
     _warn_signed_out_profiles(profile_name, base_url, session)
+    where = labels.label("workspace", workspace_id, names.get("workspace"))
+    if project_id is not None:
+        where += ", " + labels.label("project", project_id, names.get("project"))
     typer.echo(
-        f"Signed in to workspace {workspace_id}. Credential stored in {storage_used} "
+        f"Signed in to {where}. Credential stored in {storage_used} "
         f'(profile "{profile_name}"). The token refreshes automatically.',
         err=True,
     )
-    data = {
+    data: dict[str, Any] = {
         "profile": profile_name,
         "workspace_id": workspace_id,
         "base_url": base_url,
         "storage": storage_used,
         "credential": "oauth",
-        "expires_at": _iso(session.expires_at),
+        **_expiry_fields(session.expires_at),
     }
+    if names.get("workspace"):
+        data["workspace_name"] = names["workspace"]
+    if project_id is not None and names.get("project"):
+        data["project_name"] = names["project"]
     return data, {"profile": profile_name, "workspace_id": workspace_id}
 
 
@@ -688,7 +734,7 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         "connected": None,
     }
     if credential is not None and credential.oauth is not None:
-        data["expires_at"] = _iso(credential.oauth.expires_at)
+        data.update(_expiry_fields(credential.oauth.expires_at))
         data["client_id"] = credential.oauth.client_id
     if credential is not None and credential.kind == "key_secret":
         data["recommendation"] = (
@@ -703,6 +749,16 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
             service.check_connection()
             data["connected"] = True
             data["token_project"] = pinned_project(service)
+            ws_name = labels.workspace_name(service, workspace_id) if workspace_id else None
+            if ws_name:
+                data["workspace_name"] = ws_name
+            pin_name = (
+                labels.project_name(service, data["token_project"])
+                if data["token_project"] is not None
+                else None
+            )
+            if pin_name:
+                data["token_project_name"] = pin_name
         finally:
             service.close()
         data["checked"] = True

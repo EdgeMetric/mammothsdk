@@ -132,16 +132,23 @@ def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliErro
     if invocation is None:
         return error
 
+    names: dict[int, str | None] = {}
+
     def lookup() -> int | None:
+        from mammoth_cli.runtime.labels import project_name
         from mammoth_cli.runtime.session import open_service
         from mammoth_cli.runtime.token_scope import pinned_project
 
         with open_service(invocation) as (service, _auth):
-            return pinned_project(service)
+            pin = pinned_project(service)
+            if pin is not None:
+                # Same session: the name costs one more read, never a second login.
+                names[pin] = project_name(service, pin)
+            return pin
 
     from mammoth_cli.runtime.token_scope import qualify_pin_hint
 
-    return qualify_pin_hint(error, lookup)
+    return qualify_pin_hint(error, lookup, names.get)
 
 
 def _verify_exit_status(data: Any) -> int:

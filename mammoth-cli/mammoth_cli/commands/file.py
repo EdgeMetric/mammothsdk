@@ -367,9 +367,7 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 
-def _dataset_status(
-    service: Any, dataset_id: int
-) -> tuple[str, dict[str, Any] | None, str | None]:
+def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:
     """Read ``(status, status_info, name)`` for one dataset; ``unknown`` if the read fails."""
     try:
         response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
