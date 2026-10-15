@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io, new backend endpoints; CLI commands for each)
+
+- Exports: `ExportsAPI.runs(dataview_id, export_id)` lists an export's runs (`ExportRuns`, `ExportRun`); `ExportsAPI.rest_fill(dataview_id, docs_url)` asks the server to propose REST export settings from an API docs page and waits for the job; `ExportsAPI.export_hosts()` and `set_export_hosts(restricted, hosts)` read and replace the workspace's allowed export hosts (`ExportHostPolicy`, `ExportHostPolicyRead`). CLI: `view export runs`, `view export rest-fill`, `workspace export-hosts get/set`.
+- `DataviewsAPI.summary(dataset_id, dataview_id)`: what a view has had done to it and where it goes. CLI: `view summary`.
+- Workflows: `WorkflowsAPI.duplicate`, `undo_save` and `cancel_save_step`. CLI: `workflow duplicate`, `workflow save-undo`, `workflow save-cancel-step`.
+- Email updates: `CollectionsAPI.email_updates`, `set_email_updates`, `my_email_updates`, `set_my_email_updates`, `send_test_email_update`, and the matching `DashboardsAPI.email_updates_*` methods. CLI: `dashboard email-updates list/get/set/me get/me set/test`, `collection email-updates get/set/me get/me set/test`.
+- Live charts v3 and oEmbed: `DashboardsAPI.live_chart_list/create/get/audience/usage/placement` and `oembed`. CLI: `dashboard live-chart list/create/get/audience/usage/placement`, `dashboard oembed`.
+- CLI: `dataset column-stats` and `dataset definition list/add/remove` are mapped to their backend operations in the manifests.
+- The pinned OpenAPI spec is the live prod spec (651 operations); the release capability matrix keeps `master-20261002` as its baseline and lists the new routes as pending server release.
+
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
 - `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.
