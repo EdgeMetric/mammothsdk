@@ -127,6 +127,23 @@ def _validate_output(output: str) -> None:
         )
 
 
+def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
+    """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
+    if invocation is None:
+        return error
+
+    def lookup() -> int | None:
+        from mammoth_cli.runtime.session import open_service
+        from mammoth_cli.runtime.token_scope import pinned_project
+
+        with open_service(invocation) as (service, _auth):
+            return pinned_project(service)
+
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    return qualify_pin_hint(error, lookup)
+
+
 def _verify_exit_status(data: Any) -> int:
     """Exit code for a write whose read-back says it did not take effect.
 
@@ -299,7 +316,7 @@ def run(
             else None
         )
         if running is None:
-            fail(error)
+            fail(_with_pin_checked(error, invocation))
             raise typer.Exit(error.exit_status) from None
         # --return-running: a wait that ran out is not a failure; hand back the
         # handle to resume with.
@@ -326,7 +343,9 @@ def run(
         # Bespoke handlers should normally cross the SDK service seam, but a
         # malformed response or filesystem fault must still obey the same
         # machine envelope rather than leaking an implementation traceback.
-        mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
+        mapped_error = _with_pin_checked(
+            _profile_scope_recovery(map_sdk_exception(exc), profile), invocation
+        )
         fail(mapped_error, exc)
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:

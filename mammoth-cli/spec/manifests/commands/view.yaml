@@ -2738,7 +2738,7 @@ commands:
   - CT-VIEW-EXPORT-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Fix the wire key audit for current 'reorderd' field spelling.
+  known_restrictions: Lists the saved exports of one view (internal datasets, databases, cloud storage, REST); read-only.
   reviewed_by: primary
 - command_id: view.export.managed-s3
   command_path: view export managed-s3

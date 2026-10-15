@@ -4325,6 +4325,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 dataview_id,
                 dataset_id,
                 int(target_ds_id) if target_ds_id is not None else None,
+                save_as_mode=save_as_mode if isinstance(save_as_mode, str) else None,
             )
         target_view_before = None
         blank_warnings: list[str] = []
@@ -4544,7 +4545,11 @@ def _hidden_column_names(
 
 
 def reject_dataset_export_conflicts(
-    service: Any, dataview_id: int, dataset_id: int, target_ds_id: int | None
+    service: Any,
+    dataview_id: int,
+    dataset_id: int,
+    target_ds_id: int | None,
+    save_as_mode: str | None = None,
 ) -> None:
     """Refuse a dataset export (or crosstab) that cannot write, or would double-write.
 
@@ -4578,9 +4583,9 @@ def reject_dataset_export_conflicts(
             message=(
                 f"View {dataview_id} already exports into dataset "
                 f"{target_ds_id} (export {existing_export.id}). This export "
-                "re-runs on every pipeline run, and REPLACE_IN_DS replaces only "
-                "its own rows -- a second export into the same target duplicates "
-                "rows instead of refreshing them."
+                f"re-runs on every pipeline run, and {save_as_mode or 'REPLACE_IN_DS'} "
+                "writes only its own rows -- a second export into the same target "
+                "duplicates rows instead of refreshing them."
             ),
             exit_status=EXIT_USAGE,
             hint="Refresh the target by rerunning the pipeline, not by exporting again.",
@@ -4589,6 +4594,7 @@ def reject_dataset_export_conflicts(
                 "dataview_id": dataview_id,
                 "target_ds_id": target_ds_id,
                 "export_id": existing_export.id,
+                "requested_save_as_mode": save_as_mode,
             },
         )
 

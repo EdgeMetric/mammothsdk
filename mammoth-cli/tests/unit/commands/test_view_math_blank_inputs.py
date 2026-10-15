@@ -54,9 +54,11 @@ def test_the_result_names_the_blank_inputs() -> None:
 
     assert data["blank_inputs"] == {
         "columns": {"unit_price": 1},
-        "note": "A blank input counts as 0 in this math step: unit_price is blank in 1 "
-        "row(s), so the result there is computed as if it were 0. Fill or filter those "
-        "rows first if a blank must not count as 0.",
+        "note": (
+            "A blank input counts as 0 in this math step: unit_price is blank in 1 "
+            "row(s), so the result there is computed as if it were 0. Fill or filter those "
+            "rows first if a blank must not count as 0."
+        ),
     }
 
 

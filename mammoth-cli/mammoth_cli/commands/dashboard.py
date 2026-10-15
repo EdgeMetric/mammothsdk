@@ -41,16 +41,16 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.dashboard_figures import (
+    bake_error_problem,
+    canvas_figure_problems,
+    figure_problems,
+)
 from mammoth_cli.services.dashboard_filters import (
     check_filter,
     declared,
     with_filter,
     without_filter,
-)
-from mammoth_cli.services.dashboard_figures import (
-    bake_error_problem,
-    canvas_figure_problems,
-    figure_problems,
 )
 from mammoth_cli.services.dashboard_pages import (
     check_added_pages,

@@ -8,7 +8,10 @@ command can refuse before it creates something the token cannot open.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, CliError
+from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
 from mammoth_cli.services.protocol import MammothService
 
 _CURRENT_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.current"
@@ -50,3 +53,29 @@ def refuse_pinned_project(project_id: int | None, action: str) -> None:
         authorization_required=True,
         recovery_commands=[f"mammoth project get {project_id}"],
     )
+
+
+def qualify_pin_hint(error: CliError, pin_lookup: Callable[[], int | None]) -> CliError:
+    """Say whether a 403's "project-limited token" hint applies to this token.
+
+    The generic 403 hint blames a token limited to one project. ``pin_lookup`` reads the
+    real pin (``None`` when the token is not limited, or the read fails). When the token
+    is not limited the sentence is dropped; when it is, it names the project.
+    """
+    if error.code != CODE_AUTHORIZATION_REQUIRED or PINNED_PROJECT_HINT not in (error.hint or ""):
+        return error
+    try:
+        pin = pin_lookup()
+    except Exception:  # noqa: BLE001 -- keep the original error when the lookup fails
+        return error
+    assert error.hint is not None
+    if pin is None:
+        error.hint = error.hint.replace(PINNED_PROJECT_HINT, "").strip()
+        return error
+    specific = (
+        f"This token is limited to project {pin}: pass --project {pin}, or log in with a "
+        "token created without a project."
+    )
+    error.hint = error.hint.replace(PINNED_PROJECT_HINT, specific)
+    error.details = {**(error.details or {}), "pinned_project_id": pin}
+    return error

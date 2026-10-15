@@ -76,3 +76,16 @@ def test_the_run_log_records_the_exception_type_and_message(
     assert "Traceback" in exception["traceback"]
     end = next(r for r in records if r["event"] == "command.end")
     assert end["error_code"] == "internal_error"
+
+
+def test_ansi_escapes_are_stripped_from_an_error_envelope() -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    error = CliError(
+        code="api_error",
+        message='\x1b[31mERROR\x1b[0m: column \x1b[1m"x"\x1b[0m does not exist',
+        details={"response": {"detail": ["\x1b[31mbad\x1b[0m"]}},
+    )
+    body = error.to_envelope()["error"]
+    assert body["message"] == 'ERROR: column "x" does not exist'
+    assert body["details"]["response"]["detail"] == ["bad"]

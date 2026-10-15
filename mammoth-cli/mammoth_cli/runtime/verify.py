@@ -134,12 +134,38 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     )
     _apply_downstream_export_check(verify, invocation)
     verify["outcome"] = _outcome(data, verify)
+    _automation_wording(verify, data, invocation)
     result = {**data, "verify": verify}
     if verify["outcome"] in (OUTCOME_FAILED, OUTCOME_PARTIAL) and "status" in data:
         # A write that did not verify must not read "done" at the top level.
         verify["reported_status"] = data["status"]
         result["status"] = verify["outcome"]
     return Revealed(result) if isinstance(data, Revealed) else result
+
+
+def _automation_wording(
+    verify: dict[str, Any], data: dict[str, Any], invocation: Invocation | None
+) -> None:
+    """An automation run that is still going is waited on as a job, not by reading a view."""
+    if (
+        invocation is None
+        or not invocation.command_id.startswith("automation.")
+        or verify["reason"] != _UNSETTLED_REASON
+    ):
+        return
+    job_id = data.get("job_id") or data.get("future_id")
+    if job_id:
+        command = f"mammoth job wait {job_id}"
+    else:
+        automation_id = invocation.positional("automation_id")
+        command = f"mammoth automation get {automation_id}" if automation_id else None
+    verify["reason"] = (
+        "the automation run was accepted but has not finished; "
+        + ("wait for the job" if job_id else "check the automation's status")
+        + " before relying on its output"
+    )
+    if command:
+        verify["next_command"] = command
 
 
 def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:

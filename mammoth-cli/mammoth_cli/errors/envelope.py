@@ -8,6 +8,7 @@ terminal control code, or secret ever appears in the envelope.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -261,7 +262,24 @@ class CliError(Exception):
         }
         if self.log_ref is not None:
             error["log_ref"] = dict(self.log_ref)
-        return {"schema_version": SCHEMA_VERSION, "error": error}
+        return {"schema_version": SCHEMA_VERSION, "error": strip_ansi(error)}
+
+
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]")
+
+
+def strip_ansi(value: Any) -> Any:
+    """``value`` with terminal escape sequences removed from every string in it.
+
+    A server's SQL error text can arrive coloured; in a JSON error it is noise.
+    """
+    if isinstance(value, str):
+        return _ANSI_ESCAPE.sub("", value)
+    if isinstance(value, dict):
+        return {key: strip_ansi(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [strip_ansi(item) for item in value]
+    return value
 
 
 # --- Common typed errors ---------------------------------------------------

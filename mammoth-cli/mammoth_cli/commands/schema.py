@@ -24,9 +24,9 @@ from typing import Any, cast
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
-from mammoth_cli.services.field_enums import field_enum, with_enum
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
+from mammoth_cli.services.field_enums import field_enum, with_enum
 from mammoth_cli.services.input_fields import (
     example_input_hints,
     excluded_input_fields,
@@ -530,9 +530,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.delete": "delete remove permanently",
     "dataset.delete": "delete remove permanently dataset",
     "view.list": "list all views",
-    "view.task.delete": (
-        "undo remove the last step task from the pipeline revert a transformation"
-    ),
+    "view.task.delete": "undo remove the last step task from the pipeline revert a transformation",
     "view.data.query": "query rows with a filter condition sort columns and get rows back",
     "batch.create": "append add new data to an existing dataset",
     "auth.login": "log in sign in login authenticate token workspace",
@@ -638,7 +636,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "agent.message.set-request-kind": (
         "wrong kind of request answered, correct the kind: ask insight build automate fix"
     ),
-    "agent.plan.approve": ("approve the agent plan go ahead and run the plan the agent proposed"),
+    "agent.plan.approve": "approve the agent plan go ahead and run the plan the agent proposed",
     "agent.plan.skip": "skip one step of the agent plan do not run that proposed step",
     "agent.plan.discard": "discard the agent plan reject everything the agent proposed",
     "agent.plan.edit-proposal": (

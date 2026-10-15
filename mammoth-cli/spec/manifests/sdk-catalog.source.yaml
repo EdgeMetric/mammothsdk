@@ -2744,7 +2744,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: offset
   openapi_operation_ids: []
-  notes: Fix the wire key audit for current 'reorderd' field spelling.
+  notes: Lists the saved exports of one view (internal datasets, databases, cloud storage, REST); read-only.
 - sdk_symbol: mammoth.api.exports.ExportsAPI.publish_db
   canonical_command: view.export.publish-db
   alias_of: null

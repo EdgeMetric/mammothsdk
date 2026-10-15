@@ -433,3 +433,14 @@ def test_a_failed_export_read_is_reported_not_hidden(
     result = with_verify({"status": "done"}, invocation)
     assert result["verify"]["verified"] is True
     assert any("could not check" in w for w in result["verify"]["warnings"])
+
+
+def test_a_running_automation_is_waited_on_as_a_job_not_by_reading_a_view() -> None:
+    invocation = Invocation(
+        command_id="automation.update", output="json", positionals={"automation_id": 446}
+    )
+    result = with_verify({"status": "processing", "job_id": "99"}, invocation)
+    verify = result["verify"]
+    assert verify["outcome"] == "pending"
+    assert "read the view" not in verify["reason"]
+    assert verify["next_command"] == "mammoth job wait 99"

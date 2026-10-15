@@ -22,10 +22,10 @@ from mammoth.exceptions import (
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.errors.envelope import (
     CODE_API_ERROR,
-    CODE_INTERNAL_ERROR,
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_INTERNAL_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_INVALID_ARGUMENTS,
     CODE_JOB_FAILED,
@@ -45,6 +45,14 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.runtime import embedded
 
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
+
+#: The sentence that blames a project-limited token; dropped or made specific by
+#: :func:`mammoth_cli.runtime.token_scope.qualify_pin_hint` once the pin is known.
+PINNED_PROJECT_HINT = (
+    "An API token limited to one project gets this in every other "
+    "project, including one it created: pass that project's --project ID, "
+    "or log in with a token created without a project."
+)
 
 
 #: A client app's key is a credential identifier; an envelope never repeats it.
@@ -611,10 +619,7 @@ def map_sdk_exception(
                 hint=(
                     "Check the ids and scope first: a view id given with another dataset's id, "
                     "or an id from a different project, is refused the same way. Then ask an "
-                    "administrator for permission. "
-                    "An API token limited to one project gets this in every other "
-                    "project, including one it created: pass that project's --project ID, "
-                    "or log in with a token created without a project."
+                    "administrator for permission. " + PINNED_PROJECT_HINT
                 ),
                 details=details,
                 request_id=request_id,

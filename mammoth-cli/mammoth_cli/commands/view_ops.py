@@ -1647,8 +1647,13 @@ def view_transform_crosstab(invocation: Invocation) -> HandlerResult:
 
     def guard_target(service: Any, dataset_id: int, call_kwargs: dict[str, Any]) -> None:
         target = call_kwargs.get("target_ds_id")
+        mode = call_kwargs.get("save_as_mode")
         reject_dataset_export_conflicts(
-            service, view_id, dataset_id, int(target) if target is not None else None
+            service,
+            view_id,
+            dataset_id,
+            int(target) if target is not None else None,
+            save_as_mode=mode if isinstance(mode, str) else None,
         )
 
     def name_persistence(_service: Any, _dataset_id: int, _state: Any, data: Any) -> Any:

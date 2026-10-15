@@ -195,17 +195,21 @@ def test_the_checker_flags_the_old_broken_examples() -> None:
         **base,
         "command_id": "view.transform.lookup",
         "command_path": "view transform lookup",
-        "agent_example": "mammoth view transform lookup 123 --input "
-        + shlex.quote(
-            json.dumps({"source": "A", "lookup_view_id": 1, "key": "A", "value": "sample"})
+        "agent_example": (
+            "mammoth view transform lookup 123 --input "
+            + shlex.quote(
+                json.dumps({"source": "A", "lookup_view_id": 1, "key": "A", "value": "sample"})
+            )
         ),
     }
     assert example_problems(lookup)
     pivot = {
         **base,
         "command_id": "view.transform.pivot",
-        "agent_example": "mammoth view transform pivot 123 --input "
-        + shlex.quote(json.dumps({"group_by": ["sample"], "aggregations": []})),
+        "agent_example": (
+            "mammoth view transform pivot 123 --input "
+            + shlex.quote(json.dumps({"group_by": ["sample"], "aggregations": []}))
+        ),
     }
     assert any("placeholder" in problem for problem in example_problems(pivot))
     twice = {
