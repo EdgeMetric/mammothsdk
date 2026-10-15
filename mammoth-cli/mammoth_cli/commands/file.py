@@ -367,23 +367,27 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 
 
-def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None]:
-    """Read ``(status, status_info)`` for one dataset; ``unknown`` if the read fails."""
+def _dataset_status(
+    service: Any, dataset_id: int
+) -> tuple[str, dict[str, Any] | None, str | None]:
+    """Read ``(status, status_info, name)`` for one dataset; ``unknown`` if the read fails."""
     try:
         response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
     except CliError:
-        return "unknown", None
+        return "unknown", None, None
     dataset = response.get("dataset", response) if isinstance(response, dict) else {}
     status = dataset.get("status") if isinstance(dataset, dict) else None
     status_info = dataset.get("status_info") if isinstance(dataset, dict) else None
+    name = dataset.get("name") if isinstance(dataset, dict) else None
     return (
         status if isinstance(status, str) else "unknown",
         status_info if isinstance(status_info, dict) else None,
+        name if isinstance(name, str) and name else None,
     )
 
 
 def _upload_result(
-    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None]]
+    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None, str | None]]
 ) -> dict[str, Any]:
     """Shape the SDK upload return (int | list[int] | None) into a labeled result.
 
@@ -402,7 +406,7 @@ def _upload_result(
         ids = []
     datasets: list[dict[str, Any]] = []
     for dataset_id in ids:
-        status, status_info = read_status(dataset_id)
+        status, status_info, name = read_status(dataset_id)
         # The platform reports an all-text CSV as ``ready`` with the message
         # "This file has more than one plausible way to be read.": the rows are
         # ingested, but no view is created. Confirming file settings does not
@@ -410,6 +414,8 @@ def _upload_result(
         if status == "ready" and status_info and str(status_info.get("ready") or "").strip():
             status = "needs_view"
         entry: dict[str, Any] = {"id": dataset_id, "status": status}
+        if name:
+            entry["name"] = name
         if status_info:
             entry["status_info"] = status_info
         if status == "need_action":

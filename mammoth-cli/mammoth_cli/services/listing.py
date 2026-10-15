@@ -117,9 +117,10 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
         **_times(record.get("created_at"), record.get("updated_at")),
         "source": source_of(record),
         "columns": compact_columns([(str(n), t) for n, t in columns]) if columns else None,
+        # Always carried, ``ready`` included: the list route returns it, and the
+        # per-row ``dataset_health`` is judged from it.
+        "status": record.get("status"),
     }
-    if record.get("status") not in (None, "ready"):
-        summary["status"] = record["status"]
     return {k: v for k, v in summary.items() if v is not None}
 
 
@@ -138,9 +139,8 @@ def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
         "name": record.get("name"),
         **_size(stats.get("row_count"), stats.get("column_count")),
         **_times(record.get("created_at"), record.get("updated_at")),
+        "status": record.get("status"),
     }
-    if record.get("status") not in (None, "ready"):
-        hit["status"] = record["status"]
     return {k: v for k, v in hit.items() if v is not None}
 
 

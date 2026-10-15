@@ -484,3 +484,20 @@ def test_upload_result_names_revenue_to_add_before_a_dashboard(
     assert '"expression": "qty * price"' in hint["warnings"][0]["fix"]
     assert hint["note"].startswith("Run these before you make a dashboard")
     assert "no chart" not in hint["warnings"][0]["detail"]
+
+
+def test_upload_result_names_each_dataset_in_its_health_entry(
+    isolated_cli_config: object, fake_service: FakeMammothService
+) -> None:
+    """Bug bash 2026-10-15: ``dataset_health`` after ``file upload`` had ``name: null``."""
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [84], "errors": {}}
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = {
+        "id": 84,
+        "name": "foo.csv",
+        "status": "has_unstructured_data",
+    }
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
+    assert data["datasets"][0]["name"] == "foo.csv"
+    from mammoth_cli.runtime.dataset_health import with_dataset_health
+
+    assert with_dataset_health(data)["dataset_health"][0]["name"] == "foo.csv"
