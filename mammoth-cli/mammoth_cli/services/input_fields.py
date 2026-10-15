@@ -122,8 +122,12 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "body": "Quarterly revenue summary",
     },
     "annotation.update": {"status": "resolved"},
+    "automation.create": {
+        "description": "Quarterly revenue summary",
+        "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}],
+    },
     "automation.update": {
-        "patch": [{"op": "replace", "path": "details", "value": "Daily revenue export"}]
+        "patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]
     },
     "connector.ds-config.update": {
         "patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]

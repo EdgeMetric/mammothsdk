@@ -49,6 +49,21 @@ def test_create_requires_name(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == []
 
 
+@pytest.mark.parametrize("name", ["Revenue report", "1rate", "rate-x", "naïve"])
+def test_create_refuses_a_name_the_server_would_reject(
+    fake_service: FakeMammothService, tmp_path: Path, name: str
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"param_type": "TEXT", "value": "x"}), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        parameter_cmd.parameter_create(
+            _inv("parameter.create", extra_args=[name], input_file=str(doc))
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "[A-Za-z_][A-Za-z0-9_]*" in excinfo.value.hint
+    assert fake_service.call_log == []
+
+
 def test_create_requires_param_type(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         parameter_cmd.parameter_create(_inv("parameter.create", extra_args=["Rate"]))
@@ -347,3 +362,10 @@ def test_group_update_forwards_fields_and_project(
             {"group_id": 3, "name": "New", "color": "#00FF00", "project_id": 180},
         )
     ]
+
+
+def test_schema_publishes_the_parameter_name_pattern() -> None:
+    from mammoth_cli.commands.schema import get_schema
+
+    prop = dict(get_schema("parameter.create")["input_schema"])["properties"]["name"]
+    assert prop["pattern"] == "^[A-Za-z_][A-Za-z0-9_]*$"

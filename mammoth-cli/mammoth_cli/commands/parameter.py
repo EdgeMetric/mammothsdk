@@ -12,6 +12,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -107,6 +108,25 @@ def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     }
 
 
+_PARAMETER_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def _require_identifier_name(name: object) -> None:
+    """A parameter name is an identifier: letters, digits and ``_``, not starting with a digit."""
+    if isinstance(name, str) and _PARAMETER_NAME.fullmatch(name):
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=f"Parameter name {name!r} is not valid (the server refuses it with 4PARM006).",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Use letters, digits and underscores only, starting with a letter or underscore "
+            "(pattern [A-Za-z_][A-Za-z0-9_]*), for example revenue_report."
+        ),
+        details={"field": "name", "pattern": _PARAMETER_NAME.pattern},
+    )
+
+
 def parameter_create(invocation: Invocation) -> HandlerResult:
     """Create a parameter. Name comes from a positional or the ``name`` field."""
     document = invocation.load_input() or {}
@@ -118,6 +138,7 @@ def parameter_create(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Pass the name as a positional argument or a 'name' input field.",
         )
+    _require_identifier_name(name)
     param_type = _require_field(document, "param_type")
     value = _require_field(document, "value")
     kwargs: dict[str, Any] = {"name": name, "param_type": param_type, "value": value}

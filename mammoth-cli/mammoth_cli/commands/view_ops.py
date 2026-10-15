@@ -1869,6 +1869,31 @@ def view_transform_filter(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _bind_view_table(
+    service: Any, dataset_id: int, view_id: int, query: str, invocation: Invocation
+) -> str:
+    """The query with the view's own name as its table rewritten to ``"view:<id>"``.
+
+    ``generate-sql`` names the table by the view's name; ``add-sql`` binds
+    ``"view:<id>"`` (see ``schema get view.transform.add-sql``). A name that cannot be
+    read leaves the query as generated.
+    """
+    try:
+        info = service.call(
+            _DATAVIEW_GET_SYMBOL,
+            dataset_id=dataset_id,
+            dataview_id=view_id,
+            project_id=resolved_project(invocation),
+        )
+        name = info.get("name") if isinstance(info, dict) else getattr(info, "name", None)
+    except Exception:  # noqa: BLE001 -- the generated query is still returned
+        return query
+    if not isinstance(name, str) or not name:
+        return query
+    pattern = re.compile(r'(\b(?:FROM|JOIN)\s+)"' + re.escape(name) + '"', re.IGNORECASE)
+    return pattern.sub(lambda m: f'{m.group(1)}"view:{view_id}"', query)
+
+
 def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
     """Generate a SQL query from a natural-language intent. ``intent`` is required."""
     view_id = _view_id(invocation)
@@ -1883,13 +1908,19 @@ def view_transform_generate_sql(invocation: Invocation) -> HandlerResult:
         # the view to change. Say so, and give the command that applies it.
         if not isinstance(data, str):
             return data
-        spec = json.dumps({"dataset_id": dataset_id, "query": data})
-        return {
+        query = _bind_view_table(service, dataset_id, view_id, data, invocation)
+        spec = json.dumps({"dataset_id": dataset_id, "query": query})
+        project_id = resolved_project(invocation)
+        scope = f" --project {project_id}" if project_id is not None else ""
+        result = {
             "sql": data,
             "applied": False,
             "note": "The view is unchanged. Run 'apply' to add the query as a SQL task.",
-            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}",
+            "apply": f"mammoth view transform add-sql {view_id} --input {shlex.quote(spec)}{scope}",
         }
+        if query != data:
+            result["apply_sql"] = query
+        return result
 
     return _dispatch_view(invocation, view_id, "generate_sql", after=describe, **kwargs)
 

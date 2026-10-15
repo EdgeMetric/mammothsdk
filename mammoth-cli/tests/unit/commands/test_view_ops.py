@@ -781,17 +781,25 @@ def test_transform_generate_sql_says_the_view_is_unchanged(
     # The route returns a validated query and adds no task (release).
     query = 'SELECT "city", COUNT(*) AS n FROM "View 1" GROUP BY "city"'
     fake_service.view_responses[(3, "generate_sql")] = query
+    fake_service.responses[view_ops_cmd._DATAVIEW_GET_SYMBOL] = {"id": 3, "name": "View 1"}
     doc = _write(tmp_path, {"intent": "Count rows per city"})
     data, _ = view_ops_cmd.view_transform_generate_sql(
         _inv(
-            "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+            "view.transform.generate-sql",
+            extra_args=["3"],
+            resource_ref=_parent(3),
+            input_file=doc,
+            project=7,
         )
     )
     assert data["sql"] == query
     assert data["applied"] is False
     assert data["apply"].startswith("mammoth view transform add-sql 3 --input '")
-    applied = json.loads(data["apply"].split("--input ", 1)[1].strip("'"))
-    assert applied == {"dataset_id": 122, "query": query}
+    # The apply line binds the view as "view:ID" (not its name) and carries --project.
+    assert data["apply"].endswith("' --project 7")
+    body = data["apply"].split("--input ", 1)[1].rsplit(" --project", 1)[0]
+    applied = json.loads(body.strip("'"))
+    assert applied == {"dataset_id": 122, "query": query.replace('"View 1"', '"view:3"')}
 
 
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:

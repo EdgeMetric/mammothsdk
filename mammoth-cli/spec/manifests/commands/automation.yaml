@@ -68,7 +68,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval"}]}'' --yes'
+  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}'' --yes'
   unit_tests:
   - UT-AUTOMATION-CREATE
   contract_tests:
@@ -336,7 +336,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation update AUTOMATION_ID --help
-  agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details", "value": "Daily revenue export"}]}'' --yes'
+  agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]}'' --yes'
   unit_tests:
   - UT-AUTOMATION-UPDATE
   contract_tests:
@@ -345,7 +345,7 @@ commands:
   - CT-AUTOMATION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation get`). Needs --yes.'
+  known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` + `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description, tasks, conditions). Paths are details, run, status, approve_retention, reject_retention.'
   reviewed_by: primary
   readback:
     command: automation.get

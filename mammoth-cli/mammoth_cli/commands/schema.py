@@ -1519,6 +1519,9 @@ def runnable_example(
     if line is None:
         return None
     command_id = str(record["command_id"])
+    if command_id == "parameter.create":
+        # A parameter name is an identifier (letters, digits, underscore): no spaces.
+        line = line.replace("'Revenue report'", "revenue_report", 1)
     specs = positionals if positionals is not None else resolve_positionals(command_id)
     tokens = shlex.split(line)
     start = 1 + len(str(record["command_path"]).split())
@@ -1888,6 +1891,8 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
             registered = field_enum(record["command_id"], field["name"])
             if registered is not None:
                 field_schema = with_enum(field_schema, registered)
+            if record["command_id"] == "parameter.create" and field["name"] == "name":
+                field_schema = {**field_schema, "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}
             properties[field["name"]] = hoist_definitions(namespace_refs(field_schema))
         # A field a positional falls back to (the dual-sourced "positional OR
         # --input field" pattern) is satisfiable from the command line, so it is
