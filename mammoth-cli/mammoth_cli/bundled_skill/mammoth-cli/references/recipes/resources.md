@@ -127,6 +127,8 @@ not sufficient. `dataset.create` waits for its asynchronous work; only the
 If the schema does not accept a URL,
 report URL import unsupported; do not silently substitute local processing. A
 4/5/7 envelope is a failed or uncertain operation, not a usable dataset. A
-`weburl` dataset is a one-time copy: it keeps no source details, so it cannot be
-scheduled to refresh (see [recurring work](scheduling.md)); say so rather than
-promising a refreshable source.
+`weburl` dataset keeps its link and can be refreshed on demand in the web app
+("Refresh from URL", a single CSV only), but never on a schedule:
+`run_data_retrieval` cannot refresh it and the CLI has no refresh command (see
+[recurring work](scheduling.md)). For a scheduled pull from a URL, use the REST
+API connector. Say so rather than promising a scheduled refresh.

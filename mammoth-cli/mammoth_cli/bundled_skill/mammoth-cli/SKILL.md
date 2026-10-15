@@ -90,7 +90,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 | Rank, running total, previous row | `view transform window` |
 | A dashboard, or its PDF or slides | `dashboard v3 generate`, then `chat edit` ([dashboards](references/recipes/dashboards.md)) |
 | Deliver the rows | `view export csv`, `view export postgres`, `view export dataset` |
-| Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. A dataset from an uploaded file or URL is a one-time copy with no source to refresh; say so. Recipe and caveats: [recurring work](references/recipes/scheduling.md) |
+| Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. An upload can't refresh; a URL dataset refreshes on demand, never on a schedule; say so. Recipe and caveats: [recurring work](references/recipes/scheduling.md) |
 
 Call a find result (or `suggestions` entry) from its `accepted_fields` and
 `agent_example`. Before concluding the CLI cannot do something the web app
