@@ -3861,6 +3861,10 @@ def view_task_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("dataset_id",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    if isinstance(data, dict) and "offset" in data:
+        # The route is never asked for a later page, but echoes ``offset`` equal to its
+        # page size on the first one; this is the first page.
+        data = {**data, "offset": 0}
     return data, _meta(invocation, auth.workspace_id, None)
 
 
@@ -5138,8 +5142,9 @@ def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | N
 
     The backend runs the pipeline as a follow-on job; a readback taken before
     it finishes races it. Returns ``None`` when there is nothing to wait for or
-    the job succeeded, else ``execution_state: "job_failed"`` with the job's own
-    error text -- reported, never swallowed.
+    the job succeeded, ``execution_state: "unfinished"`` (with the job id and how to
+    resume) when the wait ran out while it was still running, else ``"job_failed"``
+    with the job's own error text -- reported, never swallowed.
     """
     if not isinstance(write_result, dict) or not any(
         isinstance(write_result.get(key), int) for key in ("future_id", "job_id")
@@ -5148,6 +5153,17 @@ def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | N
     try:
         service.wait_if_job(write_result)
     except CliError as exc:
+        if exc.code == "timeout":
+            # Out of time is not a failed job: it is still running, the change was
+            # accepted, and replaying it would apply the step twice.
+            pending: dict[str, Any] = {
+                "execution_state": UNFINISHED_STATE,
+                "wait_error": exc.message,
+            }
+            for key in ("job_id", "resume"):
+                if exc.details.get(key) is not None:
+                    pending[key] = exc.details[key]
+            return pending
         return {"execution_state": JOB_FAILED_STATE, "wait_error": exc.message}
     return None
 

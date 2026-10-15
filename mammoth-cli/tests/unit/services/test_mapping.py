@@ -228,8 +228,8 @@ def test_service_uses_resolved_nondefault_profile_in_job_recovery() -> None:
     assert mapped.details["workspace_id"] == 4
     assert mapped.details["project_id"] == 9
     assert mapped.recovery_commands == [
-        "mammoth job get 44 --profile production",
-        "mammoth job wait 44 --profile production",
+        "mammoth job get 44 --project 9 --profile production",
+        "mammoth job wait 44 --project 9 --profile production",
     ]
 
 
@@ -599,3 +599,51 @@ def test_a_rejected_credential_names_the_failing_non_default_profile_in_recovery
     assert "mammoth auth login --profile work" in (mapped.hint or "")
     default = map_sdk_exception(error, workspace_id=4, profile="default")
     assert default.recovery_commands == ["mammoth auth login"]
+
+
+def test_a_file_dataset_in_a_retrieval_automation_gets_its_own_code_and_a_way_forward() -> None:
+    """Bug bash 2026-10-15: 4AUTO006 was a generic api_error with no recovery."""
+    error = MammothAPIError(
+        "bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "message": (
+                "Invalid datasets for data retrieval, dataset ids should be a list of "
+                "cloud datasets under the given project [4AUTO006]"
+            )
+        },
+    )
+    mapped = map_sdk_exception(error)
+    assert mapped.code == "dataset_not_refreshable"
+    assert mapped.exit_status == EXIT_USAGE
+    assert "append_to_ds_id" in (mapped.hint or "")
+    assert "cloud" in (mapped.hint or "")
+    assert any("file upload" in c and "append_to_ds_id" in c for c in mapped.recovery_commands)
+
+
+def test_an_unknown_dataset_or_file_id_is_resource_not_found_like_a_view() -> None:
+    """Bug bash 2026-10-15: 4DSET001 / 4FILE001 came back as a generic api_error."""
+    for code, noun in (("4DSET001", "dataset"), ("4FILE001", "file")):
+        error = MammothAPIError(
+            "bad request",
+            status_code=400,
+            method="GET",
+            operation_state="failed",
+            response_body={"message": f"Invalid {noun} id [{code}]"},
+        )
+        mapped = map_sdk_exception(error)
+        assert mapped.code == "resource_not_found", code
+        assert mapped.exit_status == 5
+        assert noun in (mapped.hint or "")
+
+
+def test_job_recovery_commands_keep_the_project_they_ran_in() -> None:
+    mapped = map_sdk_exception(MammothJobTimeoutError(44, 1), project_id=3633)
+
+    assert mapped.recovery_commands == [
+        "mammoth job get 44 --project 3633",
+        "mammoth job wait 44 --project 3633",
+    ]
+    assert mapped.details["resume"] == "mammoth job wait 44 --project 3633"

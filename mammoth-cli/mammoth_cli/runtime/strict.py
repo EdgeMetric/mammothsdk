@@ -135,9 +135,21 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
                 f"{', '.join(surplus)})."
             ),
             exit_status=EXIT_USAGE,
-            hint="Check the command schema with 'mammoth schema get'.",
+            hint=_surplus_hint(command_id),
             details={"surplus": surplus, "max_positionals": max_positionals},
         )
+
+
+def _surplus_hint(command_id: str) -> str:
+    """Name the input field that takes several values when the last positional has one."""
+    positionals = resolve_positionals(command_id)
+    field = positionals[-1].falls_back_to_field if positionals else None
+    if field and field.endswith("s"):
+        return (
+            f"This command takes one positional; pass several values with "
+            f"--input '{{\"{field}\": [...]}}'. Check 'mammoth schema get {command_id}'."
+        )
+    return "Check the command schema with 'mammoth schema get'."
 
 
 def _expected_phrase(expected: str) -> str:

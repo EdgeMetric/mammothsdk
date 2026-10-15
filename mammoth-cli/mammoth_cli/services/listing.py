@@ -102,6 +102,11 @@ def _size(rows: Any, columns: Any) -> dict[str, Any]:
     return {k: v for k, v in (("rows", rows), ("cols", columns)) if v is not None}
 
 
+def _status_word(status: Any) -> Any:
+    """The state word ``dataset get`` uses: the list route says has_unstructured_data."""
+    return "need_action" if status == "has_unstructured_data" else status
+
+
 def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
     """Summary of one dataset-list item, from the fields the list route returns."""
     raw_stats, raw_schema = record.get("stats"), record.get("data_schema")
@@ -117,9 +122,10 @@ def dataset_summary(record: dict[str, Any]) -> dict[str, Any]:
         **_times(record.get("created_at"), record.get("updated_at")),
         "source": source_of(record),
         "columns": compact_columns([(str(n), t) for n, t in columns]) if columns else None,
+        # Always carried, ``ready`` included: the list route returns it, and the
+        # per-row ``dataset_health`` is judged from it.
+        "status": _status_word(record.get("status")),
     }
-    if record.get("status") not in (None, "ready"):
-        summary["status"] = record["status"]
     return {k: v for k, v in summary.items() if v is not None}
 
 
@@ -138,9 +144,8 @@ def _name_hit(record: dict[str, Any]) -> dict[str, Any]:
         "name": record.get("name"),
         **_size(stats.get("row_count"), stats.get("column_count")),
         **_times(record.get("created_at"), record.get("updated_at")),
+        "status": _status_word(record.get("status")),
     }
-    if record.get("status") not in (None, "ready"):
-        hit["status"] = record["status"]
     return {k: v for k, v in hit.items() if v is not None}
 
 

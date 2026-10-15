@@ -19,7 +19,7 @@ def test_a_dataset_that_loaded_badly_carries_its_health_and_fix() -> None:
     assert [h["dataset_id"] for h in health] == [2759]
     assert "more than one plausible way to be read" in health[0]["detail"]
     assert "delimiter" not in health[0]["detail"]
-    assert health[0]["fix"].startswith("mammoth dataset get 2759")
+    assert health[0]["fix"].startswith("mammoth dataset file-settings get 2759")
 
 
 def test_the_backends_stored_suggestion_is_quoted_not_replaced_by_a_guess() -> None:
@@ -39,7 +39,26 @@ def test_the_backends_stored_suggestion_is_quoted_not_replaced_by_a_guess() -> N
     assert entry["stored_suggestions"] == ["Skip preamble rows, row 5 is the header"]
     assert "no header candidates but first_data_row=4" in entry["detail"]
     assert "delimiter" not in entry["detail"]
-    assert entry["fix"].startswith("mammoth dataset interpretation preview 3108 --input ")
+    # No stored report: the interpretation preview answers 4DSET066, so the fix is the
+    # file-settings route that resolves need_action.
+    assert "interpretation preview" not in entry["fix"]
+    assert entry["fix"].startswith("mammoth dataset file-settings get 3108")
+    assert '"initial_skip_count":0' in entry["fix"].replace(" ", "")
+    assert "Skip preamble rows, row 5 is the header" in entry["stored_suggestions"]
+
+
+def test_a_stored_interpretation_report_keeps_the_interpretation_route() -> None:
+    data = {
+        "id": 9,
+        "status": "need_action",
+        "additional_info": {
+            "interpretation": {"report": {"x": 1}, "instruction_suggestions": ["Use row 2"]}
+        },
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["fix"].startswith("mammoth dataset interpretation preview 9 --input ")
     assert "Skip preamble rows, row 5 is the header" in entry["fix"]
 
 
@@ -116,7 +135,26 @@ def test_a_dataset_get_record_in_need_action_quotes_the_backends_own_words() -> 
     assert "needs a user decision" in entry["detail"]
     assert "Suggested: Skip preamble rows, row 5 is the header" in entry["detail"]
     assert "delimiter" not in entry["detail"]
-    assert entry["fix"].startswith("mammoth dataset interpretation preview 3108 --input ")
+    # No stored report: the interpretation preview answers 4DSET066, so the fix is the
+    # file-settings route that resolves need_action.
+    assert "interpretation preview" not in entry["fix"]
+    assert entry["fix"].startswith("mammoth dataset file-settings get 3108")
+    assert '"initial_skip_count":0' in entry["fix"].replace(" ", "")
+    assert "Skip preamble rows, row 5 is the header" in entry["stored_suggestions"]
+
+
+def test_a_stored_interpretation_report_keeps_the_interpretation_route() -> None:
+    data = {
+        "id": 9,
+        "status": "need_action",
+        "additional_info": {
+            "interpretation": {"report": {"x": 1}, "instruction_suggestions": ["Use row 2"]}
+        },
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["fix"].startswith("mammoth dataset interpretation preview 9 --input ")
 
 
 def test_a_compact_listing_entry_without_status_is_judged_from_its_size() -> None:
@@ -140,3 +178,22 @@ def test_health_name_falls_back_to_dataset_name() -> None:
     data = {"id": 3, "dataset_name": "wb.csv", "status": "need_action"}
 
     assert with_dataset_health(data)["dataset_health"][0]["name"] == "wb.csv"
+
+
+def test_an_error_status_is_failed_with_the_backends_reason() -> None:
+    data = {
+        "datasets": [
+            {
+                "id": 22,
+                "name": "empty.csv",
+                "status": "error",
+                "status_info": {"error": "The file is empty"},
+            }
+        ]
+    }
+
+    entry = with_dataset_health(data)["dataset_health"][0]
+
+    assert entry["health"] == "failed"
+    assert "The file is empty" in entry["detail"]
+    assert "health_reason" not in entry

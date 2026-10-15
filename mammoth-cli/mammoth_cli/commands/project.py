@@ -38,6 +38,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.labels import label, project_name
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.token_scope import pinned_project, require_unpinned_token
 from mammoth_cli.services import job_outcome
@@ -137,12 +138,13 @@ def _only_pinned(data: Any, pin: int) -> Any:
     if key is None:
         return data
     rows = [row for row in data[key] if not isinstance(row, dict) or row.get("id") == pin]
+    named = next((r.get("name") for r in rows if isinstance(r, dict) and r.get("name")), None)
     return {
         **data,
         key: rows,
         "note": (
-            f"This token is limited to project {pin}, so only that project is listed; "
-            "the workspace has others this token cannot open."
+            f"This token is limited to {label('project', pin, named)}, "
+            "so only that project is listed; the workspace has others this token cannot open."
         ),
     }
 
@@ -191,8 +193,8 @@ def project_get(invocation: Invocation) -> HandlerResult:
             raise CliError(
                 code=CODE_AUTHORIZATION_REQUIRED,
                 message=(
-                    f"This token is limited to project {pin}, so it cannot open "
-                    f"project {project_id}."
+                    f"This token is limited to {label('project', pin, project_name(service, pin))}"
+                    f", so it cannot open project {project_id}."
                 ),
                 exit_status=EXIT_AUTH,
                 hint=(

@@ -158,6 +158,10 @@ def _mark_pending(result: dict[str, Any], verify: dict[str, Any], invocation: An
     if not (isinstance(status, str) and status.lower() in _PENDING_STATUS_WORDS):
         verify["reported_status"] = status
         result["status"] = OUTCOME_PENDING
+    pipeline_error = result.get("pipeline_error")
+    if isinstance(pipeline_error, dict) and "next_command" not in verify:
+        if pipeline_error.get("job_id") is not None:
+            verify["next_command"] = f"mammoth job wait {pipeline_error['job_id']}"
     if "next_command" not in verify and invocation is not None:
         view_id = _pipeline_view_id(invocation)
         if view_id is not None:
@@ -364,6 +368,8 @@ def _verify_and_reason(
         return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
         return False, "the dashboard did not bake"
+    if data.get("synthetic_data") is True:
+        return False, "the imported data is synthetic, not the source's own; see warnings"
     if data.get("partial") is True:
         return False, "part of the request was swapped or dropped; see warnings"
     if row_count_attempted:
@@ -400,6 +406,8 @@ def _state(data: dict[str, Any]) -> str:
 
 def _warnings(data: dict[str, Any]) -> list[str]:
     notes: list[str] = []
+    if data.get("synthetic_data") is True and isinstance(data.get("warnings"), list):
+        notes.extend(str(item) for item in data["warnings"])
     for key, value in data.items():
         if not key.endswith("_check") or not isinstance(value, dict):
             continue

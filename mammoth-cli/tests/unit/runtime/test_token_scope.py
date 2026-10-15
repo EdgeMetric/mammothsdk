@@ -76,3 +76,53 @@ def test_403_hint_is_left_alone_when_the_lookup_fails() -> None:
 
     original = _forbidden().hint
     assert qualify_pin_hint(_forbidden(), broken).hint == original
+
+
+def test_403_hint_names_the_pinned_project_by_name_when_it_is_known() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_forbidden(), lambda: 77, lambda pin: "Sales 2026")
+    assert "limited to project Sales 2026 (77)" in error.hint
+    assert "--project 77" in error.hint
+
+
+def test_403_hint_falls_back_to_the_id_when_the_name_lookup_fails() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    def broken(pin: int) -> str | None:
+        raise RuntimeError("offline")
+
+    error = qualify_pin_hint(_forbidden(), lambda: 77, broken)
+    assert "limited to project 77:" in error.hint
+
+
+def test_refusing_a_pinned_token_names_the_project() -> None:
+    with pytest.raises(CliError) as refused:
+        refuse_pinned_project(4404, "create a project", project_name="Sales 2026")
+    assert "project Sales 2026 (4404)" in refused.value.message
+
+
+def _not_a_member() -> CliError:
+    return CliError(
+        code="authorization_required",
+        message="You are not a member of project 4460.",
+        hint="Project lists show only the projects you belong to. Ask a project admin to add you.",
+    )
+
+
+def test_a_pinned_token_is_not_told_to_ask_for_membership() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_not_a_member(), lambda: 3633, lambda pin: "Analytics")
+    assert "limited to project Analytics (3633)" in error.message
+    assert "project 4460" in error.message
+    assert "--project 3633" in error.hint
+    assert "admin" not in error.hint
+    assert error.details["pinned_project_id"] == 3633
+
+
+def test_an_unpinned_token_keeps_the_membership_message() -> None:
+    from mammoth_cli.runtime.token_scope import qualify_pin_hint
+
+    error = qualify_pin_hint(_not_a_member(), lambda: None)
+    assert error.message == "You are not a member of project 4460."

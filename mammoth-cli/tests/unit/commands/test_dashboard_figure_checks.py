@@ -278,3 +278,45 @@ def test_assess_twb_surfaces_not_a_workbook(
         dashboard_cmd.dashboard_assess_twb(_inv("dashboard.assess-twb", extra_args=[str(junk)]))
     assert caught.value.code == "not_a_workbook"
     assert fake_service.wait_log == [{"job_id": "j2"}]
+
+
+def _twbx_with_rows(path: Path, rows: int) -> None:
+    import zipfile
+
+    with zipfile.ZipFile(path, "w") as bundle:
+        bundle.writestr("a.twb", "<workbook/>")
+        csv = "day,events\n" + "".join(f"2026-10-{i + 1:02d},{i}\n" for i in range(rows))
+        bundle.writestr("Data/data.csv", csv)
+
+
+def test_import_workbook_with_synthetic_rows_is_partial_not_settled(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Bug bash 2026-10-15: 8 real rows became 4000 made-up ones and verify said settled."""
+    import json
+
+    from mammoth_cli.testing import login_default_profile, make_runner
+
+    login_default_profile()
+    book = tmp_path / "b.twbx"
+    _twbx_with_rows(book, 8)
+    fake_service.responses[_IMPORT] = {"job_id": "j1"}
+    fake_service.job_result = {
+        "dataview_id": 5,
+        "data_source": "fitted_sample",
+        "row_count": 4000,
+    }
+    result = make_runner().invoke(
+        [
+            "dashboard", "import-workbook", str(book), "--project", "3", "--yes",
+            "--confirm", "3", "--output", "json", "--no-input",
+        ]
+    )  # fmt: skip
+    assert result.exit_code == 3, result.output
+    data = json.loads(result.output)["data"]
+    assert data["verify"]["outcome"] == "partial"
+    assert data["verify"]["verified"] is False
+    warning = " ".join(data["warnings"])
+    assert "synthetic" in warning and "8" in warning and "4000" in warning
+    assert any("file upload" in step for step in data["next_steps"])
+    assert data["verify"]["warnings"] == data["warnings"]

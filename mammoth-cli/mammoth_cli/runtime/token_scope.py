@@ -8,9 +8,11 @@ command can refuse before it creates something the token cannot open.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 
 from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, CliError
+from mammoth_cli.runtime.labels import label, project_name
 from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
 from mammoth_cli.services.protocol import MammothService
 
@@ -26,10 +28,15 @@ def pinned_project(service: MammothService) -> int | None:
 
 def require_unpinned_token(service: MammothService, action: str) -> None:
     """Refuse ``action`` when the server says the token is limited to one project."""
-    refuse_pinned_project(pinned_project(service), action)
+    pin = pinned_project(service)
+    refuse_pinned_project(
+        pin, action, project_name=project_name(service, pin) if pin is not None else None
+    )
 
 
-def refuse_pinned_project(project_id: int | None, action: str) -> None:
+def refuse_pinned_project(
+    project_id: int | None, action: str, *, project_name: str | None = None
+) -> None:
     """Refuse ``action`` for a token limited to ``project_id``; None means not limited.
 
     Raises:
@@ -41,7 +48,8 @@ def refuse_pinned_project(project_id: int | None, action: str) -> None:
     raise CliError(
         code=CODE_AUTHORIZATION_REQUIRED,
         message=(
-            f"This token is limited to project {project_id}, so it cannot {action}: "
+            f"This token is limited to {label('project', project_id, project_name)}, "
+            f"so it cannot {action}: "
             "a project it creates would be closed to it."
         ),
         exit_status=EXIT_AUTH,
@@ -55,26 +63,61 @@ def refuse_pinned_project(project_id: int | None, action: str) -> None:
     )
 
 
-def qualify_pin_hint(error: CliError, pin_lookup: Callable[[], int | None]) -> CliError:
+_NOT_A_MEMBER = re.compile(r"You are not a member of project (\d+)\.?$")
+
+
+def _pin_label(pin: int, name_lookup: Callable[[int], str | None] | None) -> str:
+    try:
+        name = name_lookup(pin) if name_lookup is not None else None
+    except Exception:  # noqa: BLE001 -- a name is a courtesy; keep the id
+        name = None
+    return label("project", pin, name)
+
+
+def qualify_pin_hint(
+    error: CliError,
+    pin_lookup: Callable[[], int | None],
+    name_lookup: Callable[[int], str | None] | None = None,
+) -> CliError:
     """Say whether a 403's "project-limited token" hint applies to this token.
 
     The generic 403 hint blames a token limited to one project. ``pin_lookup`` reads the
     real pin (``None`` when the token is not limited, or the read fails). When the token
-    is not limited the sentence is dropped; when it is, it names the project.
+    is not limited the sentence is dropped; when it is, it names the project, with its name
+    when ``name_lookup`` finds one (a failed lookup leaves the bare id).
     """
-    if error.code != CODE_AUTHORIZATION_REQUIRED or PINNED_PROJECT_HINT not in (error.hint or ""):
+    if error.code != CODE_AUTHORIZATION_REQUIRED:
+        return error
+    membership = _NOT_A_MEMBER.match(error.message or "")
+    if membership is None and PINNED_PROJECT_HINT not in (error.hint or ""):
         return error
     try:
         pin = pin_lookup()
     except Exception:  # noqa: BLE001 -- keep the original error when the lookup fails
         return error
+    if membership is not None:
+        # A token limited to one project is refused elsewhere; "ask an admin to add you"
+        # is the wrong fix for that.
+        if pin is None:
+            return error
+        error.message = (
+            f"This token is limited to {_pin_label(pin, name_lookup)}, so it cannot open "
+            f"project {membership.group(1)}."
+        )
+        error.hint = f"Pass --project {pin}, or log in with a token created without a project."
+        error.details = {**(error.details or {}), "pinned_project_id": pin}
+        return error
     assert error.hint is not None
     if pin is None:
         error.hint = error.hint.replace(PINNED_PROJECT_HINT, "").strip()
         return error
+    try:
+        name = name_lookup(pin) if name_lookup is not None else None
+    except Exception:  # noqa: BLE001 -- a name is a courtesy; keep the id
+        name = None
     specific = (
-        f"This token is limited to project {pin}: pass --project {pin}, or log in with a "
-        "token created without a project."
+        f"This token is limited to {label('project', pin, name)}: pass --project {pin}, "
+        "or log in with a token created without a project."
     )
     error.hint = error.hint.replace(PINNED_PROJECT_HINT, specific)
     error.details = {**(error.details or {}), "pinned_project_id": pin}

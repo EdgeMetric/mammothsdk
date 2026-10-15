@@ -89,3 +89,13 @@ def test_ansi_escapes_are_stripped_from_an_error_envelope() -> None:
     body = error.to_envelope()["error"]
     assert body["message"] == 'ERROR: column "x" does not exist'
     assert body["details"]["response"]["detail"] == ["bad"]
+
+
+def test_a_yaml_error_is_a_yaml_envelope(capsys: pytest.CaptureFixture[str]) -> None:
+    import yaml
+
+    invocation = Invocation(command_id="project.list", output="yaml")
+    with pytest.raises(typer.Exit):
+        run("project.list", "yaml", _boom, invocation=invocation)
+    document = yaml.safe_load(capsys.readouterr().err)
+    assert document["error"]["code"] == "internal_error"

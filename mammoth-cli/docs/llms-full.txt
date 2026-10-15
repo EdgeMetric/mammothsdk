@@ -778,7 +778,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset file-settings undo` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.file_settings_undo
   example: mammoth dataset file-settings undo 123 --yes
 - `mammoth dataset file-settings update` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.file_settings_update
-  example: mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 1, "quotechar": "\""}'
+  example: mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'
 - `mammoth dataset find` [read/none] -> mammoth_cli.commands.dataset.find
   example: mammoth dataset find sales
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get

@@ -210,7 +210,18 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"
     ),
-    "file.upload-folder": "upload source-data directory folder",
+    "file.upload-folder": (
+        "upload source-data directory folder a folder of files every file in a local folder"
+    ),
+    # A "folder" in Mammoth is a project folder that groups datasets, views and
+    # dashboards (`folder` commands); a local directory of files is `file upload-folder`.
+    # An uploaded file becomes a dataset named after it, so deleting it is `dataset delete`.
+    "folder.list": "list show folder folders directories organize project resources",
+    "folder.create": "create make new add folder directory organize project resources",
+    "folder.update": "rename folder directory",
+    "folder.move": "move put dataset view dashboard resources into a folder directory",
+    "file.delete": "delete remove uploaded source file csv",
+    "file.list": "list show uploaded source files csv",
     "view.export.csv": "export download local CSV file artifact",
     "view.export.dataset": (
         "send copy branch out create save the result rows into a new project from an "
@@ -528,7 +539,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "dashboard.delete": "delete remove permanently dashboard board",
     "view.delete": "delete remove permanently",
-    "dataset.delete": "delete remove permanently dataset",
+    "dataset.delete": "delete remove permanently dataset uploaded file csv",
     "view.list": "list all views",
     "view.task.delete": "undo remove the last step task from the pipeline revert a transformation",
     "view.data.query": "query rows with a filter condition sort columns and get rows back",

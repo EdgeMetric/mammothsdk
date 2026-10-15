@@ -955,6 +955,7 @@ def _with_deliverable_check(
     if not isinstance(data, dict):
         return data
     dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    data = _reflect_not_applied(invocation.command_id, data, dashboard_id)
     if not isinstance(dashboard_id, int):
         return {
             **data,
@@ -985,6 +986,38 @@ def _with_deliverable_check(
         "deliverable_check": check,
         **_authoring_problems(invocation, data, canvas_doc, kwargs or {}),
     }
+
+
+def _reflect_not_applied(
+    command_id: str, data: dict[str, Any], dashboard_id: Any
+) -> dict[str, Any]:
+    """A chat edit that reports ``changed: false`` was not applied, whatever its message says.
+
+    The model's own ``message`` ("I added a Total Events card") describes what it meant
+    to do. It is kept as ``model_message`` and the ``message`` says plainly that nothing
+    was applied, with the fallback that works.
+    """
+    if command_id != "dashboard.chat.edit" or data.get("changed") is not False:
+        return data
+    claim = data.get("message")
+    target = dashboard_id if dashboard_id is not None else "DASHBOARD_ID"
+    out = {
+        **data,
+        "message": (
+            "NOT APPLIED: the dashboard was not changed"
+            + (" (the board did not bake)" if data.get("bake_ok") is False else "")
+            + ". The assistant's reply below describes what it intended, not what happened."
+        ),
+        "next_steps": [
+            f"Read the board: mammoth dashboard get {target}",
+            f"Add the card directly: mammoth dashboard figure add {target} --input "
+            '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
+            '"COLUMN", "agg": "sum"}}\'',
+        ],
+    }
+    if isinstance(claim, str):
+        out["model_message"] = claim
+    return out
 
 
 def _authoring_problems(
@@ -1241,8 +1274,61 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
         )
     _refuse_rejected_workbook(data)
     if isinstance(data, dict) and data.get("data_source") == "fitted_sample":
-        data = {**data, "synthetic_data": True, "data_note": _SYNTHETIC_ROWS_NOTE}
+        data = _flag_synthetic_import(data, file_path)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _packaged_row_count(file_path: str) -> int | None:
+    """Data rows in the CSV a ``.twbx`` packages (largest one), or None when it has none."""
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(file_path) as bundle:
+            sizes = [
+                sum(1 for _ in bundle.open(info)) - 1
+                for info in bundle.infolist()
+                if info.filename.lower().endswith(".csv")
+            ]
+    except (zipfile.BadZipFile, OSError):
+        return None
+    return max(sizes) if sizes and max(sizes) >= 0 else None
+
+
+def _flag_synthetic_import(data: dict[str, Any], file_path: str) -> dict[str, Any]:
+    """Make a fitted-sample import ``partial``: its numbers are not the workbook's.
+
+    The backend importer substitutes generated rows for the workbook's data. That must
+    not read ``settled`` with no warning, so the result is partial (exit 3) and says how
+    many rows were expected and received and how to load the real data.
+    """
+    expected = _packaged_row_count(file_path)
+    received = next(
+        (data[k] for k in ("row_count", "rows", "rows_imported") if isinstance(data.get(k), int)),
+        None,
+    )
+    warning = (
+        "The imported data is synthetic: the backend replaced the workbook's data with "
+        f"generated rows. Expected {expected if expected is not None else 'the workbook'}"
+        f"{' rows' if expected is not None else chr(39) + 's own rows'}, received "
+        f"{received if received is not None else 'a generated sample'}"
+        f"{' rows' if received is not None else ''}. Do not trust any number on this dataset."
+    )
+    dataview_id = data.get("dataview_id")
+    steps = [
+        "Upload the real data as a CSV: mammoth file upload REAL.csv --project PROJECT_ID "
+        "(or add it to this dataset with --input '{\"append_to_ds_id\": DATASET_ID}').",
+        "Point the imported dashboard at the real dataset (dashboard figure add or "
+        "dashboard chat edit), then delete the synthetic one"
+        + (f" (view {dataview_id})." if dataview_id is not None else "."),
+    ]
+    return {
+        **data,
+        "synthetic_data": True,
+        "data_note": _SYNTHETIC_ROWS_NOTE,
+        "partial": True,
+        "warnings": [warning],
+        "next_steps": steps,
+    }
 
 
 # ── BI export (Power BI / Tableau) ───────────────────────────────────────────
