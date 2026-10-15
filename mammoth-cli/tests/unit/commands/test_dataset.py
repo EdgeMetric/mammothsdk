@@ -1076,6 +1076,28 @@ def test_delete_succeeds_when_the_dataset_is_gone_afterwards(
     assert isinstance(data, dict)
 
 
+def test_delete_succeeds_when_the_get_answers_4dset001_afterwards(
+    fake_service: FakeMammothService,
+) -> None:
+    # Live (2.2.82): the dataset get route answers 400 4DSET001, not 404, for a
+    # deleted dataset; the delete is done and must not be reported as api_error.
+    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        if any(symbol == _DELETE for symbol, _ in log):
+            raise CliError(
+                code="api_error",
+                message="Invalid dataset id",
+                exit_status=1,
+                details={"backend_code": "4DSET001"},
+            )
+        return {"id": 7}
+
+    fake_service.responses[_GET] = get  # type: ignore[assignment]
+    data, _meta = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert isinstance(data, dict)
+
+
 def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

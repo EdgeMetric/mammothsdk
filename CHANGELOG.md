@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.83)
+
+- `dataset delete` no longer reports `api_error` (exit 1) after a delete that worked: the dataset get route answers `400 4DSET001` for a deleted dataset, and the post-delete check now reads that as gone.
+
 ### Changed (mammoth-cli 2.2.82, behavior changes)
 
 - Exit code 3 is now used: a write whose read-back says only part of it took effect (`verify.outcome` `partial`) prints its envelope with top-level `status: partial` and exits 3. A write that did not verify (`verify.outcome` `failed`) now prints `status: failed` (the earlier word is kept in `verify.reported_status`) and exits 1, where it used to say `done` and exit 0 (for example `dashboard chat edit`). A write still running when the wait ends reports `status: pending` with `verify.next_command` (`mammoth view pipeline wait VIEW_ID`, or `mammoth job wait ID` for an automation) and keeps exit 0: it was accepted and must not be replayed.
