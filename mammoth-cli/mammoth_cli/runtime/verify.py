@@ -61,6 +61,7 @@ CODE_EXPORT_NOT_FOUND = "export_not_found"
 OUTCOME_SETTLED = "settled"
 OUTCOME_PENDING = "pending"
 OUTCOME_FAILED = "failed"
+OUTCOME_PARTIAL = "partial"
 _PENDING_STATES = frozenset({"staged", "processing"})
 
 _FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
@@ -151,7 +152,11 @@ def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
     )
     if unfinished or verify["state"] in _PENDING_STATES or verify["reason"] == _UNSETTLED_REASON:
         return OUTCOME_PENDING
-    return OUTCOME_SETTLED if verify["verified"] else OUTCOME_FAILED
+    if verify["verified"]:
+        return OUTCOME_SETTLED
+    if data.get("partial") is True and data.get("bake_ok") is not False:
+        return OUTCOME_PARTIAL
+    return OUTCOME_FAILED
 
 
 def _removed_nothing(check: dict[str, Any] | None, before: Any, after: Any) -> bool:
@@ -307,6 +312,8 @@ def _verify_and_reason(
         return False, "the pipeline reported an error"
     if data.get("bake_ok") is False:
         return False, "the dashboard did not bake"
+    if data.get("partial") is True:
+        return False, "part of the request was swapped or dropped; see warnings"
     if row_count_attempted:
         # An attempted row count that never came back readable is never
         # reported as a known, verified count -- even when nothing else

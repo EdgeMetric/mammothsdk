@@ -47,7 +47,16 @@ from mammoth_cli.services.dashboard_filters import (
     with_filter,
     without_filter,
 )
-from mammoth_cli.services.dashboard_pages import check_added_pages
+from mammoth_cli.services.dashboard_figures import (
+    bake_error_problem,
+    canvas_figure_problems,
+    figure_problems,
+)
+from mammoth_cli.services.dashboard_pages import (
+    check_added_pages,
+    generate_substitutions,
+    page_substitutions,
+)
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
     NEW_COLUMN_NOTE,
@@ -56,6 +65,7 @@ from mammoth_cli.services.dashboard_review import (
     reporting_month,
     review,
 )
+from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
 from mammoth_cli.services.positionals import resolve_positionals
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -677,8 +687,48 @@ def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
     if document.get("page") is not None:
         kwargs.update(_figure_page_kwargs(document["page"]))
     with open_service(invocation) as (service, auth):
+        _refuse_bad_figure(service, dashboard_id, kwargs)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _refuse_bad_figure(service: Any, dashboard_id: int, kwargs: dict[str, Any]) -> None:
+    """Fail before the call when the figure names a missing column or sums text.
+
+    Reads the board's column profile (one canvas read); an unreadable canvas or
+    a board with no profile yet skips the check, as the server still validates.
+    """
+    figure = kwargs.get("figure")
+    if not isinstance(figure, dict):
+        return
+    try:
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+    except Exception:  # noqa: BLE001 -- the check is advice; the server still validates
+        return
+    profiles = _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
+    canvas = canvas_doc.get("canvas") if isinstance(canvas_doc, dict) else None
+    derived = [
+        str(d.get("id"))
+        for d in (canvas.get("derived") or [] if isinstance(canvas, dict) else [])
+        if isinstance(d, dict)
+    ]
+    problems = figure_problems(figure, profiles, derived=derived, view_id=kwargs.get("dataview_id"))
+    if not problems:
+        return
+    first = problems[0]
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=f"The figure cannot be drawn: {first['detail']}",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Fix the figure and run the command again."
+            if "fix" not in first
+            else "Convert the column, then add the figure."
+        ),
+        recovery_commands=[p["fix"] for p in problems if "fix" in p]
+        or [f"mammoth dashboard canvas get {dashboard_id}"],
+        details={"problems": problems},
+    )
 
 
 def dashboard_cancel_generation(invocation: Invocation) -> HandlerResult:
@@ -815,7 +865,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
-            data = _with_deliverable_check(invocation, service, auth, positionals, data)
+            data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
             data = _with_board_values(service, auth, positionals, data)
     return data, _meta(invocation, auth.workspace_id)
@@ -891,11 +941,19 @@ _REVIEWED_COMMANDS = frozenset(
 
 
 def _with_deliverable_check(
-    invocation: Invocation, service: Any, auth: Any, positionals: dict[str, Any], data: Any
+    invocation: Invocation,
+    service: Any,
+    auth: Any,
+    positionals: dict[str, Any],
+    data: Any,
+    kwargs: dict[str, Any] | None = None,
 ) -> Any:
     """Add ``deliverable_check`` (money shown? blanks decided?) to an authoring result.
 
     One canvas read; advice only, so a failed read leaves the result as it was.
+    The same read also catches a figure the board cannot draw (an unknown column,
+    a sum over text, a bake error) and any chart the server swapped or dropped; those
+    set ``bake_ok``/``partial`` so ``verify`` reports the write as not clean.
     """
     if hasattr(data, "model_dump"):
         data = data.model_dump(mode="json")
@@ -912,7 +970,8 @@ def _with_deliverable_check(
             },
         }
     try:
-        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id)
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        warnings = _deliverable_warnings(invocation, service, auth, dashboard_id, canvas_doc)
     except Exception as exc:  # noqa: BLE001 -- advice must never fail the authoring step
         error = f"{type(exc).__name__}: {exc}"
         return {
@@ -926,16 +985,78 @@ def _with_deliverable_check(
             "report why not."
             + (" " + NEW_COLUMN_NOTE if any("fix" in warning for warning in warnings) else "")
         )
-    return {**data, "deliverable_check": check}
+    return {
+        **data,
+        "deliverable_check": check,
+        **_authoring_problems(invocation, data, canvas_doc, kwargs or {}),
+    }
+
+
+def _authoring_problems(
+    invocation: Invocation, data: dict[str, Any], canvas_doc: Any, kwargs: dict[str, Any]
+) -> dict[str, Any]:
+    """Fields that make ``verify`` report a figure that failed or was swapped as not clean."""
+    command_id = invocation.command_id
+    params = (kwargs.get("body") or {}).get("params") or {}
+    broken: list[dict[str, Any]] = []
+    partial: list[dict[str, Any]] = []
+    if command_id in {"dashboard.canvas.save", "dashboard.pages.add"}:
+        broken = canvas_figure_problems(canvas_doc)
+        bake = bake_error_problem(canvas_doc)
+        if bake is not None:
+            broken.append(bake)
+    if command_id == "dashboard.pages.add":
+        profiles = [p["name"] for p in _canvas_profiles(canvas_doc)]
+        refused = (data.get("chart_check") or {}).get("refused") or []
+        partial = page_substitutions(
+            params.get("pages") or [], data.get("added_page_ids"), canvas_doc, refused, profiles
+        )
+        partial += [
+            {
+                "issue": "page_dropped",
+                "requested": {"page": removed.get("title")},
+                "used": None,
+                "detail": f"page '{removed.get('title')}' got no charts and was removed.",
+            }
+            for removed in (data.get("chart_check") or {}).get("removed_pages") or []
+        ]
+    elif command_id == "dashboard.v3.generate":
+        partial = generate_substitutions(params.get("intent"), canvas_doc, data.get("message"))
+    elif command_id == "dashboard.chat.edit":
+        partial = generate_substitutions(None, canvas_doc, data.get("message"))
+    extra: dict[str, Any] = {}
+    if broken:
+        extra["bake_ok"] = False
+        extra["figure_check"] = {
+            "problems": broken,
+            "notes": [str(problem["detail"]) for problem in broken],
+        }
+    if partial:
+        extra["partial"] = True
+        extra["substitution_check"] = {
+            "problems": partial,
+            "notes": [str(problem["detail"]) for problem in partial],
+        }
+    if broken or partial:
+        previous = data.get("warnings")
+        extra["warnings"] = [*(previous if isinstance(previous, list) else []), *broken, *partial]
+    return extra
+
+
+def _canvas_profiles(canvas_doc: Any) -> list[dict[str, Any]]:
+    return _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
 
 
 def _deliverable_warnings(
-    invocation: Invocation, service: Any, auth: Any, dashboard_id: int
+    invocation: Invocation,
+    service: Any,
+    auth: Any,
+    dashboard_id: int,
+    canvas_doc: Any = None,
 ) -> list[dict[str, Any]]:
     """Read the canvas (and its view) once and return the review's warnings."""
-    canvas_doc = service.call(CANVAS_GET, dashboard_id=dashboard_id)
-    if hasattr(canvas_doc, "model_dump"):
-        canvas_doc = canvas_doc.model_dump(mode="json")
+    if canvas_doc is None:
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
     source = (canvas_doc.get("canvas") or {}).get("dataset") or {}
     view_id = source.get("dataview_id")
     profile = invocation.profile or profiles.get_selected()
