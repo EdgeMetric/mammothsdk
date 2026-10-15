@@ -17,6 +17,11 @@ task, not in the middle of one.
 {"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
 
+A mistyped command, option or column carries `details.did_you_mean`: the nearest
+commands (unknown command), the nearest option (`--profle`, or `"--project 3633"`
+passed as one argument: pass the value separately) or the nearest column (`Day`
+for `day`). Use it instead of guessing again.
+
 `log_ref` points at the local run log: `mammoth log tail --input '{"run_id": "RUN_ID"}'` lists every request that invocation made, with HTTP status and backend `request_id`. Quote both when reporting a backend fault.
 
 ## `auth status` and token expiry

@@ -128,15 +128,16 @@ def test_a_global_option_after_a_group_reports_the_missing_subcommand() -> None:
 @pytest.mark.parametrize(
     ("args", "expected"),
     [
-        (["uplaod"], "No such command 'uplaod'. Did you mean 'upgrade'?"),
-        (["file", "uplod"], "No such command 'uplod'. Did you mean 'upload'?"),
+        (["uplaod"], "mammoth file upload"),
+        (["file", "uplod"], "mammoth file upload"),
     ],
 )
 def test_did_you_mean_suggestions_still_pass_through(args: list[str], expected: str) -> None:
     error = _error(args)
 
-    assert error["message"] == expected
-    assert error["hint"] == "Check the command schema with 'mammoth schema get'."
+    assert error["message"].startswith(f"No such command '{args[-1]}'")
+    assert expected in error["message"]
+    assert "mammoth schema find" in error["hint"]
 
 
 def test_an_unknown_option_on_a_leaf_command_is_untouched() -> None:

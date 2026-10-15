@@ -443,6 +443,72 @@ def _corrected_command(tokens: Sequence[str]) -> str | None:
     return " ".join(["mammoth", *rest, *leading])
 
 
+def _parent_words(context: Any) -> list[str]:
+    """The command words above an unknown one, without the program name."""
+    words: list[str] = []
+    while context is not None and getattr(context, "parent", None) is not None:
+        words.insert(0, str(context.info_name))
+        context = context.parent
+    return words
+
+
+def _unknown_command_report(error: Any) -> CliError | None:
+    """``No such command 'X'``: name the nearest commands and the discovery commands."""
+    from mammoth_cli.services.suggest import DISCOVERY_HINT, command_suggestions
+
+    match = _NO_SUCH_COMMAND.search(error.format_message() or "")
+    if match is None or match.group("name").startswith("-"):
+        return None
+    name = match.group("name")
+    parent = _parent_words(getattr(error, "ctx", None))
+    paths = [str(record["command_path"]).split() for record in _command_records()]
+    suggestions = command_suggestions(parent, name, paths)
+    where = f" under 'mammoth {' '.join(parent)}'" if parent else ""
+    message = f"No such command '{name}'{where}."
+    if suggestions:
+        message += f" Did you mean: {', '.join(suggestions)}?"
+    goal = name.replace('"', "")
+    return CliError(
+        code="usage_error",
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=DISCOVERY_HINT,
+        details={"command": name, "did_you_mean": suggestions},
+        recovery_commands=[
+            *(f"{suggestion} --help" for suggestion in suggestions[:2]),
+            f'mammoth how "{goal}"',
+            f'mammoth schema find "{goal}"',
+        ],
+    )
+
+
+def _unknown_option_report(error: Any, option: str) -> CliError:
+    """An unknown ``--option``: name the nearest valid one (global or the command's own)."""
+    from mammoth_cli.services.suggest import option_suggestion
+
+    command = getattr(getattr(error, "ctx", None), "command", None)
+    known = set(_global_option_flags()[0]) | {
+        flag
+        for param in getattr(command, "params", [])
+        for flag in (*param.opts, *param.secondary_opts)
+    }
+    suggestion = option_suggestion(option, sorted(known))
+    details: dict[str, Any] = {"option": option}
+    if suggestion is not None:
+        details["did_you_mean"] = suggestion["flag"]
+    return CliError(
+        code="unknown_option",
+        message=f"Unknown option '{option}'.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            suggestion["hint"]
+            if suggestion is not None
+            else "Run the command with --help to list its options."
+        ),
+        details=details,
+    )
+
+
 def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
     """Classify a usage error whose own Click message is empty or misleading.
 
@@ -471,7 +537,9 @@ def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
     if match is None:
         return None
     name = match.group("name").split("=", 1)[0]
-    if not name.startswith("-") or name not in _global_option_flags()[0]:
+    if not name.startswith("-"):
+        return _unknown_command_report(error)
+    if name not in _global_option_flags()[0]:
         return None
     # Only leaf commands declare the global options, so a group reads one as a
     # subcommand name and reports a misleading "No such command '--profile'".
@@ -656,13 +724,7 @@ class _EnvelopeGroup(TyperGroup):
         report = None if is_missing_parameter else _usage_error_report(error, tokens)
         if is_missing_parameter and (option := _unknown_flag_in(error, tokens)):
             # A misspelt flag is the first thing to fix, ahead of a missing argument.
-            report = CliError(
-                code="unknown_option",
-                message=f"Unknown option '{option}'.",
-                exit_status=EXIT_USAGE,
-                hint="Check the command schema with 'mammoth schema get'.",
-                details={"option": option},
-            )
+            report = _unknown_option_report(error, option)
         if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
             if report is None:
                 missing = is_missing_parameter
@@ -675,18 +737,7 @@ class _EnvelopeGroup(TyperGroup):
                     )
                 elif isinstance(error, _typer_click_exceptions.NoSuchOption):
                     option = getattr(error, "option_name", None) or "unknown"
-                    close = getattr(error, "possibilities", None) or []
-                    report = CliError(
-                        code="unknown_option",
-                        message=f"Unknown option '{option}'.",
-                        exit_status=EXIT_USAGE,
-                        hint=(
-                            f"Did you mean {' or '.join(sorted(close))}?"
-                            if close
-                            else "Check the command schema with 'mammoth schema get'."
-                        ),
-                        details={"option": option},
-                    )
+                    report = _unknown_option_report(error, option)
                 elif isinstance(error, _typer_click_exceptions.BadParameter):
                     # With optional typed positionals Click may consume an
                     # unknown option token as the positional value. Only
@@ -694,13 +745,7 @@ class _EnvelopeGroup(TyperGroup):
                     # a known option's malformed value remains usage_error.
                     option = _unknown_flag_in(error, tokens)
                     if option:
-                        report = CliError(
-                            code="unknown_option",
-                            message=f"Unknown option '{option}'.",
-                            exit_status=EXIT_USAGE,
-                            hint="Check the command schema with 'mammoth schema get'.",
-                            details={"option": option},
-                        )
+                        report = _unknown_option_report(error, option)
                     else:
                         report = CliError(
                             code="usage_error",
@@ -727,6 +772,8 @@ class _EnvelopeGroup(TyperGroup):
             no_args = _NO_ARGS_ERROR is not None and isinstance(error, _NO_ARGS_ERROR)
             if report.hint and not no_args:
                 typer.echo(report.hint, err=True)
+            for command in report.recovery_commands:
+                typer.echo(f"  try: {command}", err=True)
 
 
 def _version_callback(value: bool) -> None:

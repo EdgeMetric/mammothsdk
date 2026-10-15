@@ -51,7 +51,9 @@ def test_unknown_option_is_still_rejected_before_the_positional_count_check() ->
     with pytest.raises(CliError) as excinfo:
         validate_extra_args(_BULK_REPLACE, ["1039", "--nope"])
     assert excinfo.value.code == "unknown_option"
-    assert excinfo.value.hint == "Check the command schema with 'mammoth schema get'."
+    assert excinfo.value.hint == (
+        "Run 'mammoth view transform bulk-replace --help' to list its options and input fields."
+    )
 
 
 def test_option_that_names_a_positional_is_pointed_at_the_positional_form() -> None:

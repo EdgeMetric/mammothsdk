@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.86, command and capability discovery)
+
+- Did you mean: an unknown command names the nearest commands, including a nested group (`mammoth pipeline` -> `mammoth view pipeline`), and points to `mammoth how` / `mammoth schema find` instead of `schema get`; `details.did_you_mean` lists them and `recovery_commands` are ready to run. An unknown option names the nearest valid one (`--profle` -> `--profile`), and an option passed with its value as one argument (`"--project 3633"`, `--project3633`) says to pass the value separately. An unknown or wrong-case column (`Day` for `day`) names the closest column in the message, hint and `details.did_you_mean`.
+
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
 - `dataset list` (and the name search) report a real `dataset_health` for every dataset. The list route already returns `status`; the compact summary dropped it for a ready dataset, so every row read `unknown` with a "run mammoth dataset get" hint. Each row now carries `status` (about 18 characters a row); no extra request is made, so big projects list as fast as before.

@@ -92,7 +92,14 @@ def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, An
                 f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
                 {"input_field": guessed},
             )
-    return "Check the command schema with 'mammoth schema get'.", {}
+    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.services.suggest import option_suggestion
+
+    known = sorted(_global_option_flags()[0] | COMMAND_FLAGS.get(command_id, frozenset()))
+    suggestion = option_suggestion(token, known)
+    if suggestion is not None:
+        return suggestion["hint"], {"did_you_mean": suggestion["flag"]}
+    return f"Run 'mammoth {command} --help' to list its options and input fields.", {}
 
 
 def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:

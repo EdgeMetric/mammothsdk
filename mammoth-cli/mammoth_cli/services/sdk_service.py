@@ -922,18 +922,30 @@ class SdkMammothService:
         scope: str | None = None,
     ) -> CliError:
         """Build a stable pre-mutation display-name resolution error."""
+        from mammoth_cli.services.suggest import nearest_one
+
+        near = nearest_one(reference, available)
         if internal:
             message = f"{reference} must use a display name, not an internal column id."
             code = "internal_column_name"
         else:
             message = f"Column reference '{reference}' is not a display name in this view."
             code = "unknown_column"
+        hint = "Use one of the available display names from view metadata."
+        if near is not None:
+            message += f" Did you mean '{near}'?"
+            hint = f"Did you mean '{near}'? Display names are case-sensitive. {hint}"
         return CliError(
             code=code,
             message=message,
             exit_status=EXIT_USAGE,
-            hint="Use one of the available display names from view metadata.",
-            details={"reference": reference, "scope": scope, "available": available},
+            hint=hint,
+            details={
+                "reference": reference,
+                "scope": scope,
+                "available": available,
+                "did_you_mean": near,
+            },
         )
 
     @staticmethod
