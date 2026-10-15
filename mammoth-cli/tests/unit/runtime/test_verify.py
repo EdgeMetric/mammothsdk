@@ -360,6 +360,23 @@ def test_pipeline_write_with_no_broken_exports_is_unaffected(
     assert result["verify"]["warnings"] == []
 
 
+def test_an_export_that_became_not_runnable_is_flagged_as_stale(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.exports.ExportsAPI.list"] = {
+        "exports": [
+            {"id": 44043, "handler_type": "internal_dataset", "error_info": None, "runnable": False}
+        ]
+    }
+    invocation = Invocation(
+        command_id="view.transform.add-sql", output="json", extra_args=["311857"]
+    )
+    result = with_verify({"status": "done"}, invocation)
+    assert result["verify"]["verified"] is False
+    assert "export 44043" in result["verify"]["reason"]
+    assert "no longer runnable" in result["verify"]["reason"]
+
+
 def test_the_downstream_export_check_is_skipped_once_the_write_already_failed(
     fake_service: FakeMammothService,
 ) -> None:

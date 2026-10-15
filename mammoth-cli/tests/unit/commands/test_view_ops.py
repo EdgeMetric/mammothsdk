@@ -314,6 +314,43 @@ def test_transform_add_sql_forwards_query(fake_service: FakeMammothService, tmp_
     assert fake_service.view_call_log == [(3, "add_sql", {"dataset_id": 122, "query": "SELECT 1"})]
 
 
+_TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+
+
+def _unknown_outcome() -> CliError:
+    return CliError(code="outcome_unknown", message="may have committed", exit_status=7)
+
+
+def test_add_sql_whose_readback_fails_is_confirmed_by_the_task_list(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    listings = iter([[{"id": 1}], [{"id": 1}, {"id": 2}]])
+    monkeypatch.setattr(view_ops_cmd, "_tasks", lambda *_args, **_kwargs: next(listings))
+    fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
+    doc = _write(tmp_path, {"query": "SELECT 1"})
+    data, _ = view_ops_cmd.view_transform_add_sql(
+        _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
+    )
+    assert data["status"] == "done"
+    assert data["task_ids"] == [2]
+    assert "confirmed in the task list" in data["warnings"][0]
+
+
+def test_add_sql_unknown_outcome_with_no_new_task_stays_unknown(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(view_ops_cmd, "_tasks", lambda *_args, **_kwargs: [{"id": 1}])
+    fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
+    doc = _write(tmp_path, {"query": "SELECT 1"})
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_transform_add_sql(
+            _inv(
+                "view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+            )
+        )
+    assert excinfo.value.code == "outcome_unknown"
+
+
 def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_transform_ai(_inv("view.transform.ai", extra_args=["3"], input_file=None))

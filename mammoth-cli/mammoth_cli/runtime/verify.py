@@ -518,7 +518,7 @@ def _broken_downstream_exports(
     return [
         item
         for item in _listing_exports(read_data)
-        if isinstance(item, dict) and item.get("error_info")
+        if isinstance(item, dict) and (item.get("error_info") or item.get("runnable") is False)
     ]
 
 
@@ -573,6 +573,12 @@ def read_export_stamps(service: Any, view_id: int, dataset_id: int) -> dict[int,
 def _export_error_detail(item: dict[str, Any]) -> str:
     """Human-readable ``"export <id> (<handler>): ..."`` line for one broken export."""
     error_info = item.get("error_info")
+    if not error_info and item.get("runnable") is False:
+        handler = f" ({item['handler_type']})" if item.get("handler_type") else ""
+        return (
+            f"export {item.get('id')}{handler} is no longer runnable: its destination keeps "
+            "the old data until the export is fixed or recreated"
+        )
     error_info = error_info if isinstance(error_info, dict) else {}
     # the backend nests the details: error_info.additional_info.{error_code,
     # reference_errors} (live `view export get`, T2-WPP-W2)

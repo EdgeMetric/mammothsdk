@@ -56,6 +56,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_OUTCOME_UNKNOWN,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_API,
     EXIT_USAGE,
@@ -420,6 +421,15 @@ def _dispatch_view(
             if auto_row_check and dataset_id is not None
             else None
         )
+        guard_ids = (
+            task_ids_before
+            if task_ids_before is not None
+            else (
+                _task_ids(service, int(dataset_id), view_id)
+                if method == "add_sql" and dataset_id is not None
+                else None
+            )
+        )
         try:
             if dataset_id is None:
                 _require_discovery_allowed(invocation, view_id)
@@ -430,7 +440,14 @@ def _dispatch_view(
             # SDK >= 0.7.12 raises on the same job result; enrich it the same way.
             response = exc.details.get("response") if isinstance(exc.details, dict) else None
             reject_pipeline_reference_errors(service, view_id, dataset_id, response)
-            raise
+            applied = (
+                _applied_despite_unreadable(service, view_id, dataset_id, guard_ids)
+                if exc.code == CODE_OUTCOME_UNKNOWN and method == "add_sql"
+                else None
+            )
+            if applied is None:
+                raise
+            data = applied
         reject_pipeline_reference_errors(service, view_id, dataset_id, data)
         if dataset_id is not None:
             data = _mark_staged_in_draft(service, dataset_id, view_id, data)
@@ -512,6 +529,35 @@ def _tasks(service: Any, dataset_id: int, view_id: int) -> list[dict[str, Any]]:
     listing = service.call(_TASK_LIST_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
     tasks = listing.get("tasks") if isinstance(listing, dict) else None
     return [task for task in tasks or [] if isinstance(task, dict)]
+
+
+def _applied_despite_unreadable(
+    service: Any, view_id: int, dataset_id: Any, task_ids_before: set[Any] | None
+) -> dict[str, Any] | None:
+    """The result for a write whose own read-back failed after the task was stored.
+
+    ``add-sql`` can finish its job and then fail reading the view back (the new
+    query's response is not valid yet). The task list says whether the step was
+    stored: a task that was not there before means it was, so the write is
+    reported as applied with a warning instead of "outcome unknown".
+    """
+    if task_ids_before is None or dataset_id is None:
+        return None
+    try:
+        added = sorted(_task_ids(service, int(dataset_id), view_id) - task_ids_before, key=str)
+    except Exception:  # noqa: BLE001 -- an unreadable task list leaves the outcome unknown
+        return None
+    if not added:
+        return None
+    return {
+        "status": "done",
+        "task_ids": added,
+        "warnings": [
+            "the step was stored (confirmed in the task list) but reading the view back "
+            "failed right after; run `mammoth view pipeline wait VIEW_ID`, then read the view "
+            "before building on it"
+        ],
+    }
 
 
 def _task_ids(service: Any, dataset_id: int, view_id: int) -> set[Any]:
