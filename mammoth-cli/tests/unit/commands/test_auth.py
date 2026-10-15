@@ -908,3 +908,21 @@ def test_status_check_names_the_workspace_and_the_pinned_project(
     data = json.loads(result.stdout)["data"]
     assert data["workspace_name"] == "Filipe Silva"
     assert data["token_project_name"] == "Sales 2026"
+
+
+def test_status_of_a_profile_that_does_not_exist_exits_4_with_a_login_hint(
+    isolated_cli_config: Path,
+) -> None:
+    result = make_runner().invoke(["auth", "status", "--profile", "nosuch", "-o", "json"], env={})
+    assert result.exit_code == 4, result.stdout
+    error = json.loads(result.stderr.strip().splitlines()[-1])["error"]
+    assert error["code"] == "authentication_failed"
+    assert "mammoth auth login --profile nosuch" in error["recovery_commands"]
+
+
+def test_status_with_no_profile_given_still_reports_signed_out_state(
+    isolated_cli_config: Path,
+) -> None:
+    result = make_runner().invoke(["auth", "status", "-o", "json"], env={})
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["has_credentials"] is False
