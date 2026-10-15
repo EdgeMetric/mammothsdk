@@ -259,10 +259,23 @@ def test_upload_uses_files_input_field_when_no_positional(
     ]
 
 
-def test_upload_with_no_files_omits_files_kwarg(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [], "errors": {}}
-    file_cmd.file_upload(_inv("file.upload"))
-    assert fake_service.call_log == [(_UPLOAD_RESULT, {})]
+def test_upload_with_no_files_is_a_usage_error(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload"))
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.exit_status == 2
+    assert fake_service.call_log == []
+
+
+def test_upload_of_a_directory_points_at_upload_folder(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    (tmp_path / "docs").mkdir()
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", extra_args=[str(tmp_path / "docs")]))
+    assert "is a directory" in excinfo.value.message
+    assert "file upload-folder" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
 
 
 def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(

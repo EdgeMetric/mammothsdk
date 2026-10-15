@@ -234,7 +234,7 @@ def file_bulk_delete(invocation: Invocation) -> HandlerResult:
 
 
 def file_upload(invocation: Invocation) -> HandlerResult:
-    """Upload one or more local files. Paths come from positionals or ``files``."""
+    """Upload local files: one path as the argument, several via the ``files`` input field."""
     document = invocation.load_input() or {}
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
@@ -244,12 +244,20 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         **({"files": list(invocation.extra_args)} if invocation.extra_args else {}),
     )
     _require_local_files(kwargs.get("files"))
-    if kwargs.get("append_to_ds_id") is not None and not kwargs.get("files"):
+    if not kwargs.get("files"):
+        appending = kwargs.get("append_to_ds_id") is not None
         raise CliError(
             code=CODE_MISSING_ARGUMENT,
-            message="This command requires 'files' when append_to_ds_id is set.",
+            message=(
+                "This command requires 'files' when append_to_ds_id is set."
+                if appending
+                else "A file path is required."
+            ),
             exit_status=EXIT_USAGE,
-            hint="Pass the file(s) as positional arguments or a 'files' input field.",
+            hint=(
+                "Pass one path as the argument (mammoth file upload ./data.csv), or several "
+                "with --input '{\"files\": [\"a.csv\", \"b.csv\"]}'."
+            ),
         )
     with open_service(invocation) as (service, auth):
         # When the caller opts out of waiting (``wait_for_completion: false``)
@@ -356,6 +364,14 @@ def _require_local_files(files: Any) -> None:
         if not isinstance(candidate, str):
             continue
         path = Path(candidate).expanduser()
+        if path.is_dir():
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"{candidate} is a directory, not a file.",
+                exit_status=EXIT_USAGE,
+                hint=f"Use 'mammoth file upload-folder {candidate}' to upload every file in it.",
+                details={"path": candidate},
+            )
         if not path.is_file():
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
