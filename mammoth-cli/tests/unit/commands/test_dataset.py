@@ -901,6 +901,89 @@ def test_bulk_delete_requires_explicit_ids(fake_service: FakeMammothService) -> 
     assert fake_service.call_log == []
 
 
+def _gone(code: str = "api_error") -> CliError:
+    return CliError(
+        code=code,
+        message="Invalid dataset id",
+        exit_status=1,
+        details={"backend_code": "4DSET001"},
+    )
+
+
+def _bulk_delete_fake(fake_service: FakeMammothService, *, exists: set[int], kept: set[int]) -> None:
+    """Program the get/delete reads: ``exists`` are present before, ``kept`` survive the delete."""
+    fake_service.responses[_GET] = lambda log: _bulk_get(log, exists, kept)
+
+
+def _bulk_get(log: list[tuple[str, dict[str, object]]], exists: set[int], kept: set[int]) -> object:
+    dataset_id = log[-1][1]["dataset_id"]
+    deleted = any(symbol.endswith("bulk_delete") for symbol, _ in log)
+    present = dataset_id in (kept if deleted else exists)
+    if not present:
+        raise _gone()
+    return {"id": dataset_id}
+
+
+def test_bulk_delete_reports_each_id_as_deleted(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _bulk_delete_fake(fake_service, exists={7, 8}, kept=set())
+    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
+    data, _ = dataset_cmd.dataset_bulk_delete(
+        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
+    )
+    assert data["results"] == [
+        {"dataset_id": 7, "status": "deleted"},
+        {"dataset_id": 8, "status": "deleted"},
+    ]
+    assert data["deleted"] == [7, 8]
+    assert not data.get("partial")
+
+
+def test_bulk_delete_of_a_missing_id_is_not_found_and_partial(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _bulk_delete_fake(fake_service, exists={7}, kept=set())
+    doc = _write(tmp_path, {"dataset_ids": [7, 99999]})
+    data, _ = dataset_cmd.dataset_bulk_delete(
+        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
+    )
+    assert data["results"] == [
+        {"dataset_id": 7, "status": "deleted"},
+        {"dataset_id": 99999, "status": "not_found"},
+    ]
+    assert data["partial"] is True
+    sent = [kw for symbol, kw in fake_service.call_log if symbol.endswith("bulk_delete")]
+    assert sent[0]["dataset_ids"] == [7]
+
+
+def test_bulk_delete_of_only_missing_ids_is_resource_not_found(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _bulk_delete_fake(fake_service, exists=set(), kept=set())
+    doc = _write(tmp_path, {"dataset_ids": [99999]})
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_bulk_delete(
+            _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
+        )
+    assert excinfo.value.code == "resource_not_found"
+    assert excinfo.value.exit_status == 5
+    assert not [1 for symbol, _ in fake_service.call_log if symbol.endswith("bulk_delete")]
+
+
+def test_bulk_delete_with_a_survivor_is_partial_with_per_id_status(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _bulk_delete_fake(fake_service, exists={7, 8}, kept={8})
+    doc = _write(tmp_path, {"dataset_ids": [7, 8]})
+    data, _ = dataset_cmd.dataset_bulk_delete(
+        _inv("dataset.bulk-delete", project=180, yes=True, input_file=doc)
+    )
+    assert [r["status"] for r in data["results"]] == ["deleted", "failed"]
+    assert data["partial"] is True
+    assert "dataset get 8" in data["results"][1]["detail"]
+
+
 # -- bulk-update --------------------------------------------------------
 
 

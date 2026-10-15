@@ -23,6 +23,7 @@ from mammoth_cli.errors.envelope import (
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UNSUPPORTED_CONTRACT,
     EXIT_API,
+    EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
@@ -1563,27 +1564,72 @@ def dataset_bulk_delete(invocation: Invocation) -> HandlerResult:
         ),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), dataset_ids=dataset_ids, project_id=project_id)
-        remaining = _datasets_still_present(service, dataset_ids, project_id)
-    if remaining:
+        # Look before deleting: an id the backend never had must read as not_found,
+        # not as a deleted dataset with a null payload.
+        present = _datasets_still_present(service, dataset_ids, project_id)
+        existing = [item for item in dataset_ids if item in present]
+        data: Any = None
+        remaining: list[int] = []
+        if existing:
+            data = service.call(_symbol(invocation), dataset_ids=existing, project_id=project_id)
+            remaining = _datasets_still_present(service, existing, project_id)
+    results = [
+        _bulk_delete_result(item, item in present, item in remaining) for item in dataset_ids
+    ]
+    deleted = [r["dataset_id"] for r in results if r["status"] == "deleted"]
+    meta = _meta(invocation, auth.workspace_id, project_id)
+    if not deleted:
+        missing_only = not existing
         raise CliError(
-            code=CODE_API_ERROR,
+            code=CODE_RESOURCE_NOT_FOUND if missing_only else CODE_API_ERROR,
             message=(
-                f"Only {len(dataset_ids) - len(remaining)} of {len(dataset_ids)} datasets were "
-                f"deleted; still present: {', '.join(str(item) for item in remaining)}."
+                f"No dataset with id {', '.join(str(i) for i in dataset_ids)} in project "
+                f"{project_id}."
+                if missing_only
+                else f"None of the {len(dataset_ids)} datasets was deleted; "
+                f"still present: {', '.join(str(i) for i in remaining)}."
             ),
-            exit_status=EXIT_API,
+            exit_status=EXIT_NOT_FOUND if missing_only else EXIT_API,
             hint=(
-                "A dataset that another view uses as a lookup or join source is kept. "
-                "Delete the view that uses it first, then run the delete again for the "
-                "datasets listed as still present."
+                "Use dataset ids as 'mammoth dataset list' shows them."
+                if missing_only
+                else "A dataset that another view uses as a lookup or join source is kept. "
+                "Delete the view that uses it first, then run the delete again."
             ),
-            details={
-                "deleted": [item for item in dataset_ids if item not in remaining],
-                "still_present": remaining,
-            },
+            details={"results": results},
         )
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    out: dict[str, Any] = {
+        "results": results,
+        "deleted": deleted,
+        "requested": len(dataset_ids),
+    }
+    if isinstance(data, dict):
+        out["response"] = data
+    if len(deleted) < len(dataset_ids):
+        out["partial"] = True
+        out["warnings"] = [
+            f"Dataset {r['dataset_id']}: {r['status']}"
+            + (f" ({r['detail']})" if r.get("detail") else "")
+            for r in results
+            if r["status"] != "deleted"
+        ]
+    return out, meta
+
+
+def _bulk_delete_result(dataset_id: int, existed: bool, survived: bool) -> dict[str, Any]:
+    if not existed:
+        return {"dataset_id": dataset_id, "status": "not_found"}
+    if survived:
+        return {
+            "dataset_id": dataset_id,
+            "status": "failed",
+            "detail": (
+                "still present, probably used by a view's join or lookup; "
+                f"mammoth dataset get {dataset_id} shows it and mammoth dataset delete "
+                f"{dataset_id} names the dependent views"
+            ),
+        }
+    return {"dataset_id": dataset_id, "status": "deleted"}
 
 
 #: Backend code for a dataset id that does not exist (the get route answers 400, not 404).
