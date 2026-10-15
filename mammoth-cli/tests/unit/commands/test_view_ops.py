@@ -520,6 +520,22 @@ def test_transform_convert_type_skips_a_column_that_already_has_the_type(
     assert data["skipped"] == [{"column": "a", "type": "NUMERIC"}]
 
 
+def test_transform_convert_type_text_to_number_warns_that_unparsable_values_become_empty(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
+    doc = _write(tmp_path, {"conversions": [{"column": "b", "to": "NUMERIC"}]})
+    data, _ = view_ops_cmd.view_transform_convert_type(
+        _inv(
+            "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
+        )
+    )
+    warning = " ".join(data["warnings"])
+    assert "b" in warning
+    assert "N/A" in warning
+    assert "empty" in warning
+
+
 def test_transform_convert_type_adds_no_task_when_every_column_has_the_type(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
