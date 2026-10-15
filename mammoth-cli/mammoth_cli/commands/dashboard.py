@@ -955,6 +955,7 @@ def _with_deliverable_check(
     if not isinstance(data, dict):
         return data
     dashboard_id = positionals.get("dashboard_id") or data.get("id")
+    data = _reflect_not_applied(invocation.command_id, data, dashboard_id)
     if not isinstance(dashboard_id, int):
         return {
             **data,
@@ -985,6 +986,38 @@ def _with_deliverable_check(
         "deliverable_check": check,
         **_authoring_problems(invocation, data, canvas_doc, kwargs or {}),
     }
+
+
+def _reflect_not_applied(
+    command_id: str, data: dict[str, Any], dashboard_id: Any
+) -> dict[str, Any]:
+    """A chat edit that reports ``changed: false`` was not applied, whatever its message says.
+
+    The model's own ``message`` ("I added a Total Events card") describes what it meant
+    to do. It is kept as ``model_message`` and the ``message`` says plainly that nothing
+    was applied, with the fallback that works.
+    """
+    if command_id != "dashboard.chat.edit" or data.get("changed") is not False:
+        return data
+    claim = data.get("message")
+    target = dashboard_id if dashboard_id is not None else "DASHBOARD_ID"
+    out = {
+        **data,
+        "message": (
+            "NOT APPLIED: the dashboard was not changed"
+            + (" (the board did not bake)" if data.get("bake_ok") is False else "")
+            + ". The assistant's reply below describes what it intended, not what happened."
+        ),
+        "next_steps": [
+            f"Read the board: mammoth dashboard get {target}",
+            f"Add the card directly: mammoth dashboard figure add {target} --input "
+            '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
+            '"COLUMN", "agg": "sum"}}\'',
+        ],
+    }
+    if isinstance(claim, str):
+        out["model_message"] = claim
+    return out
 
 
 def _authoring_problems(

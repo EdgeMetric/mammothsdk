@@ -17,7 +17,10 @@ from typing import Any
 CANVAS_GET = "mammoth.api.dashboards.DashboardsAPI.canvas_get"
 CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
 
-_REFUSED = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*$", re.DOTALL)
+#: The notes run to the end of their paragraph; a blank line starts the builder's own
+#: "On the board: ..." summary, which is not a refusal.
+_REFUSED = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*(?:\n\s*\n|$)", re.DOTALL)
+_NOT_A_MEASURE = re.compile(r"(?P<col>[\w.-]+) (?:isn[’']t|is not) a measure", re.IGNORECASE)
 
 
 def refused_notes(message: Any) -> list[str]:
@@ -28,6 +31,20 @@ def refused_notes(message: Any) -> list[str]:
     if match is None:
         return []
     return [note.strip() for note in match.group("notes").split(";") if note.strip()]
+
+
+def refused_warning(note: str) -> dict[str, Any]:
+    """One warning for one refused card, with the fallback when a column was refused."""
+    detail = f"the server could not do: {note}"
+    found = _NOT_A_MEASURE.search(note)
+    if found:
+        column = found.group("col")
+        detail += (
+            f". Add it yourself: dashboard figure add DASHBOARD_ID --input "
+            f'\'{{"dataview_id": VIEW_ID, "figure": {{"kind": "kpi", "measure": "{column}", '
+            f'"agg": "sum", "title": "Total {column}"}}}}\''
+        )
+    return {"issue": "refused", "detail": detail}
 
 
 def _as_list(added_ids: Any) -> list[Any]:
@@ -220,8 +237,8 @@ def page_substitutions(
                         ),
                     }
                 )
-    for note in refused:
-        warnings.append({"issue": "refused", "detail": f"the server could not do: {note}"})
+    for note in dict.fromkeys(refused):
+        warnings.append(refused_warning(note))
     return warnings
 
 
@@ -230,8 +247,7 @@ def generate_substitutions(
 ) -> list[dict[str, Any]]:
     """A revenue-style intent whose board shows no money column, or a "Couldn't do" message."""
     warnings: list[dict[str, Any]] = [
-        {"issue": "refused", "detail": f"the server could not do: {note}"}
-        for note in refused_notes(message)
+        refused_warning(note) for note in dict.fromkeys(refused_notes(message))
     ]
     profiles = (
         (canvas_doc.get("plan") or {}).get("hints", {}).get("_profiles")
