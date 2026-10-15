@@ -1652,3 +1652,35 @@ def test_view_delete_that_leaves_the_view_is_not_a_success(
     with pytest.raises(CliError) as excinfo:
         view_ops_cmd.view_delete(_inv("view.delete", yes=True, extra_args=["7", "9"], project=180))
     assert excinfo.value.code == "delete_not_applied"
+
+
+def test_get_reads_the_view_and_the_dashboards_in_one_concurrent_batch(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    batches: list[list[str]] = []
+    real = fake_service.call_many
+
+    def spy(calls: Any) -> list[Any]:
+        batches.append([symbol for symbol, _kwargs in calls])
+        return real(calls)
+
+    monkeypatch.setattr(fake_service, "call_many", spy)
+    fake_service.responses[_GET] = {"id": 7, "name": "V"}
+    fake_service.responses[_DASHBOARDS_LIST] = [{"id": 1, "title": "B", "sources": [7]}]
+    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert batches == [[_GET, _DASHBOARDS_LIST]]
+    assert data["dashboards"] == [{"id": 1, "title": "B"}]
+
+
+def test_get_survives_a_failed_dashboards_read_and_raises_a_failed_view_read(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GET] = {"id": 7, "name": "V"}
+    fake_service.responses[_DASHBOARDS_LIST] = CliError(code="api_error", message="boom")
+    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert data["id"] == 7 and "dashboards" not in data
+
+    fake_service.responses[_GET] = CliError(code="not_found", message="no view")
+    with pytest.raises(CliError) as excinfo:
+        view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    assert excinfo.value.code == "not_found"

@@ -422,7 +422,8 @@ def test_update_rejects_raw_patch_without_dispatch(
 def test_data_get_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
     assert _without_meta(fake_service.call_log) == [
-        (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
 
 
@@ -434,6 +435,7 @@ def test_data_get_forwards_timeout_poll_interval(
         _inv("view.data.get", project=180, extra_args=["7", "9"], input_file=doc)
     )
     assert _without_meta(fake_service.call_log) == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (
             _DATA_GET,
             {
@@ -443,7 +445,7 @@ def test_data_get_forwards_timeout_poll_interval(
                 "timeout": 30,
                 "poll_interval": 1,
             },
-        )
+        ),
     ]
 
 
@@ -791,6 +793,7 @@ def test_data_get_resolves_dataset_from_view_when_omitted(
     view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7"]))
     assert _without_meta(fake_service.call_log) == [
         (_FIND_DATASET, {"dataview_id": 7}),
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (_DATA_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
 
@@ -3144,3 +3147,28 @@ def test_export_csv_replaces_an_existing_file_with_overwrite(
         _inv("view.export.csv", extra_args=["7"], input_file=doc, overwrite=True)
     )
     assert _without_meta(fake_service.call_log)[0][0] == _EXPORT_CSV
+
+
+def test_data_get_reads_the_dataview_once_and_the_two_metadata_reads_together(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """One dataview GET serves the envelope and the relabelling; it runs with the dataset GET."""
+    batches: list[list[str]] = []
+    real = fake_service.call_many
+
+    def spy(calls: Any) -> list[Any]:
+        batches.append([symbol for symbol, _kwargs in calls])
+        return real(calls)
+
+    monkeypatch.setattr(fake_service, "call_many", spy)
+    fake_service.responses[_DATAVIEW_GET] = {
+        "name": "V",
+        "row_count": 1,
+        "metadata": [{"internal_name": "column_1", "display_name": "store", "type": "TEXT"}],
+    }
+    fake_service.responses[_DATA_GET] = {"data": [{"column_1": "A"}]}
+    data, meta = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    assert fake_service.calls.count(_DATAVIEW_GET) == 1
+    assert batches == [[_DATAVIEW_GET, _DATASET_GET]]
+    assert data["data"] == [{"store": "A"}]
+    assert meta["view"] == {"id": 7, "name": "V", "row_count": 1}

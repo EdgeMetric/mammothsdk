@@ -383,6 +383,56 @@ def _read_meta(
         project_id=project_id,
         fields="id,name,stats",
     )
+    return _finish_meta(invocation, meta, view, dataset, dataset_id, view_id)
+
+
+def _read_meta_and_info(
+    service: Any,
+    invocation: Invocation,
+    workspace_id: int,
+    dataset_id: int,
+    view_id: int,
+    project_id: int | None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """:func:`_read_meta` plus the view's full info, from one dataview read.
+
+    The full record carries the name and row count the metadata needs, and the
+    columns a data read relabels with, so the view is read once, not twice. The
+    view and dataset reads are independent and run together.
+    """
+    meta = _meta(invocation, workspace_id, project_id)
+    view, dataset = service.call_many(
+        [
+            (
+                _DATAVIEW_GET_SYMBOL,
+                {"dataset_id": dataset_id, "dataview_id": view_id, "project_id": project_id},
+            ),
+            (
+                _DATASET_GET_SYMBOL,
+                {"dataset_id": dataset_id, "project_id": project_id, "fields": "id,name,stats"},
+            ),
+        ]
+    )
+    for outcome in (view, dataset):
+        if isinstance(outcome, CliError):
+            raise outcome
+    parents.remember(_profile_name(invocation), workspace_id, {view_id: dataset_id})
+    info = apply_column_renames(view)
+    return (
+        _finish_meta(invocation, meta, view, dataset, dataset_id, view_id),
+        info if isinstance(info, dict) else {},
+    )
+
+
+def _finish_meta(
+    invocation: Invocation,
+    meta: dict[str, Any],
+    view: Any,
+    dataset: Any,
+    dataset_id: int,
+    view_id: int,
+) -> dict[str, Any]:
+    """Fill ``meta`` with the dataset and view facts the two reads returned."""
     dataset = dataset.get("dataset", dataset) if isinstance(dataset, dict) else {}
     view = view if isinstance(view, dict) else {}
     stats = dataset.get("stats")
@@ -1313,12 +1363,13 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
         try:
-            meta = _read_meta(
+            meta, info = _read_meta_and_info(
                 service, invocation, auth.workspace_id, dataset_id, view_id, project_id
             )
         except CliError as exc:
             _explain_swapped_ids(service, exc, view_id, dataset_id)
             raise
+        mapping, types, _currencies = _profile_of_info(info)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
@@ -1336,7 +1387,14 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             data = service.call(_symbol(invocation), **kwargs)
         whole_view = document.get("offset") is None
         data = _relabel_and_check(
-            service, dataset_id, view_id, project_id, data, whole_view=whole_view
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            data,
+            mapping=mapping,
+            types=types,
+            whole_view=whole_view,
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
     data = _trim_rows(data, limit, page_size)
@@ -1772,7 +1830,13 @@ def _column_profile_with_currency(
 ) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
     """One metadata read: internal-to-display names, display name to type, and display
     name to the currency its format sets."""
-    info = _dataview_info(service, dataset_id, dataview_id, project_id)
+    return _profile_of_info(_dataview_info(service, dataset_id, dataview_id, project_id))
+
+
+def _profile_of_info(
+    info: dict[str, Any],
+) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """:func:`_column_profile_with_currency` from an already-read dataview info."""
     mapping: dict[str, str] = {}
     types: dict[str, str] = {}
     for column in _metadata_of(info):

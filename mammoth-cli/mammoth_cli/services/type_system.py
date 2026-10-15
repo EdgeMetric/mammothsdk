@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any, get_args, get_origin
 
 from mammoth import condition as _condition_module
-from pydantic import BaseModel, ValidationError
 
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.argspec import render_type_name, resolve_type_hints
@@ -66,6 +65,27 @@ def _coerce_positive_id(value: Any, path: str) -> int:
     if number <= 0:
         raise TypeValidationError(path, "positive resource ID", value)
     return number
+
+
+def _is_model(annotation: Any) -> bool:
+    """Whether ``annotation`` is a pydantic model class.
+
+    pydantic is imported only when something else already did: a model class
+    cannot exist before that, and the import costs ~20 ms a schema command
+    never needs.
+    """
+    pydantic = sys.modules.get("pydantic")
+    return (
+        pydantic is not None
+        and isinstance(annotation, type)
+        and issubclass(annotation, pydantic.BaseModel)
+    )
+
+
+def _validation_error() -> Any:
+    from pydantic import ValidationError
+
+    return ValidationError
 
 
 class TypeValidationError(ValueError):
@@ -251,8 +271,8 @@ def json_schema(annotation: Any, field_name: str | None = None) -> dict[str, Any
             dataclass_schema["required"] = required
         dataclass_schema["example"] = sample_value(annotation)
         return dataclass_schema
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
-        model_schema = annotation.model_json_schema()
+    if _is_model(annotation):
+        model_schema: dict[str, Any] = annotation.model_json_schema()
         model_schema["example"] = sample_value(annotation)
         return model_schema
     scalar = {str: "string", bool: "boolean", int: "integer", float: "number"}.get(annotation)
@@ -299,7 +319,7 @@ def sample_value(annotation: Any) -> Any:
             for field in fields(annotation)
             if field.default is MISSING and field.default_factory is MISSING
         }
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+    if _is_model(annotation):
         from mammoth_cli.services.openapi_types import sample_from_schema
 
         return sample_from_schema(annotation.model_json_schema())
@@ -419,12 +439,12 @@ def validate_value(value: Any, annotation: Any, path: str) -> Any:
                 continue
             result[name] = validate_value(value[name], hints.get(name, Any), f"{path}.{name}")
         return result
-    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+    if _is_model(annotation):
         if not isinstance(value, dict):
             raise TypeValidationError(path, "object", value)
         try:
             annotation.model_validate(value)
-        except ValidationError as error:
+        except _validation_error() as error:
             location = ".".join(str(part) for part in error.errors()[0]["loc"])
             raise TypeValidationError(
                 f"{path}.{location}" if location else path, annotation.__name__, value
