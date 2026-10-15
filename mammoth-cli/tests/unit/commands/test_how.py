@@ -131,3 +131,39 @@ def test_how_runs_from_the_command_line_as_json() -> None:
 def test_the_skill_tells_agents_to_try_how_first() -> None:
     text = (_SKILL / "SKILL.md").read_text(encoding="utf-8")
     assert 'mammoth how "' in text
+
+
+def test_a_goal_with_several_parts_gets_each_parts_steps_in_pipeline_order() -> None:
+    # The bug bash's own sample goal: blend two sources by day, chart it, refresh daily.
+    result = _how("blend user events with docs by day and build a dashboard that refreshes daily")
+    assert result["matched"] is True
+    assert [r["id"] for r in result["recipes"]] == [
+        "blend-by-key",
+        "upload-dashboard",
+        "refresh-daily",
+    ]
+    commands = [step["command_id"] for step in result["steps"]]
+    assert commands.index("view.transform.join") < commands.index("dashboard.v3.generate")
+    assert commands.index("dashboard.v3.generate") < commands.index("automation.create")
+    # One upload, first: the dashboard is built on the joined view, not a new file.
+    assert commands.count("file.upload") == 1 and commands[0] == "file.upload"
+    assert [step["step"] for step in result["steps"]] == list(range(1, len(commands) + 1))
+
+
+def test_cleaning_named_in_a_goal_runs_before_its_dashboard() -> None:
+    result = _how("upload sales.csv, remove duplicates, then make a dashboard")
+    commands = [step["command_id"] for step in result["steps"]]
+    assert commands[0] == "file.upload"
+    assert commands.index("view.transform.batch") < commands.index("dashboard.v3.generate")
+
+
+def test_a_goal_one_recipe_covers_is_not_split() -> None:
+    result = _how("upload a file and build a dashboard")
+    assert result["recipe"]["id"] == "upload-dashboard"
+    assert "recipes" not in result
+
+
+def test_a_verb_form_reaches_its_recipe_word() -> None:
+    result = _how("join orders and customers on customer id")
+    assert result["matched"] is True
+    assert result["recipe"]["id"] == "blend-by-key"

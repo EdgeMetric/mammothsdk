@@ -49,6 +49,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (mammoth-cli 2.2.86, team bug bash 2026-10-15)
 
+- `mammoth how` handles a goal with several parts ("blend user events with docs by day and build a dashboard that refreshes daily"). It used to match no recipe and fall back to unrelated commands. Now each part (split at "and", "then", commas) gets its recipe, the recipes run in pipeline order (load, blend, clean, dashboard, share/export, schedule), and their steps form one list with the upload first and once. The result names each part's recipe in `recipes`. Verb forms ("refreshes", "joined") match their recipe words.
 - `auth login --server-prefix ''` (or any malformed prefix) reports `invalid_server_prefix` first; a non-interactive run said "needs --device" instead.
 - Human-mode usage errors (`-o table`/`plain`) print Click's `Usage:` line again above the error, as before the did-you-mean change.
 - A view write's `state` block reads `view get` when the data read came back without the view record, instead of showing no columns and a null row count.

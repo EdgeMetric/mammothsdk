@@ -13,6 +13,7 @@ recipe covers falls back to the ``schema find`` matches and says so.
 from __future__ import annotations
 
 import json
+import re
 from functools import cache
 from importlib import resources
 from typing import Any
@@ -81,7 +82,70 @@ def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
 def _term_forms(term: str, compounds: frozenset[str]) -> frozenset[str]:
     from mammoth_cli.commands.schema import _token_aliases
 
-    return _token_aliases(term) | frozenset(_HOW_SYNONYMS.get(term, ())) | compounds
+    # "refreshes", "joined", "building": the recipe words are the plain forms.
+    stems = {term[: -len(end)] for end in ("es", "s", "ed", "ing") if term.endswith(end)}
+    stems = {stem for stem in stems if len(stem) >= 3}
+    return (
+        _token_aliases(term) | frozenset(_HOW_SYNONYMS.get(term, ())) | frozenset(stems) | compounds
+    )
+
+
+#: Where a goal with several parts splits: "join X and Y, then build a dashboard".
+_CLAUSE_SPLIT = re.compile(r"\s*(?:;|,|\band then\b|\bthen\b|\band\b|\bthat\b|\bwhich\b)\s*")
+
+
+def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | None:
+    """The one recipe a clause of a longer goal clearly asks for, or None.
+
+    Two or more of its words match the recipe, or, in a clause of one or two
+    words, one word the recipe itself uses ("join orders", "refresh daily").
+    """
+    from mammoth_cli.commands.schema import _adjacent_compound_forms, _query_tokens, _tokens
+
+    terms = _query_tokens(clause) or tuple(_tokens(clause))
+    if not terms:
+        return None
+    compounds = _adjacent_compound_forms(terms)
+    best: tuple[int, int, int, int, dict[str, Any]] | None = None
+    for order, recipe in enumerate(load_recipes()):
+        vocabulary = _recipe_vocabulary(recipe["id"])
+        hits = [t for t in terms if _term_forms(t, compounds.get(t, frozenset())) & vocabulary]
+        literal = sum(1 for term in hits if term in vocabulary)
+        if not (len(hits) >= 2 or (len(terms) <= 2 and literal >= 1)):
+            continue
+        # The recipe that fits the whole goal wins any clause it also fits.
+        candidate = (int(recipe["id"] == prefer), len(hits), literal, -order, recipe)
+        if best is None or candidate[:4] > best[:4]:
+            best = candidate
+    return best[4] if best else None
+
+
+#: Where each recipe sits in a pipeline; a composed goal runs them in this order.
+_STAGE = {
+    "append-rows": 0,
+    "stuck-upload": 0,
+    "blend-by-key": 1,
+    "clean-data": 2,
+    "upload-dashboard": 3,
+    "share-dashboard": 4,
+    "export-csv": 4,
+    "export-powerbi": 4,
+    "refresh-daily": 5,
+    "cleanup-mine": 6,
+}
+
+
+def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, Any]]]:
+    """Each clause of a several-part goal with its recipe, in pipeline order, no repeats."""
+    clauses = [part.strip() for part in _CLAUSE_SPLIT.split(goal) if part.strip()]
+    if len(clauses) < 2:
+        return []  # one part: the whole-goal match decides
+    found: list[tuple[str, dict[str, Any]]] = []
+    for clause in clauses:
+        recipe = _clause_recipe(clause, prefer)
+        if recipe is not None and all(recipe["id"] != seen["id"] for _, seen in found):
+            found.append((clause, recipe))
+    return sorted(found, key=lambda item: _STAGE.get(item[1]["id"], 3))
 
 
 def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
@@ -204,6 +268,10 @@ def how(invocation: Invocation) -> HandlerResult:
         )
     context = _context(invocation)
     ranked = _rank(goal)
+    composed = _compose(goal, ranked[0][1]["id"] if ranked else None)
+    if len(composed) >= 2 or (composed and not ranked):
+        # A goal with several parts gets every part's steps, not only the best one's.
+        return _composed_result(goal, composed, context), {}
     if not ranked:
         steps = _fallback_steps(goal, context)
         return {
@@ -232,3 +300,51 @@ def how(invocation: Invocation) -> HandlerResult:
             for _, recipe in ranked[1 : 1 + _MAX_ALTERNATIVES]
         ],
     }, {}
+
+
+#: Steps that set up the data a recipe works on; a composed recipe keeps the first of each.
+_SETUP_COMMANDS = frozenset(
+    {"file.upload", "view.list", "view.get", "view.data.get", "dataset.get", "dataset.list"}
+)
+
+
+def _composed_result(
+    goal: str, composed: list[tuple[str, dict[str, Any]]], context: dict[str, Any]
+) -> dict[str, Any]:
+    """One ordered recipe from the recipes of a several-part goal's clauses.
+
+    A later recipe works on what the earlier ones made, so its own setup (an upload, a
+    read of the view) is left out once an earlier recipe has that step.
+    """
+    steps: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    notes: list[str] = []
+    uploads = 0
+    for _clause, recipe in composed:
+        for step in _recipe_steps(recipe, context):
+            if step["command_id"] in _SETUP_COMMANDS and step["command_id"] in seen:
+                continue
+            seen.add(step["command_id"])
+            entry = {**step, "recipe": recipe["id"]}
+            if step["command_id"] == "file.upload":
+                # The data comes first, whichever part of the goal brought the upload.
+                steps.insert(uploads, entry)
+                uploads += 1
+            else:
+                steps.append(entry)
+        notes.extend(note for note in recipe.get("notes", []) if note not in notes)
+    steps = [{**step, "step": index} for index, step in enumerate(steps, start=1)]
+    first = composed[0][1]
+    return {
+        "goal": goal,
+        "matched": True,
+        "recipe": {"id": first["id"], "title": first["title"], "doc": first["doc"]},
+        "recipes": [
+            {"id": recipe["id"], "title": recipe["title"], "doc": recipe["doc"], "for": clause}
+            for clause, recipe in composed
+        ],
+        "context": context,
+        "steps": steps,
+        "notes": notes,
+        "alternatives": [],
+    }
