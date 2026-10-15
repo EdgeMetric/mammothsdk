@@ -549,6 +549,10 @@ class ConnectionFields:
         "insert", "update", "delete", "merge", "into", "drop", "create", "alter",
         "truncate", "grant", "revoke", "call", "exec", "execute",
     })  # fmt: skip
+    # The quoting below cannot follow a backslash escape (Postgres E'' strings,
+    # MySQL strings) or a MySQL /*! */ comment, whose body MySQL runs. A query
+    # with either is refused before it is stripped.
+    RUN_COMMENT = "/*!"
     # Strings, comments and quoted names, which may hold any word.
     QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`|\[[^\]]*\]|--[^\n]*|/\*.*?\*/"
     SAMPLE = "data_sample"

@@ -106,6 +106,22 @@ class TestTheReadCheck:
     @pytest.mark.parametrize(
         "query",
         [
+            # Postgres reads \' in an E'' string as a quote, so the rest runs.
+            "SELECT E'\\'' ; DROP TABLE orders; -- '",
+            # MySQL runs what a /*! */ comment holds.
+            "SELECT 1 /*! ; DROP TABLE orders */",
+            "SELECT * FROM orders /*! INTO OUTFILE '/tmp/o.csv' */",
+        ],
+    )
+    def test_a_query_that_hides_text_from_the_check_is_refused(self, query: str) -> None:
+        with pytest.raises(ToolError) as refused:
+            check_query("postgres", query)
+
+        assert "backslashes" in str(refused.value)
+
+    @pytest.mark.parametrize(
+        "query",
+        [
             "select * from sales;",
             "SELECT 'delete me' AS note, \"update\" FROM sales",
             "SELECT region -- drop the old ones later\nFROM sales",
@@ -116,6 +132,12 @@ class TestTheReadCheck:
     )
     def test_a_read_that_only_names_a_write_word_passes(self, query: str) -> None:
         check_query("postgres", query)
+
+    def test_a_column_named_like_a_write_word_is_told_to_quote_it(self) -> None:
+        with pytest.raises(ToolError) as refused:
+            check_query("postgres", "SELECT call, merge FROM phone_log")
+
+        assert "quote" in str(refused.value)
 
 
 def add_dataset(**arguments: Any) -> dict[str, Any]:

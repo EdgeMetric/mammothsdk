@@ -30,8 +30,13 @@ NOT_A_DATABASE = (
     " `connect_source`: the user picks the data in Mammoth."
 )
 NOT_A_READ = (
-    "Send one query that only reads: it must start with SELECT or WITH, be one"
-    " statement, and not insert, update, delete, create or drop anything."
+    "Send one query that reads: it must start with SELECT or WITH, be one"
+    " statement, and not name INSERT, UPDATE, DELETE, CREATE, DROP or another"
+    ' word that writes. A column with such a name can be quoted, as "merge".'
+)
+UNREADABLE = (
+    "Send the query without backslashes and without /*! */ comments: some"
+    " databases run what they hide, so it cannot be checked."
 )
 
 # `$fields` is filled by `render_app`; the script uses no `$` of its own.
@@ -293,13 +298,18 @@ async def preview_query(
 
 
 def check_query(connector_key: str, query: str) -> None:
-    """Refuse a source that is not a database, and a query that may write.
+    """Refuse a source that is not a database, and a query that shows a way to write.
 
     A query must start with SELECT or WITH, be one statement, and name no
-    word that writes, such as DELETE in a CTE or SELECT ... INTO.
+    word that writes, such as DELETE in a CTE or SELECT ... INTO. It is a
+    guard, not a parser: a function that writes, such as Postgres's
+    `dblink_exec`, still passes, and the connection's database account
+    decides what a query may change.
     """
     if connector_key not in ConnectionFields.DATABASES:
         raise ToolError(NOT_A_DATABASE)
+    if "\\" in query or ConnectionFields.RUN_COMMENT in query:
+        raise ToolError(UNREADABLE)
     bare = re.sub(ConnectionFields.QUOTED, " ", query, flags=re.DOTALL).strip().rstrip(";")
     words = re.findall(r"\w+", bare.lower())
     if not words or words[0] not in ConnectionFields.READING:
