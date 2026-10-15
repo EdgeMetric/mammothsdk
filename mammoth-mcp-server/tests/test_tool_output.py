@@ -72,6 +72,18 @@ class TestGetData:
             "next_offset": 3,
         }
 
+    def test_the_row_identity_mammoth_adds_to_every_row_is_not_shown(self) -> None:
+        # It is no column of the user's, and a model read its values as duplicates.
+        page = rows(2)
+        for n, row in enumerate(page["data"]):
+            row["hash"] = f"a1b2_{241 + n}"
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{VIEW_PATH}/data", page)
+            api.answer("GET", VIEW_PATH, RECORDED_VIEW)
+            answer = call_tool("get_data", view_id=VIEW, limit=2, **IDS)
+
+        assert [set(row) for row in answer["data"]] == [{"doc_count", "key.task"}] * 2
+
     def test_a_key_the_api_adds_beside_data_and_paging_is_kept(self) -> None:
         answer_with_extra = {**rows(2), "warnings": ["column hidden"]}
         with a_fake_api() as api, as_caller():
@@ -115,6 +127,7 @@ class TestGetView:
             "row_count",
             "column_count",
             "metadata",
+            "mammoth_url",
         }
         assert view["metadata"][0] == {
             "display_name": "doc_count",

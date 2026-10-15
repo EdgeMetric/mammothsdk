@@ -6,6 +6,7 @@ from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
 
 TOOLS = {
     "add_export",
+    "aggregate_data",
     "add_transformations",
     "check_upload",
     "create_automation",
@@ -76,6 +77,7 @@ def test_a_tool_that_builds_a_client_without_a_workspace_still_acts_as_the_calle
 
 
 READ_ONLY = {
+    "aggregate_data",
     "check_upload",
     "get_automation",
     "get_automation_schema",

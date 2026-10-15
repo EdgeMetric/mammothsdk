@@ -23,6 +23,7 @@ from mammoth.models.dashboards import (
 )
 from mcp.server.mcpserver.exceptions import ToolError
 
+from ..board_values import OLDER_ENGINE, board_values
 from ..consts import (
     BUILD_WAIT_SECONDS,
     DASHBOARD_EDITOR_URL,
@@ -172,15 +173,36 @@ def describe_unfinished_build(job: dict[str, JsonValue]) -> dict[str, JsonValue]
 
 
 @mcp_server.tool(title="Get dashboard", annotations=READS)
-async def get_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonValue]:
-    """Get one dashboard: its title, its views, and who it is shared with.
+async def get_dashboard(
+    workspace_id: int, dashboard_id: int, include_values: bool = True
+) -> dict[str, JsonValue]:
+    """Get one dashboard: its title, its views, who it is shared with, and its numbers.
+
+    Answer a question about a dashboard from `values`: they are the numbers
+    Mammoth worked out for it. Do not work them out again from the view's rows.
 
     Args:
         workspace_id: Which workspace to act in.
         dashboard_id: Which dashboard, as `list_dashboards` lists it.
+        include_values: Work out the numbers. Set it to false when only the
+            title, views or sharing are needed: the read is then quicker.
+
+    Returns:
+        The dashboard and its links. `values`: each KPI card and chart, in
+        order, with its `label`, the `period` it counts and any `filters` its
+        author set. A card has its `value`; a chart has its `series`, each with
+        its first `rows` and its `row_count`. `values_from` says which version
+        they are from: `published`, the one the share link opens, or `draft`,
+        the one the editor shows when the board is not published. When there
+        are no numbers to report, `values_unavailable` says why.
     """
     async with build_client(workspace_id) as client:
-        return await read_dashboard(client.dashboards, workspace_id, dashboard_id)
+        dashboard = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
+        if not include_values:
+            return dashboard
+        if dashboard.get(DashboardFields.ENGINE) != ENGINE_V3:
+            return {**dashboard, DashboardFields.VALUES_UNAVAILABLE: OLDER_ENGINE}
+        return {**dashboard, **await board_values(client.dashboards, workspace_id, dashboard)}
 
 
 @mcp_server.tool(title="Set dashboard tags", annotations=CHANGES)

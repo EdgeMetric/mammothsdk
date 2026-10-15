@@ -7,8 +7,16 @@ there is one, and a missing id with the tool that lists the right ones.
 """
 
 import math
+from collections.abc import Callable
 
-from .consts import ColumnFields, PageFields, ViewShape
+from .consts import (
+    MAMMOTH_DATASET_URL,
+    MAMMOTH_VIEW_URL,
+    ColumnFields,
+    ListFields,
+    PageFields,
+    ViewShape,
+)
 from .sdk import JsonValue, api_url
 
 HTTPS = "https://"
@@ -54,6 +62,38 @@ def tidy_page(page: dict[str, JsonValue], items_key: str, limit: int) -> dict[st
     return {**page, PageFields.NEXT: link}
 
 
+def view_url(workspace_id: int, project_id: int, view_id: JsonValue) -> str:
+    """The page in Mammoth a view opens on."""
+    return MAMMOTH_VIEW_URL.format(
+        workspace_id=workspace_id, project_id=project_id, view_id=view_id
+    )
+
+
+def dataset_url(workspace_id: int, project_id: int, dataset_id: JsonValue) -> str:
+    """The page in Mammoth a dataset opens on."""
+    return MAMMOTH_DATASET_URL.format(
+        workspace_id=workspace_id, project_id=project_id, dataset_id=dataset_id
+    )
+
+
+def link_each(
+    page: dict[str, JsonValue], items_key: str, url_of: Callable[[JsonValue], str]
+) -> dict[str, JsonValue]:
+    """Give each item of a listed page the page in Mammoth it opens on."""
+    items = page.get(items_key)
+    if not isinstance(items, list):
+        return page
+    linked: list[JsonValue] = [
+        (
+            {**item, ListFields.MAMMOTH_URL: url_of(item.get(ListFields.ID))}
+            if isinstance(item, dict)
+            else item
+        )
+        for item in items
+    ]
+    return {**page, items_key: linked}
+
+
 def slim_view(view: dict[str, JsonValue]) -> dict[str, JsonValue]:
     """A view as a model needs it: identity, size and the columns with their types."""
     slim = {key: view[key] for key in ViewShape.KEPT if key in view}
@@ -67,7 +107,7 @@ def slim_view(view: dict[str, JsonValue]) -> dict[str, JsonValue]:
     return slim
 
 
-def _typed(value: JsonValue, column_type: str | None) -> JsonValue:
+def typed(value: JsonValue, column_type: str | None) -> JsonValue:
     """A numeric column's text as the number it is; anything else as it came."""
     if column_type != ViewShape.NUMERIC or not isinstance(value, str):
         return value
@@ -97,13 +137,18 @@ def _display_names(columns: list[JsonValue]) -> dict[str, tuple[str, str | None]
 
 
 def _shaped_rows(rows: JsonValue, view: dict[str, JsonValue]) -> list[JsonValue]:
-    """Each row keyed by display name, its values typed by the column's type."""
+    """Each row keyed by display name, its values typed by the column's type.
+
+    The row identity Mammoth adds to every row is no column of the user's, and
+    a model reads its values as meaning something, so it is left out.
+    """
     columns = view.get(ViewShape.METADATA)
     names = _display_names(columns if isinstance(columns, list) else [])
     return [
         {
-            names.get(key, (key, None))[0]: _typed(value, names.get(key, (key, None))[1])
+            names.get(key, (key, None))[0]: typed(value, names.get(key, (key, None))[1])
             for key, value in row.items()
+            if key not in ViewShape.SYSTEM_COLUMNS
         }
         for row in (rows if isinstance(rows, list) else [])
         if isinstance(row, dict)

@@ -15,11 +15,13 @@ from mcp.server.mcpserver.exceptions import ToolError
 from ..consts import (
     PREVIEW_ROWS_DEFAULT,
     PREVIEW_ROWS_MAX,
+    ListFields,
     PipelineFields,
 )
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
+from ..shape import view_url
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
@@ -69,7 +71,8 @@ async def get_pipeline(
     Returns:
         `pipeline`: the state (`draft_mode` is off, clean or dirty; `auto_run`;
         `execution_state`). `steps`: each step's `id`, `sequence`, `status`
-        and `params` (columns there are internal names).
+        and `params` (columns there are internal names). `mammoth_url`: the
+        page in Mammoth the view opens on.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     # Both reads go through one client rather than one each.
@@ -83,6 +86,7 @@ async def get_pipeline(
     return {
         PipelineFields.PIPELINE: state,
         PipelineFields.STEPS: tasks[PipelineFields.TASKS],
+        ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
     }
 
 
@@ -349,11 +353,13 @@ async def _pipeline(ids: dict[str, int]) -> AsyncIterator[PipelineAPI]:
 
 
 async def read_pipeline(ids: dict[str, int]) -> dict[str, JsonValue]:
-    """Read a view's pipeline state."""
+    """Read a view's pipeline state, with the page in Mammoth the view opens on."""
     async with _pipeline(ids) as pipeline:
-        return await read_sdk_errors(
+        state = await read_sdk_errors(
             pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
+    url = view_url(ids["workspace_id"], ids["project_id"], ids["dataview_id"])
+    return {**state, ListFields.MAMMOTH_URL: url}
 
 
 async def change_draft(ids: dict[str, int], operation: str) -> dict[str, JsonValue]:
