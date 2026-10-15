@@ -570,17 +570,17 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard live-chart audience` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.live_chart_audience
   example: mammoth dashboard live-chart audience 123 --input '{"body": {"params": {"audience": "workspace"}}}' --yes --confirm 123
 - `mammoth dashboard live-chart create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.live_chart_create
-  example: mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 123, "title": "Revenue", "figure": {}}}}'
+  example: mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 1, "figure": {}, "title": "Revenue report"}}}'
 - `mammoth dashboard live-chart get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.live_chart_get
   example: mammoth dashboard live-chart get 123
 - `mammoth dashboard live-chart list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.live_chart_list
-  example: mammoth dashboard live-chart list example
+  example: mammoth dashboard live-chart list resource-123
 - `mammoth dashboard live-chart placement` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.live_chart_placement
-  example: mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 456, "figure_id": "fig1"}}}'
+  example: mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 1, "figure_id": "resource-123"}}}'
 - `mammoth dashboard live-chart usage` [read/none] -> mammoth.api.dashboards.DashboardsAPI.live_chart_usage
   example: mammoth dashboard live-chart usage 123
 - `mammoth dashboard oembed` [read/none] -> mammoth.api.dashboards.DashboardsAPI.oembed
-  example: mammoth dashboard oembed --input '{"url": "https://app.mammoth.io/dashboards/share/example"}'
+  example: mammoth dashboard oembed
 - `mammoth dashboard og-card` [read/none] -> mammoth.api.dashboards.DashboardsAPI.og_card
   example: mammoth dashboard og-card 123
 - `mammoth dashboard own-data accept` [benign_mutation/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.own_data_accept
@@ -1429,9 +1429,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export rest` [external_effect/yes_always] -> mammoth.view.ViewExport.to_rest_api
   example: mammoth view export rest 123 456 --input '{"base_url": "https://api.example", "endpoint_path": "/records"}' --yes
 - `mammoth view export rest-fill` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.rest_fill
-  example: mammoth view export rest-fill 123 --input '{"docs_url": "https://api.example.com/docs"}' --yes
+  example: mammoth view export rest-fill 123 --input '{"docs_url": "https://example.com/data.csv"}' --yes
 - `mammoth view export runs` [read/none] -> mammoth.api.exports.ExportsAPI.runs
-  example: mammoth view export runs 123 456
+  example: mammoth view export runs 123 456 789
 - `mammoth view export sftp` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sftp
   example: mammoth view export sftp 123 456 --input '{"host": "sftp.example", "username": "agent"}' --yes
 - `mammoth view export sharepoint` [external_effect/yes_always] -> mammoth.view.ViewExport.to_sharepoint
@@ -1471,7 +1471,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view restore` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.restore
   example: mammoth view restore 123 456
 - `mammoth view summary` [read/none] -> mammoth.api.dataviews.DataviewsAPI.summary
-  example: mammoth view summary 123
+  example: mammoth view summary 123 456
 - `mammoth view task add` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.add_task
   example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}'
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
@@ -1614,7 +1614,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow delete` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.delete
   example: mammoth workflow delete 123 --yes
 - `mammoth workflow duplicate` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.duplicate
-  example: mammoth workflow duplicate 123 --input '{"name": "Copy", "dataset_ids": [456]}'
+  example: mammoth workflow duplicate 123 --input '{"name": "Revenue report", "dataset_ids": [1]}'
 - `mammoth workflow from-template` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.from_template
   example: mammoth workflow from-template 123 --input '{"workflow_name": "Revenue report"}'
 - `mammoth workflow get` [read/none] -> mammoth.api.workflows.WorkflowsAPI.get
@@ -1628,9 +1628,9 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow save` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.save
   example: mammoth workflow save 123
 - `mammoth workflow save-cancel-step` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cancel_save_step
-  example: mammoth workflow save-cancel-step 123 run-abc 2
+  example: mammoth workflow save-cancel-step 123 resource-123 456
 - `mammoth workflow save-undo` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.undo_save
-  example: mammoth workflow save-undo 123 run-abc --yes
+  example: mammoth workflow save-undo 123 resource-123 --yes
 - `mammoth workflow update` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.update
   example: mammoth workflow update 123
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
@@ -1657,7 +1657,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workspace export-hosts get` [read/none] -> mammoth.api.exports.ExportsAPI.export_hosts
   example: mammoth workspace export-hosts get
 - `mammoth workspace export-hosts set` [high_impact/yes_always] -> mammoth.api.exports.ExportsAPI.set_export_hosts
-  example: mammoth workspace export-hosts set --input '{"restricted": true, "hosts": ["api.example.com"]}' --yes
+  example: mammoth workspace export-hosts set --input '{"restricted": true}' --yes
 - `mammoth workspace get` [read/none] -> mammoth.api.workspace.WorkspaceAPI.get
   example: mammoth workspace get 123
 - `mammoth workspace home` [read/none] -> mammoth.api.workspaces.WorkspacesAPI.home_summary

@@ -6750,7 +6750,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart create --help
-  agent_example: "mammoth dashboard live-chart create --input '{\"body\": {\"params\": {\"view_id\": 123, \"title\": \"Revenue\", \"figure\": {}}}}'"
+  agent_example: "mammoth dashboard live-chart create --input '{\"body\": {\"params\": {\"view_id\": 1, \"figure\": {}, \"title\": \"Revenue report\"}}}'"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-CREATE
   contract_tests:
@@ -6830,7 +6830,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart list SESSION_ID --help
-  agent_example: mammoth dashboard live-chart list example
+  agent_example: "mammoth dashboard live-chart list resource-123"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-LIST
   contract_tests:
@@ -6877,7 +6877,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard live-chart placement DASHBOARD_ID --help
-  agent_example: "mammoth dashboard live-chart placement 123 --input '{\"body\": {\"params\": {\"dashboard_id\": 456, \"figure_id\": \"fig1\"}}}'"
+  agent_example: "mammoth dashboard live-chart placement 123 --input '{\"body\": {\"params\": {\"dashboard_id\": 1, \"figure_id\": \"resource-123\"}}}'"
   unit_tests:
   - UT-DASHBOARD-LIVE-CHART-PLACEMENT
   contract_tests:
@@ -6951,7 +6951,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard oembed --help
-  agent_example: "mammoth dashboard oembed --input '{\"url\": \"https://app.mammoth.io/dashboards/share/example\"}'"
+  agent_example: "mammoth dashboard oembed"
   unit_tests:
   - UT-DASHBOARD-OEMBED
   contract_tests:

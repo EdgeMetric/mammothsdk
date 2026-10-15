@@ -958,7 +958,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow save-undo WORKFLOW_ID RUN_ID --help
-  agent_example: "mammoth workflow save-undo 123 run-abc --yes"
+  agent_example: "mammoth workflow save-undo 123 resource-123 --yes"
   unit_tests:
   - UT-WORKFLOW-SAVE-UNDO
   contract_tests:
@@ -1004,7 +1004,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow duplicate --help
-  agent_example: "mammoth workflow duplicate 123 --input '{\"name\": \"Copy\", \"dataset_ids\": [456]}'"
+  agent_example: "mammoth workflow duplicate 123 --input '{\"name\": \"Revenue report\", \"dataset_ids\": [1]}'"
   unit_tests:
   - UT-WORKFLOW-DUPLICATE
   contract_tests:
@@ -1062,7 +1062,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow save-cancel-step WORKFLOW_ID RUN_ID STEP --help
-  agent_example: "mammoth workflow save-cancel-step 123 run-abc 2"
+  agent_example: "mammoth workflow save-cancel-step 123 resource-123 456"
   unit_tests:
   - UT-WORKFLOW-SAVE-CANCEL-STEP
   contract_tests:

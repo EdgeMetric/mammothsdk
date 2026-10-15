@@ -7161,8 +7161,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export rest-fill DATAVIEW_ID --help
-  agent_example: 'mammoth view export rest-fill 123 --input ''{"docs_url": "https://api.example.com/docs"}''
-    --yes'
+  agent_example: "mammoth view export rest-fill 123 --input '{\"docs_url\": \"https://example.com/data.csv\"}' --yes"
   unit_tests:
   - UT-VIEW-EXPORT-REST-FILL
   contract_tests:
@@ -7215,7 +7214,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export runs DATAVIEW_ID EXPORT_ID --help
-  agent_example: mammoth view export runs 123 456
+  agent_example: "mammoth view export runs 123 456 789"
   unit_tests:
   - UT-VIEW-EXPORT-RUNS
   contract_tests:
@@ -7261,7 +7260,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view summary DATAVIEW_ID --help
-  agent_example: mammoth view summary 123
+  agent_example: "mammoth view summary 123 456"
   unit_tests:
   - UT-VIEW-SUMMARY
   contract_tests:

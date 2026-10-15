@@ -39,8 +39,8 @@ operations:
   response_schemas:
   - AgentBriefingResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: the briefing shown when the agent panel opens.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -85,8 +85,8 @@ operations:
   response_schemas:
   - ChatDocumentResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: uploads a document into a chat.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -108,8 +108,8 @@ operations:
   response_schemas:
   - ChatDocumentResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: bytes of a document attached to a chat.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -130,8 +130,8 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: one rendered page of an attached document.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -153,8 +153,8 @@ operations:
   response_schemas:
   - ChatImageResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: uploads an image into a chat.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -175,8 +175,8 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: bytes of an image attached to a chat.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -198,8 +198,8 @@ operations:
   response_schemas:
   - AgentNeedsYouResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: the needs-you card list.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -335,8 +335,8 @@ operations:
   response_schemas:
   - ChartPlacementReceipt
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: records where a chat chart was placed.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -357,8 +357,8 @@ operations:
   request_schema: ChipFeedbackRequest
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: thumbs feedback on a suggestion chip.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -380,8 +380,8 @@ operations:
   response_schemas:
   - CredentialTestResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: tests the credentials typed into a chat card.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -447,8 +447,8 @@ operations:
   request_schema: DismissNeedRequest
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web chat panel: dismisses one needs-you card.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -945,8 +945,8 @@ operations:
   response_schemas:
   - ReachList
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web library page: the Live pill counting a collection''s readers.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -6747,8 +6747,8 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Staff-only support route: status of a project move.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -6769,8 +6769,8 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Staff-only support route: purges the source of a finished project move.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -6970,8 +6970,8 @@ operations:
   response_schemas:
   - WorkspaceProjectsResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Staff-only support route: lists a workspace''s projects.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -6992,8 +6992,8 @@ operations:
   response_schemas:
   - MoveCheckResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Staff-only support route: dry run of a cross-workspace project move.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -7014,8 +7014,8 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Staff-only support route: starts a cross-workspace project move.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null

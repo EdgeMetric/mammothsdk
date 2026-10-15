@@ -2576,7 +2576,7 @@ Total commands: 779.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.live_chart_create`
-- Agent example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 123, "title": "Revenue", "figure": {}}}}'`
+- Agent example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 1, "figure": {}, "title": "Revenue report"}}}'`
 
 ### `mammoth dashboard live-chart get`
 
@@ -2598,7 +2598,7 @@ Total commands: 779.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.live_chart_list`
-- Agent example: `mammoth dashboard live-chart list example`
+- Agent example: `mammoth dashboard live-chart list resource-123`
 
 ### `mammoth dashboard live-chart placement`
 
@@ -2609,7 +2609,7 @@ Total commands: 779.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.live_chart_placement`
-- Agent example: `mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 456, "figure_id": "fig1"}}}'`
+- Agent example: `mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 1, "figure_id": "resource-123"}}}'`
 
 ### `mammoth dashboard live-chart usage`
 
@@ -2627,7 +2627,7 @@ Total commands: 779.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.oembed`
-- Agent example: `mammoth dashboard oembed --input '{"url": "https://app.mammoth.io/dashboards/share/example"}'`
+- Agent example: `mammoth dashboard oembed`
 
 ### `mammoth dashboard og-card`
 
@@ -6665,7 +6665,7 @@ Total commands: 779.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.rest_fill`
-- Agent example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://api.example.com/docs"}' --yes`
+- Agent example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://example.com/data.csv"}' --yes`
 
 ### `mammoth view export runs`
 
@@ -6678,7 +6678,7 @@ Total commands: 779.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.runs`
-- Agent example: `mammoth view export runs 123 456`
+- Agent example: `mammoth view export runs 123 456 789`
 
 ### `mammoth view export sftp`
 
@@ -6912,7 +6912,7 @@ Total commands: 779.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.summary`
-- Agent example: `mammoth view summary 123`
+- Agent example: `mammoth view summary 123 456`
 
 ### `mammoth view task add`
 
@@ -7682,7 +7682,7 @@ Total commands: 779.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.duplicate`
-- Agent example: `mammoth workflow duplicate 123 --input '{"name": "Copy", "dataset_ids": [456]}'`
+- Agent example: `mammoth workflow duplicate 123 --input '{"name": "Revenue report", "dataset_ids": [1]}'`
 
 ### `mammoth workflow from-template`
 
@@ -7754,7 +7754,7 @@ Total commands: 779.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.cancel_save_step`
-- Agent example: `mammoth workflow save-cancel-step 123 run-abc 2`
+- Agent example: `mammoth workflow save-cancel-step 123 resource-123 456`
 
 ### `mammoth workflow save-undo`
 
@@ -7766,7 +7766,7 @@ Total commands: 779.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.undo_save`
-- Agent example: `mammoth workflow save-undo 123 run-abc --yes`
+- Agent example: `mammoth workflow save-undo 123 resource-123 --yes`
 
 ### `mammoth workflow update`
 
@@ -7860,7 +7860,7 @@ Total commands: 779.
 - Mutation class: `high_impact`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.set_export_hosts`
-- Agent example: `mammoth workspace export-hosts set --input '{"restricted": true, "hosts": ["api.example.com"]}' --yes`
+- Agent example: `mammoth workspace export-hosts set --input '{"restricted": true}' --yes`
 
 ### `mammoth workspace get`
 

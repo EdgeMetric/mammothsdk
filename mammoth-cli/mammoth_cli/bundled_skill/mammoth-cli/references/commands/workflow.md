@@ -106,7 +106,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth workflow duplicate`. Exact input fields: `mammoth schema get workflow.duplicate`.
 
-Example: `mammoth workflow duplicate 123 --input '{"name": "Copy", "dataset_ids": [456]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow duplicate 123 --input '{"name": "Revenue report", "dataset_ids": [1]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowDuplicateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -176,7 +176,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow save-cancel-step`. Exact input fields: `mammoth schema get workflow.save-cancel-step`.
 
-Example: `mammoth workflow save-cancel-step 123 run-abc 2`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow save-cancel-step 123 resource-123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowSaveCancelStepResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -186,7 +186,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow save-undo`. Exact input fields: `mammoth schema get workflow.save-undo`.
 
-Example: `mammoth workflow save-undo 123 run-abc --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth workflow save-undo 123 resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkflowSaveUndoResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 

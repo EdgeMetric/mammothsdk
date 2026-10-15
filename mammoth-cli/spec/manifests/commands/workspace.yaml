@@ -1314,7 +1314,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workspace export-hosts set --help
-  agent_example: "mammoth workspace export-hosts set --input '{\"restricted\": true, \"hosts\": [\"api.example.com\"]}' --yes"
+  agent_example: "mammoth workspace export-hosts set --input '{\"restricted\": true}' --yes"
   unit_tests:
   - UT-WORKSPACE-EXPORT-HOSTS-SET
   contract_tests:

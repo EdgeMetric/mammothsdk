@@ -1253,6 +1253,7 @@ def _representative_string(field_name: str) -> str:
         "sheets": "Sheet1",
         "version": "1",
         "as": "Total revenue",
+        "timezone": "UTC",
     }
     if name in exact:
         return exact[name]

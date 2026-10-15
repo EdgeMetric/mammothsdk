@@ -18,10 +18,10 @@ Generated from the reviewed manifests. Do not edit by hand.
 | command | 598 |
 | alias | 2 |
 | protocol_only | 11 |
-| internal_only | 23 |
+| internal_only | 40 |
 | deprecated | 0 |
 | server_unavailable | 0 |
-| unmapped | 17 |
+| unmapped | 0 |
 | **total** | **651** |
 
 ## Public SDK method parity

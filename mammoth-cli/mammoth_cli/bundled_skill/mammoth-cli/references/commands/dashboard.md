@@ -566,7 +566,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard live-chart create`. Exact input fields: `mammoth schema get dashboard.live-chart.create`.
 
-Example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 123, "title": "Revenue", "figure": {}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 1, "figure": {}, "title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardLiveChartCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -586,7 +586,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard live-chart list`. Exact input fields: `mammoth schema get dashboard.live-chart.list`.
 
-Example: `mammoth dashboard live-chart list example`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard live-chart list resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardLiveChartListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -596,7 +596,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard live-chart placement`. Exact input fields: `mammoth schema get dashboard.live-chart.placement`.
 
-Example: `mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 456, "figure_id": "fig1"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard live-chart placement 123 --input '{"body": {"params": {"dashboard_id": 1, "figure_id": "resource-123"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardLiveChartPlacementResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -616,7 +616,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard oembed`. Exact input fields: `mammoth schema get dashboard.oembed`.
 
-Example: `mammoth dashboard oembed --input '{"url": "https://app.mammoth.io/dashboards/share/example"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard oembed`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardOembedResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

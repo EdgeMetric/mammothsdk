@@ -726,7 +726,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export rest-fill`. Exact input fields: `mammoth schema get view.export.rest-fill`.
 
-Example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://api.example.com/docs"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export rest-fill 123 --input '{"docs_url": "https://example.com/data.csv"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportRestFillResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
 
@@ -736,7 +736,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export runs`. Exact input fields: `mammoth schema get view.export.runs`.
 
-Example: `mammoth view export runs 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export runs 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportRunsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
@@ -940,7 +940,7 @@ Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on 
 
 Run: `mammoth view summary`. Exact input fields: `mammoth schema get view.summary`.
 
-Example: `mammoth view summary 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view summary 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewSummaryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
