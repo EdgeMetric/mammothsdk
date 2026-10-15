@@ -327,6 +327,13 @@ def _stored_credential_kind(profile: str | None) -> str | None:
     return credential.kind if credential is not None else None
 
 
+#: Backend codes that mean "no such id" on a 400 (the dataset and file get routes do not 404).
+_UNKNOWN_ID_CODES = (
+    ("4DSET001", "dataset", "dataset list"),
+    ("4FILE001", "file", "file list"),
+)
+
+
 def map_sdk_exception(
     exc: BaseException,
     *,
@@ -679,6 +686,16 @@ def map_sdk_exception(
                 retryable=True,
             )
         message = _backend_message(exc.response_body, status)
+        for backend_code, noun, list_command in _UNKNOWN_ID_CODES:
+            if message and backend_code in message:
+                return CliError(
+                    code=CODE_RESOURCE_NOT_FOUND,
+                    message=f"No {noun} with that id exists in this project.",
+                    exit_status=EXIT_NOT_FOUND,
+                    hint=f"Check the {noun} id with 'mammoth {list_command}'.",
+                    details=details,
+                    request_id=request_id,
+                )
         if message and "4AUTO006" in message:
             return CliError(
                 code="dataset_not_refreshable",
