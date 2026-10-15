@@ -44,6 +44,18 @@ def find_dependents(response: Any, resource_id: int) -> Any:
     return None
 
 
+#: Backend codes a get answers for an id that no longer exists, besides a 404: the
+#: dataset get route answers ``400 4DSET001`` for a deleted dataset.
+_GONE_BACKEND_CODES = frozenset({"4DSET001"})
+
+
+def _is_gone(error: CliError) -> bool:
+    return (
+        error.code == CODE_RESOURCE_NOT_FOUND
+        or (error.details or {}).get("backend_code") in _GONE_BACKEND_CODES
+    )
+
+
 def _still_there(record: Any, resource_id: int) -> bool:
     return isinstance(record, dict) and str(record.get("id")) == str(resource_id)
 
@@ -83,7 +95,7 @@ def ensure_deleted(
         try:
             record = service.call(read_symbol, **read_kwargs)
         except CliError as error:
-            if error.code == CODE_RESOURCE_NOT_FOUND:
+            if _is_gone(error):
                 return
             raise
         if not _still_there(record, resource_id):
