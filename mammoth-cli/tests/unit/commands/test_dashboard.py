@@ -941,10 +941,33 @@ def test_bi_export_writes_file_in_terminal_mode(
     data, _ = dashboard_cmd.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
-    assert fake_service.call_log == [
-        (_EXPORT_POWERBI, {"dashboard_id": 42, "output_path": str(destination)})
-    ]
+    assert fake_service.call_log[-1] == (
+        _EXPORT_POWERBI,
+        {"dashboard_id": 42, "output_path": str(destination)},
+    )
     assert data == {"output_path": str(destination)}
+
+
+def test_bi_export_names_the_figures_it_dropped(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    destination = tmp_path / "board.zip"
+    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
+    fake_service.responses[_EXPORT_POWERBI] = destination
+    fake_service.responses[_POWERBI_PREFLIGHT] = {
+        "exportable": True,
+        "figures_total": 8,
+        "figures_exported": 4,
+        "refusals": [{"title": "Map", "reason": "no geo support"}],
+    }
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+    )
+    assert data["output_path"] == str(destination)
+    assert data["dropped_figures"] == [{"title": "Map", "reason": "no geo support"}]
+    assert data["partial"] is True
+    assert data["warnings"][0]["issue"] == "figures_dropped"
+    assert "1 of 8" in data["warnings"][0]["detail"]
 
 
 def test_bi_export_dispatches_tableau_in_terminal_mode(
@@ -955,7 +978,7 @@ def test_bi_export_dispatches_tableau_in_terminal_mode(
     data, _ = dashboard_cmd.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
-    assert fake_service.call_log == [(_EXPORT_TABLEAU, {"dashboard_id": 42})]
+    assert fake_service.call_log[-1] == (_EXPORT_TABLEAU, {"dashboard_id": 42})
     assert data == {"output_path": "dashboard_42_tableau.twbx"}
 
 

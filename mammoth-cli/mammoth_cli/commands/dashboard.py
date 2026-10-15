@@ -1141,6 +1141,43 @@ def dashboard_filter_list(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id)
 
 
+def _wait_workbook_job(service: Any, data: Any) -> Any:
+    """Wait for the workbook job the upload started and return its finished result.
+
+    The upload routes answer with a job handle; ``wait_if_job`` honors
+    ``--job-timeout`` and is a no-op when the answer is already the result.
+    """
+    data = _dump_model(data)
+    if isinstance(data, dict):
+        data = _dump_model(service.wait_if_job(data))
+    return data
+
+
+def _refuse_rejected_workbook(data: Any) -> None:
+    """Raise when the server rejected the upload (a junk file, an unreadable workbook)."""
+    rejected = data.get("rejected") if isinstance(data, dict) else None
+    if not rejected:
+        return
+    detail = rejected if isinstance(rejected, dict) else {"reason": str(rejected)}
+    reason = str(detail.get("code") or detail.get("reason") or "not_a_workbook")
+    text = detail.get("message") or detail.get("detail") or detail.get("error")
+    raise CliError(
+        code=reason,
+        message=str(text) if text else f"The file was rejected: {reason}.",
+        exit_status=EXIT_USAGE,
+        hint="Pass a Tableau workbook (.twb or .twbx) or a Power BI file (.pbix).",
+        details={"rejected": detail},
+    )
+
+
+#: Said plainly on an import result: the rows are made up to fit the workbook's fields.
+_SYNTHETIC_ROWS_NOTE = (
+    "The dataset holds generated sample rows (data_source fitted_sample), made up to fit "
+    "the workbook's fields. They are synthetic, not the workbook's own data: load the real "
+    "data into this dataset before you trust any number."
+)
+
+
 def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
     """Assess a local Tableau workbook through the SDK multipart seam."""
     file_path = _require_str_positional(invocation, "file")
@@ -1151,7 +1188,8 @@ def dashboard_assess_twb(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path)
+        data = _wait_workbook_job(service, service.call(_symbol(invocation), file=file_path))
+    _refuse_rejected_workbook(data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1165,7 +1203,8 @@ def dashboard_assess_pbix(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path)
+        data = _wait_workbook_job(service, service.call(_symbol(invocation), file=file_path))
+    _refuse_rejected_workbook(data)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1202,7 +1241,12 @@ def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
         target=str(project_id),
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), file=file_path, project_id=project_id)
+        data = _wait_workbook_job(
+            service, service.call(_symbol(invocation), file=file_path, project_id=project_id)
+        )
+    _refuse_rejected_workbook(data)
+    if isinstance(data, dict) and data.get("data_source") == "fitted_sample":
+        data = {**data, "synthetic_data": True, "data_note": _SYNTHETIC_ROWS_NOTE}
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -1269,7 +1313,57 @@ def dashboard_bi_export(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id}
     _forward_optional(document, kwargs, ("output_path",))
     with open_service(invocation) as (service, auth):
+        preflight = _bi_preflight_or_none(service, target, dashboard_id)
         data = service.call(symbol, **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
-    return {"output_path": str(data)}, _meta(invocation, auth.workspace_id)
+    result: dict[str, Any] = {"output_path": str(data)}
+    result.update(_bi_drops(preflight, target))
+    return result, _meta(invocation, auth.workspace_id)
+
+
+def _bi_preflight_or_none(service: Any, target: str, dashboard_id: int) -> Any:
+    """The pre-flight for this export; ``None`` when it cannot be read (the export still runs)."""
+    try:
+        return _dump_model(
+            service.call(
+                f"mammoth.api.dashboards.DashboardsAPI.{target}_preflight",
+                dashboard_id=dashboard_id,
+            )
+        )
+    except Exception:  # noqa: BLE001 -- advice; the export is the command
+        return None
+
+
+def _bi_drops(preflight: Any, target: str) -> dict[str, Any]:
+    """Name the figures the export leaves out, as a structured warning.
+
+    The export writes a file whatever it dropped, so the result must say so:
+    ``partial`` makes ``verify`` report it as not clean.
+    """
+    if not isinstance(preflight, dict):
+        return {}
+    refusals = [r for r in preflight.get("refusals") or [] if isinstance(r, dict)]
+    if not refusals:
+        return {}
+    dropped = [{"title": r.get("title"), "reason": r.get("reason")} for r in refusals]
+    total = preflight.get("figures_total")
+    exported = preflight.get("figures_exported")
+    return {
+        "figures_total": total,
+        "figures_exported": exported,
+        "dropped_figures": dropped,
+        "partial": True,
+        "warnings": [
+            {
+                "issue": "figures_dropped",
+                "target": target,
+                "detail": (
+                    f"{len(dropped)} of {total} figures are not in the file "
+                    f"({exported} exported): "
+                    + "; ".join(f"{d['title']} ({d['reason']})" for d in dropped)
+                ),
+                "dropped": dropped,
+            }
+        ],
+    }

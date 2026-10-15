@@ -153,7 +153,7 @@ commands:
   result_model: PbixAssessResponse
   mutation_class: read
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: LT-DASHBOARD-ASSESS-PBIX
@@ -194,7 +194,7 @@ commands:
   result_model: TwbAssessResponse
   mutation_class: read
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: LT-DASHBOARD-ASSESS-TWB
@@ -1011,7 +1011,7 @@ commands:
   undo_test: null
   known_restrictions: 'Evaluates baked descriptors by id. Ids come from dashboard canvas get data.meta.figures[<page>:<kpi|add>:<n>].descriptors.value
     (rows for a table figure) and data.meta.filters. body.params.filter_state is {"<filter field>": value}
-    against the canvas''''s declared filters: a range control takes [start, end] (dates as YYYY-MM-DD),
+    against the canvas''s declared filters: a range control takes [start, end] (dates as YYYY-MM-DD),
     categorical controls a list of values; an undeclared field is rejected. Results are {descriptor_id:
     {status, value | data}}. Used to prove a countDistinct card under a Month range (ILG simulation 2026-09-19).'
   reviewed_by: primary
@@ -1728,7 +1728,7 @@ commands:
   mutation_class: high_impact
   edits_target: false
   confirmation: confirm_target
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   no_readback: ImportWorkbookDataset's result gives dataview_id only; the matching read (view.get) also

@@ -237,3 +237,44 @@ def test_figure_add_refuses_an_unknown_column(
         dashboard_cmd.dashboard_figure_add(
             _inv("dashboard.figure.add", extra_args=["7"], input_file=_figure_doc(tmp_path, figure))
         )
+
+
+# -- workbook import and assess wait for their job -----------------------------
+
+_IMPORT = _API + "import_workbook"
+_ASSESS_TWB = _API + "assess_twb"
+
+
+def test_import_workbook_waits_and_says_the_rows_are_synthetic(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    book = tmp_path / "book.twbx"
+    book.write_bytes(b"x")
+    fake_service.responses[_IMPORT] = {"job_id": "j1"}
+    fake_service.job_result = {"dataview_id": 5, "data_source": "fitted_sample"}
+    data, _ = dashboard_cmd.dashboard_import_workbook(
+        _inv(
+            "dashboard.import-workbook",
+            extra_args=[str(book)],
+            project=3,
+            yes=True,
+            confirm="3",
+        )
+    )
+    assert fake_service.wait_log == [{"job_id": "j1"}]
+    assert data["dataview_id"] == 5
+    assert data["synthetic_data"] is True
+    assert "synthetic" in data["data_note"]
+
+
+def test_assess_twb_surfaces_not_a_workbook(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    junk = tmp_path / "junk.twb"
+    junk.write_bytes(b"not xml")
+    fake_service.responses[_ASSESS_TWB] = {"job_id": "j2"}
+    fake_service.job_result = {"rejected": {"reason": "not_a_workbook"}, "source": {}}
+    with pytest.raises(CliError) as caught:
+        dashboard_cmd.dashboard_assess_twb(_inv("dashboard.assess-twb", extra_args=[str(junk)]))
+    assert caught.value.code == "not_a_workbook"
+    assert fake_service.wait_log == [{"job_id": "j2"}]
