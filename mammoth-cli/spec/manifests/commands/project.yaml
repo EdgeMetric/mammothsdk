@@ -388,7 +388,7 @@ commands:
   - CT-PROJECT-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B01.
+  known_restrictions: Reads one project by id. A token limited to one project can read only that project.
   reviewed_by: primary
 - command_id: project.list
   command_path: project list
@@ -759,7 +759,7 @@ commands:
   - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Changes the resources the project declares it depends on; views and dashboards that read through a removed dependency can stop resolving data. Read the current set first (`project resource-dependencies`). Needs --yes and --confirm PROJECT_ID.
   reviewed_by: primary
   readback:
     command: project.resource-dependencies
@@ -1025,7 +1025,7 @@ commands:
   - CT-PROJECT-USER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Changes one project member's role (role plus exactly one of user_id or invite_id); the person gains or loses access at once. Needs --yes.
   reviewed_by: primary
   no_readback: "no CLI read command exposes per-project user role assignments"
 - command_id: project.copy

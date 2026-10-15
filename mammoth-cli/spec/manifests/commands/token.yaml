@@ -39,8 +39,7 @@ commands:
   - CT-CLIENT-APP-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: App key/token emitted only once through approved secret output and redacted from
-    diagnostics. B20.
+  known_restrictions: The token is shown once, in this response only; store it at once. It is redacted from logs and diagnostics. Needs --yes.
   reviewed_by: primary
   readback:
     command: client-app.get
@@ -79,7 +78,7 @@ commands:
   - CT-CLIENT-APP-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B20.
+  known_restrictions: Lists the workspace's API tokens.
   reviewed_by: primary
 - command_id: token.revoke
   command_path: token revoke
@@ -120,7 +119,7 @@ commands:
   - CT-CLIENT-APP-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Exact client-key confirmation. B20.
+  known_restrictions: Revokes the token for good; anything using it stops working. Needs --yes and --confirm with the exact token key.
   reviewed_by: primary
   readback:
     command: client-app.list

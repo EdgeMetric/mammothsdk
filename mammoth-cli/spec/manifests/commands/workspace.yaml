@@ -750,7 +750,7 @@ commands:
   - CT-WORKSPACE-REACTIVATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Turns a deactivated workspace back on; its users regain access and billing resumes. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
   reviewed_by: primary
   readback:
     command: workspace.get
@@ -905,7 +905,7 @@ commands:
   - CT-WORKSPACE-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Patches workspace settings that apply to every member. Read them first (`workspace get`). Needs --yes and --confirm WORKSPACE_ID.
   reviewed_by: primary
   readback:
     command: workspace.get
@@ -1187,7 +1187,7 @@ commands:
   - CT-WORKSPACE-USER-UPDATE-BATCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Changes the roles of several workspace users in one JSON-patch call; each gains or loses access at once. Read `workspace user list` first. Needs --yes and --confirm WORKSPACE_ID.
   reviewed_by: primary
   readback:
     command: workspace.user.list

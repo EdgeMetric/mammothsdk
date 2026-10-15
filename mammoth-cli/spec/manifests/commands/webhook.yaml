@@ -198,8 +198,7 @@ commands:
   - CT-WEBHOOK-SEND-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Never retry; requires a disposable webhook and dataset fixture; current dataset
-    permission blocks live evidence.
+  known_restrictions: 'Delivers a payload to the webhook, which ingests it into its dataset. Never retry a send: each call adds data. Check `webhook get` first.'
   reviewed_by: primary
   no_readback: "posts data to an external webhook URL; the external receiver's state is not something this CLI can read back"
 - command_id: webhook.send-get

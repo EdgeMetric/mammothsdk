@@ -344,7 +344,7 @@ commands:
   - CT-AUTOMATION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: run/status patches require exact ID confirmation. B15.
+  known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation get`). Needs --yes.'
   reviewed_by: primary
   readback:
     command: automation.get

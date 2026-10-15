@@ -39,8 +39,7 @@ commands:
   - CT-CLIENT-APP-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: App key/token emitted only once through approved secret output and redacted from
-    diagnostics. B20.
+  known_restrictions: The app key and token are shown once, in this response only; store them at once. They are redacted from logs and diagnostics. Needs --yes.
   reviewed_by: primary
   readback:
     command: client-app.get
@@ -86,7 +85,7 @@ commands:
   - CT-CLIENT-APP-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Exact client-key confirmation. B20.
+  known_restrictions: Deletes the client app and invalidates its key for good. Needs --yes and --confirm CLIENT_KEY (the exact key).
   reviewed_by: primary
   readback:
     command: client-app.list
@@ -130,7 +129,7 @@ commands:
   - CT-CLIENT-APP-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: client_key is a secret-bearing identifier and is redacted in diagnostics. B20.
+  known_restrictions: client_key is a secret-bearing identifier and is redacted in diagnostics.
   reviewed_by: primary
 - command_id: client-app.list
   command_path: client-app list
@@ -164,7 +163,7 @@ commands:
   - CT-CLIENT-APP-LIST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B20.
+  known_restrictions: Lists the workspace's client apps.
   reviewed_by: primary
 - command_id: client-app.update
   command_path: client-app update

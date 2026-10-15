@@ -3305,7 +3305,7 @@ commands:
   - CT-VIEW-EXPORT-REST-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Alias `view export rest-api`. Type all auth variants, reject secrets in static headers/query/body,
+  known_restrictions: Type all auth variants, reject secrets in static headers/query/body,
     allow insecure TLS only with --yes.
   reviewed_by: primary
 - command_id: view.export.sftp
@@ -3470,7 +3470,7 @@ commands:
   - CT-VIEW-EXPORT-TABLEAU-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Alias `view export tableau-server`. Prohibit secret in CA bundle file.
+  known_restrictions: Prohibit secret in CA bundle file.
   reviewed_by: primary
 - command_id: view.export.update
   command_path: view export update

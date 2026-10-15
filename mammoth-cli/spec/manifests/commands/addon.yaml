@@ -33,7 +33,7 @@ commands:
   - CT-ADDON-CONNECTOR-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Adds paid connector add-ons to the workspace and changes its bill. Pass connector_id or connector_ids. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list
@@ -72,7 +72,7 @@ commands:
   - CT-ADDON-CONNECTOR-REMOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Removes paid connector add-ons from the workspace; connections that use them stop working. Pass connector_id or connector_ids. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list
@@ -144,7 +144,7 @@ commands:
   - CT-ADDON-STORAGE-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Adds paid storage to the workspace and changes its bill. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list
@@ -183,7 +183,7 @@ commands:
   - CT-ADDON-STORAGE-REMOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Removes paid storage from the workspace; it fails or data becomes read-only if usage exceeds what is left. Check `workspace storage-breakdown` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list
@@ -222,7 +222,7 @@ commands:
   - CT-ADDON-USER-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Adds paid user seats to the workspace and changes its bill. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list
@@ -261,7 +261,7 @@ commands:
   - CT-ADDON-USER-REMOVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Removes paid user seats; fails if more users than seats would remain. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
   readback:
     command: addon.list

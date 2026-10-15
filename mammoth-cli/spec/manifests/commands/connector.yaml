@@ -310,7 +310,7 @@ commands:
   - CT-CONNECTOR-CONNECTION-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Fixture required; connection documents are discriminated by connector_key.
+  known_restrictions: The connection document depends on connector_key (see `connector get KEY` for its fields); credentials in it are secrets, so pass them through a protected --input FILE.
   reviewed_by: primary
   readback:
     command: connector.connection.list
@@ -776,7 +776,7 @@ commands:
   - CT-CONNECTOR-DS-CONFIG-GET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Fixture required.
+  known_restrictions: Reads one data-source config by key (from `connector ds-config list`); secrets in it are redacted.
   reviewed_by: primary
 - command_id: connector.ds-config.list
   command_path: connector ds-config list
@@ -875,8 +875,7 @@ commands:
   - CT-CONNECTOR-DS-CONFIG-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Only query has current server support; other enum paths remain blocked pending successful
-    server evidence. Fixture required.
+  known_restrictions: Only the query path is supported by the server today; other paths are refused. Read the config first with `connector ds-config get`.
   reviewed_by: primary
   readback:
     command: connector.ds-config.get

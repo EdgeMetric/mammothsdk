@@ -92,7 +92,7 @@ commands:
   - CT-SUPPORT-CONNECTOR-PROFILE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Creates a connector profile that workspaces can be assigned. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.connector-profile.list
@@ -263,7 +263,7 @@ commands:
   - CT-SUPPORT-CONNECTOR-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Adds a connector to the catalog for every workspace. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.connector.list
@@ -484,7 +484,7 @@ commands:
   - CT-SUPPORT-FEATURE-PROFILE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Creates a feature profile that workspaces can be assigned. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.feature-profile.list
@@ -653,7 +653,7 @@ commands:
   - CT-SUPPORT-FEATURE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Adds a feature flag to the catalog for every workspace. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.feature.list
@@ -954,7 +954,7 @@ commands:
   - CT-SUPPORT-PLAN-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Creates a billing plan that workspaces can subscribe to. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.plan.get
@@ -1424,7 +1424,7 @@ commands:
   - CT-SUPPORT-USER-REGISTER-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Registers a new user account and may send them an invitation email. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.user.list-all
@@ -1469,7 +1469,7 @@ commands:
   - CT-SUPPORT-USER-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Changes another user's account details. Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: support.user.list-all
@@ -1514,7 +1514,7 @@ commands:
   - CT-SUPPORT-WORKSPACE-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Support staff only. Creates a workspace with its owner and plan (payment_frequency monthly or yearly). Needs --yes and --confirm TARGET.
   reviewed_by: primary
   readback:
     command: job.get

@@ -32,7 +32,7 @@ commands:
   - CT-UPGRADE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Installs a different mammoth CLI version from PyPI over the current one. Run `mammoth version` first. Needs a prompt or --yes; the install is skipped when the version is already current.
   reviewed_by: primary
   readback:
     command: version

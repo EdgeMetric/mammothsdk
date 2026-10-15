@@ -79,7 +79,7 @@ commands:
   - CT-NOTIFICATION-DELETE-BATCH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes the matching notifications for good. List them first (`notification list`) with the same filters. Needs a prompt or --yes.
   reviewed_by: primary
   readback:
     command: notification.list

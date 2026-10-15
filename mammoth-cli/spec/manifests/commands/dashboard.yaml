@@ -4936,7 +4936,7 @@ commands:
   - CT-DASHBOARD-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: B13.
+  known_restrictions: Updates dashboard fields; read the dashboard first (`dashboard get`).
   reviewed_by: primary
 - command_id: dashboard.v3.generate
   command_path: dashboard v3 generate

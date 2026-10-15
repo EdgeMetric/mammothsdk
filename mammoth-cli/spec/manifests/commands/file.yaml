@@ -37,7 +37,7 @@ commands:
   - CT-FILE-BULK-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes every listed uploaded file for good and cannot be undone. List them first (`file list`). Needs a prompt or --yes.
   reviewed_by: primary
 - command_id: file.delete
   command_path: file delete

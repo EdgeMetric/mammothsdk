@@ -167,7 +167,7 @@ commands:
   - CT-DATASET-BULK-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes every listed dataset for good and cannot be undone. A dataset that another view uses as a lookup or join source is kept, and the result says so. List them first (`dataset list`). Needs a prompt or --yes.
   reviewed_by: primary
 - command_id: dataset.bulk-update
   command_path: dataset bulk-update

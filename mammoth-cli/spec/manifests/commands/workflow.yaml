@@ -380,7 +380,7 @@ commands:
   - CT-WORKFLOW-CLEANUP-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes the active project's ghost (orphaned, half-created) workflows for good; real workflows are untouched. Needs --project or an active project, and a prompt or --yes.
   reviewed_by: primary
   readback:
     command: workflow.list

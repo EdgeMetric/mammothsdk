@@ -33,7 +33,7 @@ commands:
   - CT-USER-AVATAR-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Removes the signed-in user's profile picture; upload it again to restore it. Needs a prompt or --yes.
   reviewed_by: primary
   readback:
     command: user.get
@@ -159,7 +159,7 @@ commands:
   - CT-USER-DELETE-ACCOUNT-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Deletes the signed-in user's account for good. Pass validate_only to check what would be removed first. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
   reviewed_by: primary
   no_readback: "deletes the caller's own account; no parent listing exists and the account can no longer be read afterward"
 - command_id: user.get
