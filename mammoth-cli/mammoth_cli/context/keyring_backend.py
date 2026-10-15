@@ -14,7 +14,6 @@ never cached, so the user's explicit choice always wins.
 from __future__ import annotations
 
 import importlib
-import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -45,6 +44,13 @@ def _choice_is_automatic() -> bool:
     return not (Path(platform_.config_root()) / "keyringrc.cfg").exists()
 
 
+def _keyring_version() -> str:
+    """The installed keyring's version; ``importlib.metadata`` loads only when asked."""
+    from importlib.metadata import version
+
+    return version("keyring")
+
+
 def install_cached() -> None:
     """Select the recorded backend, skipping keyring's plugin scan."""
     global _recorded
@@ -54,7 +60,7 @@ def install_cached() -> None:
 
     try:
         cached = json.loads(_cache_path().read_text(encoding="utf-8"))
-        if cached["keyring"] != importlib.metadata.version("keyring"):
+        if cached["keyring"] != _keyring_version():
             return
         module, _, name = cached["backend"].partition(":")
         backend_class = getattr(importlib.import_module(module), name)
@@ -73,7 +79,7 @@ def remember(backend: object) -> None:
     kind = type(backend)
     record = {
         "backend": f"{kind.__module__}:{kind.__qualname__}",
-        "keyring": importlib.metadata.version("keyring"),
+        "keyring": _keyring_version(),
     }
     path = _cache_path()
     try:

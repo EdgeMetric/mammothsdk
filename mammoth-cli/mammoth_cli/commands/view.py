@@ -25,7 +25,7 @@ import inspect
 import re
 import shlex
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
@@ -552,6 +552,8 @@ _VIEW_LIST_ALL_DATASETS_MIN_VIEWS = 20
 #: not they hold any, so a project of many empty datasets costs a fixed number of
 #: requests. The result carries ``next_dataset_offset`` to resume from.
 _VIEW_LIST_ALL_DATASETS_MAX_VISITS = 25
+#: Datasets whose views one wave of a project-wide ``view list`` reads at the same time.
+_VIEW_LIST_WAVE = 5
 
 
 def view_list(invocation: Invocation) -> HandlerResult:
@@ -705,15 +707,14 @@ def _view_list_across_project(
     _forward_optional(document, view_kwargs, ("sort",))
     dataviews: list[Any] = []
     visited = dataset_offset
-    for index in range(dataset_offset, len(datasets)):
-        dataset = datasets[index]
+    for index, dataset_id, page in _view_pages_in_waves(
+        service, view_list_symbol, datasets, dataset_offset, project_id, view_kwargs
+    ):
         visited = index + 1
-        dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
-        if not isinstance(dataset_id, int):
+        if dataset_id is None:
             continue
-        page = service.call(
-            view_list_symbol, dataset_id=dataset_id, project_id=project_id, **view_kwargs
-        )
+        if isinstance(page, BaseException):
+            raise page
         for item in page.get("dataviews", []) if isinstance(page, dict) else []:
             if isinstance(item, dict):
                 item = {**item, "dataset_id": dataset_id}
@@ -727,6 +728,49 @@ def _view_list_across_project(
     if visited < len(datasets):
         result["next_dataset_offset"] = visited
     return result, datasets
+
+
+def _view_pages_in_waves(
+    service: Any,
+    view_list_symbol: str,
+    datasets: list[Any],
+    dataset_offset: int,
+    project_id: int,
+    view_kwargs: dict[str, Any],
+) -> Iterator[tuple[int, int | None, Any]]:
+    """``(position, dataset id, view page or error)`` from ``dataset_offset`` on, in order.
+
+    The views of :data:`_VIEW_LIST_WAVE` datasets are read at once, and a wave is only
+    read when the caller asks for its first entry, so a walk that stops early never
+    reads the waves after it. An entry that is not a dataset record has no id and no page.
+    """
+    window = range(
+        dataset_offset, min(len(datasets), dataset_offset + _VIEW_LIST_ALL_DATASETS_MAX_VISITS)
+    )
+    for start in range(0, len(window), _VIEW_LIST_WAVE):
+        wave = [(i, _dataset_id_of(datasets[i])) for i in window[start : start + _VIEW_LIST_WAVE]]
+        readable = [dataset_id for _i, dataset_id in wave if dataset_id is not None]
+        pages = iter(
+            service.call_many(
+                [
+                    (
+                        view_list_symbol,
+                        {"dataset_id": dataset_id, "project_id": project_id, **view_kwargs},
+                    )
+                    for dataset_id in readable
+                ]
+            )
+            if readable
+            else []
+        )
+        for index, dataset_id in wave:
+            yield index, dataset_id, next(pages) if dataset_id is not None else None
+
+
+def _dataset_id_of(dataset: Any) -> int | None:
+    """A dataset record's integer id, else None."""
+    dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
+    return dataset_id if isinstance(dataset_id, int) else None
 
 
 def view_bulk_delete(invocation: Invocation) -> HandlerResult:

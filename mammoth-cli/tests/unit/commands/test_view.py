@@ -183,7 +183,8 @@ def test_view_list_without_dataset_id_pages_past_the_view_floor(
     assert data["datasets_visited"] == 1
     assert data["next_dataset_offset"] == 2
     resumed_calls = [c for c in _without_meta(fake_service.call_log) if c[0] == _VIEW_LIST]
-    assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10]
+    # Each walk reads its first wave of datasets together, from where it starts.
+    assert [c[1]["dataset_id"] for c in resumed_calls] == [9, 10, 11, 10, 11]
 
 
 def test_view_list_without_dataset_id_caps_the_datasets_read_per_call(
@@ -3185,3 +3186,38 @@ def test_data_get_reads_the_dataview_once_and_the_two_metadata_reads_together(
     assert batches == [[_DATAVIEW_GET, _DATASET_GET]]
     assert data["data"] == [{"store": "A"}]
     assert meta["view"] == {"id": 7, "name": "V", "row_count": 1}
+
+
+def test_view_list_without_dataset_id_reads_datasets_in_waves(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A project-wide listing reads the views of several datasets at once, not one
+    dataset after another; the order of the result is unchanged."""
+    ids = list(range(1, 8))
+    fake_service.responses[_DATASETS_LIST_ALL] = {"datasets": [{"id": i} for i in ids]}
+    fake_service.responses[_VIEW_LIST] = {"dataviews": [{"id": 1}]}
+    batches: list[list[int]] = []
+    real_call_many = fake_service.call_many
+
+    def recording_call_many(calls: Any) -> list[Any]:
+        batches.append([kwargs["dataset_id"] for _symbol, kwargs in calls])
+        return real_call_many(calls)
+
+    monkeypatch.setattr(fake_service, "call_many", recording_call_many)
+    doc = _doc(tmp_path, {"full": True})
+    data, _ = view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
+    assert batches == [[1, 2, 3, 4, 5], [6, 7]]
+    assert [v["dataset_id"] for v in data["dataviews"]] == ids
+    assert data["datasets_visited"] == 7
+
+
+def test_view_list_without_dataset_id_raises_a_read_error_in_order(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A dataset whose views cannot be read fails the walk, as a one-by-one read did."""
+    fake_service.responses[_DATASETS_LIST_ALL] = {"datasets": [{"id": 9}, {"id": 10}]}
+    fake_service.responses[_VIEW_LIST] = CliError(code="resource_not_found", message="gone")
+    doc = _doc(tmp_path, {"full": True})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
+    assert excinfo.value.code == "resource_not_found"
