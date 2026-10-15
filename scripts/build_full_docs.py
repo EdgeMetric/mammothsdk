@@ -244,6 +244,19 @@ def _resolve_object(dotted_path: str) -> object | None:
     return None
 
 
+def _inherited_from_builtin(cls: type, name: str) -> bool:
+    """True when ``name`` comes from a builtin base such as ``str``, not from the SDK.
+
+    A ``str, Enum`` class lists every ``str`` method in ``dir()``; documenting them
+    printed Python's own docstrings 60 times and made the output depend on the Python
+    version that ran the script.
+    """
+    for klass in cls.__mro__:
+        if name in vars(klass):
+            return klass.__module__ in {"builtins", "enum"}
+    return False
+
+
 def _expand_directive(dotted_path: str, options: dict[str, object]) -> str:
     """Expand a single ::: directive into markdown documentation."""
     import inspect
@@ -290,7 +303,7 @@ def _expand_directive(dotted_path: str, options: dict[str, object]) -> str:
                     else:
                         if re.match(f, attr_name):
                             include = True
-                if include:
+                if include and not _inherited_from_builtin(obj, attr_name):
                     method_names.append(attr_name)
 
         for method_name in method_names:
