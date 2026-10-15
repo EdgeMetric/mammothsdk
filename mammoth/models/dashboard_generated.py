@@ -51,6 +51,7 @@ class AppendFigureParams(BaseModel):
     banded: dict[str, Any] | None = None
     page: FigurePageTarget | None = None
     base_sequence: int | None = None
+    on_duplicate: Literal["add", "refuse", "replace"] | None = None
 
 
 class AppendFigureResponse(BaseModel):
@@ -246,6 +247,16 @@ class AudienceViewport(BaseModel):
     buckets: dict[str, Any]
 
 
+class BoardPreviewOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dashboard_id: int
+    title: str
+    published: bool
+    rls: bool
+    figures: list[FigureOut]
+    choices: list[FigureOut]
+
+
 class BoardStatusModel(BaseModel):
     model_config = ConfigDict(extra="allow")
     state: Literal["active", "archived", "trashed"]
@@ -295,6 +306,17 @@ class CanvasResponse(BaseModel):
     specs: dict[str, Any] | None = None
     meta: CanvasMeta
     dashboard_id: int | None = None
+
+
+class ChangeAudienceParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    audience: Literal["workspace", "public", "sites"]
+    allowed_origins: list[str] | None = None
+
+
+class ChangeAudienceSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    params: ChangeAudienceParams
 
 
 class ChatEditParams(BaseModel):
@@ -408,6 +430,27 @@ class CreateBlankResponse(BaseModel):
 class CreateBlankSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
     params: CreateBlankParams
+
+
+class CreateLiveChartParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    view_id: Annotated[int, Field(ge=1.0)]
+    figure: dict[str, Any]
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    audience: Literal["workspace", "public", "sites"] | None = None
+    allowed_origins: list[str] | None = None
+    origin: LiveChartOrigin | None = None
+
+
+class CreateLiveChartResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dashboard_id: int
+    job_id: int | None = None
+
+
+class CreateLiveChartSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    params: CreateLiveChartParams
 
 
 class CreateSessionParams(BaseModel):
@@ -565,6 +608,13 @@ class DashboardModelType(BaseModel):
     collection_ids: list[int] | None = None
 
 
+class DashboardPlaceResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dashboard_id: int
+    title: str
+    figure_id: str
+
+
 class DashboardShareParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
     auth: DashboardAuth
@@ -682,6 +732,89 @@ class DuplicateDashboardResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
     id: int
     swap_job_id: int | None = None
+
+
+class EmailUpdateOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: int
+    enabled: bool
+    trigger: Trigger
+    frequency: Frequency
+    weekday: int | None = None
+    monthday: int | None = None
+    time_of_day: str
+    timezone: str
+    numbers: dict[str, Any]
+    next_run_at: str | None = None
+    last_run_at: str | None = None
+    last_status: str | None = None
+    last_detail: str | None = None
+    last_delivered: int | None = None
+    left_out: dict[str, Any] | None = None
+
+
+class EmailUpdateSettingsBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    enabled: bool
+    trigger: Trigger | None = None
+    timezone: Annotated[str, Field(min_length=1, max_length=64)]
+    frequency: Frequency | None = None
+    weekday: Annotated[int | None, Field(le=6)] = None
+    monthday: Annotated[int | None, Field(ge=1, le=28)] = None
+    time_of_day: str | None = None
+    numbers: dict[str, Any] | None = None
+
+
+class EmailUpdateSubscriptionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    subscribed: bool
+
+
+class EmailUpdateSubscriptionOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    available: bool
+    subscribed: bool
+
+
+class EmailUpdateSummaryList(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    updates: list[EmailUpdateSummaryOut]
+
+
+class EmailUpdateSummaryOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    collection_id: int | None = None
+    dashboard_id: int | None = None
+    enabled: bool
+    trigger: Trigger
+    frequency: Frequency
+    last_run_at: str | None = None
+    last_status: str | None = None
+    last_detail: str | None = None
+    last_delivered: int | None = None
+    left_out: list[int] | None = None
+    unsubscribed: list[str] | None = None
+
+
+class EmailUpdateTestOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    sent: int
+
+
+class EmailUpdatesOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    update: EmailUpdateOut | None = None
+    people: int
+    unsubscribed: list[str]
+    boards: list[BoardPreviewOut]
+    covered_by: list[str] | None = None
+
+
+class EmbedPlaceResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    origin: str
+    renders_30d: int
+    last_seen_at: str | None = None
 
 
 class EngagementActionDay(BaseModel):
@@ -951,6 +1084,13 @@ class FigureIntentSpec(BaseModel):
     params: FigureIntentParams | None = None
 
 
+class FigureOut(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    key: str
+    label: str
+    value: str | None = None
+
+
 class FigurePageTarget(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str | None = None
@@ -986,6 +1126,10 @@ class FormatPreviewResponse(BaseModel):
     not_shown: list[FormatPreviewNotShown] | None = None
 
 
+class Frequency(RootModel[Literal["daily", "weekdays", "weekly", "monthly"]]):
+    pass
+
+
 class GenerateDashboardV3Params(BaseModel):
     model_config = ConfigDict(extra="forbid")
     intent: str | None = None
@@ -994,6 +1138,7 @@ class GenerateDashboardV3Params(BaseModel):
     contexts: list[str] | None = None
     client_turn_id: str | None = None
     title: Annotated[str | None, Field(max_length=200)] = None
+    structure: Annotated[str | None, Field(max_length=40)] = None
     design_from: Annotated[int | None, Field(ge=1)] = None
 
 
@@ -1022,6 +1167,61 @@ class JobSchema(BaseModel):
     created_at: str
     path: str
     operation: str
+
+
+class LiveChartBroken(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    reasons: list[str]
+    since: str
+
+
+class LiveChartListResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    items: list[LiveChartRef]
+
+
+class LiveChartOrigin(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: Annotated[str, Field(min_length=1, max_length=64)]
+    message_id: Annotated[str, Field(min_length=1, max_length=64)]
+    chart_index: Annotated[int, Field(ge=0.0, le=99.0)]
+
+
+class LiveChartRef(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dashboard_id: int
+    message_id: str
+    chart_index: int
+    state: Literal["pending", "live", "failed", "broken"]
+    audience: Literal["workspace", "public", "sites"]
+    view_name: str | None = None
+
+
+class LiveChartResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    dashboard_id: int
+    title: str
+    token: str
+    state: Literal["pending", "live", "failed", "broken"]
+    audience: Literal["workspace", "public", "sites"]
+    allowed_origins: list[str]
+    view_id: int
+    view_name: str | None = None
+    figure: dict[str, Any] | None = None
+    data_updated_at: int | None = None
+    broken: LiveChartBroken | None = None
+    created_at: str
+    embed_url: str
+    share_url: str
+    embed_snippet: str | None = None
+    oembed: bool
+
+
+class LiveChartUsageResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    embeds: list[EmbedPlaceResponse]
+    dashboards: list[DashboardPlaceResponse]
+    link_views_30d: int
 
 
 class ObjectJobSchema(BaseModel):
@@ -1242,6 +1442,17 @@ class QaSettingsSpec(BaseModel):
     params: QaSettingsParams
 
 
+class RecordPlacementParams(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dashboard_id: Annotated[int, Field(ge=1.0)]
+    figure_id: Annotated[str, Field(min_length=1, max_length=64)]
+
+
+class RecordPlacementSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    params: RecordPlacementParams
+
+
 class RenameSessionParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: Annotated[str, Field(min_length=1, max_length=200)]
@@ -1261,6 +1472,17 @@ class RenameTemplateParams(BaseModel):
 class RenameTemplateSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
     params: RenameTemplateParams
+
+
+class RenderFigureSvgResponse(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    svg: str
+
+
+class RenderFigureSvgSpec(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    spec: dict[str, Any]
+    style_id: str | None = None
 
 
 class ResolveTemplateMappingParams(BaseModel):
@@ -1617,6 +1839,10 @@ class TrackViewSpec(BaseModel):
     page_id: Annotated[str | None, Field(max_length=200)] = None
 
 
+class Trigger(RootModel[Literal["new_data", "schedule"]]):
+    pass
+
+
 class UnpublishedAuthor(BaseModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
@@ -1746,11 +1972,14 @@ for _model_name in [
     "AudienceTotals",
     "AudienceViewer",
     "AudienceViewport",
+    "BoardPreviewOut",
     "BoardStatusModel",
     "BulkWidgetDataParams",
     "BulkWidgetDataSpec",
     "CanvasMeta",
     "CanvasResponse",
+    "ChangeAudienceParams",
+    "ChangeAudienceSpec",
     "ChatEditParams",
     "ChatEditSpec",
     "ChatRevision",
@@ -1767,6 +1996,9 @@ for _model_name in [
     "CreateBlankParams",
     "CreateBlankResponse",
     "CreateBlankSpec",
+    "CreateLiveChartParams",
+    "CreateLiveChartResponse",
+    "CreateLiveChartSpec",
     "CreateSessionParams",
     "CreateSessionSpec",
     "CreatorDashboardHtmlType",
@@ -1783,6 +2015,7 @@ for _model_name in [
     "DashboardEditSpec",
     "DashboardListSchema",
     "DashboardModelType",
+    "DashboardPlaceResponse",
     "DashboardShareParams",
     "DashboardShareSpec",
     "DashboardSource",
@@ -1803,6 +2036,15 @@ for _model_name in [
     "DraftHeadResponse",
     "DraftMove",
     "DuplicateDashboardResponse",
+    "EmailUpdateOut",
+    "EmailUpdateSettingsBody",
+    "EmailUpdateSubscriptionBody",
+    "EmailUpdateSubscriptionOut",
+    "EmailUpdateSummaryList",
+    "EmailUpdateSummaryOut",
+    "EmailUpdateTestOut",
+    "EmailUpdatesOut",
+    "EmbedPlaceResponse",
     "EngagementActionDay",
     "EngagementActions",
     "EngagementAnonymous",
@@ -1835,15 +2077,23 @@ for _model_name in [
     "FigureIntentParams",
     "FigureIntentResponse",
     "FigureIntentSpec",
+    "FigureOut",
     "FigurePageTarget",
     "FormatFloorApplied",
     "FormatPreviewNotShown",
     "FormatPreviewResponse",
+    "Frequency",
     "GenerateDashboardV3Params",
     "GenerateDashboardV3Spec",
     "ImportWorkbookForm",
     "JobResponse",
     "JobSchema",
+    "LiveChartBroken",
+    "LiveChartListResponse",
+    "LiveChartOrigin",
+    "LiveChartRef",
+    "LiveChartResponse",
+    "LiveChartUsageResponse",
     "ObjectJobSchema",
     "OkResponse",
     "OwnDataAcceptParams",
@@ -1874,10 +2124,14 @@ for _model_name in [
     "QaSettingsParams",
     "QaSettingsResponse",
     "QaSettingsSpec",
+    "RecordPlacementParams",
+    "RecordPlacementSpec",
     "RenameSessionParams",
     "RenameSessionSpec",
     "RenameTemplateParams",
     "RenameTemplateSpec",
+    "RenderFigureSvgResponse",
+    "RenderFigureSvgSpec",
     "ResolveTemplateMappingParams",
     "ResolveTemplateMappingResponse",
     "ResolveTemplateMappingSpec",
@@ -1929,6 +2183,7 @@ for _model_name in [
     "TrackHeartbeatSpec",
     "TrackViewResponse",
     "TrackViewSpec",
+    "Trigger",
     "UnpublishedAuthor",
     "UseTemplateParams",
     "UseTemplateSpec",
@@ -1978,11 +2233,14 @@ __all__ = [
     "AudienceTotals",
     "AudienceViewer",
     "AudienceViewport",
+    "BoardPreviewOut",
     "BoardStatusModel",
     "BulkWidgetDataParams",
     "BulkWidgetDataSpec",
     "CanvasMeta",
     "CanvasResponse",
+    "ChangeAudienceParams",
+    "ChangeAudienceSpec",
     "ChatEditParams",
     "ChatEditSpec",
     "ChatRevision",
@@ -1999,6 +2257,9 @@ __all__ = [
     "CreateBlankParams",
     "CreateBlankResponse",
     "CreateBlankSpec",
+    "CreateLiveChartParams",
+    "CreateLiveChartResponse",
+    "CreateLiveChartSpec",
     "CreateSessionParams",
     "CreateSessionSpec",
     "CreatorDashboardHtmlType",
@@ -2015,6 +2276,7 @@ __all__ = [
     "DashboardEditSpec",
     "DashboardListSchema",
     "DashboardModelType",
+    "DashboardPlaceResponse",
     "DashboardShareParams",
     "DashboardShareSpec",
     "DashboardSource",
@@ -2035,6 +2297,15 @@ __all__ = [
     "DraftHeadResponse",
     "DraftMove",
     "DuplicateDashboardResponse",
+    "EmailUpdateOut",
+    "EmailUpdateSettingsBody",
+    "EmailUpdateSubscriptionBody",
+    "EmailUpdateSubscriptionOut",
+    "EmailUpdateSummaryList",
+    "EmailUpdateSummaryOut",
+    "EmailUpdateTestOut",
+    "EmailUpdatesOut",
+    "EmbedPlaceResponse",
     "EngagementActionDay",
     "EngagementActions",
     "EngagementAnonymous",
@@ -2067,15 +2338,23 @@ __all__ = [
     "FigureIntentParams",
     "FigureIntentResponse",
     "FigureIntentSpec",
+    "FigureOut",
     "FigurePageTarget",
     "FormatFloorApplied",
     "FormatPreviewNotShown",
     "FormatPreviewResponse",
+    "Frequency",
     "GenerateDashboardV3Params",
     "GenerateDashboardV3Spec",
     "ImportWorkbookForm",
     "JobResponse",
     "JobSchema",
+    "LiveChartBroken",
+    "LiveChartListResponse",
+    "LiveChartOrigin",
+    "LiveChartRef",
+    "LiveChartResponse",
+    "LiveChartUsageResponse",
     "ObjectJobSchema",
     "OkResponse",
     "OwnDataAcceptParams",
@@ -2106,10 +2385,14 @@ __all__ = [
     "QaSettingsParams",
     "QaSettingsResponse",
     "QaSettingsSpec",
+    "RecordPlacementParams",
+    "RecordPlacementSpec",
     "RenameSessionParams",
     "RenameSessionSpec",
     "RenameTemplateParams",
     "RenameTemplateSpec",
+    "RenderFigureSvgResponse",
+    "RenderFigureSvgSpec",
     "ResolveTemplateMappingParams",
     "ResolveTemplateMappingResponse",
     "ResolveTemplateMappingSpec",
@@ -2161,6 +2444,7 @@ __all__ = [
     "TrackHeartbeatSpec",
     "TrackViewResponse",
     "TrackViewSpec",
+    "Trigger",
     "UnpublishedAuthor",
     "UseTemplateParams",
     "UseTemplateSpec",

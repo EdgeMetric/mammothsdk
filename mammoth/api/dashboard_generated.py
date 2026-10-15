@@ -41,11 +41,14 @@ from mammoth.models.dashboard_generated import (
     AudienceTotals,
     AudienceViewer,
     AudienceViewport,
+    BoardPreviewOut,
     BoardStatusModel,
     BulkWidgetDataParams,
     BulkWidgetDataSpec,
     CanvasMeta,
     CanvasResponse,
+    ChangeAudienceParams,
+    ChangeAudienceSpec,
     ChatEditParams,
     ChatEditSpec,
     ChatRevision,
@@ -62,6 +65,9 @@ from mammoth.models.dashboard_generated import (
     CreateBlankParams,
     CreateBlankResponse,
     CreateBlankSpec,
+    CreateLiveChartParams,
+    CreateLiveChartResponse,
+    CreateLiveChartSpec,
     CreateSessionParams,
     CreateSessionSpec,
     CreatorDashboardHtmlType,
@@ -77,6 +83,7 @@ from mammoth.models.dashboard_generated import (
     DashboardEditSpec,
     DashboardListSchema,
     DashboardModelType,
+    DashboardPlaceResponse,
     DashboardShareParams,
     DashboardShareSpec,
     DashboardSource,
@@ -97,6 +104,15 @@ from mammoth.models.dashboard_generated import (
     DraftHeadResponse,
     DraftMove,
     DuplicateDashboardResponse,
+    EmailUpdateOut,
+    EmailUpdateSettingsBody,
+    EmailUpdateSubscriptionBody,
+    EmailUpdateSubscriptionOut,
+    EmailUpdateSummaryList,
+    EmailUpdateSummaryOut,
+    EmailUpdateTestOut,
+    EmailUpdatesOut,
+    EmbedPlaceResponse,
     EngagementActionDay,
     EngagementActions,
     EngagementAnonymous,
@@ -129,15 +145,23 @@ from mammoth.models.dashboard_generated import (
     FigureIntentParams,
     FigureIntentResponse,
     FigureIntentSpec,
+    FigureOut,
     FigurePageTarget,
     FormatFloorApplied,
     FormatPreviewNotShown,
     FormatPreviewResponse,
+    Frequency,
     GenerateDashboardV3Params,
     GenerateDashboardV3Spec,
     ImportWorkbookForm,
     JobResponse,
     JobSchema,
+    LiveChartBroken,
+    LiveChartListResponse,
+    LiveChartOrigin,
+    LiveChartRef,
+    LiveChartResponse,
+    LiveChartUsageResponse,
     ObjectJobSchema,
     OkResponse,
     OwnDataAcceptParams,
@@ -168,10 +192,14 @@ from mammoth.models.dashboard_generated import (
     QaSettingsParams,
     QaSettingsResponse,
     QaSettingsSpec,
+    RecordPlacementParams,
+    RecordPlacementSpec,
     RenameSessionParams,
     RenameSessionSpec,
     RenameTemplateParams,
     RenameTemplateSpec,
+    RenderFigureSvgResponse,
+    RenderFigureSvgSpec,
     ResolveTemplateMappingParams,
     ResolveTemplateMappingResponse,
     ResolveTemplateMappingSpec,
@@ -223,6 +251,7 @@ from mammoth.models.dashboard_generated import (
     TrackHeartbeatSpec,
     TrackViewResponse,
     TrackViewSpec,
+    Trigger,
     UnpublishedAuthor,
     UseTemplateParams,
     UseTemplateSpec,
@@ -324,6 +353,26 @@ async def audience_get(self: Any, dashboard_id: int, days: int | None = None) ->
     return _typed_response(response, (AudienceResponse,), allow_untyped=False)
 
 
+async def email_updates_get(self: Any, dashboard_id: int) -> EmailUpdatesOut:
+    """A dashboard's email updates."""
+    path = "/dashboards/{dashboard_id}/email-updates"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (EmailUpdatesOut,), allow_untyped=False)
+
+
+async def email_updates_set(
+    self: Any, dashboard_id: int, body: EmailUpdateSettingsBody
+) -> EmailUpdatesOut:
+    """Turn a dashboard's email updates on, off, or change them."""
+    path = "/dashboards/{dashboard_id}/email-updates"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    return _typed_response(response, (EmailUpdatesOut,), allow_untyped=False)
+
+
 async def engagement_get(
     self: Any,
     dashboard_id: int,
@@ -359,6 +408,26 @@ async def data_draft(
     return _typed_response(
         response, (WidgetDataResponse, ObjectJobSchema, JobResponse), allow_untyped=False
     )
+
+
+async def email_updates_me_get(self: Any, dashboard_id: int) -> EmailUpdateSubscriptionOut:
+    """Whether I get this dashboard's email updates."""
+    path = "/dashboards/{dashboard_id}/email-updates/me"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (EmailUpdateSubscriptionOut,), allow_untyped=False)
+
+
+async def email_updates_me_set(
+    self: Any, dashboard_id: int, body: EmailUpdateSubscriptionBody
+) -> EmailUpdateSubscriptionOut:
+    """Turn my email updates for this dashboard back on, or off."""
+    path = "/dashboards/{dashboard_id}/email-updates/me"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
+    return _typed_response(response, (EmailUpdateSubscriptionOut,), allow_untyped=False)
 
 
 async def data_published(
@@ -426,6 +495,14 @@ async def rls_assignment_set(
     return response
 
 
+async def email_updates_list(self: Any) -> EmailUpdateSummaryList:
+    """Email updates in this workspace."""
+    path = "/dashboards/email-updates"
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (EmailUpdateSummaryList,), allow_untyped=False)
+
+
 async def tags_merge(self: Any, tag_id: int, body: TagMergeParams) -> dict[str, Any]:
     """Merge one tag into another."""
     path = "/dashboards/tags/{tag_id}/merge"
@@ -442,6 +519,15 @@ async def tags_set(self: Any, dashboard_id: int, body: DashboardTagsParams) -> d
     params = None
     response = await self._client._request_json("PUT", path, params=params, json=_json_body(body))
     return response
+
+
+async def email_updates_test(self: Any, dashboard_id: int) -> EmailUpdateTestOut:
+    """Send me a test email update."""
+    path = "/dashboards/{dashboard_id}/email-updates/test"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params)
+    return _typed_response(response, (EmailUpdateTestOut,), allow_untyped=False)
 
 
 async def pages_add(self: Any, dashboard_id: int, body: AddPagesSpec) -> AddPagesResponse:
@@ -669,6 +755,29 @@ async def video_state(self: Any, dashboard_id: int) -> dict[str, Any]:
     path = "/dashboards/{dashboard_id}/video-state"
     path = path.replace("{dashboard_id}", str(dashboard_id))
     params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return response
+
+
+async def oembed(
+    self: Any,
+    url: str | None = None,
+    maxwidth: str | None = None,
+    maxheight: str | None = None,
+    format: str | None = None,
+) -> dict[str, Any]:
+    """oEmbed provider — a pasted board link, as a live embed."""
+    path = "/dashboards/oembed"
+    params = {
+        key: value
+        for key, value in {
+            "url": url,
+            "maxwidth": maxwidth,
+            "maxheight": maxheight,
+            "format": format,
+        }.items()
+        if value is not None
+    }
     response = await self._client._request_json("GET", path, params=params)
     return response
 
@@ -1160,22 +1269,86 @@ async def templates_pending(self: Any) -> PendingTemplateResponse:
     return _typed_response(response, (PendingTemplateResponse,), allow_untyped=False)
 
 
+async def live_chart_get(self: Any, dashboard_id: int) -> LiveChartResponse:
+    """Read a live chart."""
+    path = "/dashboards/v3/live-charts/{dashboard_id}"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (LiveChartResponse,), allow_untyped=False)
+
+
+async def live_chart_audience(
+    self: Any, dashboard_id: int, body: ChangeAudienceSpec
+) -> LiveChartResponse:
+    """Change who can see a live chart."""
+    path = "/dashboards/v3/live-charts/{dashboard_id}"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("PATCH", path, params=params, json=_json_body(body))
+    return _typed_response(response, (LiveChartResponse,), allow_untyped=False)
+
+
+async def live_chart_list(self: Any, session_id: str) -> LiveChartListResponse:
+    """The charts one chat made live."""
+    path = "/dashboards/v3/live-charts"
+    params = {key: value for key, value in {"session_id": session_id}.items() if value is not None}
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (LiveChartListResponse,), allow_untyped=False)
+
+
+async def live_chart_create(
+    self: Any, body: CreateLiveChartSpec, project_id: int | None = None
+) -> CreateLiveChartResponse:
+    """Make a chat chart live."""
+    path = "/dashboards/v3/live-charts"
+    params = {key: value for key, value in {"project_id": project_id}.items() if value is not None}
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return _typed_response(response, (CreateLiveChartResponse,), allow_untyped=False)
+
+
+async def live_chart_usage(self: Any, dashboard_id: int) -> LiveChartUsageResponse:
+    """Where a live chart is used."""
+    path = "/dashboards/v3/live-charts/{dashboard_id}/usage"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (LiveChartUsageResponse,), allow_untyped=False)
+
+
+async def live_chart_placement(
+    self: Any, dashboard_id: int, body: RecordPlacementSpec
+) -> dict[str, Any]:
+    """Record a dashboard the chart was added to."""
+    path = "/dashboards/v3/live-charts/{dashboard_id}/placements"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("POST", path, params=params, json=_json_body(body))
+    return response
+
+
 GENERATED_METHODS = [
     "tags_delete",
     "tags_rename",
     "analytics",
     "audience_get",
+    "email_updates_get",
+    "email_updates_set",
     "engagement_get",
     "source_list",
     "data_draft",
+    "email_updates_me_get",
+    "email_updates_me_set",
     "data_published",
     "rls_column_list",
     "rls_value_list",
     "tags_list",
     "rls_assignment_list",
     "rls_assignment_set",
+    "email_updates_list",
     "tags_merge",
     "tags_set",
+    "email_updates_test",
     "pages_add",
     "query",
     "figure_add",
@@ -1198,6 +1371,7 @@ GENERATED_METHODS = [
     "pdf_artifact",
     "published_pdf_artifact",
     "video_state",
+    "oembed",
     "og_card",
     "published_og_card",
     "page_plan",
@@ -1250,4 +1424,10 @@ GENERATED_METHODS = [
     "template_list",
     "template_create",
     "templates_pending",
+    "live_chart_get",
+    "live_chart_audience",
+    "live_chart_list",
+    "live_chart_create",
+    "live_chart_usage",
+    "live_chart_placement",
 ]

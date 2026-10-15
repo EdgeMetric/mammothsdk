@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -23,6 +24,17 @@ ERR_URL_EMPTY = "`url` must be a non-empty string."
 ERR_FILES_EMPTY = "`files` must be a non-empty list of local file paths."
 ERR_FILE_MISSING = "File not found: {0}"
 ERR_UPDATE_EMPTY = "Give at least one field to change."
+ERR_TRIGGER = "`trigger` must be one of new_data, schedule, got {0!r}."
+ERR_FREQUENCY = "`frequency` must be one of daily, weekdays, weekly, monthly, got {0!r}."
+ERR_WEEKDAY = "`weekday` must be 0 (Monday) to 6 (Sunday), got {0!r}."
+ERR_MONTHDAY = "`monthday` must be 1 to 28, got {0!r}."
+ERR_TIME_OF_DAY = "`time_of_day` must be HH:MM (24-hour), got {0!r}."
+ERR_TIMEZONE = "`timezone` must be an IANA time zone name of 1 to 64 characters."
+ERR_NUMBERS = "`numbers` must map a dashboard id to a list of figure keys."
+ERR_SUBSCRIBED = "`subscribed` must be true or false."
+_EMAIL_TRIGGERS = ("new_data", "schedule")
+_EMAIL_FREQUENCIES = ("daily", "weekdays", "weekly", "monthly")
+_TIME_OF_DAY = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _SHARE_MAX_EMAILS = 200
 _NAME_MAX = 120
 
@@ -31,6 +43,56 @@ def _require_id(name: str, value: int) -> None:
     """Reject an id that is not a positive integer."""
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise MammothValidationError(ERR_ID_POSITIVE.format(name, value))
+
+
+def _email_update_body(
+    enabled: bool,
+    timezone: str,
+    trigger: str | None,
+    frequency: str | None,
+    weekday: int | None,
+    monthday: int | None,
+    time_of_day: str | None,
+    numbers: dict[str, _list[str]] | None,
+) -> dict[str, Any]:
+    """Validate the email-update settings and build the request body (None fields left out)."""
+    if not isinstance(enabled, bool):
+        raise MammothValidationError("`enabled` must be true or false.")
+    if not isinstance(timezone, str) or not 1 <= len(timezone) <= 64:
+        raise MammothValidationError(ERR_TIMEZONE)
+    if trigger is not None and trigger not in _EMAIL_TRIGGERS:
+        raise MammothValidationError(ERR_TRIGGER.format(trigger))
+    if frequency is not None and frequency not in _EMAIL_FREQUENCIES:
+        raise MammothValidationError(ERR_FREQUENCY.format(frequency))
+    if weekday is not None and (isinstance(weekday, bool) or weekday not in range(7)):
+        raise MammothValidationError(ERR_WEEKDAY.format(weekday))
+    if monthday is not None and (isinstance(monthday, bool) or monthday not in range(1, 29)):
+        raise MammothValidationError(ERR_MONTHDAY.format(monthday))
+    if time_of_day is not None and not (
+        isinstance(time_of_day, str) and _TIME_OF_DAY.match(time_of_day)
+    ):
+        raise MammothValidationError(ERR_TIME_OF_DAY.format(time_of_day))
+    if numbers is not None and not (
+        isinstance(numbers, dict)
+        and all(
+            isinstance(key, str)
+            and isinstance(keys, list)
+            and all(isinstance(k, str) for k in keys)
+            for key, keys in numbers.items()
+        )
+    ):
+        raise MammothValidationError(ERR_NUMBERS)
+    body: dict[str, Any] = {"enabled": enabled, "timezone": timezone}
+    optional = {
+        "trigger": trigger,
+        "frequency": frequency,
+        "weekday": weekday,
+        "monthday": monthday,
+        "time_of_day": time_of_day,
+        "numbers": numbers,
+    }
+    body.update({key: value for key, value in optional.items() if value is not None})
+    return body
 
 
 class CollectionsAPI:
@@ -390,6 +452,128 @@ class CollectionsAPI:
         finally:
             for handle in handles:
                 handle.close()
+
+    async def email_updates(self, collection_id: int) -> dict[str, Any]:
+        """Get a collection's email updates: schedule, people, unsubscribed and a preview.
+
+        Whether the collection's people get each dashboard's headline numbers by email,
+        when, who unsubscribed, and a preview of the numbers. Managers only.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+
+        Returns:
+            Dict with ``update`` (the saved setting, or None when never set up), ``people``,
+            ``unsubscribed`` and ``boards`` (a preview of each dashboard's numbers).
+
+        Raises:
+            MammothValidationError: If *collection_id* <= 0.
+        """
+        _require_id("collection_id", collection_id)
+        return await self._client._request_json(
+            "GET", f"/collections/{collection_id}/email-updates"
+        )
+
+    async def set_email_updates(
+        self,
+        collection_id: int,
+        enabled: bool,
+        timezone: str,
+        trigger: str | None = None,
+        frequency: str | None = None,
+        weekday: int | None = None,
+        monthday: int | None = None,
+        time_of_day: str | None = None,
+        numbers: dict[str, _list[str]] | None = None,
+    ) -> dict[str, Any]:
+        """Turn a collection's email updates on or off, or change them. Managers only.
+
+        This emails the collection's people when it runs: turn it on with care. Fields left
+        as None are not sent, and the server applies its defaults (``new_data``, ``weekly``,
+        ``09:00``).
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+            enabled: True to send the updates, False to stop.
+            timezone: IANA time zone name the schedule runs in, such as ``Europe/Paris``.
+            trigger: ``new_data`` (when the data refreshes) or ``schedule``.
+            frequency: ``daily``, ``weekdays``, ``weekly`` or ``monthly``.
+            weekday: Day for a weekly update, 0 (Monday) to 6 (Sunday).
+            monthday: Day for a monthly update, 1 to 28.
+            time_of_day: Time of the update as ``HH:MM`` (24-hour).
+            numbers: Dashboard id to the figure keys to include.
+
+        Returns:
+            Dict as :meth:`email_updates` returns it.
+
+        Raises:
+            MammothValidationError: If an id or a field is out of range.
+        """
+        _require_id("collection_id", collection_id)
+        body = _email_update_body(
+            enabled, timezone, trigger, frequency, weekday, monthday, time_of_day, numbers
+        )
+        return await self._client._request_json(
+            "PUT", f"/collections/{collection_id}/email-updates", json=body
+        )
+
+    async def my_email_updates(self, collection_id: int) -> dict[str, Any]:
+        """Get whether the caller receives a collection's email updates.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+
+        Returns:
+            Dict ``{"available": bool, "subscribed": bool}``.
+
+        Raises:
+            MammothValidationError: If *collection_id* <= 0.
+        """
+        _require_id("collection_id", collection_id)
+        return await self._client._request_json(
+            "GET", f"/collections/{collection_id}/email-updates/me"
+        )
+
+    async def set_my_email_updates(self, collection_id: int, subscribed: bool) -> dict[str, Any]:
+        """Turn the caller's own email updates for a collection on, or off.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+            subscribed: True to receive the updates, False to unsubscribe.
+
+        Returns:
+            Dict ``{"available": bool, "subscribed": bool}``.
+
+        Raises:
+            MammothValidationError: If *collection_id* <= 0 or *subscribed* is not a bool.
+        """
+        _require_id("collection_id", collection_id)
+        if not isinstance(subscribed, bool):
+            raise MammothValidationError(ERR_SUBSCRIBED)
+        return await self._client._request_json(
+            "PUT",
+            f"/collections/{collection_id}/email-updates/me",
+            json={"subscribed": subscribed},
+        )
+
+    async def send_test_email_update(self, collection_id: int) -> dict[str, Any]:
+        """Send one test email update to the caller, with the numbers an editor sees.
+
+        This sends a real email, to the caller only.
+
+        Args:
+            collection_id: ID of the collection (must be > 0).
+
+        Returns:
+            Dict ``{"sent": int}``.
+
+        Raises:
+            MammothValidationError: If *collection_id* <= 0.
+        """
+        _require_id("collection_id", collection_id)
+        return await self._client._request_json(
+            "POST", f"/collections/{collection_id}/email-updates/test"
+        )
 
     async def active_job(self, collection_id: int) -> dict[str, Any]:
         """Get the collection's upload job that is still in flight, if any.

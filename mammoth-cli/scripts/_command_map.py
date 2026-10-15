@@ -807,6 +807,40 @@ OVERRIDES: dict[str, str] = {
     "UpdateSubscriptionStorage": "billing.stripe.storage.set",
     "UploadFile": "collection.files.upload",
     "UseTemplate": "dashboard.templates.use",
+    # Email updates (dashboards and collections), live charts and oEmbed.
+    "ListWorkspaceEmailUpdates": "dashboard.email-updates.list",
+    "GetDashboardEmailUpdates": "dashboard.email-updates.get",
+    "SaveDashboardEmailUpdates": "dashboard.email-updates.set",
+    "GetMyDashboardEmailUpdates": "dashboard.email-updates.me.get",
+    "SetMyDashboardEmailUpdates": "dashboard.email-updates.me.set",
+    "TestDashboardEmailUpdate": "dashboard.email-updates.test",
+    "GetCollectionEmailUpdates": "collection.email-updates.get",
+    "SaveCollectionEmailUpdates": "collection.email-updates.set",
+    "GetMyCollectionEmailUpdates": "collection.email-updates.me.get",
+    "SetMyCollectionEmailUpdates": "collection.email-updates.me.set",
+    "TestCollectionEmailUpdate": "collection.email-updates.test",
+    "ListLiveCharts": "dashboard.live-chart.list",
+    "CreateLiveChart": "dashboard.live-chart.create",
+    "GetLiveChart": "dashboard.live-chart.get",
+    "ChangeAudience": "dashboard.live-chart.audience",
+    "GetUsage": "dashboard.live-chart.usage",
+    "RecordPlacement": "dashboard.live-chart.placement",
+    "Oembed": "dashboard.oembed",
+    # Exports, export hosts, view summary, dataset stats and definitions, workflow Save.
+    "ListExportRuns": "view.export.runs",
+    # "Read", "Update" and "Suggest" are the server's own (generic) operationIds; each is unique
+    # in the pinned spec today. A second route that reuses one needs a new reviewed entry.
+    "Suggest": "view.export.rest-fill",
+    "Read": "workspace.export-hosts.get",
+    "Update": "workspace.export-hosts.set",
+    "GetPanelSummary": "view.summary",
+    "GetProjectColumnStats": "dataset.column-stats",
+    "GetDatasetDefinitions": "dataset.definition.list",
+    "AddDatasetDefinition": "dataset.definition.add",
+    "RemoveDatasetDefinition": "dataset.definition.remove",
+    "DuplicateWorkflow": "workflow.duplicate",
+    "UndoWorkflowSave": "workflow.save-undo",
+    "CancelWorkflowSaveStep": "workflow.save-cancel-step",
 }
 
 
