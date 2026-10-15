@@ -23,6 +23,7 @@ MCP_INSTRUCTIONS = (
 # lets the page's frame fetch only from the origins its resource names.
 UPLOAD_APP_URI = "ui://mammoth/upload.html"
 CONNECT_APP_URI = "ui://mammoth/connect.html"
+DATASET_APP_URI = "ui://mammoth/dataset.html"
 # Where the user settles, in the web app, what an upload waits on and no tool can.
 MAMMOTH_PROJECT_URL = f"{APP_URL}/#/workspaces/{{workspace_id}}/projects/{{project_id}}"
 # The pages a view and a dataset open on, as the web app routes them.
@@ -556,14 +557,38 @@ class ConnectionFields:
     QUERY = "query"
     PROFILE = "profile"
     JOB_ID = "job_id"
-    # A dataset is one pull, now: Mammoth refuses one with no schedule. The user
-    # sets a refresh schedule in Mammoth.
+    # How `add_dataset_from_connection` takes its schedule, and how Mammoth does.
+    # Mammoth refuses a dataset with no schedule; unless asked, it is one pull, now.
     SCHEDULE_PROPERTIES = "schedule_properties"
-    ONE_PULL_NOW = {
-        "schedule_type": "moment",
-        "first_pull_at": "now",
-        "on_refresh_action": "replace",
-    }
+    RECURRENCE_INFO = "recurrence_info"
+    SCHEDULE_TYPE = "schedule_type"
+    FIRST_PULL_AT = "first_pull_at"
+    ON_REFRESH_ACTION = "on_refresh_action"
+    UNIQUE_SEQUENCE_COLUMN = "unique_sequence_column"
+    C_NAME = "c_name"
+    C_TYPE = "c_type"
+    MOMENT = "moment"
+    PERIOD = "period"
+    NOW = "now"
+    LATER = "later"
+    INTERVAL = "interval"
+    FREQUENCY = "frequency"
+    START_AT = "start_at"
+    UNTIL = "until"
+    ONCE = "once"
+    UNITS = {"hourly": "hour", "daily": "day", "weekly": "week", "monthly": "month"}
+    REFRESH_WORDS = {"replace": "replacing the rows", "append": "adding the new rows"}
+    COMBINE = "combine"
+    # The names the tool takes them under, which the dataset form sends.
+    REPEAT = "repeat"
+    EVERY = "every"
+    ON_REFRESH = "on_refresh"
+    SCHEDULE = "schedule"
+    SOURCE = "source"
+    WORKSPACE_ID = "workspace_id"
+    PROJECT_ID = "project_id"
+    # A sample's column, as Mammoth names it.
+    COLUMN_NAME = "c_name"
     # Long enough for Mammoth to refuse the dataset; the pull itself runs on.
     CHECK_SECONDS = 15.0
 

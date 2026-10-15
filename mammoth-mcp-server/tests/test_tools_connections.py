@@ -36,10 +36,14 @@ def connections_path(connector: str) -> str:
 
 
 def a_sample(rows: int) -> dict[str, Any]:
+    """A sample as Mammoth sends it: the columns in `dataschema`, each row a list of values."""
     return {
         "data_sample": {
-            "dataschema": [{"name": "region"}, {"name": "revenue"}],
-            "rows": [{"region": f"R{n}", "revenue": n} for n in range(rows)],
+            "dataschema": [
+                {"c_id": "column_1", "c_name": "region", "c_type": "text"},
+                {"c_id": "column_2", "c_name": "revenue", "c_type": "numeric"},
+            ],
+            "rows": [[f"R{n}", n] for n in range(rows)],
         }
     }
 
@@ -67,6 +71,7 @@ class TestPreviewQuery:
 
         assert sample["columns"] == ["region", "revenue"]
         assert len(sample["rows"]) == 20
+        assert sample["rows"][3] == {"region": "R3", "revenue": 3}
         (sent,) = api.sent("POST", f"{connections_path('postgres')}/{KEY}/ds_configs")
         assert api.body(sent)["data_sample"] is True
 
@@ -108,7 +113,7 @@ class TestAddDatasetFromConnection:
                     "table_name": "sales",
                     "query": "select region, revenue from sales",
                 },
-                # Mammoth refuses a dataset with no schedule: this is one pull, now.
+                # Mammoth refuses a dataset with no schedule. Unless asked, it is one pull, now.
                 "schedule_properties": {
                     "schedule_type": "moment",
                     "first_pull_at": "now",
@@ -118,6 +123,91 @@ class TestAddDatasetFromConnection:
         }
         assert "find_new_datasets" in added["next_step"]
         assert added["since"]
+
+    def a_dataset_made(self, **choices: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+        """The dataset spec sent and the answer, for a call with these choices."""
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", DATASETS, {"job_id": JOB})
+            api.answer("GET", f"/jobs/{JOB}", {"job": {"id": JOB, "status": "processing"}})
+            added = add_dataset(
+                name="Sales", query="select * from sales", **{**ON_POSTGRES, **choices}
+            )
+        (sent,) = api.sent("POST", DATASETS)
+        return api.body(sent)["dataset_spec"], added
+
+    def test_the_table_defaults_to_the_dataset_name(self) -> None:
+        spec, _ = self.a_dataset_made()
+
+        assert spec["query_properties"]["table_name"] == "Sales"
+
+    def test_once_is_the_default_and_says_so(self) -> None:
+        spec, added = self.a_dataset_made()
+
+        assert "recurrence_info" not in spec
+        assert added["schedule"] == "Once, now."
+
+    def test_a_dataset_kept_fresh_repeats_on_the_schedule_asked_for(self) -> None:
+        spec, added = self.a_dataset_made(
+            repeat="daily",
+            every=2,
+            start_at="2026-10-16T06:00:00+00:00",
+            until="2026-12-31T00:00:00+00:00",
+            on_refresh="append",
+        )
+
+        assert spec["schedule_properties"] == {
+            "schedule_type": "period",
+            "first_pull_at": "later",
+            "on_refresh_action": "append",
+        }
+        assert spec["recurrence_info"] == {
+            "interval": 2,
+            "frequency": "daily",
+            "start_at": "2026-10-16T06:00:00+00:00",
+            "until": "2026-12-31T00:00:00+00:00",
+        }
+        assert added["schedule"] == (
+            "Every 2 days from 2026-10-16T06:00:00+00:00 until"
+            " 2026-12-31T00:00:00+00:00, adding the new rows."
+        )
+
+    def test_a_repeat_with_no_start_starts_now(self) -> None:
+        spec, _ = self.a_dataset_made(repeat="hourly")
+
+        assert spec["schedule_properties"]["first_pull_at"] == "now"
+        assert spec["recurrence_info"]["start_at"]
+
+    def test_combine_matches_rows_on_the_column_named(self) -> None:
+        spec, _ = self.a_dataset_made(
+            repeat="daily", on_refresh="combine", unique_column="id", unique_column_type="numeric"
+        )
+
+        assert spec["schedule_properties"]["on_refresh_action"] == "combine"
+        assert spec["schedule_properties"]["unique_sequence_column"] == {
+            "c_name": "id",
+            "c_type": "numeric",
+        }
+
+    def test_combine_without_a_column_to_match_on_is_refused(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError) as refused:
+            add_dataset(
+                name="Sales", query="select * from sales", on_refresh="combine", **ON_POSTGRES
+            )
+
+        assert "unique_column" in str(refused.value)
+        assert not api.sent("POST", DATASETS)
+
+    def test_a_time_that_is_not_one_is_refused(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError):
+            add_dataset(
+                name="Sales",
+                query="select * from sales",
+                repeat="daily",
+                start_at="tomorrow",
+                **ON_POSTGRES,
+            )
+
+        assert not api.sent("POST", DATASETS)
 
     def test_a_dataset_mammoth_could_not_make_is_reported_at_once(self) -> None:
         # Left to `find_new_datasets`, a failed job reads as "nothing yet", forever.

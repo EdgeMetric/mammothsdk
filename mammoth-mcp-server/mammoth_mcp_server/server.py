@@ -10,7 +10,7 @@ from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
 
 # Importing them binds their tools to `chat_apps` before the server takes it.
-from . import connect_app, upload_app  # noqa: F401
+from . import connect_app, dataset_app, upload_app  # noqa: F401
 from .chat_apps import chat_apps
 from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
