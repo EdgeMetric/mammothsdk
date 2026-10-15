@@ -194,9 +194,14 @@ def test_dataset_delete_with_wrong_confirm_makes_no_api_call(
 ) -> None:
     from mammoth_cli import app
 
+    # Import the command module first and patch the name it bound: command modules
+    # load lazily, so a patch on ``runtime.session`` made before the first import
+    # would be captured by the module for the rest of the session.
+    import mammoth_cli.commands.dataset  # noqa: F401
+
     called: list[str] = []
     monkeypatch.setattr(
-        "mammoth_cli.runtime.session.open_service",
+        "mammoth_cli.commands.dataset.open_service",
         lambda *a, **k: called.append("open") or (_ for _ in ()).throw(AssertionError("api")),
     )
     result = CliRunner().invoke(
