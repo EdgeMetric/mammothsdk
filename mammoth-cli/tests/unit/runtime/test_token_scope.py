@@ -161,6 +161,7 @@ def test_pinned_projects_reads_the_set_else_the_one_project(
 
 def test_pinned_projects_reads_the_sdk_model() -> None:
     from mammoth.models.workspaces import CurrentWorkspace
+
     from mammoth_cli.runtime.token_scope import pinned_projects
 
     current = CurrentWorkspace.model_validate({"id": 4, "project": 3, "projects": [3, 7]})

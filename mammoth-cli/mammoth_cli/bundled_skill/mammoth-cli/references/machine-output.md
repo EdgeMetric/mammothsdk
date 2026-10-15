@@ -26,7 +26,8 @@ task, not in the middle of one.
 is `true` and `data.expires_at_note` says so; the CLI renews the token itself, and only a failed
 refresh (`login_expired`, exit 4) needs a new `mammoth auth login`. `auth status --check` and
 `auth login` add `workspace_name` (and `project_name` / `token_project_name` for a project-limited
-token); a name is left out when its lookup fails, and the ids are always present.
+token); a name is left out when its lookup fails, and the ids are always present. A sign-in limited
+to several projects adds `project_ids` to `auth login` and `token_projects` to `auth status --check`.
 
 ## Representative result keys
 

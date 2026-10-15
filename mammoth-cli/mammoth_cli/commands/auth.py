@@ -39,7 +39,7 @@ from mammoth_cli.runtime import executor, labels
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.token_scope import pinned_project
+from mammoth_cli.runtime.token_scope import pin_names, pinned_projects, pins_label
 from mammoth_cli.services import factory as service_factory
 
 _STORAGE_MODES = ("auto", "keyring", "file")
@@ -234,6 +234,7 @@ def _verify_login(
     api_token: str,
     names: dict[str, Any] | None = None,
     project_id: int | None = None,
+    project_ids: tuple[int, ...] | None = None,
 ) -> int:
     """Learn the token's workspace from the server and run the connection check.
 
@@ -266,6 +267,8 @@ def _verify_login(
                 names["workspace"] = labels.workspace_name(service, workspace_id)
                 if project_id is not None:
                     names["project"] = labels.project_name(service, project_id)
+                if project_ids is not None:
+                    names["projects"] = pin_names(service, project_ids)
         finally:
             service.close()
     except CliError as exc:
@@ -459,8 +462,13 @@ def _run_oauth_login(
             profile=profile_name,
         )
     existing = profiles.get_profile(profile_name)
+    pins = session.project_ids
     project_id: int | None
-    if session.project_id is not None:
+    if pins is not None and existing is not None and existing.project_id in pins:
+        # A sign-in limited to several projects keeps the profile's project when it is
+        # one of them; otherwise the profile moves to the lowest pinned project.
+        project_id = existing.project_id
+    elif session.project_id is not None:
         project_id = session.project_id
     else:
         project_id = existing.project_id if existing is not None else None
@@ -472,6 +480,7 @@ def _run_oauth_login(
         api_token=session.access,
         names=names,
         project_id=project_id,
+        project_ids=pins,
     )
     profiles.save_profile(
         profiles.ProfileRecord(
@@ -490,7 +499,9 @@ def _run_oauth_login(
     )
     _warn_signed_out_profiles(profile_name, base_url, session)
     where = labels.label("workspace", workspace_id, names.get("workspace"))
-    if project_id is not None:
+    if pins is not None:
+        where += ", limited to " + pins_label(pins, names.get("projects"))
+    elif project_id is not None:
         where += ", " + labels.label("project", project_id, names.get("project"))
     typer.echo(
         f"Signed in to {where}. Credential stored in {storage_used} "
@@ -509,6 +520,8 @@ def _run_oauth_login(
         data["workspace_name"] = names["workspace"]
     if project_id is not None and names.get("project"):
         data["project_name"] = names["project"]
+    if pins is not None:
+        data["project_ids"] = list(pins)
     return data, {"profile": profile_name, "workspace_id": workspace_id}
 
 
@@ -759,17 +772,17 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         try:
             service.check_connection()
             data["connected"] = True
-            data["token_project"] = pinned_project(service)
+            pins = pinned_projects(service)
+            data["token_project"] = pins[0] if pins is not None else None
+            data["token_projects"] = list(pins) if pins is not None else None
             ws_name = labels.workspace_name(service, workspace_id) if workspace_id else None
             if ws_name:
                 data["workspace_name"] = ws_name
-            pin_name = (
-                labels.project_name(service, data["token_project"])
-                if data["token_project"] is not None
-                else None
-            )
-            if pin_name:
-                data["token_project_name"] = pin_name
+            pinned_names = pin_names(service, pins)
+            if pins is not None and len(pins) == 1 and pinned_names.get(pins[0]):
+                data["token_project_name"] = pinned_names[pins[0]]
+            elif pins is not None and any(pinned_names.values()):
+                data["token_project_names"] = [pinned_names.get(pin) for pin in pins]
         finally:
             service.close()
         data["checked"] = True
@@ -795,7 +808,8 @@ def auth_status(
     """Report local authentication state for one profile.
 
     Makes no network call unless `--check` is given. With `--check` it also reports
-    `token_project`: the project id the token is limited to, or null when it is not limited.
+    `token_projects`: the project ids the token is limited to, or null when it is not
+    limited, and `token_project`: the lowest of them.
     """
     invocation = go.make_invocation(
         "auth.status",

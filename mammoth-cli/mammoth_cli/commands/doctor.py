@@ -25,7 +25,7 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
-from mammoth_cli.runtime.token_scope import pinned_project
+from mammoth_cli.runtime.token_scope import Pins, as_pins, pin_details, pinned_projects, pins_label
 from mammoth_cli.services.protocol import MammothService
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -139,16 +139,18 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return [p for p in service.list_all_projects() if isinstance(p, dict)]
 
 
-def _token_scope(service: MammothService) -> CliError | int | None:
-    """The project the token is limited to, or the error that kept doctor from learning it."""
+def _token_scope(service: MammothService) -> CliError | Pins | None:
+    """The projects the token is limited to, or the error that kept doctor from learning it."""
     try:
-        return pinned_project(service)
+        return pinned_projects(service)
     except CliError as error:
         return error
 
 
-def _scope_check(scope: CliError | int | None, selected_project: int | None) -> dict[str, Any]:
-    """Report the project the token is limited to; a limited token must work in that project."""
+def _scope_check(
+    scope: CliError | Pins | int | None, selected_project: int | None
+) -> dict[str, Any]:
+    """Report the projects the token is limited to; a limited token must work in one of them."""
     if isinstance(scope, CliError):
         return {
             **_check(
@@ -156,19 +158,20 @@ def _scope_check(scope: CliError | int | None, selected_project: int | None) -> 
             ),
             "pinned_project_id": None,
         }
-    if scope is None:
+    pins = as_pins(scope)
+    if pins is None:
         return {
             **_check("token_scope", True, "token is not limited to a project"),
             "pinned_project_id": None,
         }
-    if selected_project not in (None, scope):
+    if selected_project is not None and selected_project not in pins:
         detail = (
-            f"token is limited to project {scope} but project {selected_project} is selected; "
-            f"use --project {scope}"
+            f"token is limited to {pins_label(pins)} but project {selected_project} is "
+            f"selected; use --project {pins[0]}"
         )
-        return {**_check("token_scope", False, detail), "pinned_project_id": scope}
-    detail = f"token is limited to project {scope}; it cannot create or open other projects"
-    return {**_check("token_scope", True, detail), "pinned_project_id": scope}
+        return {**_check("token_scope", False, detail), **pin_details(pins)}
+    detail = f"token is limited to {pins_label(pins)}; it cannot create or open other projects"
+    return {**_check("token_scope", True, detail), **pin_details(pins)}
 
 
 def _nearest_existing(path: Path) -> Path:
@@ -325,7 +328,7 @@ def doctor(invocation: Invocation) -> HandlerResult:
     connection_ok = False
     connection_detail = "not attempted"
     projects: list[dict[str, Any]] | None = None
-    scope: CliError | int | None = None
+    scope: CliError | Pins | None = None
     wait_seconds = _wait_seconds(invocation)
     if auth_ok:
         started = time.monotonic()
