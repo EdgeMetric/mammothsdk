@@ -20,8 +20,13 @@ capabilities); verify the view binding with `dashboard get DASHBOARD_ID`
 ```bash
 mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Monthly revenue by region, with top customers", "dataview_id": VIEW_ID}}}'
 mammoth dashboard chat edit DASHBOARD_ID --input '{"body": {"params": {"prompt": "Add a chart of orders by status"}}}'
+mammoth dashboard figure add DASHBOARD_ID --input '{"intent": "Top 10 products by revenue"}'
 mammoth dashboard get DASHBOARD_ID
 ```
+
+`dashboard figure add` with an `intent` adds one chart, and the server picks it
+(the same route as `dashboard figure-intent`); an exact `figure` spec with
+`dataview_id` is for a person at the standalone CLI.
 
 `v3 generate` waits for the bake (about 30 s) and returns the baked canvas;
 `chat edit` returns `changed` and a one-line `message`. Quote one number from

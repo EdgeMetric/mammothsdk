@@ -665,14 +665,52 @@ def _figure_page_kwargs(page: Any) -> dict[str, Any]:
     return {"page_new_title": page["new_title"]}
 
 
-def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
-    """Add one figure to a dashboard. The input is the endpoint's own shape.
+_FIGURE_INTENT = "mammoth.api.dashboards.DashboardsAPI.figure_intent"
+_FIGURE_SHAPES_HINT = (
+    "Pass either an intent, and the server picks the chart: "
+    "--input '{\"intent\": \"Revenue by region\"}' (the same as 'dashboard figure-intent'), "
+    'or an exact figure: --input \'{"dataview_id": VIEW_ID, "figure": {"kind": "hbar", '
+    '"dim": "Region", "measure": "Revenue", "agg": "sum"}}\'.'
+)
 
-    ``dataview_id`` and ``figure`` are required; ``banded`` and ``page`` (``{"id": ...}``
-    or ``{"new_title": ...}``) are optional. The result carries ``bake_job_id``.
+
+def _figure_add_mode(document: dict[str, Any]) -> str:
+    """``intent`` or ``figure``: which of the two input shapes the caller sent."""
+    has_intent = document.get("intent") is not None
+    has_figure = document.get("figure") is not None
+    if has_intent != has_figure:
+        return "intent" if has_intent else "figure"
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT if has_intent else CODE_MISSING_FIELD,
+        message=(
+            "Pass 'intent' or 'figure', not both."
+            if has_intent
+            else "This command requires an 'intent' or a 'figure' input field."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=_FIGURE_SHAPES_HINT,
+    )
+
+
+def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
+    """Add one figure to a dashboard, from an intent or an exact figure spec.
+
+    ``intent`` (optional ``kind``) goes through the figure-intent route, where the
+    server picks and draws the chart. Otherwise ``dataview_id`` and ``figure`` are
+    required; ``banded`` and ``page`` (``{"id": ...}`` or ``{"new_title": ...}``) are
+    optional, and the result carries ``bake_job_id``.
     """
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = _bound_document(invocation)
+    if _figure_add_mode(document) == "intent":
+        params = {"intent": document["intent"]}
+        if document.get("kind") is not None:
+            params["kind"] = document["kind"]
+        with open_service(invocation) as (service, auth):
+            data = service.call(_FIGURE_INTENT, dashboard_id=dashboard_id, body={"params": params})
+        result = _dump_model(data)
+        result = {**result, "route": "figure-intent"} if isinstance(result, dict) else result
+        return result, _meta(invocation, auth.workspace_id)
     kwargs: dict[str, Any] = {
         "dashboard_id": dashboard_id,
         "dataview_id": _require_field(document, "dataview_id"),

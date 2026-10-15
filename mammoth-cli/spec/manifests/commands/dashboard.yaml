@@ -3220,7 +3220,9 @@ commands:
   - CT-DASHBOARD-FIGURE-ADD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Adds one figure (an explore card) with no chat turn. dataview_id must be the dashboard''s
+  known_restrictions: 'Adds one figure (an explore card) with no chat turn. Pass {"intent": "..."} (optional
+    kind) and the server picks and draws the chart, as dashboard figure-intent does; or pass an exact figure.
+    With a figure, dataview_id must be the dashboard''s
     own view. figure is the figure as the canvas stores it, without its id: kind plus its bindings (measure,
     dim, agg, title). Optional banded (a banded dimension without its id; figure.dim then points at it) and
     page: {"id": PAGE_ID} for an existing content page or {"new_title": "..."} for a new one; with neither the

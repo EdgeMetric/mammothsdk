@@ -228,7 +228,7 @@
   "dashboard.engagement.remind": "Email the share link again to people who have not opened a dashboard.",
   "dashboard.exemplar.extract": "Extract an example report into an editable dashboard spec.",
   "dashboard.figure-intent": "Resolve an AI-add figure from an intent.",
-  "dashboard.figure.add": "Add one figure to a dashboard. The input is the endpoint's own shape.",
+  "dashboard.figure.add": "Add one figure to a dashboard, from an intent or an exact figure spec.",
   "dashboard.filter.add": "Add (or replace) the filter control on one column of a board.",
   "dashboard.filter.list": "List the filter controls a board declares.",
   "dashboard.filter.remove": "Remove the filter control on one column of a board.",
