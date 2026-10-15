@@ -2,6 +2,7 @@
 
 from . import (
     automations,
+    connections,
     dashboards,
     data,
     discovery,
@@ -9,12 +10,14 @@ from . import (
     files,
     help_topics,
     pipeline,
+    sources,
     transformations,
     views,
 )
 
 __all__ = [
     "automations",
+    "connections",
     "dashboards",
     "data",
     "discovery",
@@ -22,6 +25,7 @@ __all__ = [
     "files",
     "help_topics",
     "pipeline",
+    "sources",
     "transformations",
     "views",
 ]

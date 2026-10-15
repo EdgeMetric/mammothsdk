@@ -10,7 +10,8 @@ client, how long it took and whether it failed. What is never recorded is what
 the call was about. A tool's arguments carry the user's own data — column
 names, filter values, file names — so the name of the tool is kept and the
 arguments are dropped on the floor. No token, no id and no row ever reaches an
-event.
+event. One argument is kept: the connector a user connects, which is a name
+from Mammoth's own list of connectors, not the user's data.
 """
 
 import asyncio
@@ -43,6 +44,9 @@ class Events:
 
     INITIALIZE = "mcp_initialize"
     TOOL_CALLED = "mcp_tool_called"
+    SOURCE_LINKED = "mcp_source_linked"
+    SOURCE_CONNECTED = "mcp_source_connected"
+    NEW_DATASETS = "mcp_new_datasets"
     OK = "ok"
     FAILED = "failed"
 
@@ -57,6 +61,9 @@ class TelemetryFields:
     DURATION_MS = "duration_ms"
     OUTCOME = "outcome"
     ERROR = "error"
+    CONNECTOR = "connector"
+    STATUS = "status"
+    DATASETS = "datasets"
 
 
 # The JSON-RPC methods worth an event of their own.

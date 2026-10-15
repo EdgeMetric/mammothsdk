@@ -9,19 +9,21 @@ resource server alone: it has no sign-in of its own.
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
 
+# Importing them binds their tools to `chat_apps` before the server takes it.
+from . import connect_app, dataset_app, upload_app  # noqa: F401
+from .chat_apps import chat_apps
 from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
 from .read_only import ReadOnly
 from .server_card import SERVER_CARD_MCP_PATH, SERVER_CARD_PATH, serve_server_card
 from .telemetry import Telemetry
 from .tokens import token_verifier
-from .upload_app import upload_app
 from .upload_routes import upload
 
 mcp_server = MCPServer(
     MCP_SERVER_NAME,
     instructions=MCP_INSTRUCTIONS,
-    extensions=[upload_app],
+    extensions=[chat_apps],
     # One JSON line per call, so the launch can be measured. It records which
     # tool ran and never what it ran on.
     # The limit runs before the record, so a refused write is recorded as one.

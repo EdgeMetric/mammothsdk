@@ -22,11 +22,15 @@ MCP_INSTRUCTIONS = (
 # The same upload, drawn in the chat by a client that speaks MCP Apps. The host
 # lets the page's frame fetch only from the origins its resource names.
 UPLOAD_APP_URI = "ui://mammoth/upload.html"
+CONNECT_APP_URI = "ui://mammoth/connect.html"
+DATASET_APP_URI = "ui://mammoth/dataset.html"
 # Where the user settles, in the web app, what an upload waits on and no tool can.
 MAMMOTH_PROJECT_URL = f"{APP_URL}/#/workspaces/{{workspace_id}}/projects/{{project_id}}"
 # The pages a view and a dataset open on, as the web app routes them.
 MAMMOTH_VIEW_URL = f"{MAMMOTH_PROJECT_URL}/views/{{view_id}}"
 MAMMOTH_DATASET_URL = f"{MAMMOTH_PROJECT_URL}/datasets/{{dataset_id}}"
+# The project's data page, where the web app opens "Add data" when a link asks.
+MAMMOTH_DATA_URL = f"{MAMMOTH_PROJECT_URL}/data/datasets"
 # A dashboard's two links, built as the share emails build them
 # (`api.email.transactional`). The one to give the user is the viewer link: it
 # opens the published board, on the host that serves it. The editor link is the
@@ -48,6 +52,14 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
+# Connecting a source takes the user two or three minutes in Mammoth, so the
+# watch for the new connection runs for five. One tool call cannot hold that
+# long: Claude gives up on a call well inside a minute (a 40-second hold was cut
+# off), so each call holds 20 seconds, looking every ten, and the model or the
+# card calls again until the watch ends.
+CONNECT_WATCH_SECONDS = 5 * 60
+CONNECT_WAIT_SECONDS = 20.0
+CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
 
@@ -111,6 +123,12 @@ UPLOAD_MEDIA_TYPES = {
 class UploadFields:
     """The upload handoff: its record, its link, and what `check_upload` reports."""
 
+    # Who made a dataset, by name, and the caller's name as `/self` reports it.
+    CREATED_BY = "created_by"
+    FIELDS = "fields"
+    FIRST_NAME = "first_name"
+    LAST_NAME = "last_name"
+    NAMES = "first_name,last_name"
     # The kind the ticket is stored under, and the query the page is opened with.
     TICKET = "upload"
     UPLOAD_ID = "upload_id"
@@ -266,6 +284,9 @@ class ApiPaths:
     )
     RESOURCES = "/workspaces/{workspace_id}/projects/{project_id}/resources"
     BROWSE = "/workspaces/{workspace_id}/browse"
+    # The SDK's list sends no paging or filter, and the route pages by ten.
+    CONNECTORS = "/workspaces/{workspace_id}/connectors"
+    SELF = "/self"
 
 
 class ResourceTypes:
@@ -469,6 +490,137 @@ class DashboardFields:
     # Which version the numbers are from: "published" or "draft".
     VALUES_FROM = "values_from"
     DRAFT = "draft"
+
+
+class ConnectorFields:
+    """A connector as the connectors route lists it, and how a link opens one.
+
+    The web app's data page reads `action` and `connector` from its link and
+    opens "Add data" on that connector, as Mammoth's own agent links do.
+    """
+
+    CONNECTORS = "connectors"
+    KEY = "name_key"
+    NAME = "disp_name"
+    AVAILABLE = "is_available"
+    LISTED = "name_key,disp_name,is_available"
+    FIELDS = "fields"
+    LIMIT = "limit"
+    OFFSET = "offset"
+    PROJECT_ID = "project_id"
+    HAS_CONNECTIONS = "has_connections"
+    ACTION = "action"
+    ADD_CONNECTOR = "addConnector"
+    CONNECTOR = "connector"
+    # Tells the page the link came from an AI chat, so it says to go back there.
+    FROM = "from"
+    ASSISTANT = "assistant"
+    # The watch `connect_source` starts and `find_new_connection` reads.
+    WATCH = "connect_watch"
+    WATCH_ID = "watch_id"
+    WORKSPACE_ID = "workspace_id"
+    PROJECT_ID_KEY = "project_id"
+    KNOWN = "known"
+    STARTED = "started"
+    STATUS = "status"
+    WAITING = "waiting"
+    CONNECTED = "connected"
+    GAVE_UP = "gave_up"
+    # What `connect_source` reports.
+    SHOWN_KEY = "key"
+    SHOWN_NAME = "name"
+    SINCE = "since"
+    NEXT_STEP = "next_step"
+    # The caller's own roles, as `/self` reports them. Only this project role
+    # may connect a source: Mammoth checks the role on the project itself.
+    USER_ROLES = "user_roles"
+    PROJECTS = "projects"
+    CONNECTS = "project_admin"
+
+
+class ConnectionFields:
+    """A connection the project already has, and the dataset made through one."""
+
+    CONNECTIONS = "connections"
+    # The SQL databases: their data is chosen with a query, which a model writes well.
+    DATABASES = frozenset(
+        {"postgres", "mysql", "mssql", "redshift", "snowflake", "databricks", "hana", "bigquery"}
+    )
+    # A query that reads starts with one of these, is one statement, and has
+    # none of the WRITES words outside its strings, comments and quoted names.
+    # The check is a guard, not a parser: the connection's database account
+    # still decides what a query may change.
+    READING = ("select", "with")
+    WRITES = frozenset({
+        "insert", "update", "delete", "merge", "into", "drop", "create", "alter",
+        "truncate", "grant", "revoke", "call", "exec", "execute",
+    })  # fmt: skip
+    # The quoting below cannot follow a backslash escape (Postgres E'' strings,
+    # MySQL strings) or a dollar quote (Postgres and Snowflake $$ strings). A
+    # query with either is refused before it is stripped.
+    DOLLAR_QUOTE = r"\$\w*\$"
+    # Databases read comments differently: Postgres nests /* */, MySQL needs a
+    # space after --, runs /*! */ and ends a line at #, Snowflake ends one at
+    # //. So a comment is not stripped, and one left outside a string is refused.
+    COMMENTS = ("--", "/*", "#", "//")
+    # Strings and quoted names, which may hold any word. A [name] is not
+    # stripped: Postgres reads brackets as an array index. SQL Server reads
+    # them as a name that may hold a quote, so there a bracket is refused.
+    BRACKETED = "mssql"
+    BRACKETS = ("[", "]")
+    QUOTED = r"'(?:[^']|'')*'|\"[^\"]*\"|`[^`]*`"
+    SAMPLE = "data_sample"
+    SCHEMA = "dataschema"
+    ROWS = "rows"
+    NAME = "name"
+    COLUMNS = "columns"
+    ROWS_SHOWN = 20
+    # Seconds the database has to answer a preview, inside one tool call.
+    PREVIEW_SECONDS = 30.0
+    # How `datasets.create` takes a dataset from a connection.
+    CREATION_TYPE = "cloud"
+    CONNECTOR_KEY = "connector_key"
+    CONNECTION_KEY = "connection_key"
+    QUERY_PROPERTIES = "query_properties"
+    DS_NAME = "ds_name"
+    TABLE_NAME = "table_name"
+    QUERY = "query"
+    PROFILE = "profile"
+    JOB_ID = "job_id"
+    # How `add_dataset_from_connection` takes its schedule, and how Mammoth does.
+    # Mammoth refuses a dataset with no schedule; unless asked, it is one pull, now.
+    SCHEDULE_PROPERTIES = "schedule_properties"
+    RECURRENCE_INFO = "recurrence_info"
+    SCHEDULE_TYPE = "schedule_type"
+    FIRST_PULL_AT = "first_pull_at"
+    ON_REFRESH_ACTION = "on_refresh_action"
+    UNIQUE_SEQUENCE_COLUMN = "unique_sequence_column"
+    C_NAME = "c_name"
+    C_TYPE = "c_type"
+    MOMENT = "moment"
+    PERIOD = "period"
+    NOW = "now"
+    LATER = "later"
+    INTERVAL = "interval"
+    FREQUENCY = "frequency"
+    START_AT = "start_at"
+    UNTIL = "until"
+    ONCE = "once"
+    UNITS = {"hourly": "hour", "daily": "day", "weekly": "week", "monthly": "month"}
+    REFRESH_WORDS = {"replace": "replacing the rows", "append": "adding the new rows"}
+    COMBINE = "combine"
+    # The names the tool takes them under, which the dataset form sends.
+    REPEAT = "repeat"
+    EVERY = "every"
+    ON_REFRESH = "on_refresh"
+    SCHEDULE = "schedule"
+    SOURCE = "source"
+    WORKSPACE_ID = "workspace_id"
+    PROJECT_ID = "project_id"
+    # A sample's column, as Mammoth names it.
+    COLUMN_NAME = "c_name"
+    # Long enough for Mammoth to refuse the dataset; the pull itself runs on.
+    CHECK_SECONDS = 15.0
 
 
 class BoardFields:
