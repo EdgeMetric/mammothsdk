@@ -154,7 +154,8 @@ def test_unhealthy_dataset_with_a_stored_suggestion_names_interpretation_command
         "status": "has_unstructured_data",
         "additional_info": {
             "interpretation": {
-                "instruction_suggestions": ["Skip preamble rows, row 5 is the header"]
+                "report": {"rows": 3},
+                "instruction_suggestions": ["Skip preamble rows, row 5 is the header"],
             }
         },
     }
@@ -168,7 +169,11 @@ def test_unhealthy_dataset_with_a_stored_suggestion_names_interpretation_command
 def test_unhealthy_dataset_without_a_suggestion_names_the_reading_commands() -> None:
     record = {"id": 3108, "status": "need_action"}
     fix = with_dataset_health(record)["dataset_health"][0]["fix"]
-    assert _assert_real_command(fix) == ["dataset.get", "dataset.broken-rows.list"]
+    assert _assert_real_command(fix) == [
+        "dataset.file-settings.get",
+        "dataset.file-settings.update",
+        "dataset.broken-rows.list",
+    ]
 
 
 @pytest.mark.parametrize("status", ["ready", "something_new"])

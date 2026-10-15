@@ -116,6 +116,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "dry_run_targets_unresolvable": (
         "It wasn't clear exactly which items this would change, so nothing was changed."
     ),
+    "dataset_not_refreshable": "A file-backed dataset can't be refreshed on a schedule.",
     "download_failed": "A download didn't complete.",
     "dry_run_unsupported": "That command can't be previewed, so it was not run.",
     "duplicate_input_key": _S_BAD_INPUT,
