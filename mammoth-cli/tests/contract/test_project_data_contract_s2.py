@@ -366,4 +366,7 @@ def test_representative_s2_fields_are_forwarded(
             confirm="4",
         )
     )
-    assert fake_service.call_log == [(expected_symbol, expected_kwargs)]
+    scope = "mammoth.api.workspace.WorkspaceAPI.current"  # token-scope lookup, not the command
+    assert [c for c in fake_service.call_log if c[0] != scope] == [
+        (expected_symbol, expected_kwargs)
+    ]
