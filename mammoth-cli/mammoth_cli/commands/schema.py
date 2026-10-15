@@ -599,6 +599,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "link url pasted address app page open file dataset view folder project "
         "workspace ids selected resource parse"
     ),
+    "how": (
+        "how goal recipe steps order sequence of commands guide accomplish walkthrough "
+        "plain language"
+    ),
     "resolve": (
         "resolve name what is this dataset view project called named which kind "
         "ambiguous same name another project lookup identify"

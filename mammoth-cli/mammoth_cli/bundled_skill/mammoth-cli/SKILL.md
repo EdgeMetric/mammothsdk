@@ -63,10 +63,13 @@ downloads return `download_url`. Ask for a reload on `authentication_failed` onl
 
 ## Find the command for a goal
 
-State the goal in plain words;
+State the goal in plain words. Start with `mammoth how "GOAL"`: it returns
+the ordered steps (command, purpose, runnable example) for a multi-step goal,
+or the `schema find` matches when no recipe fits (`matched: false`).
 `view transform --help` is the Transform menu with one line per task:
 
 ```bash
+mammoth how "blend two files by day"       # ordered steps: upload, view list, join, read back
 mammoth schema find "merge two datasets"   # -> view.transform.join
 mammoth view transform --help              # every data transformation
 mammoth schema find "join two datasets; remove duplicates; build a dashboard"   # 1 call, 1 result per goal

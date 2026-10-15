@@ -276,6 +276,7 @@ _ROOT_HELP_PANELS = {
     "context": "Start here",
     "doctor": "Start here",
     "project": "Start here",
+    "how": "Discover commands",
     "schema": "Discover commands",
     "capability": "Discover commands",
     "browse": "Discover commands",
@@ -1675,6 +1676,10 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     "doctor": (
         "Run environment and connectivity diagnostics."
         "\n\nExample: mammoth doctor\n\nInput fields: wait (int)"
+    ),
+    "how": (
+        "Turn a plain-language goal into an ordered recipe of commands."
+        "\n\nExample: mammoth how 'refresh a dataset daily'"
     ),
     "link": (
         "Read the workspace, project, folder, dataset and view ids out of a pasted app URL."

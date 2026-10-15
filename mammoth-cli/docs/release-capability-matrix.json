@@ -1080,6 +1080,7 @@
     "dataset.schema-diff",
     "dataset.search",
     "folder.find",
+    "how",
     "link",
     "log.path",
     "log.tail",

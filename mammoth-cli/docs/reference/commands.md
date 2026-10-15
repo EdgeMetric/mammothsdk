@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.86.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 753.
+Total commands: 754.
 
 ## activity
 
@@ -4001,6 +4001,19 @@ Total commands: 753.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.update`
 - Agent example: `mammoth folder update 123 --input '{"name": "Revenue report"}'`
+
+## how
+
+### `mammoth how`
+
+**Arguments**
+
+- `GOAL` (str, required) — The goal in plain words, for example "refresh a dataset daily" or "blend two files by day".
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.how.how`
+- Agent example: `mammoth how 'refresh a dataset daily'`
 
 ## job
 

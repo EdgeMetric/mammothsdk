@@ -763,6 +763,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
         ),
     ),
+    "how": (
+        PositionalSpec(
+            name="goal",
+            type=str,
+            required=True,
+            help='The goal in plain words, for example "refresh a dataset daily" or '
+            '"blend two files by day".',
+            example_value="refresh a dataset daily",
+        ),
+    ),
     "resolve": (
         PositionalSpec(
             name="name",

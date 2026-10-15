@@ -867,6 +867,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth folder update` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.update
   example: mammoth folder update 123 --input '{"name": "Revenue report"}'
 
+## how
+
+- `mammoth how` [read/none] -> mammoth_cli.commands.how.how
+  example: mammoth how 'refresh a dataset daily'
+
 ## job
 
 - `mammoth job get` [read/none] -> mammoth.api.jobs.JobsAPI.get_job

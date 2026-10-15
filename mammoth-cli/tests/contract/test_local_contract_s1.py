@@ -50,6 +50,7 @@ S1_ROUTES = (
     "dataset.search",
     "doctor",
     "folder.find",
+    "how",
     "link",
     "log.path",
     "log.tail",

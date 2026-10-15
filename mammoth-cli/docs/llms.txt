@@ -48,6 +48,7 @@
 - `external-key` (4 commands)
 - `file` (11 commands)
 - `folder` (10 commands)
+- `how` (1 commands)
 - `job` (4 commands)
 - `link` (1 commands)
 - `log` (2 commands)
