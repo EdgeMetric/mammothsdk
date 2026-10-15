@@ -66,7 +66,9 @@ from mammoth_cli.services.dashboard_review import UPLOAD_NOTE, upload_hints
 from mammoth_cli.services.data_quality import column_warnings, duplicate_rows_fact
 from mammoth_cli.services.explore_cards import resolve_panel as resolve_explore_panel
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS, compact_view_list
+from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.local_time import local_time
+from mammoth_cli.services.paging import paging_block
 from mammoth_cli.services.read_queries import ReadContext
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -1297,8 +1299,10 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
     """Fetch a dataview's data, waiting for the backing job to complete.
 
     The dataset is resolved from the view unless given as a trailing positional
-    or a ``dataset_id`` --input field. ``offset`` (1-based) reads a later page
-    through the query route. The result carries ``column_warnings`` when the
+    or a ``dataset_id`` --input field. ``offset`` (0-based: rows to skip; default 0,
+    ``limit`` default 50) reads a later page through the query route; ``paging`` carries
+    ``next_command`` and ``previous_command`` (null when there is no such page).
+    The result carries ``column_warnings`` when the
     rows show a text column of numbers or dates, or blanks. ``raw: true`` returns DATE
     values with their time.
     """
@@ -1321,7 +1325,8 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             "project_id": project_id,
         }
         if document.get("offset") is not None:
-            kwargs["offset"] = _int_field(document["offset"], "offset")
+            # The CLI offset is 0-based (rows to skip); the data route counts from 1.
+            kwargs["offset"] = _page_offset(document["offset"]) + 1
             page_limit = _int_field(limit, "limit")
             kwargs["limit"] = page_limit if page_limit > 0 else 400
             _forward_optional(document, kwargs, ("sequence", "raw"))
@@ -1339,7 +1344,50 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         # The view's row count is its latest step's; a read at an earlier step differs.
         data = _with_paging_total(data, meta)
         data = _close_last_page(data, kwargs.get("offset"))
+    data = _with_cli_paging(data, invocation, view_id, kwargs.get("offset"), page_size, limit)
     return data, meta
+
+
+def _page_offset(value: Any) -> int:
+    """A 0-based ``offset`` input: a non-negative integer."""
+    offset = _int_field(value, "offset")
+    if offset < 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The 'offset' input field must be 0 or more (rows to skip), got {offset}.",
+            exit_status=EXIT_USAGE,
+            hint="The first page is offset 0; use next_command from the previous page.",
+        )
+    return offset
+
+
+def _with_cli_paging(
+    data: Any,
+    invocation: Invocation,
+    view_id: int,
+    api_offset: Any,
+    page_size: int,
+    limit: Any,
+) -> Any:
+    """Replace the route's ``paging`` with the CLI's 0-based block (see ``paging_block``)."""
+    if not isinstance(data, dict) or not isinstance(data.get(_ROWS_KEY), list):
+        return data
+    old = data.get("paging")
+    total = old.get("total") if isinstance(old, dict) else None
+    returned = data.get("rows_returned", len(data[_ROWS_KEY]))
+    try:
+        asked = int(limit)
+    except (TypeError, ValueError):
+        asked = _DATA_GET_DEFAULT_LIMIT
+    block = paging_block(
+        command=f"mammoth view data get {view_id}",
+        project=invocation.project,
+        offset=(api_offset - 1) if isinstance(api_offset, int) else 0,
+        limit=asked if asked > 0 else page_size,
+        returned=returned,
+        total=total if isinstance(total, int) and total > 0 else None,
+    )
+    return {**data, "paging": block}
 
 
 def _with_paging_total(data: Any, meta: dict[str, Any]) -> Any:
@@ -1359,8 +1407,8 @@ def _close_last_page(data: Any, offset: Any) -> Any:
     """Clear ``truncated`` when the rows read reach the view's last row.
 
     A page that came back full is only a guess that more rows exist; the view's
-    row count (``paging.total``) settles it. ``offset`` is 1-based, so a page
-    holding rows ``offset`` .. ``offset + rows_returned - 1`` is the last one when
+    row count (``paging.total``) settles it. ``offset`` is the data route's 1-based
+    row, so a page holding rows ``offset`` .. ``offset + rows_returned - 1`` is the last one when
     that reaches the total.
     """
     if not isinstance(data, dict) or not data.get("truncated"):
@@ -3426,9 +3474,41 @@ def view_pipeline_items(invocation: Invocation) -> HandlerResult:
     _forward_optional(
         document, kwargs, ("dataset_id", "fields", "limit", "offset", "sort", "sequence", "status")
     )
+    if "offset" in kwargs:
+        kwargs["offset"] = _page_offset(kwargs["offset"])
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = _with_list_paging(
+        data, invocation, f"mammoth view pipeline items {dataview_id}", kwargs, "items", 100
+    )
     return data, _meta(invocation, auth.workspace_id, None)
+
+
+def _with_list_paging(
+    data: Any,
+    invocation: Invocation,
+    command: str,
+    kwargs: dict[str, Any],
+    key: str,
+    default_limit: int,
+) -> Any:
+    """Give a list read the CLI paging block, from the request and the rows that came back.
+
+    The route echoes ``offset`` as the next page's and leaves ``next`` empty, so
+    neither is trusted; they are replaced by the block.
+    """
+    if not isinstance(data, dict) or not isinstance(data.get(key), list):
+        return data
+    limit = kwargs.get("limit")
+    block = paging_block(
+        command=command,
+        project=invocation.project,
+        offset=int(kwargs.get("offset") or 0),
+        limit=int(limit) if limit is not None else default_limit,
+        returned=len(data[key]),
+    )
+    rest = {k: v for k, v in data.items() if k not in ("offset", "next", "limit")}
+    return {**rest, "paging": block}
 
 
 def view_pipeline_items_all(invocation: Invocation) -> HandlerResult:
@@ -3789,7 +3869,8 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 
     With no --input the file is written to the current directory under an
     auto-generated name; the dataset is resolved from the view. Override with
-    ``--input '{"output_path": "path.csv"}'``.
+    ``--input '{"output_path": "path.csv"}'``. An existing file is not replaced
+    (``file_exists``) unless ``--overwrite`` is given.
 
     Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
     signed download URL is returned instead so the host can hand it to its
@@ -3803,6 +3884,12 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
+        # The SDK's own default name needs the parent dataset, which is known here.
+        target = kwargs.get("output_path")
+        if target is None and kwargs.get(_DATASET_ID_FIELD) is not None:
+            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.csv"
+        if target is not None:
+            refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
@@ -3890,6 +3977,8 @@ def view_export_list(invocation: Invocation) -> HandlerResult:
             "dataset_id",
         ),
     )
+    if "offset" in kwargs:
+        kwargs["offset"] = _page_offset(kwargs["offset"])
     if dataset_id is not None:
         kwargs["dataset_id"] = dataset_id
     with open_service(invocation) as (service, auth):
@@ -3899,6 +3988,9 @@ def view_export_list(invocation: Invocation) -> HandlerResult:
             if remembered is not None:
                 kwargs["dataset_id"] = remembered
         data = service.call(_symbol(invocation), **kwargs)
+    data = _with_list_paging(
+        data, invocation, f"mammoth view export list {dataview_id}", kwargs, "exports", 50
+    )
     return data, _meta(invocation, auth.workspace_id, None)
 
 

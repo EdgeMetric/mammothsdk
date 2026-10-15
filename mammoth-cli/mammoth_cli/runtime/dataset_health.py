@@ -70,6 +70,14 @@ def _dataset_id(record: dict[str, Any]) -> int | None:
     return None
 
 
+def _name(record: dict[str, Any]) -> Any:
+    """The dataset's name under whichever key the result carries it."""
+    for key in ("name", "dataset_name", "ds_name"):
+        if record.get(key):
+            return record[key]
+    return None
+
+
 def _stored_interpretation(record: dict[str, Any]) -> dict[str, Any]:
     info = record.get("additional_info")
     stored = info.get("interpretation") if isinstance(info, dict) else None
@@ -105,7 +113,7 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
         detail += f" Status info: {said}"
     entry: dict[str, Any] = {
         "dataset_id": dataset_id,
-        "name": record.get("name"),
+        "name": _name(record),
         "status": record["status"],
         "health": "unhealthy",
         "detail": detail,
@@ -128,17 +136,59 @@ def _entry(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def _clean_entry(record: dict[str, Any], status: Any) -> dict[str, Any]:
-    """A healthy dataset, or one whose status this CLI does not classify."""
-    healthy = status == _HEALTHY_STATUS
-    return {
+    """A healthy dataset, or one whose status this CLI does not classify.
+
+    A compact listing leaves ``status`` out of a ready dataset, so a missing status is
+    judged from the fields that are present; only a record with nothing to judge by is
+    ``unknown``, and then ``health_reason`` says why.
+    """
+    entry: dict[str, Any] = {
         "dataset_id": _dataset_id(record),
-        "name": record.get("name"),
+        "name": _name(record),
         "status": status,
-        "health": "healthy" if healthy else "unknown",
-        "detail": (
-            "Loaded and readable."
-            if healthy
-            else f"Status {status!r} is not one this CLI classifies; read the dataset "
-            "before relying on its rows."
-        ),
     }
+    if status == _HEALTHY_STATUS:
+        entry.update(health="healthy", detail="Loaded and readable.")
+    elif status is None:
+        size = _loaded_size(record)
+        if size is not None:
+            entry.update(
+                health="healthy",
+                detail=f"No status is listed (a listing omits it for a ready dataset); "
+                f"it holds {size}, so it loaded.",
+            )
+        else:
+            entry.update(
+                health="unknown",
+                detail="This record carries no status and no row or column counts.",
+                health_reason=(
+                    "No status, row count or column list in this result to judge by; "
+                    f"run mammoth dataset get {entry['dataset_id']} to read its status."
+                ),
+            )
+    else:
+        entry.update(
+            health="unknown",
+            detail=f"Status {status!r} is not one this CLI classifies; read the dataset "
+            "before relying on its rows.",
+            health_reason=f"Status {status!r} is not one of the statuses this CLI classifies.",
+        )
+    return entry
+
+
+def _loaded_size(record: dict[str, Any]) -> str | None:
+    """``"12 rows, 3 columns"`` from whichever counts the record carries, else None."""
+    stats = record.get("stats")
+    stats = stats if isinstance(stats, dict) else {}
+    rows = record.get("rows", stats.get("row_count"))
+    cols = record.get("cols", stats.get("column_count"))
+    if cols is None and isinstance(record.get("columns"), (str, list)) and record["columns"]:
+        cols = "its listed"
+    parts = []
+    if isinstance(rows, int):
+        parts.append(f"{rows} rows")
+    if isinstance(cols, int):
+        parts.append(f"{cols} columns")
+    elif cols:
+        parts.append("a column list")
+    return ", ".join(parts) or None

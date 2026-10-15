@@ -945,6 +945,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "overwrite",
+            False,
+            Annotated[
+                bool,
+                typer.Option(
+                    "--overwrite",
+                    help="Replace a local file the command writes to when it already exists.",
+                    rich_help_panel="Safety",
+                ),
+            ],
+        ),
+        opt(
             "standing",
             False,
             Annotated[

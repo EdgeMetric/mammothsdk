@@ -1052,3 +1052,22 @@ def test_chat_history_hint_documents_revisions_field() -> None:
     assert "revisions" in restrictions
     assert "sequence" in restrictions
     assert "canvas restore" in restrictions
+
+
+def test_bi_export_refuses_an_existing_file_unless_overwrite(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    destination = tmp_path / "board.zip"
+    destination.write_bytes(b"old")
+    doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_bi_export(
+            _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
+        )
+    assert excinfo.value.code == "file_exists"
+    assert fake_service.call_log == []
+    fake_service.responses[_EXPORT_POWERBI] = destination
+    data, _ = dashboard_cmd.dashboard_bi_export(
+        _inv("dashboard.bi-export", extra_args=["42"], input_file=doc, overwrite=True)
+    )
+    assert data["output_path"] == str(destination)
