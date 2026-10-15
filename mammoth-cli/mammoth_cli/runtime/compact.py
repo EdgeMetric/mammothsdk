@@ -37,7 +37,6 @@ _OMITTED_KEYS = ("plan", "specs")
 #: Keys kept exactly as they are, nulls included.
 _KEPT_AS_IS = frozenset({"verify"})
 _MAX_FIGURES = 50
-_DROP = object()
 
 
 def _canvas_summary(canvas: dict[str, Any]) -> dict[str, Any]:

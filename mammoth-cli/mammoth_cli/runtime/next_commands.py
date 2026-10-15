@@ -112,6 +112,26 @@ def next_commands(
     return found[:_MAX]
 
 
+def _with_scope(command: str, invocation: Any) -> str:
+    """*command* with the ``--project`` and explicit ``--profile`` this run used.
+
+    Run as it is, a suggestion must reach the same workspace and project: without
+    them it would fall back to the saved default profile and project.
+    """
+    words = command.split()
+    project = getattr(invocation, "project", None)
+    if project is not None and "--project" not in words:
+        command += f" --project {project}"
+    profile = getattr(invocation, "profile", None)
+    if (
+        profile
+        and not getattr(invocation, "profile_is_default", False)
+        and "--profile" not in words
+    ):
+        command += f" --profile {profile}"
+    return command
+
+
 def with_next_commands(invocation: Any, data: Any, meta: dict[str, Any]) -> dict[str, Any]:
     """*meta* with ``next_commands`` added when this command has any."""
     found = next_commands(
@@ -120,4 +140,5 @@ def with_next_commands(invocation: Any, data: Any, meta: dict[str, Any]) -> dict
         dict(invocation.positionals or {}),
         known_dataset_id=invocation.known_dataset_id,
     )
+    found = [_with_scope(command, invocation) for command in found]
     return {**meta, "next_commands": found} if found else meta

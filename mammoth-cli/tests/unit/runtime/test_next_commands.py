@@ -126,3 +126,28 @@ def test_human_output_prints_one_next_line_on_stderr(capsys: pytest.CaptureFixtu
 def test_no_suggestions_leave_meta_without_the_field(capsys: pytest.CaptureFixture[str]) -> None:
     executor.emit_success("project.list", [], "json")
     assert "next_commands" not in json.loads(capsys.readouterr().out)["meta"]
+
+
+@pytest.mark.parametrize(
+    ("project", "profile", "is_default", "suffix"),
+    [
+        (42, "staging", False, " --project 42 --profile staging"),
+        (None, "staging", True, ""),
+        (None, None, False, ""),
+    ],
+)
+def test_a_suggestion_keeps_the_project_and_profile_this_run_named(
+    project: int | None, profile: str | None, is_default: bool, suffix: str
+) -> None:
+    from mammoth_cli.runtime.invocation import Invocation
+    from mammoth_cli.runtime.next_commands import with_next_commands
+
+    invocation = Invocation(
+        command_id="dashboard.figure.add",
+        project=project,
+        profile=profile,
+        profile_is_default=is_default,
+        positionals={"dashboard_id": 7},
+    )
+    meta = with_next_commands(invocation, {"status": "ok"}, {})
+    assert meta["next_commands"] == [f"mammoth dashboard get 7{suffix}"]
