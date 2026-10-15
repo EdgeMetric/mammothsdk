@@ -84,8 +84,15 @@ _GROUP_DESCRIPTIONS = {
     "data-app": "Create and manage data applications.",
     "dataset": "Create, inspect, and manage datasets.",
     "external-key": "Manage LLM provider keys (OpenAI, Anthropic, etc.) used by AI features.",
-    "file": "Upload and manage source files.",
-    "folder": "Organize folders and their contents.",
+    "file": (
+        "Upload files (file upload; a whole local directory: file upload-folder) and manage "
+        "uploaded source files. An uploaded file becomes a dataset: delete it with "
+        "'dataset delete'."
+    ),
+    "folder": (
+        "Create, rename, move and delete project folders that organize datasets, views and "
+        "dashboards. To upload a local directory use 'file upload-folder'."
+    ),
     "job": "Inspect and wait for asynchronous jobs.",
     "notification": "Manage workspace notifications.",
     "parameter": "Manage parameters and parameter groups.",

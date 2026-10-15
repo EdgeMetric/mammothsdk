@@ -83,3 +83,13 @@ def test_no_command_in_the_tree_shows_the_dispatcher_placeholder_as_its_help() -
     assert commands
     offenders = [" ".join(words) for words in commands if placeholder in _help(*words)]
     assert offenders == []
+
+
+def test_file_and_folder_group_help_say_which_command_does_what() -> None:
+    """Bug bash 2026-10-15: finding upload/delete for files and folders took guessing."""
+    from mammoth_cli.app import _GROUP_DESCRIPTIONS  # noqa: PLC2701
+
+    assert "dataset delete" in _GROUP_DESCRIPTIONS["file"]
+    assert "upload-folder" in _GROUP_DESCRIPTIONS["file"]
+    assert "project folders" in _GROUP_DESCRIPTIONS["folder"]
+    assert "file upload-folder" in _GROUP_DESCRIPTIONS["folder"]
