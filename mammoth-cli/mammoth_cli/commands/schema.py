@@ -1318,6 +1318,9 @@ def _humanize_sample(value: Any, field_name: str) -> Any:
     """Replace generator placeholders with domain-shaped representative data."""
     if value == "example":
         return _representative_string(field_name)
+    if isinstance(value, int) and not isinstance(value, bool) and "skip" in field_name:
+        # Rows to skip: an example that skips one would drop a real first row.
+        return 0
     if isinstance(value, list):
         singular = field_name[:-1] if field_name.endswith("s") else field_name
         return [_humanize_sample(item, singular) for item in value]
