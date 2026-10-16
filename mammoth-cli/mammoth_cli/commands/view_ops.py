@@ -485,16 +485,27 @@ def _dispatch_view(
             data = {key: value for key, value in data.items() if key != "message"}
             data["status"] = "done"
             data["draft_applied"] = True
+        settled = _settled_write(service, data) if dataset_id is not None else None
+        if settled is not None:
+            _forget_reads(service)  # the state read-back must see the view as the write left it
         if after is not None and dataset_id is not None:
-            run, run_error = (
-                wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
-                if task_ids_before is not None and not _is_staged(data)
-                else (None, None)
-            )
+            if settled is not None:
+                run: dict[str, Any] | None = {
+                    "task_id": settled["task_id"],
+                    "transform_status": settled["task_run_status"],
+                }
+                run_error = None
+            else:
+                run, run_error = (
+                    wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
+                    if task_ids_before is not None and not _is_staged(data)
+                    else (None, None)
+                )
             reject_unrun_task_with_reference_errors(service, view_id, dataset_id, run_error)
             sdk_ready = sdk_saw_pipeline_ready(data)
             data = after(service, int(dataset_id), state, data)
-            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
+            if settled is None:
+                _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
             if isinstance(data, dict) and run is not None:
                 data["run"] = run
                 if run_error is not None:
@@ -509,8 +520,12 @@ def _dispatch_view(
             # recomputing and read back no row_count at all; wait for it to
             # settle (bounded) before trusting this one. A staged draft never
             # ran the pipeline, so there is nothing to wait for or read.
-            rows_after, pipeline_error = wait_for_view_row_count(
-                service, int(dataset_id), view_id, invocation.project, write_result=data
+            rows_after, pipeline_error = (
+                (settled["row_count"], None)
+                if settled is not None
+                else wait_for_view_row_count(
+                    service, int(dataset_id), view_id, invocation.project, write_result=data
+                )
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
             if reduces_rows and not invocation.standing_noop:
@@ -633,6 +648,44 @@ def wait_for_added_task_run(
             f"(transform_status {run.get('transform_status')})"
         ),
     }
+
+
+def clean_write_result(job_response: Any) -> dict[str, Any] | None:
+    """The ``write_result`` of a run job when it says the write ran and settled cleanly.
+
+    A newer server adds it to the run job's response. ``None`` (read the task, the
+    pipeline and the row count as before) when it is absent, or says anything but a
+    finished task on a ``ready`` pipeline with a row count: those reads name the failure.
+    """
+    result = job_response.get("write_result") if isinstance(job_response, dict) else None
+    if (
+        isinstance(result, dict)
+        and result.get("task_id") is not None
+        and result.get("task_run_status") == _RUN_DONE_STATUS
+        and result.get("pipeline_state") == "ready"
+        and result.get("row_count") is not None
+    ):
+        return result
+    return None
+
+
+def _settled_write(service: Any, data: Any) -> dict[str, Any] | None:
+    """The clean ``write_result`` of the run job a write names (``future_id``), read once."""
+    future_id = data.get("future_id") if isinstance(data, dict) else None
+    if not isinstance(future_id, int) or _is_staged(data):
+        return None
+    try:
+        job = service.wait_if_job({"future_id": future_id})
+    except CliError:
+        return None  # the reads that follow report the failed or unfinished job
+    return clean_write_result(job)
+
+
+def _forget_reads(service: Any) -> None:
+    """Drop the reads made ahead of a write (see :mod:`mammoth_cli.services.read_memo`)."""
+    memo = getattr(service, "memo", None)
+    if memo is not None:
+        memo.clear()
 
 
 def _is_staged(data: Any) -> bool:
