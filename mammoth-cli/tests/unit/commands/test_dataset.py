@@ -1335,3 +1335,20 @@ def test_list_names_caps_at_500_and_says_more(
     assert result["shown"] == 500
     assert result["total"] == 600
     assert result["more"] is True
+
+
+def test_cut_list_page_points_to_names_true(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"id": i, "name": f"d{i}"} for i in range(150)]
+    fake_service.responses[_LIST] = {"datasets": rows[:100]}
+    fake_service.responses[_LIST_ALL] = {"datasets": rows}
+    input_file = _write(tmp_path, {"limit": 100})
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
+    assert '"names": true' in result["note"]
+
+
+def test_last_list_page_does_not_point_to_names_true(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "a"}]}
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
+    assert "names" not in result["note"]

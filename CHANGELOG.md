@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.90)
+
+- `dataset list`: the command contract (`schema get dataset.list`) now documents `names: true`, and a cut page's `note` says to use it, so an agent asked for a list of names no longer pages offsets.
+
 ### Added (mammoth-cli 2.2.89)
 
 - `dataset list --input '{"names": true}'` returns up to 500 bare `{id, name}` rows of the project in one call (with `total`, and `more` when the cap cuts), so "which files can I see?" needs one call instead of a page per ~23 rows. The default shape is unchanged.
