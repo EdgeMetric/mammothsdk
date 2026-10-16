@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.86"
+version = "2.2.87"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -566,7 +566,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.44,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.45,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -588,15 +588,15 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.44"
+version = "0.8.45"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/33/50/97fff2488ab5be94bca92dd3f0361446d289467838ccffa36e923508c4b0/mammoth_io-0.8.44.tar.gz", hash = "sha256:3094b262677733c28545097cb25ae2839f9e06f887d02e29a9cc84ef0c24c78c", size = 683863, upload-time = "2026-10-15T17:55:18.105Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/4a/9b18e1c69db5e912c0722c154150de161f45081925b22ffe596a63c693dd/mammoth_io-0.8.45.tar.gz", hash = "sha256:3fda7d5f87bdb6d718a355c503b872c119e71579ba4d8e2ab7682067fafb8437", size = 684802, upload-time = "2026-10-16T06:44:05.363Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/6f/f6463fab5cb1b6c58af5fde8d01a78889cff1bf0b9f879fc60bcf401a455/mammoth_io-0.8.44-py3-none-any.whl", hash = "sha256:100a512a0440aa6899e4a6f2f224dfb104bf69d1c015471082663ac885c006ed", size = 335895, upload-time = "2026-10-15T17:55:15.641Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/db/1762315b4405b018b55c561ca9f84add1666a19670663fbe3d832b2790a7/mammoth_io-0.8.45-py3-none-any.whl", hash = "sha256:21bdafbd383713c429bd361703a9b724931ff6c15e06012d20f8847657d86a8c", size = 336523, upload-time = "2026-10-16T06:44:02.776Z" },
 ]
 
 [[package]]
