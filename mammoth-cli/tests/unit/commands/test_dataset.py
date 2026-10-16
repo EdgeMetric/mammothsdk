@@ -1310,3 +1310,28 @@ def test_list_total_is_free_on_last_page(fake_service: FakeMammothService) -> No
     result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
     assert result["total"] == 2
     assert all(symbol != _LIST_ALL for symbol, _ in fake_service.call_log)
+
+
+def test_list_names_returns_every_name_in_one_call(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"id": i, "name": f"file_{i}.csv"} for i in range(450)]
+    fake_service.responses[_LIST_ALL] = {"datasets": rows}
+    input_file = _write(tmp_path, {"names": True})
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
+    assert result["shown"] == result["total"] == 450
+    assert result["datasets"][0] == {"id": 0, "name": "file_0.csv"}
+    assert "more" not in result
+    assert len(json.dumps(result)) < 50_000
+
+
+def test_list_names_caps_at_500_and_says_more(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"id": i, "name": f"d{i}"} for i in range(600)]
+    fake_service.responses[_LIST_ALL] = {"datasets": rows}
+    input_file = _write(tmp_path, {"names": True})
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
+    assert result["shown"] == 500
+    assert result["total"] == 600
+    assert result["more"] is True

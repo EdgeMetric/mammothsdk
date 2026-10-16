@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.89)
+
+- `dataset list --input '{"names": true}'` returns up to 500 bare `{id, name}` rows of the project in one call (with `total`, and `more` when the cap cuts), so "which files can I see?" needs one call instead of a page per ~23 rows. The default shape is unchanged.
+
 ### Added (mammoth-cli 2.2.88)
 
 - `dataset list` result carries `total`, the project's whole dataset count, so an agent counts datasets without paging. `project list` has no per-project count: the projects API returns none.
