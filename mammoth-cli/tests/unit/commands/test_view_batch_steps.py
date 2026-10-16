@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.commands.view_ops import _build_batch
+from mammoth_cli.commands.view_ops import _batch_steps, _build_batch
 from mammoth_cli.errors.envelope import CliError
 
 _BAD_OPERATOR = {"column": "Status", "operator": "NOT_EQUALS", "value": "x"}
@@ -50,3 +50,24 @@ def test_a_bad_operator_in_a_step_names_the_step_and_the_closest_operator(
     assert "NOT_EQUALS" in error.message and "Did you mean NE?" in error.message
     assert error.details["step_index"] == 0 and error.details["op"] == op
     assert "NE" in error.details["accepted"]
+
+
+@pytest.mark.parametrize("op", ["split", "unnest", "pivot"])
+def test_a_batch_takes_split_unnest_and_pivot_as_its_last_step(op: str) -> None:
+    steps = [{"op": "limit-rows", "input": {"n": 3}}, {"op": op, "input": {}}]
+
+    assert _batch_steps({"steps": steps}) == steps
+
+
+def test_a_batch_takes_a_split_before_other_steps() -> None:
+    steps = [{"op": "split", "input": {}}, {"op": "limit-rows", "input": {"n": 3}}]
+
+    assert _batch_steps({"steps": steps}) == steps
+
+
+@pytest.mark.parametrize("op", ["unnest", "pivot"])
+def test_a_step_that_replaces_the_columns_must_be_last(op: str) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _batch_steps({"steps": [{"op": op, "input": {}}, {"op": "limit-rows", "input": {"n": 3}}]})
+    assert excinfo.value.message.startswith(f"steps[0] ({op})")
+    assert excinfo.value.details == {"step": 0, "op": op}

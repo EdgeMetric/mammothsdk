@@ -37,18 +37,18 @@ def test_batch_accepts_exactly_the_listed_ops() -> None:
     for op in BATCH_OPS:
         _batch_steps({"steps": [{"op": op, "input": {}}]})
     with pytest.raises(CliError):
-        _batch_steps({"steps": [{"op": "pivot", "input": {}}]})
+        _batch_steps({"steps": [{"op": "join", "input": {}}]})
 
 
 def test_a_refused_batch_op_lists_every_allowed_op_in_the_hint() -> None:
     with pytest.raises(CliError) as caught:
-        _batch_steps({"steps": [{"op": "pivot", "input": {}}]})
+        _batch_steps({"steps": [{"op": "join", "input": {}}]})
     error = caught.value
     assert error.hint is not None
     for op in BATCH_OPS:
         assert op in error.hint
     assert error.details["allowed"] == list(BATCH_OPS)
-    assert error.details["got"] == "pivot"
+    assert error.details["got"] == "join"
 
 
 def test_a_misspelt_batch_op_is_named() -> None:

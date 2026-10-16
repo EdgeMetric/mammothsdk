@@ -68,7 +68,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
-from mammoth_cli.runtime.strict import validate_input_fields
+from mammoth_cli.runtime.strict import apply_input_aliases, validate_input_fields
 from mammoth_cli.runtime.verify import export_stamps, export_stamps_read
 from mammoth_cli.services.column_type_guard import (
     DATE,
@@ -80,7 +80,7 @@ from mammoth_cli.services.column_type_guard import (
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
-from mammoth_cli.services.field_enums import BATCH_OPS, allowed_values_text
+from mammoth_cli.services.field_enums import BATCH_LAST_OPS, BATCH_OPS, allowed_values_text
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.sql_check import check_sql_binds
@@ -2059,7 +2059,7 @@ def view_transform_json_extract(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
-    """Limit the row count. ``n`` is required."""
+    """Limit the row count. ``n`` (or its alias ``limit``) is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
     _require_field(document, "n")
@@ -2079,7 +2079,10 @@ def view_transform_rename_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_sort(invocation: Invocation) -> HandlerResult:
-    """Set the view's row order (a display setting, not a task). ``order_by`` is required."""
+    """Set the view's row order (a display setting, not a task). ``order_by`` is required.
+
+    ``sort_by`` is accepted as its alias.
+    """
     view_id = _view_id(invocation)
     document = invocation.load_input()
     _require_field(document, "order_by")
@@ -2386,7 +2389,7 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
                 exit_status=EXIT_USAGE,
                 hint=(
                     f"Allowed ops: {allowed_values_text(_BATCH_OPS)}. Run any other "
-                    "transform (pivot, join, math, ...) as its own `view transform` command."
+                    "transform (join, math, ...) as its own `view transform` command."
                 ),
                 details={
                     "step": index,
@@ -2394,6 +2397,18 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
                     "allowed": list(_BATCH_OPS),
                     "did_you_mean": near,
                 },
+            )
+        if step["op"] in BATCH_LAST_OPS and index != len(steps) - 1:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"steps[{index}] ({step['op']}) replaces the view's columns, so it must be "
+                    "the last step of a batch."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=f"Move steps[{index}] to the end, or run the steps after it as their own "
+                "`view transform` commands.",
+                details={"step": index, "op": step["op"]},
             )
     return steps
 
@@ -2423,6 +2438,7 @@ def _build_batch(
         contract = resolve_command_contract(command_id)
         assert contract is not None
         try:
+            apply_input_aliases(command_id, step["input"])
             for spec in contract.fields:
                 if spec.required:
                     _require_field(step["input"], spec.name)

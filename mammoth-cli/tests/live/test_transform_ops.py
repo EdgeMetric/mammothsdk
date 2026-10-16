@@ -281,6 +281,21 @@ def test_a_batch_limit_after_a_sort_keeps_the_rows_that_sort_puts_first(items: T
     assert items.values("Cost") == [30, 40]
 
 
+def test_a_batch_takes_the_sort_by_and_limit_aliases(items: Table) -> None:
+    data = items.ok(
+        "batch",
+        steps=[
+            {"op": "filter", "input": _KEEP_FROM_20},
+            {"op": "sort", "input": {"sort_by": ["Cost desc"]}},
+            {"op": "limit-rows", "input": {"limit": 2}},
+        ],
+    )
+
+    assert data["sort"] == [["Cost", "DESC"]]
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 2}
+    assert items.values("Cost") == [30, 40]
+
+
 def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items: Table) -> None:
     """A find/replace on the numeric Cost column builds client-side, then fails in the pipeline."""
     before = items.steps()

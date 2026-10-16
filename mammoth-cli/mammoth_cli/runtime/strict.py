@@ -63,6 +63,16 @@ CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
 CODE_UNKNOWN_INPUT_FIELD = "unknown_input_field"
 CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 
+#: Names an agent reaches for that are not a command's own field: ``{command id: {alias: field}}``.
+#: Applied before the unknown-field check, so every caller of :func:`validate_input_fields`
+#: (a command's ``--input``, a ``view transform batch`` step) accepts them.
+INPUT_ALIASES: dict[str, dict[str, str]] = {
+    "view.transform.sort": {"sort_by": "order_by"},
+    "view.transform.limit-rows": {"limit": "n"},
+}
+_SORT_COMMAND = "view.transform.sort"
+_SORT_DIRECTIONS = frozenset({"asc", "desc"})
+
 # Case-insensitive string tokens accepted for a boolean ``--input`` field.
 # Deliberately explicit: a boolean field must never be coerced with a blanket
 # ``bool(str)``, which treats any non-empty string (including ``"false"``) as
@@ -373,6 +383,38 @@ def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: lis
     return f"Accepted fields: {', '.join(accepted) or '(none)' }."
 
 
+def _sort_entry(entry: Any) -> Any:
+    """``"col"`` / ``"col asc"`` / ``"col desc"`` as ``[col, DIR]``; any other entry as it is."""
+    if not isinstance(entry, str):
+        return entry
+    words = entry.split()
+    if len(words) > 1 and words[-1].lower() in _SORT_DIRECTIONS:
+        return [" ".join(words[:-1]), words[-1].upper()]
+    return [" ".join(words), "ASC"]
+
+
+def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
+    """Rename an aliased key to the command's own field, in place; refuse both together.
+
+    ``sort`` also takes its entries as strings (see :func:`_sort_entry`).
+    """
+    for alias, field in INPUT_ALIASES.get(command_id, {}).items():
+        if alias not in document:
+            continue
+        if field in document:
+            raise CliError(
+                code=CODE_INVALID_INPUT_FIELD_TYPE,
+                message=f"Give '{field}' or its alias '{alias}', not both.",
+                exit_status=EXIT_USAGE,
+                hint=f"Use '{field}'.",
+                details={"field": field, "alias": alias},
+            )
+        document[field] = document.pop(alias)
+    entries = document.get("order_by")
+    if command_id == _SORT_COMMAND and isinstance(entries, list):
+        document["order_by"] = [_sort_entry(entry) for entry in entries]
+
+
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
     """Reject unknown ``--input`` keys, then coerce known keys to their type.
 
@@ -397,6 +439,7 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
     """
     if document is None:
         return
+    apply_input_aliases(command_id, document)
     # ArchiveDashboard's OpenAPI body is a strict boolean set-state field;
     # unlike ordinary CLI convenience scalars, string coercion would change
     # the wire contract (and make ``"false"`` truthy).
