@@ -197,3 +197,9 @@ def test_an_error_status_is_failed_with_the_backends_reason() -> None:
     assert entry["health"] == "failed"
     assert "The file is empty" in entry["detail"]
     assert "health_reason" not in entry
+
+
+def test_a_names_listing_carries_no_health_entry_per_bare_row() -> None:
+    data = {"datasets": [{"id": 1, "name": "a.csv"}, {"id": 2, "name": "b.csv"}]}
+
+    assert with_dataset_health(data) == data
