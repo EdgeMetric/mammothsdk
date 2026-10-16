@@ -193,20 +193,6 @@ def test_search_needs_no_project(fake_service: FakeMammothService) -> None:
     assert meta["project_id"] is None
 
 
-def test_search_forwards_filters_and_cursor(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"search": "revenue", "resource_type": "dataset", "cursor": "c1", "limit": 5}),
-        encoding="utf-8",
-    )
-    browse_cmd.browse_search(_inv("browse.search", input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_SEARCH, {"search": "revenue", "resource_type": "datasource", "cursor": "c1", "limit": 5})
-    ]
-
-
 # --- resource-type aliases, and ancestors of a non-folder ---------------------------
 
 

@@ -146,50 +146,6 @@ def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothServic
     assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
 
 
-_DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
-_DATAVIEW_LIST = "mammoth.api.dataviews.DataviewsAPI.list"
-
-
-def _unreadable_after_delete(
-    fake_service: FakeMammothService, listed: list[dict[str, int]]
-) -> None:
-    # Live (2.2.92, koyal): the dataview get answers 400 4DTVW019, not 404, for a view
-    # that was just deleted (apiv2 dataview controller get).
-    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
-        if any(symbol == _DELETE for symbol, _ in log):
-            raise CliError(
-                code="api_error",
-                message="The response generated is invalid",
-                exit_status=1,
-                details={"backend_code": "4DTVW019"},
-            )
-        return {"id": 7}
-
-    fake_service.responses[_DATAVIEW_GET] = get  # type: ignore[assignment]
-    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": listed}
-
-
-def test_delete_succeeds_when_the_get_answers_4dtvw019_and_the_view_is_no_longer_listed(
-    fake_service: FakeMammothService,
-) -> None:
-    _unreadable_after_delete(fake_service, [{"id": 8}])
-
-    data, _ = view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
-
-    assert data is not None
-
-
-def test_delete_still_fails_when_the_get_answers_4dtvw019_and_the_view_is_still_listed(
-    fake_service: FakeMammothService,
-) -> None:
-    _unreadable_after_delete(fake_service, [{"id": 7}])
-
-    with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
-
-    assert excinfo.value.details["backend_code"] == "4DTVW019"
-
-
 def test_delete_forwards_exact_parent_input(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

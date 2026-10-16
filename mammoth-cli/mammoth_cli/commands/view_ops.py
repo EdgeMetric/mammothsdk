@@ -31,7 +31,6 @@ from typing import Any
 
 from mammoth_cli.commands.view import (
     _DATAVIEW_GET_SYMBOL,
-    _DATAVIEW_LIST_SYMBOL,
     _FIND_DATASET_SYMBOL,
     BRIEF_VIEW_FIELDS,
     UNFINISHED_STATE,
@@ -1274,10 +1273,6 @@ def view_delete(invocation: Invocation) -> HandlerResult:
             },
             responses=(data,),
             recovery_commands=[f"mammoth view task list {view_id}"],
-            listing=(
-                _DATAVIEW_LIST_SYMBOL,
-                {"dataset_id": dataset_id, "project_id": invocation.project},
-            ),
         )
     return data, _meta(invocation, auth.workspace_id)
 
