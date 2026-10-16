@@ -106,6 +106,7 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
         {"term": "late", "definition": "delivered more than 5 days after shipped_date"},
     ),
     "dataset.definition.remove": (("123", "a1b2c3d4"), {}),
+    "dataset.refresh": (("123",), {}),
     "view.data.drivers": (
         ("123",),
         {

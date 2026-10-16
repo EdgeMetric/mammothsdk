@@ -131,6 +131,7 @@ edits_target_commands:
 - dataset.file-settings.undo
 - dataset.file-settings.update
 - dataset.interpretation.confirm
+- dataset.refresh
 - dataset.rename
 - dataset.restore
 - dataset.trash

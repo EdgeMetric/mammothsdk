@@ -212,6 +212,16 @@ Result: `DatasetListResult`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Listed the datasets the sends created in the target project. Single invocation only.
 
+### `dataset.refresh`
+
+Run: `mammoth dataset refresh`. Exact input fields: `mammoth schema get dataset.refresh`.
+
+Example: `mammoth dataset refresh 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DatasetRefreshResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.rename`
 
 Run: `mammoth dataset rename`. Exact input fields: `mammoth schema get dataset.rename`.

@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import urlsplit
 
 from mammoth_cli.services.stored_stats import stored_facts
 
@@ -75,11 +76,28 @@ def compact_columns(columns: list[tuple[str, Any]], limit: int | None = _MAX_COL
     return ", ".join(shown) + (f" (+{extra} more)" if extra > 0 else "")
 
 
+def _url_host(info: Any) -> str | None:
+    """The host of the link a fetch-from-URL dataset was made from, or None.
+
+    The backend stores such a dataset as source type ``file`` and keeps the link in
+    ``additional_info.ORIGINAL_FILE_PROPS.URL``. Only the host is returned: the path
+    and query can carry secrets.
+    """
+    original = info.get("ORIGINAL_FILE_PROPS") if isinstance(info, dict) else None
+    url = original.get("URL") if isinstance(original, dict) else None
+    return urlsplit(url).hostname if isinstance(url, str) and url else None
+
+
 def source_of(dataset: dict[str, Any]) -> str:
-    """How the dataset's data arrived: the stored source type and, for a file, its name."""
+    """How the dataset's data arrived: the stored source type and, for a file, its name.
+
+    A dataset fetched from a link reads ``url: <host>``.
+    """
     info = dataset.get("additional_info")
     if isinstance(info, dict) and info.get("DATAVIEW_ID") is not None:
         return f"export of view {info['DATAVIEW_ID']}"
+    if host := _url_host(info):
+        return f"url: {host}"
     sources = dataset.get("sources")
     first = sources[0] if isinstance(sources, list) and sources else None
     if not isinstance(first, dict):

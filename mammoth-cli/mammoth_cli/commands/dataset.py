@@ -1481,6 +1481,27 @@ def dataset_rename(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def dataset_refresh(invocation: Invocation) -> HandlerResult:
+    """Fetch a URL dataset's link again into the same dataset. Prompt or ``--yes`` required.
+
+    The server refuses a dataset not made from a URL and a URL that serves JSON; its
+    reason reaches the caller. Waits for the job (honoring ``--job-timeout``).
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"fetch the link of dataset {dataset_id} again and update its data",
+    )
+    with open_service(invocation) as (service, auth):
+        handle = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        service.wait_if_job(handle)
+    return {"dataset_id": dataset_id, "refreshed": True}, _meta(
+        invocation, auth.workspace_id, project_id
+    )
+
+
 def dataset_trash(invocation: Invocation) -> HandlerResult:
     """Move one dataset to the project trash (reversible)."""
     project_id = require_project(invocation)
