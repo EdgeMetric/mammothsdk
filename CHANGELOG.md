@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-io 0.8.45, mammoth-cli 2.2.87, changelog-analytics fixes)
+
+- `dataset list` shows a URL dataset's link host as `source` (`url: HOST`), and `dataset refresh DATASET_ID --yes` fetches the link again into the same dataset and waits for the job (`DatasetsAPI.refresh_from_url`).
+
+### Fixed (mammoth-io 0.8.45, mammoth-cli 2.2.87)
+
+- `dashboard share` reports the share state it set (`{dashboard_id, share}`), and `dashboard delete` reads back the deleted board (`state.absent: true`) instead of the board list.
+- `EmbedConfig` set sends only the fields passed; `get` explains the mode.
+- Docs: a month bucket is `year_month_number`; auto-publish covers data refreshes only; sample a REST source with `connector ds-config create`, not `connection query`.
+
 ### Added (mammoth-io 0.8.44, mammoth-cli 2.2.86: new backend endpoints; CLI commands for each)
 
 - Exports: `ExportsAPI.runs(dataview_id, export_id)` lists an export's runs (`ExportRuns`, `ExportRun`); `ExportsAPI.rest_fill(dataview_id, docs_url)` asks the server to propose REST export settings from an API docs page and waits for the job; `ExportsAPI.export_hosts()` and `set_export_hosts(restricted, hosts)` read and replace the workspace's allowed export hosts (`ExportHostPolicy`, `ExportHostPolicyRead`). CLI: `view export runs`, `view export rest-fill`, `workspace export-hosts get/set`.
