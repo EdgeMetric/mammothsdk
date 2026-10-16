@@ -48,10 +48,20 @@ def with_dataset_health(data: Any) -> Any:
     """
     if not isinstance(data, dict):
         return data
-    health = [_entry(record) for record in _dataset_records(data, 0, False)]
+    health = [
+        _entry(record)
+        for record in _dataset_records(data, 0, False)
+        if not _is_bare_name_row(record)
+    ]
     if not health:
         return data
     return {**data, "dataset_health": health}
+
+
+def _is_bare_name_row(record: dict[str, Any]) -> bool:
+    """A ``names: true`` row is just ``{id, name}``: it carries no status to judge, and
+    an ``unknown`` entry per row would be several times the size of the names."""
+    return set(record) <= {"id", "name"}
 
 
 def _dataset_records(value: Any, depth: int, listed: bool) -> Iterator[dict[str, Any]]:

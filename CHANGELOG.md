@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli 2.2.91)
+
+- `dataset list` with `names: true`: the bare `{id, name}` rows no longer each get an `unknown` `dataset_health` entry, which made a 114-name listing about ten times larger and cut it in an agent's chained call.
+
 ### Fixed (mammoth-cli 2.2.90)
 
 - `dataset list`: the command contract (`schema get dataset.list`) now documents `names: true`, and a cut page's `note` says to use it, so an agent asked for a list of names no longer pages offsets.
