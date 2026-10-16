@@ -15,6 +15,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dashboard share` reports the share state it set (`{dashboard_id, share}`), and `dashboard delete` reads back the deleted board (`state.absent: true`) instead of the board list.
 - `EmbedConfig` set sends only the fields passed; `get` explains the mode.
 - Docs: a month bucket is `year_month_number`; auto-publish covers data refreshes only; sample a REST source with `connector ds-config create`, not `connection query`.
+- Requires mammoth-io 0.8.45 (`DatasetsAPI.refresh_from_url` and the embed config set that sends only the fields passed).
 
 ### Added (mammoth-io 0.8.44, mammoth-cli 2.2.86: new backend endpoints; CLI commands for each)
 
