@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-cli 2.2.88)
+
+- `dataset list` result carries `total`, the project's whole dataset count, so an agent counts datasets without paging. `project list` has no per-project count: the projects API returns none.
+
 ### Added (mammoth-io 0.8.45, mammoth-cli 2.2.87, changelog-analytics fixes)
 
 - `dataset list` shows a URL dataset's link host as `source` (`url: HOST`), and `dataset refresh DATASET_ID --yes` fetches the link again into the same dataset and waits for the job (`DatasetsAPI.refresh_from_url`).
