@@ -362,3 +362,12 @@ def test_limit_rows_refuses_n_and_limit_together() -> None:
         validate_input_fields(_LIMIT_ROWS, {"n": 5, "limit": 3})
     assert excinfo.value.exit_status == EXIT_USAGE
     assert "'n'" in excinfo.value.message and "'limit'" in excinfo.value.message
+
+
+@pytest.mark.parametrize("key", ["sort_by", "order_by"])
+def test_a_single_string_sort_is_a_one_entry_list(key: str) -> None:
+    document = {key: "Revenue desc"}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Revenue", "DESC"]]}

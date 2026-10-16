@@ -396,7 +396,7 @@ def _sort_entry(entry: Any) -> Any:
 def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
     """Rename an aliased key to the command's own field, in place; refuse both together.
 
-    ``sort`` also takes its entries as strings (see :func:`_sort_entry`).
+    ``sort`` also takes its entries as strings (see :func:`_sort_entry`), and one string alone.
     """
     for alias, field in INPUT_ALIASES.get(command_id, {}).items():
         if alias not in document:
@@ -411,6 +411,8 @@ def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
             )
         document[field] = document.pop(alias)
     entries = document.get("order_by")
+    if command_id == _SORT_COMMAND and isinstance(entries, str):
+        entries = [entries]
     if command_id == _SORT_COMMAND and isinstance(entries, list):
         document["order_by"] = [_sort_entry(entry) for entry in entries]
 
