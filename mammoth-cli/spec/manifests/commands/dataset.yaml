@@ -810,7 +810,7 @@ commands:
   - CT-DATASET-REFRESH-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Fetches the link of a dataset made from a URL (dataset create with ds_creation_type weburl; dataset list and dataset get show it as source url) again into the same dataset, and waits for the job. Whether the new data replaces or adds to the old follows the dataset's own data addition setting. A dataset not made from a URL is refused, and so is a URL that serves JSON; the server's reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval cannot refresh it; for a scheduled pull from a URL use the REST API connector.
+  known_restrictions: Fetches the link of a dataset made from a URL (dataset create with ds_creation_type weburl; dataset list shows it as source url with the link host) again into the same dataset, and waits for the job. Whether the new data replaces or adds to the old follows the dataset's own data addition setting. A dataset not made from a URL is refused, and so is a URL that serves JSON; the server's reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval cannot refresh it; for a scheduled pull from a URL use the REST API connector.
   reviewed_by: primary
 - command_id: dataset.rename
   command_path: dataset rename
