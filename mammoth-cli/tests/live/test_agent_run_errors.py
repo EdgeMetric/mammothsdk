@@ -10,10 +10,15 @@ Replaces the fake-service unit tests that stood in for these paths:
 
 from __future__ import annotations
 
+import gc
 import json
 
 import pytest
 from live_harness import LiveCli, upload_csv
+from mammoth.client import MammothClient
+
+from mammoth_cli.context.resolver import ExplicitLogin
+from mammoth_cli.embed import invoke
 
 pytestmark = pytest.mark.live
 
@@ -74,3 +79,26 @@ def test_view_delete_succeeds_without_a_read_back_error(
 
     listed, _ = live_cli.ok("view", "list", str(dataset), project=scratch_project)
     assert view not in [row["id"] for row in listed["dataviews"]]
+
+
+def test_an_embedded_write_builds_one_client_for_the_write_and_its_read_backs(
+    live_cli: LiveCli, login: ExplicitLogin, scratch_project: int, dataset: int
+) -> None:
+    created, _ = live_cli.ok("view", "create", str(dataset), "--yes", project=scratch_project)
+    view = int(created["id"])
+    document = json.dumps({"n": 1, "dataset_id": dataset})
+    gc.collect()
+    gc.disable()  # a client the run is done with must stay countable
+    try:
+        before = {id(o) for o in gc.get_objects() if isinstance(o, MammothClient)}
+        envelope = invoke(
+            ["view", "transform", "limit-rows", str(view), "--input", document, "--yes"],
+            login=login,
+            project_id=scratch_project,
+        )
+        built = {id(o) for o in gc.get_objects() if isinstance(o, MammothClient)} - before
+    finally:
+        gc.enable()
+
+    assert "error" not in envelope, envelope
+    assert len(built) == 1
