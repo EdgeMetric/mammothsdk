@@ -59,6 +59,13 @@ tile they do not want), say so in the next `chat edit` prompt in the user's
 words ("show revenue in pounds", "remove the Key insights tile"); the builder
 decides how.
 
+## A month axis
+
+To chart by month from a date, extract `year_month_number` ("2026-10") with
+`view transform extract-date`: it sorts in time order. `year_month`
+("2026, October") is text and a chart axis sorts it alphabetically, April
+before August; use it only when the user asks for that wording.
+
 ## "Per region", "per month", "for each X": one board and a filter control
 
 A request for a board "per <dimension>" (per region, per month, per rep, by
