@@ -21,6 +21,11 @@ from mammoth_cli.services.stored_stats import stored_facts
 
 #: Characters of ``data`` a list may use; the agent tool caps a whole result at 4,000.
 LIST_DATA_BUDGET = 3500
+#: ``dataset list`` with ``names: true``: bare ``{id, name}`` rows, so far more fit. Kept under
+#: the agent dispatcher's 50,000-byte output cap, with room for the envelope.
+NAMES_DATA_BUDGET = 40_000
+#: Most names ``dataset list`` with ``names: true`` returns in one call.
+NAMES_MAX_ROWS = 500
 #: ``fields`` asked of the dataset list route: everything the summary shows.
 DATASET_LIST_FIELDS = (
     "id,name,created_at,updated_at,status,stats,sources,data_schema,additional_info"

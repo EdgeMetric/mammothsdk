@@ -40,6 +40,8 @@ from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
 from mammoth_cli.services.field_enums import DATA_PULL_FILE_VALUES, allowed_values_text
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
+    NAMES_DATA_BUDGET,
+    NAMES_MAX_ROWS,
     ambiguity_note,
     compact_columns,
     dataset_summary,
@@ -757,6 +759,8 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     [...]}'`` finds the dataset that has given columns.
     The result carries ``total``, the project's whole dataset count, so "how many
     datasets" never needs paging: read ``total`` with the first page's newest names.
+    For a list of names (e.g. "which files can I see?") pass ``names: true``: ONE call
+    returns up to 500 bare ``{id, name}`` rows, newest first, with ``total`` and ``more``.
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
@@ -767,6 +771,8 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset", "sort"))
     name = document.get("name")
+    if document.get("names") and not (isinstance(name, str) and name.strip()):
+        return _dataset_names(invocation, project_id, document)
     if isinstance(name, str) and name.strip():
         return _dataset_name_search(invocation, project_id, name.strip(), document)
     compact = not document.get("full")
@@ -781,6 +787,34 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
             if isinstance(data, dict) and "shown" in data:
                 data["total"] = _dataset_total(service, project_id, data, kwargs.get("offset", 0))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_names(
+    invocation: Invocation, project_id: int, document: dict[str, Any]
+) -> HandlerResult:
+    """``dataset list`` with ``names``: every ``{id, name}`` of the project in one result.
+
+    Capped at ``NAMES_MAX_ROWS`` rows and ``NAMES_DATA_BUDGET`` bytes; ``total`` is the whole
+    count and ``more`` says the cap cut the list (``name`` then narrows it).
+    """
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            project_id=project_id,
+            sort=document.get("sort", "(created_at:desc)"),
+            fields="id,name",
+        )
+    records = data.get("datasets", []) if isinstance(data, dict) else []
+    rows = [{"id": r["id"], "name": r.get("name")} for r in records if isinstance(r, dict)]
+    kept, _cut = fit_budget(rows[:NAMES_MAX_ROWS], budget=NAMES_DATA_BUDGET)
+    result: dict[str, Any] = {"datasets": kept, "shown": len(kept), "total": len(rows)}
+    if len(kept) < len(rows):
+        result["more"] = True
+        result["note"] = (
+            f"Only the newest {len(kept)} of {len(rows)} names fit one call; narrow with "
+            '--input \'{"name": "<text>"}\' to find the rest.'
+        )
+    return result, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _dataset_total(service: Any, project_id: int, page: dict[str, Any], offset: int) -> int:
