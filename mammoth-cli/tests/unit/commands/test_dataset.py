@@ -1291,3 +1291,22 @@ def test_delete_names_the_deleted_id_and_lists_nothing(fake_service: FakeMammoth
     )
     assert data["deleted"] == [7]
     assert all(symbol != "mammoth.api.datasets.DatasetsAPI.list" for symbol in fake_service.calls)
+
+
+def test_list_total_counts_whole_project_when_page_is_cut(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rows = [{"id": i, "name": f"d{i}"} for i in range(150)]
+    fake_service.responses[_LIST] = {"datasets": rows[:100]}
+    fake_service.responses[_LIST_ALL] = {"datasets": rows}
+    input_file = _write(tmp_path, {"limit": 100})
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180, input_file=input_file))
+    assert result["more"] is True
+    assert result["total"] == 150
+
+
+def test_list_total_is_free_on_last_page(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "a"}, {"id": 2, "name": "b"}]}
+    result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
+    assert result["total"] == 2
+    assert all(symbol != _LIST_ALL for symbol, _ in fake_service.call_log)

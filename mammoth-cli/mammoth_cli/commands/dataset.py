@@ -755,6 +755,8 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     only the cheap fields, so it holds no row counts or column names: ``view list
     DATASET_ID`` shows a dataset's columns, and ``dataset find --input '{"columns":
     [...]}'`` finds the dataset that has given columns.
+    The result carries ``total``, the project's whole dataset count, so "how many
+    datasets" never needs paging: read ``total`` with the first page's newest names.
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
@@ -772,11 +774,24 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
         kwargs["fields"] = DATASET_ROW_FIELDS
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    if compact:
-        data = _compact_dataset_list(
-            data, kwargs.get("offset", 0), kwargs.get("sort"), kwargs.get("limit", 100)
-        )
+        if compact:
+            data = _compact_dataset_list(
+                data, kwargs.get("offset", 0), kwargs.get("sort"), kwargs.get("limit", 100)
+            )
+            if isinstance(data, dict) and "shown" in data:
+                data["total"] = _dataset_total(service, project_id, data, kwargs.get("offset", 0))
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_total(service: Any, project_id: int, page: dict[str, Any], offset: int) -> int:
+    """The project's whole dataset count. The list route sends none, so a page that
+    is the last one counts itself; otherwise the ids are read once, here, in one call."""
+    if not page.get("more"):
+        return int(offset) + page["shown"]
+    everything = service.call(
+        "mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id, fields="id"
+    )
+    return len(everything.get("datasets", []))
 
 
 def _dataset_name_search(
