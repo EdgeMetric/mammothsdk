@@ -377,6 +377,7 @@
   "dataset.interpretation.confirm": "Preview or confirm how a file that can be read several ways is interpreted.",
   "dataset.interpretation.preview": "Preview or confirm how a file that can be read several ways is interpreted.",
   "dataset.list": "List datasets in the active project, newest first, each with what tells them apart.",
+  "dataset.refresh": "Fetch a URL dataset's link again into the same dataset. Prompt or '--yes' required.",
   "dataset.rename": "Rename a dataset. Dataset id is positional; new name comes from '--input'.",
   "dataset.restore": "Restore a trashed dataset.",
   "dataset.schema-diff": "Compare two datasets' columns and propose the 'batch create' mapping.",

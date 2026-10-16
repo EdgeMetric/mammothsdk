@@ -474,6 +474,22 @@ class TestDatasetsAPI:
             "/workspaces/1/projects/42/datasets/7/definitions/a1b2c3d4",
         )
 
+    async def test_refresh_from_url_sends_the_weburl_refresh_command(self, client: MammothClient):
+        await client.datasets.refresh_from_url(dataset_id=7, project_id=42)
+        assert_called_with_method_and_endpoint(
+            client._request_json, "PATCH", "/workspaces/1/projects/42/datasets/7"
+        )
+        assert_json_body(
+            client._request_json,
+            {
+                "patch": {
+                    "op": "command",
+                    "path": "data_refresh",
+                    "value": {"refresh_source_type": "weburl", "source_id": 7},
+                }
+            },
+        )
+
     async def test_create(self, client: MammothClient):
         await client.datasets.create(dataset_spec={"name": "ds"}, ds_creation_type="file")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets")

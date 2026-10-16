@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.86.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 781.
+Total commands: 782.
 
 ## activity
 
@@ -3870,6 +3870,17 @@ Total commands: 781.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.list`
 - Agent example: `mammoth dataset list`
+
+### `mammoth dataset refresh`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.refresh_from_url`
+- Agent example: `mammoth dataset refresh 123 --yes`
 
 ### `mammoth dataset rename`
 

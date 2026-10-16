@@ -1028,18 +1028,23 @@ class DashboardsAPI:
     async def embed_config_set(
         self,
         dashboard_id: int,
-        mode: Literal["key", "signed"] = "key",
-        allow_any_origin: bool = True,
+        mode: Literal["key", "signed"] | None = None,
+        allow_any_origin: bool | None = None,
         allowed_origins: _list[str] | None = None,
         appearance: dict[str, Any] | None = None,
         snippet: dict[str, Any] | None = None,
     ) -> EmbedConfigResponse:
         """Save a board's embed settings (mode, origin allowlist, appearance).
 
+        Only the fields you pass are sent, and the server keeps the saved value of
+        every field you leave out, so setting the origins never moves a Signed
+        board back to Key or clears its appearance.
+
         Args:
             dashboard_id: ID of the dashboard (must be > 0).
             mode: ``key`` (the board's embed key) or ``signed`` (a host-signed
-                token). Ignored while the board is public.
+                token): the tier a board without a public link is on. Saved
+                while the board is public, and used once its link is removed.
             allow_any_origin: Any site may frame the board. Set false to
                 restrict framing to *allowed_origins*.
             allowed_origins: Origin patterns allowed to frame the board while
@@ -1056,20 +1061,25 @@ class DashboardsAPI:
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
-        try:
-            typed = EmbedConfigParams(
-                mode=mode,
-                allow_any_origin=allow_any_origin,
-                allowed_origins=allowed_origins or [],
-                appearance=appearance or {},
-                snippet=snippet or {},
+        given = {
+            name: value
+            for name, value in (
+                ("mode", mode),
+                ("allow_any_origin", allow_any_origin),
+                ("allowed_origins", allowed_origins),
+                ("appearance", appearance),
+                ("snippet", snippet),
             )
+            if value is not None
+        }
+        try:
+            typed = EmbedConfigParams(**given)
         except ValidationError as exc:
             raise MammothValidationError(f"Invalid embed config parameters: {exc}") from exc
         response = await self._client._request_json(
             "PUT",
             f"/dashboards/{dashboard_id}/embed/config",
-            json={"params": typed.model_dump(mode="json")},
+            json={"params": typed.model_dump(mode="json", exclude_unset=True)},
         )
         return EmbedConfigResponse.model_validate(response)
 

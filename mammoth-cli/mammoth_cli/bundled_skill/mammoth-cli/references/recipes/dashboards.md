@@ -59,6 +59,13 @@ tile they do not want), say so in the next `chat edit` prompt in the user's
 words ("show revenue in pounds", "remove the Key insights tile"); the builder
 decides how.
 
+## A month axis
+
+To chart by month from a date, extract `year_month_number` ("2026-10") with
+`view transform extract-date`: it sorts in time order. `year_month`
+("2026, October") is text and a chart axis sorts it alphabetically, April
+before August; use it only when the user asks for that wording.
+
 ## "Per region", "per month", "for each X": one board and a filter control
 
 A request for a board "per <dimension>" (per region, per month, per rep, by
@@ -185,6 +192,11 @@ not publish: `was_published` stays false until you also run
 `dashboard action` with `publish-data` on a board that was never published
 publishes the presentation instead and says so. `share` and `action` print the
 deliverable check in their confirmation text.
+Auto-publish (`auto_publish: true`) republishes **data refreshes only**. A chat
+edit or any other layout change stays in the draft, and `dashboard get` shows
+`is_publish_presentation_pending: true`, until you run `publish-presentation`.
+After editing a live board with auto-publish on, tell the user the layout
+change is not live yet, and publish only if they asked for it.
 Only then do `dashboard published canvas URL`, `published data URL`,
 `job-by-url URL JOB_ID` and the other `/dashboards/url/...` routes answer;
 before that they return 404 `DASHBOARD_NOT_FOUND`. Legacy widget routes

@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 800
+method_count: 801
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3256,9 +3256,9 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.embed_config_set
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.embed_config_set
-  signature: 'embed_config_set(self, dashboard_id: ''int'', mode: "Literal[''key'', ''signed'']" = ''key'',
-    allow_any_origin: ''bool'' = True, allowed_origins: ''_list[str] | None'' = None, appearance: ''dict[str,
-    Any] | None'' = None, snippet: ''dict[str, Any] | None'' = None) -> ''EmbedConfigResponse'''
+  signature: 'embed_config_set(self, dashboard_id: ''int'', mode: "Literal[''key'', ''signed''] | None"
+    = None, allow_any_origin: ''bool | None'' = None, allowed_origins: ''_list[str] | None'' = None, appearance:
+    ''dict[str, Any] | None'' = None, snippet: ''dict[str, Any] | None'' = None) -> ''EmbedConfigResponse'''
   openapi_operation_ids:
   - PutEmbedConfig
   canonical_command: dashboard.embed.config.set
@@ -5499,6 +5499,19 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_from_url
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.refresh_from_url
+  signature: 'refresh_from_url(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.refresh
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition

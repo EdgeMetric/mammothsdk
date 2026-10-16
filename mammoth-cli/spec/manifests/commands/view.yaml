@@ -5176,7 +5176,9 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-EXTRACT-DATE-UNDO
   known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the column type is DATE (run convert-type
-    first if TEXT) and `view data get` to check a few values.'
+    first if TEXT) and `view data get` to check a few values. For a month bucket use `year_month_number`
+    ("2026-10"), which sorts in time order; `year_month` ("2026, October") sorts alphabetically on a chart
+    axis.'
   reviewed_by: primary
 - command_id: view.transform.fill-missing
   command_path: view transform fill-missing

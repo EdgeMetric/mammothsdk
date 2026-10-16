@@ -406,6 +406,45 @@ class DatasetsAPI:
             **({"params": {"unique": "true"}} if unique else {}),
         )
 
+    async def refresh_from_url(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Fetch a fetch-from-URL dataset's link again, into the same dataset.
+
+        Sends ``PATCH /datasets/{dataset_id}`` with the OpenAPI ``DatasetPatchOperation``
+        ``{"op": "command", "path": "data_refresh", "value": {"refresh_source_type":
+        "weburl", "source_id": dataset_id}}``. The server refuses a dataset that was not
+        made from a URL, and a URL that serves JSON (a sketch dataset).
+
+        Args:
+            dataset_id: ID of the dataset.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            The job handle (``job_id``); wait on it before reading the dataset.
+
+        Raises:
+            MammothValidationError: If *dataset_id* <= 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        patch = {
+            "op": "command",
+            "path": "data_refresh",
+            "value": {"refresh_source_type": "weburl", "source_id": dataset_id},
+        }
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": patch},
+        )
+
     async def delete(
         self,
         dataset_id: int,

@@ -382,6 +382,7 @@ _TARGETS: dict[str, str] = {
     "dataset.interpretation.confirm": "mammoth_cli.commands.dataset:dataset_interpretation",
     "dataset.create": "mammoth_cli.commands.dataset:dataset_create",
     "dataset.create-from-pdf": "mammoth_cli.commands.dataset:dataset_create_from_pdf",
+    "dataset.refresh": "mammoth_cli.commands.dataset:dataset_refresh",
     "dataset.rename": "mammoth_cli.commands.dataset:dataset_rename",
     "dataset.trash": "mammoth_cli.commands.dataset:dataset_trash",
     "dataset.restore": "mammoth_cli.commands.dataset:dataset_restore",

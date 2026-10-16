@@ -48,9 +48,13 @@ mammoth automation create 'Nightly refresh' --yes --input '{
 }'
 ```
 
-`run_data_retrieval` only refreshes a cloud-connected dataset; a dataset made
-from an uploaded file or a URL (`weburl`) is a one-time copy with no source
-details to refresh from — say so rather than scheduling one.
+`run_data_retrieval` only refreshes a cloud-connected dataset. A dataset made
+from an uploaded file has no source to refresh from. A URL (`weburl`) dataset
+keeps its link and can be refreshed on demand (`dataset refresh DATASET_ID
+--yes`, or "Refresh from URL" in the web app; a single CSV only), but
+not on a schedule. For a
+scheduled pull from a URL, use the REST API connector. Say so rather than
+scheduling a refresh.
 
 That is not the same as "this dataset can never be recurring." A
 file-backed dataset's pipeline re-runs on new data exactly like any other

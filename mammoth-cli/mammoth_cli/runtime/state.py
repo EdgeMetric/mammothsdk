@@ -115,6 +115,25 @@ def _unfinished_state(data: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+#: Backend codes a get answers for an id a delete just removed, besides a 404. The
+#: dashboard get route checks permission before existence, and a missing dashboard
+#: has no one who may view it: ``dashboard get`` on a deleted id answers ``4PERM002``.
+#: Read straight after OUR successful delete of that id, it means gone; anywhere else
+#: it keeps meaning "no permission".
+_GONE_AFTER_DELETE: dict[str, frozenset[str]] = {
+    "dashboard.delete": frozenset({"4PERM002", "4DASH001"}),
+}
+
+
+def _proves_gone(invocation: Invocation, exc: Exception) -> bool:
+    if not isinstance(exc, CliError):
+        return False
+    if exc.code == CODE_RESOURCE_NOT_FOUND:
+        return True
+    backend_code = (exc.details or {}).get("backend_code")
+    return backend_code in _GONE_AFTER_DELETE.get(invocation.command_id, frozenset())
+
+
 def _build_state(
     invocation: Invocation, data: dict[str, Any], readback: dict[str, Any]
 ) -> dict[str, Any]:
@@ -150,8 +169,7 @@ def _build_state(
         read_by = _read_by_label(read_command_id, resolved_ids)
         if (
             invocation.command_id.endswith(".delete")
-            and isinstance(exc, CliError)
-            and exc.code == CODE_RESOURCE_NOT_FOUND
+            and _proves_gone(invocation, exc)
             and kind == "object"
             and resolved_ids
         ):

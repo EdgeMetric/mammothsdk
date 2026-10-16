@@ -631,7 +631,18 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
             + _board_findings(invocation, service, auth, dashboard_id),
         )
         data = service.call(_symbol(invocation), **kwargs)
+        if data is None:
+            # The route answers 200 with no body, so the result was ``data: null`` and
+            # the caller could not see whether the share took. Read it back.
+            data = _share_readback(service, dashboard_id)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _share_readback(service: Any, dashboard_id: int) -> dict[str, Any]:
+    """The board's share state as ``dashboard get`` reports it after a share."""
+    board = _dump_model(service.call(_DASHBOARD_GET, dashboard_id=dashboard_id))
+    board = board if isinstance(board, dict) else {}
+    return {"dashboard_id": dashboard_id, "share": board.get("share")}
 
 
 def _was_published(service: Any, dashboard_id: int) -> bool:

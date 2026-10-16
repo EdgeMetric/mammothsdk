@@ -445,6 +445,44 @@ def test_definition_remove_requires_the_definition_id(fake_service: FakeMammothS
     assert fake_service.call_log == []
 
 
+# -- refresh ----------------------------------------------------------------
+
+
+_REFRESH = "mammoth.api.datasets.DatasetsAPI.refresh_from_url"
+
+
+def test_refresh_sends_the_dataset_and_waits_for_the_job(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_REFRESH] = {"job_id": 88}
+    fake_service.job_result = {"status": "completed"}
+
+    result, meta = dataset_cmd.dataset_refresh(
+        _inv("dataset.refresh", project=180, extra_args=["7"], yes=True)
+    )
+
+    assert fake_service.call_log == [(_REFRESH, {"dataset_id": 7, "project_id": 180})]
+    assert "wait_if_job" in fake_service.calls
+    assert result == {"dataset_id": 7, "refreshed": True}
+    assert meta["project_id"] == 180
+
+
+def test_refresh_shows_the_servers_reason_for_a_dataset_not_made_from_a_url(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_REFRESH] = CliError(
+        code="api_error", message="This dataset cannot be refreshed from this source."
+    )
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_refresh(
+            _inv("dataset.refresh", project=180, extra_args=["7"], yes=True)
+        )
+
+    assert "cannot be refreshed" in excinfo.value.message
+    assert "wait_if_job" not in fake_service.calls
+
+
 # -- list -----------------------------------------------------------------
 
 

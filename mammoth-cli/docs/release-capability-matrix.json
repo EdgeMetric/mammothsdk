@@ -8829,6 +8829,7 @@
       "schema_id": "dataset.update",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.update",
       "bound_commands": [
+        "dataset.refresh",
         "dataset.rename",
         "dataset.update"
       ],

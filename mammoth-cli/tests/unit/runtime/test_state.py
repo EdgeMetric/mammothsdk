@@ -529,3 +529,50 @@ def test_a_delete_whose_handler_saw_the_resource_gone_does_not_list_the_rest(
         "object": None,
         "absent": True,
     }
+
+# `dashboard delete` returned the workspace's OTHER dashboards as its `state` (its
+# readback was `dashboard.list` with no ids), and `dashboard get` on the deleted id
+# answers 4PERM002 because the backend checks permission before existence — so the
+# delete read like a failure (changelog analytics build, 2026-10-15).
+
+
+def _dashboard_delete_readback(monkeypatch: pytest.MonkeyPatch, error: Exception) -> dict[str, Any]:
+    def raising_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise error
+
+    _patch_handlers(monkeypatch, {"dashboard.get": raising_get})
+    invocation = _invocation("dashboard.delete", positionals={"dashboard_id": 753})
+    invocation = Invocation(**{**invocation.__dict__, "extra_args": ["753"]})
+    return with_state(invocation, {})
+
+
+def test_dashboard_delete_reads_back_the_deleted_board_not_the_list() -> None:
+    from mammoth_cli.manifest.loader import command_by_id
+
+    readback = command_by_id("dashboard.delete")["readback"]
+    assert readback["command"] == "dashboard.get"
+    assert readback["ids"] == {"dashboard_id": "positional.0"}
+
+
+@pytest.mark.parametrize("backend_code", ["4PERM002", "4DASH001"])
+def test_a_deleted_dashboard_reads_back_as_absent(
+    monkeypatch: pytest.MonkeyPatch, backend_code: str
+) -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    refused = CliError(
+        code="permission_denied", message="no", details={"backend_code": backend_code}
+    )
+    result = _dashboard_delete_readback(monkeypatch, refused)
+    assert result["state"]["absent"] is True
+    assert result["state"]["object"] is None
+
+
+def test_4perm002_proves_nothing_outside_a_dashboard_delete(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.errors.envelope import CliError
+
+    refused = CliError(code="permission_denied", message="no", details={"backend_code": "4PERM002"})
+    result = _delete_readback(monkeypatch, refused)
+    assert result["state"]["kind"] == "unreadable"

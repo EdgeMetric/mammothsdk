@@ -55,6 +55,17 @@ def test_a_dataset_summary_says_size_times_source_and_columns() -> None:
     assert "(+17 more)" in summary["columns"]
 
 
+def test_a_dataset_fetched_from_a_url_reports_its_host_and_never_the_path_or_query() -> None:
+    """The backend stores it as type ``file``; the link is in additional_info."""
+    url = "https://user:pw@data.example.org/exports/sales.csv?token=SECRET"
+    dataset = {
+        **_dataset(1),
+        "additional_info": {"ORIGINAL_FILE_PROPS": {"URL": url, "FILE_NAME": "sales.csv"}},
+    }
+    source = listing.dataset_summary(dataset)["source"]
+    assert source == "url: data.example.org"
+
+
 def test_two_near_duplicate_datasets_are_told_apart_by_their_summaries() -> None:
     first = listing.dataset_summary(_dataset(1))
     second = {**_dataset(2), "stats": {"row_count": 9995, "column_count": 22}}

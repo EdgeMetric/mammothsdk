@@ -533,6 +533,7 @@ S2_COMMANDS = frozenset(
         "dataset.file-settings.update",
         "dataset.get",
         "dataset.list",
+        "dataset.refresh",
         "dataset.rename",
         "dataset.restore",
         "dataset.trash",

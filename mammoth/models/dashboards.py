@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, computed_field, model_validator
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
 
@@ -447,6 +447,23 @@ class EmbedConfigResponse(BaseModel):
     token_ttl: int = 300
     rls_enabled: bool = False
     rls_column: str | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def mode_reason(self) -> str:
+        """Why the board embeds the way it does, and which tier is settable.
+
+        ``mode`` is the EFFECTIVE mode and reads ``public`` whenever the board's
+        share link is public, whatever tier is saved; ``tier`` is what
+        ``embed config set`` changes.
+        """
+        if self.public:
+            return (
+                "public because the board's share link is public: it embeds with no"
+                f" key or token. Saved tier for when the link is removed: {self.tier}"
+                " (embed config set mode=key|signed)."
+            )
+        return f"{self.tier}: the board's saved tier (embed config set mode=key|signed)."
 
 
 class EmbedKeyResponse(BaseModel):
