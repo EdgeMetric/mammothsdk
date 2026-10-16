@@ -4720,10 +4720,9 @@ commands:
     op is filter, sort, limit-rows, discard-duplicates, fill-missing, bulk-replace, replace, text, substring,
     extract-date, increment-date, copy-columns, split, unnest or pivot, and input is exactly what that
     view transform command takes (display names). unnest and pivot replace the view''s columns, so
-    they can only be the last step, and no sort step may come before them. A step may use the
-    columns an earlier split or copy-columns step adds. Every step is checked against the view''s columns as they are NOW before anything
-    is sent, so a step cannot use a column an earlier step creates, except the ones split and copy-columns
-    add: run other column-creating steps first, then batch the rest. A sort is the view''s row order, not a task: it is set after the tasks
+    they can only be the last step, and no sort step may come before them.  Every step is checked against the view''s columns as they are NOW before anything
+    is sent, so a step can use a column an earlier step adds (split, copy-columns, or the new_column of
+    substring, extract-date, increment-date) but no other column that does not exist yet. A sort is the view''s row order, not a task: it is set after the tasks
     have run. A batch skips the per-op no-op check (a filter that matches every row still adds its task).
     If a task fails the batch''s tasks are removed, the view is as before, and the error names steps[i]
     (batch_step_failed). In draft mode the tasks are staged, not run.'

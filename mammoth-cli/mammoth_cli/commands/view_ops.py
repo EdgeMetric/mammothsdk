@@ -2345,10 +2345,9 @@ _TASK_DELETE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.delete_task"
 CODE_BATCH_STEP_FAILED = "batch_step_failed"
 CODE_UNKNOWN_COLUMN = "unknown_column"
 _BATCH_COLUMN_HINT = (
-    "A batch is built against the view's columns plus the ones an earlier `split` or "
-    "`copy-columns` step adds, so a step cannot use a column another op creates. Run the "
-    "steps that create columns first (their own `view transform` command or a batch), then "
-    "batch the rest."
+    "A batch is built against the view's columns plus the ones the earlier steps of the batch "
+    "add (split, copy-columns, and any new_column of substring, extract-date, increment-date). "
+    "A column in neither is unknown: check its name, or run the step that creates it first."
 )
 
 
@@ -2443,10 +2442,18 @@ def _step_error(index: int, op: str, error: CliError) -> CliError:
 
 
 def _created_columns(task_spec: dict[str, Any]) -> list[dict[str, str]]:
-    """The ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built ``split`` or ``copy-columns`` adds."""
-    if "SPLIT" in task_spec:
-        return list(task_spec["SPLIT"]["AS"])
-    return [item["AS"] for item in task_spec.get("COPY", []) if "AS" in item]
+    """The ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built task adds, from its ``AS`` outputs.
+
+    ``AS`` is one column (substring, extract-date, increment-date), a list of them (split) or
+    sits on each item of the task's list (copy-columns).
+    """
+    columns: list[dict[str, str]] = []
+    for body in task_spec.values():
+        for item in body if isinstance(body, list) else [body]:
+            made = item.get("AS") if isinstance(item, dict) else None
+            if made is not None:
+                columns.extend(made if isinstance(made, list) else [made])
+    return columns
 
 
 def _build_batch(

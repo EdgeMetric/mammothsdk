@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from mammoth import CopySpec, SplitColumnSpec, View
+from mammoth import CopySpec, DateComponent, SplitColumnSpec, View
 
 from mammoth_cli.commands.view_ops import _batch_steps, _build_batch, _created_columns
 from mammoth_cli.errors.envelope import CliError
@@ -143,3 +143,20 @@ def test_a_sort_before_a_step_that_replaces_the_columns_is_refused(last: str) ->
     with pytest.raises(CliError) as excinfo:
         _batch_steps({"steps": steps})
     assert excinfo.value.message.startswith("steps[0] (sort)")
+
+
+def test_every_batch_op_that_makes_a_column_carries_it_forward() -> None:
+    view = _view()
+    substring = _built(view, "substring", column="Top Actors", num_char=3, new_column="Prefix")
+    extract = _built(
+        view, "extract_date", column="Year", component=DateComponent.YEAR, new_column="Yr"
+    )
+    copy = _built(view, "copy_columns", copies=[CopySpec("Year", as_name="Year 2")])
+
+    made = [c["COLUMN"] for spec in (substring, extract, copy) for c in _created_columns(spec)]
+    assert made == ["Prefix", "Yr", "Year 2"]
+
+    for spec in (substring, extract, copy):
+        add_columns_to_view(view, _created_columns(spec))
+    # A filter on the substring's column validates once it is carried, as the batch would.
+    _built(view, "filter_rows", condition={"column": "Prefix", "operator": "EQ", "value": "Tom"})
