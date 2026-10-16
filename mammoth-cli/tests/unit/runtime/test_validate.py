@@ -109,3 +109,15 @@ def test_str_typed_positional_is_not_checked_as_an_id() -> None:
 
 def test_no_positional_tokens_is_a_noop() -> None:
     validate_positional_ids("project.delete", [])
+
+
+def test_browse_resource_id_zero_points_to_browse_project_for_the_root() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_positional_ids("browse.resource", ["folder", "0"])
+    assert excinfo.value.hint is not None and "browse project" in excinfo.value.hint
+
+
+def test_another_command_keeps_the_generic_hint_for_id_zero() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_positional_ids("view.get", ["0"])
+    assert excinfo.value.hint is not None and "browse project" not in excinfo.value.hint

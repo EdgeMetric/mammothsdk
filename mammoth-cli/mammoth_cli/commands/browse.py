@@ -17,6 +17,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
@@ -27,6 +28,31 @@ from mammoth_cli.runtime.session import open_service, require_project, resolved_
 from mammoth_cli.services.folder_ids import FolderIds
 
 HandlerResult = tuple[Any, dict[str, Any]]
+
+#: The route's resource types are datasource, dataview, label, file_object, report and webhook;
+#: these are the names a caller reaches for instead.
+_RESOURCE_TYPE_ALIASES = {"dataset": "datasource", "folder": "label"}
+
+
+def canonical_resource_type(value: str) -> str:
+    """``value`` (one type, or several joined by commas) with each alias as the route's name."""
+    return ",".join(
+        _RESOURCE_TYPE_ALIASES.get(part.strip(), part.strip()) for part in value.split(",")
+    )
+
+
+def ancestors_needs_a_folder(error: CliError) -> CliError:
+    """``error`` (the 404 for an id that is no folder) as a message saying what to pass."""
+    return CliError(
+        code=error.code,
+        message="browse ancestors needs a FOLDER id; this id is not a folder.",
+        exit_status=error.exit_status,
+        hint=(
+            "A dataset or view has no ancestors of its own: run `mammoth browse resource "
+            "dataset ID` (or `dataview ID`) and pass the parent_resource_id it returns."
+        ),
+        details=error.details,
+    )
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -213,7 +239,8 @@ def browse_resource(invocation: Invocation) -> HandlerResult:
         )
     with open_service(invocation) as (service, auth):
         folders = FolderIds(service)
-        if str(resource_type) == "label":
+        resource_type = canonical_resource_type(str(resource_type))
+        if resource_type == "label":
             object_id = folders.label(project_id, int(object_id))
         data = service.call(
             _symbol(invocation),
@@ -230,7 +257,14 @@ def browse_ancestors(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     resource_id = _require_int_positional(invocation, "resource id")
     with open_service(invocation) as (service, auth):
-        found = service.call(_symbol(invocation), resource_id=resource_id, project_id=project_id)
+        try:
+            found = service.call(
+                _symbol(invocation), resource_id=resource_id, project_id=project_id
+            )
+        except CliError as exc:
+            if exc.code != CODE_RESOURCE_NOT_FOUND:
+                raise
+            raise ancestors_needs_a_folder(exc) from exc
         data = FolderIds(service).open_data(found, project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
@@ -238,7 +272,8 @@ def browse_ancestors(invocation: Invocation) -> HandlerResult:
 def browse_search(invocation: Invocation) -> HandlerResult:
     """Search resources across every project of the workspace (resources v2).
 
-    ``resource_type`` ``dataset`` means the route's ``datasource``. Each dataset hit
+    ``resource_type`` ``dataset`` means the route's ``datasource``, ``folder`` its ``label``.
+    Each dataset hit
     carries ``dataset_id`` and each view hit ``view_id``: pass those, never the tree ``id``.
     """
     document = invocation.load_input() or {}
@@ -246,6 +281,8 @@ def browse_search(invocation: Invocation) -> HandlerResult:
     _forward_optional(
         document, kwargs, ("search", "resource_type", "cursor", "limit", "sort", "fields")
     )
+    if isinstance(kwargs.get("resource_type"), str):
+        kwargs["resource_type"] = canonical_resource_type(kwargs["resource_type"])
     with open_service(invocation) as (service, auth):
         data = FolderIds(service).open_data(service.call(_symbol(invocation), **kwargs), None)
     return _with_object_ids(data), _meta(invocation, auth.workspace_id, None)

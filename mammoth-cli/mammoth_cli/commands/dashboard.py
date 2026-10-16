@@ -618,10 +618,13 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
     assert document is not None
     _forward_optional(document, kwargs, ("users",))
     with open_service(invocation) as (service, auth):
+        was_published = _was_published(service, dashboard_id)
+        if not was_published:
+            refuse_viewer_share_before_publish(dashboard_id, type_of_auth, kwargs.get("users"))
         unpublished = (
             " (not published yet: sharing alone does not publish it; run dashboard action "
             'with {"action":"publish-presentation"} to publish)'
-            if not _was_published(service, dashboard_id)
+            if not was_published
             else ""
         )
         enforce_confirmation(
@@ -636,6 +639,33 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
             # the caller could not see whether the share took. Read it back.
             data = _share_readback(service, dashboard_id)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def refuse_viewer_share_before_publish(
+    dashboard_id: int, type_of_auth: str, users: list[dict[str, Any]] | None
+) -> None:
+    """Refuse, as the server does, a ``mammoth`` share that gives viewer access before a publish.
+
+    The server (``_apply_mammoth_recipients``) refuses the whole request when any user is
+    shared as a viewer (the default role) and the board has no published version.
+    """
+    if type_of_auth != "mammoth":
+        return
+    for user in users or []:
+        shared = user.get("shared", True)
+        shared = shared.lower() in ("true", "1", "yes", "on") if isinstance(shared, str) else shared
+        if shared and user.get("role") != "dashboard_editor":
+            raise CliError(
+                code="dashboard_not_published",
+                message=f"Dashboard {dashboard_id} is not published; viewers cannot be invited.",
+                exit_status=EXIT_USAGE,
+                hint=(
+                    "Publish it first: mammoth dashboard action "
+                    f'{dashboard_id} --input \'{{"action": "publish-presentation"}}\' --yes, '
+                    "then share. Or share only users with role dashboard_editor."
+                ),
+                details={"dashboard_id": dashboard_id},
+            )
 
 
 def _share_readback(service: Any, dashboard_id: int) -> dict[str, Any]:
@@ -1348,7 +1378,7 @@ def _packaged_row_count(file_path: str) -> int | None:
                     # csv, not line counting: a quoted value may hold a line break.
                     text = io.TextIOWrapper(raw, encoding="utf-8", errors="replace", newline="")
                     sizes.append(sum(1 for _ in csv.reader(text)) - 1)
-    except (zipfile.BadZipFile, OSError, csv.Error):
+    except zipfile.BadZipFile, OSError, csv.Error:
         return None
     return max(sizes) if sizes and max(sizes) >= 0 else None
 

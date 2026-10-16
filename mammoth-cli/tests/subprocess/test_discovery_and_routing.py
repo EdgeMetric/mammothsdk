@@ -96,6 +96,17 @@ def test_schema_get_without_id_is_a_clean_missing_argument() -> None:
     assert payload["error"]["code"] == "missing_argument"
 
 
+def test_a_missing_argument_hint_gives_the_usage_line_and_the_example() -> None:
+    result = _run(
+        ["view", "task", "update", "312138", "--output", "json", "--no-input"], env=_base_env()
+    )
+    assert result.returncode == _EXIT_USAGE, result.stderr
+    error = _envelope(result)["error"]
+    assert error["code"] == "missing_argument"
+    assert "Usage: mammoth view task update DATAVIEW_ID TASK_ID" in error["hint"]
+    assert "Example: mammoth view task update" in error["hint"]
+
+
 # --- finding #2: prefix-command routing + machine envelope on Click errors ------
 
 

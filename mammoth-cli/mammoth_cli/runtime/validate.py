@@ -37,12 +37,20 @@ _TIMEOUT_OPTIONS = (
 )
 
 
-def _invalid_option_error(option: str, message: str, *, details: dict[str, object]) -> CliError:
+#: Commands whose id 0 is a guess at "the root": where the root really is.
+_ZERO_ID_HINTS = {
+    "browse.resource": "For the project root use `mammoth browse project`; it lists the top level.",
+}
+
+
+def _invalid_option_error(
+    option: str, message: str, *, details: dict[str, object], hint: str | None = None
+) -> CliError:
     return CliError(
         code=CODE_INVALID_OPTION_VALUE,
         message=message,
         exit_status=EXIT_USAGE,
-        hint=f"Check the value passed to {option}.",
+        hint=hint or f"Check the value passed to {option}.",
         details=details,
     )
 
@@ -124,4 +132,5 @@ def validate_positional_ids(command_id: str, extra_args: list[str]) -> None:
                 spec.metavar,
                 f"'{spec.name}' must be a positive integer, got {value}.",
                 details={"argument": spec.name, "value": value},
+                hint=_ZERO_ID_HINTS.get(command_id) if value == 0 else None,
             )

@@ -134,8 +134,6 @@ def add_columns_to_view(view: Any, columns: list[dict[str, str]]) -> None:
         view.column_types[name] = column["TYPE"]
         if name not in view.display_names:
             view.display_names.append(name)
-        if internal not in view._internal_names:
-            view._internal_names.append(internal)
 
 
 class SdkMammothService:

@@ -147,6 +147,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "invalid_config_value": _S_SETUP,
     "invalid_credentials": "The sign-in details weren't accepted.",
     "invalid_input_document": _S_BAD_INPUT,
+    "dashboard_not_published": "The dashboard has to be published before viewers can be invited.",
     "invalid_input_encoding": _S_BAD_INPUT,
     "invalid_input_field_type": _S_BAD_INPUT,
     "invalid_input_format": _S_BAD_INPUT,
