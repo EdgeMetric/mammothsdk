@@ -764,7 +764,7 @@ commands:
     cut. full true returns the raw id and name list. name (input field, a case-insensitive
     substring) reads every page and returns only the matching datasets as short rows (id, name, rows,
     cols; no column lists) with matched, and more with next_offset when cut; limit and offset then
-    page over the matches. limit must be at most 100. Without a project use dataset find NAME_SUBSTRING.'
+    page over the matches. limit must be at most 100. names true returns up to 500 bare id and name rows of the project in ONE call, newest first, with total and more: use it for a list of names (which files can I see), never page offsets. Without a project use dataset find NAME_SUBSTRING.'
   reviewed_by: primary
 - command_id: dataset.refresh
   command_path: dataset refresh

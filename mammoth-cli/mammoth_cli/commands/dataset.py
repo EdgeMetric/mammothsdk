@@ -884,6 +884,10 @@ def _compact_dataset_list(data: Any, offset: int, sort: str | None, limit: int) 
     if omitted or data.get("next") or len(datasets) >= limit:
         result["more"] = True
         result["next_offset"] = int(offset) + len(kept)
+        result["note"] += (
+            " For just the names of every dataset, one call: --input '{\"names\": true}'"
+            " (up to 500 names, no paging)."
+        )
     return result
 
 
