@@ -37,6 +37,7 @@ CODE_INVALID_ARGUMENT = "invalid_argument"
 CODE_UPLOAD_REFUSED = "upload_refused"
 CODE_INVALID_ARGUMENTS = "invalid_arguments"
 CODE_INVALID_CONFIG_VALUE = "invalid_config_value"
+CODE_INVALID_INPUT = "invalid_input"
 CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
 CODE_INVALID_INPUT_FORMAT = "invalid_input_format"
 CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
@@ -147,6 +148,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "invalid_config_value": _S_SETUP,
     "invalid_credentials": "The sign-in details weren't accepted.",
     "invalid_input_document": _S_BAD_INPUT,
+    "invalid_input": _S_BAD_INPUT,
     "dashboard_not_published": "The dashboard has to be published before viewers can be invited.",
     "invalid_input_encoding": _S_BAD_INPUT,
     "invalid_input_field_type": _S_BAD_INPUT,

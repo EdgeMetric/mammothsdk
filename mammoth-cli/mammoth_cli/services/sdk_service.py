@@ -30,6 +30,7 @@ from mammoth_cli import __version__
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
+    CODE_INVALID_INPUT,
     CODE_MISSING_ARGUMENT,
     CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -41,7 +42,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.output.progress import spinner
 from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.dryrun import DryRunStop
-from mammoth_cli.services.coerce import coerce_arguments
+from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
@@ -470,7 +471,10 @@ class SdkMammothService:
         method takes a pydantic model (``automation create``, ``client-app
         update``, ``external-key create``) crashes on the raw dict.
 
-        Coercion is best-effort: a method whose annotations cannot be resolved
+        A value that does not fit its model is refused here, before the dry-run
+        gate and any confirmation, as ``invalid_input`` naming each faulty field.
+
+        Coercion is otherwise best-effort: a method whose annotations cannot be resolved
         (for example an API module that imports its types only under
         ``TYPE_CHECKING`` and names one this module's namespace does not carry)
         falls back to the raw kwargs, so currently-working commands are never
@@ -487,6 +491,14 @@ class SdkMammothService:
         """
         try:
             return coerce_arguments(method, kwargs)
+        except InvalidArgumentValue as exc:
+            raise CliError(
+                code=CODE_INVALID_INPUT,
+                message=f"The input is not valid: {exc}.",
+                exit_status=EXIT_USAGE,
+                hint="Fix the listed fields in --input and send it again.",
+                details={"problems": exc.problems},
+            ) from exc
         except Exception:
             return kwargs
 

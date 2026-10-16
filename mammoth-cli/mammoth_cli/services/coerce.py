@@ -27,7 +27,7 @@ from typing import Any, get_args, get_origin
 
 from mammoth import condition as _condition_module
 from mammoth import models as _models_package
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from mammoth_cli.services.argspec import resolve_type_hints
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -77,6 +77,31 @@ def _sdk_type_namespace() -> dict[str, Any]:
     return namespace
 
 
+class InvalidArgumentValue(ValueError):
+    """A value that does not fit the model its argument is annotated with.
+
+    ``problems`` holds one ``{"field", "reason"}`` per fault; ``field`` is the path from
+    the argument down (``patch[0].value``).
+    """
+
+    def __init__(self, problems: list[dict[str, str]]) -> None:
+        super().__init__("; ".join(f"{p['field']}: {p['reason']}" for p in problems))
+        self.problems = problems
+
+    def under(self, prefix: str) -> InvalidArgumentValue:
+        """The same faults, their paths one level further out (``prefix`` + the path)."""
+        joined = [{"field": prefix + p["field"], "reason": p["reason"]} for p in self.problems]
+        return InvalidArgumentValue(joined)
+
+
+def _model_problems(exc: ValidationError) -> list[dict[str, str]]:
+    """A pydantic error as ``.field`` paths (leading dot: the model sits under a prefix)."""
+    return [
+        {"field": "".join(f".{part}" for part in err["loc"]), "reason": err["msg"]}
+        for err in exc.errors()
+    ]
+
+
 def coerce_arguments(method: Callable[..., Any], kwargs: dict[str, Any]) -> dict[str, Any]:
     """Coerce ``kwargs`` to the types annotated on ``method``.
 
@@ -93,6 +118,8 @@ def coerce_arguments(method: Callable[..., Any], kwargs: dict[str, Any]) -> dict
         TypeError: When the method's type hints cannot be resolved even with
             the SDK type namespace supplied, so the failure is visible rather
             than silently skipping coercion.
+        InvalidArgumentValue: When a value does not fit its pydantic model,
+            naming each faulty field.
     """
     hints = resolve_type_hints(method, _sdk_type_namespace)
     coerced: dict[str, Any] = {}
@@ -101,7 +128,13 @@ def coerce_arguments(method: Callable[..., Any], kwargs: dict[str, Any]) -> dict
             coerced[name] = value
             continue
         annotation = hints.get(name)
-        coerced[name] = _coerce(value, annotation) if annotation is not None else value
+        if annotation is None:
+            coerced[name] = value
+            continue
+        try:
+            coerced[name] = _coerce(value, annotation)
+        except InvalidArgumentValue as exc:
+            raise exc.under(name) from exc
     return coerced
 
 
@@ -118,7 +151,7 @@ def _coerce(value: Any, annotation: Any) -> Any:
     if origin in (list, typing.List):  # noqa: UP006 - runtime origin comparison
         args = get_args(annotation)
         if args and isinstance(value, list):
-            return [_coerce(item, args[0]) for item in value]
+            return [_coerce_item(index, item, args[0]) for index, item in enumerate(value)]
         return value
 
     if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
@@ -138,9 +171,20 @@ def _coerce(value: Any, annotation: Any) -> Any:
     ):
         # pydantic v2 validates and recurses into nested models itself, so a
         # single ``model_validate`` builds the whole tree from JSON-shaped input.
-        return annotation.model_validate(value)
+        try:
+            return annotation.model_validate(value)
+        except ValidationError as exc:
+            raise InvalidArgumentValue(_model_problems(exc)) from exc
 
     return value
+
+
+def _coerce_item(index: int, item: Any, annotation: Any) -> Any:
+    """Coerce one list item; a fault names the item's position."""
+    try:
+        return _coerce(item, annotation)
+    except InvalidArgumentValue as exc:
+        raise exc.under(f"[{index}]") from exc
 
 
 def _coerce_union(value: Any, args: tuple[Any, ...]) -> Any:

@@ -7,6 +7,7 @@ ever crashes on or silently mangles a legitimate JSON-shaped argument.
 
 from __future__ import annotations
 
+import pytest
 from mammoth.api.automations import AutomationsAPI
 from mammoth.api.clientapps import ClientAppsAPI
 from mammoth.api.external_keys import ExternalKeysAPI
@@ -22,7 +23,7 @@ from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 from mammoth.models.pipeline import SetValue, SortDirection
 from mammoth.view import View
 
-from mammoth_cli.services.coerce import coerce_arguments
+from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 
 
 def test_union_str_or_enum_keeps_non_enum_string_and_coerces_valid_direction() -> None:
@@ -159,3 +160,13 @@ def test_convert_type_decimal_separator_reaches_the_task_format_info() -> None:
         "decimal_separator": ",",
         "thousands_separator": ".",
     }
+
+
+def test_a_patch_item_without_its_value_names_the_item_and_the_field() -> None:
+    patch = [
+        {"op": "replace", "path": "status", "value": "ACTIVE"},
+        {"op": "replace", "path": "status"},
+    ]
+    with pytest.raises(InvalidArgumentValue) as excinfo:
+        coerce_arguments(AutomationsAPI.update, {"automation_id": 1, "patch": patch})
+    assert excinfo.value.problems == [{"field": "patch[1].value", "reason": "Field required"}]
