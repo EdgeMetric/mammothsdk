@@ -802,6 +802,8 @@ class _EnvelopeGroup(TyperGroup):
             executor.emit_error(report, machine=True)
         elif report is None:
             error.show()
+            if is_missing_parameter:
+                typer.echo(missing_argument_hint(tokens), err=True)
         else:
             # A no-subcommand error arrives with the help text already on
             # screen, so repeating "run --help" below it would be noise.

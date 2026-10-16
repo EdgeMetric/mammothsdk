@@ -107,6 +107,16 @@ def test_a_missing_argument_hint_gives_the_usage_line_and_the_example() -> None:
     assert "Example: mammoth view task update" in error["hint"]
 
 
+def test_a_missing_argument_in_human_output_also_prints_the_usage_and_the_example() -> None:
+    result = _run(
+        ["view", "task", "update", "312138", "--output", "table", "--no-input"], env=_base_env()
+    )
+    assert result.returncode == _EXIT_USAGE, result.stderr
+    assert "Missing argument 'TASK_ID'" in result.stderr
+    assert "Usage: mammoth view task update DATAVIEW_ID TASK_ID" in result.stderr
+    assert "Example: mammoth view task update" in result.stderr
+
+
 # --- finding #2: prefix-command routing + machine envelope on Click errors ------
 
 
