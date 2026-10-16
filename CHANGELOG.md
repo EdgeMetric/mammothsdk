@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (mammoth-cli 2.2.92)
 
-- `view transform sort` accepts `sort_by` as an alias of `order_by`, and an entry as a string (`"Revenue"`, `"Revenue asc"`, `"Revenue desc"`); `view transform limit-rows` accepts `limit` as an alias of `n` (both together are refused). `view transform batch` takes `split`, `unnest` and `pivot` steps (`unnest` and `pivot` replace the view's columns, so only as the last step).
+- `view transform sort` accepts `sort_by` as an alias of `order_by`, and an entry as a string (`"Revenue"`, `"Revenue asc"`, `"Revenue desc"`); `view transform limit-rows` accepts `limit` as an alias of `n` (both together are refused). `view transform batch` takes `split`, `unnest` and `pivot` steps (`unnest` and `pivot` replace the view's columns, so only as the last step, with no `sort` before them). A batch step can use the columns an earlier `split` or `copy-columns` step adds.
 
 ### Fixed (mammoth-cli 2.2.91)
 

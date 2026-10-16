@@ -315,12 +315,8 @@ def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items:
     assert items.total("Cost") == 100
 
 
-def test_a_batch_step_using_a_column_an_earlier_step_creates_is_refused_before_any_send(
-    items: Table,
-) -> None:
-    before = items.steps()
-
-    error = items.err(
+def test_a_batch_step_can_use_a_column_an_earlier_copy_step_creates(items: Table) -> None:
+    data = items.ok(
         "batch",
         steps=[
             {"op": "copy-columns", "input": {"copies": [{"source": "Cost", "as_name": "Cost 2"}]}},
@@ -331,9 +327,26 @@ def test_a_batch_step_using_a_column_an_earlier_step_creates_is_refused_before_a
         ],
     )
 
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 3}
+
+
+def test_a_batch_step_using_a_column_nothing_creates_is_refused_before_any_send(
+    items: Table,
+) -> None:
+    before = items.steps()
+
+    error = items.err(
+        "batch",
+        steps=[
+            {
+                "op": "filter",
+                "input": {"condition": {"column": "Cost 2", "operator": "GTE", "value": 20}},
+            },
+        ],
+    )
+
     assert error["code"] == "unknown_column"
-    assert "steps[1] (filter)" in error["message"]
-    assert "earlier step" in json.dumps(error)
+    assert "steps[0] (filter)" in error["message"]
     assert items.steps() == before
 
 

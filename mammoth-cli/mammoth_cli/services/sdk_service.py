@@ -122,6 +122,22 @@ async def _settle_all(works: list[Any]) -> list[Any]:
     return list(await asyncio.gather(*(settle(work) for work in works)))
 
 
+def add_columns_to_view(view: Any, columns: list[dict[str, str]]) -> None:
+    """Make ``view`` know the ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built task would add.
+
+    A batch builds each step before any is sent, so a later step must see the columns an
+    earlier one creates. Only the in-memory View changes; nothing is written.
+    """
+    for column in columns:
+        name, internal = column["COLUMN"], column["INTERNAL_NAME"]
+        view.columns[name] = internal
+        view.column_types[name] = column["TYPE"]
+        if name not in view.display_names:
+            view.display_names.append(name)
+        if internal not in view._internal_names:
+            view._internal_names.append(internal)
+
+
 class SdkMammothService:
     """Production :class:`~mammoth_cli.services.protocol.MammothService`."""
 
@@ -510,6 +526,7 @@ class SdkMammothService:
         /,
         dataset_id: int | None = None,
         build_only: bool = False,
+        added_columns: list[dict[str, str]] | None = None,
         **kwargs: Any,
     ) -> Any:
         """Resolve a View and invoke one of its public methods (or a property).
@@ -524,6 +541,8 @@ class SdkMammothService:
                 sending it (``View.build_only``): a transform answers
                 ``{"status": "validated", "task_spec": ...}``. Nothing is
                 written, so the dry-run gate is not consulted.
+            added_columns: ``{COLUMN, TYPE, INTERNAL_NAME}`` columns to add to the
+                View before the method runs (see :func:`add_columns_to_view`).
             **kwargs: Keyword arguments forwarded to the method; a ``condition``
                 spec is compiled to an SDK condition object first.
 
@@ -571,6 +590,7 @@ class SdkMammothService:
                 parents.remember(self._profile, self._workspace_id, {view_id: discovered})
         if method.startswith("_"):
             raise self._view_member_error(view_id, method)
+        add_columns_to_view(view, added_columns or [])
         attribute = getattr(view, method, None)
         # Typed export conveniences live on ``view.export`` rather than on
         # ``View`` itself.  Keep the public call seam single and scoped while

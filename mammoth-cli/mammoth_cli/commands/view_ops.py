@@ -2345,9 +2345,10 @@ _TASK_DELETE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.delete_task"
 CODE_BATCH_STEP_FAILED = "batch_step_failed"
 CODE_UNKNOWN_COLUMN = "unknown_column"
 _BATCH_COLUMN_HINT = (
-    "A batch is built against the view's columns as they are now, so a step cannot use a "
-    "column an earlier step of the same batch creates. Run the steps that create columns "
-    "first (their own `view transform` command or a batch), then batch the rest."
+    "A batch is built against the view's columns plus the ones an earlier `split` or "
+    "`copy-columns` step adds, so a step cannot use a column another op creates. Run the "
+    "steps that create columns first (their own `view transform` command or a batch), then "
+    "batch the rest."
 )
 
 
@@ -2398,6 +2399,20 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
                     "did_you_mean": near,
                 },
             )
+        if step["op"] == _BATCH_SORT_OP and any(
+            isinstance(later, dict) and later.get("op") in BATCH_LAST_OPS
+            for later in steps[index + 1 :]
+        ):
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"steps[{index}] (sort) comes before a step that replaces the view's columns, "
+                    "so its columns would no longer exist when the sort is applied."
+                ),
+                exit_status=EXIT_USAGE,
+                hint="Run the sort after the batch, as its own `view transform sort` command.",
+                details={"step": index, "op": _BATCH_SORT_OP},
+            )
         if step["op"] in BATCH_LAST_OPS and index != len(steps) - 1:
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
@@ -2427,11 +2442,19 @@ def _step_error(index: int, op: str, error: CliError) -> CliError:
     )
 
 
+def _created_columns(task_spec: dict[str, Any]) -> list[dict[str, str]]:
+    """The ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built ``split`` or ``copy-columns`` adds."""
+    if "SPLIT" in task_spec:
+        return list(task_spec["SPLIT"]["AS"])
+    return [item["AS"] for item in task_spec.get("COPY", []) if "AS" in item]
+
+
 def _build_batch(
     invocation: Invocation, service: Any, view_id: int, dataset_id: int, steps: list[dict[str, Any]]
 ) -> _BatchPlan:
     """Bind and build every step against the view's current columns; send nothing."""
     plan = _BatchPlan()
+    created: list[dict[str, str]] = []
     for index, step in enumerate(steps):
         op = step["op"]
         command_id = f"view.transform.{op}"
@@ -2454,7 +2477,12 @@ def _build_batch(
         method = str((command_by_id(command_id) or {})["sdk_symbol"]).rsplit(".", 1)[-1]
         try:
             built = service.call_view(
-                view_id, method, dataset_id=dataset_id, build_only=True, **kwargs
+                view_id,
+                method,
+                dataset_id=dataset_id,
+                build_only=True,
+                added_columns=created,
+                **kwargs,
             )
         except CliError as exc:
             raise _step_error(index, op, exc) from exc
@@ -2462,6 +2490,7 @@ def _build_batch(
             plan.sorts.append(kwargs)
         else:
             plan.specs.append(built["task_spec"])
+            created.extend(_created_columns(built["task_spec"]))
             plan.task_steps.append((index, op))
     return plan
 

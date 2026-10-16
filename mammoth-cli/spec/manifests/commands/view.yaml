@@ -4720,9 +4720,10 @@ commands:
     op is filter, sort, limit-rows, discard-duplicates, fill-missing, bulk-replace, replace, text, substring,
     extract-date, increment-date, copy-columns, split, unnest or pivot, and input is exactly what that
     view transform command takes (display names). unnest and pivot replace the view''s columns, so
-    they can only be the last step. Every step is checked against the view''s columns as they are NOW before anything
-    is sent, so a step cannot use a column an earlier step of the same batch creates: add those columns
-    first, then batch the rest. A sort is the view''s row order, not a task: it is set after the tasks
+    they can only be the last step, and no sort step may come before them. A step may use the
+    columns an earlier split or copy-columns step adds. Every step is checked against the view''s columns as they are NOW before anything
+    is sent, so a step cannot use a column an earlier step creates, except the ones split and copy-columns
+    add: run other column-creating steps first, then batch the rest. A sort is the view''s row order, not a task: it is set after the tasks
     have run. A batch skips the per-op no-op check (a filter that matches every row still adds its task).
     If a task fails the batch''s tasks are removed, the view is as before, and the error names steps[i]
     (batch_step_failed). In draft mode the tasks are staged, not run.'
@@ -5966,7 +5967,8 @@ commands:
   known_restrictions: 'A view display setting (the web grid''s sort), not a pipeline task: data reads
     and exports return rows in this order. At most three columns. `sort_by` is accepted as an alias
     of `order_by`; each entry is [column, ASC|DESC] or a string "column", "column asc" or "column
-    desc".'
+    desc". A string ending in asc or desc is read as column plus direction, so for a column
+    whose name ends in asc or desc use the pair form [column, ASC|DESC].'
   reviewed_by: primary
 - command_id: view.transform.split
   command_path: view transform split

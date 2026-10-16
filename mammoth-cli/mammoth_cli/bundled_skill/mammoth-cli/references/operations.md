@@ -98,9 +98,10 @@ When several transforms go on the same view in a row (for example filter, sort, 
 limit-rows), send them in one `view transform batch VIEW_ID --input '{"steps": [{"op":
 "filter", "input": {...}}, ...]}'` instead of one command each: the pipeline runs once and
 one verified outcome comes back (`row_check`, and `tasks` with each new task's status).
-Each `input` is what that `view transform` command takes. A step cannot use a column an
-earlier step of the batch creates: run those steps first. `split`, `unnest` and `pivot` can be
-batch steps too; `unnest` and `pivot` replace the view's columns, so they go last. If a task fails, the batch's tasks
+Each `input` is what that `view transform` command takes. A step can use the columns an
+earlier `split` or `copy-columns` step adds; for any other column an earlier step creates, run
+those steps first. `split`, `unnest` and `pivot` can be
+batch steps too; `unnest` and `pivot` replace the view's columns, so they go last (and no `sort` step before them). If a task fails, the batch's tasks
 are removed and the error names `steps[i]`.
 
 Prefer a typed `view transform <operation>` command. Its schema is the

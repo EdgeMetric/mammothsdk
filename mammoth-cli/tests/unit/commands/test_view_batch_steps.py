@@ -5,13 +5,16 @@ The steps are bound before anything is sent, so these need no service.
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from mammoth import CopySpec, SplitColumnSpec, View
 
-from mammoth_cli.commands.view_ops import _batch_steps, _build_batch
+from mammoth_cli.commands.view_ops import _batch_steps, _build_batch, _created_columns
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.services.sdk_service import add_columns_to_view
 
 _BAD_OPERATOR = {"column": "Status", "operator": "NOT_EQUALS", "value": "x"}
 
@@ -71,3 +74,72 @@ def test_a_step_that_replaces_the_columns_must_be_last(op: str) -> None:
         _batch_steps({"steps": [{"op": op, "input": {}}, {"op": "limit-rows", "input": {"n": 3}}]})
     assert excinfo.value.message.startswith(f"steps[0] ({op})")
     assert excinfo.value.details == {"step": 0, "op": op}
+
+
+def _view() -> View:
+    metadata = [
+        {"internal_name": "column_actors", "display_name": "Top Actors", "type": "TEXT"},
+        {"internal_name": "column_year", "display_name": "Year", "type": "NUMERIC"},
+    ]
+    return View(None, {"id": 1, "metadata": metadata}, 2)
+
+
+def _built(view: View, method: str, **kwargs: Any) -> dict[str, Any]:
+    with view.build_only():
+        return asyncio.run(getattr(view, method)(**kwargs))["task_spec"]
+
+
+def test_split_then_trim_the_split_columns_then_unnest_passes_validation() -> None:
+    view = _view()
+    split = _built(
+        view,
+        "split_column",
+        column="Top Actors",
+        delimiter=",",
+        new_columns=[SplitColumnSpec("Actor 1"), SplitColumnSpec("Actor 2")],
+    )
+    steps = [
+        {"op": "split", "input": {}},
+        {"op": "text", "input": {}},
+        {"op": "unnest", "input": {}},
+    ]
+    assert _batch_steps({"steps": steps}) == steps
+
+    add_columns_to_view(view, _created_columns(split))
+    trim = _built(view, "text_transform", columns=["Actor 1", "Actor 2"], trim=True)
+    unnest = _built(view, "unnest", columns=["Actor 1", "Actor 2"])
+
+    assert trim["TEXT_TRANSFORM"]
+    assert unnest["UNNEST"]["COLUMNS"][0]["COLUMN"] == split["SPLIT"]["AS"][0]["INTERNAL_NAME"]
+
+
+def test_a_column_a_split_creates_is_unknown_to_a_view_that_was_not_told() -> None:
+    view = _view()
+    split = _built(
+        view,
+        "split_column",
+        column="Top Actors",
+        delimiter=",",
+        new_columns=[SplitColumnSpec("A1")],
+    )
+    assert _created_columns(split)[0]["COLUMN"] == "A1"
+
+    with pytest.raises(Exception, match="A1"):
+        _built(view, "text_transform", columns=["A1"], trim=True)
+
+
+def test_a_copy_columns_new_column_is_carried_to_later_steps() -> None:
+    view = _view()
+    copy = _built(view, "copy_columns", copies=[CopySpec("Year", as_name="Year 2")])
+    add_columns_to_view(view, _created_columns(copy))
+
+    assert view.columns["Year 2"] == _created_columns(copy)[0]["INTERNAL_NAME"]
+    assert view.column_types["Year 2"] == _created_columns(copy)[0]["TYPE"]
+
+
+@pytest.mark.parametrize("last", ["unnest", "pivot"])
+def test_a_sort_before_a_step_that_replaces_the_columns_is_refused(last: str) -> None:
+    steps = [{"op": "sort", "input": {"order_by": [["A", "ASC"]]}}, {"op": last, "input": {}}]
+    with pytest.raises(CliError) as excinfo:
+        _batch_steps({"steps": steps})
+    assert excinfo.value.message.startswith("steps[0] (sort)")
