@@ -1378,7 +1378,7 @@ def _packaged_row_count(file_path: str) -> int | None:
                     # csv, not line counting: a quoted value may hold a line break.
                     text = io.TextIOWrapper(raw, encoding="utf-8", errors="replace", newline="")
                     sizes.append(sum(1 for _ in csv.reader(text)) - 1)
-    except zipfile.BadZipFile, OSError, csv.Error:
+    except (zipfile.BadZipFile, OSError, csv.Error):
         return None
     return max(sizes) if sizes and max(sizes) >= 0 else None
 
