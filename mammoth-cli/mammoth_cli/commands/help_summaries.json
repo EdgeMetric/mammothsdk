@@ -689,7 +689,7 @@
   "view.transform.increment-date": "Increment a date column. 'column'/'delta' required.",
   "view.transform.join": "Join another view. 'foreign_view'/'join_type'/'on'/'select' required.",
   "view.transform.json-extract": "Extract fields from a JSON column. 'column' is required.",
-  "view.transform.limit-rows": "Limit the row count. 'n' is required.",
+  "view.transform.limit-rows": "Limit the row count. 'n' (or its alias 'limit') is required.",
   "view.transform.lookup": "Look up values from another view. 'source'/'lookup_view_id'/'key'/",
   "view.transform.math": "Evaluate a math expression into a column. 'expression' is required.",
   "view.transform.pivot": "Pivot with aggregations. 'group_by'/'aggregations' required.",

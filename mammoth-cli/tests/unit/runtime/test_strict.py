@@ -309,3 +309,65 @@ def test_surplus_file_paths_name_the_files_input_field() -> None:
     assert excinfo.value.code == "unexpected_argument"
     assert '"files"' in (excinfo.value.hint or "")
     assert "--input" in (excinfo.value.hint or "")
+
+
+# --- input aliases: sort_by -> order_by, limit -> n ------------------------
+
+_SORT = "view.transform.sort"
+_LIMIT_ROWS = "view.transform.limit-rows"
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        [["Revenue", "DESC"], ["Region", "ASC"]],
+        ["Revenue desc", "Region"],
+        ["Revenue DESC", "Region asc"],
+    ],
+)
+def test_sort_by_in_any_entry_form_is_the_canonical_order_by(entries: list[object]) -> None:
+    document = {"sort_by": entries}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Revenue", "DESC"], ["Region", "ASC"]]}
+
+
+def test_a_string_sort_entry_keeps_a_column_name_with_spaces() -> None:
+    document = {"order_by": ["Net Revenue desc", "Sales Amount"]}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Net Revenue", "DESC"], ["Sales Amount", "ASC"]]}
+
+
+def test_sort_leaves_an_unknown_direction_word_in_a_pair_for_the_sort_to_refuse() -> None:
+    document = {"sort_by": [["Revenue", "sideways"]]}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Revenue", "sideways"]]}
+
+
+def test_limit_is_the_alias_of_n_for_limit_rows() -> None:
+    document = {"limit": 5}
+
+    validate_input_fields(_LIMIT_ROWS, document)
+
+    assert document == {"n": 5}
+
+
+def test_limit_rows_refuses_n_and_limit_together() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(_LIMIT_ROWS, {"n": 5, "limit": 3})
+    assert excinfo.value.exit_status == EXIT_USAGE
+    assert "'n'" in excinfo.value.message and "'limit'" in excinfo.value.message
+
+
+@pytest.mark.parametrize("key", ["sort_by", "order_by"])
+def test_a_single_string_sort_is_a_one_entry_list(key: str) -> None:
+    document = {key: "Revenue desc"}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Revenue", "DESC"]]}

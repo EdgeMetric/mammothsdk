@@ -428,6 +428,29 @@ def _global_option_flags() -> tuple[frozenset[str], frozenset[str]]:
     return frozenset(every), frozenset(valued)
 
 
+def missing_argument_hint(tokens: Sequence[str]) -> str:
+    """The command's usage line and runnable example, for a ``missing_argument`` error.
+
+    The command is the longest run of leading words that names one; with none, the
+    generic pointer to the schema.
+    """
+    generic = "Check the command schema with 'mammoth schema get'."
+    path_to_command, _ = _command_tree()
+    words = [token for token in tokens if not token.startswith("-")]
+    for length in range(len(words), 0, -1):
+        command_id = path_to_command.get(tuple(words[:length]))
+        if command_id is None:
+            continue
+        slots = " ".join(
+            spec.metavar if spec.required else f"[{spec.metavar}]"
+            for spec in resolve_positionals(command_id)
+        )
+        usage = " ".join(part for part in ("mammoth", *words[:length], slots) if part)
+        example = (command_by_id(command_id) or {}).get("agent_example")
+        return f"Usage: {usage}." + (f" Example: {example}" if example else "")
+    return generic
+
+
 def _corrected_command(tokens: Sequence[str]) -> str | None:
     """Rebuild an invocation with leading global options moved after the command.
 
@@ -747,7 +770,7 @@ class _EnvelopeGroup(TyperGroup):
                         code="missing_argument",
                         message=error_message,
                         exit_status=EXIT_USAGE,
-                        hint="Check the command schema with 'mammoth schema get'.",
+                        hint=missing_argument_hint(tokens),
                     )
                 elif isinstance(error, _typer_click_exceptions.NoSuchOption):
                     option = getattr(error, "option_name", None) or "unknown"
@@ -779,6 +802,8 @@ class _EnvelopeGroup(TyperGroup):
             executor.emit_error(report, machine=True)
         elif report is None:
             error.show()
+            if is_missing_parameter:
+                typer.echo(missing_argument_hint(tokens), err=True)
         else:
             # A no-subcommand error arrives with the help text already on
             # screen, so repeating "run --help" below it would be noise.

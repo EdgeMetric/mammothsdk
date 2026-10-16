@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.91"
+version = "2.2.92"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },

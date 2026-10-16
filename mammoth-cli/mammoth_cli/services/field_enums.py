@@ -88,7 +88,8 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
 #: The ``view transform`` ops ``view transform batch`` takes: each one's handler only binds its
 #: input and calls one View method, so the batch binds and builds exactly as the single command
 #: does. The rest need their own checks (an impact read, a draft apply, a new dataset) or name a
-#: column an earlier step creates.
+#: column an earlier step creates. ``split`` only adds columns, as ``copy-columns`` does; ``unnest``
+#: and ``pivot`` replace the view's columns, so they are the batch's last step (``BATCH_LAST_OPS``).
 BATCH_OPS: tuple[str, ...] = (
     "filter",
     "sort",
@@ -102,7 +103,14 @@ BATCH_OPS: tuple[str, ...] = (
     "extract-date",
     "increment-date",
     "copy-columns",
+    "split",
+    "unnest",
+    "pivot",
 )
+
+#: The batch ops that replace the view's columns: a later step is built against columns that
+#: no longer exist, so they may only be the last step.
+BATCH_LAST_OPS: tuple[str, ...] = ("unnest", "pivot")
 
 #: The server's ``data_pull_file`` values for a cloud file import; the first is the app default.
 DATA_PULL_FILE_VALUES: tuple[str, ...] = ("Pull same file", "Pull next file based on name pattern")

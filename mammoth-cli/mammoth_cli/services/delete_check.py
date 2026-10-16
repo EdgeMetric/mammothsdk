@@ -45,8 +45,10 @@ def find_dependents(response: Any, resource_id: int) -> Any:
 
 
 #: Backend codes a get answers for an id that no longer exists, besides a 404: the
-#: dataset get route answers ``400 4DSET001`` for a deleted dataset.
-_GONE_BACKEND_CODES = frozenset({"4DSET001"})
+#: dataset get route answers ``400 4DSET001`` for a deleted dataset, and the dataview get
+#: ``400 4DTVW019`` for a deleted view (it raises it when the view record comes back empty,
+#: apiv2 dataview controller ``get``).
+_GONE_BACKEND_CODES = frozenset({"4DSET001", "4DTVW019"})
 
 
 def _is_gone(error: CliError) -> bool:

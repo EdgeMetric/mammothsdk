@@ -59,9 +59,10 @@ def with_dataset_health(data: Any) -> Any:
 
 
 def _is_bare_name_row(record: dict[str, Any]) -> bool:
-    """A ``names: true`` row is just ``{id, name}``: it carries no status to judge, and
-    an ``unknown`` entry per row would be several times the size of the names."""
-    return set(record) <= {"id", "name"}
+    """A ``names: true`` row is just ``{id, name}`` (plus its project when listed across
+    projects): it carries no status to judge, and an ``unknown`` entry per row would be
+    several times the size of the names."""
+    return set(record) <= {"id", "name", "project_id", "project_name"}
 
 
 def _dataset_records(value: Any, depth: int, listed: bool) -> Iterator[dict[str, Any]]:

@@ -35,7 +35,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
-from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
 from mammoth_cli.services.field_enums import DATA_PULL_FILE_VALUES, allowed_values_text
 from mammoth_cli.services.listing import (
@@ -761,17 +761,22 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     datasets" never needs paging: read ``total`` with the first page's newest names.
     For a list of names (e.g. "which files can I see?") pass ``names: true``: ONE call
     returns up to 500 bare ``{id, name}`` rows, newest first, with ``total`` and ``more``.
+    With no project set it returns ``{project_id, project_name, id, name}`` rows from every
+    project the caller can open, from one workspace search (the newest 500 at most).
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
     """
-    project_id = require_project(invocation)
     document = invocation.load_input() or {}
+    name = document.get("name")
+    wants_names = document.get("names") and not (isinstance(name, str) and name.strip())
+    if wants_names and resolved_project(invocation) is None:
+        return _dataset_names_everywhere(invocation)
+    project_id = require_project(invocation)
     _validate_paging(document)
     kwargs: dict[str, Any] = {"project_id": project_id}
     _forward_optional(document, kwargs, ("limit", "offset", "sort"))
-    name = document.get("name")
-    if document.get("names") and not (isinstance(name, str) and name.strip()):
+    if wants_names:
         return _dataset_names(invocation, project_id, document)
     if isinstance(name, str) and name.strip():
         return _dataset_name_search(invocation, project_id, name.strip(), document)
@@ -815,6 +820,42 @@ def _dataset_names(
             '--input \'{"name": "<text>"}\' to find the rest.'
         )
     return result, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _dataset_names_everywhere(invocation: Invocation) -> HandlerResult:
+    """``dataset list`` with ``names`` and no project: the names of every reachable project.
+
+    One workspace search (100 hits a page, the route's cap) lists the datasets of the
+    projects the caller can open, under the same access rules as ``project list``; one
+    ``project list`` read supplies the project names. Capped at ``_SEARCH_PAGES`` pages.
+    """
+    with open_service(invocation) as (service, auth):
+        hits, cut = search_hits(service, "datasource", "", fields="minimal")
+        names = {p.get("id"): p.get("name") for p in _visible_projects(service)}
+    rows = [
+        {
+            "project_id": hit["project_id"],
+            "project_name": names[hit["project_id"]],
+            "id": hit["object_id"],
+            "name": hit.get("name"),
+        }
+        for hit in hits
+        if hit.get("project_id") in names
+    ]
+    kept, _cut = fit_budget(rows[:NAMES_MAX_ROWS], budget=NAMES_DATA_BUDGET)
+    result: dict[str, Any] = {
+        "datasets": kept,
+        "shown": len(kept),
+        "total": len(rows),
+        "projects": len({row["project_id"] for row in rows}),
+    }
+    if cut or len(kept) < len(rows):
+        result["more"] = True
+        result["note"] = (
+            f"Only the newest {len(kept)} names were read; pass --project to list one "
+            "project's names, or name to find one."
+        )
+    return result, _meta(invocation, auth.workspace_id, None)
 
 
 def _dataset_total(service: Any, project_id: int, page: dict[str, Any], offset: int) -> int:

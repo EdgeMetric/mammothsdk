@@ -11,8 +11,6 @@ from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from typing import Any
 
-from mammoth_cli.runtime import embedded
-
 #: The services one command run has opened so far, by the options that distinguish them;
 #: ``None`` outside :func:`shared_services`.
 SHARED: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("SHARED", default=None)
@@ -28,7 +26,7 @@ def shared_services() -> Iterator[None]:
     open builds the service and the later ones, whose reads follow the write, take the
     same one over its warm connection. The services are closed when the block ends.
     """
-    if SHARED.get() is not None or embedded.active():
+    if SHARED.get() is not None:
         yield
         return
     opened: dict[tuple[Any, ...], Any] = {}

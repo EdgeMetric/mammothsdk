@@ -306,6 +306,36 @@ def _contains_nonfinite(value: Any) -> bool:
     return False
 
 
+#: Characters of the input shown on each side of the place the parser stopped.
+_EXCERPT_RADIUS = 20
+
+
+def _excerpt(text: str, position: int) -> str:
+    """About 40 characters of ``text`` around ``position``, on one line."""
+    start = max(0, position - _EXCERPT_RADIUS)
+    return " ".join(text[start : position + _EXCERPT_RADIUS].split())
+
+
+def _where_it_broke(text: str, exc: Exception) -> dict[str, Any]:
+    """What the parser said and where: its message, line, column and the text there."""
+    if isinstance(exc, json.JSONDecodeError):
+        return {
+            "parser_error": exc.msg,
+            "line": exc.lineno,
+            "column": exc.colno,
+            "near": _excerpt(text, exc.pos),
+        }
+    mark = getattr(exc, "problem_mark", None)
+    if mark is not None:
+        return {
+            "parser_error": getattr(exc, "problem", None) or str(exc),
+            "line": mark.line + 1,
+            "column": mark.column + 1,
+            "near": _excerpt(text, mark.index),
+        }
+    return {"parser_error": str(exc) or type(exc).__name__}
+
+
 def _parse(text: str, fmt: str) -> Any:
     try:
         if fmt == _JSON_FORMAT:
@@ -337,11 +367,15 @@ def _parse(text: str, fmt: str) -> Any:
             hint="Use a finite JSON number instead of NaN or Infinity.",
         ) from exc
     except (json.JSONDecodeError, yaml.YAMLError, RecursionError) as exc:
+        where = _where_it_broke(text, exc)
+        place = f" at line {where['line']} column {where['column']}" if "line" in where else ""
         raise CliError(
             code=CODE_INVALID_INPUT_DOCUMENT,
-            message="The input document is not valid.",
+            message=f"The input document is not valid {fmt}: {where['parser_error']}{place}.",
             exit_status=EXIT_USAGE,
-            hint=f"Provide a well-formed {fmt} object.",
+            hint=f"Provide a well-formed {fmt} object."
+            + (f" The parser stopped near: {where['near']}" if "near" in where else ""),
+            details=where,
         ) from exc
 
 
@@ -380,12 +414,16 @@ def load_input_document(input_file: str | None, input_format: str | None) -> dic
     _require_inline_when_embedded(input_file)
     input_file = _strip_at_prefix(input_file)
     fmt = _resolve_format(input_file, input_format)
-    document = _parse(_read_text(input_file), fmt)
+    text = _read_text(input_file)
+    document = _parse(text, fmt)
     if not isinstance(document, dict):
         raise CliError(
             code=CODE_INVALID_INPUT_DOCUMENT,
-            message="The input document must be a mapping of fields.",
+            message=(
+                f"The input document must be a mapping of fields, not {type(document).__name__}."
+            ),
             exit_status=EXIT_USAGE,
             hint="Wrap the request fields in a top-level object.",
+            details={"found": type(document).__name__, "near": _excerpt(text, 0)},
         )
     return document

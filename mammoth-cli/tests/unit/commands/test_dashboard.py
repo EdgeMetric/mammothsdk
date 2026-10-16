@@ -613,6 +613,7 @@ def test_share_proceeds_with_yes_and_forwards_users(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(tmp_path, {"type_of_auth": "mammoth", "users": [{"email": "a@example.com"}]})
+    fake_service.responses[_GET] = {"id": 7, "was_published": True}
     dashboard_cmd.dashboard_share(
         _inv("dashboard.share", extra_args=["7"], input_file=doc, yes=True)
     )
@@ -1091,3 +1092,38 @@ def test_bi_export_refuses_an_existing_file_unless_overwrite(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc, overwrite=True)
     )
     assert data["output_path"] == str(destination)
+
+
+# --- dashboard share: the server's publish precondition, before the dry-run ----------
+
+
+@pytest.mark.parametrize(
+    "users",
+    [
+        [{"email": "a@example.com"}],
+        [{"email": "a@example.com", "role": "dashboard_viewer", "shared": "true"}],
+        [{"email": "a@example.com", "role": "dashboard_editor"}, {"email": "b@example.com"}],
+    ],
+)
+def test_sharing_a_viewer_before_publish_is_refused_as_the_server_does(
+    users: list[dict[str, str]],
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.refuse_viewer_share_before_publish(762, "mammoth", users)
+    assert excinfo.value.code == "dashboard_not_published"
+    assert excinfo.value.hint is not None and "publish-presentation" in excinfo.value.hint
+
+
+@pytest.mark.parametrize(
+    ("type_of_auth", "users"),
+    [
+        ("public", None),
+        ("mammoth", [{"email": "a@example.com", "role": "dashboard_editor"}]),
+        ("mammoth", [{"email": "a@example.com", "shared": False}]),
+        ("mammoth", None),
+    ],
+)
+def test_a_share_the_server_accepts_before_publish_is_not_refused(
+    type_of_auth: str, users: list[dict[str, object]] | None
+) -> None:
+    dashboard_cmd.refuse_viewer_share_before_publish(762, type_of_auth, users)

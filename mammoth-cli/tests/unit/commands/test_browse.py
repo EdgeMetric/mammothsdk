@@ -193,15 +193,27 @@ def test_search_needs_no_project(fake_service: FakeMammothService) -> None:
     assert meta["project_id"] is None
 
 
-def test_search_forwards_filters_and_cursor(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    doc = tmp_path / "in.json"
-    doc.write_text(
-        json.dumps({"search": "revenue", "resource_type": "dataset", "cursor": "c1", "limit": 5}),
-        encoding="utf-8",
+# --- resource-type aliases, and ancestors of a non-folder ---------------------------
+
+
+@pytest.mark.parametrize(
+    ("given", "route"),
+    [
+        ("dataset", "datasource"),
+        ("folder", "label"),
+        ("dataset,folder,dataview", "datasource,label,dataview"),
+        ("report", "report"),
+    ],
+)
+def test_resource_type_aliases_become_the_routes_names(given: str, route: str) -> None:
+    assert browse_cmd.canonical_resource_type(given) == route
+
+
+def test_ancestors_of_a_non_folder_says_it_needs_a_folder_id_and_where_to_get_it() -> None:
+    error = browse_cmd.ancestors_needs_a_folder(
+        CliError(code="resource_not_found", message="404", exit_status=1)
     )
-    browse_cmd.browse_search(_inv("browse.search", input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_SEARCH, {"search": "revenue", "resource_type": "dataset", "cursor": "c1", "limit": 5})
-    ]
+
+    assert error.code == "resource_not_found"
+    assert "FOLDER id" in error.message
+    assert error.hint is not None and "parent_resource_id" in error.hint

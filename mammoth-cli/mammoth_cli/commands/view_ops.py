@@ -68,7 +68,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
-from mammoth_cli.runtime.strict import validate_input_fields
+from mammoth_cli.runtime.strict import apply_input_aliases, validate_input_fields
 from mammoth_cli.runtime.verify import export_stamps, export_stamps_read
 from mammoth_cli.services.column_type_guard import (
     DATE,
@@ -80,8 +80,9 @@ from mammoth_cli.services.column_type_guard import (
 from mammoth_cli.services.command_contract import bind_command_inputs, resolve_command_contract
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
-from mammoth_cli.services.field_enums import BATCH_OPS, allowed_values_text
+from mammoth_cli.services.field_enums import BATCH_LAST_OPS, BATCH_OPS, allowed_values_text
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.suggest import nearest_one
@@ -484,16 +485,27 @@ def _dispatch_view(
             data = {key: value for key, value in data.items() if key != "message"}
             data["status"] = "done"
             data["draft_applied"] = True
+        settled = _settled_write(service, data) if dataset_id is not None else None
+        if settled is not None:
+            _forget_reads(service)  # the state read-back must see the view as the write left it
         if after is not None and dataset_id is not None:
-            run, run_error = (
-                wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
-                if task_ids_before is not None and not _is_staged(data)
-                else (None, None)
-            )
+            if settled is not None:
+                run: dict[str, Any] | None = {
+                    "task_id": settled["task_id"],
+                    "transform_status": settled["task_run_status"],
+                }
+                run_error = None
+            else:
+                run, run_error = (
+                    wait_for_added_task_run(service, int(dataset_id), view_id, task_ids_before)
+                    if task_ids_before is not None and not _is_staged(data)
+                    else (None, None)
+                )
             reject_unrun_task_with_reference_errors(service, view_id, dataset_id, run_error)
             sdk_ready = sdk_saw_pipeline_ready(data)
             data = after(service, int(dataset_id), state, data)
-            _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
+            if settled is None:
+                _flag_unsettled_pipeline(service, int(dataset_id), view_id, data, sdk_ready)
             if isinstance(data, dict) and run is not None:
                 data["run"] = run
                 if run_error is not None:
@@ -508,8 +520,12 @@ def _dispatch_view(
             # recomputing and read back no row_count at all; wait for it to
             # settle (bounded) before trusting this one. A staged draft never
             # ran the pipeline, so there is nothing to wait for or read.
-            rows_after, pipeline_error = wait_for_view_row_count(
-                service, int(dataset_id), view_id, invocation.project, write_result=data
+            rows_after, pipeline_error = (
+                (settled["row_count"], None)
+                if settled is not None
+                else wait_for_view_row_count(
+                    service, int(dataset_id), view_id, invocation.project, write_result=data
+                )
             )
             data["row_check"] = {"rows_before": rows_before, "rows_after": rows_after}
             if reduces_rows and not invocation.standing_noop:
@@ -547,6 +563,8 @@ _RUN_FAILED_STATUSES = _RUN_OVER_STATUSES - {_RUN_DONE_STATUS}
 #: Bounded wait for the run of a task just added: it starts after the add returns.
 _RUN_ATTEMPTS = 40
 _RUN_RETRY_S = 0.5
+#: Most seconds the wait for a task's run sleeps in all.
+_RUN_WAIT_S = _RUN_ATTEMPTS * _RUN_RETRY_S
 
 
 def _tasks(service: Any, dataset_id: int, view_id: int) -> list[dict[str, Any]]:
@@ -603,7 +621,7 @@ def wait_for_added_task_run(
     else the pipeline_error that keeps the write from reading verified.
     """
     run: dict[str, Any] = {}
-    for _ in range(_RUN_ATTEMPTS):
+    for delay in poll_delays(_RUN_WAIT_S, _RUN_RETRY_S):
         added = [
             task
             for task in _tasks(service, dataset_id, view_id)
@@ -621,7 +639,7 @@ def wait_for_added_task_run(
                 "task_id": run["task_id"],
                 "transform_status": status,
             }
-        time.sleep(_RUN_RETRY_S)
+        time.sleep(delay)
     return run, {
         "execution_state": UNFINISHED_STATE,
         "task_id": run.get("task_id"),
@@ -630,6 +648,44 @@ def wait_for_added_task_run(
             f"(transform_status {run.get('transform_status')})"
         ),
     }
+
+
+def clean_write_result(job_response: Any) -> dict[str, Any] | None:
+    """The ``write_result`` of a run job when it says the write ran and settled cleanly.
+
+    A newer server adds it to the run job's response. ``None`` (read the task, the
+    pipeline and the row count as before) when it is absent, or says anything but a
+    finished task on a ``ready`` pipeline with a row count: those reads name the failure.
+    """
+    result = job_response.get("write_result") if isinstance(job_response, dict) else None
+    if (
+        isinstance(result, dict)
+        and result.get("task_id") is not None
+        and result.get("task_run_status") == _RUN_DONE_STATUS
+        and result.get("pipeline_state") == "ready"
+        and result.get("row_count") is not None
+    ):
+        return result
+    return None
+
+
+def _settled_write(service: Any, data: Any) -> dict[str, Any] | None:
+    """The clean ``write_result`` of the run job a write names (``future_id``), read once."""
+    future_id = data.get("future_id") if isinstance(data, dict) else None
+    if not isinstance(future_id, int) or _is_staged(data):
+        return None
+    try:
+        job = service.wait_if_job({"future_id": future_id})
+    except CliError:
+        return None  # the reads that follow report the failed or unfinished job
+    return clean_write_result(job)
+
+
+def _forget_reads(service: Any) -> None:
+    """Drop the reads made ahead of a write (see :mod:`mammoth_cli.services.read_memo`)."""
+    memo = getattr(service, "memo", None)
+    if memo is not None:
+        memo.clear()
 
 
 def _is_staged(data: Any) -> bool:
@@ -2059,7 +2115,7 @@ def view_transform_json_extract(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
-    """Limit the row count. ``n`` is required."""
+    """Limit the row count. ``n`` (or its alias ``limit``) is required."""
     view_id = _view_id(invocation)
     document = invocation.load_input()
     _require_field(document, "n")
@@ -2079,7 +2135,10 @@ def view_transform_rename_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_sort(invocation: Invocation) -> HandlerResult:
-    """Set the view's row order (a display setting, not a task). ``order_by`` is required."""
+    """Set the view's row order (a display setting, not a task). ``order_by`` is required.
+
+    ``sort_by`` is accepted as its alias.
+    """
     view_id = _view_id(invocation)
     document = invocation.load_input()
     _require_field(document, "order_by")
@@ -2342,9 +2401,9 @@ _TASK_DELETE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.delete_task"
 CODE_BATCH_STEP_FAILED = "batch_step_failed"
 CODE_UNKNOWN_COLUMN = "unknown_column"
 _BATCH_COLUMN_HINT = (
-    "A batch is built against the view's columns as they are now, so a step cannot use a "
-    "column an earlier step of the same batch creates. Run the steps that create columns "
-    "first (their own `view transform` command or a batch), then batch the rest."
+    "A batch is built against the view's columns plus the ones the earlier steps of the batch "
+    "add (split, copy-columns, and any new_column of substring, extract-date, increment-date). "
+    "A column in neither is unknown: check its name, or run the step that creates it first."
 )
 
 
@@ -2357,6 +2416,9 @@ class _BatchPlan:
     task_steps: list[tuple[int, str]] = dataclass_field(default_factory=list)
     #: The bound ``sort`` inputs, applied after the tasks have run.
     sorts: list[dict[str, Any]] = dataclass_field(default_factory=list)
+    #: The columns the tasks add; the sort is built after they ran but on metadata that may not
+    #: list them yet.
+    created: list[dict[str, str]] = dataclass_field(default_factory=list)
 
 
 def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -2386,7 +2448,7 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
                 exit_status=EXIT_USAGE,
                 hint=(
                     f"Allowed ops: {allowed_values_text(_BATCH_OPS)}. Run any other "
-                    "transform (pivot, join, math, ...) as its own `view transform` command."
+                    "transform (join, math, ...) as its own `view transform` command."
                 ),
                 details={
                     "step": index,
@@ -2394,6 +2456,32 @@ def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
                     "allowed": list(_BATCH_OPS),
                     "did_you_mean": near,
                 },
+            )
+        if step["op"] == _BATCH_SORT_OP and any(
+            isinstance(later, dict) and later.get("op") in BATCH_LAST_OPS
+            for later in steps[index + 1 :]
+        ):
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"steps[{index}] (sort) comes before a step that replaces the view's columns, "
+                    "so its columns would no longer exist when the sort is applied."
+                ),
+                exit_status=EXIT_USAGE,
+                hint="Run the sort after the batch, as its own `view transform sort` command.",
+                details={"step": index, "op": _BATCH_SORT_OP},
+            )
+        if step["op"] in BATCH_LAST_OPS and index != len(steps) - 1:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=(
+                    f"steps[{index}] ({step['op']}) replaces the view's columns, so it must be "
+                    "the last step of a batch."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=f"Move steps[{index}] to the end, or run the steps after it as their own "
+                "`view transform` commands.",
+                details={"step": index, "op": step["op"]},
             )
     return steps
 
@@ -2412,17 +2500,34 @@ def _step_error(index: int, op: str, error: CliError) -> CliError:
     )
 
 
+def _created_columns(task_spec: dict[str, Any]) -> list[dict[str, str]]:
+    """The ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built task adds, from its ``AS`` outputs.
+
+    ``AS`` is one column (substring, extract-date, increment-date), a list of them (split) or
+    sits on each item of the task's list (copy-columns).
+    """
+    columns: list[dict[str, str]] = []
+    for body in task_spec.values():
+        for item in body if isinstance(body, list) else [body]:
+            made = item.get("AS") if isinstance(item, dict) else None
+            if made is not None:
+                columns.extend(made if isinstance(made, list) else [made])
+    return columns
+
+
 def _build_batch(
     invocation: Invocation, service: Any, view_id: int, dataset_id: int, steps: list[dict[str, Any]]
 ) -> _BatchPlan:
     """Bind and build every step against the view's current columns; send nothing."""
     plan = _BatchPlan()
+    created = plan.created
     for index, step in enumerate(steps):
         op = step["op"]
         command_id = f"view.transform.{op}"
         contract = resolve_command_contract(command_id)
         assert contract is not None
         try:
+            apply_input_aliases(command_id, step["input"])
             for spec in contract.fields:
                 if spec.required:
                     _require_field(step["input"], spec.name)
@@ -2438,7 +2543,12 @@ def _build_batch(
         method = str((command_by_id(command_id) or {})["sdk_symbol"]).rsplit(".", 1)[-1]
         try:
             built = service.call_view(
-                view_id, method, dataset_id=dataset_id, build_only=True, **kwargs
+                view_id,
+                method,
+                dataset_id=dataset_id,
+                build_only=True,
+                added_columns=created,
+                **kwargs,
             )
         except CliError as exc:
             raise _step_error(index, op, exc) from exc
@@ -2446,6 +2556,7 @@ def _build_batch(
             plan.sorts.append(kwargs)
         else:
             plan.specs.append(built["task_spec"])
+            created.extend(_created_columns(built["task_spec"]))
             plan.task_steps.append((index, op))
     return plan
 
@@ -2461,7 +2572,7 @@ def wait_for_added_tasks_run(
     ``count`` may be listed.
     """
     runs: list[dict[str, Any]] = []
-    for _ in range(_RUN_ATTEMPTS):
+    for delay in poll_delays(_RUN_WAIT_S, _RUN_RETRY_S):
         added = sorted(
             (t for t in _tasks(service, dataset_id, view_id) if t.get("id") not in task_ids_before),
             key=lambda task: task.get("id") or 0,
@@ -2475,7 +2586,7 @@ def wait_for_added_tasks_run(
             return runs
         if len(runs) >= count and all(status == _RUN_DONE_STATUS for status in statuses):
             return runs
-        time.sleep(_RUN_RETRY_S)
+        time.sleep(delay)
     return runs
 
 
@@ -2591,7 +2702,11 @@ def _apply_batch(
     try:
         for kwargs in plan.sorts:
             data["sort"] = service.call_view(
-                view_id, _SORT_METHOD, dataset_id=dataset_id, **kwargs
+                view_id,
+                _SORT_METHOD,
+                dataset_id=dataset_id,
+                added_columns=plan.created,
+                **kwargs,
             )["sort"]
     except CliError as exc:
         raise _batch_failure(service, dataset_id, view_id, task_ids_before, plan, exc) from exc
