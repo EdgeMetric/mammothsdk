@@ -82,6 +82,7 @@ from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.delete_check import ensure_deleted
 from mammoth_cli.services.field_enums import BATCH_LAST_OPS, BATCH_OPS, allowed_values_text
 from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
+from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.sql_check import check_sql_binds
 from mammoth_cli.services.suggest import nearest_one
@@ -547,6 +548,8 @@ _RUN_FAILED_STATUSES = _RUN_OVER_STATUSES - {_RUN_DONE_STATUS}
 #: Bounded wait for the run of a task just added: it starts after the add returns.
 _RUN_ATTEMPTS = 40
 _RUN_RETRY_S = 0.5
+#: Most seconds the wait for a task's run sleeps in all.
+_RUN_WAIT_S = _RUN_ATTEMPTS * _RUN_RETRY_S
 
 
 def _tasks(service: Any, dataset_id: int, view_id: int) -> list[dict[str, Any]]:
@@ -603,7 +606,7 @@ def wait_for_added_task_run(
     else the pipeline_error that keeps the write from reading verified.
     """
     run: dict[str, Any] = {}
-    for _ in range(_RUN_ATTEMPTS):
+    for delay in poll_delays(_RUN_WAIT_S, _RUN_RETRY_S):
         added = [
             task
             for task in _tasks(service, dataset_id, view_id)
@@ -621,7 +624,7 @@ def wait_for_added_task_run(
                 "task_id": run["task_id"],
                 "transform_status": status,
             }
-        time.sleep(_RUN_RETRY_S)
+        time.sleep(delay)
     return run, {
         "execution_state": UNFINISHED_STATE,
         "task_id": run.get("task_id"),
@@ -2516,7 +2519,7 @@ def wait_for_added_tasks_run(
     ``count`` may be listed.
     """
     runs: list[dict[str, Any]] = []
-    for _ in range(_RUN_ATTEMPTS):
+    for delay in poll_delays(_RUN_WAIT_S, _RUN_RETRY_S):
         added = sorted(
             (t for t in _tasks(service, dataset_id, view_id) if t.get("id") not in task_ids_before),
             key=lambda task: task.get("id") or 0,
@@ -2530,7 +2533,7 @@ def wait_for_added_tasks_run(
             return runs
         if len(runs) >= count and all(status == _RUN_DONE_STATUS for status in statuses):
             return runs
-        time.sleep(_RUN_RETRY_S)
+        time.sleep(delay)
     return runs
 
 

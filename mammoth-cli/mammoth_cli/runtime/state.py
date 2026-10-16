@@ -25,6 +25,7 @@ from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.normalize import Revealed
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.positionals import resolve_positionals
 
 #: Total JSON size a ``state`` block may reach before trimming kicks in.
@@ -59,6 +60,8 @@ _STAGED_DETAIL = (
 _STEP_NOT_RUN_YET = "no data for pipeline step"
 _DATA_READ_ATTEMPTS = 6
 _DATA_READ_RETRY_S = 2.0
+#: Most seconds a data read sleeps in all while a step has not run yet.
+_DATA_READ_WAIT_S = (_DATA_READ_ATTEMPTS - 1) * _DATA_READ_RETRY_S
 
 
 def with_state(invocation: Invocation, data: Any) -> Any:
@@ -477,14 +480,15 @@ def _read_data_once_run(view_ids: dict[str, Any], base: Invocation) -> tuple[Any
     fails with "no data for pipeline step N ... yet" though the step runs a
     moment later (FB-18, FB-22). Any other failure is raised at once.
     """
-    for attempt in range(_DATA_READ_ATTEMPTS):
+    delays = poll_delays(_DATA_READ_WAIT_S, _DATA_READ_RETRY_S)
+    while True:
         try:
             return _call_read_with(_VIEW_DATA_COMMAND, view_ids, base)
         except CliError as exc:
-            if _STEP_NOT_RUN_YET not in exc.message or attempt == _DATA_READ_ATTEMPTS - 1:
+            delay = next(delays, None)
+            if _STEP_NOT_RUN_YET not in exc.message or delay is None:
                 raise
-            time.sleep(_DATA_READ_RETRY_S)
-    raise AssertionError("unreachable")
+            time.sleep(delay)
 
 
 def _staged_state(
@@ -570,13 +574,13 @@ def _discover_view_id(dataset_id: int, base: Invocation) -> int:
 
     A dataset just created has no view for a moment; polling beats reporting it unreadable.
     """
-    for attempt in range(_DATA_READ_ATTEMPTS):
+    for delay in (*poll_delays(_DATA_READ_WAIT_S, _DATA_READ_RETRY_S), None):
         listing = _call_read(_VIEW_LIST_COMMAND, {"dataset_id": dataset_id}, base)
         views = listing.get("dataviews") if isinstance(listing, dict) else None
         if isinstance(views, list) and views and isinstance(views[0], dict):
             break
-        if attempt < _DATA_READ_ATTEMPTS - 1:
-            time.sleep(_DATA_READ_RETRY_S)
+        if delay is not None:
+            time.sleep(delay)
     else:
         raise ValueError(f"dataset {dataset_id} has no view to read its new state from")
     view_id = views[0].get("id")
