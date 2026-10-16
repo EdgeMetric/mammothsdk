@@ -79,3 +79,35 @@ def test_dataset_find_reads_no_project_dataset_list(
     paths = _http_paths_of_last_run(live_cli, "dataset.find")
     assert paths, "the run log holds no request of the dataset.find run"
     assert [p for p in paths if p.endswith("/datasets")] == []
+
+
+def _project_list_ids(live_cli: LiveCli) -> set[int]:
+    """Ids ``project list`` shows the caller, read page by page."""
+    ids: set[int] = set()
+    while True:
+        page, _ = live_cli.ok(
+            "project", "list", "--input", json.dumps({"offset": len(ids)}), project=None
+        )
+        fresh = {p["id"] for p in page["projects"]} - ids
+        if not fresh:
+            return ids
+        ids |= fresh
+
+
+def test_names_without_a_project_lists_every_project_project_list_shows(
+    live_cli: LiveCli, sales_data: SalesData
+) -> None:
+    listed, _ = live_cli.ok("dataset", "list", "--input", json.dumps({"names": True}), project=None)
+
+    shown = listed["datasets"]
+    assert set(shown[0]) == {"project_id", "project_name", "id", "name"}
+    assert listed["projects"] == len(_project_list_ids(live_cli))
+    assert {r["project_id"] for r in shown} <= _project_list_ids(live_cli)
+    assert "dataset_health" not in listed
+    paths = _http_paths_of_last_run(live_cli, "dataset.list")
+    assert len({p for p in paths if p.endswith("/datasets")}) == listed["projects"]
+    row = shown[-1]
+    own, _ = live_cli.ok(
+        "dataset", "list", "--input", json.dumps({"names": True}), project=row["project_id"]
+    )
+    assert {"id": row["id"], "name": row["name"]} in own["datasets"]
