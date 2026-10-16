@@ -86,6 +86,39 @@ def test_malformed_json_is_usage_error(tmp_path: Path) -> None:
     assert excinfo.value.code == "invalid_input_document"
 
 
+def test_malformed_json_says_what_the_parser_found_and_where() -> None:
+    text = '{"title": "Sales",\n "tiles": [{"kind": "kpi",}]}'
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(text, None)
+    error = excinfo.value
+    assert error.details["line"] == 2
+    assert error.details["column"] == 26
+    assert "trailing comma" in error.details["parser_error"]
+    assert '"kpi",}' in error.details["near"]
+    assert len(error.details["near"]) <= 40
+    assert "line 2 column 26" in error.message
+    assert error.details["near"] in error.hint
+
+
+def test_malformed_yaml_says_what_the_parser_found_and_where(tmp_path: Path) -> None:
+    path = tmp_path / "req.yaml"
+    path.write_text("title: Sales\ntiles: [a, b\nname: x\n", encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.details["line"] == 3
+    assert excinfo.value.details["parser_error"]
+    assert "line 3" in excinfo.value.message
+
+
+def test_a_list_document_says_what_it_found_instead_of_an_object(tmp_path: Path) -> None:
+    path = tmp_path / "req.json"
+    path.write_text('[{"a": 1}]', encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        load_input_document(str(path), None)
+    assert excinfo.value.details == {"found": "list", "near": '[{"a": 1}]'}
+    assert "not list" in excinfo.value.message
+
+
 def test_non_mapping_document_is_usage_error(tmp_path: Path) -> None:
     path = tmp_path / "req.json"
     path.write_text("[1, 2, 3]", encoding="utf-8")
