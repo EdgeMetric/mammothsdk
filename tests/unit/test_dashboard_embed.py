@@ -6,6 +6,7 @@ import pytest
 
 from mammoth.api.dashboards import DashboardsAPI
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.dashboards import EmbedConfigResponse
 
 
 def _api() -> tuple[DashboardsAPI, MagicMock]:
@@ -65,11 +66,53 @@ async def test_embed_config_set_puts_exact_wire_shape() -> None:
                 "mode": "signed",
                 "allow_any_origin": False,
                 "allowed_origins": ["https://intranet.example.com"],
-                "appearance": {},
-                "snippet": {},
             }
         },
     )
+
+
+async def test_embed_config_set_sends_only_the_fields_passed() -> None:
+    """Sending every field from its default moved a Signed board back to Key and
+    cleared its appearance when only the origins were set (ruling, Gaurav
+    2026-10-16: a set never resets the tier). The server keeps what is left out."""
+    api, client = _api()
+    client._request_json.return_value = {
+        "mode": "signed",
+        "tier": "signed",
+        "embed_url": "https://app.mammoth.io/api/v3/embed/abc",
+        "sdk_url": "https://app.mammoth.io/embed-assets/sdk.v1.js",
+        "published": True,
+        "public": False,
+    }
+    await api.embed_config_set(7, allowed_origins=["https://intranet.example.com"])
+    client._request_json.assert_called_once_with(
+        "PUT",
+        "/dashboards/7/embed/config",
+        json={"params": {"allowed_origins": ["https://intranet.example.com"]}},
+    )
+
+
+def _config(**overrides: object) -> EmbedConfigResponse:
+    base: dict[str, object] = {
+        "mode": "key",
+        "tier": "key",
+        "embed_url": "u",
+        "sdk_url": "s",
+        "published": True,
+        "public": False,
+    }
+    return EmbedConfigResponse.model_validate({**base, **overrides})
+
+
+def test_embed_config_get_explains_a_public_board_and_names_the_saved_tier() -> None:
+    reason = _config(mode="public", tier="signed", public=True).mode_reason
+    assert reason.startswith("public because the board's share link is public")
+    assert "Saved tier for when the link is removed: signed" in reason
+    assert "mode_reason" in _config(public=True).model_dump()
+
+
+def test_embed_config_get_names_the_tier_of_a_private_board() -> None:
+    assert _config(mode="signed", tier="signed").mode_reason.startswith("signed: ")
 
 
 @pytest.mark.parametrize("dashboard_id", [0, -1, True])
