@@ -56,6 +56,19 @@ def _is_gone(error: CliError) -> bool:
     )
 
 
+#: The dataview get answers ``400 4DTVW019`` ("response generated is invalid") for a view that
+#: was just deleted (apiv2 dataview controller ``get``), so only its dataset's listing settles it.
+_UNREADABLE_BACKEND_CODES = frozenset({"4DTVW019"})
+
+
+def _listed(service: Any, listing: tuple[str, dict[str, Any]], resource_id: int) -> bool:
+    """Whether ``resource_id`` is among the ``dataviews`` the listing call returns."""
+    symbol, kwargs = listing
+    found = service.call(symbol, **kwargs)
+    rows = found.get("dataviews") if isinstance(found, dict) else None
+    return any(_still_there(row, resource_id) for row in rows or [])
+
+
 def _still_there(record: Any, resource_id: int) -> bool:
     return isinstance(record, dict) and str(record.get("id")) == str(resource_id)
 
@@ -69,6 +82,7 @@ def ensure_deleted(
     read_kwargs: dict[str, Any],
     responses: tuple[Any, ...],
     recovery_commands: list[str] | None = None,
+    listing: tuple[str, dict[str, Any]] | None = None,
 ) -> None:
     """Raise unless the resource is gone after a delete.
 
@@ -80,6 +94,8 @@ def ensure_deleted(
         read_kwargs: Its arguments.
         responses: What the delete (and its job) returned, searched for a dependency map.
         recovery_commands: Runnable commands that help clear the blockers.
+        listing: The SDK list call (symbol, arguments) to ask when the get cannot answer for
+            a deleted resource (``4DTVW019``): gone if it is no longer listed.
 
     Raises:
         CliError: ``has_dependents`` when the server reported what depends on it,
@@ -96,6 +112,9 @@ def ensure_deleted(
             record = service.call(read_symbol, **read_kwargs)
         except CliError as error:
             if _is_gone(error):
+                return
+            unreadable = (error.details or {}).get("backend_code") in _UNREADABLE_BACKEND_CODES
+            if unreadable and listing is not None and not _listed(service, listing, resource_id):
                 return
             raise
         if not _still_there(record, resource_id):
