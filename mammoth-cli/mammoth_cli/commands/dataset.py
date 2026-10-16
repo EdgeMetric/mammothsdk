@@ -11,7 +11,6 @@ seam to the public SDK method named by the command's reviewed manifest
 from __future__ import annotations
 
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Protocol
 
 from mammoth_cli.errors.envelope import (
@@ -29,7 +28,6 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -38,7 +36,6 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
-from mammoth_cli.runtime.token_scope import pinned_projects
 from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
 from mammoth_cli.services.field_enums import DATA_PULL_FILE_VALUES, allowed_values_text
 from mammoth_cli.services.listing import (
@@ -56,9 +53,6 @@ from mammoth_cli.services.listing import (
 from mammoth_cli.services.schema_diff import column_samples, schema_diff
 
 HandlerResult = tuple[Any, dict[str, Any]]
-
-#: Projects whose dataset lists ``dataset list`` with ``names`` and no project reads at once.
-_NAMES_WORKERS = 8
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
@@ -768,7 +762,7 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     For a list of names (e.g. "which files can I see?") pass ``names: true``: ONE call
     returns up to 500 bare ``{id, name}`` rows, newest first, with ``total`` and ``more``.
     With no project set it returns ``{project_id, project_name, id, name}`` rows from every
-    project ``project list`` shows (one dataset-list request per project, read together).
+    project the caller can open, from one workspace search (the newest 500 at most).
     ``full: true`` returns the raw ``{id, name}`` list instead. ``name`` keeps only datasets
     whose name contains it (case-insensitive) across every page, as short rows without
     column lists; ``limit``/``offset`` then page over the matches.
@@ -777,7 +771,7 @@ def dataset_list(invocation: Invocation) -> HandlerResult:
     name = document.get("name")
     wants_names = document.get("names") and not (isinstance(name, str) and name.strip())
     if wants_names and resolved_project(invocation) is None:
-        return _dataset_names_everywhere(invocation, document)
+        return _dataset_names_everywhere(invocation)
     project_id = require_project(invocation)
     _validate_paging(document)
     kwargs: dict[str, Any] = {"project_id": project_id}
@@ -828,55 +822,38 @@ def _dataset_names(
     return result, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _project_dataset_rows(service: Any, project: dict[str, Any], sort: str) -> list[dict[str, Any]]:
-    """One project's ``{project_id, project_name, id, name}`` rows, from its dataset list."""
-    data = service.call(
-        "mammoth.api.datasets.DatasetsAPI.list_all",
-        project_id=project["id"],
-        sort=sort,
-        fields="id,name",
-    )
-    records = data.get("datasets", []) if isinstance(data, dict) else []
-    return [
-        {
-            "project_id": project["id"],
-            "project_name": project.get("name"),
-            "id": r["id"],
-            "name": r.get("name"),
-        }
-        for r in records
-        if isinstance(r, dict)
-    ]
+def _dataset_names_everywhere(invocation: Invocation) -> HandlerResult:
+    """``dataset list`` with ``names`` and no project: the names of every reachable project.
 
-
-def _dataset_names_everywhere(invocation: Invocation, document: dict[str, Any]) -> HandlerResult:
-    """``dataset list`` with ``names`` and no project: every reachable project's names.
-
-    The projects are the ones ``project list`` shows (the same route, limited to a
-    pinned token's projects); each one's datasets come from the route ``dataset list
-    --project`` reads, a few projects at a time. Capped like the one-project list.
+    One workspace search (100 hits a page, the route's cap) lists the datasets of the
+    projects the caller can open, under the same access rules as ``project list``; one
+    ``project list`` read supplies the project names. Capped at ``_SEARCH_PAGES`` pages.
     """
-    sort = document.get("sort", "(created_at:desc)")
     with open_service(invocation) as (service, auth):
-        pins = pinned_projects(service)
-        projects = [p for p in _visible_projects(service) if pins is None or p["id"] in pins]
-        with ThreadPoolExecutor(max_workers=_NAMES_WORKERS) as pool:
-            per_project = embedded.pool_map(
-                pool, lambda project: _project_dataset_rows(service, project, sort), projects
-            )
-    rows = [row for project_rows in per_project for row in project_rows]
+        hits, cut = search_hits(service, "datasource", "", fields="minimal")
+        names = {p.get("id"): p.get("name") for p in _visible_projects(service)}
+    rows = [
+        {
+            "project_id": hit["project_id"],
+            "project_name": names[hit["project_id"]],
+            "id": hit["object_id"],
+            "name": hit.get("name"),
+        }
+        for hit in hits
+        if hit.get("project_id") in names
+    ]
     kept, _cut = fit_budget(rows[:NAMES_MAX_ROWS], budget=NAMES_DATA_BUDGET)
     result: dict[str, Any] = {
         "datasets": kept,
         "shown": len(kept),
         "total": len(rows),
-        "projects": len(projects),
+        "projects": len({row["project_id"] for row in rows}),
     }
-    if len(kept) < len(rows):
+    if cut or len(kept) < len(rows):
         result["more"] = True
         result["note"] = (
-            f"Only the first {len(kept)} of {len(rows)} names fit one call; pass --project "
-            "to list one project's names."
+            f"Only the newest {len(kept)} names were read; pass --project to list one "
+            "project's names, or name to find one."
         )
     return result, _meta(invocation, auth.workspace_id, None)
 

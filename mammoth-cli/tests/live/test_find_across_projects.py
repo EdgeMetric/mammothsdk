@@ -101,11 +101,10 @@ def test_names_without_a_project_lists_every_project_project_list_shows(
 
     shown = listed["datasets"]
     assert set(shown[0]) == {"project_id", "project_name", "id", "name"}
-    assert listed["projects"] == len(_project_list_ids(live_cli))
     assert {r["project_id"] for r in shown} <= _project_list_ids(live_cli)
     assert "dataset_health" not in listed
     paths = _http_paths_of_last_run(live_cli, "dataset.list")
-    assert len({p for p in paths if p.endswith("/datasets")}) == listed["projects"]
+    assert [p for p in paths if p.endswith("/datasets")] == []
     row = shown[-1]
     own, _ = live_cli.ok(
         "dataset", "list", "--input", json.dumps({"names": True}), project=row["project_id"]
