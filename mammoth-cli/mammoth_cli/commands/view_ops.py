@@ -2360,6 +2360,9 @@ class _BatchPlan:
     task_steps: list[tuple[int, str]] = dataclass_field(default_factory=list)
     #: The bound ``sort`` inputs, applied after the tasks have run.
     sorts: list[dict[str, Any]] = dataclass_field(default_factory=list)
+    #: The columns the tasks add; the sort is built after they ran but on metadata that may not
+    #: list them yet.
+    created: list[dict[str, str]] = dataclass_field(default_factory=list)
 
 
 def _batch_steps(document: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -2461,7 +2464,7 @@ def _build_batch(
 ) -> _BatchPlan:
     """Bind and build every step against the view's current columns; send nothing."""
     plan = _BatchPlan()
-    created: list[dict[str, str]] = []
+    created = plan.created
     for index, step in enumerate(steps):
         op = step["op"]
         command_id = f"view.transform.{op}"
@@ -2643,7 +2646,11 @@ def _apply_batch(
     try:
         for kwargs in plan.sorts:
             data["sort"] = service.call_view(
-                view_id, _SORT_METHOD, dataset_id=dataset_id, **kwargs
+                view_id,
+                _SORT_METHOD,
+                dataset_id=dataset_id,
+                added_columns=plan.created,
+                **kwargs,
             )["sort"]
     except CliError as exc:
         raise _batch_failure(service, dataset_id, view_id, task_ids_before, plan, exc) from exc

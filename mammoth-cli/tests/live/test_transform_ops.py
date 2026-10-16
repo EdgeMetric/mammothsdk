@@ -319,15 +319,20 @@ def test_a_batch_step_can_use_a_column_an_earlier_copy_step_creates(items: Table
     data = items.ok(
         "batch",
         steps=[
-            {"op": "copy-columns", "input": {"copies": [{"source": "Cost", "as_name": "Cost 2"}]}},
+            {
+                "op": "copy-columns",
+                "input": {"copies": [{"source": "Cost", "as_name": "Cost 2", "type": "NUMERIC"}]},
+            },
             {
                 "op": "filter",
                 "input": {"condition": {"column": "Cost 2", "operator": "GTE", "value": 20}},
             },
+            {"op": "sort", "input": {"order_by": [["Cost 2", "DESC"]]}},
         ],
     )
 
     assert data["row_check"] == {"rows_before": 4, "rows_after": 3}
+    assert data["sort"]
 
 
 def test_a_batch_step_using_a_column_nothing_creates_is_refused_before_any_send(
