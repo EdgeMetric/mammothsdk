@@ -3,7 +3,7 @@
   "name": "io.mammoth/mcp",
   "title": "Mammoth Analytics",
   "description": "Explore, clean, transform and export your Mammoth Analytics data from an AI client.",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "websiteUrl": "https://mammoth.io",
   "repository": {
     "url": "https://github.com/EdgeMetric/mammothsdk",

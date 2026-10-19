@@ -47,8 +47,8 @@ GAVE_UP = (
 CONNECTED = (
     "The user connected the source. They may still be picking its data in"
     " Mammoth: call `find_new_datasets` with `since` for what they bring in. For"
-    " a database, you can bring the data in yourself with `preview_query` and"
-    " `add_dataset_from_connection`."
+    " a database, you can bring the data in yourself with `list_tables`,"
+    " `preview_query` and `add_dataset_from_connection`."
 )
 NOT_A_TIME = (
     "`since` must be the time `connect_source` returned, such as 2026-10-14T09:00:00+00:00."
@@ -76,7 +76,7 @@ async def list_connectors(
     Returns:
         `connectors`: each one's `name_key` (what `connect_source` takes),
         `disp_name`, and `is_available`: false when the workspace's plan does
-        not include it.
+        not include it. With `connected_only`, also `connection_count`.
     """
     query: dict[str, str | int] = {
         ConnectorFields.FIELDS: ConnectorFields.LISTED,
@@ -85,12 +85,21 @@ async def list_connectors(
         ConnectorFields.PROJECT_ID: project_id,
     }
     if connected_only:
-        query[ConnectorFields.HAS_CONNECTIONS] = "true"
+        query |= {
+            ConnectorFields.FIELDS: ConnectorFields.LISTED_CONNECTED,
+            ConnectorFields.HAS_CONNECTIONS: "true",
+            ConnectorFields.LIMIT: ConnectorFields.EVERY_CONNECTOR,
+            ConnectorFields.OFFSET: 0,
+        }
     async with build_client(workspace_id) as client:
         page = await request_api(
             client, "GET", ApiPaths.CONNECTORS.format(workspace_id=workspace_id), query=query
         )
-    return tidy_page(page, ConnectorFields.CONNECTORS, limit)
+    if not connected_only:
+        return tidy_page(page, ConnectorFields.CONNECTORS, limit)
+    connected = page.get(ConnectorFields.CONNECTORS)
+    connected = connected if isinstance(connected, list) else []
+    return {ConnectorFields.CONNECTORS: connected[offset : offset + limit]}
 
 
 @mcp_server.tool(title="Find new datasets", annotations=READS)

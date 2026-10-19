@@ -286,6 +286,11 @@ class ApiPaths:
     BROWSE = "/workspaces/{workspace_id}/browse"
     # The SDK's list sends no paging or filter, and the route pages by ten.
     CONNECTORS = "/workspaces/{workspace_id}/connectors"
+    # One connection, with the connector key base64-encoded as the route reads it.
+    CONNECTION = (
+        "/workspaces/{workspace_id}/projects/{project_id}"
+        "/connectors/{connector}/connections/{connection_key}"
+    )
     SELF = "/self"
 
 
@@ -504,6 +509,12 @@ class ConnectorFields:
     NAME = "disp_name"
     AVAILABLE = "is_available"
     LISTED = "name_key,disp_name,is_available"
+    # The route filters by `has_connections` only when it counts each
+    # connector's connections, and only within the page it read. So the
+    # connected ones are read in one page of every connector, the route's
+    # largest, and paged here.
+    LISTED_CONNECTED = LISTED + ",connection_count"
+    EVERY_CONNECTOR = 100
     FIELDS = "fields"
     LIMIT = "limit"
     OFFSET = "offset"
@@ -619,6 +630,17 @@ class ConnectionFields:
     PROJECT_ID = "project_id"
     # A sample's column, as Mammoth names it.
     COLUMN_NAME = "c_name"
+    # What a connection is asked for: its schemas (`profiles`), or the form the
+    # web app draws for one schema, which lists that schema's tables.
+    CONCERN = "concern"
+    PROFILES = "profiles"
+    DS_CONFIG_SPEC = "ds_config_spec"
+    TABLES_AT = ("ux", "attributes", "tables", "items")
+    VALUE = "value"
+    IS_VALID = "is_valid"
+    SCHEMAS = "schemas"
+    SCHEMA_NAME = "schema"
+    TABLES = "tables"
     # Long enough for Mammoth to refuse the dataset; the pull itself runs on.
     CHECK_SECONDS = 15.0
 

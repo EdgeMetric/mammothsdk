@@ -216,6 +216,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth doctor` prints the exact `mammoth auth login --profile NAME` command for a legacy API key + secret profile.
 - Preconditions shown by `schema get` no longer carry internal test-harness text (fixture requirements, evidence provenance, variance codes).
 
+### Added (mammoth-mcp-server 0.2.5)
+
+- `list_tables` lists the tables of a database connection the project already has, so the user can ask "which tables are in my Postgres?" and Claude names a real table in its query. It lists the schemas first: with one schema, or none (MySQL, Redshift), the tables come at once; with several, Claude picks one. Mammoth reads the tables with the connector's own query, as its data page does. Some databases put the schema name straight into that query, so a schema Mammoth did not list is never sent.
+
+### Fixed (mammoth-mcp-server 0.2.5)
+
+- `list_connectors` with `connected_only` listed every connector. Mammoth filters by connections only when it counts them, and only within the page it read, so the tool now asks for the count and one page of every connector, and pages the connected ones itself.
+
 ### Added (mammoth-mcp-server 0.2.4)
 
 - The user can bring data in from a database or an app over MCP. `list_connectors` lists the sources Mammoth connects to, and which the workspace's plan includes. `connect_source` gives the user the page in Mammoth that opens "Add data" on that connector in the project; they sign in to the source and pick the data there, so no credential passes through the model. `find_new_datasets` then reports the datasets the caller added to the project, with each one's view and link; a teammate's dataset made in the same time is left out (Mammoth records the maker by name), as `check_upload` does for a file. All three are read-only: the change is the user's own, in Mammoth.
