@@ -31,7 +31,7 @@ from .consts import (
     UploadFields,
     UploadReportFields,
 )
-from .sdk import JsonValue, check_project, own_project
+from .sdk import JsonValue, check_project, named_projects, only_project, own_projects
 from .tool_kinds import CHANGES
 from .upload_tickets import mint_ticket
 
@@ -257,7 +257,7 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
         workspace_id: Which workspace the files land in.
         project_id: Which project the files land in. Leave it out when the
             user limited this connection to one project: that is the project
-            the files land in, and no other is allowed.
+            the files land in. With several, name one of them.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
@@ -267,12 +267,11 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
     if caller is None:
         raise ToolError("Sign in again: this call carries no Mammoth user.")
     check_project(project_id)
-    landing = project_id if project_id is not None else own_project()
+    landing = project_id if project_id is not None else only_project()
     if landing is None:
-        raise ToolError(
-            "Name the project the files land in: this connection may use any"
-            " project in the workspace."
-        )
+        pinned = own_projects()
+        may_use = f"{named_projects(pinned)}" if pinned else "any project in the workspace"
+        raise ToolError(f"Name the project the files land in: this connection may use {may_use}.")
     upload_id = await mint_ticket(caller, workspace_id, landing)
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",

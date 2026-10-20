@@ -739,9 +739,9 @@ class TokenClaims:
 
     # The one workspace the caller's token belongs to.
     WORKSPACE_ID = "workspace_id"
-    # The one project the user picked when they connected, or None when they
-    # picked "All projects". Mammoth refuses the token on any other project.
-    PROJECT_ID = "project_id"
+    # The projects the user picked when they connected, sorted, or None when
+    # they picked "All projects". Mammoth refuses the token on any other project.
+    PROJECT_IDS = "project_ids"
 
 
 class PipelineFields:

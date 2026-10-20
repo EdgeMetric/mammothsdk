@@ -1,6 +1,6 @@
 [project]
 name = "mammoth-mcp-server"
-version = "0.2.6"
+version = "0.2.7"
 description = "MCP server for Mammoth Analytics: an AI client explores, transforms and exports data as the signed-in user"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 license = "LicenseRef-Proprietary"

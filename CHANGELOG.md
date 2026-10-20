@@ -6,6 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-mcp-server 0.2.7)
+
+- A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.
 ### Added (mammoth-mcp-server 0.2.6)
 
 - `edit_transformation_step` changes one step of a view's pipeline: `replace` (the step does a new operation, built on the columns that step reads, and a column it makes keeps its internal name so later steps still find it), `suspend` or `restore`. In draft mode the change is staged. Otherwise it runs at once, and a change that makes a step fail that did not fail before is undone, with the failing steps and their errors in `problems`. A change Mammoth refuses because a later step reads a column it removes names those columns and says to make the changes together in draft mode. A step of another view is refused before anything is sent.
