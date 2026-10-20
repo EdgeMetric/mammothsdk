@@ -91,6 +91,20 @@ class TestListConnectors:
 
         (sent,) = api.sent("GET", CONNECTORS)
         assert sent.url.params["has_connections"] == "true"
+        # The route skips the filter unless it counts each connector's connections.
+        assert sent.url.params["fields"] == "name_key,disp_name,is_available,connection_count"
+
+    def test_the_connected_ones_are_paged_after_the_route_filters_them(self) -> None:
+        connected = [{**HUBSPOT, "name_key": key, "connection_count": 1} for key in ("a", "b", "c")]
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", CONNECTORS, {"connectors": connected, "next": "http://next"})
+            listed = call_tool("list_connectors", connected_only=True, limit=1, offset=1, **IDS)
+
+        # The route pages before it filters, so one page of every connector is asked for.
+        (sent,) = api.sent("GET", CONNECTORS)
+        assert (sent.url.params["limit"], sent.url.params["offset"]) == ("100", "0")
+        assert [one["name_key"] for one in listed["connectors"]] == ["b"]
+        assert "next" not in listed
 
 
 class TestConnectSource:
