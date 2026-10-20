@@ -752,6 +752,8 @@ class PipelineFields:
     TASKS = "tasks"
     DRAFT_MODE = "draft_mode"
     NOT_DRAFTING = "off"
+    # Staged changes that have not run.
+    DRAFT_DIRTY = "dirty"
     DRAFT_OPERATION = "draft_operation"
     DRAFT_ON = "enter"
     DRAFT_OFF = "exit"
@@ -759,6 +761,51 @@ class PipelineFields:
     DRAFT_DISCARD = "discard"
     PATCHES = "patches"
     RUN = {"op": "command", "path": "run", "value": None}
+
+
+class StepFields:
+    """One step of a pipeline as the tasks route lists it, and what a tool says of it."""
+
+    ID = "id"
+    SEQUENCE = "sequence"
+    STATUS = "status"
+    SUSPENDED = "suspended"
+    PARAMS = "params"
+    # The columns a step reads: the ones the steps before it leave.
+    COLUMNS_READ = "prev_metadata"
+    RUN_STATE = "transform_status"
+    FAILED_STATES = frozenset({"ERROR", "REFERROR", "EXCEPTION"})
+    REFERENCE_ERRORS = "reference_errors"
+    # Inside `params`: which operation the step is, and what it makes.
+    TASK_KEY = "TASK_KEY"
+    NEW_COLUMN = "COLUMN"
+    INTERNAL_NAME = "INTERNAL_NAME"
+    # The keys of a stored step, besides its operation, that the edit route takes back.
+    KEPT_ON_PUT_BACK = ("CONDITION", "VERSION", "ORDER_BY", "ORDER", "PRESET")
+    # The edit route's patch.
+    OP = "op"
+    PATH = "path"
+    VALUE = "value"
+    REPLACE = "replace"
+    COMMAND = "command"
+    REPLACE_PARAMS = "params"
+    # What a change that would break a later step is refused with.
+    DEPENDENTS = "column_to_dependencies_dict"
+    # Inside it: the steps that read a column, and the view each is in.
+    TASKS = "tasks"
+    VIEW_ID = "dataview_id"
+    # What a tool reports.
+    STEP = "step"
+    STEP_ID = "step_id"
+    TASK = "task"
+    ERROR = "error"
+    PROBLEMS = "problems"
+    OUTCOME = "outcome"
+    NEXT_STEP = "next_step"
+    CHANGED = "changed"
+    STAGED = "staged"
+    PUT_BACK = "put_back"
+    NOT_PUT_BACK = "not_put_back"
 
 
 class PageFields:
