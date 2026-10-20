@@ -11,6 +11,7 @@ from . import (
     help_topics,
     pipeline,
     sources,
+    steps,
     transformations,
     views,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "help_topics",
     "pipeline",
     "sources",
+    "steps",
     "transformations",
     "views",
 ]
