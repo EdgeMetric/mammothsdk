@@ -41,12 +41,15 @@ def as_caller(
     token: str = TOKEN,
     workspace_id: int = WORKSPACE,
     project_id: int | None = None,
+    project_ids: list[int] | None = None,
 ) -> Generator[None]:
     """Run the block as a caller whose token Mammoth issued for this server.
 
-    project_id is the one project the caller may act in; None is a caller who
-    picked "All projects" when they connected.
+    project_id is the one project the caller may act in, and project_ids the
+    several; neither is a caller who picked "All projects" when they connected.
     """
+    if project_ids is None and project_id is not None:
+        project_ids = [project_id]
     access = AccessToken(
         token=token,
         client_id="a-client",
@@ -54,7 +57,7 @@ def as_caller(
         resource=MCP_RESOURCE_URL,
         claims={
             TokenClaims.WORKSPACE_ID: workspace_id,
-            TokenClaims.PROJECT_ID: project_id,
+            TokenClaims.PROJECT_IDS: project_ids,
         },
     )
     reset = auth_context_var.set(AuthenticatedUser(access))
@@ -162,6 +165,7 @@ def knows_the_token(
     resource: str | None = MCP_RESOURCE_URL,
     project: int | None = None,
     read_only: bool | None = None,
+    projects: list[int] | None = None,
 ) -> None:
     """Have the fake Mammoth say what a bearer token is for."""
     issued: dict[str, Any] = {"id": workspace_id}
@@ -169,6 +173,8 @@ def knows_the_token(
         issued["resource"] = resource
     if project is not None:
         issued["project"] = project
+    if projects is not None:
+        issued["projects"] = projects
     if read_only is not None:
         issued["read_only"] = read_only
     api.answer("GET", "/workspaces/current", issued)

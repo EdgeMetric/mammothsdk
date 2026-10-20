@@ -137,18 +137,28 @@ def own_workspace() -> int:
     return int((access_token.claims or {})[TokenClaims.WORKSPACE_ID])
 
 
-def own_project() -> int | None:
-    """The one project the caller may act in, or None for every project.
+def own_projects() -> list[int] | None:
+    """The projects the caller may act in, sorted, or None for every project.
 
-    The user settles this when they connect: picking a project fences the
-    token to it, and Mammoth refuses the token on any other. Read it rather
-    than ask the user again.
+    The user settles this when they connect: picking projects fences the token
+    to them, and Mammoth refuses the token on any other. Read it rather than
+    ask the user again.
     """
     access_token = get_access_token()
     if access_token is None:
         raise RuntimeError("no authenticated MCP caller for this tool call")
-    pinned = (access_token.claims or {}).get(TokenClaims.PROJECT_ID)
-    return int(pinned) if pinned is not None else None
+    pinned = (access_token.claims or {}).get(TokenClaims.PROJECT_IDS)
+    return [int(project) for project in pinned] if pinned else None
+
+
+def only_project() -> int | None:
+    """The project the caller may act in, when they may act in exactly one.
+
+    A tool that must land somewhere uses it without asking. With several, or
+    with every project, the model has to name one.
+    """
+    pinned = own_projects()
+    return pinned[0] if pinned is not None and len(pinned) == 1 else None
 
 
 def check_project(project_id: int | None) -> None:
@@ -156,17 +166,23 @@ def check_project(project_id: int | None) -> None:
 
     Mammoth refuses it too, with an authorization error that reaches the user
     as a failed call and nothing more. Said here, the model learns which
-    project it may use.
+    projects it may use.
 
     Raises:
-        ToolError: If the token is pinned to another project.
+        ToolError: If the token is pinned to other projects.
     """
-    pinned = own_project()
-    if pinned is not None and project_id is not None and project_id != pinned:
+    pinned = own_projects()
+    if pinned is not None and project_id is not None and project_id not in pinned:
         raise ToolError(
-            f"This connection is limited to project {pinned}, not {project_id}."
-            " Use that project, or connect again and choose All projects."
+            f"This connection is limited to {named_projects(pinned)}, not {project_id}."
+            " Use one of those, or connect again and choose the other project too."
         )
+
+
+def named_projects(pinned: list[int]) -> str:
+    """The pinned projects as a person reads them: "project 3" or "projects 3, 7"."""
+    listed = ", ".join(str(project) for project in pinned)
+    return f"project {listed}" if len(pinned) == 1 else f"projects {listed}"
 
 
 def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> MammothClient:
