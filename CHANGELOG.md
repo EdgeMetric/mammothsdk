@@ -14,6 +14,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `edit_transformation_step` changes one step of a view's pipeline: `replace` (the step does a new operation, built on the columns that step reads, and a column it makes keeps its internal name so later steps still find it), `suspend` or `restore`. In draft mode the change is staged. Otherwise it runs at once, and a change that makes a step fail that did not fail before is undone, with the failing steps and their errors in `problems`. A change Mammoth refuses because a later step reads a column it removes names those columns and says to make the changes together in draft mode. A step of another view is refused before anything is sent.
 - `get_pipeline` lists the steps in error under `problems` and says what to do in `next_step`; it also says when changes are staged in draft mode and have not run. `manage_draft` "run" reports the steps the run broke.
 - `get_help` topic `pipeline`: when to run at once and when to use draft mode, and what to do when a step fails.
+- `edit_export` changes one export of a view: `replace` (only the settings named change, null drops one, a masked password is kept, a scheduled export keeps its schedule; nothing is sent), `suspend`, `restore`, or `run` (sends the rows now and reports the run's rows or its error, with how to fix it). An export of another view, and a command that cannot do anything (suspend twice, run a suspended export), are refused before anything is sent.
+- `get_export` shows the export's recent runs, with each failed run's error.
 
 ### Fixed (mammoth-mcp-server 0.2.6)
 
