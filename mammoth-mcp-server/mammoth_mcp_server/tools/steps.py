@@ -48,6 +48,10 @@ STAGED_NOTE = (
     ' user. Call manage_draft with "run" to run the staged changes, or "drop" to'
     " throw them away."
 )
+STAGED_BREAKS = (
+    "The steps in `problems` now read a column that is not there, and will fail"
+    " when the draft runs: change them first."
+)
 PUT_BACK_NOTE = (
     "The change made the steps in `problems` fail, so it was undone: the step is as"
     " it was and the view runs as before. Tell the user what failed and why, and"
@@ -109,12 +113,14 @@ async def edit_transformation_step(
     patch = await build_patch(ids, step, change, operation)
     drafting = (await read_pipeline(ids))[PipelineFields.DRAFT_MODE] != PipelineFields.NOT_DRAFTING
     try:
-        run = await send_change(ids, step_id, patch)
+        run = await send_change(ids, step, patch)
     except JobStillRunning as running:
         return still_running(running, EDIT_RUNS_ON)
-    if drafting:
-        return await report(ids, step_id, StepFields.STAGED, STAGED_NOTE)
     after = await read_steps(ids)
+    if drafting:
+        staged = problems_of(after)
+        note = f"{STAGED_NOTE} {STAGED_BREAKS}" if staged else STAGED_NOTE
+        return await report(ids, step_id, StepFields.STAGED, note, staged)
     failing_before = failing_ids(before)
     if failing_ids(after, run) <= failing_before:
         note = STILL_FAILING_NOTE if failing_ids(after, run) else CHANGED_NOTE
@@ -234,9 +240,9 @@ def command_patch(change: str) -> dict[str, JsonValue]:
 
 
 async def send_change(
-    ids: dict[str, int], step_id: int, patch: dict[str, JsonValue]
+    ids: dict[str, int], step: dict[str, JsonValue], patch: dict[str, JsonValue]
 ) -> dict[str, JsonValue]:
-    """Send one change, and wait for the run it starts.
+    """Send one change to a step, and wait for the run it starts.
 
     Returns:
         The run's result, or nothing when no run started (in draft mode). A
@@ -246,13 +252,18 @@ async def send_change(
         JobStillRunning: If the run outlasts the tool call.
         ToolError: If Mammoth refused the change.
     """
+    step_id = int(str(step[StepFields.ID]))
     async with build_client(ids["workspace_id"], ids["project_id"]) as client:
         answer = await read_sdk_errors(
             client.pipeline.update_task(
                 ids["dataview_id"], step_id, patches=[patch], dataset_id=ids["dataset_id"]
             )
         )
-    refuse_a_broken_dependency(answer)
+    refuse_a_broken_dependency(answer, step, ids["dataview_id"])
+    if answer.get(TaskFields.STATUS) == TaskFields.DONE and answer.get(TaskFields.HAS_ERROR):
+        # Made, but later steps now read a column that is not there. Mammoth
+        # says so only in draft mode; the steps' own errors name them.
+        return {}
     run_id = check_change(answer, NOT_CHANGED).get(TaskFields.RUN_ID)
     if run_id is None:
         return {}
@@ -268,18 +279,46 @@ async def send_change(
         }
 
 
-def refuse_a_broken_dependency(answer: dict[str, JsonValue]) -> None:
+def refuse_a_broken_dependency(
+    answer: dict[str, JsonValue], step: dict[str, JsonValue], view_id: int
+) -> None:
     """Explain a change Mammoth refused because later steps read what it removes."""
     info = answer.get(TaskFields.ERROR_INFO)
     dependents = info.get(StepFields.DEPENDENTS) if isinstance(info, dict) else None
-    if not dependents:
+    if not isinstance(dependents, dict) or not dependents:
         return
+    made = new_column_names(step.get(StepFields.PARAMS))
+    names = {internal: name for name, internal in made.items()}
+    read = "; ".join(
+        f"{names.get(column, column)!r} is read by {readers_of(readers, view_id)}"
+        for column, readers in dependents.items()
+    )
     raise ToolError(
-        f"{NOT_CHANGED}: it removes columns that later steps or other views read."
-        f" By internal name, each column and what reads it: {dependents}. Nothing"
+        f"{NOT_CHANGED}: it removes columns that are still read. {read}. Nothing"
         ' changed. To change them together, call manage_draft with "start", change'
         ' or delete the steps that read them, change this one, then "run".'
     )
+
+
+def readers_of(readers: JsonValue, view_id: int) -> str:
+    """What reads a column, as Mammoth lists it: steps by place, anything else by count."""
+    if not isinstance(readers, dict):
+        return str(readers)
+    found: list[str] = []
+    for kind, items in readers.items():
+        listed = items if isinstance(items, list) else [items]
+        if kind == StepFields.TASKS:
+            found += [step_at(item, view_id) for item in listed if isinstance(item, dict)]
+        else:
+            found.append(f"{len(listed)} {kind}")
+    return ", ".join(found)
+
+
+def step_at(reader: dict[str, JsonValue], view_id: int) -> str:
+    """A step that reads a column, by its place, and its view when it is another."""
+    where = reader.get(StepFields.VIEW_ID)
+    place = f"step {reader.get(StepFields.SEQUENCE)}"
+    return place if where in (None, view_id) else f"{place} of view {where}"
 
 
 async def put_back(
@@ -300,7 +339,7 @@ async def put_back(
     """
     step_id = int(str(step[StepFields.ID]))
     try:
-        run = await send_change(ids, step_id, undo_patch(ids, step, change))
+        run = await send_change(ids, step, undo_patch(ids, step, change))
     except JobStillRunning as running:
         return still_running(running, EDIT_RUNS_ON)
     except ToolError as error:

@@ -260,10 +260,12 @@ class TestInDraftMode:
 
 class TestAChangeMammothRefuses:
     def test_a_change_that_breaks_a_later_step_says_how_to_make_it(self) -> None:
+        # The shape Mammoth refuses with: each column, and the steps that read it.
+        reader = {"sequence": 2, "param": READS_TOTAL["params"], "dataview_id": VIEW}
         refused = {
             "status": "error",
             "error_code": 7010,
-            "error_info": {"column_to_dependencies_dict": {"column_total": {"tasks": [2]}}},
+            "error_info": {"column_to_dependencies_dict": {"column_total": {"tasks": [reader]}}},
         }
         with a_fake_api() as api, as_caller():
             a_view(api, [MAKES_TOTAL, READS_TOTAL])
@@ -278,10 +280,66 @@ class TestAChangeMammothRefuses:
                 )
 
         message = str(error.value)
-        assert "column_total" in message
+        assert "'total' is read by step 2." in message
+        # The reading step's own params are not repeated to the model.
+        assert "total_plus" not in message
         assert "Nothing changed" in message
         assert 'manage_draft with "start"' in message
         assert len(api.sent("PATCH", STEP)) == 1
+
+    def test_a_step_of_another_view_that_reads_the_column_is_named_with_its_view(self) -> None:
+        reader = {"sequence": 4, "dataview_id": 77}
+        refused = {
+            "status": "error",
+            "error_info": {"column_to_dependencies_dict": {"column_total": {"tasks": [reader]}}},
+        }
+        with a_fake_api() as api, as_caller():
+            a_view(api, [MAKES_TOTAL, READS_TOTAL])
+            api.answer("PATCH", STEP, refused)
+            with pytest.raises(ToolError, match="'total' is read by step 4 of view 77"):
+                call_tool("edit_transformation_step", step_id=101, change="suspend", **IDS)
+
+
+class TestAChangeMadeWithBrokenReferences:
+    """Mammoth makes the change, and says later steps now read a missing column."""
+
+    MADE_WITH_ERRORS = {"status": "done", "has_error": True, "error_info": None}
+
+    def test_in_draft_mode_it_is_staged_with_the_steps_that_will_fail(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(
+                api,
+                [MAKES_TOTAL, READS_TOTAL],
+                [MAKES_TOTAL, failing(READS_TOTAL)],
+                draft_mode="dirty",
+            )
+            api.answer("PATCH", STEP, self.MADE_WITH_ERRORS)
+            answer = call_tool(
+                "edit_transformation_step",
+                step_id=101,
+                change="replace",
+                operation=replace_total("sum"),
+                **IDS,
+            )
+
+        assert answer["outcome"] == "staged"
+        assert [problem["step_id"] for problem in answer["problems"]] == [102]
+        assert "change them first" in answer["next_step"]
+
+    def test_outside_draft_mode_it_is_put_back(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(
+                api,
+                [MAKES_TOTAL, READS_TOTAL],
+                [MAKES_TOTAL, failing(READS_TOTAL)],
+                [MAKES_TOTAL, READS_TOTAL],
+            )
+            api.answer("PATCH", STEP, self.MADE_WITH_ERRORS)
+            api.answer("PATCH", STEP, A_RUN)
+            answer = call_tool("edit_transformation_step", step_id=101, change="suspend", **IDS)
+
+        assert [sent["path"] for sent in patches(api)] == ["suspend", "restore"]
+        assert answer["outcome"] == "put_back"
 
 
 class TestAChangeThatBreaksTheView:

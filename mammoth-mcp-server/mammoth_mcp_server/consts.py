@@ -769,6 +769,9 @@ class StepFields:
     REPLACE_PARAMS = "params"
     # What a change that would break a later step is refused with.
     DEPENDENTS = "column_to_dependencies_dict"
+    # Inside it: the steps that read a column, and the view each is in.
+    TASKS = "tasks"
+    VIEW_ID = "dataview_id"
     # What a tool reports.
     STEP = "step"
     STEP_ID = "step_id"
