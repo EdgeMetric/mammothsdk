@@ -65,6 +65,9 @@ steps before it leave.
   `edit_transformation_step` ("replace", "suspend", "restore"). Delete one
   with `delete_transformation_step`. Read the steps with `get_pipeline`.
 - Try a change on a sample first with `preview_transformation`.
+- An export is a step too: it sends the view's rows out. Change its settings,
+  suspend, restore or run it with `edit_export`; `get_export` shows its recent
+  runs. Ask the user before anything sends rows.
 
 ## Run now, or draft
 

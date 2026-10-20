@@ -781,9 +781,43 @@ class StepFields:
     OUTCOME = "outcome"
     NEXT_STEP = "next_step"
     CHANGED = "changed"
+    RAN = "ran"
+    RUN_FAILED = "run_failed"
     STAGED = "staged"
     PUT_BACK = "put_back"
     NOT_PUT_BACK = "not_put_back"
+
+
+class ExportFields:
+    """One export of a view as the exports route lists it, and what a tool says of it."""
+
+    ID = "id"
+    STATUS = "status"
+    SUSPENDED = "suspended"
+    SUSPENDING = "suspending"
+    DESTINATION = "handler_type"
+    SETTINGS = "target_properties"
+    EXTRA = "additional_properties"
+    WHEN = "trigger_type"
+    ON_A_SCHEDULE = "schedule"
+    SCHEDULE = "schedule"
+    # What an edit keeps of the stored export, besides its settings.
+    KEPT_ON_REPLACE = (
+        "trigger_type",
+        "end_of_pipeline",
+        "sequence",
+        "additional_properties",
+        "condition",
+    )
+    # Names the export a save replaces.
+    TRIGGER_ID = "TRIGGER_ID"
+    # One run, as the export's run history lists it.
+    RUN_STATUS = "status"
+    FAILED = "failed"
+    # What a tool reports.
+    EXPORT = "export"
+    LAST_RUN = "last_run"
+    RECENT_RUNS = "recent_runs"
 
 
 class PageFields:
