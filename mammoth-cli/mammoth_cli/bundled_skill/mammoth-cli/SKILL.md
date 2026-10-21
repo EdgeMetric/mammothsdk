@@ -192,7 +192,7 @@ your report. If no column links the files, ask before you combine them.
   a web-app task you cannot find in the CLI:** [about Mammoth](references/about-mammoth.md)
 - **Cold start, task plan, or unsupported route:** [task start](references/task-start.md)
 - **Login, profiles, and authorized scope:** [auth](references/auth.md)
-- **Nested input, output envelopes, confirmations, jobs, or recovery:**
+- **Input, envelopes, `mammoth run` (batch), confirmations, jobs, recovery:**
   [input](references/input.md), [machine output](references/machine-output.md),
   [safety](references/safety.md), or [jobs and drafts](references/jobs-drafts.md)
 - **Import, resources, transforms, pipelines, dashboards, exports, or cleanup:**

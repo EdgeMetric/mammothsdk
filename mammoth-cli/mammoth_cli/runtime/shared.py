@@ -16,6 +16,28 @@ from typing import Any
 SHARED: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("SHARED", default=None)
 
 
+#: The credentials one ``mammoth run`` has resolved so far, by profile; ``None`` outside
+#: :func:`remembering_auth`.
+AUTH_MEMO: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("AUTH_MEMO", default=None)
+
+
+@contextmanager
+def remembering_auth() -> Iterator[dict[tuple[Any, ...], Any]]:
+    """Resolve each profile's credentials once for the length of this block.
+
+    Every line of a ``mammoth run`` resolves its credentials like a single command does
+    (keyring, profile file, environment token). The answer cannot change within one
+    run, so the first line's is reused; ``clear()`` drops it after a line that changes
+    credentials.
+    """
+    memo: dict[tuple[Any, ...], Any] = {}
+    token = AUTH_MEMO.set(memo)
+    try:
+        yield memo
+    finally:
+        AUTH_MEMO.reset(token)
+
+
 @contextmanager
 def shared_services() -> Iterator[None]:
     """Let every :func:`open_service` in this block reuse one service per credential set.

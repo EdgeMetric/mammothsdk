@@ -11,7 +11,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 from urllib.parse import parse_qs, urlparse
 
 from ..exceptions import (
@@ -29,6 +29,27 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 logger = logging.getLogger(__name__)
+
+
+class DataviewDatasetStore(Protocol):
+    """Where a client keeps dataview -> dataset resolutions between processes.
+
+    A dataview belongs to one dataset for its whole life, so the answer to "which
+    dataset holds dataview N" can outlive the client that asked. A caller (the CLI)
+    sets ``client.dataview_dataset_store`` to an object with these three methods;
+    the SDK reads it before asking the API and writes each answer it learns. Every
+    method may raise: the SDK treats a failing store as an empty one.
+    """
+
+    def get(self, workspace_id: int, project_id: int, dataview_id: int) -> int | None:
+        """The remembered dataset id, or None."""
+
+    def put(self, workspace_id: int, project_id: int, dataview_id: int, dataset_id: int) -> None:
+        """Remember a resolution the API just confirmed."""
+
+    def drop(self, workspace_id: int, project_id: int, dataview_id: int) -> None:
+        """Forget a resolution the server contradicted."""
+
 
 PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 # States emitted while a pipeline is settling after a mutation.  Keep this
@@ -88,6 +109,9 @@ class PipelineAPI:
         # Keyed by (workspace_id, project_id, dataview_id) so a client that
         # switches project or workspace never returns a stale dataset.
         self._dataview_dataset_cache: dict[tuple[int, int, int], int] = {}
+        # Resolutions this client took from ``client.dataview_dataset_store`` rather than
+        # from the API; the ones a 404 may prove stale (see ``forget_dataview_dataset``).
+        self._stored_resolutions: set[tuple[int, int, int]] = set()
 
     async def _resolve_ids(
         self, dataview_id: int, dataset_id: int | None = None
@@ -160,6 +184,11 @@ class PipelineAPI:
         cached = self._dataview_dataset_cache.get(cache_key)
         if cached is not None:
             return cached
+        stored = self._stored_dataset(cache_key)
+        if stored is not None:
+            self._dataview_dataset_cache[cache_key] = stored
+            self._stored_resolutions.add(cache_key)
+            return stored
 
         try:
             body = await self._client.browse.resource_get(
@@ -180,7 +209,50 @@ class PipelineAPI:
                 details={"dataview_id": dataview_id, "project_id": project_id},
             )
         self._dataview_dataset_cache[cache_key] = dataset_id
+        store = self._store()
+        if store is not None:
+            try:
+                store.put(*cache_key, dataset_id)
+            except Exception:  # noqa: BLE001 -- a store that fails is an empty store
+                logger.debug("dataview_dataset_store.put failed", exc_info=True)
         return dataset_id
+
+    def _store(self) -> DataviewDatasetStore | None:
+        store: DataviewDatasetStore | None = getattr(self._client, "dataview_dataset_store", None)
+        return store
+
+    def _stored_dataset(self, cache_key: tuple[int, int, int]) -> int | None:
+        store = self._store()
+        if store is None:
+            return None
+        try:
+            found = store.get(*cache_key)
+        except Exception:  # noqa: BLE001 -- a store that fails is an empty store
+            logger.debug("dataview_dataset_store.get failed", exc_info=True)
+            return None
+        if isinstance(found, int) and not isinstance(found, bool) and found > 0:
+            return found
+        return None
+
+    def stored_dataview_resolutions(self) -> frozenset[int]:
+        """Dataview ids whose dataset this client took from the store, not from the API."""
+        return frozenset(key[2] for key in self._stored_resolutions)
+
+    def forget_dataview_dataset(self, dataview_id: int) -> None:
+        """Drop a dataview's remembered dataset here and in the store.
+
+        For a caller that saw the server contradict the answer (a 404 on a request
+        addressed with it): the next resolution asks the API again.
+        """
+        store = self._store()
+        for key in [key for key in self._dataview_dataset_cache if key[2] == dataview_id]:
+            self._dataview_dataset_cache.pop(key, None)
+            self._stored_resolutions.discard(key)
+            if store is not None:
+                try:
+                    store.drop(*key)
+                except Exception:  # noqa: BLE001 -- a store that fails is an empty store
+                    logger.debug("dataview_dataset_store.drop failed", exc_info=True)
 
     def _base_url(self, ws_id: int, proj_id: int, ds_id: int, dv_id: int) -> str:
         return f"/workspaces/{ws_id}/projects/{proj_id}/datasets/{ds_id}/dataviews/{dv_id}/pipeline"

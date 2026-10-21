@@ -131,6 +131,13 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_not_found": _S_NOT_FOUND,
     "input_too_deep": _S_BAD_INPUT,
     "input_too_large": "The information provided was too large.",
+    "invalid_run_line": "One line of the list of commands couldn't be used, so it wasn't run.",
+    "run_command_refused": "That command can't be run from a list of commands.",
+    "run_global_flag_refused": (
+        "Confirmation has to be given on each command in the list, not for the whole list."
+    ),
+    "run_input_empty": "The list of commands was empty, so nothing was run.",
+    "run_input_too_large": "The list of commands was too large.",
     "input_unreadable": _S_BAD_INPUT,
     "insecure_credential_file": _S_SETUP,
     "insecure_input_file": _S_BAD_INPUT,

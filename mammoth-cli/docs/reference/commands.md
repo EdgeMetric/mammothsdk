@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.93.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 859.
+Total commands: 860.
 
 ## activity
 
@@ -5002,6 +5002,19 @@ Total commands: 859.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.resolve.resolve`
 - Agent example: `mammoth resolve uqa-w29-ren`
+
+## run
+
+### `mammoth run`
+
+**Arguments**
+
+- `FILE` (str, optional) — JSON Lines file with one command per line, or '-' (the default) for stdin.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.run.run`
+- Agent example: `mammoth run commands.jsonl`
 
 ## schedule
 

@@ -29,7 +29,7 @@ from typing import Any
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.manifest.loader import command_by_id, load_commands
+from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 
 Gate = Callable[..., None]
 
@@ -98,6 +98,40 @@ def _read_symbols() -> frozenset[str]:
         for record in load_commands()
         if record.get("mutation_class") == "read" and record.get("sdk_symbol")
     )
+
+
+@lru_cache(maxsize=1)
+def _get_only_symbols() -> frozenset[str]:
+    """SDK symbols every manifest record of which is a read made only of ``GET`` operations.
+
+    A read-class command can still be a ``POST`` (``activity export`` starts an export,
+    ``view data query`` posts its query), and a ``POST`` may start work that sending twice
+    would repeat. A symbol with no mapped operation, or one the operation table does not
+    know, is not vouched for.
+    """
+    methods = {str(op["operation_id"]): str(op["method"]) for op in load_operations()}
+    verdicts: dict[str, bool] = {}
+    for record in load_commands():
+        symbol = record.get("sdk_symbol")
+        if not symbol:
+            continue
+        ids = record.get("operation_ids") or []
+        safe = (
+            record.get("mutation_class") == "read"
+            and bool(ids)
+            and all(methods.get(str(op_id)) == "GET" for op_id in ids)
+        )
+        verdicts[str(symbol)] = verdicts.get(str(symbol), True) and safe
+    return frozenset(symbol for symbol, safe in verdicts.items() if safe)
+
+
+def is_get_symbol(symbol: str) -> bool:
+    """True when ``symbol`` is a read that the manifest ties to ``GET`` operations only.
+
+    The test for replaying a call after a stale-cache 404: a read that is not a ``GET``
+    (``activity export``) might start a job, so it is never sent twice.
+    """
+    return symbol == DATAVIEW_GET or symbol in _get_only_symbols()
 
 
 def _read_view_methods() -> frozenset[str]:

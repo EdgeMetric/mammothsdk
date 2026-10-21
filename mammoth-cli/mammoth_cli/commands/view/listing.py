@@ -19,6 +19,7 @@ from mammoth_cli.commands.view._common import (
     _symbol,
     apply_column_renames,
 )
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.confirm import (
     POLICY_PROMPT_OR_YES,
@@ -140,9 +141,22 @@ def view_list(invocation: Invocation) -> HandlerResult:
         else:
             kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
             _forward_optional(document, kwargs, ("limit", "sort", "offset"))
-            data = service.call(_symbol(invocation), **kwargs)
             if compact:
-                datasets = [_dataset_record(service, dataset_id, project_id)]
+                # The views and their dataset's name do not depend on each other:
+                # one round trip's wait, not two.
+                data, record = service.call_many(
+                    [
+                        (_symbol(invocation), kwargs),
+                        (_DATASET_GET_SYMBOL, _dataset_get_kwargs(dataset_id, project_id)),
+                    ]
+                )
+                if isinstance(data, CliError):
+                    raise data
+                if isinstance(record, CliError):
+                    raise record
+                datasets = [_dataset_record_from(record, dataset_id)]
+            else:
+                data = service.call(_symbol(invocation), **kwargs)
         parents.remember_records(
             _profile_name(invocation), auth.workspace_id, data, project_id=project_id
         )
@@ -151,14 +165,13 @@ def view_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _dataset_record(service: Any, dataset_id: int, project_id: int) -> dict[str, Any]:
-    """One dataset with the fields a list summary shows."""
-    response = service.call(
-        _DATASET_GET_SYMBOL,
-        dataset_id=dataset_id,
-        project_id=project_id,
-        fields=DATASET_LIST_FIELDS,
-    )
+def _dataset_get_kwargs(dataset_id: int, project_id: int) -> dict[str, Any]:
+    """Arguments of the dataset read a list summary shows its views under."""
+    return {"dataset_id": dataset_id, "project_id": project_id, "fields": DATASET_LIST_FIELDS}
+
+
+def _dataset_record_from(response: Any, dataset_id: int) -> dict[str, Any]:
+    """The dataset record out of a ``dataset get`` response."""
     record = response.get("dataset", response) if isinstance(response, dict) else {}
     return {**record, "id": record.get("id", dataset_id)}
 

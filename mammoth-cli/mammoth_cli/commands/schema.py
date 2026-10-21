@@ -621,6 +621,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "how goal recipe steps order sequence of commands guide accomplish walkthrough "
         "plain language"
     ),
+    "run": (
+        "run batch many several multiple commands jsonl json lines file stdin one process "
+        "faster fewer round trips script sequence loop bulk"
+    ),
     "resolve": (
         "resolve name what is this dataset view project called named which kind "
         "ambiguous same name another project lookup identify"

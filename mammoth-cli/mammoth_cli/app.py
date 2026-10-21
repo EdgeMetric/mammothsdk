@@ -333,6 +333,7 @@ _ROOT_HELP_PANELS = {
     "activity": "Manage resources",
     "support": "Manage resources",
     "config": "CLI and agent tools",
+    "run": "CLI and agent tools",
     "completion": "CLI and agent tools",
     "skill": "CLI and agent tools",
     "log": "CLI and agent tools",
@@ -1442,7 +1443,17 @@ def _sdk_backed(command_id: str) -> bool:
 
 #: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
 _RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
+_RUN_HELP_NOTE = (
+    'One command per line: {"cmd": "view task list", "args": ["290"], "input": {}, '
+    '"flags": {"project": 1}, "id": "a"}. cmd is the command path, args its positionals, '
+    "input its --input document, flags the global flags by long name (yes, confirm, dry-run, "
+    "project). Prints each line's envelope plus line, cmd and exit, then a summary; stops at "
+    "the first failed line (exit = its status) unless --continue. No global --yes: a "
+    "mutating line carries its own. --dry-run, --profile and --project apply to every line. "
+    "FILE defaults to stdin; --continue may come before or after it."
+)
 _HELP_NOTES = {
+    "run": _RUN_HELP_NOTE,
     "view.data.get": _RAW_NOTE,
     "view.data.query": _RAW_NOTE,
     "view.export.dataset": (
@@ -1775,6 +1786,11 @@ _ROOT_LEAF_HELP: dict[str, str] = {
     "resolve": (
         "Say what NAME refers to: a dataset, a view or a project, with ids and projects."
         "\n\nExample: mammoth resolve uqa-w29-ren\n\nInput fields: all_projects (bool)"
+    ),
+    "run": (
+        "Run many commands in one process: JSON Lines of cmd, args, input and flags."
+        f"\n\n{_RUN_HELP_NOTE}"
+        "\n\nExample: mammoth run commands.jsonl"
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."

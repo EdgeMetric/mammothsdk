@@ -491,6 +491,7 @@
   "project.user.update": "Update a project member's role ('role' required; 'user_id'/'invite_id').",
   "report.list": "List reports in the active workspace, with optional 'limit'/'offset'.",
   "resolve": "Say what NAME refers to: a dataset, a view or a project, with ids and projects.",
+  "run": "Run many commands in one process: JSON Lines of cmd, args, input and flags.",
   "schedule.create": "Create a schedule. The required 'spec' field comes from '--input'.",
   "schedule.delete": "Delete one schedule by id. Prompt or '--yes' required.",
   "schedule.get": "Get one schedule by id in the active project.",

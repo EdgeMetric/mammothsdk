@@ -40,7 +40,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
-from mammoth_cli.runtime import embedded, parents
+from mammoth_cli.runtime import dryrun, embedded, parents, view_dataset_cache
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -214,6 +214,8 @@ class SdkMammothService:
             user_agent=f"mammoth-cli/{__version__}",
             **kwargs,
         )
+        # Which dataset holds a view survives the process (see view_dataset_cache).
+        self._client.dataview_dataset_store = view_dataset_cache.store_for(auth, profile)
         self._default_job_timeout = self._client.job_timeout
         self._default_pipeline_timeout = self._client.pipeline_timeout
         # One loop for the process, not one per call: the client's connection
@@ -291,7 +293,35 @@ class SdkMammothService:
             with spinner(self._progress):
                 return self._run(method(**kwargs))
         except Exception as exc:
+            if self._forget_stale_resolutions(exc) and dryrun.is_get_symbol(sdk_symbol):
+                # A remembered view -> dataset answer was wrong: ask the server once more.
+                # Only a GET read is replayed: a write may have done part of its work before
+                # the 404 (add a step, then poll), and sending it twice could do it twice.
+                try:
+                    with spinner(self._progress):
+                        return self._run(method(**kwargs))
+                except Exception as again:
+                    self._raise_mapped(again, sdk_symbol, method, kwargs)
             self._raise_mapped(exc, sdk_symbol, method, kwargs)
+
+    def _forget_stale_resolutions(self, exc: Exception) -> bool:
+        """Drop the view -> dataset answers this client took from disk after a 404.
+
+        True when there were any to drop, so the call is worth one more try; False when the
+        404 cannot come from a stale answer (none was used) or the error is something else.
+        """
+        if not (isinstance(exc, MammothAPIError) and exc.status_code == 404):
+            return False
+        pipeline = self._client.pipeline
+        # An older SDK has no store: nothing was read from disk, so nothing is stale.
+        stored = getattr(pipeline, "stored_dataview_resolutions", None)
+        forget = getattr(pipeline, "forget_dataview_dataset", None)
+        if stored is None or forget is None:
+            return False
+        stale = stored()
+        for dataview_id in stale:
+            forget(dataview_id)
+        return bool(stale)
 
     def _prepare_call(self, sdk_symbol: str, kwargs: dict[str, Any]) -> tuple[Any, dict[str, Any]]:
         """The SDK method for ``sdk_symbol`` and its coerced keyword arguments."""

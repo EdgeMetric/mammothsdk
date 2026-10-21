@@ -836,6 +836,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="view transform",
         ),
     ),
+    "run": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=False,
+            help="JSON Lines file with one command per line, or '-' (the default) for stdin.",
+            example_value="commands.jsonl",
+        ),
+    ),
     "calc": (
         PositionalSpec(
             name="expression",

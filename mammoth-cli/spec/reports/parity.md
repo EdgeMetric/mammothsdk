@@ -26,20 +26,20 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 ## Public SDK method parity
 
-- Total public methods: `880`
+- Total public methods: `885`
 - With canonical command: `789`
 - Alias of another command: `38`
-- Reviewed SDK-only exemptions: `53`
+- Reviewed SDK-only exemptions: `58`
 
 ## Command surface
 
-- Canonical + convenience commands: `859`
+- Canonical + convenience commands: `860`
 
 ### Mutation classes
 
 | Mutation class | Count |
 |---|---:|
-| read | 345 |
+| read | 346 |
 | benign_mutation | 237 |
 | reversible_pipeline | 40 |
 | destructive | 72 |
@@ -53,7 +53,7 @@ Generated from the reviewed manifests. Do not edit by hand.
 | contract_only_high_impact | 219 |
 | contract_only_no_disposable_fixture | 149 |
 | live_disposable_project | 216 |
-| live_read_only | 275 |
+| live_read_only | 276 |
 
 ## Protocol-only operations
 
