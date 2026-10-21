@@ -13,8 +13,8 @@ from typing import Any
 import pytest
 
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.services import data_profile, text_dates
 from mammoth_cli.services import read_queries as rq
-from mammoth_cli.services import text_dates
 from mammoth_cli.services.testing import FakeMammothService
 
 
@@ -265,7 +265,7 @@ def test_a_clean_text_column_reports_no_groups_and_no_examples() -> None:
 
 
 def test_a_text_column_with_too_many_values_is_not_checked_and_says_why() -> None:
-    limit = rq.dp.MAX_LISTED_DISTINCT
+    limit = data_profile.MAX_LISTED_DISTINCT
     ctx = _ctx(
         {"data": [{"group_0": f"v{n}", "agg_0": 1} for n in range(limit + 2)]}, {"N": "TEXT"}
     )

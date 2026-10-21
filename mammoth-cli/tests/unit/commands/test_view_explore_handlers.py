@@ -484,3 +484,95 @@ def test_a_number_card_at_auto_level_uses_the_width_its_buckets_show(
     assert code == 0
     levels = [c.get("level") for c in _calls(service, _EXPLORE)]
     assert levels == ["AUTO", 1]  # first to learn the width, then at it
+
+
+# ── a filter on a DATE chart card ──
+
+
+def _date_card(level: str) -> dict[str, Any]:
+    return {
+        "colId": "column_bk",
+        "renderType": "chart",
+        "view": "columns",
+        "charts": [{"queryIndex": 0, "level": level, "activeValues": []}],
+        "granularity": {"id": level, "name": level.title()},
+    }
+
+
+def _dated_view(service: FakeMammothService) -> None:
+    service.responses[_GET] = {
+        "id": 7,
+        "metadata": [{"display_name": "Booked", "internal_name": "column_bk", "type": "DATE"}],
+    }
+
+
+def test_a_filter_on_a_date_card_matches_the_buckets_the_backend_spells_with_a_t_and_z(
+    service: FakeMammothService,
+) -> None:
+    """The chart rows come back as ISO instants; the card stores ``YYYY-MM-DD HH:MM:SS``.
+
+    Nov, Dec and Jan are adjacent months, so (as ``getChartRuns`` merges adjacent buckets) they
+    become the one range [2026-11-01, 2027-02-01); March stays apart.
+    """
+    _dated_view(service)
+    service.responses[_PANEL_GET] = {"cards": [_date_card("MONTH")]}
+    service.responses[_EXPLORE] = {
+        "data": [
+            {"group_0": "2026-11-01T00:00:00Z"},
+            {"group_0": "2026-12-01T00:00:00Z"},
+            {"group_0": "2027-01-01T00:00:00Z"},
+            {"group_0": "2027-03-01T00:00:00Z"},
+        ]
+    }
+    code, out = _run(
+        ["view", "explore-panel", "edit", "7"],
+        {
+            "edits": [
+                {
+                    "op": "filter",
+                    "card": "Booked",
+                    "values": ["2026-11-01", "2026-12-01 00:00", "2027-01-01", "2027-03-01"],
+                }
+            ]
+        },
+    )
+    assert code == 0, out
+    (read,) = _calls(service, _EXPLORE)
+    assert read["column_type"] == "DATE"
+    assert read["level"] == "MONTH"
+    assert "condition" not in read
+    (written,) = _calls(service, _PANEL_SET)
+    assert written["panel"]["cards"][0]["condition"] == {
+        "OR": [
+            {
+                "AND": [
+                    {"column_bk": {"GTE": {"VALUE": "2026-11-01 00:00:00"}}},
+                    {"column_bk": {"LT": {"VALUE": "2027-02-01 00:00:00"}}},
+                ]
+            },
+            {
+                "AND": [
+                    {"column_bk": {"GTE": {"VALUE": "2027-03-01 00:00:00"}}},
+                    {"column_bk": {"LT": {"VALUE": "2027-04-01 00:00:00"}}},
+                ]
+            },
+        ]
+    }
+
+
+def test_a_date_the_card_does_not_list_is_refused_naming_the_buckets_it_lists(
+    service: FakeMammothService,
+) -> None:
+    _dated_view(service)
+    service.responses[_PANEL_GET] = {"cards": [_date_card("MONTH")]}
+    service.responses[_EXPLORE] = {"data": [{"group_0": "2026-11-01T00:00:00Z"}]}
+    code, out = _run(
+        ["view", "explore-panel", "edit", "7"],
+        {"edits": [{"op": "filter", "card": "Booked", "values": ["2026-05-01"]}]},
+    )
+    assert code == 2
+    assert out["error"]["message"] == (
+        "Not values of the 'Booked' card: '2026-05-01 00:00:00'. "
+        "It lists: '2026-11-01 00:00:00'."
+    )
+    assert _calls(service, _PANEL_SET) == []

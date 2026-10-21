@@ -407,6 +407,7 @@ def test_one_list_read_serves_every_target_of_a_sub_resource(svc: FakeMammothSer
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="_sub_record documents 'a list read serves every target of the call, so it is made "
     "once', but the cache is created per Sub, so tags.merge (two Subs on one list) reads it twice",
 )
@@ -552,3 +553,12 @@ def test_a_failed_dependents_read_is_reported_unchecked_never_as_none_found(
     svc.responses[dt._DEPENDENCIES_SYMBOL] = RuntimeError("boom")
     got = dt.resolve_dependents(svc, "view.delete", {"arguments": {"view_id": 5}}, 180)
     assert got == {"checked": False, "resource_ids": ["5"], "error": "RuntimeError: boom"}
+
+
+def test_a_label_skips_a_present_path_that_is_not_a_non_empty_string(
+    svc: FakeMammothService,
+) -> None:
+    """A truthy number at the first path is not a label; the next path that is text is."""
+    svc.responses[sym("dashboard.template.get")] = {"title": 5, "name": "Board", "label": "L"}
+    got = _targets(svc, "dashboard.template.delete", arguments={"template_id": 4})
+    assert got[0]["name"] == "dashboard template “Board”"

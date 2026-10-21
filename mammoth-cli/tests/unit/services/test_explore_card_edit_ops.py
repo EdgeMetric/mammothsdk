@@ -426,16 +426,19 @@ def test_duplicate_values_are_selected_once() -> None:
     assert card(out, "channel")["condition"] == {"channel": {"IN_LIST": {"VALUE": ["Shop"]}}}
 
 
-@pytest.mark.parametrize("values", [None, [], "Amazon"])
-def test_values_must_be_a_non_empty_list(values: Any) -> None:
+@pytest.mark.parametrize(
+    ("values", "message"),
+    [
+        (None, '"values" must be a non-empty list; null stands for the blank value.'),
+        ([], '"values" must be a non-empty list; null stands for the blank value.'),
+        ("Amazon", '"values" must be a non-empty list; null stands for the blank value.'),
+    ],
+)
+def test_values_must_be_a_non_empty_list(values: Any, message: str) -> None:
     edit: dict[str, Any] = {"op": "filter", "card": "Channel"}
     if values is not None:
         edit["values"] = values
-    error = refused(cards_for("Channel"), edit)
-    assert error.message in (
-        '"values" must be a non-empty list; null stands for the blank value.',
-        'The "filter" edit needs "values".',
-    )
+    assert refused(cards_for("Channel"), edit).message == message
 
 
 def test_a_text_value_that_is_not_text_is_refused() -> None:
@@ -1162,7 +1165,7 @@ def _evaluate(node: dict[str, Any], row: dict[str, Any]) -> bool | None:
     return False if False in results else None if None in results else True
 
 
-_ROWS = [
+_ROWS: list[dict[str, Any]] = [
     {"channel": "Amazon", "quantity": 5},
     {"channel": "Amazon", "quantity": 1},
     {"channel": "eBay", "quantity": None},
@@ -1199,7 +1202,7 @@ _UNDERSTOOD = {
 def test_exclude_keeps_exactly_the_rows_the_reading_does_not_keep_blanks_included(
     condition: dict[str, Any],
 ) -> None:
-    negated = ece.negate_condition(condition)
+    negated: Any = ece.negate_condition(condition)
     assert negated is not None
     kept = [r for r in _ROWS if _evaluate(negated, r) is True]
     not_kept = [r for r in _ROWS if _evaluate(condition, r) is not True]

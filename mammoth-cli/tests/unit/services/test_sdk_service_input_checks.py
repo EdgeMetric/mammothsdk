@@ -10,10 +10,12 @@ the SDK's expression parser reports a position, and the name that failed is read
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterator
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
@@ -84,7 +86,7 @@ def test_an_unknown_name_is_refused_with_the_nearest_display_name() -> None:
         "Column reference 'Regon' is not a display name in this view. Did you mean 'Region'?"
     )
     assert error.details["did_you_mean"] == "Region"
-    assert "case-sensitive" in error.hint
+    assert "case-sensitive" in (error.hint or "")
 
 
 def test_a_name_far_from_every_column_gets_no_suggestion() -> None:
@@ -159,10 +161,10 @@ def test_a_column_to_column_comparison_checks_the_value_as_a_column_too() -> Non
 
 
 def test_a_number_written_as_text_is_converted_for_a_number_column_in_place() -> None:
-    condition = {"or": [{"column": "Amount", "operator": ">", "value": "1000"}]}
-    _reject(SALES, condition=condition)
-    assert condition["or"][0]["value"] == 1000
-    assert isinstance(condition["or"][0]["value"], int)
+    leaf: dict[str, Any] = {"column": "Amount", "operator": ">", "value": "1000"}
+    _reject(SALES, condition={"or": [leaf]})
+    assert leaf["value"] == 1000
+    assert isinstance(leaf["value"], int)
 
 
 # ── join and lookup ──
@@ -344,7 +346,7 @@ def test_columns_a_built_step_adds_are_visible_to_the_next_step() -> None:
 
 
 @pytest.fixture
-def service() -> SdkMammothService:
+def service() -> Iterator[SdkMammothService]:
     instance = SdkMammothService(AUTH)
     real_client = instance._client
     try:
@@ -393,7 +395,7 @@ def test_a_view_in_no_dataset_is_a_not_found_naming_the_project_searched(
     assert service._discovery_miss_error(ValueError("other"), 7) is None
 
 
-class _Forbidden(sdk.MammothAPIError):
+class _Forbidden(MammothAPIError):
     def __init__(self) -> None:
         super().__init__("forbidden", status_code=403)
 
@@ -416,7 +418,7 @@ def test_a_403_with_no_project_or_another_error_has_no_non_member_project(
 ) -> None:
     assert service._non_member_project(_Forbidden(), {}) is None
     assert service._non_member_project(ValueError("x"), {"project_id": 9}) is None
-    other = sdk.MammothAPIError("server", status_code=500)
+    other = MammothAPIError("server", status_code=500)
     assert service._non_member_project(other, {"project_id": 9}) is None
 
 
@@ -424,7 +426,7 @@ def test_the_member_list_failing_leaves_the_error_unchanged(
     service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async def listing() -> list[dict[str, int]]:
-        raise sdk.MammothAPIError("down", status_code=500)
+        raise MammothAPIError("down", status_code=500)
 
     monkeypatch.setattr(
         service, "_client", SimpleNamespace(projects=SimpleNamespace(list_all=listing))

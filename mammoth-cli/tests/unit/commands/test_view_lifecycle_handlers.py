@@ -245,6 +245,7 @@ def test_optimize_applies_the_named_rules_and_waits_for_the_rerun_it_queued(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=KeyError,
     reason=(
         "BUG (suspected): the handler's result keeps job_id after its own wait, so the verify "
         "step polls it again and replaces the whole result with the job's payload; the "
@@ -360,7 +361,7 @@ def test_panel_set_with_cards_writes_them_as_given_and_returns_the_panel_read_ba
 def test_panel_set_with_columns_adds_a_default_card_for_each_column_after_the_saved_ones(
     service: FakeMammothService,
 ) -> None:
-    saved = {"cards": [{"colId": "column_ch", "renderType": "list"}], "height": 300}
+    saved: dict[str, Any] = {"cards": [{"colId": "column_ch", "renderType": "list"}], "height": 300}
     service.responses[_PANEL_GET] = saved
     service.responses[_PANEL_SET] = {}
     code, out = _run(

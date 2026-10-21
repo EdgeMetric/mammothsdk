@@ -12,6 +12,7 @@ import json
 import math
 import statistics
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -67,12 +68,13 @@ def _matching(condition: dict[str, Any] | None) -> list[dict[str, Any]]:
     ((column, test),) = condition.items()
     ((operator, spec),) = test.items()
     value = spec["VALUE"]
-    keep = {
+    keeps: dict[str, Callable[[Any], bool]] = {
         "EQ": lambda cell: cell == value,
         "NE": lambda cell: cell != value,
         "IN_LIST": lambda cell: cell in value,
         "NOT_IN_LIST": lambda cell: cell not in value,
-    }[operator]
+    }
+    keep = keeps[operator]
     return [r for r in ROWS if r[column] is not None and keep(r[column])]
 
 
@@ -80,17 +82,19 @@ def _measure(spec: dict[str, Any], rows: list[dict[str, Any]]) -> Any:
     function, column = spec["function"], spec.get("column")
     if function == "COUNT":
         return len(rows)
+    assert column is not None
     values = _present(column, rows)
     if function == "DISTINCT_COUNT":
         return len(set(values))
     if not values:
         return None
-    return {
+    measures: dict[str, Callable[[], Any]] = {
         "MIN": lambda: min(values),
         "MAX": lambda: max(values),
         "AVG": lambda: statistics.fmean(values),
         "STDDEV": lambda: statistics.stdev(values) if len(values) > 1 else None,
-    }[function]()
+    }
+    return measures[function]()
 
 
 def _aggregate(call_log: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:
@@ -203,6 +207,7 @@ def test_the_summary_names_constant_all_blank_and_mostly_blank_columns(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason=(
         "BUG: a column with one value and an unknown blank count (nulls is None, 'not guessed') "
         "is listed constant although 30 of its 40 rows are blank"
@@ -403,3 +408,43 @@ def test_a_target_with_too_many_values_is_refused(service: FakeMammothService) -
     assert out["error"]["message"] == (
         "target 'Amount' has 40 distinct values; a target needs between 2 and 20."
     )
+
+
+# ── boundaries of the blank arithmetic ──
+
+
+def _summary_row(name: str, distinct: int, nulls: int | None) -> dict[str, Any]:
+    return {"column": name, "type": "TEXT", "distinct": distinct, "nulls": nulls}
+
+
+def test_a_column_is_mostly_blank_from_exactly_half_its_rows() -> None:
+    """Pins the code's reading of "mostly": half of the rows or more (``nulls * 2 >= rows``)."""
+    from mammoth_cli.commands import view_profile as vp
+
+    details = {
+        "Under": _summary_row("Under", 3, 49),
+        "Half": _summary_row("Half", 3, 50),
+        "Over": _summary_row("Over", 3, 51),
+        "Unknown": _summary_row("Unknown", 3, None),
+        "Empty": _summary_row("Empty", 0, 100),
+    }
+    summary = vp._summary(details, 100, {})
+    assert summary["mostly_blank"] == [
+        {"column": "Half", "nulls": 50},
+        {"column": "Over", "nulls": 51},
+    ]
+    # an all-blank column is reported as all_blank only
+    assert summary["all_blank"] == ["Empty"]
+
+
+def test_blanks_are_known_without_a_query_only_from_stats_or_all_rows_distinct() -> None:
+    from mammoth_cli.commands import view_profile as vp
+
+    nulls = vp._nulls
+    # stored stats win
+    assert nulls(None, "C", {"nulls": "7"}, 3, 10) == 7  # type: ignore[arg-type]
+    # no value at all: every row is blank
+    assert nulls(None, "C", {}, 0, 10) == 10  # type: ignore[arg-type]
+    # as many distinct values as rows leaves no room for a blank; one fewer might hide one
+    assert nulls(None, "C", {}, 10, 10) == 0  # type: ignore[arg-type]
+    assert nulls(None, "C", {}, 9, 10) is None  # type: ignore[arg-type]

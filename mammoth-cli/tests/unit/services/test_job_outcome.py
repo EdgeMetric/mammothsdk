@@ -32,7 +32,30 @@ def test_view_target_reads_all_three_ids_from_the_path() -> None:
     assert jo.view_target(_job("rerun_dataview", _VIEW_PATH)) == jo.ViewTarget(180, 9, 7)
 
 
-@pytest.mark.parametrize("operation", sorted(jo.VIEW_JOB_OPERATIONS))
+#: Task names that leave a dataview to read, as the backend registers them
+#: (mvc-service ``CommonConstants/async_task_names.py``), not read from the implementation.
+BACKEND_VIEW_OPERATIONS = (
+    "create_dataview",
+    "clone_dataview",
+    "rerun_dataview",
+    "pipeline_rerun",
+    "reset_dataview",
+    "restore_dataview",
+    "optimize_dataview",
+    "apply_pipeline_version",
+    "apply_pending_changes",
+    "reorder_pipeline_rules",
+    "post_modification_pipeline_execution",
+    "pipeline_modification_handler",
+    "apply_ds_data_to_dataviews",
+)
+
+
+def test_the_set_of_view_operations_is_exactly_the_backends() -> None:
+    assert set(jo.VIEW_JOB_OPERATIONS) == set(BACKEND_VIEW_OPERATIONS)
+
+
+@pytest.mark.parametrize("operation", BACKEND_VIEW_OPERATIONS)
 def test_every_documented_view_operation_names_its_target(operation: str) -> None:
     assert jo.view_target(_job(operation, _VIEW_PATH)) == jo.ViewTarget(180, 9, 7)
 

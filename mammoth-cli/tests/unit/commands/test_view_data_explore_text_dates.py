@@ -8,7 +8,7 @@ stored strings, parses them (the format is stated in the answer) and regroups th
 from __future__ import annotations
 
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -112,7 +112,7 @@ def test_the_format_the_dates_were_read_in_is_stated(service: FakeMammothService
 def test_a_metric_is_summed_into_each_bucket(service: FakeMammothService) -> None:
     _, out = _explore({"level": "MONTH", "metric": {"column": "Amount", "function": "SUM"}})
     rows = out["data"]["data"]
-    expected: Counter[str] = Counter()
+    expected: defaultdict[str, float] = defaultdict(float)
     for value in BOOKED:
         expected[value[:7] + "-01"] += AMOUNTS.get(value, 0.0)
     assert [(r["bucket"], r["SUM_Amount"]) for r in rows] == sorted(expected.items())
