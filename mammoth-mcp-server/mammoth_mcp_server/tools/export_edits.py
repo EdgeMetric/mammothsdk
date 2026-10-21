@@ -15,8 +15,8 @@ from typing import Literal
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ExportFields, JobFields, ListFields, StepFields
-from ..jobs import JobStillRunning, still_running, wait_for_job
+from ..consts import ExportFields, ListFields, StepFields
+from ..jobs import JobStillRunning, job_id_of, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import view_url
@@ -254,8 +254,7 @@ async def send_export_change(
             project_id=ids["project_id"],
         )
     )
-    # The route names its job either way: under `job`, or as `job_id` alone.
-    if JobFields.JOB in answer or JobFields.JOB_ID in answer:
+    if job_id_of(answer) is not None:
         await wait_for_job(ids["workspace_id"], answer)
 
 

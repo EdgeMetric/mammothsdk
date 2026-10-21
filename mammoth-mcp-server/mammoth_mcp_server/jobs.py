@@ -93,7 +93,15 @@ def still_running(running: JobStillRunning, note: str) -> dict[str, JsonValue]:
 
 
 def find_job_id(payload: dict[str, JsonValue]) -> int:
-    """Find the job id in the payload of a route that answers asynchronously.
+    """Find the job id in the payload of a route that answers asynchronously."""
+    job_id = job_id_of(payload)
+    if job_id is None:
+        raise ToolError(f"{API_ERROR_PREFIX}: the route started no job")
+    return job_id
+
+
+def job_id_of(payload: dict[str, JsonValue]) -> int | None:
+    """The id of the job a route's answer names, or None when it names none.
 
     the API has three shapes for it: the job under `job`, the job itself, and
     `job_id` alone.
@@ -102,9 +110,7 @@ def find_job_id(payload: dict[str, JsonValue]) -> int:
     if isinstance(job, dict) and JobFields.ID in job:
         return int(str(job[JobFields.ID]))
     job_id = payload.get(JobFields.JOB_ID)
-    if job_id is None:
-        raise ToolError(f"{API_ERROR_PREFIX}: the route started no job")
-    return int(str(job_id))
+    return None if job_id is None else int(str(job_id))
 
 
 def read_job(payload: dict[str, JsonValue]) -> dict[str, JsonValue]:

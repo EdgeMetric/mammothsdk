@@ -6,11 +6,12 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
-from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
 from mammoth_mcp_server.consts import JobFields
 from mammoth_mcp_server.server import mcp_server
 from mammoth_mcp_server.task_params import _OPERATION_BUILDERS
+from mammoth_mcp_server.tools.steps import STAGED_BREAKS, about_steps
 
 from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool, run
 
@@ -193,7 +194,7 @@ class TestReplacingAStep:
 
         with a_fake_api() as api, as_caller(), patch.dict(_OPERATION_BUILDERS, {"delete": broken}):
             a_view(api, [MAKES_TOTAL, READS_TOTAL])
-            with pytest.raises(Exception) as error:
+            with pytest.raises(UnexpectedToolError) as error:
                 call_tool(
                     "edit_transformation_step",
                     step_id=101,
@@ -202,8 +203,32 @@ class TestReplacingAStep:
                     **IDS,
                 )
 
-        assert "does not fit the view" not in str(error.value)
+        # The builder's own error surfaces as a bug, not as the model's operation.
+        assert str(error.value) == "Error executing tool edit_transformation_step"
+        assert isinstance(error.value.__cause__, ValueError)
+        assert "invalid literal for int()" in str(error.value.__cause__)
         assert api.sent("PATCH", STEP) == []
+
+    def test_a_bug_in_the_math_builder_is_not_blamed_on_the_expression(self) -> None:
+        def broken(*_: object, **__: object) -> dict[str, Any]:
+            raise TypeError("unexpected keyword argument")
+
+        with (
+            a_fake_api() as api,
+            as_caller(),
+            patch("mammoth_mcp_server.task_params.build_math_params", broken),
+        ):
+            a_view(api, [MAKES_TOTAL, READS_TOTAL])
+            with pytest.raises(UnexpectedToolError) as error:
+                call_tool(
+                    "edit_transformation_step",
+                    step_id=101,
+                    change="replace",
+                    operation=replace_total(),
+                    **IDS,
+                )
+
+        assert isinstance(error.value.__cause__, TypeError)
 
     def test_without_an_operation_it_is_refused(self) -> None:
         with a_fake_api() as api, as_caller():
@@ -305,8 +330,15 @@ class TestInDraftModeWithAStepAlreadyFailing:
         assert answer["outcome"] == "staged"
         # Step 102 is still listed, as in error before this change.
         assert [problem["step_id"] for problem in answer["problems"]] == [102]
-        assert "change them first" not in answer["next_step"]
-        assert "in error before this change" in answer["next_step"]
+        assert "change it first" not in answer["next_step"]
+        assert "Step 102 in `problems` was in error before this change too" in answer["next_step"]
+
+
+def test_a_note_about_several_steps_names_them_in_the_plural() -> None:
+    note = about_steps(STAGED_BREAKS, {103, 102})
+
+    assert note.startswith("Steps 102, 103 in `problems` now read a column")
+    assert note.endswith("change them first.")
 
 
 class TestAChangeMammothRefuses:
@@ -375,7 +407,8 @@ class TestAChangeMadeWithBrokenReferences:
 
         assert answer["outcome"] == "staged"
         assert [problem["step_id"] for problem in answer["problems"]] == [102]
-        assert "change them first" in answer["next_step"]
+        assert "Step 102 in `problems` now reads a column" in answer["next_step"]
+        assert "change it first" in answer["next_step"]
 
     def test_outside_draft_mode_it_is_put_back(self) -> None:
         with a_fake_api() as api, as_caller():

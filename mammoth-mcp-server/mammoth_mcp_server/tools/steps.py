@@ -47,12 +47,16 @@ STAGED_NOTE = (
     ' user. Call manage_draft with "run" to run the staged changes, or "drop" to'
     " throw them away."
 )
+# Each note about steps reads in the singular for one step, in the plural for more.
 STAGED_BREAKS = (
-    "Steps {steps} in `problems` now read a column that is not there, and will fail"
-    " when the draft runs: change them first."
+    "Step {steps} in `problems` now reads a column that is not there, and will fail when"
+    " the draft runs: change it first.",
+    "Steps {steps} in `problems` now read a column that is not there, and will fail when"
+    " the draft runs: change them first.",
 )
 STAGED_FAILED_BEFORE = (
-    "Steps {steps} in `problems` were in error before this change too: it did not" " cause them."
+    "Step {steps} in `problems` was in error before this change too: it did not cause it.",
+    "Steps {steps} in `problems` were in error before this change too: it did not cause them.",
 )
 PUT_BACK_NOTE = (
     "The change made the steps in `problems` fail, so it was undone: the step is as"
@@ -134,15 +138,17 @@ def staged_note(failing_before: set[int], failing_after: set[int]) -> str:
     """What to say of a staged change: which failing steps it breaks, and which it did not."""
     notes = [STAGED_NOTE]
     if broken := failing_after - failing_before:
-        notes.append(STAGED_BREAKS.format(steps=listed(broken)))
+        notes.append(about_steps(STAGED_BREAKS, broken))
     if still := failing_after & failing_before:
-        notes.append(STAGED_FAILED_BEFORE.format(steps=listed(still)))
+        notes.append(about_steps(STAGED_FAILED_BEFORE, still))
     return " ".join(notes)
 
 
-def listed(step_ids: set[int]) -> str:
-    """Step ids as a sentence lists them, in order."""
-    return ", ".join(str(step_id) for step_id in sorted(step_ids))
+def about_steps(note: tuple[str, str], step_ids: set[int]) -> str:
+    """A note about some steps, in the singular for one, naming them in order."""
+    one, many = note
+    listed = ", ".join(str(step_id) for step_id in sorted(step_ids))
+    return (one if len(step_ids) == 1 else many).format(steps=listed)
 
 
 def find_step(steps: list[dict[str, JsonValue]], step_id: int) -> dict[str, JsonValue]:
