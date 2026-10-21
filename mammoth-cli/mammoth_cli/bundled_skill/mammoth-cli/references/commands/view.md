@@ -540,7 +540,7 @@ Status on release: ran once on CLI 2.0.27 — cross-project send 2026-09-19: exi
 
 Run: `mammoth view export csv`. Exact input fields: `mammoth schema get view.export.csv`.
 
-Example: `mammoth view export csv 123 --input '{"file_type": "xlsx"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export csv 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportCsvResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -565,6 +565,16 @@ Example: `mammoth view export delete 123 456 --yes`. Illustrative only: append `
 Result: `ViewExportDeleteResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Deleted export 2 -> {future_id:null,status:deleted,trigger_id:2}. Single invocation only.
+
+### `view.export.download`
+
+Run: `mammoth view export download`. Exact input fields: `mammoth schema get view.export.download`.
+
+Example: `mammoth view export download 123 --input '{"format": "xlsx"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExportDownloadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.export.elasticsearch`
 

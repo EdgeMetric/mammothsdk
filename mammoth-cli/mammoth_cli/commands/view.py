@@ -1446,6 +1446,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
     data = _trim_rows(data, limit, page_size)
+    data = keep_columns(data, document.get("columns"))
     if document.get("sequence") is None:
         # The view's row count is its latest step's; a read at an earlier step differs.
         data = _with_paging_total(data, meta)
@@ -1465,6 +1466,34 @@ def _page_offset(value: Any) -> int:
             hint="The first page is offset 0; use next_command from the previous page.",
         )
     return offset
+
+
+def keep_columns(data: Any, columns: list[str] | None) -> Any:
+    """Keep only ``columns`` (display names) in a data page's rows and column header.
+
+    A name the page does not have is refused with the names it does have, so a typo
+    never reads as an empty column.
+    """
+    if columns is None or not isinstance(data, dict):
+        return data
+    rows = data.get(_ROWS_KEY)
+    if not isinstance(rows, list):
+        return data
+    first = rows[0] if rows else None
+    available = list(first) if isinstance(first, dict) else list(data.get(_COLUMNS_KEY) or [])
+    missing = [name for name in columns if name not in available]
+    if missing:
+        raise CliError(
+            code="unknown_column",
+            message=f"Column(s) not in the view: {', '.join(missing)}.",
+            exit_status=EXIT_USAGE,
+            hint="Use column display names from this view.",
+            details={"columns": missing, "available": available},
+        )
+    kept = {**data, _ROWS_KEY: DataRows([{c: row[c] for c in columns} for row in rows])}
+    if isinstance(data.get(_COLUMNS_KEY), list):
+        kept[_COLUMNS_KEY] = list(columns)
+    return kept
 
 
 def _with_cli_paging(
@@ -4025,23 +4054,46 @@ def view_export_create(invocation: Invocation) -> HandlerResult:
 
 
 def view_export_csv(invocation: Invocation) -> HandlerResult:
-    """Download a dataview to a local file: csv by default, or ``file_type`` (xlsx, json, ...).
+    """Export a dataview to a local CSV file.
 
     With no --input the file is written to the current directory under an
     auto-generated name; the dataset is resolved from the view. Override with
-    ``--input '{"output_path": "path.xlsx", "file_type": "xlsx"}'``. An existing
-    file is not replaced (``file_exists``) unless ``--overwrite`` is given.
+    ``--input '{"output_path": "path.csv"}'``. An existing file is not replaced
+    (``file_exists``) unless ``--overwrite`` is given.
 
     Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
     signed download URL is returned instead so the host can hand it to its
     user. ``output_path`` is refused in that case.
     """
+    return _download_dataview(
+        invocation, "mammoth.api.exports.ExportsAPI.to_csv_url", ("output_path", "timeout")
+    )
+
+
+def view_export_download(invocation: Invocation) -> HandlerResult:
+    """Download a dataview to a local file as csv, xlsx, json, ndjson, xml, yaml or parquet.
+
+    Same as ``view export csv`` otherwise: ``--input '{"format": "xlsx", "output_path":
+    "out.xlsx"}'``; the default name carries the format's extension; an existing file is not
+    replaced unless ``--overwrite``; embedded, the signed download URL is returned instead.
+    """
+    return _download_dataview(
+        invocation,
+        "mammoth.api.exports.ExportsAPI.to_file_url",
+        ("output_path", "file_type", "timeout"),
+    )
+
+
+def _download_dataview(
+    invocation: Invocation, embedded_symbol: str, fields: tuple[str, ...]
+) -> HandlerResult:
+    """Shared body of ``view export csv`` and ``view export download``."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
     if embedded.active():
-        return _view_export_csv_embedded(invocation, dataview_id, document)
+        return _view_export_csv_embedded(invocation, dataview_id, document, embedded_symbol)
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("output_path", "file_type", "timeout", "dataset_id"))
+    _forward_optional(document, kwargs, (*fields, "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         # The SDK's own default name needs the parent dataset, which is known here.
@@ -4058,9 +4110,9 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 
 
 def _view_export_csv_embedded(
-    invocation: Invocation, dataview_id: int, document: dict[str, Any]
+    invocation: Invocation, dataview_id: int, document: dict[str, Any], symbol: str
 ) -> HandlerResult:
-    """``view.export.csv`` for an embedded call: never writes a local file."""
+    """A download for an embedded call: never writes a local file."""
     if "output_path" in document:
         raise CliError(
             code=CODE_UNSUPPORTED_CONTRACT,
@@ -4071,7 +4123,7 @@ def _view_export_csv_embedded(
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
     _forward_optional(document, kwargs, ("file_type", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call("mammoth.api.exports.ExportsAPI.to_file_url", **kwargs)
+        data = service.call(symbol, **kwargs)
     return {"download_url": data["url"]}, _meta(invocation, auth.workspace_id, None)
 
 

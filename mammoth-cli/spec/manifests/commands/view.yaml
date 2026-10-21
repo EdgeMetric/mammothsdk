@@ -2521,8 +2521,8 @@ commands:
     falls_back_to_field: null
     help: ID of the dataview.
   options: []
-  sdk_symbol: mammoth.api.exports.ExportsAPI.to_file
-  sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_file with validated request fields.
+  sdk_symbol: mammoth.api.exports.ExportsAPI.to_csv
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_csv with validated request fields.
   request_model: ViewExportCsvRequest
   result_model: ViewExportCsvResult
   mutation_class: benign_mutation
@@ -2531,7 +2531,7 @@ commands:
   wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
-  no_readback: a file download returns a one-time download link that settles synchronously; no CLI read command
+  no_readback: a CSV export returns a one-time download link that settles synchronously; no CLI read command
     can re-fetch it
   live_test: LT-VIEW-EXPORT-CSV
   live_exemption_reason: null
@@ -2539,7 +2539,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export csv DATAVIEW_ID --help
-  agent_example: 'mammoth view export csv 123 --input ''{"file_type": "xlsx"}'''
+  agent_example: mammoth view export csv 123
   unit_tests:
   - UT-VIEW-EXPORT-CSV
   contract_tests:
@@ -2548,7 +2548,7 @@ commands:
   - CT-VIEW-EXPORT-CSV-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: SDK target for view export csv VIEW_ID (file_type csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default; format is an alias of file_type); uses partial file, fsync, atomic rename,
+  known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
     and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is
     given.
   reviewed_by: primary
@@ -2678,6 +2678,51 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.download
+  command_path: view export download
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddExport
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.to_file
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_file with validated request fields.
+  request_model: ViewExportDownloadRequest
+  result_model: ViewExportDownloadResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  no_readback: a file download returns a one-time download link that settles synchronously; no CLI read command
+    can re-fetch it
+  live_test: LT-VIEW-EXPORT-DOWNLOAD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export download DATAVIEW_ID --help
+  agent_example: 'mammoth view export download 123 --input ''{"format": "xlsx"}'''
+  unit_tests:
+  - UT-VIEW-EXPORT-DOWNLOAD
+  contract_tests:
+  - CT-VIEW-EXPORT-DOWNLOAD-HUMAN
+  - CT-VIEW-EXPORT-DOWNLOAD-JSON
+  - CT-VIEW-EXPORT-DOWNLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: SDK target for view export download VIEW_ID (format csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default); uses partial file, fsync, atomic rename,
+    and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is
+    given.
   reviewed_by: primary
 - command_id: view.export.elasticsearch
   command_path: view export elasticsearch
@@ -4987,7 +5032,9 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-UNDO
   known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to count values that will
-    not convert (they become empty).'
+    not convert (they become empty). A DATE conversion of a text column takes input_formats (list of the
+    layouts it mixes), output_format (display layout) and input_format_preference (uk or us for day/month
+    ambiguity) on the conversions entry; format (python-style date_format) still works.'
   reviewed_by: primary
 - command_id: view.transform.copy-columns
   command_path: view transform copy-columns

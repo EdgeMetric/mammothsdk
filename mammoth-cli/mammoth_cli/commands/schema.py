@@ -223,8 +223,9 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "folder.move": "move put dataset view dashboard resources into a folder directory",
     "file.delete": "delete remove uploaded source file csv",
     "file.list": "list show uploaded source files csv",
-    "view.export.csv": (
-        "export download local file artifact csv xlsx excel json ndjson xml yaml parquet "
+    "view.export.csv": "export download local CSV file artifact",
+    "view.export.download": (
+        "export download local file artifact xlsx excel json ndjson xml yaml parquet csv "
         "file type format"
     ),
     "view.export.dataset": (
@@ -1196,6 +1197,8 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
 
 
 _INLINE_SCHEMA_MAX_CHARS = 3000
+#: A restrictions note (where a nested input shape often lives) is inlined up to this long.
+_INLINE_NOTES_MAX_CHARS = 700
 
 
 def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
@@ -2261,6 +2264,10 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
             entry["accepted_fields"] = fields
         if record.get("agent_example"):
             entry["agent_example"] = record["agent_example"]
+        notes = record.get("known_restrictions")
+        if isinstance(notes, str) and notes:
+            cut = notes[:_INLINE_NOTES_MAX_CHARS]
+            entry["known_restrictions"] = cut + ("..." if len(notes) > len(cut) else "")
 
 
 def _inline_picks(page: list[dict[str, Any]], offset: int) -> list[dict[str, Any]]:

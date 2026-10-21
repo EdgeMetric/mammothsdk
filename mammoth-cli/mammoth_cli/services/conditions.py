@@ -114,7 +114,24 @@ def suggest_operator(raw: Any) -> str | None:
     return close[0] if close else None
 
 
+#: Operator names for a regular-expression match. Conditions have none, so a guess is
+#: answered with the two ways that do work instead of a list of unrelated operators.
+_REGEX_OPERATORS = frozenset({"REGEX", "REGEXP", "REGEXP_MATCH", "RLIKE", "MATCH", "MATCHES"})
+
+
 def _resolve_operator(raw: Any) -> str:
+    if isinstance(raw, str) and raw.strip().upper() in _REGEX_OPERATORS:
+        raise CliError(
+            code="invalid_condition",
+            message=f"Conditions have no regular-expression operator ({raw!r}).",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Use CONTAINS, ICONTAINS, STARTS_WITH or ENDS_WITH for a plain pattern, or "
+                "extract the match into a column with `view transform substring` "
+                "(regex_pattern) and filter on that column."
+            ),
+            details={"operator": raw, "accepted": list(_operator_names())},
+        )
     if isinstance(raw, str):
         alias = _operator_aliases().get(raw.strip())
         if alias is not None:

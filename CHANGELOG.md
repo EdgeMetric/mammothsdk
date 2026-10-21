@@ -10,9 +10,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `view transform convert-type`: `conversions[]` items take `input_formats` (list), `output_format` and `input_format_preference` (`uk` or `us`); `format` stays as an alias.
 - `view column format set`: sets a column's display format (date, number, currency, percentage) in one call.
-- `view export csv` takes `file_type`: csv, xlsx, json, ndjson, xml, yaml or parquet (`format` is an alias). SDK: `ExportsAPI.to_file` and `to_file_url`.
+- `view export download` saves a view as csv, xlsx, json, ndjson, xml, yaml or parquet (`format`; `view export csv` is unchanged). SDK: `ExportsAPI.to_file` and `to_file_url`.
 - `view conditional-format replace`: deletes every rule and creates the given ones in one call. SDK: `conditional_format_replace`.
 - `schema find` inlines the nested JSON Schema of non-scalar fields; input-validation errors carry `details.input_contract` (accepted fields and an example).
+- `view data get` takes `columns` (display names) to return only those columns.
+- `dataset batch-data` `columns` takes display names or ids, a list or one string (the route wants column ids); SDK `get_batch_data(columns=)` also takes a list.
+- `dashboard v3 generate` accepts `intent`, `dataview_id` and `title` at the top level of `--input`.
+- Condition operators: a regular-expression operator (`REGEX`, `RLIKE`, ...) is refused with the working alternatives.
+- SDK `create_from_pdf` refuses a call the API would refuse (neither or both of `table_list` and `is_preview_needed`) with the reason; embedded `project_required` says how to pick a project.
 
 ## mammoth-io 0.8.45, mammoth-cli 2.2.92, mammoth-mcp-server 0.2.4 (2026-10-21)
 

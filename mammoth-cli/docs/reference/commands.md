@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.93.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 784.
+Total commands: 785.
 
 ## activity
 
@@ -3729,7 +3729,7 @@ Total commands: 784.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.create_from_pdf`
-- Agent example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'`
+- Agent example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "report.pdf", "is_preview_needed": true}'`
 
 ### `mammoth dataset data`
 
@@ -6495,8 +6495,8 @@ Total commands: 784.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
-- Backing SDK: `mammoth.api.exports.ExportsAPI.to_file`
-- Agent example: `mammoth view export csv 123 --input '{"file_type": "xlsx"}'`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.to_csv`
+- Agent example: `mammoth view export csv 123`
 
 ### `mammoth view export dataset`
 
@@ -6521,6 +6521,17 @@ Total commands: 784.
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.delete`
 - Agent example: `mammoth view export delete 123 456 --yes`
+
+### `mammoth view export download`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.to_file`
+- Agent example: `mammoth view export download 123 --input '{"format": "xlsx"}'`
 
 ### `mammoth view export elasticsearch`
 

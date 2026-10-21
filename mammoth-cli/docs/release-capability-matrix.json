@@ -12863,6 +12863,7 @@
         "view.export.create",
         "view.export.csv",
         "view.export.dataset",
+        "view.export.download",
         "view.export.elasticsearch",
         "view.export.email",
         "view.export.ftp",

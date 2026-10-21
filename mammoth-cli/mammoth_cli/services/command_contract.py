@@ -732,6 +732,7 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "view.data.get": (
         FieldSpec("limit", required=False, annotation=int, default=50),
         FieldSpec("offset", required=False, annotation=int, default=0),
+        FieldSpec("columns", required=False, annotation=list[str] | None, default=None),
     ),
     # The dataview GET takes a server-side projection: "__min", "__standard",
     # "__full" or a comma-separated field list.

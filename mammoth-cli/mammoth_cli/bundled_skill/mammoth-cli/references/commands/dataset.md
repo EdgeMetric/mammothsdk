@@ -76,7 +76,7 @@ Status on release: ran once on CLI 1.1.9 — Bounded owned-fixture create succee
 
 Run: `mammoth dataset create-from-pdf`. Exact input fields: `mammoth schema get dataset.create-from-pdf`.
 
-Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "report.pdf", "is_preview_needed": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetCreateFromPdfResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

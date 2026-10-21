@@ -283,7 +283,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset create-from-pdf FILE_OBJECT_ID --help
-  agent_example: 'mammoth dataset create-from-pdf 123 --input ''{"file_name": "./sales.csv"}'''
+  agent_example: 'mammoth dataset create-from-pdf 123 --input ''{"file_name": "report.pdf", "is_preview_needed": true}'''
   unit_tests:
   - UT-DATASET-CREATE-FROM-PDF
   contract_tests:
@@ -292,7 +292,7 @@ commands:
   - CT-DATASET-CREATE-FROM-PDF-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: Give exactly one of table_list (table indices to extract) or is_preview_needed (true to preview the tables first); the API refuses neither and refuses both. user_instruction cannot be combined with table_list.
   reviewed_by: primary
 - command_id: dataset.data
   command_path: dataset data

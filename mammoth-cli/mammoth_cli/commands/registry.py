@@ -927,6 +927,7 @@ _TARGETS: dict[str, str] = {
     "view.task.update": "mammoth_cli.commands.view:view_task_update",
     "view.export.create": "mammoth_cli.commands.view:view_export_create",
     "view.export.csv": "mammoth_cli.commands.view:view_export_csv",
+    "view.export.download": "mammoth_cli.commands.view:view_export_download",
     "view.export.delete": "mammoth_cli.commands.view:view_export_delete",
     "view.export.get": "mammoth_cli.commands.view:view_export_get",
     "view.export.list": "mammoth_cli.commands.view:view_export_list",
