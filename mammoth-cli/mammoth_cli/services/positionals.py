@@ -232,6 +232,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "workspace.invite.update-role": (),
     "agent.run.status": (),
     "agent.run.list": (),
+    "agent.access.askers": (
+        PositionalSpec(
+            name="project_id",
+            type=int,
+            required=True,
+            help="ID of the project whose askers to list.",
+            example_value="123",
+        ),
+    ),
     "agent.action.delete": (
         PositionalSpec(
             name="action_id",
@@ -386,6 +395,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=True,
             help="Path to a local workbook.",
             example_value="Sales.pbix",
+        ),
+    ),
+    "dashboard.chat.attachment.upload": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local file to attach to the dashboard chat.",
+            example_value="notes.pdf",
         ),
     ),
     "dashboard.import-workbook": (

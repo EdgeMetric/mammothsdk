@@ -939,3 +939,77 @@ commands:
     command: billing.stripe.usage
     ids: {}
     kind: object
+- command_id: billing.stripe.held-change.cancel
+  command_path: billing stripe held-change cancel
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CancelHeldChange
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_held_change_cancel
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_held_change_cancel with validated request
+    fields.
+  request_model: BillingStripeHeldChangeCancelRequest
+  result_model: BillingStripeHeldChangeCancelResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe held-change cancel --help
+  agent_example: mammoth billing stripe held-change cancel --yes
+  unit_tests:
+  - UT-BILLING-STRIPE-HELD-CHANGE-CANCEL
+  contract_tests:
+  - CT-BILLING-STRIPE-HELD-CHANGE-CANCEL-HUMAN
+  - CT-BILLING-STRIPE-HELD-CHANGE-CANCEL-JSON
+  - CT-BILLING-STRIPE-HELD-CHANGE-CANCEL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Cancels the plan change the workspace is holding. Read `billing stripe held-change get` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
+  reviewed_by: primary
+  readback:
+    command: billing.stripe.held-change.get
+    ids: {}
+    kind: object
+- command_id: billing.stripe.held-change.get
+  command_path: billing stripe held-change get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetHeldChange
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_held_change_get
+  sdk_conversion: Call mammoth.api.billing.BillingAPI.stripe_held_change_get with validated request fields.
+  request_model: BillingStripeHeldChangeGetRequest
+  result_model: BillingStripeHeldChangeGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth billing stripe held-change get --help
+  agent_example: mammoth billing stripe held-change get
+  unit_tests:
+  - UT-BILLING-STRIPE-HELD-CHANGE-GET
+  contract_tests:
+  - CT-BILLING-STRIPE-HELD-CHANGE-GET-HUMAN
+  - CT-BILLING-STRIPE-HELD-CHANGE-GET-JSON
+  - CT-BILLING-STRIPE-HELD-CHANGE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Answers not found when no plan change is waiting for payment.
+  reviewed_by: primary

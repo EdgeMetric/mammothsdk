@@ -452,6 +452,32 @@ class DashboardsAPI:
         """
         return await self._post_workbook(file, "/dashboards/v3/attachments")
 
+    async def chat_attachment_upload(self, dashboard_id: int, file: str | Path) -> dict[str, Any]:
+        """Keep a file the user attaches in a dashboard's editor chat, to read in a turn.
+
+        One picture (PNG, JPEG, WebP or GIF, scaled to 1500 px), PDF or Word file (up to 20
+        MB, the first 50 pages read), or a text file. It is kept with the board's chat,
+        once per content, never on the board itself. A spreadsheet is refused (it belongs
+        in the data import), as is a ``.pbix`` or ``.twb`` workbook (use
+        :meth:`attachment_create`).
+
+        Args:
+            dashboard_id: ID of the dashboard.
+            file: Local file to attach.
+
+        Returns:
+            Dict with ``ref`` (what a chat turn's ``attachments`` names), ``name``, ``kind``
+            (``image``, ``document`` or ``text``), ``media_type``, ``byte_size`` and, for a
+            document, ``pages``, ``pages_read``, ``words`` and ``truncated``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* is not positive or *file* is not a
+                readable local file.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return await self._post_workbook(file, f"/dashboards/{dashboard_id}/chat/attachments")
+
     async def _post_workbook(self, file: str | Path, endpoint: str) -> dict[str, Any]:
         try:
             path = Path(file)

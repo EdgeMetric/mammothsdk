@@ -114,6 +114,14 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "kind": "dataset",
         "units": [{"id": 12, "name": "Sales", "project_id": 3}],
     },
+    "agent.access.grant.give": {
+        "emails": ["analyst@example.com"],
+        "level": "ask",
+        "items": [{"project_id": 1}],
+    },
+    "agent.access.request.create": {"kind": "access", "text": "Please share the Sales project"},
+    "agent.access.request.resolve": {"status": "done"},
+    "agent.turn.rate": {"rating": "up"},
     "agent.session.set-visibility": {"visibility": "shared"},
     "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
     "annotation.create": {

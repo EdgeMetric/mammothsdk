@@ -88,6 +88,19 @@ INTERNAL_ONLY: dict[str, str] = {
     "GetProjectMove": "Staff-only support route: status of a project move.",
     "PurgeProjectMove": "Staff-only support route: purges the source of a finished project move.",
     "CollectionsReach": "Web library page: the Live pill counting a collection's readers.",
+    "GetChatAttachment": (
+        "Web editor chat panel: bytes of a file attached to a dashboard's AI chat "
+        "(att:<sha> thumbnails and page views); the caller already has the file."
+    ),
+    "StreamJob": (
+        "Server-Sent Events stream of one job until it is done; a terminal cannot hold it, "
+        "and 'job wait' polls the same job."
+    ),
+    "StartToolClaim": (
+        "Public web sign-up step of an emailed Open tables link: makes an account for a "
+        "visitor with none and returns a one-time browser sign-in URL; CLI users are "
+        "already signed in and use 'dataset tool-claim redeem'."
+    ),
 }
 
 # --- Routes the SDK calls that the server on master does not serve yet ------
@@ -897,6 +910,38 @@ OVERRIDES: dict[str, str] = {
     "DuplicateWorkflow": "workflow.duplicate",
     "UndoWorkflowSave": "workflow.save-undo",
     "CancelWorkflowSaveStep": "workflow.save-cancel-step",
+    # Agent access (Settings > AI Agent): who may ask, how far, and what they request.
+    "ListAgentGrants": "agent.access.grant.list",
+    "GiveAgentAccess": "agent.access.grant.give",
+    "ChangeAgentAccess": "agent.access.grant.update",
+    "RevokeAgentAccess": "agent.access.grant.revoke",
+    "GetAgentAccessMe": "agent.access.me",
+    "ListAgentPeople": "agent.access.people",
+    "GetAgentProjectAskers": "agent.access.askers",
+    "GetAgentAccessReach": "agent.access.reach",
+    "GetAgentAccessTree": "agent.access.tree",
+    "GetAgentSettings": "agent.access.settings.get",
+    "UpdateAgentSettings": "agent.access.settings.update",
+    "ListAgentAccessRequests": "agent.access.request.list",
+    "ListMyAgentAccessRequests": "agent.access.request.mine",
+    "CreateAgentAccessRequest": "agent.access.request.create",
+    "ResolveAgentAccessRequest": "agent.access.request.resolve",
+    "AddAgentRequestToProjectContext": "agent.access.request.add-to-context",
+    "SaveAgentChart": "agent.access.chart.save",
+    "ListAgentTurnFeedback": "agent.session.feedback.list",
+    "RateAgentTurn": "agent.turn.rate",
+    # Dashboard v3 editor chat.
+    "UploadChatAttachment": "dashboard.chat.attachment.upload",
+    "GetUnpublishedChanges": "dashboard.unpublished",
+    # Subscription plans, held plan changes, connections, previews, Open tables links.
+    "UpdatePlanEntitlements": "support.plan.update-entitlements",
+    "GetHeldChange": "billing.stripe.held-change.get",
+    "CancelHeldChange": "billing.stripe.held-change.cancel",
+    "ListAllConnections": "connector.connection.list-all",
+    "TestConnection": "connector.connection.test",
+    "CancelTaskPreview": "view.task.preview-cancel",
+    "GetToolClaim": "dataset.tool-claim.get",
+    "RedeemToolClaim": "dataset.tool-claim.redeem",
 }
 
 

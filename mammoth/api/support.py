@@ -34,6 +34,7 @@ WARN_CONNECTOR_PRICE_IGNORED = (
     "field (connectors are access, not a priced line item), so it is no longer sent."
 )
 ERR_STORAGE_TIERS_EMPTY = "`storage_tiers` must be a non-empty list."
+ERR_ENTITLEMENT_VALUES_EMPTY = "`values` must be a non-empty mapping of registry key to value."
 ERR_STORAGE_OPTION_NO_CHANGE = "Provide at least one of storage_gb, monthly_price, annual_price."
 ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
 ERR_TEMPLATE_CHANGES_EMPTY = "`changes` must be a non-empty mapping of filing fields."
@@ -290,6 +291,34 @@ class SupportAPI:
         }
         body = {k: v for k, v in fields.items() if v is not None}
         return await self._client._request_json("PUT", f"/subscription/plans/{plan_id}", json=body)
+
+    async def plan_update_entitlements(
+        self, plan_id: int, values: dict[str, bool | int | str | None]
+    ) -> dict[str, Any]:
+        """Edit a plan's entitlement values (its column of the entitlement matrix).
+
+        Admin only. The values land on the plan's own feature profile.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+            values: ``{registry key: value}`` cells to write (at least one). A switch takes
+                ``true``/``false``; a capacity or meter a number (0 = not granted),
+                ``"unlimited"`` or ``"custom"``; an enum one of its options or ``null``
+                (not granted).
+
+        Returns:
+            Dict with ``plan``, ``values`` (the plan's whole matrix column afterwards) and
+            ``message``.
+
+        Raises:
+            MammothValidationError: If *plan_id* is not positive or *values* is empty.
+        """
+        _check_id("plan_id", plan_id)
+        if not values:
+            raise MammothValidationError(ERR_ENTITLEMENT_VALUES_EMPTY)
+        return await self._client._request_json(
+            "PUT", f"/subscription/plans/{plan_id}/entitlements", json={"values": values}
+        )
 
     async def plan_update_storage_tiers(
         self, plan_id: int, storage_tiers: list[dict[str, Any]]

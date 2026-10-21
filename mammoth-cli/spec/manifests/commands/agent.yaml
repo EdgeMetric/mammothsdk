@@ -2381,3 +2381,761 @@ commands:
     team. A new charter becomes a new charter version.'
   reviewed_by: primary
   no_readback: returns the changed definition itself
+- command_id: agent.access.askers
+  command_path: agent access askers
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentProjectAskers
+  positionals:
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project whose askers to list.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_project_askers
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_project_askers with validated request fields.
+  request_model: AgentAccessAskersRequest
+  result_model: AgentAccessAskersResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-ASKERS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access askers PROJECT_ID --help
+  agent_example: mammoth agent access askers 123
+  unit_tests:
+  - UT-AGENT-ACCESS-ASKERS
+  contract_tests:
+  - CT-AGENT-ACCESS-ASKERS-HUMAN
+  - CT-AGENT-ACCESS-ASKERS-JSON
+  - CT-AGENT-ACCESS-ASKERS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Needs a manager of the workspace's AI Agent settings, or someone who manages the project's people. Returns a count.
+  reviewed_by: primary
+- command_id: agent.access.chart.save
+  command_path: agent access chart save
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SaveAgentChart
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
+  - name: turn_id
+    type: str
+    required: true
+    metavar: TURN_ID
+    falls_back_to_field: null
+    help: ID of the turn.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_chart_save
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_chart_save with validated request fields.
+  request_model: AgentAccessChartSaveRequest
+  result_model: AgentAccessChartSaveResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-CHART-SAVE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access chart save SESSION_ID TURN_ID --help
+  agent_example: mammoth agent access chart save resource-123 resource-123
+  unit_tests:
+  - UT-AGENT-ACCESS-CHART-SAVE
+  contract_tests:
+  - CT-AGENT-ACCESS-CHART-SAVE-HUMAN
+  - CT-AGENT-ACCESS-CHART-SAVE-JSON
+  - CT-AGENT-ACCESS-CHART-SAVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  no_readback: returns the dashboard id the chart was saved to; that dashboard is the new state
+- command_id: agent.access.grant.give
+  command_path: agent access grant give
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GiveAgentAccess
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_give
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_give with validated request fields.
+  request_model: AgentAccessGrantGiveRequest
+  result_model: AgentAccessGrantGiveResult
+  mutation_class: external_effect
+  edits_target: false
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access grant give --help
+  agent_example: 'mammoth agent access grant give --input ''{"emails": ["analyst@example.com"], "level":
+    "ask", "items": [{"project_id": 1}]}'' --yes'
+  unit_tests:
+  - UT-AGENT-ACCESS-GRANT-GIVE
+  contract_tests:
+  - CT-AGENT-ACCESS-GRANT-GIVE-HUMAN
+  - CT-AGENT-ACCESS-GRANT-GIVE-JSON
+  - CT-AGENT-ACCESS-GRANT-GIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can give access. People outside the workspace are invited as free guests. Needs --yes. Read `agent access grant list` afterwards.
+  reviewed_by: primary
+  readback:
+    command: agent.access.grant.list
+    ids: {}
+    kind: object
+- command_id: agent.access.grant.list
+  command_path: agent access grant list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentGrants
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grants_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grants_list with validated request fields.
+  request_model: AgentAccessGrantListRequest
+  result_model: AgentAccessGrantListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-GRANT-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access grant list --help
+  agent_example: mammoth agent access grant list
+  unit_tests:
+  - UT-AGENT-ACCESS-GRANT-LIST
+  contract_tests:
+  - CT-AGENT-ACCESS-GRANT-LIST-HUMAN
+  - CT-AGENT-ACCESS-GRANT-LIST-JSON
+  - CT-AGENT-ACCESS-GRANT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can list grants.
+  reviewed_by: primary
+- command_id: agent.access.grant.revoke
+  command_path: agent access grant revoke
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RevokeAgentAccess
+  positionals:
+  - name: grant_id
+    type: int
+    required: true
+    metavar: GRANT_ID
+    falls_back_to_field: null
+    help: ID of the grant.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_revoke
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_revoke with validated request fields.
+  request_model: AgentAccessGrantRevokeRequest
+  result_model: AgentAccessGrantRevokeResult
+  mutation_class: destructive
+  edits_target: false
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-GRANT-REVOKE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access grant revoke GRANT_ID --help
+  agent_example: mammoth agent access grant revoke 123 --yes
+  unit_tests:
+  - UT-AGENT-ACCESS-GRANT-REVOKE
+  contract_tests:
+  - CT-AGENT-ACCESS-GRANT-REVOKE-HUMAN
+  - CT-AGENT-ACCESS-GRANT-REVOKE-JSON
+  - CT-AGENT-ACCESS-GRANT-REVOKE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can revoke. Removes the grant at once; the person loses the access. Prompts, or pass --yes.
+  reviewed_by: primary
+  readback:
+    command: agent.access.grant.list
+    ids: {}
+    kind: object
+- command_id: agent.access.grant.update
+  command_path: agent access grant update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ChangeAgentAccess
+  positionals:
+  - name: grant_id
+    type: int
+    required: true
+    metavar: GRANT_ID
+    falls_back_to_field: null
+    help: ID of the grant.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_update
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_update with validated request fields.
+  request_model: AgentAccessGrantUpdateRequest
+  result_model: AgentAccessGrantUpdateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-GRANT-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access grant update GRANT_ID --help
+  agent_example: mammoth agent access grant update 123
+  unit_tests:
+  - UT-AGENT-ACCESS-GRANT-UPDATE
+  contract_tests:
+  - CT-AGENT-ACCESS-GRANT-UPDATE-HUMAN
+  - CT-AGENT-ACCESS-GRANT-UPDATE-JSON
+  - CT-AGENT-ACCESS-GRANT-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can change a grant.
+  reviewed_by: primary
+  readback:
+    command: agent.access.grant.list
+    ids: {}
+    kind: object
+- command_id: agent.access.me
+  command_path: agent access me
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentAccessMe
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_me
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_me with validated request fields.
+  request_model: AgentAccessMeRequest
+  result_model: AgentAccessMeResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-ME
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access me --help
+  agent_example: mammoth agent access me
+  unit_tests:
+  - UT-AGENT-ACCESS-ME
+  contract_tests:
+  - CT-AGENT-ACCESS-ME-HUMAN
+  - CT-AGENT-ACCESS-ME-JSON
+  - CT-AGENT-ACCESS-ME-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.access.people
+  command_path: agent access people
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentPeople
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_people
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_people with validated request fields.
+  request_model: AgentAccessPeopleRequest
+  result_model: AgentAccessPeopleResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-PEOPLE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access people --help
+  agent_example: mammoth agent access people
+  unit_tests:
+  - UT-AGENT-ACCESS-PEOPLE
+  contract_tests:
+  - CT-AGENT-ACCESS-PEOPLE-HUMAN
+  - CT-AGENT-ACCESS-PEOPLE-JSON
+  - CT-AGENT-ACCESS-PEOPLE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can list the people.
+  reviewed_by: primary
+- command_id: agent.access.reach
+  command_path: agent access reach
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentAccessReach
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_reach
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_reach with validated request fields.
+  request_model: AgentAccessReachRequest
+  result_model: AgentAccessReachResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-REACH
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access reach --help
+  agent_example: mammoth agent access reach
+  unit_tests:
+  - UT-AGENT-ACCESS-REACH
+  contract_tests:
+  - CT-AGENT-ACCESS-REACH-HUMAN
+  - CT-AGENT-ACCESS-REACH-JSON
+  - CT-AGENT-ACCESS-REACH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Anyone reads their own; another person's (user_id) is for managers of the AI Agent settings only.
+  reviewed_by: primary
+- command_id: agent.access.request.add-to-context
+  command_path: agent access request add-to-context
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddAgentRequestToProjectContext
+  positionals:
+  - name: request_id
+    type: int
+    required: true
+    metavar: REQUEST_ID
+    falls_back_to_field: null
+    help: ID of the request.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_add_to_context
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_add_to_context with validated request
+    fields.
+  request_model: AgentAccessRequestAddToContextRequest
+  result_model: AgentAccessRequestAddToContextResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access request add-to-context REQUEST_ID --help
+  agent_example: mammoth agent access request add-to-context 123
+  unit_tests:
+  - UT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT
+  contract_tests:
+  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-HUMAN
+  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-JSON
+  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  readback:
+    command: agent.access.request.list
+    ids: {}
+    kind: object
+- command_id: agent.access.request.create
+  command_path: agent access request create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateAgentAccessRequest
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_create
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_create with validated request fields.
+  request_model: AgentAccessRequestCreateRequest
+  result_model: AgentAccessRequestCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-REQUEST-CREATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access request create --help
+  agent_example: 'mammoth agent access request create --input ''{"kind": "access", "text": "Please share
+    the Sales project"}'''
+  unit_tests:
+  - UT-AGENT-ACCESS-REQUEST-CREATE
+  contract_tests:
+  - CT-AGENT-ACCESS-REQUEST-CREATE-HUMAN
+  - CT-AGENT-ACCESS-REQUEST-CREATE-JSON
+  - CT-AGENT-ACCESS-REQUEST-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  readback:
+    command: agent.access.request.list
+    ids: {}
+    kind: object
+- command_id: agent.access.request.list
+  command_path: agent access request list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentAccessRequests
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_requests_list with validated request fields.
+  request_model: AgentAccessRequestListRequest
+  result_model: AgentAccessRequestListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-REQUEST-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access request list --help
+  agent_example: mammoth agent access request list
+  unit_tests:
+  - UT-AGENT-ACCESS-REQUEST-LIST
+  contract_tests:
+  - CT-AGENT-ACCESS-REQUEST-LIST-HUMAN
+  - CT-AGENT-ACCESS-REQUEST-LIST-JSON
+  - CT-AGENT-ACCESS-REQUEST-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can list everyone's requests; `agent access request mine` lists your own.
+  reviewed_by: primary
+- command_id: agent.access.request.mine
+  command_path: agent access request mine
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListMyAgentAccessRequests
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_mine
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_requests_mine with validated request fields.
+  request_model: AgentAccessRequestMineRequest
+  result_model: AgentAccessRequestMineResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-REQUEST-MINE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access request mine SESSION_ID --help
+  agent_example: mammoth agent access request mine resource-123
+  unit_tests:
+  - UT-AGENT-ACCESS-REQUEST-MINE
+  contract_tests:
+  - CT-AGENT-ACCESS-REQUEST-MINE-HUMAN
+  - CT-AGENT-ACCESS-REQUEST-MINE-JSON
+  - CT-AGENT-ACCESS-REQUEST-MINE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.access.request.resolve
+  command_path: agent access request resolve
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ResolveAgentAccessRequest
+  positionals:
+  - name: request_id
+    type: int
+    required: true
+    metavar: REQUEST_ID
+    falls_back_to_field: null
+    help: ID of the request.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_resolve
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_resolve with validated request fields.
+  request_model: AgentAccessRequestResolveRequest
+  result_model: AgentAccessRequestResolveResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-REQUEST-RESOLVE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access request resolve REQUEST_ID --help
+  agent_example: 'mammoth agent access request resolve 123 --input ''{"status": "done"}'''
+  unit_tests:
+  - UT-AGENT-ACCESS-REQUEST-RESOLVE
+  contract_tests:
+  - CT-AGENT-ACCESS-REQUEST-RESOLVE-HUMAN
+  - CT-AGENT-ACCESS-REQUEST-RESOLVE-JSON
+  - CT-AGENT-ACCESS-REQUEST-RESOLVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  readback:
+    command: agent.access.request.list
+    ids: {}
+    kind: object
+- command_id: agent.access.settings.get
+  command_path: agent access settings get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentSettings
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_get
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_settings_get with validated request fields.
+  request_model: AgentAccessSettingsGetRequest
+  result_model: AgentAccessSettingsGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-SETTINGS-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access settings get --help
+  agent_example: mammoth agent access settings get
+  unit_tests:
+  - UT-AGENT-ACCESS-SETTINGS-GET
+  contract_tests:
+  - CT-AGENT-ACCESS-SETTINGS-GET-HUMAN
+  - CT-AGENT-ACCESS-SETTINGS-GET-JSON
+  - CT-AGENT-ACCESS-SETTINGS-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can read them.
+  reviewed_by: primary
+- command_id: agent.access.settings.update
+  command_path: agent access settings update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateAgentSettings
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_update
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_settings_update with validated request fields.
+  request_model: AgentAccessSettingsUpdateRequest
+  result_model: AgentAccessSettingsUpdateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-ACCESS-SETTINGS-UPDATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access settings update --help
+  agent_example: mammoth agent access settings update
+  unit_tests:
+  - UT-AGENT-ACCESS-SETTINGS-UPDATE
+  contract_tests:
+  - CT-AGENT-ACCESS-SETTINGS-UPDATE-HUMAN
+  - CT-AGENT-ACCESS-SETTINGS-UPDATE-JSON
+  - CT-AGENT-ACCESS-SETTINGS-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can change them. Only the fields given change.
+  reviewed_by: primary
+  readback:
+    command: agent.access.settings.get
+    ids: {}
+    kind: object
+- command_id: agent.access.tree
+  command_path: agent access tree
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetAgentAccessTree
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_tree
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_tree with validated request fields.
+  request_model: AgentAccessTreeRequest
+  result_model: AgentAccessTreeResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-ACCESS-TREE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent access tree --help
+  agent_example: mammoth agent access tree
+  unit_tests:
+  - UT-AGENT-ACCESS-TREE
+  contract_tests:
+  - CT-AGENT-ACCESS-TREE-HUMAN
+  - CT-AGENT-ACCESS-TREE-JSON
+  - CT-AGENT-ACCESS-TREE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Only a manager of the workspace's AI Agent settings can read the tree.
+  reviewed_by: primary
+- command_id: agent.session.feedback.list
+  command_path: agent session feedback list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAgentTurnFeedback
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_feedback_list
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.turn_feedback_list with validated request fields.
+  request_model: AgentSessionFeedbackListRequest
+  result_model: AgentSessionFeedbackListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-AGENT-SESSION-FEEDBACK-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent session feedback list SESSION_ID --help
+  agent_example: mammoth agent session feedback list resource-123
+  unit_tests:
+  - UT-AGENT-SESSION-FEEDBACK-LIST
+  contract_tests:
+  - CT-AGENT-SESSION-FEEDBACK-LIST-HUMAN
+  - CT-AGENT-SESSION-FEEDBACK-LIST-JSON
+  - CT-AGENT-SESSION-FEEDBACK-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: agent.turn.rate
+  command_path: agent turn rate
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RateAgentTurn
+  positionals:
+  - name: session_id
+    type: str
+    required: true
+    metavar: SESSION_ID
+    falls_back_to_field: null
+    help: ID of the session.
+  - name: turn_id
+    type: str
+    required: true
+    metavar: TURN_ID
+    falls_back_to_field: null
+    help: ID of the turn.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_rate
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.turn_rate with validated request fields.
+  request_model: AgentTurnRateRequest
+  result_model: AgentTurnRateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-AGENT-TURN-RATE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth agent turn rate SESSION_ID TURN_ID --help
+  agent_example: 'mammoth agent turn rate resource-123 resource-123 --input ''{"rating": "up"}'''
+  unit_tests:
+  - UT-AGENT-TURN-RATE
+  contract_tests:
+  - CT-AGENT-TURN-RATE-HUMAN
+  - CT-AGENT-TURN-RATE-JSON
+  - CT-AGENT-TURN-RATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  readback:
+    command: agent.session.feedback.list
+    ids:
+      session_id: positional.0
+    kind: object

@@ -13,6 +13,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - SDK `MammothClient(http_client=...)` sends through a shared `httpx.AsyncClient`. Credentials go on each request, never on the shared client; a pool shared between users should keep no cookies.
 - New `.github/workflows/pr-checks.yml` runs the SDK, CLI and MCP checks (Python 3.12 and 3.14) on pull requests.
 
+### Added (next mammoth-io and mammoth-cli)
+
+- Agent access. SDK `AgentsAPI.access_me`, `access_settings_get`, `access_settings_update`, `access_grants_list`, `access_grant_give`, `access_grant_update`, `access_grant_revoke`, `access_people`, `access_tree`, `access_project_askers`, `access_reach`, `access_requests_list`, `access_requests_mine`, `access_request_create`, `access_request_resolve`, `access_request_add_to_context` and `access_chart_save`, with CLI `agent access me|settings get|settings update|grant list|grant give|grant update|grant revoke|people|tree|askers|reach|request list|request mine|request create|request resolve|request add-to-context|chart save`. `grant give` needs `--yes` (it tells the people), `grant revoke` prompts or takes `--yes`, and its `--dry-run` names the grant.
+- Agent turn feedback. SDK `AgentsAPI.turn_feedback_list` and `turn_rate`, with CLI `agent session feedback list SESSION_ID` and `agent turn rate SESSION_ID TURN_ID` (`rating` is `up` or `down`).
+- Held plan change. SDK `BillingAPI.stripe_held_change_get` and `stripe_held_change_cancel`, with CLI `billing stripe held-change get` and `billing stripe held-change cancel` (`--yes --confirm WORKSPACE_ID`).
+- Plan entitlements. SDK `SupportAPI.plan_update_entitlements` and CLI `support plan update-entitlements PLAN_ID` (`--yes --confirm PLAN_ID`).
+- Connections. SDK `ConnectorsAPI.list_all_connections` and `test_connection`, with CLI `connector connection list-all` (every connection in the project, across connectors) and `connector connection test CONNECTION_KEY` (a health check that is kept).
+- Task preview cancel. SDK `PipelineAPI.preview_cancel` and CLI `view task preview-cancel VIEW_ID JOB_ID`.
+- Open tables links. SDK `DatasetsAPI.tool_claim_get` and `tool_claim_redeem`, with CLI `dataset tool-claim get` and `dataset tool-claim redeem` (token in `--input`).
+- Dashboard chat. SDK `DashboardsAPI.chat_attachment_upload` and `unpublished`, with CLI `dashboard chat attachment upload DASHBOARD_ID FILE` (the result's `ref` goes in a chat turn's `attachments`) and `dashboard unpublished DASHBOARD_ID`.
+- The OpenAPI inventory marks three more operations internal-only: `GetChatAttachment` (editor chat thumbnails), `StreamJob` (a server-sent stream a terminal cannot hold; use `job wait`) and `StartToolClaim` (the public sign-up step of an emailed link).
+
 ### Changed (next mammoth-io, mammoth-cli and mammoth-mcp-server)
 
 - CLI: a project-scoped command no longer asks `GET /workspaces/current` every time. The token's project pin is cached on disk for an hour; `doctor`, `auth status` and the 403 hint read it live, and `auth login` and `auth logout` clear it. `MAMMOTH_CLI_PIN_CACHE=0` turns the cache off. Credentials load once per process. Measured on `project list`: about 1.6 to 2.0s and one request, from 2.4 to 3.9s and two.

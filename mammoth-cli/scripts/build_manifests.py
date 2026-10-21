@@ -79,16 +79,19 @@ def _existing_commands() -> dict[str, dict[str, Any]]:
 
 
 def _append_command_records(group: str, records: list[dict[str, Any]]) -> None:
-    """Append ``records`` to ``commands/<group>.yaml``, keeping the records already there."""
-    import yaml
-
+    """Append ``records`` to ``commands/<group>.yaml``, keeping the existing text."""
     path = COMMANDS_DIR / f"{group}.yaml"
-    existing = yaml.safe_load(path.read_text(encoding="utf-8"))["commands"] if path.exists() else []
     added = sorted(records, key=lambda record: record["command_id"])
-    path.write_text(
-        _yaml_dump({"manifest_schema_version": 1, "commands": existing + added}),
-        encoding="utf-8",
-    )
+    if not path.exists():
+        path.write_text(
+            _yaml_dump({"manifest_schema_version": 1, "commands": added}), encoding="utf-8"
+        )
+        return
+    tail = _yaml_dump({"commands": added}).split("commands:\n", 1)[1]
+    text = path.read_text(encoding="utf-8")
+    path.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(tail)
 
 
 def _yaml_dump(data: Any) -> str:

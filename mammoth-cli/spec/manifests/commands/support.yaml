@@ -2891,3 +2891,51 @@ commands:
     command: support.template.export-dashboard
     ids: {}
     kind: object
+- command_id: support.plan.update-entitlements
+  command_path: support plan update-entitlements
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdatePlanEntitlements
+  positionals:
+  - name: plan_id
+    type: int
+    required: true
+    metavar: PLAN_ID
+    falls_back_to_field: null
+    help: ID of the plan.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_update_entitlements
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_update_entitlements with validated request
+    fields.
+  request_model: SupportPlanUpdateEntitlementsRequest
+  result_model: SupportPlanUpdateEntitlementsResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan update-entitlements PLAN_ID --help
+  agent_example: 'mammoth support plan update-entitlements 123 --input ''{"values": {"name": true}}''
+    --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS
+  contract_tests:
+  - CT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS-HUMAN
+  - CT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS-JSON
+  - CT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Changes what every workspace on the plan is granted. Read `support plan get` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
+  reviewed_by: primary
+  readback:
+    command: support.plan.get
+    ids:
+      plan_id: positional.0
+    kind: object

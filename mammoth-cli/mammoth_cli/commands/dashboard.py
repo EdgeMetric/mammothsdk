@@ -1321,6 +1321,23 @@ def dashboard_assess_pbix(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def dashboard_chat_attachment_upload(invocation: Invocation) -> HandlerResult:
+    """Attach a local file to a dashboard's editor chat; the result's ``ref`` goes in a turn."""
+    positionals = _generated_positionals(invocation)
+    file_path = str(positionals.get("file", ""))
+    if not Path(file_path).is_file():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"File not found: {file_path}.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation), dashboard_id=positionals["dashboard_id"], file=file_path
+        )
+    return data, _meta(invocation, auth.workspace_id)
+
+
 def dashboard_import_workbook(invocation: Invocation) -> HandlerResult:
     """Import a local workbook into a confirmed project scope."""
     file_path = _require_str_positional(invocation, "file")

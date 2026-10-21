@@ -56,6 +56,7 @@ _TARGET_RESOLVED_AT_RUN_TIME = frozenset(
         "billing.stripe.cancel",
         "billing.stripe.checkout-url",
         "billing.stripe.end-trial",
+        "billing.stripe.held-change.cancel",
         "billing.stripe.portal-url",
         "billing.stripe.resume",
         "billing.stripe.retry-payment",

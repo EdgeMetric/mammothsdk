@@ -23,6 +23,27 @@ ERR_VISIBILITY_INVALID = '`visibility` must be "private" or "shared", got {0!r}.
 
 VALID_VISIBILITIES = frozenset({"private", "shared"})
 
+ERR_ACCESS_NOTHING_TO_CHANGE = "Give at least one {0} field to change."
+ERR_ACCESS_NEEDS_PEOPLE = "`emails` must list at least one address."
+ERR_ACCESS_NEEDS_ITEMS = "`items` must list at least one project."
+ERR_GRANT_LEVEL_INVALID = '`level` must be "ask" or "explore", got {0!r}.'
+ERR_REQUEST_STATUS_INVALID = (
+    '`status` must be "open", "done", "declined" or "dismissed", got {0!r}.'
+)
+ERR_RESOLVE_STATUS_INVALID = '`status` must be "done", "declined" or "dismissed", got {0!r}.'
+ERR_REQUEST_KIND_INVALID = '`kind` must be "access", "change" or "feedback", got {0!r}.'
+ERR_REQUEST_TEXT_LENGTH = "`text` must be 1 to {0} characters."
+ERR_RATING_INVALID = '`rating` must be "up" or "down", got {0!r}.'
+ERR_COMMENT_LENGTH = "`comment` must be at most {0} characters."
+
+VALID_GRANT_LEVELS = frozenset({"ask", "explore"})
+VALID_REQUEST_STATUSES = frozenset({"open", "done", "declined", "dismissed"})
+VALID_RESOLVE_STATUSES = frozenset({"done", "declined", "dismissed"})
+VALID_REQUEST_KINDS = frozenset({"access", "change", "feedback"})
+VALID_RATINGS = frozenset({"up", "down"})
+#: The server's length limit on a request's text and on a rating's comment.
+REQUEST_TEXT_MAX = 2000
+
 #: Gateway statuses on which a chat submit is sent again with the same ``request_key``.
 CHAT_RETRY_STATUSES = frozenset({502, 503, 504})
 CHAT_MAX_ATTEMPTS = 3
@@ -701,6 +722,426 @@ class AgentsAPI:
             body["name"] = name
         return await self._client._request_json(
             "PATCH", f"/agents/sessions/{session_id}/plan/proposal", json=body
+        )
+
+    # -- Access: who may use the agent, how far, and the requests they make ------------------
+    # Settings > AI Agent. All of it is scoped to the client's workspace (X-WORKSPACE-ID).
+
+    async def access_me(
+        self, project_id: int | None = None, preview_user_id: int | None = None
+    ) -> dict[str, Any]:
+        """What the agent may do for the caller in this workspace.
+
+        Args:
+            project_id: Read the level for this project (``None`` when the caller cannot
+                open it) instead of the highest of the caller's levels.
+            preview_user_id: A manager of AI Agent settings may read the same for this
+                person; anyone else gets 403.
+
+        Returns:
+            Dict with ``enabled``, ``level``, ``levels`` (by project id), ``can_manage``,
+            ``downloads`` and ``grant_only`` (projects held only through a "can ask" grant).
+        """
+        params = {
+            key: value
+            for key, value in {"project_id": project_id, "preview_user_id": preview_user_id}.items()
+            if value is not None
+        }
+        return await self._client._request_json("GET", "/agents/access/me", params=params or None)
+
+    async def access_settings_get(self) -> dict[str, Any]:
+        """Get the workspace's AI Agent controls. Managers only.
+
+        Returns:
+            Dict with ``enabled``, ``can_make_changes``, ``downloads``, ``viewers_explore``,
+            ``managers`` and ``role_exceptions``.
+        """
+        return await self._client._request_json("GET", "/agents/access/settings")
+
+    async def access_settings_update(
+        self,
+        enabled: bool | None = None,
+        can_make_changes: bool | None = None,
+        downloads: bool | None = None,
+        viewers_explore: bool | None = None,
+        managers: list[str] | None = None,
+        role_exceptions: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Change the workspace's AI Agent controls. Managers only.
+
+        Only the fields given are sent; one left out stays as it is.
+
+        Args:
+            enabled: Whether the agent is on in the workspace.
+            can_make_changes: Whether the agent may change things, not only read.
+            downloads: Whether the agent may offer downloads.
+            viewers_explore: Whether viewers can explore with the agent.
+            managers: The people or roles that manage these settings.
+            role_exceptions: Per-role overrides, each ``{"role", "has_agent",
+                "can_make_changes"}``.
+
+        Returns:
+            Dict with the settings after the change.
+
+        Raises:
+            MammothValidationError: If nothing to change was given.
+        """
+        fields: dict[str, Any] = {
+            "enabled": enabled,
+            "can_make_changes": can_make_changes,
+            "downloads": downloads,
+            "viewers_explore": viewers_explore,
+            "managers": managers,
+            "role_exceptions": role_exceptions,
+        }
+        body = {key: value for key, value in fields.items() if value is not None}
+        if not body:
+            raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("settings"))
+        return await self._client._request_json("PATCH", "/agents/access/settings", json=body)
+
+    async def access_grants_list(self) -> list[dict[str, Any]]:
+        """List who can ask the agent about projects without opening the data. Managers only.
+
+        Returns:
+            One dict per grant: ``id``, ``user``, ``level``, ``items`` (projects, and the
+            files when not the whole project), ``granted_by`` and ``created_at``.
+        """
+        return await self._client._request_list("GET", "/agents/access/grants")
+
+    async def access_grant_give(
+        self, emails: list[str], level: str, items: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Give people access to ask about projects. Managers only.
+
+        People outside the workspace are invited as free guests. A person who can already
+        open a project gets no grant for it.
+
+        Args:
+            emails: Email addresses of the people (at least one).
+            level: ``"ask"`` or ``"explore"``.
+            items: What to cover (at least one), each ``{"project_id": 1}`` for the whole
+                project or ``{"project_id": 1, "file_ids": [2, 3]}`` for those files only.
+
+        Returns:
+            Dict with ``grants`` (new grant ids), ``invited`` and ``already_had_access``.
+
+        Raises:
+            MammothValidationError: If *emails* or *items* is empty, or *level* is not
+                ``"ask"`` or ``"explore"``.
+        """
+        if not emails:
+            raise MammothValidationError(ERR_ACCESS_NEEDS_PEOPLE)
+        if not items:
+            raise MammothValidationError(ERR_ACCESS_NEEDS_ITEMS)
+        if level not in VALID_GRANT_LEVELS:
+            raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+        return await self._client._request_json(
+            "POST",
+            "/agents/access/grants",
+            json={"emails": emails, "level": level, "items": items},
+        )
+
+    async def access_grant_update(
+        self,
+        grant_id: int,
+        level: str | None = None,
+        items: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        """Change a person's access. Managers only.
+
+        Args:
+            grant_id: ID of the grant (from :meth:`access_grants_list`).
+            level: New level, ``"ask"`` or ``"explore"``.
+            items: New coverage, replacing the old: ``{"project_id", "file_ids"}`` entries.
+
+        Returns:
+            Empty dict (the server answers 204).
+
+        Raises:
+            MammothValidationError: If nothing to change was given, or *level* is invalid.
+        """
+        if level is None and items is None:
+            raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("grant"))
+        if level is not None and level not in VALID_GRANT_LEVELS:
+            raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+        body: dict[str, Any] = {}
+        if level is not None:
+            body["level"] = level
+        if items is not None:
+            body["items"] = items
+        return await self._client._request_json(
+            "PATCH", f"/agents/access/grants/{grant_id}", json=body
+        )
+
+    async def access_grant_revoke(self, grant_id: int) -> dict[str, Any]:
+        """Revoke a person's access. Managers only.
+
+        Args:
+            grant_id: ID of the grant (from :meth:`access_grants_list`).
+
+        Returns:
+            Empty dict (the server answers 204).
+        """
+        return await self._client._request_json("DELETE", f"/agents/access/grants/{grant_id}")
+
+    async def access_people(self, search: str | None = None) -> list[dict[str, Any]]:
+        """List the workspace's members and what their own access gives their agent.
+
+        Managers only.
+
+        Args:
+            search: Keep only people whose name or email matches.
+
+        Returns:
+            One dict per person: ``user`` and ``summary`` (a level per project).
+        """
+        return await self._client._request_list(
+            "GET", "/agents/access/people", params={"search": search} if search else None
+        )
+
+    async def access_tree(self) -> list[dict[str, Any]]:
+        """List the projects and files the Give access tree offers. Managers only.
+
+        Returns:
+            One dict per project: ``project_id``, ``name`` and ``files``.
+        """
+        return await self._client._request_list("GET", "/agents/access/tree")
+
+    async def access_project_askers(self, project_id: int) -> dict[str, Any]:
+        """Count the people who can ask about a project without opening it.
+
+        For workspace managers and for anyone who manages the project's people.
+
+        Args:
+            project_id: ID of the project.
+
+        Returns:
+            Dict with ``count``.
+        """
+        return await self._client._request_json(
+            "GET", f"/agents/access/projects/{project_id}/askers"
+        )
+
+    async def access_reach(self, user_id: int | None = None) -> list[dict[str, Any]]:
+        """List what one person's agent can see.
+
+        Any member reads their own; another person's is for managers only.
+
+        Args:
+            user_id: The person; leave out (or pass the caller) for the caller's own.
+
+        Returns:
+            One dict per project: ``project_id``, ``name``, ``level``, ``files`` and
+            ``starters`` (suggested questions).
+        """
+        return await self._client._request_list(
+            "GET",
+            "/agents/access/reach",
+            params={"user_id": user_id} if user_id is not None else None,
+        )
+
+    async def access_requests_list(self, status: str | None = None) -> list[dict[str, Any]]:
+        """List the workspace's agent requests. Owners and admins.
+
+        Args:
+            status: ``"open"`` (the server's default), ``"done"``, ``"declined"`` or
+                ``"dismissed"``.
+
+        Returns:
+            One dict per request: ``id``, ``kind``, ``requester``, ``text``, ``status`` ...
+
+        Raises:
+            MammothValidationError: If *status* is not one of the four.
+        """
+        if status is not None and status not in VALID_REQUEST_STATUSES:
+            raise MammothValidationError(ERR_REQUEST_STATUS_INVALID.format(status))
+        return await self._client._request_list(
+            "GET",
+            "/agents/access/requests",
+            params={"status": status} if status is not None else None,
+        )
+
+    async def access_requests_mine(self, session_id: str) -> list[dict[str, Any]]:
+        """List the caller's own requests made from one chat.
+
+        Args:
+            session_id: ID of the chat session.
+
+        Returns:
+            One dict per request, as in :meth:`access_requests_list`.
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        return await self._client._request_list(
+            "GET", "/agents/access/requests/mine", params={"session_id": session_id}
+        )
+
+    async def access_request_create(
+        self,
+        kind: str,
+        text: str,
+        project_id: int | None = None,
+        file_id: int | None = None,
+        asked: str | None = None,
+        session_id: str | None = None,
+        turn_id: str | None = None,
+        dashboard_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Ask for access or a change, or flag an answer, from the chat. Any member.
+
+        The same person asking the same thing of the same turn again gets the open request
+        back. An access or change request tells the workspace's owners and admins.
+
+        Args:
+            kind: ``"access"``, ``"change"`` or ``"feedback"``.
+            text: What is asked (1-2000 characters).
+            project_id: The project it is about.
+            file_id: The file it is about.
+            asked: The question the person asked the agent (1-200 characters).
+            session_id: The chat session it was raised from.
+            turn_id: The turn it is about.
+            dashboard_id: The dashboard it is about.
+
+        Returns:
+            Dict with the request.
+
+        Raises:
+            MammothValidationError: If *kind* is invalid or *text* is empty or too long.
+        """
+        if kind not in VALID_REQUEST_KINDS:
+            raise MammothValidationError(ERR_REQUEST_KIND_INVALID.format(kind))
+        if not text or len(text) > REQUEST_TEXT_MAX:
+            raise MammothValidationError(ERR_REQUEST_TEXT_LENGTH.format(REQUEST_TEXT_MAX))
+        fields: dict[str, Any] = {
+            "project_id": project_id,
+            "file_id": file_id,
+            "asked": asked,
+            "session_id": session_id,
+            "turn_id": turn_id,
+            "dashboard_id": dashboard_id,
+        }
+        body: dict[str, Any] = {"kind": kind, "text": text}
+        body.update({key: value for key, value in fields.items() if value is not None})
+        return await self._client._request_json("POST", "/agents/access/requests", json=body)
+
+    async def access_request_resolve(self, request_id: int, status: str) -> dict[str, Any]:
+        """Close a request. Owners, admins and the file's keeper.
+
+        Args:
+            request_id: ID of the request.
+            status: ``"done"``, ``"declined"`` or ``"dismissed"``.
+
+        Returns:
+            Dict with the closed request.
+
+        Raises:
+            MammothValidationError: If *status* is not one of the three.
+        """
+        if status not in VALID_RESOLVE_STATUSES:
+            raise MammothValidationError(ERR_RESOLVE_STATUS_INVALID.format(status))
+        return await self._client._request_json(
+            "PATCH", f"/agents/access/requests/{request_id}", json={"status": status}
+        )
+
+    async def access_request_add_to_context(self, request_id: int) -> dict[str, Any]:
+        """Keep a thumbs-down's correction in the project's agent context. Owners and admins.
+
+        Keeps the comment of a feedback request in the project's agent context, which
+        every agent reading the project gets, and marks the request done.
+
+        Args:
+            request_id: ID of the feedback request.
+
+        Returns:
+            Dict with the request.
+        """
+        return await self._client._request_json(
+            "POST", f"/agents/access/requests/{request_id}/project-context"
+        )
+
+    async def access_chart_save(
+        self,
+        session_id: str,
+        turn_id: str,
+        dashboard_id: int | None = None,
+        new_dashboard_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Save the chart of an answer to the caller's own dashboard (Explore level).
+
+        The dashboard builder draws the chart in the background from the intent alone.
+
+        Args:
+            session_id: ID of the chat session (the caller's own).
+            turn_id: ID of the turn whose chart to save.
+            dashboard_id: A dashboard the caller saved to before. Leave out to make a new one.
+            new_dashboard_name: Name of the new dashboard (up to 200 characters).
+
+        Returns:
+            Dict with ``dashboard_id``.
+
+        Raises:
+            MammothValidationError: If *session_id* or *turn_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        _require_id("turn_id", turn_id)
+        body: dict[str, Any] = {"session_id": session_id, "turn_id": turn_id}
+        if dashboard_id is not None:
+            body["dashboard_id"] = dashboard_id
+        if new_dashboard_name is not None:
+            body["new_dashboard_name"] = new_dashboard_name
+        return await self._client._request_json("POST", "/agents/access/saved-charts", json=body)
+
+    # -- Ratings of a chat's replies -----------------------------------------------------------
+
+    async def turn_feedback_list(self, session_id: str) -> list[dict[str, Any]]:
+        """List the ratings the creator gave one chat's replies.
+
+        Args:
+            session_id: ID of the chat session.
+
+        Returns:
+            One dict per rated turn: ``turn_id``, ``rating``, ``comment``, ``user_id`` and
+            ``created_at``.
+
+        Raises:
+            MammothValidationError: If *session_id* is empty.
+        """
+        _require_id("session_id", session_id)
+        return await self._client._request_list("GET", f"/agents/sessions/{session_id}/feedback")
+
+    async def turn_rate(
+        self, session_id: str, turn_id: str, rating: str, comment: str | None = None
+    ) -> dict[str, Any]:
+        """Rate one agent reply. Only the chat's creator may.
+
+        A later rating of the same turn replaces the earlier one.
+
+        Args:
+            session_id: ID of the chat session.
+            turn_id: ID of the turn (the reply).
+            rating: ``"up"`` or ``"down"``.
+            comment: Why (up to 2000 characters).
+
+        Returns:
+            Empty dict (the server answers 204).
+
+        Raises:
+            MammothValidationError: If an id is empty, *rating* is not ``"up"`` or
+                ``"down"``, or *comment* is too long.
+        """
+        _require_id("session_id", session_id)
+        _require_id("turn_id", turn_id)
+        if rating not in VALID_RATINGS:
+            raise MammothValidationError(ERR_RATING_INVALID.format(rating))
+        if comment is not None and len(comment) > REQUEST_TEXT_MAX:
+            raise MammothValidationError(ERR_COMMENT_LENGTH.format(REQUEST_TEXT_MAX))
+        body: dict[str, Any] = {"rating": rating}
+        if comment is not None:
+            body["comment"] = comment
+        return await self._client._request_json(
+            "POST", f"/agents/sessions/{session_id}/turns/{turn_id}/feedback", json=body
         )
 
     async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:

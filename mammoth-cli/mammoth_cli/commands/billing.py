@@ -405,6 +405,26 @@ def billing_stripe_resume(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+def billing_stripe_held_change_get(invocation: Invocation) -> HandlerResult:
+    """Read the plan change the workspace is holding (what is held and why)."""
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
+def billing_stripe_held_change_cancel(invocation: Invocation) -> HandlerResult:
+    """Cancel the held plan change. ``--yes --confirm WS`` required."""
+    with open_service(invocation) as (service, auth):
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_CONFIRM_TARGET,
+            action=f"cancel the held plan change of workspace {auth.workspace_id}",
+            target=str(auth.workspace_id),
+        )
+        data = service.call(_symbol(invocation))
+    return data, _meta(invocation, auth.workspace_id, None)
+
+
 def billing_stripe_recheck_limits(invocation: Invocation) -> HandlerResult:
     """Recompute the workspace's plan-limit lock and return the report."""
     with open_service(invocation) as (service, auth):

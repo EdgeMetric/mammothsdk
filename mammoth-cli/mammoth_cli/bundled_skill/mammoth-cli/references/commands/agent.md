@@ -2,6 +2,146 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `agent.access.askers`
+
+Run: `mammoth agent access askers`. Exact input fields: `mammoth schema get agent.access.askers`.
+
+Example: `mammoth agent access askers 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessAskersResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.chart.save`
+
+Run: `mammoth agent access chart save`. Exact input fields: `mammoth schema get agent.access.chart.save`.
+
+Example: `mammoth agent access chart save resource-123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessChartSaveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.grant.give`
+
+Run: `mammoth agent access grant give`. Exact input fields: `mammoth schema get agent.access.grant.give`.
+
+Example: `mammoth agent access grant give --input '{"emails": ["analyst@example.com"], "level": "ask", "items": [{"project_id": 1}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AgentAccessGrantGiveResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.grant.list`
+
+Run: `mammoth agent access grant list`. Exact input fields: `mammoth schema get agent.access.grant.list`.
+
+Example: `mammoth agent access grant list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessGrantListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.grant.revoke`
+
+Run: `mammoth agent access grant revoke`. Exact input fields: `mammoth schema get agent.access.grant.revoke`.
+
+Example: `mammoth agent access grant revoke 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AgentAccessGrantRevokeResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.grant.update`
+
+Run: `mammoth agent access grant update`. Exact input fields: `mammoth schema get agent.access.grant.update`.
+
+Example: `mammoth agent access grant update 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessGrantUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.me`
+
+Run: `mammoth agent access me`. Exact input fields: `mammoth schema get agent.access.me`.
+
+Example: `mammoth agent access me`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessMeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.people`
+
+Run: `mammoth agent access people`. Exact input fields: `mammoth schema get agent.access.people`.
+
+Example: `mammoth agent access people`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessPeopleResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.reach`
+
+Run: `mammoth agent access reach`. Exact input fields: `mammoth schema get agent.access.reach`.
+
+Example: `mammoth agent access reach`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessReachResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.request.add-to-context`
+
+Run: `mammoth agent access request add-to-context`. Exact input fields: `mammoth schema get agent.access.request.add-to-context`.
+
+Example: `mammoth agent access request add-to-context 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessRequestAddToContextResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.request.create`
+
+Run: `mammoth agent access request create`. Exact input fields: `mammoth schema get agent.access.request.create`.
+
+Example: `mammoth agent access request create --input '{"kind": "access", "text": "Please share the Sales project"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessRequestCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.request.list`
+
+Run: `mammoth agent access request list`. Exact input fields: `mammoth schema get agent.access.request.list`.
+
+Example: `mammoth agent access request list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessRequestListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.request.mine`
+
+Run: `mammoth agent access request mine`. Exact input fields: `mammoth schema get agent.access.request.mine`.
+
+Example: `mammoth agent access request mine resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessRequestMineResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.request.resolve`
+
+Run: `mammoth agent access request resolve`. Exact input fields: `mammoth schema get agent.access.request.resolve`.
+
+Example: `mammoth agent access request resolve 123 --input '{"status": "done"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessRequestResolveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.access.set`
 
 Run: `mammoth agent access set`. Exact input fields: `mammoth schema get agent.access.set`.
@@ -9,6 +149,36 @@ Run: `mammoth agent access set`. Exact input fields: `mammoth schema get agent.a
 Example: `mammoth agent access set revenue-assistant --input '{"role": "member", "propose": true}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentAccessSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.settings.get`
+
+Run: `mammoth agent access settings get`. Exact input fields: `mammoth schema get agent.access.settings.get`.
+
+Example: `mammoth agent access settings get`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessSettingsGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.settings.update`
+
+Run: `mammoth agent access settings update`. Exact input fields: `mammoth schema get agent.access.settings.update`.
+
+Example: `mammoth agent access settings update`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.access.tree`
+
+Run: `mammoth agent access tree`. Exact input fields: `mammoth schema get agent.access.tree`.
+
+Example: `mammoth agent access tree`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessTreeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -482,6 +652,16 @@ Result: `AgentSessionDeleteResult`; mutation `destructive`, confirmation `prompt
 
 Status on release: untried; no live run recorded.
 
+### `agent.session.feedback.list`
+
+Run: `mammoth agent session feedback list`. Exact input fields: `mammoth schema get agent.session.feedback.list`.
+
+Example: `mammoth agent session feedback list resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentSessionFeedbackListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.session.list`
 
 Run: `mammoth agent session list`. Exact input fields: `mammoth schema get agent.session.list`.
@@ -529,6 +709,16 @@ Run: `mammoth agent turn cancel`. Exact input fields: `mammoth schema get agent.
 Example: `mammoth agent turn cancel resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentTurnCancelResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `agent.turn.rate`
+
+Run: `mammoth agent turn rate`. Exact input fields: `mammoth schema get agent.turn.rate`.
+
+Example: `mammoth agent turn rate resource-123 resource-123 --input '{"rating": "up"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentTurnRateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

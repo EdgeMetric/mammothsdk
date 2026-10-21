@@ -7439,3 +7439,51 @@ commands:
   undo_test: null
   known_restrictions: "Makes Mammoth's server fetch the docs URL and propose REST export settings; nothing is configured or sent. Needs --yes."
   reviewed_by: primary
+- command_id: view.task.preview-cancel
+  command_path: view task preview-cancel
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CancelTaskPreview
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  - name: job_id
+    type: int
+    required: true
+    metavar: JOB_ID
+    falls_back_to_field: null
+    help: ID of the job.
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_cancel
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.preview_cancel with validated request fields.
+  request_model: ViewTaskPreviewCancelRequest
+  result_model: ViewTaskPreviewCancelResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TASK-PREVIEW-CANCEL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task preview-cancel DATAVIEW_ID JOB_ID --help
+  agent_example: mammoth view task preview-cancel 123 456
+  unit_tests:
+  - UT-VIEW-TASK-PREVIEW-CANCEL
+  contract_tests:
+  - CT-VIEW-TASK-PREVIEW-CANCEL-HUMAN
+  - CT-VIEW-TASK-PREVIEW-CANCEL-JSON
+  - CT-VIEW-TASK-PREVIEW-CANCEL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  no_readback: stops a preview job and answers empty; nothing persisted to read back

@@ -214,6 +214,16 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             label_paths=("title",),
         ),
     ),
+    "agent.access.grant.revoke": (
+        Sub(
+            "agent access grant",
+            "grant_id",
+            source="agent.access.grant.list",
+            container="",
+            label_paths=("user.email", "user.name", "user"),
+            name_fmt="agent access for {label}",
+        ),
+    ),
     "annotation.delete": (
         Sub(
             "annotation",
@@ -398,7 +408,15 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
 
 
 #: Commands that make a new resource and change no existing one: nothing to name.
-CREATES_ONLY: frozenset[str] = frozenset({"dataset.create", "dataset.create-from-pdf"})
+CREATES_ONLY: frozenset[str] = frozenset(
+    {
+        "dataset.create",
+        "dataset.create-from-pdf",
+        # An Open tables link adds a new folder of tables; reading it names no dataset.
+        "dataset.tool-claim.get",
+        "dataset.tool-claim.redeem",
+    }
+)
 
 
 def unresolvable_error(command_id: str, reason: str) -> CliError:
