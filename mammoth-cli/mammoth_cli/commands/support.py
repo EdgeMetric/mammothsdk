@@ -1174,7 +1174,7 @@ def support_search(invocation: Invocation) -> HandlerResult:
 def _refund_action(kwargs: dict[str, Any]) -> str:
     """Confirmation text for a refund; refuse both-or-neither of ``amount`` and ``full``."""
     amount = kwargs.get("amount")
-    full = bool(kwargs.get("full"))
+    full = kwargs.get("full") is True
     if (amount is not None) == full:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
@@ -1193,8 +1193,8 @@ def _refund_action(kwargs: dict[str, Any]) -> str:
             message="The refund 'amount' must be a positive whole number of cents.",
             exit_status=EXIT_USAGE,
         )
-    how = "FULL" if full else f"{amount} cents of"
-    return f"refund {how} the last payment of workspace {kwargs['workspace_id']} (irreversible)"
+    how = "the FULL last payment" if full else f"{amount} cents of the last payment"
+    return f"refund {how} of workspace {kwargs['workspace_id']} (irreversible)"
 
 
 def support_billing_start_trial(invocation: Invocation) -> HandlerResult:

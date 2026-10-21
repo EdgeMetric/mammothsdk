@@ -2480,6 +2480,8 @@ def _refund(tmp_path: Path, doc: dict[str, object], **overrides: object) -> None
         {"amount": 2.5},
         {"amount": "abc"},
         {"amount": True},
+        {"full": "true"},
+        {"full": 1},
     ],
 )
 def test_refund_needs_exactly_one_valid_amount(
@@ -2497,7 +2499,7 @@ def test_refund_full_is_explicit_and_the_confirmation_says_so(
 ) -> None:
     with pytest.raises(CliError) as blocked:
         _refund(tmp_path, {"full": True}, output="json")
-    assert "FULL" in blocked.value.message
+    assert "refund the FULL last payment of workspace 9" in blocked.value.message
     assert fake_service.call_log == []
     _refund(tmp_path, {"full": True}, yes=True, confirm="9")
     assert fake_service.call_log == [

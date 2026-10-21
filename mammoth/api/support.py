@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -56,6 +57,8 @@ ERR_REFUND_AMOUNT = (
 )
 IDENTITY_LIST_PAGE_SIZE = 100
 IDENTITY_LIST_MAX_PAGES = 1000
+ERR_IDENTITY_LIMIT = "`limit` must be a whole number from 1 to 100."
+ERR_IDENTITY_OFFSET = "`offset` must be a whole number, 0 or more."
 ERR_DEAL_WORKSPACE = "Provide exactly one of `workspace_id` or `workspace_create`."
 ERR_DEAL_NO_CHANGE = "Provide at least one deal field to change."
 ERR_DEAL_OPT_IN_EMPTY = "Provide `keys`, `connectors` or `everything=True`."
@@ -110,6 +113,20 @@ def _is_int(value: Any) -> bool:
 def _is_number(value: Any) -> bool:
     """True for an ``int`` or ``float`` (``bool`` is not one)."""
     return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _identity_key(row: Any) -> str:
+    """A stable identity for one listed row: a user by ``id``, an invitee by ``invite_id``.
+
+    An invited person with no account has ``id`` None and its own ``invite_id``; any other
+    shape falls back to the whole row, so two different rows never collapse into one.
+    """
+    if isinstance(row, dict):
+        if row.get("id") is not None:
+            return f"id:{row['id']}"
+        if row.get("invite_id") is not None:
+            return f"invite:{row['invite_id']}"
+    return json.dumps(row, sort_keys=True, default=str)
 
 
 def _check_interval(value: str | None) -> None:
@@ -2013,22 +2030,31 @@ class SupportAPI:
         """List users identity-first, each with workspace counts.
 
         Args:
-            limit: Page size used for each request, 1 to 100 (default 100). All pages
-                are read; this does not cap the result.
+            limit: Page size used for each request, 1 to 100 (default 100); anything else
+                is refused. All pages are read; this does not cap the result.
             offset: Row to start from.
             search: Filter by email or name.
             sort: ``name``, ``email`` or ``last_active``.
             order: ``asc`` or ``desc``.
 
         Returns:
-            Dict with every matching user under ``users``; the pages are followed to the
-            end (a repeated page stops the loop).
+            Dict with every matching user (and invitee) under ``users``. The pages are
+            followed to the end and merged, so the server's per-page ``offset``, ``limit``
+            and ``next`` are not returned. A repeated page stops the loop.
+
+        Raises:
+            MammothValidationError: If *limit* is not a whole number from 1 to 100 or
+                *offset* is negative.
         """
-        size = min(limit, IDENTITY_LIST_PAGE_SIZE) if limit else IDENTITY_LIST_PAGE_SIZE
+        if limit is not None and (not _is_int(limit) or not 1 <= limit <= IDENTITY_LIST_PAGE_SIZE):
+            raise MammothValidationError(ERR_IDENTITY_LIMIT)
+        if offset is not None and (not _is_int(offset) or offset < 0):
+            raise MammothValidationError(ERR_IDENTITY_OFFSET)
+        size = limit or IDENTITY_LIST_PAGE_SIZE
         start = offset or 0
         users: list[Any] = []
-        seen: set[Any] = set()
-        previous: list[Any] | None = None
+        seen: set[str] = set()
+        pages: set[str] = set()
         for page_number in range(IDENTITY_LIST_MAX_PAGES):
             params = _drop_none(
                 limit=size, offset=start + page_number * size, search=search, sort=sort, order=order
@@ -2037,13 +2063,16 @@ class SupportAPI:
             page = result.get("users")
             if not isinstance(page, list):
                 return result
-            if page == previous:
+            signature = json.dumps(page, sort_keys=True, default=str)
+            if signature in pages:
                 break
-            previous = page
-            fresh = [u for u in page if not isinstance(u, dict) or u.get("id") not in seen]
-            seen.update(u["id"] for u in fresh if isinstance(u, dict) and "id" in u)
-            users.extend(fresh)
-            if not fresh or len(page) < size:
+            pages.add(signature)
+            for user in page:
+                key = _identity_key(user)
+                if key not in seen:
+                    seen.add(key)
+                    users.append(user)
+            if len(page) < size:
                 break
         return {"users": users}
 

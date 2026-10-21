@@ -1348,6 +1348,37 @@ class TestIdentities:
         offsets = [c.kwargs["params"]["offset"] for c in call.call_args_list]
         assert offsets == [0, 100]
 
+    async def test_list_keeps_every_invitee_across_pages(self):
+        """Invitees have ``id`` None and their own ``invite_id``; none may be dropped."""
+        api, call = _call_api()
+
+        def invitee(n):
+            return {"id": None, "invite_id": n, "email": f"i{n}@x.co"}
+
+        call.side_effect = [
+            {"users": [{"id": 1}, {"id": 2}, invitee(1)]},
+            {"users": [invitee(2), invitee(3), {"id": 9}]},
+            {"users": []},
+        ]
+        result = await api.identity_list(limit=3)
+        assert len(result["users"]) == 6
+        assert [u.get("invite_id") for u in result["users"] if u.get("id") is None] == [1, 2, 3]
+
+    async def test_a_page_of_only_invitees_does_not_end_the_listing(self):
+        api, call = _call_api()
+        page1 = [{"id": None, "invite_id": n} for n in (1, 2)]
+        page2 = [{"id": None, "invite_id": n} for n in (3, 4)]
+        call.side_effect = [{"users": page1}, {"users": page2}, {"users": []}]
+        result = await api.identity_list(limit=2)
+        assert len(result["users"]) == 4
+
+    @pytest.mark.parametrize("limit", [0, -1, 101, 2.5, True])
+    async def test_list_rejects_a_page_size_outside_1_to_100(self, limit):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="limit"):
+            await api.identity_list(limit=limit)
+        call.assert_not_called()
+
     async def test_list_stops_on_a_repeated_page(self):
         api, call = _call_api()
         page = {"users": [{"id": i} for i in range(100)]}

@@ -8334,7 +8334,7 @@ methods:
   no_command_reason: null
   mutation_class: null
   wait_policy: null
-  pagination_policy: null
+  pagination_policy: offset
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.ownership_transfer

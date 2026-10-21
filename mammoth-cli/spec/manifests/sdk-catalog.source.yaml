@@ -4551,7 +4551,7 @@ sdk_methods:
   alias_of: null
   mutation_class: null
   wait_policy: null
-  pagination_policy: null
+  pagination_policy: offset
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.ownership_transfer
   canonical_command: support.ownership.transfer
