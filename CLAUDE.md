@@ -96,6 +96,32 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
   - `scripts/gen_docs.py`.
 - Live check: `mammoth --profile <name> ...` against a dev server, never prod, unless the change is read-only.
 
+## Releasing the MCP server
+
+The `release-sync` skill checks and fixes every release surface. These are the MCP server steps, in order:
+
+1. **Bump the version.** Change it in `mammoth-mcp-server/pyproject.toml`, `mammoth-mcp-server/mammoth_mcp_server/__init__.py` and `mammoth-mcp-server/server.json` together; a test fails if they differ. Add the CHANGELOG entry. Merge the PR.
+2. **Publish to PyPI** (there is no CI workflow for it).
+   - Test: `cd mammoth-mcp-server && uv run --with-editable . --with pytest --with pytest-asyncio --with ../ python -m pytest tests -q`.
+   - Build: `SOURCE_DATE_EPOCH=1700000000 uv build --out-dir <scratch>`.
+   - Upload: `uvx twine check <scratch>/*`, then `uvx twine upload -r pypi --non-interactive <scratch>/*`.
+3. **Tag and release.**
+   - `git tag -a mcp-server-vX -m "mammoth-mcp-server X" <merge commit> && git push origin mcp-server-vX`.
+   - `gh release create mcp-server-vX --verify-tag --latest=false` with the wheel and sdist downloaded from PyPI, not rebuilt.
+4. **Deploy.** Deploy the new version to `https://mcp.mammoth.io/mcp`. Ops does this; it isn't in this repo. Check that `https://mcp.mammoth.io/.well-known/mcp/server-card.json` reports the new version.
+5. **Publish to the MCP registry** (`io.mammoth/mcp`), after step 4.
+   - Each version publishes once and can't be changed, and clients connect to the URL in `server.json`.
+   - Log in with the DNS key:
+     ```bash
+     cd mammoth-mcp-server
+     PRIVATE_KEY="$(openssl pkey -in ~/.config/mammoth/mcp-registry-key.pem -noout -text | grep -A3 'priv:' | tail -n +2 | tr -d ' :\n')"
+     mcp-publisher login dns --domain mammoth.io --private-key "$PRIVATE_KEY"
+     ```
+   - Then run `mcp-publisher validate && mcp-publisher publish`.
+   - Verify: `curl -s https://registry.modelcontextprotocol.io/v0/servers/io.mammoth%2Fmcp/versions` lists the version as latest.
+   - Key setup and the `mammoth.io` DNS TXT record are documented in `mm-ai-docs/deploy/README.md`.
+   - Never commit, print or paste the private key.
+
 ## Conventions
 
 - All enums extend `str, Enum` — serialize as strings in JSON, work with IDE autocomplete
