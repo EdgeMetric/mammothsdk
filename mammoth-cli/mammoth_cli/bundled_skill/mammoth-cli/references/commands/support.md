@@ -2,6 +2,66 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `support.billing.cancel-subscription`
+
+Run: `mammoth support billing cancel-subscription`. Exact input fields: `mammoth schema get support.billing.cancel-subscription`.
+
+Example: `mammoth support billing cancel-subscription 123 --input '{"when": "period_end"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingCancelSubscriptionResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.billing.change-plan`
+
+Run: `mammoth support billing change-plan`. Exact input fields: `mammoth schema get support.billing.change-plan`.
+
+Example: `mammoth support billing change-plan 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingChangePlanResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.billing.end-trial`
+
+Run: `mammoth support billing end-trial`. Exact input fields: `mammoth schema get support.billing.end-trial`.
+
+Example: `mammoth support billing end-trial 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingEndTrialResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.billing.refund`
+
+Run: `mammoth support billing refund`. Exact input fields: `mammoth schema get support.billing.refund`.
+
+Example: `mammoth support billing refund 123 --input '{"amount": 500}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingRefundResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.billing.retry-payment`
+
+Run: `mammoth support billing retry-payment`. Exact input fields: `mammoth schema get support.billing.retry-payment`.
+
+Example: `mammoth support billing retry-payment 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingRetryPaymentResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.billing.start-trial`
+
+Run: `mammoth support billing start-trial`. Exact input fields: `mammoth schema get support.billing.start-trial`.
+
+Example: `mammoth support billing start-trial 123 --input '{"days": 14}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportBillingStartTrialResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.connector-profile.add-connector`
 
 Run: `mammoth support connector-profile add-connector`. Exact input fields: `mammoth schema get support.connector-profile.add-connector`.
@@ -52,6 +112,16 @@ Result: `SupportConnectorProfileUpdateResult`; mutation `high_impact`, confirmat
 
 Status on release: untried; no live run recorded.
 
+### `support.connector.bucket-impact`
+
+Run: `mammoth support connector bucket-impact`. Exact input fields: `mammoth schema get support.connector.bucket-impact`.
+
+Example: `mammoth support connector bucket-impact 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportConnectorBucketImpactResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.connector.create`
 
 Run: `mammoth support connector create`. Exact input fields: `mammoth schema get support.connector.create`.
@@ -89,6 +159,106 @@ Run: `mammoth support connector update`. Exact input fields: `mammoth schema get
 Example: `mammoth support connector update 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportConnectorUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.activity`
+
+Run: `mammoth support deal activity`. Exact input fields: `mammoth schema get support.deal.activity`.
+
+Example: `mammoth support deal activity 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportDealActivityResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.cancel-move-to-partner`
+
+Run: `mammoth support deal cancel-move-to-partner`. Exact input fields: `mammoth schema get support.deal.cancel-move-to-partner`.
+
+Example: `mammoth support deal cancel-move-to-partner 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportDealCancelMoveToPartnerResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.create`
+
+Run: `mammoth support deal create`. Exact input fields: `mammoth schema get support.deal.create`.
+
+Example: `mammoth support deal create 123 --input '{"base_plan_id": 3, "price": 1200.0}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportDealCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.get`
+
+Run: `mammoth support deal get`. Exact input fields: `mammoth schema get support.deal.get`.
+
+Example: `mammoth support deal get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportDealGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.list`
+
+Run: `mammoth support deal list`. Exact input fields: `mammoth schema get support.deal.list`.
+
+Example: `mammoth support deal list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportDealListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.move-to-partner`
+
+Run: `mammoth support deal move-to-partner`. Exact input fields: `mammoth schema get support.deal.move-to-partner`.
+
+Example: `mammoth support deal move-to-partner 123 456 --input '{"price": 900.0, "billing_interval": "monthly"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportDealMoveToPartnerResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.opt-in`
+
+Run: `mammoth support deal opt-in`. Exact input fields: `mammoth schema get support.deal.opt-in`.
+
+Example: `mammoth support deal opt-in 123 --input '{"everything": true}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportDealOptInResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.preview-entitlement`
+
+Run: `mammoth support deal preview-entitlement`. Exact input fields: `mammoth schema get support.deal.preview-entitlement`.
+
+Example: `mammoth support deal preview-entitlement 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportDealPreviewEntitlementResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.deal.update`
+
+Run: `mammoth support deal update`. Exact input fields: `mammoth schema get support.deal.update`.
+
+Example: `mammoth support deal update 123 --input '{"notes": "Renewal agreed"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportDealUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.entitlement.registry`
+
+Run: `mammoth support entitlement registry`. Exact input fields: `mammoth schema get support.entitlement.registry`.
+
+Example: `mammoth support entitlement registry`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportEntitlementRegistryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -182,6 +352,26 @@ Result: `SupportFeatureUpdateResult`; mutation `high_impact`, confirmation `conf
 
 Status on release: untried; no live run recorded.
 
+### `support.identity.get`
+
+Run: `mammoth support identity get`. Exact input fields: `mammoth schema get support.identity.get`.
+
+Example: `mammoth support identity get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportIdentityGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.identity.list`
+
+Run: `mammoth support identity list`. Exact input fields: `mammoth schema get support.identity.list`.
+
+Example: `mammoth support identity list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportIdentityListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.ownership.transfer`
 
 Run: `mammoth support ownership transfer`. Exact input fields: `mammoth schema get support.ownership.transfer`.
@@ -192,6 +382,136 @@ Result: `SupportOwnershipTransferResult`; mutation `high_impact`, confirmation `
 
 Status on release: untried; no live run recorded.
 
+### `support.partner.activity`
+
+Run: `mammoth support partner activity`. Exact input fields: `mammoth schema get support.partner.activity`.
+
+Example: `mammoth support partner activity 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerActivityResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.billing`
+
+Run: `mammoth support partner billing`. Exact input fields: `mammoth schema get support.partner.billing`.
+
+Example: `mammoth support partner billing 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerBillingResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.charge-invoices`
+
+Run: `mammoth support partner charge-invoices`. Exact input fields: `mammoth schema get support.partner.charge-invoices`.
+
+Example: `mammoth support partner charge-invoices 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerChargeInvoicesResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.client.cancel-detach`
+
+Run: `mammoth support partner client cancel-detach`. Exact input fields: `mammoth schema get support.partner.client.cancel-detach`.
+
+Example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerClientCancelDetachResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.client.delete`
+
+Run: `mammoth support partner client delete`. Exact input fields: `mammoth schema get support.partner.client.delete`.
+
+Example: `mammoth support partner client delete 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerClientDeleteResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.client.detach`
+
+Run: `mammoth support partner client detach`. Exact input fields: `mammoth schema get support.partner.client.detach`.
+
+Example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerClientDetachResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.client.list`
+
+Run: `mammoth support partner client list`. Exact input fields: `mammoth schema get support.partner.client.list`.
+
+Example: `mammoth support partner client list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerClientListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.create`
+
+Run: `mammoth support partner create`. Exact input fields: `mammoth schema get support.partner.create`.
+
+Example: `mammoth support partner create 'Revenue report' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.get`
+
+Run: `mammoth support partner get`. Exact input fields: `mammoth schema get support.partner.get`.
+
+Example: `mammoth support partner get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.invoices`
+
+Run: `mammoth support partner invoices`. Exact input fields: `mammoth schema get support.partner.invoices`.
+
+Example: `mammoth support partner invoices 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerInvoicesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.list`
+
+Run: `mammoth support partner list`. Exact input fields: `mammoth schema get support.partner.list`.
+
+Example: `mammoth support partner list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPartnerListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.send-payment-link`
+
+Run: `mammoth support partner send-payment-link`. Exact input fields: `mammoth schema get support.partner.send-payment-link`.
+
+Example: `mammoth support partner send-payment-link 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerSendPaymentLinkResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.partner.update`
+
+Run: `mammoth support partner update`. Exact input fields: `mammoth schema get support.partner.update`.
+
+Example: `mammoth support partner update 123 --input '{"notes": "Prefers invoices"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPartnerUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.plan.archive`
 
 Run: `mammoth support plan archive`. Exact input fields: `mammoth schema get support.plan.archive`.
@@ -199,6 +519,16 @@ Run: `mammoth support plan archive`. Exact input fields: `mammoth schema get sup
 Example: `mammoth support plan archive 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.plan.catalog`
+
+Run: `mammoth support plan catalog`. Exact input fields: `mammoth schema get support.plan.catalog`.
+
+Example: `mammoth support plan catalog`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportPlanCatalogResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -329,6 +659,16 @@ Run: `mammoth support plan update-storage-tiers`. Exact input fields: `mammoth s
 Example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanUpdateStorageTiersResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.search`
+
+Run: `mammoth support search`. Exact input fields: `mammoth schema get support.search`.
+
+Example: `mammoth support search acme`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportSearchResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -522,6 +862,26 @@ Result: `SupportTemplateUnpublishResult`; mutation `high_impact`, confirmation `
 
 Status on release: untried; no live run recorded.
 
+### `support.triage`
+
+Run: `mammoth support triage`. Exact input fields: `mammoth schema get support.triage`.
+
+Example: `mammoth support triage`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportTriageResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.usage-tiles`
+
+Run: `mammoth support usage-tiles`. Exact input fields: `mammoth schema get support.usage-tiles`.
+
+Example: `mammoth support usage-tiles`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportUsageTilesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.user.list-all`
 
 Run: `mammoth support user list-all`. Exact input fields: `mammoth schema get support.user.list-all`.
@@ -552,6 +912,46 @@ Result: `SupportUserUpdateResult`; mutation `high_impact`, confirmation `confirm
 
 Status on release: untried; no live run recorded.
 
+### `support.workspace.activity`
+
+Run: `mammoth support workspace activity`. Exact input fields: `mammoth schema get support.workspace.activity`.
+
+Example: `mammoth support workspace activity 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceActivityResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.archive`
+
+Run: `mammoth support workspace archive`. Exact input fields: `mammoth schema get support.workspace.archive`.
+
+Example: `mammoth support workspace archive 123 --input '{"storage_class": "GLACIER_IR", "confirm_name": "Revenue report", "reason": "Customer left"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.archive-info`
+
+Run: `mammoth support workspace archive-info`. Exact input fields: `mammoth schema get support.workspace.archive-info`.
+
+Example: `mammoth support workspace archive-info 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceArchiveInfoResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.chargebee-cancelled`
+
+Run: `mammoth support workspace chargebee-cancelled`. Exact input fields: `mammoth schema get support.workspace.chargebee-cancelled`.
+
+Example: `mammoth support workspace chargebee-cancelled 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceChargebeeCancelledResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.workspace.create`
 
 Run: `mammoth support workspace create`. Exact input fields: `mammoth schema get support.workspace.create`.
@@ -559,6 +959,16 @@ Run: `mammoth support workspace create`. Exact input fields: `mammoth schema get
 Example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "monthly"}' --yes --confirm 'Revenue report'`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.deal-seed`
+
+Run: `mammoth support workspace deal-seed`. Exact input fields: `mammoth schema get support.workspace.deal-seed`.
+
+Example: `mammoth support workspace deal-seed 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceDealSeedResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -572,6 +982,16 @@ Result: `SupportWorkspaceDeleteResult`; mutation `high_impact`, confirmation `co
 
 Status on release: untried; no live run recorded.
 
+### `support.workspace.entitlement`
+
+Run: `mammoth support workspace entitlement`. Exact input fields: `mammoth schema get support.workspace.entitlement`.
+
+Example: `mammoth support workspace entitlement 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceEntitlementResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.workspace.get`
 
 Run: `mammoth support workspace get`. Exact input fields: `mammoth schema get support.workspace.get`.
@@ -579,6 +999,26 @@ Run: `mammoth support workspace get`. Exact input fields: `mammoth schema get su
 Example: `mammoth support workspace get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `SupportWorkspaceGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.invite.cancel`
+
+Run: `mammoth support workspace invite cancel`. Exact input fields: `mammoth schema get support.workspace.invite.cancel`.
+
+Example: `mammoth support workspace invite cancel 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceInviteCancelResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.invite.resend`
+
+Run: `mammoth support workspace invite resend`. Exact input fields: `mammoth schema get support.workspace.invite.resend`.
+
+Example: `mammoth support workspace invite resend 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceInviteResendResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -599,6 +1039,16 @@ Run: `mammoth support workspace restore-access`. Exact input fields: `mammoth sc
 Example: `mammoth support workspace restore-access 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportWorkspaceRestoreAccessResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.restore-archive`
+
+Run: `mammoth support workspace restore-archive`. Exact input fields: `mammoth schema get support.workspace.restore-archive`.
+
+Example: `mammoth support workspace restore-archive 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceRestoreArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
 Status on release: untried; no live run recorded.
 

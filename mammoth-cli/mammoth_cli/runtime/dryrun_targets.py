@@ -272,6 +272,22 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             name_fmt="picture of dashboard template {label}",
         ),
     ),
+    # Named by id alone, with no read: a token scoped to another workspace could not read
+    # it, and the dry run must stay a pure report of what would be sent.
+    "support.billing.refund": (
+        Sub(
+            "payment",
+            "workspace_id",
+            name_fmt="last payment of workspace {workspace_id}",
+        ),
+    ),
+    "support.partner.client.delete": (
+        Sub(
+            "client workspace",
+            "workspace_id",
+            name_fmt="client workspace {workspace_id} of partner {partner_id}",
+        ),
+    ),
     "support.template.discard": (
         Sub(
             "curated template",

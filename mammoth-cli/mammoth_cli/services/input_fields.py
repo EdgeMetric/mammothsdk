@@ -139,6 +139,20 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}
     },
     "snippet.create": {"code": "SELECT * FROM orders", "language": "sql"},
+    "support.billing.cancel-subscription": {"when": "period_end"},
+    "support.billing.refund": {"amount": 500},
+    "support.billing.start-trial": {"days": 14},
+    "support.deal.create": {"base_plan_id": 3, "price": 1200.0},
+    "support.deal.move-to-partner": {"price": 900.0, "billing_interval": "monthly"},
+    "support.deal.opt-in": {"everything": True},
+    "support.deal.update": {"notes": "Renewal agreed"},
+    "support.partner.client.detach": {"price": 900.0, "contact_email": "owner@example.com"},
+    "support.partner.update": {"notes": "Prefers invoices"},
+    "support.workspace.archive": {
+        "storage_class": "GLACIER_IR",
+        "confirm_name": "Revenue report",
+        "reason": "Customer left",
+    },
     "support.template.export-dashboard": {"slug": "revenue-overview"},
     "support.workspace.create": {
         "user_email": "analyst@example.com",

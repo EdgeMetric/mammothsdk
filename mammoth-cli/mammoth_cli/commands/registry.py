@@ -848,6 +848,73 @@ _TARGETS: dict[str, str] = {
     "support.workspace.user.transfer": (
         "mammoth_cli.commands.support:support_workspace_user_transfer"
     ),
+    "support.billing.cancel-subscription": (
+        "mammoth_cli.commands.support:support_billing_cancel_subscription"
+    ),
+    "support.billing.change-plan": "mammoth_cli.commands.support:support_billing_change_plan",
+    "support.billing.end-trial": "mammoth_cli.commands.support:support_billing_end_trial",
+    "support.billing.refund": "mammoth_cli.commands.support:support_billing_refund",
+    "support.billing.retry-payment": "mammoth_cli.commands.support:support_billing_retry_payment",
+    "support.billing.start-trial": "mammoth_cli.commands.support:support_billing_start_trial",
+    "support.connector.bucket-impact": (
+        "mammoth_cli.commands.support:support_connector_bucket_impact"
+    ),
+    "support.deal.activity": "mammoth_cli.commands.support:support_deal_activity",
+    "support.deal.cancel-move-to-partner": (
+        "mammoth_cli.commands.support:support_deal_cancel_move_to_partner"
+    ),
+    "support.deal.create": "mammoth_cli.commands.support:support_deal_create",
+    "support.deal.get": "mammoth_cli.commands.support:support_deal_get",
+    "support.deal.list": "mammoth_cli.commands.support:support_deal_list",
+    "support.deal.move-to-partner": "mammoth_cli.commands.support:support_deal_move_to_partner",
+    "support.deal.opt-in": "mammoth_cli.commands.support:support_deal_opt_in",
+    "support.deal.preview-entitlement": (
+        "mammoth_cli.commands.support:support_deal_preview_entitlement"
+    ),
+    "support.deal.update": "mammoth_cli.commands.support:support_deal_update",
+    "support.entitlement.registry": "mammoth_cli.commands.support:support_entitlement_registry",
+    "support.identity.get": "mammoth_cli.commands.support:support_identity_get",
+    "support.identity.list": "mammoth_cli.commands.support:support_identity_list",
+    "support.partner.activity": "mammoth_cli.commands.support:support_partner_activity",
+    "support.partner.billing": "mammoth_cli.commands.support:support_partner_billing",
+    "support.partner.charge-invoices": (
+        "mammoth_cli.commands.support:support_partner_charge_invoices"
+    ),
+    "support.partner.client.cancel-detach": (
+        "mammoth_cli.commands.support:support_partner_client_cancel_detach"
+    ),
+    "support.partner.client.delete": "mammoth_cli.commands.support:support_partner_client_delete",
+    "support.partner.client.detach": "mammoth_cli.commands.support:support_partner_client_detach",
+    "support.partner.client.list": "mammoth_cli.commands.support:support_partner_client_list",
+    "support.partner.create": "mammoth_cli.commands.support:support_partner_create",
+    "support.partner.get": "mammoth_cli.commands.support:support_partner_get",
+    "support.partner.invoices": "mammoth_cli.commands.support:support_partner_invoices",
+    "support.partner.list": "mammoth_cli.commands.support:support_partner_list",
+    "support.partner.send-payment-link": (
+        "mammoth_cli.commands.support:support_partner_send_payment_link"
+    ),
+    "support.partner.update": "mammoth_cli.commands.support:support_partner_update",
+    "support.plan.catalog": "mammoth_cli.commands.support:support_plan_catalog",
+    "support.search": "mammoth_cli.commands.support:support_search",
+    "support.triage": "mammoth_cli.commands.support:support_triage",
+    "support.usage-tiles": "mammoth_cli.commands.support:support_usage_tiles",
+    "support.workspace.activity": "mammoth_cli.commands.support:support_workspace_activity",
+    "support.workspace.archive": "mammoth_cli.commands.support:support_workspace_archive",
+    "support.workspace.archive-info": "mammoth_cli.commands.support:support_workspace_archive_info",
+    "support.workspace.chargebee-cancelled": (
+        "mammoth_cli.commands.support:support_workspace_chargebee_cancelled"
+    ),
+    "support.workspace.deal-seed": "mammoth_cli.commands.support:support_workspace_deal_seed",
+    "support.workspace.entitlement": "mammoth_cli.commands.support:support_workspace_entitlement",
+    "support.workspace.invite.cancel": (
+        "mammoth_cli.commands.support:support_workspace_invite_cancel"
+    ),
+    "support.workspace.invite.resend": (
+        "mammoth_cli.commands.support:support_workspace_invite_resend"
+    ),
+    "support.workspace.restore-archive": (
+        "mammoth_cli.commands.support:support_workspace_restore_archive"
+    ),
     "view.list": "mammoth_cli.commands.view.listing:view_list",
     "view.bulk-delete": "mammoth_cli.commands.view.listing:view_bulk_delete",
     "view.active-user.list": "mammoth_cli.commands.view.listing:view_active_user_list",

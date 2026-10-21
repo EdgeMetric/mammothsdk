@@ -3010,19 +3010,19 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
-  canonical_command: dataset.definition.remove
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_from_url
   canonical_command: dataset.refresh
   alias_of: null
   mutation_class: benign_mutation
   wait_policy: always_wait
   pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
+  canonical_command: dataset.definition.remove
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.rename
   canonical_command: dataset.rename
@@ -4282,6 +4282,62 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_cancel_subscription
+  canonical_command: support.billing.cancel-subscription
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. `when` is required: now ends access and billing at once, period_end keeps the workspace until the paid period ends. Check `support workspace entitlement WORKSPACE_ID` first."
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_change_plan
+  canonical_command: support.billing.change-plan
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. A workspace billed through a partner is refused: change it on the partner instead. Look the plan up with `support plan catalog`; `when` is now or period_end. A change now is prorated and billed at once."
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_end_trial
+  canonical_command: support.billing.end-trial
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. A workspace billed through a partner is refused: change it on the partner instead. Ends the trial now and charges the plan; the card on file is billed."
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_refund
+  canonical_command: support.billing.refund
+  alias_of: null
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. A workspace billed through a partner is refused: change it on the partner instead. Moves money back to the customer, and it cannot be undone. Exactly one of `amount` (positive whole cents, a partial refund) or `full: true` (the whole last payment) is required: neither, or both, is refused, so a refund is never full by omission. The confirmation text names the amount or FULL."
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_retry_payment
+  canonical_command: support.billing.retry-payment
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. A workspace billed through a partner is refused: change it on the partner instead. Charges the failed invoice again; the card on file is billed."
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_start_trial
+  canonical_command: support.billing.start-trial
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Starts a trial of `days` (1-60) on the workspace. It REPLACES the workspace's billing and cancels a live paid Stripe subscription. Check `support workspace entitlement WORKSPACE_ID` first."
+- sdk_symbol: mammoth.api.support.SupportAPI.connector_bucket_impact
+  canonical_command: support.connector.bucket-impact
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.connector_create
   canonical_command: support.connector.create
   alias_of: null
@@ -4340,6 +4396,81 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.connector_update
   canonical_command: support.connector.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_activity
+  canonical_command: support.deal.activity
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_cancel_move_to_partner
+  canonical_command: support.deal.cancel-move-to-partner
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Cancels the deal's pending move to a partner; read the deal first with `support deal get DEAL_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_create
+  canonical_command: support.deal.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Needs `base_plan_id` and exactly one of the WORKSPACE_ID argument or `workspace_create`. A deal sets what the workspace is billed and entitled to."
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_get
+  canonical_command: support.deal.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_list
+  canonical_command: support.deal.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_move_to_partner
+  canonical_command: support.deal.move-to-partner
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Moves the deal's billing under a partner (`when`: period_end or now). With `when` now, the workspace's subscription is cancelled prorated and the unused time is refunded. Undo a pending move with `support deal cancel-move-to-partner DEAL_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_opt_in
+  canonical_command: support.deal.opt-in
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Releases opt-in rollout pins on the deal (`keys`, `connectors`, or `everything`), which can change the workspace's entitlements at once."
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_preview_entitlement
+  canonical_command: support.deal.preview-entitlement
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_update
+  canonical_command: support.deal.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Changes what the workspace is billed and entitled to; a bad status turns entitlements off. Read the deal first with `support deal get DEAL_ID`, and preview the result with `support deal preview-entitlement DEAL_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.entitlement_registry
+  canonical_command: support.entitlement.registry
   alias_of: null
   mutation_class: null
   wait_policy: null
@@ -4408,6 +4539,20 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.identity_get
+  canonical_command: support.identity.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.identity_list
+  canonical_command: support.identity.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: offset
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.ownership_transfer
   canonical_command: support.ownership.transfer
   alias_of: null
@@ -4415,8 +4560,114 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_activity
+  canonical_command: support.partner.activity
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_billing
+  canonical_command: support.partner.billing
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_charge_invoices
+  canonical_command: support.partner.charge-invoices
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Charges every open invoice of the partner now; the partner's card on file is billed. Look at them first with `support partner invoices PARTNER_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_cancel_detach
+  canonical_command: support.partner.client.cancel-detach
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Cancels the client's pending detach. Confirm with the WORKSPACE id (`--confirm WORKSPACE_ID`, the second argument), not the partner id. List the clients first with `support partner client list PARTNER_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_delete
+  canonical_command: support.partner.client.delete
+  alias_of: null
+  mutation_class: destructive
+  confirmation: confirm_target
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Deletes the client workspace of the partner, and it cannot be undone. Confirm with the WORKSPACE id (`--confirm WORKSPACE_ID`, the second argument), not the partner id. List them first with `support partner client list PARTNER_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_detach
+  canonical_command: support.partner.client.detach
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Turns the partner's client into a direct customer: `price` (above 0) and `contact_email` are required. Confirm with the WORKSPACE id (`--confirm WORKSPACE_ID`, the second argument), not the partner id. Undo a pending detach with `support partner client cancel-detach PARTNER_ID WORKSPACE_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_list
+  canonical_command: support.partner.client.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_create
+  canonical_command: support.partner.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Creates a partner record; no money moves."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_get
+  canonical_command: support.partner.get
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_invoices
+  canonical_command: support.partner.invoices
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_list
+  canonical_command: support.partner.list
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_send_payment_link
+  canonical_command: support.partner.send-payment-link
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Emails the partner contact a payment link; the email goes out at once."
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_update
+  canonical_command: support.partner.update
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. An empty string clears contact_name, contact_email or notes. billing_method sets how the partner's consolidated subscription is collected."
 - sdk_symbol: mammoth.api.support.SupportAPI.plan_archive
   canonical_command: support.plan.archive
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_catalog
+  canonical_command: support.plan.catalog
   alias_of: null
   mutation_class: null
   wait_policy: null
@@ -4508,6 +4759,13 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.plan_update_storage_tiers
   canonical_command: support.plan.update-storage-tiers
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.search
+  canonical_command: support.search
   alias_of: null
   mutation_class: null
   wait_policy: null
@@ -4646,6 +4904,20 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.triage
+  canonical_command: support.triage
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.usage_tiles
+  canonical_command: support.usage-tiles
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.user_list_all
   canonical_command: support.user.list-all
   alias_of: null
@@ -4667,8 +4939,45 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_activity
+  canonical_command: support.workspace.activity
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive
+  canonical_command: support.workspace.archive
+  alias_of: null
+  mutation_class: null
+  wait_policy: returns_job
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Moves the workspace's data to cold storage and takes it offline. The server answers 202 and queues a job: poll `support workspace archive-info WORKSPACE_ID` until the archive has finished. Needs `storage_class` (GLACIER_IR or DEEP_ARCHIVE) and `confirm_name`, the workspace's exact name (case sensitive). `cancel_billing` also cancels billing. Read `support workspace archive-info WORKSPACE_ID` first. Reverse it with `support workspace restore-archive WORKSPACE_ID`."
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive_info
+  canonical_command: support.workspace.archive-info
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_chargebee_cancelled
+  canonical_command: support.workspace.chargebee-cancelled
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Records the workspace's Chargebee subscription as cancelled; use it only after the cancellation was done in Chargebee."
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_create
   canonical_command: support.workspace.create
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_deal_seed
+  canonical_command: support.workspace.deal-seed
   alias_of: null
   mutation_class: null
   wait_policy: null
@@ -4681,6 +4990,13 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_entitlement
+  canonical_command: support.workspace.entitlement
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_get
   canonical_command: support.workspace.get
   alias_of: null
@@ -4688,6 +5004,22 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_cancel
+  canonical_command: support.workspace.invite.cancel
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Cancels the pending invite so its link stops working."
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_resend
+  canonical_command: support.workspace.invite.resend
+  alias_of: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Emails the invitee again at once."
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_list
   canonical_command: support.workspace.list
   alias_of: null
@@ -4702,6 +5034,14 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_restore_archive
+  canonical_command: support.workspace.restore-archive
+  alias_of: null
+  mutation_class: null
+  wait_policy: returns_job
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: "Platform admin only (super or tech admin); a sales admin can read but not write. Brings an archived workspace back from cold storage. The server answers 202 and queues a job: poll `support workspace archive-info WORKSPACE_ID` until the restore has finished. Check `support workspace archive-info WORKSPACE_ID` first."
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_suspend_access
   canonical_command: support.workspace.suspend-access
   alias_of: null
