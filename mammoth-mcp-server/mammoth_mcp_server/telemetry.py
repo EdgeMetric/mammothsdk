@@ -121,7 +121,7 @@ async def _send(caller: AccessToken, event: str, fields: dict[str, Any]) -> None
     try:
         async with sdk.client_with(caller.token) as client:
             # The SDK has no method for this route; one would need a mammoth-io release.
-            await client._request("POST", path, json={"encoded_data": encoded})
+            await client.request_json("POST", path, json={"encoded_data": encoded})
     except MammothError:
         _problems.warning("Mammoth did not store the %s event", event, exc_info=True)
 

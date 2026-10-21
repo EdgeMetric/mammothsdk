@@ -26,14 +26,16 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import functools
 import hashlib
 import importlib
+import inspect
 import logging
 import math
 import time
 from collections.abc import Awaitable, Callable
 from ipaddress import ip_address
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 from urllib.parse import urljoin, urlsplit
 
 import httpx
@@ -326,6 +328,22 @@ def _read_error_detail(body: dict[str, Any]) -> str | None:
     return None
 
 
+_ApiT = TypeVar("_ApiT")
+
+_blocking_lookup_warned = False
+
+
+def _warn_once_blocking_lookup() -> None:
+    """Log, once per process, that a direct ``workspace_id`` read blocked the event loop."""
+    global _blocking_lookup_warned
+    if not _blocking_lookup_warned:
+        _blocking_lookup_warned = True
+        logging.getLogger("mammoth").warning(
+            "client.workspace_id made a blocking lookup inside a running event loop; "
+            "await client.resolve_workspace_id() first to avoid it"
+        )
+
+
 _TOKEN_WORKSPACES: dict[tuple[str, str], int] = {}
 _TOKEN_WORKSPACES_MAX = 64
 
@@ -358,33 +376,75 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
             raise MammothAPIError(
                 "Could not reach Mammoth to resolve the token's workspace"
             ) from exc
-        if response.status_code == 401:
-            try:
-                refused = response.json()
-            except ValueError:
-                refused = None
-            raise MammothAuthError(
-                "Invalid API credentials",
-                response_body=refused if isinstance(refused, dict) else None,
-            )
-        workspace_id: object = None
-        if response.status_code == 200:
-            try:
-                body = response.json()
-            except ValueError as exc:
-                raise MammothAPIError(
-                    "Mammoth returned an unreadable answer for the token's workspace",
-                    status_code=response.status_code,
-                ) from exc
-            workspace_id = body.get("id") if isinstance(body, dict) else None
-        if not isinstance(workspace_id, int) or workspace_id <= 0:
-            raise MammothAPIError(
-                "Mammoth did not return the token's workspace", status_code=response.status_code
-            )
-        if len(_TOKEN_WORKSPACES) >= _TOKEN_WORKSPACES_MAX:
-            _TOKEN_WORKSPACES.pop(next(iter(_TOKEN_WORKSPACES)))
-        _TOKEN_WORKSPACES[key] = workspace_id
+        _remember_token_workspace(key, response)
     return _TOKEN_WORKSPACES[key]
+
+
+async def resolve_token_workspace_id_async(
+    session: httpx.AsyncClient, base_url: str, api_token: str, timeout: float
+) -> int:
+    """Ask the server which workspace an ``mm_`` token belongs to, without blocking.
+
+    The same question and the same per-process cache as
+    :func:`resolve_token_workspace_id`, asked over ``session`` so it waits on
+    the event loop instead of holding it.
+
+    Args:
+        session: The async HTTP client to ask through. It sends no credentials
+            of its own; the token goes on this one request.
+        base_url: The API base url, ending in ``/api/v2``.
+        api_token: The ``mm_...`` Bearer token.
+        timeout: Request timeout in seconds.
+
+    Raises:
+        MammothAuthError: The server rejected the token.
+        MammothAPIError: The request failed or the answer carried no workspace id.
+    """
+    key = (base_url, api_token)
+    if key not in _TOKEN_WORKSPACES:
+        try:
+            response = await session.get(
+                f"{base_url}/workspaces/current",
+                headers={"Authorization": f"Bearer {api_token}"},
+                timeout=timeout,
+                follow_redirects=False,
+            )
+        except httpx.HTTPError as exc:
+            raise MammothAPIError(
+                "Could not reach Mammoth to resolve the token's workspace"
+            ) from exc
+        _remember_token_workspace(key, response)
+    return _TOKEN_WORKSPACES[key]
+
+
+def _remember_token_workspace(key: tuple[str, str], response: httpx.Response) -> None:
+    """Read the workspace id off a ``/workspaces/current`` answer and cache it."""
+    if response.status_code == 401:
+        try:
+            refused = response.json()
+        except ValueError:
+            refused = None
+        raise MammothAuthError(
+            "Invalid API credentials",
+            response_body=refused if isinstance(refused, dict) else None,
+        )
+    workspace_id: object = None
+    if response.status_code == 200:
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise MammothAPIError(
+                "Mammoth returned an unreadable answer for the token's workspace",
+                status_code=response.status_code,
+            ) from exc
+        workspace_id = body.get("id") if isinstance(body, dict) else None
+    if not isinstance(workspace_id, int) or workspace_id <= 0:
+        raise MammothAPIError(
+            "Mammoth did not return the token's workspace", status_code=response.status_code
+        )
+    if len(_TOKEN_WORKSPACES) >= _TOKEN_WORKSPACES_MAX:
+        _TOKEN_WORKSPACES.pop(next(iter(_TOKEN_WORKSPACES)))
+    _TOKEN_WORKSPACES[key] = workspace_id
 
 
 if TYPE_CHECKING:
@@ -571,6 +631,7 @@ class MammothClient:
         retry_gateway_errors: bool = True,
         token_provider: Callable[[], str] | None = None,
         user_agent: str | None = None,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -581,9 +642,11 @@ class MammothClient:
         Args:
             api_key: Deprecated API key; use ``api_token``.
             api_secret: Deprecated API secret; use ``api_token``.
-            workspace_id: Your Mammoth workspace ID. Only for the deprecated
-                ``api_key`` + ``api_secret`` pair; an ``api_token`` names its
-                own workspace and rejects this argument.
+            workspace_id: Your Mammoth workspace ID. Required with the deprecated
+                ``api_key`` + ``api_secret`` pair. With an ``api_token`` it is a
+                trusted hint: the token names its own workspace, and a hint saves
+                the request that would ask which. The SDK does not check it, so
+                a wrong one makes requests fail on the server.
             base_url: Base URL for the Mammoth API.
             timeout: Request timeout in seconds.
             job_timeout: Job polling timeout in seconds.
@@ -612,6 +675,12 @@ class MammothClient:
                 Turn it off when the server answering is the process making
                 the call: a retry then adds load to the very worker that is
                 overloaded. Connection errors are still retried.
+            http_client: An ``httpx.AsyncClient`` to send API requests through,
+                so many clients (one per caller) can share one connection pool.
+                The SDK never closes it and never writes credentials into its
+                ``headers``: Authorization, ``X-API-*`` and ``User-Agent`` go on
+                each request, so a second client sends its own and not the
+                first one's. The caller owns its lifetime and its timeouts.
         """
         if token_provider is not None and (
             api_token is not None or api_key is not None or api_secret is not None
@@ -625,8 +694,6 @@ class MammothClient:
             raise ValueError("pass api_token (mm_...) or both api_key and api_secret")
         if api_token is not None and (not isinstance(api_token, str) or not api_token.strip()):
             raise ValueError("api_token must be a non-empty string")
-        if api_token is not None and workspace_id is not None:
-            raise ValueError("workspace_id is not accepted with api_token: the token names it")
         if api_token is None and token_provider is None and workspace_id is None:
             raise ValueError("workspace_id is required")
         if not isinstance(base_url, str):
@@ -685,7 +752,12 @@ class MammothClient:
 
         self.project_id: int | None = None
 
-        self.session = httpx.AsyncClient(timeout=self.timeout, follow_redirects=False)
+        self._owns_session = http_client is None
+        self.session = (
+            http_client
+            if http_client is not None
+            else httpx.AsyncClient(timeout=self.timeout, follow_redirects=False)
+        )
         if self._token_provider is not None:
             # The Authorization header is computed per request in ``_request``.
             credential_headers = {}
@@ -697,21 +769,21 @@ class MammothClient:
                 "X-API-SECRET": str(self.api_secret),
                 "X-WORKSPACE-ID": str(workspace_id),
             }
-        self.session.headers.update(
-            {
-                **credential_headers,
-                "User-Agent": " ".join(
-                    part for part in (user_agent, f"mammoth-io/{_get_version()}") if part
-                ),
-            }
-        )
+        self._default_headers = {
+            **credential_headers,
+            "User-Agent": " ".join(
+                part for part in (user_agent, f"mammoth-io/{_get_version()}") if part
+            ),
+        }
+        if self._owns_session:
+            self.session.headers.update(self._default_headers)
         # Signed export URLs are commonly served from a storage origin rather
         # than the API origin.  Keep that traffic on a separate session so API
         # credentials are never attached to a signed URL (or its redirects).
         self.download_session = httpx.AsyncClient(timeout=self.timeout)
 
         # ── Sub-clients ──
-        self.views = ViewsResource(self)
+        self.views = self._resolving(ViewsResource(self))
 
     def __getattr__(self, name: str) -> Any:
         """Build a sub-client the first time it is read, then cache it."""
@@ -719,9 +791,37 @@ class MammothClient:
         if target is None:
             raise AttributeError(f"{type(self).__name__!r} object has no attribute {name!r}")
         module_name, class_name = target
-        api = getattr(importlib.import_module(module_name), class_name)(self)
+        api = self._resolving(getattr(importlib.import_module(module_name), class_name)(self))
         setattr(self, name, api)
         return api
+
+    def _resolving(self, api: _ApiT) -> _ApiT:
+        """Make each public coroutine method of ``api`` learn the workspace first.
+
+        The API classes read ``workspace_id`` while building a URL, before any
+        request goes out, and that read must not make a blocking call on the
+        event loop. A token client that does not know its workspace yet
+        therefore asks for it, asynchronously, at the top of each call. A client
+        that knows it (a hint, a key pair, a lookup already made) is left bare.
+        """
+        if self._workspace_id is not None:
+            return api
+        for name in dir(type(api)):
+            if name.startswith("_") or not inspect.iscoroutinefunction(getattr(type(api), name)):
+                continue
+            setattr(api, name, self._resolve_first(getattr(api, name)))
+        return api
+
+    def _resolve_first(
+        self, method: Callable[..., Awaitable[Any]]
+    ) -> Callable[..., Awaitable[Any]]:
+        @functools.wraps(method)
+        async def call(*args: Any, **kwargs: Any) -> Any:
+            if self._workspace_id is None:
+                await self.resolve_workspace_id()
+            return await method(*args, **kwargs)
+
+        return call
 
     async def find_dataset_for_dataview(
         self, dataview_id: int, dataset_id: int | None = None
@@ -799,14 +899,43 @@ class MammothClient:
     def workspace_id(self) -> int:
         """The workspace this client acts in.
 
-        Given at construction with ``api_key`` + ``api_secret``; an ``api_token``
-        names its own workspace, which is fetched once on first use and kept.
+        Given at construction (required with ``api_key`` + ``api_secret``, a
+        hint with an ``api_token``). A token client without a hint learns it
+        from the API once, on first use, and keeps it. SDK calls made from
+        async code learn it without blocking the event loop. Reading this
+        property first, inside a running loop, still works but blocks the loop
+        for that one lookup: ``await client.resolve_workspace_id()`` avoids it.
         """
         if self._workspace_id is None:
             token = self._token_provider() if self._token_provider else self.api_token
             if token is None:
                 raise ValueError("workspace_id is required with api_key + api_secret")
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                pass
+            else:
+                _warn_once_blocking_lookup()
             self._workspace_id = resolve_token_workspace_id(self.base_url, token, self.timeout)
+        return self._workspace_id
+
+    async def resolve_workspace_id(self) -> int:
+        """The workspace this client acts in, learned without blocking the event loop.
+
+        Returns at once when it is already known. Otherwise asks the API through
+        this client's own connection pool, once, and keeps the answer.
+
+        Raises:
+            MammothAuthError: The API rejected the token.
+            MammothAPIError: The request failed or the answer carried no workspace id.
+        """
+        if self._workspace_id is None:
+            token = self._token_provider() if self._token_provider else self.api_token
+            if token is None:
+                raise ValueError("workspace_id is required with api_key + api_secret")
+            self._workspace_id = await resolve_token_workspace_id_async(
+                self.session, self.base_url, token.strip(), self.timeout
+            )
         return self._workspace_id
 
     async def _request(
@@ -864,6 +993,12 @@ class MammothClient:
             request_kwargs["params"] = params
 
         headers = dict(self.session.headers)
+        if not self._owns_session:
+            # A shared pool carries no credentials of its own: ours go on each request.
+            # httpx lowercases header names, so merge through its own mapping.
+            merged = httpx.Headers(headers)
+            merged.update(self._default_headers)
+            headers = dict(merged)
         if self._token_provider is not None:
             headers["Authorization"] = f"Bearer {self._token_provider().strip()}"
         if "headers" in kwargs:
@@ -1296,7 +1431,9 @@ class MammothClient:
             workspace_id: ID of the workspace.
         """
         self._workspace_id = workspace_id
-        self.session.headers["X-WORKSPACE-ID"] = str(workspace_id)
+        self._default_headers["X-WORKSPACE-ID"] = str(workspace_id)
+        if self._owns_session:
+            self.session.headers["X-WORKSPACE-ID"] = str(workspace_id)
 
     def set_project_id(self, project_id: int) -> None:
         """Set the active project for subsequent API calls.
@@ -1392,14 +1529,17 @@ class MammothClient:
         )
 
     async def close(self) -> None:
-        """Close the owned HTTP session.
+        """Close the owned HTTP sessions.
 
-        Safe to call more than once. After a CLI command completes, the caller
+        A shared ``http_client`` is left open: its owner closes it. Safe to call
+        more than once. After a CLI command completes, the caller
         closes the client deterministically instead of relying on interpreter
         shutdown.
         """
         closed_sessions: set[int] = set()
         for name in ("session", "download_session"):
+            if name == "session" and not self._owns_session:
+                continue
             session = getattr(self, name, None)
             if session is not None and id(session) not in closed_sessions:
                 await session.aclose()
