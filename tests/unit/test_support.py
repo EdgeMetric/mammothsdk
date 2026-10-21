@@ -293,15 +293,36 @@ class TestConnectors:
         mock_client._request_json.assert_called_once_with(
             "POST",
             "/subscription/connectors",
-            json={"name": "Salesforce", "price_per_month": 0, "enabled": True},
+            json={"name": "Salesforce", "enabled": True},
+        )
+
+    async def test_connector_create_never_sends_the_removed_price(self):
+        """Prod dropped ``price_per_month`` from connectors; a caller's value warns and is not sent."""
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        with pytest.warns(DeprecationWarning, match="price_per_month"):
+            await api.connector_create("Salesforce", price_per_month=9.5)
+        mock_client._request_json.assert_called_once_with(
+            "POST",
+            "/subscription/connectors",
+            json={"name": "Salesforce", "enabled": True},
         )
 
     async def test_connector_update(self):
         api, mock_client = _make_api()
         mock_client._request_json = AsyncMock(return_value={})
-        await api.connector_update(4, price_per_month=15.0)
+        await api.connector_update(4, name="Salesforce 2", enabled=False)
         mock_client._request_json.assert_called_once_with(
-            "PUT", "/subscription/connectors/4", json={"price_per_month": 15.0}
+            "PUT", "/subscription/connectors/4", json={"name": "Salesforce 2", "enabled": False}
+        )
+
+    async def test_connector_update_never_sends_the_removed_price(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={})
+        with pytest.warns(DeprecationWarning, match="price_per_month"):
+            await api.connector_update(4, name="X", price_per_month=15.0)
+        mock_client._request_json.assert_called_once_with(
+            "PUT", "/subscription/connectors/4", json={"name": "X"}
         )
 
     async def test_connector_update_invalid_id(self):
@@ -543,7 +564,10 @@ class TestWorkspaces:
         mock_client._request = AsyncMock(return_value={"workspaces": []})
         result = await api.workspace_list()
         mock_client._request.assert_called_once_with(
-            "GET", "/support/workspaces", expected_response_shape="list_or_dict"
+            "GET",
+            "/support/workspaces",
+            params={"limit": 100, "offset": 0},
+            expected_response_shape="list_or_dict",
         )
         assert result == {"workspaces": []}
 
@@ -552,6 +576,33 @@ class TestWorkspaces:
         api, mock_client = _make_api()
         mock_client._request = AsyncMock(return_value=[{"id": 4}, {"id": 5}])
         assert await api.workspace_list() == {"workspaces": [{"id": 4}, {"id": 5}]}
+
+    async def test_workspace_list_follows_pages_past_the_default_of_fifty(self):
+        """Prod pages this route; one unparameterised call would stop at 50 workspaces."""
+        api, mock_client = _make_api()
+        first = [{"id": i} for i in range(1, 101)]
+        second = [{"id": i} for i in range(101, 131)]
+        mock_client._request = AsyncMock(
+            side_effect=[{"workspaces": first, "limit": 100}, {"workspaces": second, "limit": 100}]
+        )
+        result = await api.workspace_list()
+        assert [w["id"] for w in result["workspaces"]] == list(range(1, 131))
+        offsets = [c.kwargs["params"]["offset"] for c in mock_client._request.call_args_list]
+        assert offsets == [0, 100]
+
+    async def test_workspace_list_stops_when_the_backend_ignores_paging(self):
+        api, mock_client = _make_api()
+        everything = [{"id": i} for i in range(1, 151)]
+        mock_client._request = AsyncMock(return_value=everything)
+        result = await api.workspace_list()
+        assert result == {"workspaces": everything}
+        assert mock_client._request.await_count == 2
+
+    async def test_workspace_list_leaves_the_instance_types_variant_alone(self):
+        api, mock_client = _make_api()
+        body = {"instance_types": [{"name": "small"}]}
+        mock_client._request = AsyncMock(return_value=body)
+        assert await api.workspace_list() == body
 
     async def test_workspace_get(self):
         api, mock_client = _make_api()

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -25,6 +26,12 @@ _ERR_ID = "`{name}` must be a positive integer, got {value}."
 ERR_CUSTOMER_DETAILS_REQUIRED = (
     "Provide either `customer_id` (existing Chargebee customer) or the full set of "
     "`first_name`, `last_name`, `email`, `company_name` (new customer)."
+)
+WORKSPACE_LIST_PAGE_SIZE = 100
+WORKSPACE_LIST_MAX_PAGES = 1000
+WARN_CONNECTOR_PRICE_IGNORED = (
+    "`price_per_month` is ignored for subscription connectors: the server dropped the "
+    "field (connectors are access, not a priced line item), so it is no longer sent."
 )
 ERR_STORAGE_TIERS_EMPTY = "`storage_tiers` must be a non-empty list."
 ERR_STORAGE_OPTION_NO_CHANGE = "Provide at least one of storage_gb, monthly_price, annual_price."
@@ -696,17 +703,17 @@ class SupportAPI:
         Args:
             name: Connector name.
             description: Optional connector description.
-            price_per_month: Monthly price in USD (default ``0``).
+            price_per_month: Deprecated and ignored. The server no longer has a
+                price on connectors, so the SDK does not send it (a non-zero value
+                warns). Kept so existing calls still work.
             enabled: Whether the connector is enabled (default ``True``).
 
         Returns:
             Dict with the created connector.
         """
-        body: dict[str, Any] = {
-            "name": name,
-            "price_per_month": price_per_month,
-            "enabled": enabled,
-        }
+        if price_per_month:
+            warnings.warn(WARN_CONNECTOR_PRICE_IGNORED, DeprecationWarning, stacklevel=2)
+        body: dict[str, Any] = {"name": name, "enabled": enabled}
         if description is not None:
             body["description"] = description
         return await self._client._request_json("POST", "/subscription/connectors", json=body)
@@ -726,7 +733,9 @@ class SupportAPI:
             connector_id: ID of the connector (must be a positive integer).
             name: New connector name.
             description: New connector description.
-            price_per_month: New monthly price in USD.
+            price_per_month: Deprecated and ignored. The server no longer has a
+                price on connectors, so the SDK does not send it (a value warns).
+                Kept so existing calls still work.
             enabled: Whether the connector is enabled.
 
         Returns:
@@ -736,10 +745,11 @@ class SupportAPI:
             MammothValidationError: If *connector_id* is not a positive integer.
         """
         _check_id("connector_id", connector_id)
+        if price_per_month is not None:
+            warnings.warn(WARN_CONNECTOR_PRICE_IGNORED, DeprecationWarning, stacklevel=2)
         fields = {
             "name": name,
             "description": description,
-            "price_per_month": price_per_month,
             "enabled": enabled,
         }
         body = {k: v for k, v in fields.items() if v is not None}
@@ -1095,18 +1105,37 @@ class SupportAPI:
     async def workspace_list(self) -> dict[str, Any]:
         """List all workspaces visible to the current admin/support user.
 
+        The route pages its answer (``limit`` defaults to 50, at most 100), so this
+        follows the pages until the list is complete. A backend that ignores paging
+        and answers with the whole list is read once more and stops on the repeat.
+
         Returns:
             Dict with the ``workspaces`` list (or ``instance_types``, depending
             on the server response variant). The release backend answers this
             route with a bare JSON array, which is wrapped as ``{"workspaces":
             [...]}`` so callers get the usual dict shape.
         """
-        result = await self._client._request(
-            "GET", "/support/workspaces", expected_response_shape="list_or_dict"
-        )
-        if isinstance(result, list):
-            return {"workspaces": result}
-        return result
+        workspaces: list[Any] = []
+        seen: set[Any] = set()
+        for page_number in range(WORKSPACE_LIST_MAX_PAGES):
+            result = await self._client._request(
+                "GET",
+                "/support/workspaces",
+                params={
+                    "limit": WORKSPACE_LIST_PAGE_SIZE,
+                    "offset": page_number * WORKSPACE_LIST_PAGE_SIZE,
+                },
+                expected_response_shape="list_or_dict",
+            )
+            page = result if isinstance(result, list) else result.get("workspaces")
+            if not isinstance(page, list):
+                return result if isinstance(result, dict) else {"workspaces": workspaces}
+            fresh = [w for w in page if not isinstance(w, dict) or w.get("id") not in seen]
+            seen.update(w["id"] for w in fresh if isinstance(w, dict) and "id" in w)
+            workspaces.extend(fresh)
+            if not fresh or len(page) < WORKSPACE_LIST_PAGE_SIZE:
+                break
+        return {"workspaces": workspaces}
 
     async def workspace_get(self, workspace_id: int, fields: str | None = None) -> dict[str, Any]:
         """Get details of a workspace.
