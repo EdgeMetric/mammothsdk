@@ -16,7 +16,10 @@ from mammoth.models.exports import (
 from mammoth.view import ViewExport
 
 from mammoth_cli.commands import view as view_cmd
-from mammoth_cli.commands.view.export_specialized import _SPECIAL_EXPORT_COMMON_FIELDS, _SPECIAL_EXPORTS
+from mammoth_cli.commands.view.export_specialized import (
+    _SPECIAL_EXPORT_COMMON_FIELDS,
+    _SPECIAL_EXPORTS,
+)
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_NONE

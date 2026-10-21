@@ -856,7 +856,7 @@ def _map_checks[T](
 def _preview_dataset(
     service: Any, _auth: Any, args: tuple[Any, int | None, int | None]
 ) -> dict[str, Any]:
-    from mammoth_cli.commands.view import upload_preview
+    from mammoth_cli.commands.view.upload import upload_preview
 
     dataset, project_id, view_id = args
     dataset_id = dataset.get("id") if isinstance(dataset, dict) else None
