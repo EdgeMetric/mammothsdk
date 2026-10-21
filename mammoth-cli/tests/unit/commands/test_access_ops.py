@@ -526,9 +526,12 @@ def test_dry_run_and_live_refuse_the_same_invalid_input(
     dry = _run(*argv, "--dry-run")
     live = _run(*argv, "--yes")
     assert dry.exit_code == live.exit_code == 2, (dry.output, live.output)
+    # A status outside the request enum is refused by the CLI's own field check;
+    # the rest reach the SDK's validation. Either way, before anything is sent.
+    code = "invalid_input_field_type" if word == "open" else "invalid_arguments"
     for result in (dry, live):
         error = _error(result)
-        assert error["code"] == "invalid_arguments"
+        assert error["code"] == code
         assert word in error["message"]
     assert _error(dry)["message"] == _error(live)["message"]
     assert not any(

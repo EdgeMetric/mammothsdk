@@ -256,7 +256,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth billing chargebee-plan` [read/none] -> mammoth.api.billing.BillingAPI.chargebee_plan
   example: mammoth billing chargebee-plan
 - `mammoth billing hosted-page` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.hosted_page
-  example: mammoth billing hosted-page change_plan --yes --confirm change_plan
+  example: mammoth billing hosted-page change_plan --yes --confirm 123
 - `mammoth billing invoice charge` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.invoice_charge
   example: mammoth billing invoice charge --yes
 - `mammoth billing invoice list` [read/none] -> mammoth.api.billing.BillingAPI.invoice_list
@@ -266,7 +266,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth billing stripe checkout-url` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_checkout_url
   example: mammoth billing stripe checkout-url --input '{"success_url": "https://example.com/data.csv", "cancel_url": "https://example.com/data.csv"}' --yes
 - `mammoth billing stripe create` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_create
-  example: mammoth billing stripe create 123 --yes --confirm 123
+  example: mammoth billing stripe create 123 --yes --confirm 456
 - `mammoth billing stripe end-trial` [high_impact/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_end_trial
   example: mammoth billing stripe end-trial --yes
 - `mammoth billing stripe get` [read/none] -> mammoth.api.billing.BillingAPI.stripe_get
@@ -1278,13 +1278,13 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth support plan self-serve-list` [read/none] -> mammoth.api.support.SupportAPI.plan_self_serve_list
   example: mammoth support plan self-serve-list
 - `mammoth support plan storage-option archive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_archive
-  example: mammoth support plan storage-option archive 123 456 --yes --confirm 123
+  example: mammoth support plan storage-option archive 123 456 --yes --confirm 456
 - `mammoth support plan storage-option create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_create
   example: mammoth support plan storage-option create 123 --input '{"storage_gb": 1, "monthly_price": 1.0, "annual_price": 1.0}' --yes --confirm 123
 - `mammoth support plan storage-option list` [read/none] -> mammoth.api.support.SupportAPI.plan_storage_option_list
   example: mammoth support plan storage-option list 123
 - `mammoth support plan storage-option update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_storage_option_update
-  example: mammoth support plan storage-option update 123 456 --yes --confirm 123
+  example: mammoth support plan storage-option update 123 456 --yes --confirm 456
 - `mammoth support plan unarchive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_unarchive
   example: mammoth support plan unarchive 123 --yes --confirm 123
 - `mammoth support plan update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update

@@ -1659,11 +1659,13 @@ _DISTINCT_IDS = ("123", "456", "789", "1011")
 
 
 #: Commands whose ``--confirm`` is a positional other than the first: the change lands on the
-#: workspace (second), not on the partner it belongs to.
+#: second id (the workspace of a partner, the storage option of a plan), not on its parent.
 _CONFIRM_POSITIONAL: dict[str, str] = {
     "support.partner.client.delete": "workspace_id",
     "support.partner.client.detach": "workspace_id",
     "support.partner.client.cancel-detach": "workspace_id",
+    "support.plan.storage-option.update": "option_id",
+    "support.plan.storage-option.archive": "option_id",
 }
 
 
@@ -1676,10 +1678,15 @@ def _confirm_index(command_id: str, specs: tuple[PositionalSpec, ...], given: in
     return 0
 
 
-#: ``confirm_target`` commands whose target is the workspace (no positional), whose example
-#: carries ``--confirm`` with a sample workspace id so it reads as complete.
+#: ``confirm_target`` commands that confirm the signed-in workspace, not a positional: the
+#: example carries ``--confirm`` with a sample workspace id distinct from its other ids.
 _WORKSPACE_CONFIRM_EXAMPLES = frozenset(
-    {"agent.access.settings.update", "billing.stripe.held-change.cancel"}
+    {
+        "agent.access.settings.update",
+        "billing.hosted-page",
+        "billing.stripe.create",
+        "billing.stripe.held-change.cancel",
+    }
 )
 
 
@@ -1730,14 +1737,12 @@ def runnable_example(
     policy = record.get("confirmation")
     if policy in {"prompt_or_yes", "confirm_target", "yes_always"} and "--yes" not in rest:
         rest.append("--yes")
-    if policy == "confirm_target" and "--confirm" not in rest and given:
-        rest.extend(["--confirm", given[_confirm_index(command_id, specs, len(given))]])
-    if (
-        policy == "confirm_target"
-        and "--confirm" not in rest
-        and command_id in _WORKSPACE_CONFIRM_EXAMPLES
-    ):
-        rest.extend(["--confirm", "123"])  # the workspace id, like the other sample ids
+    if policy == "confirm_target" and "--confirm" not in rest:
+        if command_id in _WORKSPACE_CONFIRM_EXAMPLES:
+            workspace = next(item for item in _DISTINCT_IDS if item not in given)
+            rest.extend(["--confirm", workspace])
+        elif given:
+            rest.extend(["--confirm", given[_confirm_index(command_id, specs, len(given))]])
     return shlex.join([*tokens[:start], *given, *rest])
 
 

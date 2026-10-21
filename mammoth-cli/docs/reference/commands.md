@@ -1142,7 +1142,7 @@ Total commands: 859.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.hosted_page`
-- Agent example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`
+- Agent example: `mammoth billing hosted-page change_plan --yes --confirm 123`
 
 ### `mammoth billing invoice charge`
 
@@ -1181,7 +1181,7 @@ Total commands: 859.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_create`
-- Agent example: `mammoth billing stripe create 123 --yes --confirm 123`
+- Agent example: `mammoth billing stripe create 123 --yes --confirm 456`
 
 ### `mammoth billing stripe end-trial`
 
@@ -5845,7 +5845,7 @@ Total commands: 859.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_archive`
-- Agent example: `mammoth support plan storage-option archive 123 456 --yes --confirm 123`
+- Agent example: `mammoth support plan storage-option archive 123 456 --yes --confirm 456`
 
 ### `mammoth support plan storage-option create`
 
@@ -5879,7 +5879,7 @@ Total commands: 859.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_update`
-- Agent example: `mammoth support plan storage-option update 123 456 --yes --confirm 123`
+- Agent example: `mammoth support plan storage-option update 123 456 --yes --confirm 456`
 
 ### `mammoth support plan unarchive`
 

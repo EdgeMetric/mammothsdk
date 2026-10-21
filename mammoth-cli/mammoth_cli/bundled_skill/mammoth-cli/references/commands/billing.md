@@ -16,7 +16,7 @@ Status on release: observed blocker — backend_error: The CLI gates this GET be
 
 Run: `mammoth billing hosted-page`. Exact input fields: `mammoth schema get billing.hosted-page`.
 
-Example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing hosted-page change_plan --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingHostedPageResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe create`. Exact input fields: `mammoth schema get billing.stripe.create`.
 
-Example: `mammoth billing stripe create 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe create 123 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

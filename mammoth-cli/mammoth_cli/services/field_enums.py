@@ -35,6 +35,8 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     "agent.session.set-visibility": {"visibility": ("private", "shared")},
     "agent.plan.edit-proposal": {"action": ("rename", "remove")},
     "agent.run.units.list": {"state": ("queued", "running", "done", "failed", "skipped")},
+    "agent.access.request.list": {"status": ("open", "done", "declined", "dismissed")},
+    "agent.access.request.resolve": {"status": ("done", "declined", "dismissed")},
     "annotation.create": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.list": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.update": {"status": ("open", "resolved")},

@@ -2139,7 +2139,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan storage-option update PLAN_ID OPTION_ID --help
-  agent_example: mammoth support plan storage-option update 123 456 --yes --confirm 123
+  agent_example: mammoth support plan storage-option update 123 456 --yes --confirm 456
   unit_tests:
   - UT-SUPPORT-PLAN-STORAGE-OPTION-UPDATE
   contract_tests:
@@ -2185,7 +2185,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan storage-option archive PLAN_ID OPTION_ID --help
-  agent_example: mammoth support plan storage-option archive 123 456 --yes --confirm 123
+  agent_example: mammoth support plan storage-option archive 123 456 --yes --confirm 456
   unit_tests:
   - UT-SUPPORT-PLAN-STORAGE-OPTION-ARCHIVE
   contract_tests:

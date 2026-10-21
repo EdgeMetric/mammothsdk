@@ -596,7 +596,7 @@ Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 
 
 Run: `mammoth support plan storage-option archive`. Exact input fields: `mammoth schema get support.plan.storage-option.archive`.
 
-Example: `mammoth support plan storage-option archive 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan storage-option archive 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanStorageOptionArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -626,7 +626,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan storage-option update`. Exact input fields: `mammoth schema get support.plan.storage-option.update`.
 
-Example: `mammoth support plan storage-option update 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan storage-option update 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanStorageOptionUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

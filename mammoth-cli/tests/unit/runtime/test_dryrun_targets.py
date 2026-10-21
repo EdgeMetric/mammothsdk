@@ -197,7 +197,7 @@ def test_no_explicit_id_means_the_command_may_target_everything_so_it_is_refused
     assert "--yes" in (excinfo.value.hint or "")
 
 
-_SPECIAL = {"user.avatar.delete", "dataset.bulk-update"}
+_SPECIAL = {"user.avatar.delete", "dataset.bulk-update", "billing.stripe.held-change.cancel"}
 _UNREADABLE = sorted(
     str(record["command_id"])
     for record in load_commands()
