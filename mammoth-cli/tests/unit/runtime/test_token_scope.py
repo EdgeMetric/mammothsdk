@@ -325,3 +325,13 @@ def test_an_oauth_login_is_keyed_by_its_connection_not_its_access_token(
     store("access-2", "1.bbb")  # a refresh: new access and refresh tokens, same connection
     _pins(service, auth, profile="work")
     assert service.calls == 1
+
+
+def test_forgetting_the_pins_reads_live_again() -> None:
+    service = _CountingService({"project": 4})
+    auth = _token_auth()
+    assert _pins(service, auth) == (4,)
+    service.current = {"projects": [4, 6]}
+    token_scope.forget_pins()
+    assert _pins(service, auth) == (4, 6)
+    assert service.calls == 2

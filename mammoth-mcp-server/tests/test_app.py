@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+import httpx
 import pytest
 from starlette.testclient import TestClient
 
@@ -330,3 +331,14 @@ class TestTheConnectionPoolFollowsTheServer:
         with TestClient(create_app(), base_url=SERVER_URL):
             assert not pool.is_closed
         assert pool.is_closed
+
+    def test_the_shared_pool_keeps_no_cookie_for_the_next_caller(self) -> None:
+        async def open_pool():
+            return shared_http_client()
+
+        pool = run(open_pool())
+        request = httpx.Request("GET", "https://app.mammoth.io/api/v2/workspaces/current")
+        pool.cookies.extract_cookies(
+            httpx.Response(200, headers={"set-cookie": "sess=one-user; Path=/"}, request=request)
+        )
+        assert not pool.cookies

@@ -39,7 +39,7 @@ from mammoth_cli.runtime import executor, labels
 from mammoth_cli.runtime import options as go
 from mammoth_cli.runtime.input_loader import load_input_document
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.token_scope import pin_names, pinned_projects, pins_label
+from mammoth_cli.runtime.token_scope import forget_pins, pin_names, pinned_projects, pins_label
 from mammoth_cli.services import factory as service_factory
 
 _STORAGE_MODES = ("auto", "keyring", "file")
@@ -491,6 +491,7 @@ def _run_oauth_login(
         ),
         select=True,
     )
+    forget_pins()
     storage_used = credentials.store_credentials(
         profile_name,
         storage=cast(credentials.StorageMode, storage),
@@ -620,6 +621,7 @@ def _run_login(
     # secret goes to its store: a stored secret with no readable record is the
     # "credentials present / no profile" state that strands a later doctor run.
     profiles.save_profile(record, select=True)
+    forget_pins()
     storage_used = credentials.store_credentials(
         profile_name,
         storage=cast(credentials.StorageMode, storage),
@@ -920,6 +922,7 @@ def _run_logout(
             removed.append(profile_name)
         profiles.delete_profile(profile_name)
 
+    forget_pins()
     data: dict[str, Any] = {"removed_profiles": sorted(removed), "all": all_profiles}
     if warnings:
         data["warnings"] = warnings

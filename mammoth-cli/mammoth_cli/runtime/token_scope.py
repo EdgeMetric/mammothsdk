@@ -11,7 +11,8 @@ A pin is a non-empty sorted tuple of project ids; None means not limited.
 The answer is fixed for the life of a credential, so it is cached on disk for an hour,
 keyed by a fingerprint of the long-lived credential. The cache only decides which refusal
 or hint the CLI shows; the server enforces the pin on every request, so a stale answer can
-never grant access. Diagnostics (``doctor``, ``auth status``) and the 403 hint read it live.
+never grant access. Diagnostics (``doctor``, ``auth status``) and the 403 hint read it live,
+and ``auth login`` and ``auth logout`` clear it.
 """
 
 from __future__ import annotations
@@ -132,6 +133,15 @@ def _write_pin_cache(path: Path, pins: Pins | None) -> None:
         for old in path.parent.glob(f"{_PIN_CACHE_PREFIX}*.json"):
             if old != path and time.time() - old.stat().st_mtime > PIN_CACHE_TTL_SECONDS:
                 old.unlink(missing_ok=True)
+    except OSError:
+        return
+
+
+def forget_pins() -> None:
+    """Drop every cached pin answer: a sign-in or sign-out may change what a credential reaches."""
+    try:
+        for path in cache_dir().glob(f"{_PIN_CACHE_PREFIX}*.json"):
+            path.unlink(missing_ok=True)
     except OSError:
         return
 

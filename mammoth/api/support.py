@@ -1117,6 +1117,7 @@ class SupportAPI:
         """
         workspaces: list[Any] = []
         seen: set[Any] = set()
+        previous: list[Any] | None = None
         for page_number in range(WORKSPACE_LIST_MAX_PAGES):
             result = await self._client._request(
                 "GET",
@@ -1130,6 +1131,9 @@ class SupportAPI:
             page = result if isinstance(result, list) else result.get("workspaces")
             if not isinstance(page, list):
                 return result if isinstance(result, dict) else {"workspaces": workspaces}
+            if page == previous:
+                break
+            previous = page
             fresh = [w for w in page if not isinstance(w, dict) or w.get("id") not in seen]
             seen.update(w["id"] for w in fresh if isinstance(w, dict) and "id" in w)
             workspaces.extend(fresh)

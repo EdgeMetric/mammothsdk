@@ -598,6 +598,14 @@ class TestWorkspaces:
         assert result == {"workspaces": everything}
         assert mock_client._request.await_count == 2
 
+    async def test_workspace_list_stops_on_a_repeated_page_of_rows_without_ids(self):
+        api, mock_client = _make_api()
+        everything = [{"name": f"w{i}"} for i in range(150)]
+        mock_client._request = AsyncMock(return_value=everything)
+        result = await api.workspace_list()
+        assert result == {"workspaces": everything}
+        assert mock_client._request.await_count == 2
+
     async def test_workspace_list_leaves_the_instance_types_variant_alone(self):
         api, mock_client = _make_api()
         body = {"instance_types": [{"name": "small"}]}

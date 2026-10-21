@@ -680,7 +680,9 @@ class MammothClient:
                 The SDK never closes it and never writes credentials into its
                 ``headers``: Authorization, ``X-API-*`` and ``User-Agent`` go on
                 each request, so a second client sends its own and not the
-                first one's. The caller owns its lifetime and its timeouts.
+                first one's. The caller owns its lifetime and its timeouts, and
+                its cookie jar: a pool shared between users should keep no
+                cookies (``http.cookiejar.DefaultCookiePolicy(allowed_domains=[])``).
         """
         if token_provider is not None and (
             api_token is not None or api_key is not None or api_secret is not None

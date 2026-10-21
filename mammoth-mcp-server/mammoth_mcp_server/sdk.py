@@ -18,6 +18,7 @@ session), and leaves the shared pool open.
 import asyncio
 from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
+from http.cookiejar import DefaultCookiePolicy
 from typing import TypeVar
 
 import httpx
@@ -64,12 +65,15 @@ def shared_http_client() -> httpx.AsyncClient:
     """The process-wide connection pool, opened on first use.
 
     It carries no credentials: each client the SDK builds on it sends its own
-    caller's token with every request.
+    caller's token with every request. It keeps no cookies either: a cookie one
+    caller's response set would otherwise go out with the next caller's request.
+    A pool left on a loop that is gone is not closed: its loop cannot run the close.
     """
     global _http_client, _http_client_loop
     loop = asyncio.get_running_loop()
     if _http_client is None or _http_client.is_closed or _http_client_loop is not loop:
         _http_client = httpx.AsyncClient(timeout=ROUTE_TIMEOUT_SECONDS, follow_redirects=False)
+        _http_client.cookies.jar.set_policy(DefaultCookiePolicy(allowed_domains=[]))
         _http_client_loop = loop
     return _http_client
 
