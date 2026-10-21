@@ -10,6 +10,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.
 
+## mammoth-io 0.8.45, mammoth-cli 2.2.92, mammoth-mcp-server 0.2.4 (2026-10-21)
+
+Covers mammoth-io 0.8.24 to 0.8.45, mammoth-cli 2.2.46 to 2.2.92 and mammoth-mcp-server 0.1.1 to
+0.2.4; each section names the version it shipped in.
+
 ### Added (mammoth-cli 2.2.92)
 
 - `view transform sort` accepts `sort_by` as an alias of `order_by`, and an entry as a string (`"Revenue"`, `"Revenue asc"`, `"Revenue desc"`); `view transform limit-rows` accepts `limit` as an alias of `n` (both together are refused). `view transform batch` takes `split`, `unnest` and `pivot` steps (`unnest` and `pivot` replace the view's columns, so only as the last step, with no `sort` before them). A batch step can use the columns an earlier step adds (`split`, `copy-columns`, the `new_column` of `substring`, `extract-date` or `increment-date`).
