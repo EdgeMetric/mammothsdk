@@ -6,7 +6,6 @@ Real client and View; the HTTP boundary is a recording httpx transport.
 from __future__ import annotations
 
 import json
-from typing import Any
 
 import httpx
 import pytest

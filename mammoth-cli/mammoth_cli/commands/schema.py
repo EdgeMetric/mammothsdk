@@ -794,6 +794,63 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.gallery.list": "public template gallery curated templates catalog examples browse",
     "dashboard.gallery.get": "one public gallery template card by slug",
     "support.plan.unarchive": "platform admin restore an archived subscription plan",
+    "support.billing.start-trial": "platform admin begin a free trial days on a workspace",
+    "support.billing.end-trial": "platform admin end a workspace trial now charge the plan",
+    "support.billing.retry-payment": "platform admin retry a failed payment past due workspace",
+    "support.billing.refund": "platform admin refund the last payment of a workspace money back",
+    "support.billing.change-plan": (
+        "platform admin move a workspace to another plan upgrade downgrade"
+    ),
+    "support.billing.cancel-subscription": (
+        "platform admin cancel a workspace subscription now or at period end"
+    ),
+    "support.connector.bucket-impact": (
+        "platform admin which plans a connector bucket change reaches"
+    ),
+    "support.entitlement.registry": "platform admin every entitlement key a plan or deal can set",
+    "support.plan.catalog": "platform admin plans catalog entitlement values per plan",
+    "support.deal.list": "platform admin all deals customer contracts",
+    "support.deal.get": "platform admin one deal terms status",
+    "support.deal.create": "platform admin new deal contract for a workspace price plan",
+    "support.deal.update": "platform admin change deal terms price status contract dates",
+    "support.deal.activity": "platform admin deal history audit log",
+    "support.deal.move-to-partner": "platform admin move a direct deal under a reseller partner",
+    "support.deal.cancel-move-to-partner": "platform admin cancel a pending deal move to a partner",
+    "support.deal.opt-in": "platform admin release opt-in rollout pins on a deal",
+    "support.deal.preview-entitlement": "platform admin preview what a deal grants entitlements",
+    "support.identity.list": "platform admin all users identities across workspaces search",
+    "support.identity.get": "platform admin one user identity workspaces memberships",
+    "support.partner.list": "platform admin all partners resellers",
+    "support.partner.get": "platform admin one partner contact billing terms",
+    "support.partner.create": "platform admin new partner reseller",
+    "support.partner.update": "platform admin change partner contact billing method notes status",
+    "support.partner.activity": "platform admin partner history audit log",
+    "support.partner.billing": "platform admin partner billing summary balance",
+    "support.partner.invoices": "platform admin partner invoices open paid",
+    "support.partner.charge-invoices": "platform admin charge a partner open invoices now",
+    "support.partner.send-payment-link": "platform admin email a partner a payment link",
+    "support.partner.client.list": "platform admin a partner client workspaces",
+    "support.partner.client.delete": "platform admin remove a partner client workspace",
+    "support.partner.client.detach": "platform admin detach a partner client into a direct deal",
+    "support.partner.client.cancel-detach": "platform admin cancel a pending client detach",
+    "support.search": "platform admin command palette find workspace partner user by text",
+    "support.triage": "platform admin attention queue failed payments expiring trials",
+    "support.usage-tiles": "platform admin usage overview tiles totals",
+    "support.workspace.activity": "platform admin workspace history audit log",
+    "support.workspace.entitlement": "platform admin what a workspace entitlements resolve to",
+    "support.workspace.deal-seed": "platform admin deal terms a workspace subscription would seed",
+    "support.workspace.chargebee-cancelled": (
+        "platform admin mark a workspace cancelled in chargebee"
+    ),
+    "support.workspace.archive-info": (
+        "platform admin what archiving a workspace does archive state"
+    ),
+    "support.workspace.archive": "platform admin archive a workspace to cold storage glacier",
+    "support.workspace.restore-archive": (
+        "platform admin restore an archived workspace from cold storage"
+    ),
+    "support.workspace.invite.cancel": "platform admin cancel a pending workspace invite",
+    "support.workspace.invite.resend": "platform admin resend a pending workspace invite email",
     "support.plan.storage-option.list": "platform admin plan storage sizes prices options",
     "support.plan.storage-option.create": "platform admin add a storage size price to a plan",
     "support.plan.storage-option.update": "platform admin reprice resize a plan storage option",
@@ -1605,6 +1662,38 @@ compact_contract = _compact_contract
 _DISTINCT_IDS = ("123", "456", "789", "1011")
 
 
+#: Commands whose ``--confirm`` is a positional other than the first: the change lands on the
+#: second id (the workspace of a partner, the storage option of a plan), not on its parent.
+_CONFIRM_POSITIONAL: dict[str, str] = {
+    "support.partner.client.delete": "workspace_id",
+    "support.partner.client.detach": "workspace_id",
+    "support.partner.client.cancel-detach": "workspace_id",
+    "support.plan.storage-option.update": "option_id",
+    "support.plan.storage-option.archive": "option_id",
+}
+
+
+def _confirm_index(command_id: str, specs: tuple[PositionalSpec, ...], given: int) -> int:
+    """Index, among the example's positionals, of the one ``--confirm`` must repeat."""
+    name = _CONFIRM_POSITIONAL.get(command_id)
+    for index, spec in enumerate(specs):
+        if spec.name == name and index < given:
+            return index
+    return 0
+
+
+#: ``confirm_target`` commands that confirm the signed-in workspace, not a positional: the
+#: example carries ``--confirm`` with a sample workspace id distinct from its other ids.
+_WORKSPACE_CONFIRM_EXAMPLES = frozenset(
+    {
+        "agent.access.settings.update",
+        "billing.hosted-page",
+        "billing.stripe.create",
+        "billing.stripe.held-change.cancel",
+    }
+)
+
+
 def runnable_example(
     record: dict[str, Any],
     symbol: str | None,
@@ -1652,8 +1741,12 @@ def runnable_example(
     policy = record.get("confirmation")
     if policy in {"prompt_or_yes", "confirm_target", "yes_always"} and "--yes" not in rest:
         rest.append("--yes")
-    if policy == "confirm_target" and "--confirm" not in rest and given:
-        rest.extend(["--confirm", given[0]])
+    if policy == "confirm_target" and "--confirm" not in rest:
+        if command_id in _WORKSPACE_CONFIRM_EXAMPLES:
+            workspace = next(item for item in _DISTINCT_IDS if item not in given)
+            rest.extend(["--confirm", workspace])
+        elif given:
+            rest.extend(["--confirm", given[_confirm_index(command_id, specs, len(given))]])
     return shlex.join([*tokens[:start], *given, *rest])
 
 

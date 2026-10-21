@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
 from unittest.mock import AsyncMock
 
 import httpx
+import pytest
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError

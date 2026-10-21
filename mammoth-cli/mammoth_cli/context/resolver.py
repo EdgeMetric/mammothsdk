@@ -17,7 +17,7 @@ import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
-from mammoth_cli.context import credentials, oauth, profiles
+from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.profiles import ProfileRecord
 from mammoth_cli.errors.envelope import (
@@ -252,6 +252,9 @@ def _resolve_auth(
         if credential is not None:
             base_url = _endpoint(record.server_prefix)
             if credential.oauth is not None:
+                # Imported here: only a browser-signed-in profile refreshes a token.
+                from mammoth_cli.context import oauth
+
                 return ResolvedAuth(
                     None,
                     None,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -11,7 +12,7 @@ from mammoth_cli.commands import support as support_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
-from mammoth_cli.testing import login_default_profile
+from mammoth_cli.testing import login_default_profile, make_runner
 
 _CONNECTOR_LIST = "mammoth.api.support.SupportAPI.connector_list"
 _CONNECTOR_CREATE = "mammoth.api.support.SupportAPI.connector_create"
@@ -2033,3 +2034,592 @@ def test_template_export_dashboard_forwards_slug(
             {"dashboard_id": 42, "slug": "my-board", "with_data": False},
         )
     ]
+
+
+# --- admin console: billing actions, deals, partners, identities, archive ------------------
+#
+# Each row is (command id, positional args, input document, SDK method, expected kwargs).
+# The handler name is the command id with dots and dashes turned into underscores.
+
+_ADMIN_READS = [
+    (
+        "support.connector.bucket-impact",
+        ["4"],
+        {"bucket": "100GB"},
+        "connector_bucket_impact",
+        {"connector_id": 4, "bucket": "100GB"},
+    ),
+    ("support.entitlement.registry", [], {}, "entitlement_registry", {}),
+    ("support.plan.catalog", [], {}, "plan_catalog", {}),
+    ("support.deal.list", [], {}, "deal_list", {}),
+    ("support.deal.get", ["5"], {}, "deal_get", {"deal_id": 5}),
+    ("support.deal.activity", ["5"], {}, "deal_activity", {"deal_id": 5}),
+    ("support.deal.preview-entitlement", ["5"], {}, "deal_preview_entitlement", {"deal_id": 5}),
+    (
+        "support.identity.list",
+        [],
+        {"limit": 10, "search": "ann"},
+        "identity_list",
+        {"limit": 10, "search": "ann"},
+    ),
+    ("support.identity.get", ["6"], {}, "identity_get", {"user_id": 6}),
+    ("support.partner.list", [], {}, "partner_list", {}),
+    ("support.partner.get", ["7"], {}, "partner_get", {"partner_id": 7}),
+    ("support.partner.activity", ["7"], {}, "partner_activity", {"partner_id": 7}),
+    ("support.partner.billing", ["7"], {}, "partner_billing", {"partner_id": 7}),
+    ("support.partner.invoices", ["7"], {}, "partner_invoices", {"partner_id": 7}),
+    ("support.partner.client.list", ["7"], {}, "partner_client_list", {"partner_id": 7}),
+    ("support.triage", [], {}, "triage", {}),
+    ("support.usage-tiles", [], {}, "usage_tiles", {}),
+    ("support.workspace.activity", ["9"], {}, "workspace_activity", {"workspace_id": 9}),
+    ("support.workspace.entitlement", ["9"], {}, "workspace_entitlement", {"workspace_id": 9}),
+    ("support.workspace.deal-seed", ["9"], {}, "workspace_deal_seed", {"workspace_id": 9}),
+    ("support.workspace.archive-info", ["9"], {}, "workspace_archive_info", {"workspace_id": 9}),
+]
+
+# (command id, positional args, input document, SDK method, expected kwargs, confirm target)
+_ADMIN_WRITES = [
+    (
+        "support.billing.start-trial",
+        ["9"],
+        {"days": 14},
+        "billing_start_trial",
+        {"workspace_id": 9, "days": 14},
+        "9",
+    ),
+    ("support.billing.end-trial", ["9"], {}, "billing_end_trial", {"workspace_id": 9}, "9"),
+    ("support.billing.retry-payment", ["9"], {}, "billing_retry_payment", {"workspace_id": 9}, "9"),
+    (
+        "support.billing.refund",
+        ["9"],
+        {"amount": 500},
+        "billing_refund",
+        {"workspace_id": 9, "amount": 500},
+        "9",
+    ),
+    (
+        "support.billing.change-plan",
+        ["9", "3"],
+        {"when": "period_end", "storage_gb": 50},
+        "billing_change_plan",
+        {"workspace_id": 9, "new_plan_id": 3, "when": "period_end", "storage_gb": 50},
+        "9",
+    ),
+    (
+        "support.billing.cancel-subscription",
+        ["9"],
+        {"when": "now"},
+        "billing_cancel_subscription",
+        {"workspace_id": 9, "when": "now"},
+        "9",
+    ),
+    (
+        "support.deal.update",
+        ["5"],
+        {"notes": "hi"},
+        "deal_update",
+        {"deal_id": 5, "notes": "hi"},
+        "5",
+    ),
+    (
+        "support.deal.opt-in",
+        ["5"],
+        {"keys": ["a"]},
+        "deal_opt_in",
+        {"deal_id": 5, "keys": ["a"]},
+        "5",
+    ),
+    (
+        "support.deal.move-to-partner",
+        ["5", "7"],
+        {"price": 900, "billing_interval": "monthly"},
+        "deal_move_to_partner",
+        {"deal_id": 5, "partner_id": 7, "price": 900, "billing_interval": "monthly"},
+        "5",
+    ),
+    (
+        "support.deal.cancel-move-to-partner",
+        ["5"],
+        {},
+        "deal_cancel_move_to_partner",
+        {"deal_id": 5},
+        "5",
+    ),
+    (
+        "support.partner.update",
+        ["7"],
+        {"notes": ""},
+        "partner_update",
+        {"partner_id": 7, "notes": ""},
+        "7",
+    ),
+    (
+        "support.partner.charge-invoices",
+        ["7"],
+        {},
+        "partner_charge_invoices",
+        {"partner_id": 7},
+        "7",
+    ),
+    (
+        "support.partner.send-payment-link",
+        ["7"],
+        {},
+        "partner_send_payment_link",
+        {"partner_id": 7},
+        "7",
+    ),
+    (
+        "support.partner.client.delete",
+        ["7", "9"],
+        {},
+        "partner_client_delete",
+        {"partner_id": 7, "workspace_id": 9},
+        "9",
+    ),
+    (
+        "support.partner.client.detach",
+        ["7", "9"],
+        {"price": 900, "contact_email": "a@b.co"},
+        "partner_client_detach",
+        {"partner_id": 7, "workspace_id": 9, "price": 900, "contact_email": "a@b.co"},
+        "9",
+    ),
+    (
+        "support.partner.client.cancel-detach",
+        ["7", "9"],
+        {},
+        "partner_client_cancel_detach",
+        {"partner_id": 7, "workspace_id": 9},
+        "9",
+    ),
+    (
+        "support.workspace.chargebee-cancelled",
+        ["9"],
+        {},
+        "workspace_chargebee_cancelled",
+        {"workspace_id": 9},
+        "9",
+    ),
+    (
+        "support.workspace.archive",
+        ["9"],
+        {"storage_class": "GLACIER_IR", "confirm_name": "Acme", "cancel_billing": True},
+        "workspace_archive",
+        {
+            "workspace_id": 9,
+            "storage_class": "GLACIER_IR",
+            "confirm_name": "Acme",
+            "cancel_billing": True,
+        },
+        "9",
+    ),
+    (
+        "support.workspace.restore-archive",
+        ["9"],
+        {},
+        "workspace_restore_archive",
+        {"workspace_id": 9},
+        "9",
+    ),
+    (
+        "support.workspace.invite.cancel",
+        ["9", "4"],
+        {},
+        "workspace_invite_cancel",
+        {"workspace_id": 9, "invite_id": 4},
+        "9",
+    ),
+    (
+        "support.workspace.invite.resend",
+        ["9", "4"],
+        {},
+        "workspace_invite_resend",
+        {"workspace_id": 9, "invite_id": 4},
+        "9",
+    ),
+]
+
+
+def _handler(command_id: str) -> Any:
+    return getattr(support_cmd, command_id.replace(".", "_").replace("-", "_"))
+
+
+@pytest.mark.parametrize(("cid", "args", "doc", "method", "kwargs"), _ADMIN_READS)
+def test_admin_read_runs_without_confirmation(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    cid: str,
+    args: list[str],
+    doc: dict[str, object],
+    method: str,
+    kwargs: dict[str, object],
+) -> None:
+    extra = {"input_file": _write(tmp_path, doc)} if doc else {}
+    _handler(cid)(_inv(cid, extra_args=args, output="json", **extra))
+    assert fake_service.call_log == [(_SUPPORT + method, kwargs)]
+
+
+@pytest.mark.parametrize(("cid", "args", "doc", "method", "kwargs", "target"), _ADMIN_WRITES)
+def test_admin_write_needs_the_confirm_target(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    cid: str,
+    args: list[str],
+    doc: dict[str, object],
+    method: str,
+    kwargs: dict[str, object],
+    target: str,
+) -> None:
+    extra = {"input_file": _write(tmp_path, doc)} if doc else {}
+    handler = _handler(cid)
+    with pytest.raises(CliError) as blocked:
+        handler(_inv(cid, extra_args=args, output="json", **extra))
+    assert blocked.value.code == "confirmation_required"
+    with pytest.raises(CliError) as wrong:
+        handler(_inv(cid, extra_args=args, yes=True, confirm="not-the-target", **extra))
+    assert wrong.value.code == "confirmation_target_mismatch"
+    assert fake_service.call_log == []
+    handler(_inv(cid, extra_args=args, yes=True, confirm=target, **extra))
+    assert fake_service.call_log == [(_SUPPORT + method, kwargs)]
+
+
+@pytest.mark.parametrize(
+    "cid",
+    sorted({row[0] for row in _ADMIN_READS + _ADMIN_WRITES if row[1]}),
+)
+def test_admin_command_with_ids_needs_them(fake_service: FakeMammothService, cid: str) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _handler(cid)(_inv(cid, yes=True, confirm="1"))
+    assert excinfo.value.code == "missing_argument"
+    assert fake_service.call_log == []
+
+
+def test_admin_id_must_be_an_integer(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_get(_inv("support.deal.get", extra_args=["abc"]))
+    assert excinfo.value.code == "invalid_argument"
+
+
+def test_cancel_subscription_requires_when(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_billing_cancel_subscription(
+            _inv("support.billing.cancel-subscription", extra_args=["9"], yes=True, confirm="9")
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_move_to_partner_requires_price_and_interval(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"price": 1})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_move_to_partner(
+            _inv(
+                "support.deal.move-to-partner",
+                extra_args=["5", "7"],
+                input_file=doc,
+                yes=True,
+                confirm="5",
+            )
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_archive_requires_the_typed_workspace_name(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"storage_class": "DEEP_ARCHIVE"})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_workspace_archive(
+            _inv(
+                "support.workspace.archive",
+                extra_args=["9"],
+                input_file=doc,
+                yes=True,
+                confirm="9",
+            )
+        )
+    assert excinfo.value.code == "missing_field"
+    assert fake_service.call_log == []
+
+
+def test_an_input_id_cannot_replace_the_positional(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"workspace_id": 1})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_billing_end_trial(
+            _inv(
+                "support.billing.end-trial",
+                extra_args=["9"],
+                input_file=doc,
+                yes=True,
+                confirm="9",
+            )
+        )
+    assert excinfo.value.code == "unknown_input_field"
+    assert fake_service.call_log == []
+
+
+def test_deal_create_on_an_existing_workspace(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"base_plan_id": 3, "price": 1200.0})
+    support_cmd.support_deal_create(
+        _inv("support.deal.create", extra_args=["42"], input_file=doc, yes=True, confirm="42")
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "deal_create", {"base_plan_id": 3, "price": 1200.0, "workspace_id": 42})
+    ]
+
+
+def test_deal_create_on_a_new_workspace_confirms_its_name(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    created = {"name": "Acme", "user_email": "a@acme.co"}
+    doc = _write(tmp_path, {"base_plan_id": 3, "workspace_create": created})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_create(
+            _inv("support.deal.create", input_file=doc, yes=True, confirm="3")
+        )
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    support_cmd.support_deal_create(
+        _inv("support.deal.create", input_file=doc, yes=True, confirm="Acme")
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "deal_create", {"base_plan_id": 3, "workspace_create": created})
+    ]
+
+
+def test_deal_create_requires_a_base_plan(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _write(tmp_path, {"price": 1.0})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_create(
+            _inv("support.deal.create", extra_args=["42"], input_file=doc, yes=True, confirm="42")
+        )
+    assert excinfo.value.code == "missing_field"
+
+
+def test_partner_create_takes_the_name_from_a_positional_or_the_field(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    support_cmd.support_partner_create(
+        _inv("support.partner.create", extra_args=["Acme"], yes=True, confirm="Acme")
+    )
+    doc = _write(tmp_path, {"name": "Beta", "contact_email": "b@beta.co"})
+    support_cmd.support_partner_create(
+        _inv("support.partner.create", input_file=doc, yes=True, confirm="Beta")
+    )
+    assert fake_service.call_log == [
+        (_SUPPORT + "partner_create", {"name": "Acme"}),
+        (_SUPPORT + "partner_create", {"name": "Beta", "contact_email": "b@beta.co"}),
+    ]
+
+
+def test_partner_create_needs_a_name(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_partner_create(_inv("support.partner.create", yes=True))
+    assert excinfo.value.code == "missing_argument"
+
+
+def test_search_takes_text_from_a_positional_or_the_field(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    support_cmd.support_search(_inv("support.search", extra_args=["acme"]))
+    support_cmd.support_search(_inv("support.search", input_file=_write(tmp_path, {"q": "ws-42"})))
+    support_cmd.support_search(_inv("support.search"))
+    assert fake_service.call_log == [
+        (_SUPPORT + "search", {"q": "acme"}),
+        (_SUPPORT + "search", {"q": "ws-42"}),
+        (_SUPPORT + "search", {}),
+    ]
+
+
+# --- review fixes: confirm targets, refund, dry run, validation ------------------------------
+
+_CLIENT_COMMANDS = [
+    ("support.partner.client.delete", {}),
+    ("support.partner.client.detach", {"price": 900, "contact_email": "a@b.co"}),
+    ("support.partner.client.cancel-detach", {}),
+]
+
+
+@pytest.mark.parametrize(("cid", "doc"), _CLIENT_COMMANDS)
+def test_client_commands_refuse_the_partner_id_as_the_confirm_target(
+    fake_service: FakeMammothService, tmp_path: Path, cid: str, doc: dict[str, object]
+) -> None:
+    """The change lands on the workspace (second positional), so that is what is typed."""
+    extra = {"input_file": _write(tmp_path, doc)} if doc else {}
+    with pytest.raises(CliError) as excinfo:
+        _handler(cid)(_inv(cid, extra_args=["7", "9"], yes=True, confirm="7", **extra))
+    assert excinfo.value.code == "confirmation_target_mismatch"
+    assert fake_service.call_log == []
+
+
+def _refund(tmp_path: Path, doc: dict[str, object], **overrides: object) -> None:
+    support_cmd.support_billing_refund(
+        _inv(
+            "support.billing.refund",
+            extra_args=["9"],
+            input_file=_write(tmp_path, doc),
+            **overrides,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "doc",
+    [
+        {},
+        {"amount": 500, "full": True},
+        {"amount": 0},
+        {"amount": -5},
+        {"amount": 2.5},
+        {"amount": "abc"},
+        {"amount": True},
+        {"full": "true"},
+        {"full": 1},
+    ],
+)
+def test_refund_needs_exactly_one_valid_amount(
+    fake_service: FakeMammothService, tmp_path: Path, doc: dict[str, object]
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _refund(tmp_path, doc, yes=True, confirm="9")
+    assert excinfo.value.code in {"invalid_argument", "invalid_input_field_type"}
+    assert excinfo.value.exit_status == 2
+    assert fake_service.call_log == []
+
+
+def test_refund_full_is_explicit_and_the_confirmation_says_so(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as blocked:
+        _refund(tmp_path, {"full": True}, output="json")
+    assert "refund the FULL last payment of workspace 9" in blocked.value.message
+    assert fake_service.call_log == []
+    _refund(tmp_path, {"full": True}, yes=True, confirm="9")
+    assert fake_service.call_log == [
+        (_SUPPORT + "billing_refund", {"workspace_id": 9, "full": True})
+    ]
+
+
+def test_refund_partial_confirmation_names_the_amount(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as blocked:
+        _refund(tmp_path, {"amount": 750}, output="json")
+    assert "750" in blocked.value.message
+
+
+@pytest.mark.parametrize("cid", [row[0] for row in _ADMIN_WRITES + _ADMIN_READS if row[1]])
+def test_workspace_id_zero_is_refused_at_the_cli(
+    fake_service: FakeMammothService, cid: str
+) -> None:
+    args = ["0"] + ["1"] * (
+        len(next(r for r in _ADMIN_WRITES + _ADMIN_READS if r[0] == cid)[1]) - 1
+    )
+    with pytest.raises(CliError) as excinfo:
+        _handler(cid)(_inv(cid, extra_args=args, yes=True, confirm="0"))
+    assert excinfo.value.code in {"invalid_argument", "missing_field"}
+    assert fake_service.call_log == []
+
+
+def test_archive_forwards_the_typed_name_verbatim(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The name is checked by the server (case sensitive); the CLI never edits it."""
+    doc = _write(tmp_path, {"storage_class": "GLACIER_IR", "confirm_name": "acme"})
+    support_cmd.support_workspace_archive(
+        _inv("support.workspace.archive", extra_args=["9"], input_file=doc, yes=True, confirm="9")
+    )
+    assert fake_service.call_log[0][1]["confirm_name"] == "acme"
+
+
+def test_deal_create_without_a_workspace_is_a_usage_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"base_plan_id": 3, "price": 10, "billing_interval": "monthly"})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_create(
+            _inv("support.deal.create", input_file=doc, yes=True, confirm="3")
+        )
+    assert excinfo.value.code == "missing_argument"
+    assert fake_service.call_log == []
+
+
+def test_deal_update_to_cancelled_has_its_own_confirmation_text(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"status": "cancelled"})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_update(
+            _inv("support.deal.update", extra_args=["5"], input_file=doc, output="json")
+        )
+    assert "CANCEL deal 5" in excinfo.value.message
+
+
+@pytest.mark.parametrize(
+    ("when", "phrase"), [("now", "refunds the unused time"), ("period_end", "period end")]
+)
+def test_move_to_partner_confirmation_says_what_now_does(
+    fake_service: FakeMammothService, tmp_path: Path, when: str, phrase: str
+) -> None:
+    doc = _write(tmp_path, {"price": 9, "billing_interval": "monthly", "when": when})
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_deal_move_to_partner(
+            _inv(
+                "support.deal.move-to-partner", extra_args=["5", "7"], input_file=doc, output="json"
+            )
+        )
+    assert phrase in excinfo.value.message
+
+
+def test_start_trial_confirmation_says_it_replaces_billing(
+    fake_service: FakeMammothService,
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        support_cmd.support_billing_start_trial(
+            _inv("support.billing.start-trial", extra_args=["9"], output="json")
+        )
+    assert "REPLACES" in excinfo.value.message
+    assert "Stripe" in excinfo.value.message
+
+
+def _dry_run(args: list[str], doc: str | None = None) -> Any:
+    argv = ["support", *args, "--dry-run", "--output", "json", "--no-input"]
+    if doc:
+        argv += ["--input", doc]
+    return make_runner().invoke(argv)
+
+
+@pytest.mark.parametrize(
+    ("args", "doc"),
+    [
+        (["billing", "refund", "9"], '{"full": true}'),
+        (["partner", "client", "delete", "7", "9"], None),
+    ],
+)
+def test_dry_run_of_an_irreversible_command_sends_nothing_and_says_so(
+    fake_service: FakeMammothService, args: list[str], doc: str | None
+) -> None:
+    result = _dry_run(args, doc)
+    assert result.exit_code == 0, result.output
+    record = json.loads(result.output)["data"]
+    assert record["irreversible"] is True
+    assert record["ran"] is False
+    assert [c for c in fake_service.call_log if not c[0].endswith("_get")] == []
+
+
+def test_dry_run_of_archive_sends_nothing(fake_service: FakeMammothService) -> None:
+    doc = '{"storage_class": "GLACIER_IR", "confirm_name": "Acme"}'
+    result = _dry_run(["workspace", "archive", "9"], doc)
+    assert result.exit_code == 0, result.output
+    record = json.loads(result.output)["data"]
+    assert record["ran"] is False
+    assert record["irreversible"] is False
+    assert record["mutation_class"] == "high_impact"
+    assert fake_service.call_log == []

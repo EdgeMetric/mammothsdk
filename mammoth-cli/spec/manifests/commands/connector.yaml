@@ -1050,3 +1050,80 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: connector.connection.list-all
+  command_path: connector connection list-all
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListAllConnections
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_all_connections
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_all_connections with validated request
+    fields.
+  request_model: ConnectorConnectionListAllRequest
+  result_model: ConnectorConnectionListAllResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-LIST-ALL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection list-all --help
+  agent_example: mammoth connector connection list-all
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-LIST-ALL
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-LIST-ALL-HUMAN
+  - CT-CONNECTOR-CONNECTION-LIST-ALL-JSON
+  - CT-CONNECTOR-CONNECTION-LIST-ALL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.connection.test
+  command_path: connector connection test
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TestConnection
+  positionals:
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  options: []
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.test_connection
+  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.test_connection with validated request fields.
+  request_model: ConnectorConnectionTestRequest
+  result_model: ConnectorConnectionTestResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-CONNECTOR-CONNECTION-TEST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection test CONNECTION_KEY --help
+  agent_example: mammoth connector connection test prod-warehouse
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-TEST
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-TEST-HUMAN
+  - CT-CONNECTOR-CONNECTION-TEST-JSON
+  - CT-CONNECTOR-CONNECTION-TEST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Needs project admin; the check reaches the connection's own service and its result is kept.
+  reviewed_by: primary
+  no_readback: returns the health check result itself (success, health_status, message); nothing else to read back

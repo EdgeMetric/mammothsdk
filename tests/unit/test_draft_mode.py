@@ -172,7 +172,6 @@ class TestAddTaskReferenceErrors:
     async def test_draft_state_is_read_before_the_submit(self, mock_client: MammothClient) -> None:
         """A reference error flips the server's draft flag; reading it after the
         submit would skip the pipeline wait and report the failure as success."""
-        from unittest.mock import MagicMock
 
         view = View(mock_client, SAMPLE_VIEW_DATA, SAMPLE_DATASET_ID)
         view.refresh = AsyncMock(return_value=view)  # type: ignore[assignment]

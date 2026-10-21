@@ -108,12 +108,22 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # bare ``<field>``: the values are the ones the API documents (OpenAPI enums, or
     # the SDK method's own docstring/validator), so each example is a call that works.
     "agent.message.set-request-kind": {"request_kind": "ask"},
+    "support.plan.update-entitlements": {"values": {"dashboardBranding": "no_branding"}},
+    "agent.access.settings.update": {"enabled": True},
     "agent.plan.edit-proposal": {"plan_id": "resource-123", "action": "rename", "key": "Status"},
     "agent.run.units.set": {
         "step": 1,
         "kind": "dataset",
         "units": [{"id": 12, "name": "Sales", "project_id": 3}],
     },
+    "agent.access.grant.give": {
+        "emails": ["analyst@example.com"],
+        "level": "ask",
+        "items": [{"project_id": 1}],
+    },
+    "agent.access.request.create": {"kind": "access", "text": "Please share the Sales project"},
+    "agent.access.request.resolve": {"status": "done"},
+    "agent.turn.rate": {"rating": "up"},
     "agent.session.set-visibility": {"visibility": "shared"},
     "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
     "annotation.create": {
@@ -139,6 +149,20 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}
     },
     "snippet.create": {"code": "SELECT * FROM orders", "language": "sql"},
+    "support.billing.cancel-subscription": {"when": "period_end"},
+    "support.billing.refund": {"amount": 500},
+    "support.billing.start-trial": {"days": 14},
+    "support.deal.create": {"base_plan_id": 3, "price": 1200.0},
+    "support.deal.move-to-partner": {"price": 900.0, "billing_interval": "monthly"},
+    "support.deal.opt-in": {"everything": True},
+    "support.deal.update": {"notes": "Renewal agreed"},
+    "support.partner.client.detach": {"price": 900.0, "contact_email": "owner@example.com"},
+    "support.partner.update": {"notes": "Prefers invoices"},
+    "support.workspace.archive": {
+        "storage_class": "GLACIER_IR",
+        "confirm_name": "Revenue report",
+        "reason": "Customer left",
+    },
     "support.template.export-dashboard": {"slug": "revenue-overview"},
     "support.workspace.create": {
         "user_email": "analyst@example.com",

@@ -232,6 +232,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "workspace.invite.update-role": (),
     "agent.run.status": (),
     "agent.run.list": (),
+    "agent.access.askers": (
+        PositionalSpec(
+            name="project_id",
+            type=int,
+            required=True,
+            help="ID of the project whose askers to list.",
+            example_value="123",
+        ),
+    ),
     "agent.action.delete": (
         PositionalSpec(
             name="action_id",
@@ -386,6 +395,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=True,
             help="Path to a local workbook.",
             example_value="Sales.pbix",
+        ),
+    ),
+    "dashboard.chat.attachment.upload": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local file to attach to the dashboard chat.",
+            example_value="notes.pdf",
         ),
     ),
     "dashboard.import-workbook": (
@@ -638,6 +657,28 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     ),
     # project commands sourced entirely from ``--input`` or the active workspace.
     "project.list": (),
+    # ``support deal create`` puts the deal on an existing workspace (the optional positional) or
+    # on a new one (``workspace_create`` in ``--input``). ``workspace_id`` is a context field the
+    # CLI never takes from ``--input``, so the positional is the only way to name the workspace.
+    "support.deal.create": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to put the deal on; omit it and pass 'workspace_create'.",
+        ),
+    ),
+    # ``support search`` takes its text as a positional or the ``q`` field.
+    "support.search": (
+        PositionalSpec(
+            name="q",
+            type=str,
+            required=False,
+            help="Text to search for (a workspace, user, deal or partner); or the 'q' field.",
+            falls_back_to_field="q",
+            example_value="acme",
+        ),
+    ),
     "project.bulk-delete": (),
     "project.bulk-update": (),
     # ``file upload`` takes a local file path as an optional positional so the
@@ -720,6 +761,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ("support.feature-profile.create", "name", "Name of the new feature profile"),
             ("support.plan.create", "name", "Name of the new plan"),
             ("support.workspace.create", "name", "Name of the new workspace"),
+            ("support.partner.create", "name", "Name of the new partner"),
             ("support.user.register", "email", "Email of the user to register"),
             ("support.user.update", "email", "Email of the user to update"),
         )

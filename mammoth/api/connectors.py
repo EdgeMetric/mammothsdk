@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from typing import TYPE_CHECKING, Any, cast
+from urllib.parse import quote
 
 from mammoth.exceptions import MammothValidationError
 from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
@@ -35,6 +36,11 @@ ERR_DS_CONFIG_SOURCE_REQUIRED = (
 ERR_DS_CONFIG_VALIDATE_XOR = (
     "`validate` and `data_sample` are mutually exclusive; " "set at most one of them to True."
 )
+ERR_CONNECTION_KEY_EMPTY = "`connection_key` must be a non-empty string."
+ERR_CONNECTIONS_LIMIT = "`limit` must be 0 through 100, got {0}."
+ERR_CONNECTIONS_OFFSET = "`offset` must be 0 or more, got {0}."
+#: The server's page-size ceiling for the bulk connections list.
+CONNECTIONS_LIMIT_MAX = 100
 ERR_DS_CONFIG_PATCH_EMPTY = "`patch` must be a non-empty list of patch operations."
 ERR_DS_CONFIG_PATCH_OP = "Each patch op must have op='replace', got {0!r}."
 ERR_DS_CONFIG_PATCH_PATH = (
@@ -123,6 +129,68 @@ class ConnectorsAPI:
         if isinstance(response, _list):
             return response
         return response.get("connections", [])
+
+    async def list_all_connections(
+        self, project_id: int | None = None, limit: int | None = None, offset: int | None = None
+    ) -> dict[str, Any]:
+        """List every connection in a project, across all connector types, in one call.
+
+        Each row carries the connection's health, and how many sources and destinations use
+        it. Unlike :meth:`list_connections`, it needs no connector key.
+
+        Args:
+            project_id: Project ID (uses client default if not provided).
+            limit: Rows to return, 0 through 100 (the server's default is 50).
+            offset: Rows to skip (the server's default is 0).
+
+        Returns:
+            Dict with ``connections`` (``id``, ``name``, ``connector_type``, ``managed_by``,
+            ``connection_key``, ``connector_key``, ``health_status``, ``source_count``,
+            ``dest_count`` ...) and ``total``.
+
+        Raises:
+            MammothValidationError: If *limit* is not 0 through 100 or *offset* is negative.
+        """
+        if limit is not None and not 0 <= limit <= CONNECTIONS_LIMIT_MAX:
+            raise MammothValidationError(ERR_CONNECTIONS_LIMIT.format(limit))
+        if offset is not None and offset < 0:
+            raise MammothValidationError(ERR_CONNECTIONS_OFFSET.format(offset))
+        params = {
+            key: value
+            for key, value in {"limit": limit, "offset": offset}.items()
+            if value is not None
+        }
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/connections",
+            params=params or None,
+        )
+
+    async def test_connection(
+        self, connection_key: str, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Run a health check on one connection now, and keep the result.
+
+        Needs project admin. The check reaches the connection's own service.
+
+        Args:
+            connection_key: Key identifying the connection (from :meth:`list_all_connections`).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with ``success``, ``health_status`` (``healthy``, ``unreachable`` or
+            ``unknown``) and ``message``.
+
+        Raises:
+            MammothValidationError: If *connection_key* is empty.
+        """
+        if not connection_key:
+            raise MammothValidationError(ERR_CONNECTION_KEY_EMPTY)
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
+            f"/connections/{quote(connection_key, safe='')}/test",
+        )
 
     async def create_connection(
         self, connector_key: str, config: dict[str, Any], project_id: int | None = None

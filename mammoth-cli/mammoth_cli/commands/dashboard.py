@@ -14,6 +14,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from mammoth.api import agents as agents_api
+from mammoth.exceptions import MammothValidationError
 from pydantic import ValidationError
 
 from mammoth_cli.commands.view._common import _FIND_DATASET_SYMBOL
@@ -68,6 +70,7 @@ from mammoth_cli.services.dashboard_review import (
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
 from mammoth_cli.services.local_files import refuse_existing_file
+from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.read_memo import forget, remember
 
@@ -874,6 +877,56 @@ def dashboard_archive(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+#: Rules the SDK method enforces before sending, run by the handler too: a dry run stops
+#: at the SDK symbol, so without this it would accept input the real run refuses.
+_SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
+    "agent.access.grant.give": lambda k: agents_api.check_grant_give(
+        k.get("emails") or [], str(k.get("level") or ""), k.get("items") or []
+    ),
+    "agent.access.grant.update": lambda k: agents_api.check_grant_update(
+        k.get("level"), k.get("items")
+    ),
+    "agent.access.request.create": lambda k: agents_api.check_request_create(
+        str(k.get("kind") or ""), str(k.get("text") or "")
+    ),
+    "agent.access.request.resolve": lambda k: agents_api.check_request_resolve(
+        str(k.get("status") or "")
+    ),
+    "agent.access.settings.update": lambda k: agents_api.check_settings_update(k),
+    "agent.turn.rate": lambda k: agents_api.check_rating(
+        str(k.get("rating") or ""), k.get("comment")
+    ),
+}
+
+#: What the confirmation (and its refusal) names, where the command id alone would hide
+#: the consequence. Formatted with the command's positionals.
+_CONFIRM_ACTIONS: dict[str, str] = {
+    "agent.access.grant.give": "invite people to ask the agent about projects (they are emailed)",
+    "agent.access.grant.revoke": "revoke agent access grant {grant_id} (the person loses access)",
+    "agent.access.request.resolve": (
+        "close agent access request {request_id} for good (irreversible: it cannot be reopened "
+        "and the requester is told)"
+    ),
+    "agent.access.settings.update": "change the AI Agent settings of the whole workspace",
+    "support.plan.update-entitlements": (
+        "change the entitlements of plan {plan_id} (applies to every workspace on that plan)"
+    ),
+}
+
+#: Commands whose ``--confirm`` target is the workspace, not a positional.
+_WORKSPACE_TARGETED = frozenset({"agent.access.settings.update"})
+
+
+def _check_sdk_rules(command_id: str, kwargs: dict[str, Any]) -> None:
+    rule = _SDK_RULES.get(command_id)
+    if rule is None:
+        return
+    try:
+        rule(kwargs)
+    except MammothValidationError as exc:
+        raise map_sdk_exception(exc) from exc
+
+
 def generated_dashboard(invocation: Invocation) -> HandlerResult:
     """Dispatch a generated dashboard command through its reviewed manifest.
 
@@ -925,16 +978,21 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
                 hint=f"Pass it via --input, for example: --input '{{\"{field}\": ...}}'.",
             )
 
+    _check_sdk_rules(invocation.command_id, kwargs)
+
     policy = str(record.get("confirmation") or POLICY_NONE)
     target = next((str(value) for value in positionals.values()), None)
-    enforce_confirmation(
-        invocation,
-        policy=policy,
-        action=invocation.command_id.replace(".", " "),
-        target=target if policy == POLICY_CONFIRM_TARGET else None,
-    )
+    action = _CONFIRM_ACTIONS.get(invocation.command_id, invocation.command_id.replace(".", " "))
+    action = action.format(**positionals)
+    if invocation.command_id not in _WORKSPACE_TARGETED:
+        enforce_confirmation(invocation, policy=policy, action=action, target=target)
 
     with open_service(invocation) as (service, auth):
+        if invocation.command_id in _WORKSPACE_TARGETED:
+            # The target is the workspace itself, known only once the session is open.
+            enforce_confirmation(
+                invocation, policy=policy, action=action, target=str(auth.workspace_id)
+            )
         data = service.call(_symbol(invocation), **kwargs)
         data = _resolve_job(service, invocation, data)
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
@@ -1318,6 +1376,23 @@ def dashboard_assess_pbix(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = _wait_workbook_job(service, service.call(_symbol(invocation), file=file_path))
     _refuse_rejected_workbook(data)
+    return data, _meta(invocation, auth.workspace_id)
+
+
+def dashboard_chat_attachment_upload(invocation: Invocation) -> HandlerResult:
+    """Attach a local file to a dashboard's editor chat; the result's ``ref`` goes in a turn."""
+    positionals = _generated_positionals(invocation)
+    file_path = str(positionals.get("file", ""))
+    if not Path(file_path).is_file():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"File not found: {file_path}.",
+            exit_status=EXIT_USAGE,
+        )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation), dashboard_id=positionals["dashboard_id"], file=file_path
+        )
     return data, _meta(invocation, auth.workspace_id)
 
 

@@ -60,6 +60,7 @@ PIPELINE_RUNNING_STATES = frozenset({"modifying", "modified", "running"})
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 ERR_SAMPLE_SIZE_RANGE = "`sample_size` must be an integer from 1 through 500, got {0!r}."
 PREVIEW_SAMPLE_SIZE_MAX = 500
+ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0!r}."
 
 # Pipeline-item keys used to resolve the latest task sequence. Reads (data,
 # metadata) are scoped to a sequence: sequence 0 is the original dataset, and
@@ -442,6 +443,32 @@ class PipelineAPI:
             params={"sample_size": sample_size} if sample_size is not None else None,
         )
         return await self._client._wait_if_job(response)
+
+    async def preview_cancel(
+        self, dataview_id: int, job_id: int, dataset_id: int | None = None
+    ) -> dict[str, Any]:
+        """Cancel a task preview job that newer settings of the task replaced.
+
+        The job does not start, or its running query stops. Only the user who started the
+        job can stop it.
+
+        Args:
+            dataview_id: ID of the dataview.
+            job_id: ID of the preview job (a job a task preview started).
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            Empty dict (the server answers 204).
+
+        Raises:
+            MammothValidationError: If *job_id* is not a positive integer.
+        """
+        if isinstance(job_id, bool) or not isinstance(job_id, int) or job_id <= 0:
+            raise MammothValidationError(ERR_JOB_ID_POSITIVE.format(job_id))
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        return await self._client._request_json(
+            "DELETE", f"{self._base_url(ws, proj, ds, dv)}/task_preview/{job_id}"
+        )
 
     async def draft_mode(
         self, dataview_id: int, command: str, dataset_id: int | None = None

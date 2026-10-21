@@ -296,6 +296,36 @@ class BillingAPI:
             "POST", f"/workspaces/{self._ws()}/subscription/resume"
         )
 
+    async def stripe_held_change_get(self) -> dict[str, Any]:
+        """Get the plan change waiting for payment.
+
+        A failed card payment holds a plan, storage or billing-cycle change until its
+        invoice is paid. A change paid since is applied first, so the server answers 404
+        once the change has landed or is gone.
+
+        Returns:
+            Dict with ``plan_id``, ``plan_name``, ``storage_gb``, ``billing_cycle``,
+            ``changes_plan`` and ``payment_url`` (the Stripe page that pays it).
+        """
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/subscription/held-change"
+        )
+
+    async def stripe_held_change_cancel(self) -> dict[str, Any]:
+        """Cancel the plan change waiting for payment.
+
+        Voids the invoice of the held change, so it can no longer be paid, and keeps the
+        workspace as it is. When the invoice was paid already, the change is applied
+        instead.
+
+        Returns:
+            Dict with ``cancelled`` (the invoice was voided) and ``landed`` (the change was
+            applied instead). Both are false when nothing was held.
+        """
+        return await self._client._request_json(
+            "POST", f"/workspaces/{self._ws()}/subscription/held-change/cancel"
+        )
+
     async def stripe_recheck_limits(self) -> dict[str, Any]:
         """Recompute which plan limits the workspace exceeds and store the lock.
 

@@ -7,6 +7,7 @@ import base64
 import builtins
 import os
 import tempfile
+import zipfile
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -59,6 +60,35 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
+ERR_CHAT_ATTACHMENT_EMPTY = "The file is empty: {0}"
+ERR_CHAT_ATTACHMENT_DOCUMENT_TOO_LARGE = (
+    "The PDF or Word file is {0} bytes; the chat reads at most 20 MB of those."
+)
+ERR_CHAT_ATTACHMENT_TOO_LARGE = (
+    "The file is {0} bytes; the most the server takes in one upload is 50 MB."
+)
+# A PDF or Word file is kept up to 20 MB (backend MAX_DOCUMENT_BYTES); the request body
+# limit for anything else (text is cut, a picture is scaled down) is 50 MB.
+CHAT_ATTACHMENT_DOCUMENT_MAX_BYTES = 20 * 1024 * 1024
+CHAT_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024
+_WORD_BODY_PART = "word/document.xml"
+
+
+def _is_pdf_or_word(path: Path) -> bool:
+    """Whether the server would treat the file as a PDF or Word file (it sniffs the bytes)."""
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(4)
+        if head.startswith(b"%PDF"):
+            return True
+        if head.startswith(b"PK"):
+            with zipfile.ZipFile(path) as archive:
+                return _WORD_BODY_PART in archive.namelist()
+    except (OSError, zipfile.BadZipFile):
+        return False
+    return False
+
+
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
 ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0}."
 ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
@@ -451,6 +481,48 @@ class DashboardsAPI:
             MammothValidationError: If *file* is not a readable local file.
         """
         return await self._post_workbook(file, "/dashboards/v3/attachments")
+
+    async def chat_attachment_upload(self, dashboard_id: int, file: str | Path) -> dict[str, Any]:
+        """Keep a file the user attaches in a dashboard's editor chat, to read in a turn.
+
+        One picture (PNG, JPEG, WebP or GIF), PDF or Word file, or a text file, up to 50 MB
+        (a PDF or Word file up to 20 MB; text is cut to its first part).
+        A picture is scaled to 1500 px and refused when it is still over 2 MB after that;
+        a PDF or Word file has its first 50 pages read. It is kept with the board's chat,
+        once per content, never on the board itself. A spreadsheet is refused (it belongs
+        in the data import), as is a ``.pbix`` or ``.twb`` workbook (use
+        :meth:`attachment_create`).
+
+        Args:
+            dashboard_id: ID of the dashboard.
+            file: Local file to attach.
+
+        Returns:
+            Dict with ``ref`` (what a chat turn's ``attachments`` names), ``name``, ``kind``
+            (``image``, ``document`` or ``text``), ``media_type``, ``byte_size`` and, for a
+            document, ``pages``, ``pages_read``, ``words`` and ``truncated``.
+
+        Raises:
+            MammothValidationError: If *dashboard_id* is not positive, *file* is not a
+                readable local file, it is empty, over 50 MB, or a PDF or Word file over 20 MB.
+        """
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            size = Path(file).stat().st_size
+        except (TypeError, ValueError, OSError):
+            size = None  # `_post_workbook` names the problem (missing or unreadable file)
+        if size == 0:
+            raise MammothValidationError(ERR_CHAT_ATTACHMENT_EMPTY.format(file))
+        if size is not None and size > CHAT_ATTACHMENT_MAX_BYTES:
+            raise MammothValidationError(ERR_CHAT_ATTACHMENT_TOO_LARGE.format(size))
+        if (
+            size is not None
+            and size > CHAT_ATTACHMENT_DOCUMENT_MAX_BYTES
+            and _is_pdf_or_word(Path(file))
+        ):
+            raise MammothValidationError(ERR_CHAT_ATTACHMENT_DOCUMENT_TOO_LARGE.format(size))
+        return await self._post_workbook(file, f"/dashboards/{dashboard_id}/chat/attachments")
 
     async def _post_workbook(self, file: str | Path, endpoint: str) -> dict[str, Any]:
         try:

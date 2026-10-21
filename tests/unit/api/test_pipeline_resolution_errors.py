@@ -20,8 +20,8 @@ import json
 from typing import Any
 from urllib.parse import urlparse
 
-import pytest
 import httpx
+import pytest
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothAPIError, MammothAuthError

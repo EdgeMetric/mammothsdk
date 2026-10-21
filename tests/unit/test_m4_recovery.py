@@ -7,8 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-import pytest
 import httpx
+import pytest
 
 from mammoth.api.exports import ExportsAPI
 from mammoth.api.jobs import JobsAPI

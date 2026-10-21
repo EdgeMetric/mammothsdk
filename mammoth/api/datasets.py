@@ -24,6 +24,17 @@ _list = list  # Alias to avoid shadowing by method name
 ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
 ERR_FILE_OBJECT_ID_POSITIVE = "`file_object_id` must be a positive integer, got {0}."
 _INTERPRETATION_MODES = ("interpreted", "original")
+ERR_TOOL_CLAIM_TOKEN = "`token` must be 1 to 300 characters, got {0} characters."
+#: The server's length limit on an Open tables link's token.
+TOOL_CLAIM_TOKEN_MAX = 300
+
+
+def _check_tool_claim_token(token: str) -> None:
+    """Reject a token the server would refuse (empty, or over its length limit)."""
+    if not isinstance(token, str) or not 1 <= len(token) <= TOOL_CLAIM_TOKEN_MAX:
+        raise MammothValidationError(
+            ERR_TOOL_CLAIM_TOKEN.format(len(token) if isinstance(token, str) else 0)
+        )
 
 
 class DatasetsAPI:
@@ -189,6 +200,56 @@ class DatasetsAPI:
         proj = self._proj(project_id)
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/definitions"
+        )
+
+    async def tool_claim_get(self, token: str) -> dict[str, Any]:
+        """Say what an emailed Open tables link opens.
+
+        A table-extraction tool emails a link whose token stands for the tables it found in
+        a file. The answer never contains the address the link was sent to.
+
+        Args:
+            token: Token from the emailed link (up to 300 characters).
+
+        Returns:
+            Dict with ``file_name``, ``table_count``, ``expired``, ``signed_in``,
+            ``for_this_account`` (the link was sent to the caller's address) and
+            ``redeemed`` (``{workspace_id, project_id, folder_id}`` once added, shown to the
+            link's owner only).
+
+        Raises:
+            MammothValidationError: If *token* is empty or longer than 300 characters.
+        """
+        _check_tool_claim_token(token)
+        return await self._client._request_json("GET", "/tool-claims", params={"token": token})
+
+    async def tool_claim_redeem(
+        self,
+        token: str,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Add the tables of an emailed Open tables link to a project, in a new folder.
+
+        The link must have been sent to the caller's address. Redeeming the same link again
+        returns where the tables already are and adds nothing.
+
+        Args:
+            token: Token from the emailed link (up to 300 characters).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``workspace_id``, ``project_id`` and ``folder_id`` (the new folder).
+
+        Raises:
+            MammothValidationError: If *token* is empty or longer than 300 characters.
+        """
+        _check_tool_claim_token(token)
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "POST", f"/workspaces/{ws}/projects/{proj}/tool-claims", json={"token": token}
         )
 
     async def add_definition(

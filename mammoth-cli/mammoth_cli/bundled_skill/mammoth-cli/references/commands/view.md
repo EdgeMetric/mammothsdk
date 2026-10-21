@@ -1026,6 +1026,16 @@ Result: `ViewTaskPreviewResult`; mutation `read`, confirmation `none`, wait poli
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Previewed a COPY task using the documented agent_example shape; metadata correctly shows the new column_9. Minor note: data:[] came back empty despite the source view having 3 rows - previ…
 
+### `view.task.preview-cancel`
+
+Run: `mammoth view task preview-cancel`. Exact input fields: `mammoth schema get view.task.preview-cancel`.
+
+Example: `mammoth view task preview-cancel 123 456`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTaskPreviewCancelResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.task.update`
 
 Run: `mammoth view task update`. Exact input fields: `mammoth schema get view.task.update`.

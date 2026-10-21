@@ -443,6 +443,10 @@ def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
         document["order_by"] = [_sort_entry(entry) for entry in entries]
 
 
+#: Commands with one input field that must be a JSON boolean (no "true" string coercion).
+_STRICT_BOOL_FIELDS = {"dashboard.archive": "archived", "support.billing.refund": "full"}
+
+
 def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> None:
     """Reject unknown ``--input`` keys, then coerce known keys to their type.
 
@@ -471,9 +475,13 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
     # ArchiveDashboard's OpenAPI body is a strict boolean set-state field;
     # unlike ordinary CLI convenience scalars, string coercion would change
     # the wire contract (and make ``"false"`` truthy).
-    if command_id == "dashboard.archive" and "archived" in document:
-        if type(document["archived"]) is not bool:
-            raise _invalid_field_type_error(command_id, "archived", document["archived"], "boolean")
+    # ``support billing refund``'s ``full`` is the same: a refund is full only on a JSON true.
+    strict_bool = _STRICT_BOOL_FIELDS.get(command_id)
+    if strict_bool and strict_bool in document:
+        if type(document[strict_bool]) is not bool:
+            raise _invalid_field_type_error(
+                command_id, strict_bool, document[strict_bool], "boolean"
+            )
     contract = resolve_command_contract(command_id)
     if contract is None:
         return

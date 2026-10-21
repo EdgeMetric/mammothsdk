@@ -13,6 +13,15 @@ import pytest
 from mammoth.client import MammothClient
 
 
+def _decode_body(raw: bytes, content_type: str) -> object:
+    """JSON bodies are parsed; anything else (multipart) is kept as latin-1 text."""
+    if not raw:
+        return None
+    if content_type.startswith("multipart/"):
+        return raw.decode("latin-1")
+    return json.loads(raw)
+
+
 class RecordingServer(HTTPServer):
     """Records requests; ``answers`` maps ``"METHOD /path"`` (or ``"/path"``) to a body or
     to ``(status, body)``. Unscripted routes answer 200 ``{"ok": true}``."""
@@ -21,6 +30,9 @@ class RecordingServer(HTTPServer):
         super().__init__(("127.0.0.1", 0), _Handler)
         self.requests: list[dict[str, object]] = []
         self.answers: dict[str, object] = {}
+        #: Per request, parallel to ``requests``: the ``content_type`` header and the ``raw``
+        #: body bytes (what a multipart upload needs; ``requests`` keeps only decoded JSON).
+        self.wire: list[dict[str, object]] = []
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -29,6 +41,7 @@ class _Handler(BaseHTTPRequestHandler):
     def _answer(self) -> None:
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b""
+        content_type = self.headers.get("Content-Type") or ""
         parts = urlsplit(self.path)
         path = parts.path.removeprefix("/api/v2")
         self.server.requests.append(
@@ -36,9 +49,10 @@ class _Handler(BaseHTTPRequestHandler):
                 "method": self.command,
                 "path": path,
                 "query": {k: v[0] for k, v in parse_qs(parts.query).items()},
-                "body": json.loads(raw) if raw else None,
+                "body": _decode_body(raw, content_type),
             }
         )
+        self.server.wire.append({"content_type": content_type, "raw": raw})
         scripted = self.server.answers.get(f"{self.command} {path}", self.server.answers.get(path))
         status, body = scripted if isinstance(scripted, tuple) else (200, scripted or {"ok": True})
         self.send_response(status)
@@ -56,7 +70,7 @@ class _Handler(BaseHTTPRequestHandler):
 @pytest.fixture
 def server() -> Iterator[RecordingServer]:
     srv = RecordingServer()
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True).start()
     yield srv
     srv.shutdown()
 
