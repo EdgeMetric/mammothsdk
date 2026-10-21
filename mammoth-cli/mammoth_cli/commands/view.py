@@ -1446,6 +1446,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
     data = _trim_rows(data, limit, page_size)
+    data = keep_columns(data, document.get("columns"))
     if document.get("sequence") is None:
         # The view's row count is its latest step's; a read at an earlier step differs.
         data = _with_paging_total(data, meta)
@@ -1465,6 +1466,34 @@ def _page_offset(value: Any) -> int:
             hint="The first page is offset 0; use next_command from the previous page.",
         )
     return offset
+
+
+def keep_columns(data: Any, columns: list[str] | None) -> Any:
+    """Keep only ``columns`` (display names) in a data page's rows and column header.
+
+    A name the page does not have is refused with the names it does have, so a typo
+    never reads as an empty column.
+    """
+    if columns is None or not isinstance(data, dict):
+        return data
+    rows = data.get(_ROWS_KEY)
+    if not isinstance(rows, list):
+        return data
+    first = rows[0] if rows else None
+    available = list(first) if isinstance(first, dict) else list(data.get(_COLUMNS_KEY) or [])
+    missing = [name for name in columns if name not in available]
+    if missing:
+        raise CliError(
+            code="unknown_column",
+            message=f"Column(s) not in the view: {', '.join(missing)}.",
+            exit_status=EXIT_USAGE,
+            hint="Use column display names from this view.",
+            details={"columns": missing, "available": available},
+        )
+    kept = {**data, _ROWS_KEY: DataRows([{c: row[c] for c in columns} for row in rows])}
+    if isinstance(data.get(_COLUMNS_KEY), list):
+        kept[_COLUMNS_KEY] = list(columns)
+    return kept
 
 
 def _with_cli_paging(
@@ -2816,6 +2845,47 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        rules = _cf_rules_for_document(
+            service, document, has_typed, (dataset_id, dataview_id, project_id)
+        )
+        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_conditional_format_replace(invocation: Invocation) -> HandlerResult:
+    """Replace every conditional-format rule on a view with new ones in one call.
+
+    Takes the input of ``view conditional-format create`` (typed fields or a raw ``rule``);
+    the old rules are deleted and the new ones created. Prompt or ``--yes``.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        scope = (dataset_id, dataview_id, project_id)
+        rules = _cf_rules_for_document(service, document, has_typed, scope)
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_PROMPT_OR_YES,
+            action=f"replace all conditional-format rules on view {dataview_id}",
+        )
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            rules=rules,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _cf_check_document(document: dict[str, Any]) -> bool:
+    """Whether the input uses the typed fields; refuses mixing them with ``rule`` or neither."""
     has_typed = any(field in document for field in cf_rules.TYPED_FIELDS)
     if "rule" in document and has_typed:
         raise CliError(
@@ -2825,17 +2895,20 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
         )
     if "rule" not in document and not has_typed:
         _require_field(document, "rule")
-    with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        if has_typed:
-            metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
-            column_map, column_types = _column_maps(metadata)
-            rules = cf_rules.build_rules(document, column_map, column_types)
-        else:
-            cf_rules.validate_rule(document["rule"])
-            rules = [document["rule"]]
-        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return has_typed
+
+
+def _cf_rules_for_document(
+    service: Any, document: dict[str, Any], has_typed: bool, scope: tuple[Any, ...]
+) -> list[dict[str, Any]]:
+    """The rule bodies an input document stands for (typed fields build one rule per column)."""
+    dataset_id, dataview_id, project_id = scope
+    if has_typed:
+        metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+        column_map, column_types = _column_maps(metadata)
+        return cf_rules.build_rules(document, column_map, column_types)
+    cf_rules.validate_rule(document["rule"])
+    return [document["rule"]]
 
 
 def _cf_sequence(rule: Any) -> int:
@@ -3992,18 +4065,42 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     signed download URL is returned instead so the host can hand it to its
     user. ``output_path`` is refused in that case.
     """
+    return _download_dataview(
+        invocation, "mammoth.api.exports.ExportsAPI.to_csv_url", ("output_path", "timeout")
+    )
+
+
+def view_export_download(invocation: Invocation) -> HandlerResult:
+    """Download a dataview to a local file as csv, xlsx, json, ndjson, xml, yaml or parquet.
+
+    Same as ``view export csv`` otherwise: ``--input '{"format": "xlsx", "output_path":
+    "out.xlsx"}'``; the default name carries the format's extension; an existing file is not
+    replaced unless ``--overwrite``; embedded, the signed download URL is returned instead.
+    """
+    return _download_dataview(
+        invocation,
+        "mammoth.api.exports.ExportsAPI.to_file_url",
+        ("output_path", "file_type", "timeout"),
+    )
+
+
+def _download_dataview(
+    invocation: Invocation, embedded_symbol: str, fields: tuple[str, ...]
+) -> HandlerResult:
+    """Shared body of ``view export csv`` and ``view export download``."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
     if embedded.active():
-        return _view_export_csv_embedded(invocation, dataview_id, document)
+        return _view_export_csv_embedded(invocation, dataview_id, document, embedded_symbol)
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
+    _forward_optional(document, kwargs, (*fields, "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         # The SDK's own default name needs the parent dataset, which is known here.
         target = kwargs.get("output_path")
         if target is None and kwargs.get(_DATASET_ID_FIELD) is not None:
-            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.csv"
+            extension = str(kwargs.get("file_type") or "csv").strip().lower().lstrip(".")
+            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.{extension}"
         if target is not None:
             refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
@@ -4013,9 +4110,9 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 
 
 def _view_export_csv_embedded(
-    invocation: Invocation, dataview_id: int, document: dict[str, Any]
+    invocation: Invocation, dataview_id: int, document: dict[str, Any], symbol: str
 ) -> HandlerResult:
-    """``view.export.csv`` for an embedded call: never writes a local file."""
+    """A download for an embedded call: never writes a local file."""
     if "output_path" in document:
         raise CliError(
             code=CODE_UNSUPPORTED_CONTRACT,
@@ -4024,9 +4121,9 @@ def _view_export_csv_embedded(
             hint="Drop output_path -- an embedded call returns a download_url instead.",
         )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("timeout", "dataset_id"))
+    _forward_optional(document, kwargs, ("file_type", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call("mammoth.api.exports.ExportsAPI.to_csv_url", **kwargs)
+        data = service.call(symbol, **kwargs)
     return {"download_url": data["url"]}, _meta(invocation, auth.workspace_id, None)
 
 

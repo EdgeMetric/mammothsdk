@@ -11,8 +11,27 @@ from mammoth._pure.builders import (
     build_copy_params,
     build_delete_params,
 )
-from mammoth.exceptions import MammothError
+from mammoth.exceptions import MammothError, MammothValidationError
 from mammoth.models.pipeline import ColumnType, ConversionSpec, CopySpec
+
+#: Keys a column's ``FORMAT_INFO`` entry holds (what the web grid's format menu writes).
+COLUMN_FORMAT_KEYS = frozenset(
+    {
+        "date_format",
+        "postgres_date_format",
+        "date_format_type",
+        "tz",
+        "decimal_spec",
+        "numtype",
+        "currency_symbol",
+        "is_percentage",
+        "thousands_separator",
+        "decimal_separator",
+        "scientific",
+        "numeric_precision",
+        "enabled",
+    }
+)
 
 if TYPE_CHECKING:
     from mammoth._mixins._host import ViewHost
@@ -229,3 +248,61 @@ class ColumnOpsMixin(ViewHost):
                 },
             )
         return {"renamed": cleaned, "columns": list(self.columns)}
+
+    async def set_column_format(self, formats: dict[str, dict[str, Any]]) -> dict[str, Any]:
+        """Set how columns are displayed (the web grid's column format; not a pipeline task).
+
+        The format is a view display property (``FORMAT_INFO``), the same change as
+        the format menu of a column header in the web app. It changes how values show
+        in the grid, exports that use the format and dashboards, never the stored
+        values. Keys you give replace the same keys of the column's current format;
+        keys you leave out are kept.
+
+        Args:
+            formats: ``{display name: {format key: value}}``. Keys by column type:
+                DATE ``date_format`` (python style, ``"%d-%b-%Y"``),
+                ``postgres_date_format`` (``"DD-Mon-YYYY"``), ``tz``;
+                NUMERIC ``decimal_spec`` (decimal places), ``numtype`` (``"float"`` or
+                ``"int"``), ``currency_symbol``, ``is_percentage``,
+                ``thousands_separator``, ``decimal_separator``, ``scientific``.
+
+        Returns:
+            ``{"formatted": {display name: the column's format after}}``.
+
+        Raises:
+            MammothColumnError: A name is not a column of the view.
+            MammothValidationError: ``formats`` is empty, or a column's format is
+                empty or uses a key that is not a format key.
+
+        Example::
+
+            await view.set_column_format({
+                "Admitted": {"date_format": "%d-%b-%Y"},
+                "Revenue": {"decimal_spec": 2, "currency_symbol": "$"},
+            })
+        """
+        if not formats:
+            raise MammothValidationError("formats must name at least one column")
+        value: dict[str, dict[str, Any]] = {}
+        current = (self.raw.get("display_properties") or {}).get("FORMAT_INFO") or {}
+        for name, fmt in formats.items():
+            internal = self._resolve_column(name)
+            unknown = sorted(set(fmt) - COLUMN_FORMAT_KEYS) if isinstance(fmt, dict) else []
+            if not isinstance(fmt, dict) or not fmt or unknown:
+                raise MammothValidationError(
+                    f"format for {name!r} must be a non-empty object of format keys; "
+                    f"{'unknown: ' + ', '.join(unknown) + '. ' if unknown else ''}"
+                    f"allowed: {', '.join(sorted(COLUMN_FORMAT_KEYS))}",
+                    details={"column": name},
+                )
+            value[internal] = {**(current.get(internal) or {}), **fmt}
+        if self._build_only:
+            return {"status": "validated", "formatted": dict(formats)}
+        await self._client.dataviews.update(
+            self.dataset_id,
+            self.id,
+            [{"op": "replace", "path": "display_properties/FORMAT_INFO", "value": value}],
+        )
+        await self.refresh()
+        after = (self.raw.get("display_properties") or {}).get("FORMAT_INFO") or {}
+        return {"formatted": {name: after.get(self._resolve_column(name), {}) for name in formats}}

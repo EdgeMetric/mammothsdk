@@ -297,7 +297,10 @@ def missing_project_error() -> CliError:
             code="project_required",
             message="No project is set for this command.",
             exit_status=EXIT_USAGE,
-            hint="Pass --project PROJECT_ID.",
+            hint=(
+                "This environment has no default project. Run `mammoth project list`, then "
+                "repeat the command with --project PROJECT_ID."
+            ),
             recovery_commands=["mammoth project list", "mammoth dataset find SUBSTRING"],
         )
     return CliError(

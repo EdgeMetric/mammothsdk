@@ -278,6 +278,7 @@ _EXPORT_DESTINATION_NATURAL_QUERIES = {
     "view.export.bigquery": "export to big query",
     "view.export.csv": "export to csv file",
     "view.export.dataset": "copy rows into another dataset",
+    "view.export.download": "download the view as an xlsx file",
     "view.export.elasticsearch": "export to elastic search",
     "view.export.email": "email the export",
     "view.export.ftp": "export via ftp",

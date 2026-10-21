@@ -202,6 +202,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.set_column_format
+  implementation_origin: mammoth._mixins._column_ops.ColumnOpsMixin.set_column_format
+  signature: 'set_column_format(self, formats: ''dict[str, dict[str, Any]]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.column.format.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   implementation_origin: mammoth._mixins._date_ops.DateOpsMixin.date_diff
   signature: 'date_diff(self, component: ''DateDiffUnit'', start: ''str'', end: ''str'', new_column: ''str
@@ -5352,7 +5364,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_batch_data
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get_batch_data
-  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | None'' = None,
+  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | _list[str] | None'' = None,
     limit: ''int'' = 50, offset: ''int'' = 0, workspace_id: ''int | None'' = None, project_id: ''int |
     None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None) -> ''dict[str,
     Any]'''
@@ -5729,6 +5741,20 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
+  implementation_origin: mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
+  signature: 'conditional_format_replace(self, dataset_id: ''int'', dataview_id: ''int'', rules: ''_list[dict[str,
+    Any]]'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.conditional-format.replace
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_update
@@ -6253,6 +6279,32 @@ methods:
   mutation_class: benign_mutation
   wait_policy: returns_job
   pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.to_file
+  implementation_origin: mammoth.api.exports.ExportsAPI.to_file
+  signature: 'to_file(self, dataview_id: ''int'', output_path: ''str | Path | None'' = None, file_type:
+    ''DownloadFileType'' = ''csv'', timeout: ''int'' = 300, dataset_id: ''int | None'' = None) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: view.export.download
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.to_file_url
+  implementation_origin: mammoth.api.exports.ExportsAPI.to_file_url
+  signature: 'to_file_url(self, dataview_id: ''int'', file_type: ''DownloadFileType'' = ''csv'', timeout:
+    ''int'' = 300, dataset_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.exports.ExportsAPI.to_s3
