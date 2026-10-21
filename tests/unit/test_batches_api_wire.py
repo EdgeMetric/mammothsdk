@@ -136,16 +136,12 @@ async def test_create_sends_optional_fields_under_the_spec_names(
     assert set(body) <= set(schema("BatchesPostRequest")["properties"])
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="BUG: create(change_map=...) sends `change_map`, which is not a BatchesPostRequest "
-    "property in the pinned spec; the server drops it silently",
-)
 async def test_create_only_sends_properties_the_spec_defines(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
-    await client.batches.create(77, 12, {"A": "a"}, change_map={"x": 1})
+    """``change_map`` is not a BatchesPostRequest property: it warns and is not sent."""
+    with pytest.warns(DeprecationWarning, match="change_map"):
+        await client.batches.create(77, 12, {"A": "a"}, change_map={"x": 1})
     assert set(_last(server)["body"]) <= set(schema("BatchesPostRequest")["properties"])
 
 

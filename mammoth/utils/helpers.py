@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 
 def format_date_range(from_date: datetime, to_date: datetime) -> str:
     """Format a date range for API queries.
+
+    The backend parses only ``%Y-%m-%dT%H:%M:%S.%fZ``, so every value is sent in UTC with
+    microseconds and a ``Z``: a timezone-aware value is converted to UTC first, a naive one is
+    taken as UTC.
 
     Args:
         from_date: Start date.
@@ -16,9 +20,13 @@ def format_date_range(from_date: datetime, to_date: datetime) -> str:
     Returns:
         Formatted date range string for API.
     """
-    from_str = from_date.isoformat() + "Z" if not from_date.tzinfo else from_date.isoformat()
-    to_str = to_date.isoformat() + "Z" if not to_date.tzinfo else to_date.isoformat()
-    return f"(from:'{from_str}',to:'{to_str}')"
+    return f"(from:'{_backend_time(from_date)}',to:'{_backend_time(to_date)}')"
+
+
+def _backend_time(value: datetime) -> str:
+    if value.tzinfo is not None:
+        value = value.astimezone(UTC).replace(tzinfo=None)
+    return value.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def validate_file_path(file_path: str | Path) -> Path:

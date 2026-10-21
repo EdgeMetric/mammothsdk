@@ -166,13 +166,14 @@ class DashboardBiPreflightResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     exportable: bool
     blocked_reason: str | None = None
-    figures_total: int
-    figures_exported: int
-    figures_refused: int
-    degraded: bool
-    refusals: list[DashboardBiRefusal]
-    row_count: int
-    column_count: int
+    # Only ``exportable`` is required; the rest carry the backend's defaults.
+    figures_total: int = 0
+    figures_exported: int = 0
+    figures_refused: int = 0
+    degraded: bool = False
+    refusals: list[DashboardBiRefusal] = Field(default_factory=list)
+    row_count: int = 0
+    column_count: int = 0
 
 
 # Same body as the Tableau pre-flight, deliberately: the backend answers both

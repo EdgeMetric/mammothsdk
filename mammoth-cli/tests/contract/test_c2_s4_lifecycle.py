@@ -85,18 +85,19 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
         {"params": {"limit": 13, "offset": 5}},
     )
 
-    _drive(
-        api.create(
-            731,
-            732,
-            {"S4_SOURCE": "S4_DEST"},
-            project_id=41,
-            new_ds_params={"name": "S4_DATASET"},
-            is_validation_required=True,
-            change_map={"S4_OLD": "S4_NEW"},
-            delete_source_ds=False,
+    with pytest.warns(DeprecationWarning, match="change_map"):
+        _drive(
+            api.create(
+                731,
+                732,
+                {"S4_SOURCE": "S4_DEST"},
+                project_id=41,
+                new_ds_params={"name": "S4_DATASET"},
+                is_validation_required=True,
+                change_map={"S4_OLD": "S4_NEW"},
+                delete_source_ds=False,
+            )
         )
-    )
     assert client.calls[-1] == (
         "POST",
         "/workspaces/17/projects/41/datasets/731/batches",
@@ -113,7 +114,6 @@ def test_batch_wire_oracles_cover_query_body_and_distinct_lifecycle_paths() -> N
                 "delete_source_ds": False,
                 "new_ds_details": {"name": "S4_DATASET"},
                 "validate_only": True,
-                "change_map": {"S4_OLD": "S4_NEW"},
             }
         },
     )

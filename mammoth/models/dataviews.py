@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import ConfigDict
+from pydantic import AliasChoices, ConfigDict, Field
 
 from ._base import MammothModel
 
@@ -44,7 +44,8 @@ class DataviewSchema(MammothModel):
     name: str
     status: str | None = None
     description: str | None = None
-    dataset_id: int
+    # The API's DataviewInfo names it ``ds_id``.
+    dataset_id: int = Field(validation_alias=AliasChoices("dataset_id", "ds_id"))
     properties: DataviewProperties | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
@@ -123,7 +124,8 @@ class ActiveUser(MammothModel):
 
     model_config = ConfigDict(extra="allow")
 
-    user_id: int
+    # The API's DataviewActiveUsers items are UserSchema, keyed ``id``.
+    user_id: int = Field(validation_alias=AliasChoices("user_id", "id"))
     username: str | None = None
     email: str | None = None
     last_active: datetime | None = None
@@ -134,5 +136,6 @@ class ActiveUsersList(MammothModel):
 
     model_config = ConfigDict(extra="allow")
 
-    users: list[ActiveUser]
+    # The API's DataviewActiveUsers names the list ``active_users``.
+    users: list[ActiveUser] = Field(validation_alias=AliasChoices("users", "active_users"))
     count: int | None = None

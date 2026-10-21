@@ -81,12 +81,11 @@ class RestAuthType(str, Enum):
 
 
 class ExportStatus(str, Enum):
-    """Status values for exports."""
+    """Status values for exports (the backend's ``PipelineItemStatus``)."""
 
     DELETED = "deleted"
     EXECUTED = "executed"
     EXECUTING = "executing"
-    QUEUED = "queued"
     EDITED = "edited"
     ADDED = "added"
     SUSPENDED = "suspended"

@@ -2,9 +2,8 @@
 
 Payloads below use the property names and types of the spec schemas (``DsInfo``,
 ``DatasetsList``, ``DataviewInfo``, ``DataviewInfoList``, ``DataviewActiveUsers``,
-``DatasetPatchRequest``, ``DataviewPatch``, ``DataviewData``), not the SDK's own field lists.
-Where the SDK model rejects a payload the server really sends, the test is an
-``xfail(strict=True)`` that records the drift.
+``DatasetPatchRequest``, ``DataviewPatch``, ``DataviewData``), not the SDK's own field lists,
+so a model that drifts from what the server really sends fails here.
 """
 
 from __future__ import annotations
@@ -103,11 +102,6 @@ class TestDatasetModels:
         with pytest.raises(ValidationError, match="datasets"):
             DatasetsList.model_validate({"total": 0})
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValidationError,
-        reason="BUG: DatasetSchema.created_by is int|None but spec DsInfo.created_by is a string",
-    )
     def test_dataset_accepts_spec_string_created_by(self) -> None:
         assert DatasetSchema.model_validate(_ds_info()).created_by == "Asha Rao"
 
@@ -122,18 +116,15 @@ class TestDatasetModels:
         with pytest.raises(ValidationError, match="data"):
             DatasetDataResponse.model_validate({"data": "rows"})
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValidationError,
-        reason="BUG: DatasetPatchRequest.patch is a required list; spec DatasetPatchRequest "
-        "takes a single `patch` operation or a `patches` list (both optional)",
-    )
     def test_spec_patch_request_examples_parse(self) -> None:
         # The spec documents ``{"patch": {op, path, value}}`` (a single operation).
         example = schema("DatasetPatchRequest")["examples"][0]
         assert example == {"patch": {"op": "replace", "path": "name", "value": "test"}}
         req = DatasetPatchRequest.model_validate(example)
-        assert req.patch[0].op == "replace" and req.patch[0].value == "test"
+        assert req.patch is not None
+        assert req.patch.op == "replace" and req.patch.value == "test"
+        listed = DatasetPatchRequest.model_validate({"patches": [example["patch"]]})
+        assert listed.patches is not None and listed.patches[0].path == "name"
 
     def test_patch_request_requires_patch(self) -> None:
         with pytest.raises(ValidationError, match="patch"):
@@ -170,19 +161,9 @@ class TestDataviewModels:
             DataviewPatchRequest.model_validate({"patch": [{"value": 1}]})
         assert {e["loc"][-1] for e in exc.value.errors()} == {"op", "path"}
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValidationError,
-        reason="BUG: DataviewSchema requires dataset_id but spec DataviewInfo names it ds_id",
-    )
     def test_dataview_accepts_spec_dataview_info(self) -> None:
         assert DataviewSchema.model_validate(_dv_info()).dataset_id == 9423
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValidationError,
-        reason="BUG: DataviewsList cannot parse spec DataviewInfoList (items use ds_id)",
-    )
     def test_dataview_list_accepts_spec_dataview_info_list(self) -> None:
         body = {"dataviews": [_dv_info()], "offset": 0, "limit": 50, "next": "u"}
         assert DataviewsList.model_validate(body).dataviews[0].id == 4
@@ -191,14 +172,10 @@ class TestDataviewModels:
         with pytest.raises(ValidationError, match="dataset_id"):
             DataviewSchema.model_validate({"id": 1, "name": "v"})
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValidationError,
-        reason="BUG: ActiveUsersList expects 'users'; spec DataviewActiveUsers uses 'active_users'",
-    )
     def test_active_users_accepts_spec_shape(self) -> None:
         body = {"active_users": [{"id": 7, "email": "a@example.com", "first_name": "A"}]}
-        assert len(ActiveUsersList.model_validate(body).users) == 1
+        users = ActiveUsersList.model_validate(body).users
+        assert [(u.user_id, u.email) for u in users] == [(7, "a@example.com")]
 
 
 class TestPage:
@@ -224,3 +201,31 @@ class TestPage:
         assert Page[int].model_validate({"items": ["1", 2]}).items == [1, 2]
         with pytest.raises(ValidationError, match="items"):
             Page[int].model_validate({"items": ["x"]})
+
+
+@pytest.mark.parametrize(
+    "name", ["ProjectPatch", "AddUsersToProject", "ProjectUserPatch", "ProjectsPatch"]
+)
+def test_project_request_models_round_trip_the_spec_examples(name: str) -> None:
+    import mammoth.models.projects as projects
+
+    model = getattr(projects, name)
+    for example in schema(name)["examples"]:
+        dumped = model.model_validate(example).model_dump(exclude_none=True)
+        if name == "ProjectsPatch":
+            # One backend example puts ``invite_id`` in ``user_roles``, which has no such field;
+            # the server ignores it, and so does the model.
+            for op in example["patches"]:
+                for item in op["value"]:
+                    for role in item.get("user_roles", []):
+                        role.pop("invite_id", None)
+        assert dumped == example
+
+
+def test_project_request_models_reject_the_old_shapes() -> None:
+    from mammoth.models.projects import AddUsersToProject, ProjectUserPatch
+
+    with pytest.raises(ValidationError):
+        AddUsersToProject.model_validate({"user_emails": ["a@example.com"], "role": "editor"})
+    with pytest.raises(ValidationError):
+        ProjectUserPatch.model_validate({"role": "admin"})

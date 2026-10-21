@@ -59,30 +59,86 @@ class PatchOperation(MammothModel):
     value: Any | None = Field(None, description="New value for the field")
 
 
+ProjectRole = Literal["project_admin", "project_analyst"]
+
+
+class ProjectPatchOp(MammothModel):
+    """One ``ProjectPatch`` operation; ``value`` is the new name or a properties object."""
+
+    op: str = Field(..., min_length=1, max_length=50, description="Operation, e.g. replace")
+    path: Literal["name", "properties", "agent_memory"] = Field(..., description="Field to change")
+    value: str | dict[str, Any] = Field(..., description="New name, or project properties")
+
+
 class ProjectPatch(MammothModel):
     """Schema for project patch operations."""
 
-    patch: list[PatchOperation] = Field(..., description="List of patch operations")
+    patches: list[ProjectPatchOp] = Field(..., description="List of patch operations")
+
+
+class AddUserSpec(MammothModel):
+    """One user to add to a project, with their project role."""
+
+    user_id: int = Field(..., gt=0, description="User id")
+    role: ProjectRole = Field("project_analyst", description="Project role")
 
 
 class AddUsersToProject(MammothModel):
     """Schema for adding users to a project."""
 
-    user_emails: list[str] = Field(..., description="List of user email addresses to add")
-    role: str | None = Field("editor", description="Role for the users (editor, admin)")
+    users: list[AddUserSpec] = Field(..., description="Users to add, each with a project role")
+
+
+class ProjectUserPatchOp(MammothModel):
+    """The one ``ProjectUserPatch`` operation: replace the user's project role."""
+
+    op: Literal["replace"] = "replace"
+    path: Literal["permissions"] = "permissions"
+    value: ProjectRole = Field(..., description="New project role")
 
 
 class ProjectUserPatch(MammothModel):
     """Schema for updating user role in a project."""
 
-    role: str = Field(..., description="New role for the user (editor, admin)")
+    patch: list[ProjectUserPatchOp] = Field(..., description="Role change operations")
+
+
+class UserRolesPatch(MammothModel):
+    """A user and the project role to give them."""
+
+    user_id: int | None = None
+    role: ProjectRole | None = None
+
+
+class InviteRolesPatch(MammothModel):
+    """A pending invite and the project role to give it."""
+
+    invite_id: int | None = None
+    role: ProjectRole = "project_analyst"
+
+
+class UsersToProjectsPatch(MammothModel):
+    """The users and invites one ``ProjectsPatch`` operation applies to one project."""
+
+    project_id: int | None = None
+    user_ids: list[int] | None = None
+    invite_ids: list[int] | None = None
+    user_roles: list[UserRolesPatch] | None = None
+    invite_roles: list[InviteRolesPatch] | None = None
+
+
+class ProjectsPatchOp(MammothModel):
+    """One ``ProjectsPatch`` operation: add, remove or replace roles across projects."""
+
+    op: Literal["replace", "add", "remove"]
+    path: Literal["role"] = "role"
+    value: list[UsersToProjectsPatch]
 
 
 class ProjectsPatch(MammothModel):
-    """Schema for bulk project operations."""
+    """Schema for bulk project role changes."""
 
-    project_ids: list[int] = Field(..., description="List of project IDs to update")
-    operations: list[PatchOperation] = Field(..., description="Operations to perform on projects")
+    patches: list[ProjectsPatchOp] = Field(..., description="Role operations across projects")
 
 
 class DataSyncPatchValue(MammothModel):
