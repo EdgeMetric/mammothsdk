@@ -134,7 +134,6 @@ def keep_columns(data: Any, columns: list[str] | None) -> Any:
     return kept
 
 
-
 def _with_cli_paging(
     data: Any,
     invocation: Invocation,

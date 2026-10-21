@@ -1215,3 +1215,73 @@ commands:
     for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route,
     so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.'
   reviewed_by: primary
+- command_id: dataset.tool-claim.get
+  command_path: dataset tool-claim get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetToolClaim
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_get
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.tool_claim_get with validated request fields.
+  request_model: DatasetToolClaimGetRequest
+  result_model: DatasetToolClaimGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-TOOL-CLAIM-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset tool-claim get --help
+  agent_example: 'mammoth dataset tool-claim get --input ''{"token": "replace-with-secret"}'''
+  unit_tests:
+  - UT-DATASET-TOOL-CLAIM-GET
+  contract_tests:
+  - CT-DATASET-TOOL-CLAIM-GET-HUMAN
+  - CT-DATASET-TOOL-CLAIM-GET-JSON
+  - CT-DATASET-TOOL-CLAIM-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.tool-claim.redeem
+  command_path: dataset tool-claim redeem
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RedeemToolClaim
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_redeem
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.tool_claim_redeem with validated request fields.
+  request_model: DatasetToolClaimRedeemRequest
+  result_model: DatasetToolClaimRedeemResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-TOOL-CLAIM-REDEEM
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset tool-claim redeem --help
+  agent_example: 'mammoth dataset tool-claim redeem --input ''{"token": "replace-with-secret"}'''
+  unit_tests:
+  - UT-DATASET-TOOL-CLAIM-REDEEM
+  contract_tests:
+  - CT-DATASET-TOOL-CLAIM-REDEEM-HUMAN
+  - CT-DATASET-TOOL-CLAIM-REDEEM-JSON
+  - CT-DATASET-TOOL-CLAIM-REDEEM-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing and returns where the tables already are.
+  reviewed_by: primary
+  no_readback: returns the workspace, project and new folder ids; the folder is the new state

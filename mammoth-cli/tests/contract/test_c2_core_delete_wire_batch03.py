@@ -146,6 +146,7 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
         {},
         None,
     )
+
     # The release route rejects an empty id list (4DSET025), so the CLI
     # requires dataset_ids and sends them as the ids query parameter.
     # The bulk delete reads each dataset before (it must exist) and after the

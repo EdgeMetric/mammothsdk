@@ -6965,3 +6965,93 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.chat.attachment.upload
+  command_path: dashboard chat attachment upload
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UploadChatAttachment
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  - name: file
+    type: str
+    required: true
+    metavar: FILE
+    falls_back_to_field: null
+    help: Path to a local file to attach to the dashboard chat.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload with validated request
+    fields.
+  request_model: DashboardChatAttachmentUploadRequest
+  result_model: DashboardChatAttachmentUploadResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard chat attachment upload DASHBOARD_ID FILE --help
+  agent_example: mammoth dashboard chat attachment upload 123 notes.pdf
+  unit_tests:
+  - UT-DASHBOARD-CHAT-ATTACHMENT-UPLOAD
+  contract_tests:
+  - CT-DASHBOARD-CHAT-ATTACHMENT-UPLOAD-HUMAN
+  - CT-DASHBOARD-CHAT-ATTACHMENT-UPLOAD-JSON
+  - CT-DASHBOARD-CHAT-ATTACHMENT-UPLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+  no_readback: returns the attachment ref and metadata; the file is readable only through a chat turn that names the ref
+- command_id: dashboard.unpublished
+  command_path: dashboard unpublished
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetUnpublishedChanges
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.unpublished
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.unpublished with validated request fields.
+  request_model: DashboardUnpublishedRequest
+  result_model: DashboardUnpublishedResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-UNPUBLISHED
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard unpublished DASHBOARD_ID --help
+  agent_example: mammoth dashboard unpublished 123
+  unit_tests:
+  - UT-DASHBOARD-UNPUBLISHED
+  contract_tests:
+  - CT-DASHBOARD-UNPUBLISHED-HUMAN
+  - CT-DASHBOARD-UNPUBLISHED-JSON
+  - CT-DASHBOARD-UNPUBLISHED-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary

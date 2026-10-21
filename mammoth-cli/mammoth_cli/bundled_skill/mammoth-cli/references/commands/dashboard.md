@@ -162,6 +162,16 @@ Result: `DashboardCanvasSaveResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Authored a canvas from a blank one: page-level focus.kpis (sum with unit.prefix GBP, and a countDistinct card), added bar (measure+measure2), hbar, line on a derived ratio measure (canvas.derived),…
 
+### `dashboard.chat.attachment.upload`
+
+Run: `mammoth dashboard chat attachment upload`. Exact input fields: `mammoth schema get dashboard.chat.attachment.upload`.
+
+Example: `mammoth dashboard chat attachment upload 123 notes.pdf`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardChatAttachmentUploadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.chat.edit`
 
 Run: `mammoth dashboard chat edit`. Exact input fields: `mammoth schema get dashboard.chat.edit`.
@@ -979,6 +989,16 @@ Example: `mammoth dashboard trash 123`. Placeholders are illustrative; resolve I
 Result: `DashboardTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.12 — Dashboard sweep 2026-09-18: exit 0 on release with CLI 2.0.12; result keys: n/a. trashed D2=54; confirmed via dashboard list -- 54 no longer appears in the active list Single invocation only; no error-path or variant coverage. Also exercised successfully in t…
+
+### `dashboard.unpublished`
+
+Run: `mammoth dashboard unpublished`. Exact input fields: `mammoth schema get dashboard.unpublished`.
+
+Example: `mammoth dashboard unpublished 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardUnpublishedResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `dashboard.update`
 

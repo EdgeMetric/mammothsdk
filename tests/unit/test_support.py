@@ -1021,3 +1021,609 @@ class TestTemplateAdmin:
         with pytest.raises(MammothValidationError, match="slug"):
             await api.template_export_dashboard(42, "")
         mock_client._request_binary.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Billing actions
+# ---------------------------------------------------------------------------
+
+
+def _call_api(returns: object = None) -> tuple[SupportAPI, AsyncMock]:
+    """A SupportAPI whose HTTP seam is an AsyncMock returning *returns*."""
+    api, mock_client = _make_api()
+    mock_client._request_json = AsyncMock(return_value=returns if returns is not None else {})
+    return api, mock_client._request_json
+
+
+class TestBillingActions:
+    async def test_start_trial_default_length(self):
+        api, call = _call_api({"message": "ok", "trial": {}})
+        await api.billing_start_trial(12)
+        call.assert_called_once_with("POST", "/support/billing/12/start-trial", json={})
+
+    async def test_start_trial_with_days(self):
+        api, call = _call_api()
+        await api.billing_start_trial(12, days=30)
+        call.assert_called_once_with("POST", "/support/billing/12/start-trial", json={"days": 30})
+
+    @pytest.mark.parametrize("days", [0, 61, -1])
+    async def test_start_trial_days_out_of_range(self, days):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="days"):
+            await api.billing_start_trial(12, days=days)
+        call.assert_not_called()
+
+    async def test_end_trial(self):
+        api, call = _call_api()
+        await api.billing_end_trial(12)
+        call.assert_called_once_with("POST", "/support/billing/12/end-trial")
+
+    async def test_retry_payment(self):
+        api, call = _call_api()
+        await api.billing_retry_payment(12)
+        call.assert_called_once_with("POST", "/support/billing/12/retry-payment")
+
+    async def test_refund_full_is_explicit(self):
+        api, call = _call_api()
+        await api.billing_refund(12, full=True)
+        call.assert_called_once_with("POST", "/support/billing/12/refund", params=None)
+
+    async def test_refund_without_amount_or_full_is_refused(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="full"):
+            await api.billing_refund(12)
+        call.assert_not_called()
+
+    async def test_refund_with_amount_and_full_is_refused(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="full"):
+            await api.billing_refund(12, amount=100, full=True)
+        call.assert_not_called()
+
+    async def test_refund_partial_sends_cents_as_query(self):
+        api, call = _call_api()
+        await api.billing_refund(12, amount=2500)
+        call.assert_called_once_with("POST", "/support/billing/12/refund", params={"amount": 2500})
+
+    async def test_refund_rejects_non_positive_amount(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="amount"):
+            await api.billing_refund(12, amount=0)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("amount", [-1, 2.5, "500", True])
+    async def test_refund_rejects_non_int_or_negative_amount(self, amount):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="amount"):
+            await api.billing_refund(12, amount=amount)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("bad", ["5", 2.5, True, None])
+    async def test_ids_must_be_real_integers(self, bad):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="workspace_id"):
+            await api.billing_end_trial(bad)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("days", ["7", 7.5, True])
+    async def test_start_trial_days_must_be_an_int(self, days):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="days"):
+            await api.billing_start_trial(12, days=days)
+        call.assert_not_called()
+
+    async def test_change_plan_defaults_to_now(self):
+        api, call = _call_api()
+        await api.billing_change_plan(12, 7)
+        call.assert_called_once_with(
+            "POST",
+            "/support/billing/12/change-plan",
+            json={"new_plan_id": 7, "when": "now"},
+        )
+
+    async def test_change_plan_period_end_with_storage(self):
+        api, call = _call_api()
+        await api.billing_change_plan(12, 7, when="period_end", storage_gb=500)
+        call.assert_called_once_with(
+            "POST",
+            "/support/billing/12/change-plan",
+            json={"new_plan_id": 7, "when": "period_end", "storage_gb": 500},
+        )
+
+    async def test_change_plan_rejects_unknown_when(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="when"):
+            await api.billing_change_plan(12, 7, when="tomorrow")
+        call.assert_not_called()
+
+    async def test_cancel_subscription(self):
+        api, call = _call_api()
+        await api.billing_cancel_subscription(12, "period_end")
+        call.assert_called_once_with(
+            "POST", "/support/billing/12/cancel-subscription", json={"when": "period_end"}
+        )
+
+    async def test_cancel_subscription_rejects_unknown_when(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="when"):
+            await api.billing_cancel_subscription(12, "later")
+        call.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "method",
+        ["billing_start_trial", "billing_end_trial", "billing_retry_payment", "billing_refund"],
+    )
+    async def test_workspace_id_must_be_positive(self, method):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="workspace_id"):
+            await getattr(api, method)(0)
+        call.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Catalog reads
+# ---------------------------------------------------------------------------
+
+
+class TestCatalogReads:
+    async def test_connector_bucket_impact(self):
+        api, call = _call_api()
+        await api.connector_bucket_impact(9, bucket="pro")
+        call.assert_called_once_with(
+            "GET", "/support/connectors/9/bucket-impact", params={"bucket": "pro"}
+        )
+
+    async def test_connector_bucket_impact_without_bucket(self):
+        api, call = _call_api()
+        await api.connector_bucket_impact(9)
+        call.assert_called_once_with("GET", "/support/connectors/9/bucket-impact", params=None)
+
+    async def test_connector_bucket_impact_invalid_id(self):
+        api, _ = _call_api()
+        with pytest.raises(MammothValidationError, match="connector_id"):
+            await api.connector_bucket_impact(0)
+
+    async def test_entitlement_registry(self):
+        api, call = _call_api()
+        await api.entitlement_registry()
+        call.assert_called_once_with("GET", "/support/entitlements")
+
+    async def test_plan_catalog(self):
+        api, call = _call_api()
+        await api.plan_catalog()
+        call.assert_called_once_with("GET", "/support/plans/catalog")
+
+
+# ---------------------------------------------------------------------------
+# Deals
+# ---------------------------------------------------------------------------
+
+
+class TestDeals:
+    async def test_list_and_get(self):
+        api, call = _call_api()
+        await api.deal_list()
+        call.assert_called_with("GET", "/support/deals")
+        await api.deal_get(4)
+        call.assert_called_with("GET", "/support/deals/4")
+
+    async def test_get_invalid_id(self):
+        api, _ = _call_api()
+        with pytest.raises(MammothValidationError, match="deal_id"):
+            await api.deal_get(0)
+
+    async def test_create_on_existing_workspace_sends_only_given_fields(self):
+        api, call = _call_api({"id": 1, "workspace_id": 5})
+        await api.deal_create(3, workspace_id=5, price=99.5, billing_interval="yearly")
+        call.assert_called_once_with(
+            "POST",
+            "/support/deals",
+            json={
+                "base_plan_id": 3,
+                "workspace_id": 5,
+                "price": 99.5,
+                "billing_interval": "yearly",
+            },
+        )
+
+    async def test_create_with_new_workspace(self):
+        api, call = _call_api()
+        new_ws = {"name": "Acme", "user_email": "a@acme.test"}
+        await api.deal_create(3, workspace_create=new_ws, status="trial", trial_end="2027-01-01")
+        body = call.call_args.kwargs["json"]
+        assert body["workspace_create"] == new_ws
+        assert body["status"] == "trial"
+        assert "workspace_id" not in body
+
+    async def test_create_needs_exactly_one_workspace(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            await api.deal_create(3)
+        with pytest.raises(MammothValidationError, match="exactly one"):
+            await api.deal_create(3, workspace_id=1, workspace_create={"name": "x"})
+        call.assert_not_called()
+
+    async def test_update_sends_only_changed_fields(self):
+        api, call = _call_api()
+        await api.deal_update(4, notes="renewed", contact_email="")
+        call.assert_called_once_with(
+            "PUT", "/support/deals/4", json={"notes": "renewed", "contact_email": ""}
+        )
+
+    async def test_update_without_fields_is_rejected(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="at least one"):
+            await api.deal_update(4)
+        call.assert_not_called()
+
+    async def test_activity_and_preview(self):
+        api, call = _call_api()
+        await api.deal_activity(4)
+        call.assert_called_with("GET", "/support/deals/4/activity")
+        await api.deal_preview_entitlement(4)
+        call.assert_called_with("GET", "/support/deals/4/preview-entitlement")
+
+    async def test_opt_in_keys_and_connectors(self):
+        api, call = _call_api()
+        await api.deal_opt_in(4, keys=["max_users"], connectors=["snowflake"])
+        call.assert_called_once_with(
+            "POST",
+            "/support/deals/4/opt-in",
+            json={"keys": ["max_users"], "connectors": ["snowflake"], "all": False},
+        )
+
+    async def test_opt_in_everything_is_sent_as_all(self):
+        api, call = _call_api()
+        await api.deal_opt_in(4, everything=True)
+        call.assert_called_once_with(
+            "POST", "/support/deals/4/opt-in", json={"keys": [], "connectors": [], "all": True}
+        )
+
+    async def test_opt_in_needs_something_to_release(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="everything"):
+            await api.deal_opt_in(4)
+        call.assert_not_called()
+
+    async def test_move_to_partner_defaults_to_period_end(self):
+        api, call = _call_api()
+        await api.deal_move_to_partner(4, 2, 40.0, "monthly")
+        call.assert_called_once_with(
+            "POST",
+            "/support/deals/4/move-to-partner",
+            json={
+                "partner_id": 2,
+                "price": 40.0,
+                "billing_interval": "monthly",
+                "when": "period_end",
+            },
+        )
+
+    async def test_move_to_partner_validates_inputs(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.deal_move_to_partner(4, 2, -1.0, "monthly")
+        with pytest.raises(MammothValidationError, match="when"):
+            await api.deal_move_to_partner(4, 2, 1.0, "monthly", when="never")
+        with pytest.raises(MammothValidationError, match="partner_id"):
+            await api.deal_move_to_partner(4, 0, 1.0, "monthly")
+        call.assert_not_called()
+
+    async def test_cancel_move_to_partner(self):
+        api, call = _call_api()
+        await api.deal_cancel_move_to_partner(4)
+        call.assert_called_once_with("DELETE", "/support/deals/4/move-to-partner")
+
+
+# ---------------------------------------------------------------------------
+# Identities
+# ---------------------------------------------------------------------------
+
+
+class TestIdentities:
+    async def test_list_without_filters(self):
+        api, call = _call_api()
+        await api.identity_list()
+        call.assert_called_once_with(
+            "GET", "/support/identities", params={"limit": 100, "offset": 0}
+        )
+
+    async def test_list_with_filters(self):
+        api, call = _call_api()
+        await api.identity_list(limit=20, offset=40, search="ann", sort="email", order="desc")
+        call.assert_called_once_with(
+            "GET",
+            "/support/identities",
+            params={"limit": 20, "offset": 40, "search": "ann", "sort": "email", "order": "desc"},
+        )
+
+    async def test_list_follows_the_pages_to_the_end(self):
+        api, call = _call_api()
+        call.side_effect = [
+            {"users": [{"id": i} for i in range(100)]},
+            {"users": [{"id": i} for i in range(100, 130)]},
+        ]
+        result = await api.identity_list()
+        assert [u["id"] for u in result["users"]] == list(range(130))
+        offsets = [c.kwargs["params"]["offset"] for c in call.call_args_list]
+        assert offsets == [0, 100]
+
+    async def test_list_keeps_every_invitee_across_pages(self):
+        """Invitees have ``id`` None and their own ``invite_id``; none may be dropped."""
+        api, call = _call_api()
+
+        def invitee(n):
+            return {"id": None, "invite_id": n, "email": f"i{n}@x.co"}
+
+        call.side_effect = [
+            {"users": [{"id": 1}, {"id": 2}, invitee(1)]},
+            {"users": [invitee(2), invitee(3), {"id": 9}]},
+            {"users": []},
+        ]
+        result = await api.identity_list(limit=3)
+        assert len(result["users"]) == 6
+        assert [u.get("invite_id") for u in result["users"] if u.get("id") is None] == [1, 2, 3]
+
+    async def test_a_page_of_only_invitees_does_not_end_the_listing(self):
+        api, call = _call_api()
+        page1 = [{"id": None, "invite_id": n} for n in (1, 2)]
+        page2 = [{"id": None, "invite_id": n} for n in (3, 4)]
+        call.side_effect = [{"users": page1}, {"users": page2}, {"users": []}]
+        result = await api.identity_list(limit=2)
+        assert len(result["users"]) == 4
+
+    @pytest.mark.parametrize("limit", [0, -1, 101, 2.5, True])
+    async def test_list_rejects_a_page_size_outside_1_to_100(self, limit):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="limit"):
+            await api.identity_list(limit=limit)
+        call.assert_not_called()
+
+    async def test_list_stops_on_a_repeated_page(self):
+        api, call = _call_api()
+        page = {"users": [{"id": i} for i in range(100)]}
+        call.side_effect = [page, page]
+        result = await api.identity_list()
+        assert len(result["users"]) == 100
+        assert call.call_count == 2
+
+    async def test_list_keeps_a_zero_offset(self):
+        api, call = _call_api()
+        await api.identity_list(offset=0)
+        assert call.call_args.kwargs["params"]["offset"] == 0
+
+    async def test_get(self):
+        api, call = _call_api()
+        await api.identity_get(77)
+        call.assert_called_once_with("GET", "/support/identities/77")
+
+    async def test_get_invalid_id(self):
+        api, _ = _call_api()
+        with pytest.raises(MammothValidationError, match="user_id"):
+            await api.identity_get(0)
+
+
+# ---------------------------------------------------------------------------
+# Partners
+# ---------------------------------------------------------------------------
+
+
+class TestPartners:
+    async def test_list_and_get(self):
+        api, call = _call_api()
+        await api.partner_list()
+        call.assert_called_with("GET", "/support/partners")
+        await api.partner_get(2)
+        call.assert_called_with("GET", "/support/partners/2")
+
+    async def test_create(self):
+        api, call = _call_api()
+        await api.partner_create(
+            "Acme", contact_email="ops@acme.test", billing_method="send_invoice"
+        )
+        call.assert_called_once_with(
+            "POST",
+            "/support/partners",
+            json={
+                "name": "Acme",
+                "contact_email": "ops@acme.test",
+                "billing_method": "send_invoice",
+            },
+        )
+
+    async def test_update_sends_only_given_fields_and_empty_clears(self):
+        api, call = _call_api()
+        await api.partner_update(2, status="inactive", notes="")
+        call.assert_called_once_with(
+            "PUT", "/support/partners/2", json={"status": "inactive", "notes": ""}
+        )
+
+    async def test_update_without_fields_is_rejected(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="at least one"):
+            await api.partner_update(2)
+        call.assert_not_called()
+
+    async def test_reads(self):
+        api, call = _call_api()
+        await api.partner_activity(2)
+        call.assert_called_with("GET", "/support/partners/2/activity")
+        await api.partner_billing(2)
+        call.assert_called_with("GET", "/support/partners/2/billing")
+        await api.partner_invoices(2)
+        call.assert_called_with("GET", "/support/partners/2/invoices")
+        await api.partner_client_list(2)
+        call.assert_called_with("GET", "/support/partners/2/workspaces")
+
+    async def test_money_actions(self):
+        api, call = _call_api()
+        await api.partner_charge_invoices(2)
+        call.assert_called_with("POST", "/support/partners/2/charge-invoices")
+        await api.partner_send_payment_link(2)
+        call.assert_called_with("POST", "/support/partners/2/send-payment-link")
+
+    async def test_client_delete(self):
+        api, call = _call_api()
+        await api.partner_client_delete(2, 15)
+        call.assert_called_once_with("DELETE", "/support/partners/2/workspaces/15")
+
+    async def test_client_detach_sends_terms(self):
+        api, call = _call_api()
+        await api.partner_client_detach(
+            2, 15, 120.0, "ap@client.test", billing_interval="yearly", notes="moved"
+        )
+        call.assert_called_once_with(
+            "POST",
+            "/support/partners/2/workspaces/15/detach",
+            json={
+                "price": 120.0,
+                "contact_email": "ap@client.test",
+                "billing_interval": "yearly",
+                "notes": "moved",
+            },
+        )
+
+    async def test_client_detach_price_must_be_positive(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.partner_client_detach(2, 15, 0, "ap@client.test")
+        call.assert_not_called()
+
+    async def test_client_cancel_detach(self):
+        api, call = _call_api()
+        await api.partner_client_cancel_detach(2, 15)
+        call.assert_called_once_with("DELETE", "/support/partners/2/workspaces/15/detach")
+
+    @pytest.mark.parametrize(
+        ("method", "args"),
+        [
+            ("partner_get", (0,)),
+            ("partner_client_delete", (2, 0)),
+            ("partner_client_detach", (0, 1, 1.0, "a@b.test")),
+            ("partner_client_cancel_detach", (0, 1)),
+        ],
+    )
+    async def test_ids_must_be_positive(self, method, args):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="_id"):
+            await getattr(api, method)(*args)
+        call.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Admin home
+# ---------------------------------------------------------------------------
+
+
+class TestAdminHome:
+    async def test_search_sends_q(self):
+        api, call = _call_api({"results": []})
+        await api.search("acme")
+        call.assert_called_once_with("GET", "/support/search", params={"q": "acme"})
+
+    async def test_triage_and_usage_tiles(self):
+        api, call = _call_api()
+        await api.triage()
+        call.assert_called_with("GET", "/support/triage")
+        await api.usage_tiles()
+        call.assert_called_with("GET", "/support/usage-tiles")
+
+
+# ---------------------------------------------------------------------------
+# Workspace admin: activity, entitlement, archive, invites
+# ---------------------------------------------------------------------------
+
+
+class TestWorkspaceAdmin:
+    async def test_reads(self):
+        api, call = _call_api()
+        await api.workspace_activity(8)
+        call.assert_called_with("GET", "/support/workspaces/8/activity")
+        await api.workspace_entitlement(8)
+        call.assert_called_with("GET", "/support/workspaces/8/entitlement")
+        await api.workspace_deal_seed(8)
+        call.assert_called_with("GET", "/support/workspaces/8/deal-seed")
+        await api.workspace_archive_info(8)
+        call.assert_called_with("GET", "/support/workspaces/8/archive")
+
+    async def test_chargebee_cancelled(self):
+        api, call = _call_api()
+        await api.workspace_chargebee_cancelled(8)
+        call.assert_called_once_with("POST", "/support/workspaces/8/chargebee-cancelled")
+
+    async def test_archive_sends_confirmation_and_storage_class(self):
+        api, call = _call_api({"ledger": {}})
+        await api.workspace_archive(8, "GLACIER_IR", "Acme Inc", reason="dormant")
+        call.assert_called_once_with(
+            "POST",
+            "/support/workspaces/8/archive",
+            json={
+                "storage_class": "GLACIER_IR",
+                "confirm_name": "Acme Inc",
+                "cancel_billing": False,
+                "reason": "dormant",
+            },
+        )
+
+    async def test_archive_can_cancel_billing(self):
+        api, call = _call_api()
+        await api.workspace_archive(8, "DEEP_ARCHIVE", "Acme Inc", cancel_billing=True)
+        assert call.call_args.kwargs["json"]["cancel_billing"] is True
+
+    async def test_archive_validates_storage_class_and_name(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="storage_class"):
+            await api.workspace_archive(8, "STANDARD", "Acme Inc")
+        with pytest.raises(MammothValidationError, match="confirm_name"):
+            await api.workspace_archive(8, "GLACIER_IR", "")
+        call.assert_not_called()
+
+    async def test_restore_archive(self):
+        api, call = _call_api()
+        await api.workspace_restore_archive(8)
+        call.assert_called_once_with("POST", "/support/workspaces/8/restore")
+
+    async def test_invite_cancel_and_resend(self):
+        api, call = _call_api()
+        await api.workspace_invite_cancel(8, 31)
+        call.assert_called_with("DELETE", "/support/workspaces/8/users/invites/31")
+        await api.workspace_invite_resend(8, 31)
+        call.assert_called_with("POST", "/support/workspaces/8/users/invites/31/resend")
+
+    async def test_invite_ids_must_be_positive(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="invite_id"):
+            await api.workspace_invite_cancel(8, 0)
+        with pytest.raises(MammothValidationError, match="workspace_id"):
+            await api.workspace_invite_resend(0, 1)
+        call.assert_not_called()
+
+
+class TestBillingIntervalAndTypes:
+    @pytest.mark.parametrize("interval", ["month", "year", "weekly"])
+    async def test_a_billing_interval_outside_the_server_cycles_is_refused(self, interval):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_create(3, workspace_id=5, price=1.0, billing_interval=interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_update(3, billing_interval=interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_move_to_partner(4, 2, 1.0, interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.partner_client_detach(2, 15, 1.0, "a@b.co", billing_interval=interval)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("interval", ["monthly", "yearly", "annual"])
+    async def test_the_server_cycles_are_accepted(self, interval):
+        api, call = _call_api()
+        await api.deal_update(3, billing_interval=interval)
+        assert call.call_args.kwargs["json"]["billing_interval"] == interval
+
+    @pytest.mark.parametrize("price", ["9", True, None])
+    async def test_a_non_number_price_is_a_validation_error(self, price):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.deal_move_to_partner(4, 2, price, "monthly")
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.partner_client_detach(2, 15, price, "a@b.co")
+        call.assert_not_called()

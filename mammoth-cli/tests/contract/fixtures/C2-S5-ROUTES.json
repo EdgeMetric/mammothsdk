@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 65,
+  "route_count": 67,
   "families": {
     "view_export": 30,
-    "connector": 22,
+    "connector": 24,
     "external-key": 4,
     "webhook": 7
   },
@@ -3910,6 +3910,83 @@
         "method": "POST",
         "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports/rest-fill",
         "body": "json:docs_url,notes",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.list-all",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.list_all_connections",
+      "field_destinations": {
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "query"
+        },
+        "offset": {
+          "source": "input",
+          "destination": "offset",
+          "wire": "query"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connections",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.test",
+      "sdk_symbol": "mammoth.api.connectors.ConnectorsAPI.test_connection",
+      "field_destinations": {
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/connections/{connection_key}/test",
+        "body": "none",
         "checks": [
           "method",
           "path",

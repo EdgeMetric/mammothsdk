@@ -17,8 +17,6 @@ import os
 import sys
 from typing import Any, TextIO
 
-import yaml
-
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENTS, EXIT_USAGE, CliError
 
 from .normalize import normalize
@@ -60,6 +58,8 @@ def render(
         # rows, schema documents, revealed secrets) that JSON accepts, so a round trip makes
         # yaml carry exactly what ``--output json`` carries.
         document = json.loads(json.dumps(envelope, ensure_ascii=False, allow_nan=False))
+        import yaml  # imported here: only ``--output yaml`` needs it (about 12 ms)
+
         yaml.safe_dump(document, stream, sort_keys=True, allow_unicode=True)
     elif output in ("plain", "table") and (text := _document_text(envelope)) is not None:
         stream.write(text if text.endswith("\n") else text + "\n")

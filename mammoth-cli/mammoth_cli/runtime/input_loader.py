@@ -14,10 +14,9 @@ from __future__ import annotations
 import json
 import math
 import sys
+from functools import cache
 from pathlib import Path
-from typing import Any
-
-import yaml
+from typing import TYPE_CHECKING, Any
 
 from mammoth_cli.errors.envelope import (
     CODE_INPUT_FORMAT_REQUIRED,
@@ -60,28 +59,48 @@ class _NonFiniteNumberError(ValueError):
     """Internal marker raised by the strict JSON constant hook."""
 
 
-class _StrictYamlLoader(yaml.SafeLoader):
-    """Safe YAML loader that does not silently apply last-key-wins parsing."""
+if TYPE_CHECKING:
+    import yaml
 
 
-def _construct_yaml_mapping(
-    loader: _StrictYamlLoader, node: yaml.nodes.MappingNode, deep: bool = False
-) -> dict[Any, Any]:
-    loader.flatten_mapping(node)
-    # PyYAML's stubs leave ``construct_object`` untyped.
-    construct: Any = loader.construct_object
-    mapping: dict[Any, Any] = {}
-    for key_node, value_node in node.value:
-        key = construct(key_node, deep=deep)
-        if key in mapping:
-            raise _DuplicateKeyError
-        mapping[key] = construct(value_node, deep=deep)
-    return mapping
+@cache
+def _strict_yaml_loader() -> type[yaml.SafeLoader]:
+    """The strict YAML loader class, built on first use.
+
+    PyYAML costs about 30 ms to import and only a ``--input`` document in YAML needs it,
+    so neither the import nor the class happens before then.
+    """
+    import yaml
+
+    class StrictYamlLoader(yaml.SafeLoader):
+        """Safe YAML loader that does not silently apply last-key-wins parsing."""
+
+    def construct_mapping(
+        loader: StrictYamlLoader, node: yaml.nodes.MappingNode, deep: bool = False
+    ) -> dict[Any, Any]:
+        loader.flatten_mapping(node)
+        # PyYAML's stubs leave ``construct_object`` untyped.
+        construct: Any = loader.construct_object
+        mapping: dict[Any, Any] = {}
+        for key_node, value_node in node.value:
+            key = construct(key_node, deep=deep)
+            if key in mapping:
+                raise _DuplicateKeyError
+            mapping[key] = construct(value_node, deep=deep)
+        return mapping
+
+    StrictYamlLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
+    )
+    return StrictYamlLoader
 
 
-_StrictYamlLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_yaml_mapping
-)
+def _parse_errors() -> tuple[type[Exception], ...]:
+    """The exceptions a malformed document raises; YAML's only once YAML has been imported."""
+    yaml_module = sys.modules.get("yaml")
+    if yaml_module is None:
+        return (json.JSONDecodeError, RecursionError)
+    return (json.JSONDecodeError, yaml_module.YAMLError, RecursionError)
 
 
 def _limit_error(code: str, message: str, hint: str) -> CliError:
@@ -347,7 +366,9 @@ def _parse(text: str, fmt: str) -> Any:
                 parse_float=_parse_finite_float,
             )
         _check_yaml_depth(text)
-        document = yaml.load(text, Loader=_StrictYamlLoader)  # noqa: S506
+        import yaml
+
+        document = yaml.load(text, Loader=_strict_yaml_loader())  # noqa: S506
         _check_loaded_depth(document)
         if _contains_nonfinite(document):
             raise _NonFiniteNumberError
@@ -366,7 +387,7 @@ def _parse(text: str, fmt: str) -> Any:
             exit_status=EXIT_USAGE,
             hint="Use a finite JSON number instead of NaN or Infinity.",
         ) from exc
-    except (json.JSONDecodeError, yaml.YAMLError, RecursionError) as exc:
+    except _parse_errors() as exc:
         where = _where_it_broke(text, exc)
         place = f" at line {where['line']} column {where['column']}" if "line" in where else ""
         raise CliError(

@@ -114,6 +114,16 @@ Result: `ConnectorConnectionListResult`; mutation `read`, confirmation `none`, w
 
 Status on release: observed blocker — server_error: see sweep report. Re-check before relying on it.
 
+### `connector.connection.list-all`
+
+Run: `mammoth connector connection list-all`. Exact input fields: `mammoth schema get connector.connection.list-all`.
+
+Example: `mammoth connector connection list-all`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorConnectionListAllResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `connector.connection.query`
 
 Run: `mammoth connector connection query`. Exact input fields: `mammoth schema get connector.connection.query`.
@@ -121,6 +131,16 @@ Run: `mammoth connector connection query`. Exact input fields: `mammoth schema g
 Example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorConnectionQueryResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.connection.test`
+
+Run: `mammoth connector connection test`. Exact input fields: `mammoth schema get connector.connection.test`.
+
+Example: `mammoth connector connection test prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorConnectionTestResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

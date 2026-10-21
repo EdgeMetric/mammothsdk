@@ -16,7 +16,7 @@ Status on release: observed blocker — backend_error: The CLI gates this GET be
 
 Run: `mammoth billing hosted-page`. Exact input fields: `mammoth schema get billing.hosted-page`.
 
-Example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing hosted-page change_plan --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingHostedPageResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -66,7 +66,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe create`. Exact input fields: `mammoth schema get billing.stripe.create`.
 
-Example: `mammoth billing stripe create 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe create 123 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeCreateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -89,6 +89,26 @@ Run: `mammoth billing stripe get`. Exact input fields: `mammoth schema get billi
 Example: `mammoth billing stripe get`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `BillingStripeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `billing.stripe.held-change.cancel`
+
+Run: `mammoth billing stripe held-change cancel`. Exact input fields: `mammoth schema get billing.stripe.held-change.cancel`.
+
+Example: `mammoth billing stripe held-change cancel --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `BillingStripeHeldChangeCancelResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `billing.stripe.held-change.get`
+
+Run: `mammoth billing stripe held-change get`. Exact input fields: `mammoth schema get billing.stripe.held-change.get`.
+
+Example: `mammoth billing stripe held-change get`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BillingStripeHeldChangeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

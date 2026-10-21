@@ -165,7 +165,8 @@ def _strip_documentation(node: Any) -> Any:
         return {
             key: _strip_documentation(value)
             for key, value in sorted(node.items())
-            if key not in {
+            if key
+            not in {
                 "default",
                 "description",
                 "example",

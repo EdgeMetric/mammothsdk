@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.93.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 785.
+Total commands: 859.
 
 ## activity
 
@@ -75,6 +75,133 @@ Total commands: 785.
 
 ## agent
 
+### `mammoth agent access askers`
+
+**Arguments**
+
+- `PROJECT_ID` (int, required) — ID of the project whose askers to list.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_project_askers`
+- Agent example: `mammoth agent access askers 123`
+
+### `mammoth agent access chart save`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+- `TURN_ID` (str, required) — ID of the turn.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_chart_save`
+- Agent example: `mammoth agent access chart save resource-123 resource-123`
+
+### `mammoth agent access grant give`
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_give`
+- Agent example: `mammoth agent access grant give --input '{"emails": ["analyst@example.com"], "level": "ask", "items": [{"project_id": 1}]}' --yes`
+
+### `mammoth agent access grant list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grants_list`
+- Agent example: `mammoth agent access grant list`
+
+### `mammoth agent access grant revoke`
+
+**Arguments**
+
+- `GRANT_ID` (int, required) — ID of the grant.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_revoke`
+- Agent example: `mammoth agent access grant revoke 123 --yes`
+
+### `mammoth agent access grant update`
+
+**Arguments**
+
+- `GRANT_ID` (int, required) — ID of the grant.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_update`
+- Agent example: `mammoth agent access grant update 123`
+
+### `mammoth agent access me`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_me`
+- Agent example: `mammoth agent access me`
+
+### `mammoth agent access people`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_people`
+- Agent example: `mammoth agent access people`
+
+### `mammoth agent access reach`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_reach`
+- Agent example: `mammoth agent access reach`
+
+### `mammoth agent access request add-to-context`
+
+**Arguments**
+
+- `REQUEST_ID` (int, required) — ID of the request.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_add_to_context`
+- Agent example: `mammoth agent access request add-to-context 123`
+
+### `mammoth agent access request create`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_create`
+- Agent example: `mammoth agent access request create --input '{"kind": "access", "text": "Please share the Sales project"}'`
+
+### `mammoth agent access request list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_requests_list`
+- Agent example: `mammoth agent access request list`
+
+### `mammoth agent access request mine`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_requests_mine`
+- Agent example: `mammoth agent access request mine resource-123`
+
+### `mammoth agent access request resolve`
+
+**Arguments**
+
+- `REQUEST_ID` (int, required) — ID of the request.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_resolve`
+- Agent example: `mammoth agent access request resolve 123 --input '{"status": "done"}' --yes`
+
 ### `mammoth agent access set`
 
 **Arguments**
@@ -85,6 +212,27 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
 - Agent example: `mammoth agent access set revenue-assistant --input '{"role": "member", "propose": true}'`
+
+### `mammoth agent access settings get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_get`
+- Agent example: `mammoth agent access settings get`
+
+### `mammoth agent access settings update`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_update`
+- Agent example: `mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123`
+
+### `mammoth agent access tree`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_tree`
+- Agent example: `mammoth agent access tree`
 
 ### `mammoth agent action delete`
 
@@ -584,6 +732,17 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_delete`
 - Agent example: `mammoth agent session delete resource-123 --yes`
 
+### `mammoth agent session feedback list`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_feedback_list`
+- Agent example: `mammoth agent session feedback list resource-123`
+
 ### `mammoth agent session list`
 
 - Mutation class: `read`
@@ -634,6 +793,18 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.turn_cancel`
 - Agent example: `mammoth agent turn cancel resource-123`
+
+### `mammoth agent turn rate`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+- `TURN_ID` (str, required) — ID of the turn.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_rate`
+- Agent example: `mammoth agent turn rate resource-123 resource-123 --input '{"rating": "up"}'`
 
 ### `mammoth agent update`
 
@@ -971,7 +1142,7 @@ Total commands: 785.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.hosted_page`
-- Agent example: `mammoth billing hosted-page change_plan --yes --confirm change_plan`
+- Agent example: `mammoth billing hosted-page change_plan --yes --confirm 123`
 
 ### `mammoth billing invoice charge`
 
@@ -1010,7 +1181,7 @@ Total commands: 785.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_create`
-- Agent example: `mammoth billing stripe create 123 --yes --confirm 123`
+- Agent example: `mammoth billing stripe create 123 --yes --confirm 456`
 
 ### `mammoth billing stripe end-trial`
 
@@ -1025,6 +1196,20 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_get`
 - Agent example: `mammoth billing stripe get`
+
+### `mammoth billing stripe held-change cancel`
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_held_change_cancel`
+- Agent example: `mammoth billing stripe held-change cancel --yes --confirm 123`
+
+### `mammoth billing stripe held-change get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_held_change_get`
+- Agent example: `mammoth billing stripe held-change get`
 
 ### `mammoth billing stripe history`
 
@@ -1725,6 +1910,13 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_connections`
 - Agent example: `mammoth connector connection list postgres`
 
+### `mammoth connector connection list-all`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_all_connections`
+- Agent example: `mammoth connector connection list-all`
+
 ### `mammoth connector connection query`
 
 **Arguments**
@@ -1736,6 +1928,17 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
 - Agent example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
+
+### `mammoth connector connection test`
+
+**Arguments**
+
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connectors.ConnectorsAPI.test_connection`
+- Agent example: `mammoth connector connection test prod-warehouse`
 
 ### `mammoth connector connection update`
 
@@ -2073,6 +2276,18 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
 - Agent example: `mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}'`
+
+### `mammoth dashboard chat attachment upload`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+- `FILE` (str, required) — Path to a local file to attach to the dashboard chat.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload`
+- Agent example: `mammoth dashboard chat attachment upload 123 notes.pdf`
 
 ### `mammoth dashboard chat edit`
 
@@ -3465,6 +3680,17 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.trash`
 - Agent example: `mammoth dashboard trash 123`
 
+### `mammoth dashboard unpublished`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.unpublished`
+- Agent example: `mammoth dashboard unpublished 123`
+
 ### `mammoth dashboard update`
 
 **Arguments**
@@ -3926,6 +4152,20 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.dataset.search`
 - Agent example: `mammoth dataset search 'New Year Sale'`
+
+### `mammoth dataset tool-claim get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.tool_claim_get`
+- Agent example: `mammoth dataset tool-claim get --input '{"token": "replace-with-secret"}'`
+
+### `mammoth dataset tool-claim redeem`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.tool_claim_redeem`
+- Agent example: `mammoth dataset tool-claim redeem --input '{"token": "replace-with-secret"}'`
 
 ### `mammoth dataset trash`
 
@@ -4986,6 +5226,84 @@ Total commands: 785.
 
 ## support
 
+### `mammoth support billing cancel-subscription`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_cancel_subscription`
+- Agent example: `mammoth support billing cancel-subscription 123 --input '{"when": "period_end"}' --yes --confirm 123`
+
+### `mammoth support billing change-plan`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `NEW_PLAN_ID` (int, required) — ID of the new plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_change_plan`
+- Agent example: `mammoth support billing change-plan 123 456 --yes --confirm 123`
+
+### `mammoth support billing end-trial`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_end_trial`
+- Agent example: `mammoth support billing end-trial 123 --yes --confirm 123`
+
+### `mammoth support billing refund`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_refund`
+- Agent example: `mammoth support billing refund 123 --input '{"amount": 500}' --yes --confirm 123`
+
+### `mammoth support billing retry-payment`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_retry_payment`
+- Agent example: `mammoth support billing retry-payment 123 --yes --confirm 123`
+
+### `mammoth support billing start-trial`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.billing_start_trial`
+- Agent example: `mammoth support billing start-trial 123 --input '{"days": 14}' --yes --confirm 123`
+
+### `mammoth support connector bucket-impact`
+
+**Arguments**
+
+- `CONNECTOR_ID` (int, required) — ID of the connector.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.connector_bucket_impact`
+- Agent example: `mammoth support connector bucket-impact 123`
+
 ### `mammoth support connector create`
 
 **Arguments**
@@ -5077,6 +5395,109 @@ Total commands: 785.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.connector_profile_update`
 - Agent example: `mammoth support connector-profile update 123 --yes --confirm 123`
+
+### `mammoth support deal activity`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_activity`
+- Agent example: `mammoth support deal activity 123`
+
+### `mammoth support deal cancel-move-to-partner`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_cancel_move_to_partner`
+- Agent example: `mammoth support deal cancel-move-to-partner 123 --yes --confirm 123`
+
+### `mammoth support deal create`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, optional) — ID of the workspace to put the deal on; omit it and pass 'workspace_create'.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_create`
+- Agent example: `mammoth support deal create 123 --input '{"base_plan_id": 3, "price": 1200.0}' --yes --confirm 123`
+
+### `mammoth support deal get`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_get`
+- Agent example: `mammoth support deal get 123`
+
+### `mammoth support deal list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_list`
+- Agent example: `mammoth support deal list`
+
+### `mammoth support deal move-to-partner`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_move_to_partner`
+- Agent example: `mammoth support deal move-to-partner 123 456 --input '{"price": 900.0, "billing_interval": "monthly"}' --yes --confirm 123`
+
+### `mammoth support deal opt-in`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_opt_in`
+- Agent example: `mammoth support deal opt-in 123 --input '{"everything": true}' --yes --confirm 123`
+
+### `mammoth support deal preview-entitlement`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_preview_entitlement`
+- Agent example: `mammoth support deal preview-entitlement 123`
+
+### `mammoth support deal update`
+
+**Arguments**
+
+- `DEAL_ID` (int, required) — ID of the deal.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.deal_update`
+- Agent example: `mammoth support deal update 123 --input '{"notes": "Renewal agreed"}' --yes --confirm 123`
+
+### `mammoth support entitlement registry`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.entitlement_registry`
+- Agent example: `mammoth support entitlement registry`
 
 ### `mammoth support feature create`
 
@@ -5170,6 +5591,24 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.feature_profile_update`
 - Agent example: `mammoth support feature-profile update 123 --yes --confirm 123`
 
+### `mammoth support identity get`
+
+**Arguments**
+
+- `USER_ID` (int, required) — ID of the user.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.identity_get`
+- Agent example: `mammoth support identity get 123`
+
+### `mammoth support identity list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.identity_list`
+- Agent example: `mammoth support identity list`
+
 ### `mammoth support ownership transfer`
 
 **Arguments**
@@ -5182,6 +5621,148 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.ownership_transfer`
 - Agent example: `mammoth support ownership transfer 123 456 --yes --confirm 123`
 
+### `mammoth support partner activity`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_activity`
+- Agent example: `mammoth support partner activity 123`
+
+### `mammoth support partner billing`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_billing`
+- Agent example: `mammoth support partner billing 123`
+
+### `mammoth support partner charge-invoices`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_charge_invoices`
+- Agent example: `mammoth support partner charge-invoices 123 --yes --confirm 123`
+
+### `mammoth support partner client cancel-detach`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_client_cancel_detach`
+- Agent example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 456`
+
+### `mammoth support partner client delete`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_client_delete`
+- Agent example: `mammoth support partner client delete 123 456 --yes --confirm 456`
+
+### `mammoth support partner client detach`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_client_detach`
+- Agent example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 456`
+
+### `mammoth support partner client list`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_client_list`
+- Agent example: `mammoth support partner client list 123`
+
+### `mammoth support partner create`
+
+**Arguments**
+
+- `NAME` (str, optional) — Name of the new partner; or pass it via the 'name' input field.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_create`
+- Agent example: `mammoth support partner create 'Revenue report' --yes --confirm 'Revenue report'`
+
+### `mammoth support partner get`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_get`
+- Agent example: `mammoth support partner get 123`
+
+### `mammoth support partner invoices`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_invoices`
+- Agent example: `mammoth support partner invoices 123`
+
+### `mammoth support partner list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_list`
+- Agent example: `mammoth support partner list`
+
+### `mammoth support partner send-payment-link`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_send_payment_link`
+- Agent example: `mammoth support partner send-payment-link 123 --yes --confirm 123`
+
+### `mammoth support partner update`
+
+**Arguments**
+
+- `PARTNER_ID` (int, required) — ID of the partner.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.partner_update`
+- Agent example: `mammoth support partner update 123 --input '{"notes": "Prefers invoices"}' --yes --confirm 123`
+
 ### `mammoth support plan archive`
 
 **Arguments**
@@ -5192,6 +5773,13 @@ Total commands: 785.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_archive`
 - Agent example: `mammoth support plan archive 123 --yes --confirm 123`
+
+### `mammoth support plan catalog`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_catalog`
+- Agent example: `mammoth support plan catalog`
 
 ### `mammoth support plan chargebee-list`
 
@@ -5257,7 +5845,7 @@ Total commands: 785.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_archive`
-- Agent example: `mammoth support plan storage-option archive 123 456 --yes --confirm 123`
+- Agent example: `mammoth support plan storage-option archive 123 456 --yes --confirm 456`
 
 ### `mammoth support plan storage-option create`
 
@@ -5291,7 +5879,7 @@ Total commands: 785.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_storage_option_update`
-- Agent example: `mammoth support plan storage-option update 123 456 --yes --confirm 123`
+- Agent example: `mammoth support plan storage-option update 123 456 --yes --confirm 456`
 
 ### `mammoth support plan unarchive`
 
@@ -5315,6 +5903,17 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update`
 - Agent example: `mammoth support plan update 123 --yes --confirm 123`
 
+### `mammoth support plan update-entitlements`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_update_entitlements`
+- Agent example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123`
+
 ### `mammoth support plan update-storage-tiers`
 
 **Arguments**
@@ -5325,6 +5924,17 @@ Total commands: 785.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
 - Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`
+
+### `mammoth support search`
+
+**Arguments**
+
+- `Q` (str, optional) — Text to search for (a workspace, user, deal or partner); or the 'q' field.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.search`
+- Agent example: `mammoth support search acme`
 
 ### `mammoth support subscription create`
 
@@ -5526,6 +6136,20 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.template_unpublish`
 - Agent example: `mammoth support template unpublish revenue-overview --yes --confirm revenue-overview`
 
+### `mammoth support triage`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.triage`
+- Agent example: `mammoth support triage`
+
+### `mammoth support usage-tiles`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.usage_tiles`
+- Agent example: `mammoth support usage-tiles`
+
 ### `mammoth support user list-all`
 
 - Mutation class: `read`
@@ -5555,6 +6179,50 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.user_update`
 - Agent example: `mammoth support user update analyst@example.com --input '{"verified": true}' --yes --confirm analyst@example.com`
 
+### `mammoth support workspace activity`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_activity`
+- Agent example: `mammoth support workspace activity 123`
+
+### `mammoth support workspace archive`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_archive`
+- Agent example: `mammoth support workspace archive 123 --input '{"storage_class": "GLACIER_IR", "confirm_name": "Revenue report", "reason": "Customer left"}' --yes --confirm 123`
+
+### `mammoth support workspace archive-info`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_archive_info`
+- Agent example: `mammoth support workspace archive-info 123`
+
+### `mammoth support workspace chargebee-cancelled`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_chargebee_cancelled`
+- Agent example: `mammoth support workspace chargebee-cancelled 123 --yes --confirm 123`
+
 ### `mammoth support workspace create`
 
 **Arguments**
@@ -5565,6 +6233,17 @@ Total commands: 785.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_create`
 - Agent example: `mammoth support workspace create 'Revenue report' --input '{"user_email": "analyst@example.com", "payment_frequency": "monthly"}' --yes --confirm 'Revenue report'`
+
+### `mammoth support workspace deal-seed`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_deal_seed`
+- Agent example: `mammoth support workspace deal-seed 123`
 
 ### `mammoth support workspace delete`
 
@@ -5577,6 +6256,17 @@ Total commands: 785.
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_delete`
 - Agent example: `mammoth support workspace delete 123 --yes --confirm 123`
 
+### `mammoth support workspace entitlement`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_entitlement`
+- Agent example: `mammoth support workspace entitlement 123`
+
 ### `mammoth support workspace get`
 
 **Arguments**
@@ -5587,6 +6277,30 @@ Total commands: 785.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_get`
 - Agent example: `mammoth support workspace get 123`
+
+### `mammoth support workspace invite cancel`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `INVITE_ID` (int, required) — ID of the invite.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_invite_cancel`
+- Agent example: `mammoth support workspace invite cancel 123 456 --yes --confirm 123`
+
+### `mammoth support workspace invite resend`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `INVITE_ID` (int, required) — ID of the invite.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_invite_resend`
+- Agent example: `mammoth support workspace invite resend 123 456 --yes --confirm 123`
 
 ### `mammoth support workspace list`
 
@@ -5605,6 +6319,17 @@ Total commands: 785.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_restore_access`
 - Agent example: `mammoth support workspace restore-access 123 --yes --confirm 123`
+
+### `mammoth support workspace restore-archive`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_restore_archive`
+- Agent example: `mammoth support workspace restore-archive 123 --yes --confirm 123`
 
 ### `mammoth support workspace suspend-access`
 
@@ -7056,6 +7781,18 @@ Total commands: 785.
   `view.transform.substring`), and inspect one with
   `mammoth schema get view.transform.filter` before composing a
   transformation.
+
+### `mammoth view task preview-cancel`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `JOB_ID` (int, required) — ID of the job.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.preview_cancel`
+- Agent example: `mammoth view task preview-cancel 123 456`
 
 ### `mammoth view task update`
 

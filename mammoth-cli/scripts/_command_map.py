@@ -88,6 +88,20 @@ INTERNAL_ONLY: dict[str, str] = {
     "GetProjectMove": "Staff-only support route: status of a project move.",
     "PurgeProjectMove": "Staff-only support route: purges the source of a finished project move.",
     "CollectionsReach": "Web library page: the Live pill counting a collection's readers.",
+    "GetChatAttachment": (
+        "Web editor chat panel: bytes of a file attached to a dashboard's AI chat "
+        "(att:<sha> thumbnails and page views); the caller already has the file."
+    ),
+    "StreamJob": (
+        "Server-Sent Events push of one job's progress. It works over curl, but it only "
+        "arrives sooner than polling for task previews, and 'job wait' already follows the "
+        "same job to its end, so a command would add nothing."
+    ),
+    "StartToolClaim": (
+        "Public web sign-up step of an emailed Open tables link: makes an account for a "
+        "visitor with none and returns a one-time browser sign-in URL; CLI users are "
+        "already signed in and use 'dataset tool-claim redeem'."
+    ),
 }
 
 # --- Routes the SDK calls that the server on master does not serve yet ------
@@ -169,6 +183,60 @@ PENDING_SERVER_RELEASE.update(
         for method, suffix in (("GET", ""), ("POST", ""), ("DELETE", "/{}"))
     }
 )
+# Support admin console (45 routes): on server master since bd054e3685 (2026-10-06), after the
+# pinned master snapshot (master-20261002) was exported.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@cdbc7a6ed2"
+        for method, path in (
+            ("POST", "/support/billing/{}/cancel-subscription"),
+            ("POST", "/support/billing/{}/change-plan"),
+            ("POST", "/support/billing/{}/end-trial"),
+            ("POST", "/support/billing/{}/refund"),
+            ("POST", "/support/billing/{}/retry-payment"),
+            ("POST", "/support/billing/{}/start-trial"),
+            ("GET", "/support/connectors/{}/bucket-impact"),
+            ("GET", "/support/deals"),
+            ("POST", "/support/deals"),
+            ("GET", "/support/deals/{}"),
+            ("PUT", "/support/deals/{}"),
+            ("GET", "/support/deals/{}/activity"),
+            ("DELETE", "/support/deals/{}/move-to-partner"),
+            ("POST", "/support/deals/{}/move-to-partner"),
+            ("POST", "/support/deals/{}/opt-in"),
+            ("GET", "/support/deals/{}/preview-entitlement"),
+            ("GET", "/support/entitlements"),
+            ("GET", "/support/identities"),
+            ("GET", "/support/identities/{}"),
+            ("GET", "/support/partners"),
+            ("POST", "/support/partners"),
+            ("GET", "/support/partners/{}"),
+            ("PUT", "/support/partners/{}"),
+            ("GET", "/support/partners/{}/activity"),
+            ("GET", "/support/partners/{}/billing"),
+            ("POST", "/support/partners/{}/charge-invoices"),
+            ("GET", "/support/partners/{}/invoices"),
+            ("POST", "/support/partners/{}/send-payment-link"),
+            ("GET", "/support/partners/{}/workspaces"),
+            ("DELETE", "/support/partners/{}/workspaces/{}"),
+            ("DELETE", "/support/partners/{}/workspaces/{}/detach"),
+            ("POST", "/support/partners/{}/workspaces/{}/detach"),
+            ("GET", "/support/plans/catalog"),
+            ("GET", "/support/search"),
+            ("GET", "/support/triage"),
+            ("GET", "/support/usage-tiles"),
+            ("GET", "/support/workspaces/{}/activity"),
+            ("GET", "/support/workspaces/{}/archive"),
+            ("POST", "/support/workspaces/{}/archive"),
+            ("POST", "/support/workspaces/{}/chargebee-cancelled"),
+            ("GET", "/support/workspaces/{}/deal-seed"),
+            ("GET", "/support/workspaces/{}/entitlement"),
+            ("POST", "/support/workspaces/{}/restore"),
+            ("DELETE", "/support/workspaces/{}/users/invites/{}"),
+            ("POST", "/support/workspaces/{}/users/invites/{}/resend"),
+        )
+    }
+)
 # On server master (and release) since the pinned master snapshot, for mammoth-io 0.8.44.
 PENDING_SERVER_RELEASE.update(
     {
@@ -210,6 +278,49 @@ PENDING_SERVER_RELEASE.update(
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"
 ]
+# --- feat/agent-access-ops: on server master since the pinned master snapshot
+# (master-20261002) was exported, and in the live prod openapi.json. Agent access, turn
+# feedback, dashboard unpublished changes, plan entitlements, tool claims, connection
+# overview and test, task preview cancel and the held plan change. Kept as its own block
+# so it merges cleanly beside other branches' blocks.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@cdbc7a6ed2"
+        for method, path in (
+            ("GET", "/agents/access/grants"),
+            ("POST", "/agents/access/grants"),
+            ("PATCH", "/agents/access/grants/{}"),
+            ("DELETE", "/agents/access/grants/{}"),
+            ("GET", "/agents/access/me"),
+            ("GET", "/agents/access/people"),
+            ("GET", "/agents/access/projects/{}/askers"),
+            ("GET", "/agents/access/reach"),
+            ("GET", "/agents/access/requests"),
+            ("POST", "/agents/access/requests"),
+            ("GET", "/agents/access/requests/mine"),
+            ("PATCH", "/agents/access/requests/{}"),
+            ("POST", "/agents/access/requests/{}/project-context"),
+            ("POST", "/agents/access/saved-charts"),
+            ("GET", "/agents/access/settings"),
+            ("PATCH", "/agents/access/settings"),
+            ("GET", "/agents/access/tree"),
+            ("GET", "/agents/sessions/{}/feedback"),
+            ("POST", "/agents/sessions/{}/turns/{}/feedback"),
+            ("GET", "/dashboards/{}/unpublished"),
+            ("PUT", "/subscription/plans/{}/entitlements"),
+            ("GET", "/tool-claims"),
+            ("POST", "/workspaces/{}/projects/{}/tool-claims"),
+            ("GET", "/workspaces/{}/projects/{}/connections"),
+            ("PATCH", "/workspaces/{}/projects/{}/connections/{}/test"),
+            (
+                "DELETE",
+                "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/task_preview/{}",
+            ),
+            ("GET", "/workspaces/{}/subscription/held-change"),
+            ("POST", "/workspaces/{}/subscription/held-change/cancel"),
+        )
+    }
+)
 
 # --- Operations that alias another command (identical behavior) ------------
 OP_ALIAS: dict[str, str] = {
@@ -897,6 +1008,84 @@ OVERRIDES: dict[str, str] = {
     "DuplicateWorkflow": "workflow.duplicate",
     "UndoWorkflowSave": "workflow.save-undo",
     "CancelWorkflowSaveStep": "workflow.save-cancel-step",
+    # Support admin console (billing actions, deals, partners, identities, catalog, archive).
+    "SupportStartTrial": "support.billing.start-trial",
+    "SupportEndTrial": "support.billing.end-trial",
+    "SupportRetryPayment": "support.billing.retry-payment",
+    "SupportRefund": "support.billing.refund",
+    "SupportChangePlan": "support.billing.change-plan",
+    "SupportCancelSubscription": "support.billing.cancel-subscription",
+    "SupportConnectorBucketImpact": "support.connector.bucket-impact",
+    "SupportEntitlementRegistry": "support.entitlement.registry",
+    "SupportPlansCatalog": "support.plan.catalog",
+    "SupportListDeals": "support.deal.list",
+    "SupportGetDeal": "support.deal.get",
+    "SupportCreateDeal": "support.deal.create",
+    "SupportUpdateDeal": "support.deal.update",
+    "SupportDealActivity": "support.deal.activity",
+    "SupportPreviewDealEntitlement": "support.deal.preview-entitlement",
+    "SupportDealOptIn": "support.deal.opt-in",
+    "SupportDealMoveToPartner": "support.deal.move-to-partner",
+    "SupportDealCancelMoveToPartner": "support.deal.cancel-move-to-partner",
+    "SupportListIdentities": "support.identity.list",
+    "SupportGetIdentity": "support.identity.get",
+    "SupportListPartners": "support.partner.list",
+    "SupportGetPartner": "support.partner.get",
+    "SupportCreatePartner": "support.partner.create",
+    "SupportUpdatePartner": "support.partner.update",
+    "SupportPartnerActivity": "support.partner.activity",
+    "SupportGetPartnerBilling": "support.partner.billing",
+    "SupportListPartnerInvoices": "support.partner.invoices",
+    "SupportChargePartnerInvoices": "support.partner.charge-invoices",
+    "SupportSendPartnerPaymentLink": "support.partner.send-payment-link",
+    "SupportListPartnerClients": "support.partner.client.list",
+    "SupportDeletePartnerClient": "support.partner.client.delete",
+    "SupportDetachClient": "support.partner.client.detach",
+    "SupportCancelDetachClient": "support.partner.client.cancel-detach",
+    "SupportSearch": "support.search",
+    "SupportTriage": "support.triage",
+    "SupportUsageTiles": "support.usage-tiles",
+    "SupportWorkspaceActivity": "support.workspace.activity",
+    "SupportWorkspaceEntitlement": "support.workspace.entitlement",
+    "SupportWorkspaceDealSeed": "support.workspace.deal-seed",
+    "SupportWorkspaceChargebeeCancelled": "support.workspace.chargebee-cancelled",
+    "SupportWorkspaceArchiveInfo": "support.workspace.archive-info",
+    "SupportWorkspaceArchive": "support.workspace.archive",
+    "SupportWorkspaceArchiveRestore": "support.workspace.restore-archive",
+    "SupportCancelWorkspaceInvite": "support.workspace.invite.cancel",
+    "SupportResendWorkspaceInvite": "support.workspace.invite.resend",
+    # Agent access (Settings > AI Agent): who may ask, how far, and what they request.
+    "ListAgentGrants": "agent.access.grant.list",
+    "GiveAgentAccess": "agent.access.grant.give",
+    "ChangeAgentAccess": "agent.access.grant.update",
+    "RevokeAgentAccess": "agent.access.grant.revoke",
+    "GetAgentAccessMe": "agent.access.me",
+    "ListAgentPeople": "agent.access.people",
+    "GetAgentProjectAskers": "agent.access.askers",
+    "GetAgentAccessReach": "agent.access.reach",
+    "GetAgentAccessTree": "agent.access.tree",
+    "GetAgentSettings": "agent.access.settings.get",
+    "UpdateAgentSettings": "agent.access.settings.update",
+    "ListAgentAccessRequests": "agent.access.request.list",
+    "ListMyAgentAccessRequests": "agent.access.request.mine",
+    "CreateAgentAccessRequest": "agent.access.request.create",
+    "ResolveAgentAccessRequest": "agent.access.request.resolve",
+    "AddAgentRequestToProjectContext": "agent.access.request.add-to-context",
+    "SaveAgentChart": "agent.access.chart.save",
+    "ListAgentTurnFeedback": "agent.session.feedback.list",
+    "RateAgentTurn": "agent.turn.rate",
+    # Dashboard v3 editor chat.
+    "UploadChatAttachment": "dashboard.chat.attachment.upload",
+    "GetUnpublishedChanges": "dashboard.unpublished",
+    # Subscription plans, held plan changes, connections, previews, Open tables links.
+    "UpdatePlanEntitlements": "support.plan.update-entitlements",
+    "GetHeldChange": "billing.stripe.held-change.get",
+    "CancelHeldChange": "billing.stripe.held-change.cancel",
+    "ListAllConnections": "connector.connection.list-all",
+    "TestConnection": "connector.connection.test",
+    "CancelTaskPreview": "view.task.preview-cancel",
+    "GetToolClaim": "dataset.tool-claim.get",
+    "RedeemToolClaim": "dataset.tool-claim.redeem",
 }
 
 

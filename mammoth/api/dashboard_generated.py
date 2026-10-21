@@ -768,6 +768,15 @@ async def published_pdf_artifact(self: Any, url: str, job_id: int) -> dict[str, 
     return response
 
 
+async def unpublished(self: Any, dashboard_id: int) -> UnpublishedChangesResponse:
+    """Draft changes since the published version."""
+    path = "/dashboards/{dashboard_id}/unpublished"
+    path = path.replace("{dashboard_id}", str(dashboard_id))
+    params = None
+    response = await self._client._request_json("GET", path, params=params)
+    return _typed_response(response, (UnpublishedChangesResponse,), allow_untyped=False)
+
+
 async def video_state(
     self: Any,
     dashboard_id: int,
@@ -1392,6 +1401,7 @@ GENERATED_METHODS = [
     "columns",
     "pdf_artifact",
     "published_pdf_artifact",
+    "unpublished",
     "video_state",
     "oembed",
     "og_card",

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -34,9 +35,38 @@ WARN_CONNECTOR_PRICE_IGNORED = (
     "field (connectors are access, not a priced line item), so it is no longer sent."
 )
 ERR_STORAGE_TIERS_EMPTY = "`storage_tiers` must be a non-empty list."
+ERR_ENTITLEMENT_VALUES_EMPTY = "`values` must be a non-empty mapping of registry key to value."
 ERR_STORAGE_OPTION_NO_CHANGE = "Provide at least one of storage_gb, monthly_price, annual_price."
 ERR_SLUG_EMPTY = "`slug` must be a non-empty template slug."
 ERR_TEMPLATE_CHANGES_EMPTY = "`changes` must be a non-empty mapping of filing fields."
+
+TRIAL_DAYS_MIN = 1
+TRIAL_DAYS_MAX = 60
+ERR_TRIAL_DAYS = f"`days` must be between {TRIAL_DAYS_MIN} and {TRIAL_DAYS_MAX}."
+BILLING_WHEN = ("now", "period_end")
+ERR_BILLING_WHEN = '`when` must be "now" or "period_end", got {value!r}.'
+MOVE_WHEN = ("period_end", "now")
+ERR_MOVE_WHEN = '`when` must be "period_end" or "now", got {value!r}.'
+ERR_PRICE_NEGATIVE = "`price` must be 0 or more."
+ERR_PRICE_POSITIVE = "`price` must be above 0."
+BILLING_INTERVALS = ("monthly", "yearly", "annual")
+ERR_BILLING_INTERVAL = (
+    '`billing_interval` must be one of "monthly", "yearly" or "annual", got {value!r}.'
+)
+ERR_REFUND_AMOUNT = (
+    "Give either `amount` (a partial refund in cents) or `full=True`, not both or neither."
+)
+IDENTITY_LIST_PAGE_SIZE = 100
+IDENTITY_LIST_MAX_PAGES = 1000
+ERR_IDENTITY_LIMIT = "`limit` must be a whole number from 1 to 100."
+ERR_IDENTITY_OFFSET = "`offset` must be a whole number, 0 or more."
+ERR_DEAL_WORKSPACE = "Provide exactly one of `workspace_id` or `workspace_create`."
+ERR_DEAL_NO_CHANGE = "Provide at least one deal field to change."
+ERR_DEAL_OPT_IN_EMPTY = "Provide `keys`, `connectors` or `everything=True`."
+ERR_PARTNER_NO_CHANGE = "Provide at least one partner field to change."
+ARCHIVE_STORAGE_CLASSES = ("GLACIER_IR", "DEEP_ARCHIVE")
+ERR_STORAGE_CLASS = '`storage_class` must be "GLACIER_IR" or "DEEP_ARCHIVE", got {value!r}.'
+ERR_CONFIRM_NAME = "`confirm_name` must be the workspace name, typed to confirm."
 
 #: Root of the curated-template admin routes (dashboards v3).
 _TEMPLATE_ADMIN = "/dashboards/v3/templates/admin"
@@ -57,6 +87,11 @@ def _local_file(file: str | Path) -> Path:
     return path
 
 
+def _drop_none(**fields: Any) -> dict[str, Any]:
+    """The fields that were given: every keyword whose value is not ``None``."""
+    return {key: value for key, value in fields.items() if value is not None}
+
+
 def _check_id(name: str, value: int) -> None:
     """Validate that a path-id argument is a positive integer.
 
@@ -67,8 +102,38 @@ def _check_id(name: str, value: int) -> None:
     Raises:
         MammothValidationError: If *value* is not a positive integer.
     """
-    if value <= 0:
+    if not _is_int(value) or value <= 0:
         raise MammothValidationError(_ERR_ID.format(name=name, value=value))
+
+
+def _is_int(value: Any) -> bool:
+    """True for a real integer (``bool`` is not one)."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_number(value: Any) -> bool:
+    """True for an ``int`` or ``float`` (``bool`` is not one)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _identity_key(row: Any) -> str:
+    """A stable identity for one listed row: a user by ``id``, an invitee by ``invite_id``.
+
+    An invited person with no account has ``id`` None and its own ``invite_id``; any other
+    shape falls back to the whole row, so two different rows never collapse into one.
+    """
+    if isinstance(row, dict):
+        if row.get("id") is not None:
+            return f"id:{row['id']}"
+        if row.get("invite_id") is not None:
+            return f"invite:{row['invite_id']}"
+    return json.dumps(row, sort_keys=True, default=str)
+
+
+def _check_interval(value: str | None) -> None:
+    """Validate a billing interval against the cycles the server accepts."""
+    if value is not None and value not in BILLING_INTERVALS:
+        raise MammothValidationError(ERR_BILLING_INTERVAL.format(value=value))
 
 
 class SupportAPI:
@@ -290,6 +355,34 @@ class SupportAPI:
         }
         body = {k: v for k, v in fields.items() if v is not None}
         return await self._client._request_json("PUT", f"/subscription/plans/{plan_id}", json=body)
+
+    async def plan_update_entitlements(
+        self, plan_id: int, values: dict[str, bool | int | str | None]
+    ) -> dict[str, Any]:
+        """Edit a plan's entitlement values (its column of the entitlement matrix).
+
+        Admin only. The values land on the plan's own feature profile.
+
+        Args:
+            plan_id: ID of the plan (must be a positive integer).
+            values: ``{registry key: value}`` cells to write (at least one). A switch takes
+                ``true``/``false``; a capacity or meter a number (0 = not granted),
+                ``"unlimited"`` or ``"custom"``; an enum one of its options or ``null``
+                (not granted).
+
+        Returns:
+            Dict with ``plan``, ``values`` (the plan's whole matrix column afterwards) and
+            ``message``.
+
+        Raises:
+            MammothValidationError: If *plan_id* is not positive or *values* is empty.
+        """
+        _check_id("plan_id", plan_id)
+        if not values:
+            raise MammothValidationError(ERR_ENTITLEMENT_VALUES_EMPTY)
+        return await self._client._request_json(
+            "PUT", f"/subscription/plans/{plan_id}/entitlements", json={"values": values}
+        )
 
     async def plan_update_storage_tiers(
         self, plan_id: int, storage_tiers: list[dict[str, Any]]
@@ -1431,6 +1524,1138 @@ class SupportAPI:
         body = {"patch": [{"op": "replace", "path": "role", "value": value}]}
         return await self._client._request_json(
             "PATCH", f"/support/workspaces/{workspace_id}/users", json=body
+        )
+
+    # -- Billing actions (per workspace) ------------------------------------------
+    #
+    # Money-moving admin actions on one workspace's subscription. Each needs a
+    # super or tech admin and is recorded as an admin audit event. A
+    # partner-billed workspace refuses the per-workspace actions; its recovery
+    # runs through the ``partner_*`` methods.
+
+    async def billing_start_trial(
+        self, workspace_id: int, days: int | None = None
+    ) -> dict[str, Any]:
+        """Start a Pro trial on an existing workspace (no card needed).
+
+        Replaces the workspace's billing with the trial. Refused for a live deal,
+        a partner-billed, a Chargebee-billed or a deleted workspace.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            days: Trial length in days, 1 to 60. Omit for the Pro plan's own trial length.
+
+        Returns:
+            Dict with ``message`` and the started ``trial``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer or
+                *days* is outside 1 to 60.
+        """
+        _check_id("workspace_id", workspace_id)
+        body: dict[str, Any] = {}
+        if days is not None:
+            if not _is_int(days) or not TRIAL_DAYS_MIN <= days <= TRIAL_DAYS_MAX:
+                raise MammothValidationError(ERR_TRIAL_DAYS)
+            body["days"] = days
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/start-trial", json=body
+        )
+
+    async def billing_end_trial(self, workspace_id: int) -> dict[str, Any]:
+        """End a workspace's trial and start billing.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``message``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/end-trial"
+        )
+
+    async def billing_retry_payment(self, workspace_id: int) -> dict[str, Any]:
+        """Retry payment for a past-due workspace (charges its open invoices).
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``message`` and the payment service ``result``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/retry-payment"
+        )
+
+    async def billing_refund(
+        self, workspace_id: int, amount: int | None = None, *, full: bool = False
+    ) -> dict[str, Any]:
+        """Refund a workspace's most recent payment, in full or in part.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            amount: Partial refund in cents (positive integer).
+            full: ``True`` to refund the whole payment. Exactly one of *amount* and
+                *full* is required, so a refund is never full by omission.
+
+        Returns:
+            Dict with ``message`` and the payment service ``result``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* or *amount* is not a positive integer,
+                or not exactly one of *amount* and *full* is given.
+        """
+        _check_id("workspace_id", workspace_id)
+        if (amount is not None) == bool(full):
+            raise MammothValidationError(ERR_REFUND_AMOUNT)
+        params: dict[str, Any] | None = None
+        if amount is not None:
+            _check_id("amount", amount)
+            params = {"amount": amount}
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/refund", params=params
+        )
+
+    async def billing_change_plan(
+        self,
+        workspace_id: int,
+        new_plan_id: int,
+        *,
+        when: str = "now",
+        storage_gb: int | None = None,
+    ) -> dict[str, Any]:
+        """Change a workspace's self-serve plan.
+
+        Refused for a live deal workspace (edit the deal instead), a partner-billed
+        workspace, an archived workspace and a plan that is not current.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            new_plan_id: ID of the current catalog plan to move onto.
+            when: ``"now"`` (prorated, the default) or ``"period_end"`` (at renewal).
+            storage_gb: Total storage allocation on an inline-pricing target plan
+                (its base size or one of its storage options).
+
+        Returns:
+            Dict with ``message`` (or ``message`` and ``chargebee`` for a Chargebee workspace).
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer, *when* is
+                not ``"now"`` or ``"period_end"``, or *storage_gb* is not positive.
+        """
+        _check_id("workspace_id", workspace_id)
+        _check_id("new_plan_id", new_plan_id)
+        if when not in BILLING_WHEN:
+            raise MammothValidationError(ERR_BILLING_WHEN.format(value=when))
+        body: dict[str, Any] = {"new_plan_id": new_plan_id, "when": when}
+        if storage_gb is not None:
+            _check_id("storage_gb", storage_gb)
+            body["storage_gb"] = storage_gb
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/change-plan", json=body
+        )
+
+    async def billing_cancel_subscription(self, workspace_id: int, when: str) -> dict[str, Any]:
+        """Cancel a workspace's subscription (or its live deal).
+
+        ``now`` stops billing today, turns the unused time into credit (no
+        refund) and lands the workspace on Free. ``period_end`` keeps the plan
+        until the paid period ends. A live deal is cancelled instead (a partner
+        deal: ``now`` only).
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            when: ``"now"`` or ``"period_end"``.
+
+        Returns:
+            Dict with ``message``, ``when``, ``effective_at`` and ``deal_id``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer or
+                *when* is not ``"now"`` or ``"period_end"``.
+        """
+        _check_id("workspace_id", workspace_id)
+        if when not in BILLING_WHEN:
+            raise MammothValidationError(ERR_BILLING_WHEN.format(value=when))
+        return await self._client._request_json(
+            "POST", f"/support/billing/{workspace_id}/cancel-subscription", json={"when": when}
+        )
+
+    # -- Catalog reads -----------------------------------------------------------
+
+    async def connector_bucket_impact(
+        self, connector_id: int, bucket: str | None = None
+    ) -> dict[str, Any]:
+        """Read what moving a connector to another bucket does to access (read-only).
+
+        Args:
+            connector_id: ID of the connector (must be a positive integer).
+            bucket: The bucket the connector would move to.
+
+        Returns:
+            Dict with ``connector``, ``from_bucket``, ``to_bucket``, ``levels``,
+            ``change``, ``workspaces`` and ``connections``.
+
+        Raises:
+            MammothValidationError: If *connector_id* is not a positive integer.
+        """
+        _check_id("connector_id", connector_id)
+        params = {"bucket": bucket} if bucket else None
+        return await self._client._request_json(
+            "GET", f"/support/connectors/{connector_id}/bucket-impact", params=params
+        )
+
+    async def entitlement_registry(self) -> dict[str, Any]:
+        """Read the entitlement registry: what may be sold and what is never gated.
+
+        Returns:
+            Dict with ``registry`` and ``never_gated`` lists.
+        """
+        return await self._client._request_json("GET", "/support/entitlements")
+
+    async def plan_catalog(self) -> dict[str, Any]:
+        """Read the plan catalog: current, archived, legacy and system plans, ladder, matrix.
+
+        Returns:
+            Dict with ``current``, ``archived``, ``enterprise``, ``legacy``,
+            ``system``, ``storage_steps``, ``matrix`` and related fields.
+        """
+        return await self._client._request_json("GET", "/support/plans/catalog")
+
+    # -- Deals ------------------------------------------------------------------
+
+    async def deal_list(self) -> dict[str, Any]:
+        """List deals.
+
+        Returns:
+            Dict with the ``deals`` list.
+        """
+        return await self._client._request_json("GET", "/support/deals")
+
+    async def deal_get(self, deal_id: int) -> dict[str, Any]:
+        """Get one deal.
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+
+        Returns:
+            Dict with the ``deal``.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer.
+        """
+        _check_id("deal_id", deal_id)
+        return await self._client._request_json("GET", f"/support/deals/{deal_id}")
+
+    async def deal_create(
+        self,
+        base_plan_id: int,
+        *,
+        price: float | None = None,
+        billing_interval: str | None = None,
+        collection_method: str | None = None,
+        currency: str | None = None,
+        ent_overrides: dict[str, Any] | None = None,
+        custom_connectors: list[str] | None = None,
+        contract_start: str | None = None,
+        contract_end: str | None = None,
+        trial_end: str | None = None,
+        payment_terms: str | None = None,
+        notes: str | None = None,
+        contact_name: str | None = None,
+        contact_email: str | None = None,
+        workspace_id: int | None = None,
+        workspace_create: dict[str, Any] | None = None,
+        customer_email: str | None = None,
+        partner_id: int | None = None,
+        billing_start: str | None = None,
+        billing_start_at: str | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a deal: a base plan plus overrides, on one workspace.
+
+        Give exactly one of *workspace_id* (an existing workspace) or
+        *workspace_create* (a new workspace).
+
+        Args:
+            base_plan_id: ID of the plan the deal starts from (grants nothing without it).
+            price: Price per billing interval.
+            billing_interval: Billing cycle the server accepts (for example ``"monthly"``).
+            collection_method: ``"charge_automatically"`` or ``"send_invoice"``.
+            currency: Three-letter ISO currency code.
+            ent_overrides: Entitlement registry keys the deal freezes, as ``{key: value}``.
+            custom_connectors: Names of sources built for this account.
+            contract_start: ISO 8601 timestamp.
+            contract_end: ISO 8601 timestamp, after *contract_start*.
+            trial_end: ISO 8601 timestamp; required when *status* is ``"trial"``.
+            payment_terms: One of the fixed payment terms the server accepts.
+            notes: Free-text notes.
+            contact_name: Billing contact name (128 characters at most).
+            contact_email: Billing contact email.
+            workspace_id: Existing workspace to put on the deal.
+            workspace_create: New workspace to create, as ``{"name": ..., "user_email": ...}``.
+            customer_email: Customer email for the workspace's billing customer.
+            partner_id: Partner that bills this deal.
+            billing_start: ``"now"``, ``"chargebee_term_end"`` or ``"date"`` (a workspace
+                leaving Chargebee); ``"date"`` needs *billing_start_at*.
+            billing_start_at: ISO 8601 timestamp for ``billing_start="date"``.
+            status: ``"active"`` (default) or ``"trial"``.
+
+        Returns:
+            Dict with the new deal ``id`` and its ``workspace_id``.
+
+        Raises:
+            MammothValidationError: If *base_plan_id* is not a positive integer or
+                not exactly one of *workspace_id* / *workspace_create* is given.
+        """
+        _check_id("base_plan_id", base_plan_id)
+        _check_interval(billing_interval)
+        if bool(workspace_id) == bool(workspace_create):
+            raise MammothValidationError(ERR_DEAL_WORKSPACE)
+        body = _drop_none(
+            base_plan_id=base_plan_id,
+            price=price,
+            billing_interval=billing_interval,
+            collection_method=collection_method,
+            currency=currency,
+            ent_overrides=ent_overrides,
+            custom_connectors=custom_connectors,
+            contract_start=contract_start,
+            contract_end=contract_end,
+            trial_end=trial_end,
+            payment_terms=payment_terms,
+            notes=notes,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            workspace_id=workspace_id,
+            workspace_create=workspace_create,
+            customer_email=customer_email,
+            partner_id=partner_id,
+            billing_start=billing_start,
+            billing_start_at=billing_start_at,
+            status=status,
+        )
+        return await self._client._request_json("POST", "/support/deals", json=body)
+
+    async def deal_update(
+        self,
+        deal_id: int,
+        *,
+        price: float | None = None,
+        billing_interval: str | None = None,
+        collection_method: str | None = None,
+        currency: str | None = None,
+        base_plan_id: int | None = None,
+        ent_overrides: dict[str, Any] | None = None,
+        custom_connectors: list[str] | None = None,
+        contract_start: str | None = None,
+        contract_end: str | None = None,
+        trial_end: str | None = None,
+        payment_terms: str | None = None,
+        notes: str | None = None,
+        contact_name: str | None = None,
+        contact_email: str | None = None,
+        status: str | None = None,
+    ) -> dict[str, Any]:
+        """Update a deal's terms. Only the fields you pass change.
+
+        The partner is not editable here: use ``deal_move_to_partner`` or
+        ``partner_client_detach``.
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+            price: Price per billing interval.
+            billing_interval: Billing cycle the server accepts.
+            collection_method: ``"charge_automatically"`` or ``"send_invoice"``.
+            currency: Three-letter ISO currency code.
+            base_plan_id: ID of the plan the deal starts from.
+            ent_overrides: Entitlement registry keys the deal freezes, as ``{key: value}``.
+            custom_connectors: Names of sources built for this account.
+            contract_start: ISO 8601 timestamp.
+            contract_end: ISO 8601 timestamp, after *contract_start*.
+            trial_end: ISO 8601 timestamp.
+            payment_terms: One of the fixed payment terms the server accepts.
+            notes: Free-text notes.
+            contact_name: Billing contact name (128 characters at most).
+            contact_email: Billing contact email; an empty string clears it.
+            status: New deal status (for example ``"active"``).
+
+        Returns:
+            Dict with the deal ``id`` and its ``workspace_id``.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer or no
+                field to change is given.
+        """
+        _check_id("deal_id", deal_id)
+        _check_interval(billing_interval)
+        body = _drop_none(
+            price=price,
+            billing_interval=billing_interval,
+            collection_method=collection_method,
+            currency=currency,
+            base_plan_id=base_plan_id,
+            ent_overrides=ent_overrides,
+            custom_connectors=custom_connectors,
+            contract_start=contract_start,
+            contract_end=contract_end,
+            trial_end=trial_end,
+            payment_terms=payment_terms,
+            notes=notes,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            status=status,
+        )
+        if not body:
+            raise MammothValidationError(ERR_DEAL_NO_CHANGE)
+        return await self._client._request_json("PUT", f"/support/deals/{deal_id}", json=body)
+
+    async def deal_activity(self, deal_id: int) -> dict[str, Any]:
+        """Read a deal's activity feed (its events plus its workspace's billing events).
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+
+        Returns:
+            Dict with the ``activity`` rows.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer.
+        """
+        _check_id("deal_id", deal_id)
+        return await self._client._request_json("GET", f"/support/deals/{deal_id}/activity")
+
+    async def deal_preview_entitlement(self, deal_id: int) -> dict[str, Any]:
+        """Preview a deal's resolved entitlement (base plan plus overrides).
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+
+        Returns:
+            Dict with the ``entitlement``.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer.
+        """
+        _check_id("deal_id", deal_id)
+        return await self._client._request_json(
+            "GET", f"/support/deals/{deal_id}/preview-entitlement"
+        )
+
+    async def deal_opt_in(
+        self,
+        deal_id: int,
+        *,
+        keys: list[str] | None = None,
+        connectors: list[str] | None = None,
+        everything: bool = False,
+    ) -> dict[str, Any]:
+        """Opt a deal in to catalog changes: release rollout pins so keys follow the base plan.
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+            keys: Entitlement registry keys to release.
+            connectors: Connector names to release.
+            everything: Release every pin on the deal (sent as ``all``).
+
+        Returns:
+            Dict with the remaining ``pins``.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer or
+                nothing to release is given.
+        """
+        _check_id("deal_id", deal_id)
+        if not (keys or connectors or everything):
+            raise MammothValidationError(ERR_DEAL_OPT_IN_EMPTY)
+        body = {"keys": keys or [], "connectors": connectors or [], "all": everything}
+        return await self._client._request_json(
+            "POST", f"/support/deals/{deal_id}/opt-in", json=body
+        )
+
+    async def deal_move_to_partner(
+        self,
+        deal_id: int,
+        partner_id: int,
+        price: float,
+        billing_interval: str,
+        *,
+        when: str = "period_end",
+    ) -> dict[str, Any]:
+        """Move a direct deal under a partner.
+
+        Refused for a partner deal, an unpaid workspace, a pending detach or move,
+        and a partner whose billing is stopped.
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+            partner_id: ID of the partner to move under.
+            price: The new price (usually the partner's wholesale price), 0 or more.
+            billing_interval: Billing cycle the server accepts.
+            when: ``"period_end"`` (default, no proration) or ``"now"`` (cancels the
+                workspace's subscription prorated and refunds the unused time).
+
+        Returns:
+            Dict with the scheduled ``move``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer, *price* is
+                negative or *when* is not ``"period_end"`` or ``"now"``.
+        """
+        _check_id("deal_id", deal_id)
+        _check_id("partner_id", partner_id)
+        if not _is_number(price) or price < 0:
+            raise MammothValidationError(ERR_PRICE_NEGATIVE)
+        _check_interval(billing_interval)
+        if when not in MOVE_WHEN:
+            raise MammothValidationError(ERR_MOVE_WHEN.format(value=when))
+        body = {
+            "partner_id": partner_id,
+            "price": price,
+            "billing_interval": billing_interval,
+            "when": when,
+        }
+        return await self._client._request_json(
+            "POST", f"/support/deals/{deal_id}/move-to-partner", json=body
+        )
+
+    async def deal_cancel_move_to_partner(self, deal_id: int) -> dict[str, Any]:
+        """Cancel a scheduled move of a deal under a partner.
+
+        Args:
+            deal_id: ID of the deal (must be a positive integer).
+
+        Returns:
+            Dict with ``message``.
+
+        Raises:
+            MammothValidationError: If *deal_id* is not a positive integer.
+        """
+        _check_id("deal_id", deal_id)
+        return await self._client._request_json(
+            "DELETE", f"/support/deals/{deal_id}/move-to-partner"
+        )
+
+    # -- Identities (cross-tenant users) ----------------------------------------
+
+    async def identity_list(
+        self,
+        *,
+        limit: int | None = None,
+        offset: int | None = None,
+        search: str | None = None,
+        sort: str | None = None,
+        order: str | None = None,
+    ) -> dict[str, Any]:
+        """List users identity-first, each with workspace counts.
+
+        Args:
+            limit: Page size used for each request, 1 to 100 (default 100); anything else
+                is refused. All pages are read; this does not cap the result.
+            offset: Row to start from.
+            search: Filter by email or name.
+            sort: ``name``, ``email`` or ``last_active``.
+            order: ``asc`` or ``desc``.
+
+        Returns:
+            Dict with every matching user (and invitee) under ``users``. The pages are
+            followed to the end and merged, so the server's per-page ``offset``, ``limit``
+            and ``next`` are not returned. A repeated page stops the loop.
+
+        Raises:
+            MammothValidationError: If *limit* is not a whole number from 1 to 100 or
+                *offset* is negative.
+        """
+        if limit is not None and (not _is_int(limit) or not 1 <= limit <= IDENTITY_LIST_PAGE_SIZE):
+            raise MammothValidationError(ERR_IDENTITY_LIMIT)
+        if offset is not None and (not _is_int(offset) or offset < 0):
+            raise MammothValidationError(ERR_IDENTITY_OFFSET)
+        size = limit or IDENTITY_LIST_PAGE_SIZE
+        start = offset or 0
+        users: list[Any] = []
+        seen: set[str] = set()
+        pages: set[str] = set()
+        for page_number in range(IDENTITY_LIST_MAX_PAGES):
+            params = _drop_none(
+                limit=size, offset=start + page_number * size, search=search, sort=sort, order=order
+            )
+            result = await self._client._request_json("GET", "/support/identities", params=params)
+            page = result.get("users")
+            if not isinstance(page, list):
+                return result
+            signature = json.dumps(page, sort_keys=True, default=str)
+            if signature in pages:
+                break
+            pages.add(signature)
+            for user in page:
+                key = _identity_key(user)
+                if key not in seen:
+                    seen.add(key)
+                    users.append(user)
+            if len(page) < size:
+                break
+        return {"users": users}
+
+    async def identity_get(self, user_id: int) -> dict[str, Any]:
+        """Get one user's identity: workspace memberships and roles.
+
+        Args:
+            user_id: ID of the user (must be a positive integer).
+
+        Returns:
+            Dict with the ``user``.
+
+        Raises:
+            MammothValidationError: If *user_id* is not a positive integer.
+        """
+        _check_id("user_id", user_id)
+        return await self._client._request_json("GET", f"/support/identities/{user_id}")
+
+    # -- Partners ---------------------------------------------------------------
+
+    async def partner_list(self) -> dict[str, Any]:
+        """List partners.
+
+        Returns:
+            Dict with the ``partners`` list.
+        """
+        return await self._client._request_json("GET", "/support/partners")
+
+    async def partner_get(self, partner_id: int) -> dict[str, Any]:
+        """Get one partner.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the ``partner``.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json("GET", f"/support/partners/{partner_id}")
+
+    async def partner_create(
+        self,
+        name: str,
+        *,
+        contact_name: str | None = None,
+        contact_email: str | None = None,
+        payment_terms: str | None = None,
+        billing_method: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a partner.
+
+        Args:
+            name: Partner name.
+            contact_name: Billing contact name.
+            contact_email: Billing contact email (Stripe customer and payment-link emails).
+            payment_terms: Payment terms the server accepts.
+            billing_method: ``"send_invoice"`` (default) or ``"charge_automatically"``; the
+                collection method of the partner's consolidated subscription.
+            notes: Free-text notes.
+
+        Returns:
+            Dict with the new partner ``id`` and ``name``.
+        """
+        body = _drop_none(
+            name=name,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            payment_terms=payment_terms,
+            billing_method=billing_method,
+            notes=notes,
+        )
+        return await self._client._request_json("POST", "/support/partners", json=body)
+
+    async def partner_update(
+        self,
+        partner_id: int,
+        *,
+        name: str | None = None,
+        contact_name: str | None = None,
+        contact_email: str | None = None,
+        payment_terms: str | None = None,
+        billing_method: str | None = None,
+        status: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Update a partner. Only the fields you pass change.
+
+        An empty string for *contact_name*, *contact_email* or *notes* clears it.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+            name: New partner name.
+            contact_name: Billing contact name.
+            contact_email: Billing contact email.
+            payment_terms: Payment terms the server accepts.
+            billing_method: ``"send_invoice"`` or ``"charge_automatically"``.
+            status: New partner status.
+            notes: Free-text notes.
+
+        Returns:
+            Dict with the partner ``id`` and ``name``.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer or no
+                field to change is given.
+        """
+        _check_id("partner_id", partner_id)
+        body = _drop_none(
+            name=name,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            payment_terms=payment_terms,
+            billing_method=billing_method,
+            status=status,
+            notes=notes,
+        )
+        if not body:
+            raise MammothValidationError(ERR_PARTNER_NO_CHANGE)
+        return await self._client._request_json("PUT", f"/support/partners/{partner_id}", json=body)
+
+    async def partner_activity(self, partner_id: int) -> dict[str, Any]:
+        """Read a partner's admin activity feed.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the ``activity`` rows.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json("GET", f"/support/partners/{partner_id}/activity")
+
+    async def partner_billing(self, partner_id: int) -> dict[str, Any]:
+        """Read a partner's consolidated billing: the total and the per-client lines.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the ``billing`` breakdown.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json("GET", f"/support/partners/{partner_id}/billing")
+
+    async def partner_invoices(self, partner_id: int) -> dict[str, Any]:
+        """List a partner's consolidated Stripe invoices.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the ``invoices`` list.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json("GET", f"/support/partners/{partner_id}/invoices")
+
+    async def partner_charge_invoices(self, partner_id: int) -> dict[str, Any]:
+        """Charge a partner's open invoices (recovers an incomplete subscription).
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the per-invoice ``result``.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json(
+            "POST", f"/support/partners/{partner_id}/charge-invoices"
+        )
+
+    async def partner_send_payment_link(self, partner_id: int) -> dict[str, Any]:
+        """Email the partner a link to add or update their payment method.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with ``message`` naming the address the link went to.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json(
+            "POST", f"/support/partners/{partner_id}/send-payment-link"
+        )
+
+    async def partner_client_list(self, partner_id: int) -> dict[str, Any]:
+        """List a partner's client workspaces.
+
+        Args:
+            partner_id: ID of the partner (must be a positive integer).
+
+        Returns:
+            Dict with the ``clients`` list.
+
+        Raises:
+            MammothValidationError: If *partner_id* is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        return await self._client._request_json("GET", f"/support/partners/{partner_id}/workspaces")
+
+    async def partner_client_delete(self, partner_id: int, workspace_id: int) -> dict[str, Any]:
+        """Delete a partner's client workspace and remove its prorated line item.
+
+        Args:
+            partner_id: ID of the partner that bills the workspace.
+            workspace_id: ID of the client workspace to delete.
+
+        Returns:
+            Dict with ``message``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "DELETE", f"/support/partners/{partner_id}/workspaces/{workspace_id}"
+        )
+
+    async def partner_client_detach(
+        self,
+        partner_id: int,
+        workspace_id: int,
+        price: float,
+        contact_email: str,
+        *,
+        billing_interval: str | None = None,
+        collection_method: str | None = None,
+        currency: str | None = None,
+        base_plan_id: int | None = None,
+        ent_overrides: dict[str, Any] | None = None,
+        custom_connectors: list[str] | None = None,
+        contract_start: str | None = None,
+        contract_end: str | None = None,
+        trial_end: str | None = None,
+        payment_terms: str | None = None,
+        notes: str | None = None,
+        contact_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Detach a partner's client workspace to direct billing.
+
+        Schedules the cutover at the partner's period end with the direct deal's
+        new terms. When the partner's billing has stopped, it runs now and restores
+        the client's access. Refused for a cancelled deal.
+
+        Args:
+            partner_id: ID of the partner that bills the workspace.
+            workspace_id: ID of the client workspace.
+            price: What the customer pays Mammoth directly (not the wholesale price), above 0.
+            contact_email: Billing email of the workspace's Stripe customer.
+            billing_interval: Billing cycle the server accepts.
+            collection_method: ``"charge_automatically"`` or ``"send_invoice"``.
+            currency: Three-letter ISO currency code.
+            base_plan_id: ID of the plan the direct deal starts from.
+            ent_overrides: Entitlement registry keys the deal freezes, as ``{key: value}``.
+            custom_connectors: Names of sources built for this account.
+            contract_start: ISO 8601 timestamp.
+            contract_end: ISO 8601 timestamp, after *contract_start*.
+            trial_end: ISO 8601 timestamp.
+            payment_terms: One of the fixed payment terms the server accepts.
+            notes: Free-text notes.
+            contact_name: Billing contact name (128 characters at most).
+
+        Returns:
+            Dict with the pending ``detach`` (``None`` when it ran now) and ``message``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer or *price* is not above 0.
+        """
+        _check_id("partner_id", partner_id)
+        _check_id("workspace_id", workspace_id)
+        if not _is_number(price) or price <= 0:
+            raise MammothValidationError(ERR_PRICE_POSITIVE)
+        _check_interval(billing_interval)
+        body = _drop_none(
+            price=price,
+            contact_email=contact_email,
+            billing_interval=billing_interval,
+            collection_method=collection_method,
+            currency=currency,
+            base_plan_id=base_plan_id,
+            ent_overrides=ent_overrides,
+            custom_connectors=custom_connectors,
+            contract_start=contract_start,
+            contract_end=contract_end,
+            trial_end=trial_end,
+            payment_terms=payment_terms,
+            notes=notes,
+            contact_name=contact_name,
+        )
+        return await self._client._request_json(
+            "POST", f"/support/partners/{partner_id}/workspaces/{workspace_id}/detach", json=body
+        )
+
+    async def partner_client_cancel_detach(
+        self, partner_id: int, workspace_id: int
+    ) -> dict[str, Any]:
+        """Cancel a scheduled detach of a client workspace to direct billing.
+
+        Args:
+            partner_id: ID of the partner that bills the workspace.
+            workspace_id: ID of the client workspace.
+
+        Returns:
+            Dict with ``message``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("partner_id", partner_id)
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "DELETE", f"/support/partners/{partner_id}/workspaces/{workspace_id}/detach"
+        )
+
+    # -- Admin home --------------------------------------------------------------
+
+    async def search(self, q: str = "") -> dict[str, Any]:
+        """Search workspaces, partners and users at once.
+
+        Args:
+            q: Search text.
+
+        Returns:
+            Dict with the matching ``results``.
+        """
+        return await self._client._request_json("GET", "/support/search", params={"q": q})
+
+    async def triage(self) -> dict[str, Any]:
+        """List the admin triage ("needs you") items.
+
+        Returns:
+            Dict with the ``items`` list.
+        """
+        return await self._client._request_json("GET", "/support/triage")
+
+    async def usage_tiles(self) -> dict[str, Any]:
+        """Read the admin home headline counts.
+
+        Returns:
+            Dict with the ``tiles``.
+        """
+        return await self._client._request_json("GET", "/support/usage-tiles")
+
+    # -- Workspace admin (activity, entitlement, archive) ------------------------
+
+    async def workspace_activity(self, workspace_id: int) -> dict[str, Any]:
+        """Read a workspace's admin activity feed (including its deal's billing events).
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with the ``activity`` rows.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "GET", f"/support/workspaces/{workspace_id}/activity"
+        )
+
+    async def workspace_entitlement(self, workspace_id: int) -> dict[str, Any]:
+        """Read a workspace's resolved entitlement, current usage and billing source.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``entitlement``, ``usage`` and ``billing``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "GET", f"/support/workspaces/{workspace_id}/entitlement"
+        )
+
+    async def workspace_deal_seed(self, workspace_id: int) -> dict[str, Any]:
+        """Read the deal terms seeded from a workspace's live subscription ("Convert to deal").
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``seed``, ``chargebee``, ``current`` and ``usage``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "GET", f"/support/workspaces/{workspace_id}/deal-seed"
+        )
+
+    async def workspace_chargebee_cancelled(self, workspace_id: int) -> dict[str, Any]:
+        """Confirm that the old Chargebee subscription was cancelled in Chargebee.
+
+        The checklist step after a Chargebee-to-Stripe deal conversion. The API
+        never writes to Chargebee; this only records the admin's confirmation.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with the ``chargebee`` record.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "POST", f"/support/workspaces/{workspace_id}/chargebee-cancelled"
+        )
+
+    async def workspace_archive_info(self, workspace_id: int) -> dict[str, Any]:
+        """Read whether a workspace may be archived now, and the archive progress.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``eligible``, ``block_code``, ``block_reason``, ``billing_to_end``,
+            ``estimate_bytes``, the storage classes and the archive ledger.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "GET", f"/support/workspaces/{workspace_id}/archive"
+        )
+
+    async def workspace_archive(
+        self,
+        workspace_id: int,
+        storage_class: str,
+        confirm_name: str,
+        *,
+        reason: str | None = None,
+        cancel_billing: bool = False,
+    ) -> dict[str, Any]:
+        """Archive a workspace to cold storage, or retry a failed archive.
+
+        Blocks the workspace (status ARCHIVED) and queues the job that moves its
+        data to S3. Live billing (deal, Stripe subscription, add-ons) is cancelled
+        first, now and with no refund, only when *cancel_billing* is true.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            storage_class: S3 storage class: ``"GLACIER_IR"`` or ``"DEEP_ARCHIVE"``. A retry
+                keeps the class it started with.
+            confirm_name: The workspace name, typed to confirm (case-sensitive).
+            reason: Reason recorded with the archive.
+            cancel_billing: Confirm that archiving cancels live billing now, with no refund.
+
+        Returns:
+            Dict with the archive ``ledger``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer,
+                *storage_class* is unknown or *confirm_name* is empty.
+        """
+        _check_id("workspace_id", workspace_id)
+        if storage_class not in ARCHIVE_STORAGE_CLASSES:
+            raise MammothValidationError(ERR_STORAGE_CLASS.format(value=storage_class))
+        if not confirm_name:
+            raise MammothValidationError(ERR_CONFIRM_NAME)
+        body: dict[str, Any] = {
+            "storage_class": storage_class,
+            "confirm_name": confirm_name,
+            "cancel_billing": cancel_billing,
+        }
+        if reason is not None:
+            body["reason"] = reason
+        return await self._client._request_json(
+            "POST", f"/support/workspaces/{workspace_id}/archive", json=body
+        )
+
+    async def workspace_restore_archive(self, workspace_id: int) -> dict[str, Any]:
+        """Restore an archived workspace from cold storage, or retry a failed restore.
+
+        The workspace stays ARCHIVED until the restore job finishes.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+
+        Returns:
+            Dict with the archive ``ledger``.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "POST", f"/support/workspaces/{workspace_id}/restore"
+        )
+
+    async def workspace_invite_cancel(self, workspace_id: int, invite_id: int) -> dict[str, Any]:
+        """Cancel a pending workspace invite.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            invite_id: ID of the pending invite.
+
+        Returns:
+            Dict with ``message`` naming the invited address.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        _check_id("invite_id", invite_id)
+        return await self._client._request_json(
+            "DELETE", f"/support/workspaces/{workspace_id}/users/invites/{invite_id}"
+        )
+
+    async def workspace_invite_resend(self, workspace_id: int, invite_id: int) -> dict[str, Any]:
+        """Resend a pending workspace invite.
+
+        Args:
+            workspace_id: ID of the target workspace (must be a positive integer).
+            invite_id: ID of the pending invite.
+
+        Returns:
+            Dict with ``message`` naming the invited address.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        _check_id("invite_id", invite_id)
+        return await self._client._request_json(
+            "POST", f"/support/workspaces/{workspace_id}/users/invites/{invite_id}/resend"
         )
 
     # -- Curated template catalog (dashboards v3 admin) ---------------------------

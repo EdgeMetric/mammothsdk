@@ -22,23 +22,24 @@ import base64
 import contextlib
 import functools
 import hashlib
-import html
-import http.server
 import logging
 import os
 import secrets
 import threading
 import time
 import urllib.parse
-import webbrowser
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
+
+if TYPE_CHECKING:
+    from mammoth_cli.context.oauth_loopback import CallbackServer as _CallbackServer
 
 _LOG = logging.getLogger("mammoth_cli.oauth")
 
@@ -139,53 +140,12 @@ def authorize_url(
 
 # --- loopback listener ----------------------------------------------------------
 
-_PAGE = (
-    "<!doctype html><meta charset=utf-8><title>Mammoth CLI</title>"
-    "<body style='font-family:system-ui;margin:3rem'><h2>{title}</h2><p>{body}</p>"
-)
 
-
-class _CallbackHandler(http.server.BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 - http.server's naming
-        parsed = urllib.parse.urlsplit(self.path)
-        if parsed.path != CALLBACK_PATH:
-            self.send_error(404)
-            return
-        params = {k: v[0] for k, v in urllib.parse.parse_qs(parsed.query).items()}
-        server = self.server
-        assert isinstance(server, _CallbackServer)
-        server.params = params
-        failed = "error" in params or "code" not in params
-        title = "Sign-in failed" if failed else "Signed in"
-        body = (
-            "Return to the terminal for details."
-            if failed
-            else "You can close this tab and return to the terminal."
-        )
-        payload = _PAGE.format(title=html.escape(title), body=html.escape(body)).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(payload)
-
-    def log_message(self, format: str, *args: object) -> None:  # noqa: A002
-        return
-
-
-class _CallbackServer(http.server.HTTPServer):
-    params: dict[str, str] | None = None
-
-
-@contextlib.contextmanager
-def loopback_listener() -> Iterator[_CallbackServer]:
+def loopback_listener() -> contextlib.AbstractContextManager[_CallbackServer]:
     """Listen on 127.0.0.1 on a random free port, for one callback."""
-    server = _CallbackServer(("127.0.0.1", 0), _CallbackHandler)
-    try:
-        yield server
-    finally:
-        server.server_close()
+    from mammoth_cli.context.oauth_loopback import loopback_listener as listen
+
+    return listen()
 
 
 def redirect_uri_for(server: _CallbackServer) -> str:
@@ -365,6 +325,8 @@ def browser_login(
             challenge=challenge,
             state=state,
         )
+        import webbrowser
+
         opened = open_browser and webbrowser.open(url)
         if opened:
             say("Opening your browser to sign in to Mammoth.")

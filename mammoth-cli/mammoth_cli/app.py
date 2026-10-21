@@ -148,6 +148,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "auth connected-apps": "List and revoke the apps you have authorised.",
     "billing invoice": "List and charge invoices.",
     "billing stripe": "Manage the Stripe subscription: checkout, trial, payment methods, invoices.",
+    "billing stripe held-change": "Read or cancel a held plan change.",
     "billing stripe payment-method": "List, delete and default Stripe payment methods.",
     "billing stripe storage": "Set the Stripe storage tier.",
     "billing subscription": "Read and update the subscription.",
@@ -167,6 +168,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "dashboard audience digest": "Read and set the audience digest of a dashboard.",
     "dashboard canvas": "Read, save and restore a dashboard canvas.",
     "dashboard chat": "Edit a dashboard by chat and read the chat history.",
+    "dashboard chat attachment": "Upload a file to a dashboard's chat.",
     "dashboard context": "Create, review, apply and manage dashboard contexts.",
     "dashboard data": "Read the data behind a dashboard, draft or published.",
     "dashboard embed": "Manage dashboard embedding: keys, origins, tokens and usage.",
@@ -219,6 +221,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "dataset definition": "List, save and remove what terms mean for a dataset.",
     "dataset file-settings": "Read, update and undo a dataset's file settings.",
     "dataset interpretation": "Preview and confirm how a file is interpreted.",
+    "dataset tool-claim": "Read an emailed Open tables link and add its tables to a project.",
     "parameter group": "Create, list, update, reorder and delete parameter groups.",
     "project checkpoint": "List project checkpoints.",
     "project data-check": "List project data checks.",
@@ -226,11 +229,17 @@ _SUBGROUP_DESCRIPTIONS = {
     "project resource-dependencies": "Update project resource dependencies.",
     "project user": "Add, update and remove project users.",
     "skill agents-md": "Install the agent instructions file.",
+    "support billing": "Trials, plan changes, payment retries, refunds and cancellations.",
     "support connector": "Create, list, update and delete connectors.",
     "support connector-profile": "Manage connector profiles and their connectors.",
+    "support deal": "Create, read and update deals, and move them to partners.",
+    "support entitlement": "Read the entitlement registry.",
     "support feature": "Create, list, update and delete features.",
     "support feature-profile": "Manage feature profiles and their features.",
+    "support identity": "List and read users across workspaces.",
     "support ownership": "Transfer ownership.",
+    "support partner": "Create, read and update partners, and manage their billing and invoices.",
+    "support partner client": "List, delete and detach (or cancel detaching) a partner's clients.",
     "support plan": "Manage billing plans.",
     "support plan storage-option": "Manage a plan's storage options.",
     "support subscription": "Create, read and update subscriptions.",
@@ -238,6 +247,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "support template thumbnail": "Set and clear a template thumbnail.",
     "support user": "List, register and update users.",
     "support workspace": "Manage workspaces: create, suspend, restore and delete.",
+    "support workspace invite": "Cancel or resend a workspace invite.",
     "support workspace user": "Add, list, remove and transfer workspace users.",
     "user avatar": "Upload or delete the avatar.",
     "user preference": "Read and update user preferences.",
@@ -1423,6 +1433,13 @@ def _indexed_summary(command_id: str) -> str | None:
     return _summary_index().get(command_id)
 
 
+def _sdk_backed(command_id: str) -> bool:
+    """Whether the command's help comes from an SDK method's docstring."""
+    from mammoth_cli.commands.registry import _TARGETS
+
+    return _TARGETS.get(command_id, "").endswith(":generated_dashboard")
+
+
 #: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
 _RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
 _HELP_NOTES = {
@@ -1454,7 +1471,11 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
 
     parts: list[str] = []
-    summary = live_command_summary(command_id)
+    # The generated index equals the handler's docstring (a unit test pins it) and reading it
+    # keeps the handler's module, and the SDK it imports, out of ``--help``. A command built from
+    # an SDK method reads it live: the installed SDK may be newer than the index.
+    summary = None if _sdk_backed(command_id) else _indexed_summary(command_id)
+    summary = summary or live_command_summary(command_id)
     if summary:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
@@ -1619,7 +1640,9 @@ def _lazy_leaf_command(command_id: str) -> type[TyperCommand]:
                 info = CommandInfo(
                     name=self.name,
                     callback=_build_leaf(command_id),
-                    help=_command_help(command_id, command_by_id(command_id)),
+                    # The help text is read from this class's lazy ``help`` property; building
+                    # it here would import the contract and schema layers on every run.
+                    help="",
                     rich_help_panel=self.rich_help_panel,
                     context_settings=_leaf_context_settings(command_id),
                 )

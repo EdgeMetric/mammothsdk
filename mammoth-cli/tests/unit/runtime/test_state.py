@@ -530,6 +530,7 @@ def test_a_delete_whose_handler_saw_the_resource_gone_does_not_list_the_rest(
         "absent": True,
     }
 
+
 # `dashboard delete` returned the workspace's OTHER dashboards as its `state` (its
 # readback was `dashboard.list` with no ids), and `dashboard get` on the deleted id
 # answers 4PERM002 because the backend checks permission before existence — so the
