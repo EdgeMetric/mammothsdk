@@ -776,7 +776,7 @@ def _run_status(invocation: Invocation, *, check: bool) -> tuple[dict[str, Any],
         try:
             service.check_connection()
             data["connected"] = True
-            pins = pinned_projects(service)
+            pins = pinned_projects(service, auth, profile=invocation.profile, refresh=True)
             data["token_project"] = pins[0] if pins is not None else None
             data["token_projects"] = list(pins) if pins is not None else None
             ws_name = labels.workspace_name(service, workspace_id) if workspace_id else None

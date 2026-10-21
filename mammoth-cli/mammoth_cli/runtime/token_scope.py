@@ -7,15 +7,30 @@ lowest; the only field a server older than multi-project sign-in sends). This mo
 reads them so a command can refuse before it creates something the token cannot open.
 
 A pin is a non-empty sorted tuple of project ids; None means not limited.
+
+The answer is fixed for the life of a credential, so it is cached on disk for an hour,
+keyed by a fingerprint of the long-lived credential. The cache only decides which refusal
+or hint the CLI shows; the server enforces the pin on every request, so a stale answer can
+never grant access. Diagnostics (``doctor``, ``auth status``) and the 403 hint read it live.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import re
+import tempfile
+import time
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Any
 
+from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, CliError
+from mammoth_cli.manifest.loader import _cache_enabled, cache_dir
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.labels import label, project_name
 from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
 from mammoth_cli.services.protocol import MammothService
@@ -23,6 +38,10 @@ from mammoth_cli.services.protocol import MammothService
 Pins = tuple[int, ...]
 
 _CURRENT_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.current"
+
+#: How long a cached pin answer is trusted.
+PIN_CACHE_TTL_SECONDS = 3600
+_PIN_CACHE_PREFIX = "pins-"
 
 #: Above this many pinned projects, messages give ids only: one name read per project.
 MAX_NAMED_PINS = 5
@@ -40,8 +59,109 @@ def as_pins(pin: int | Pins | None) -> Pins | None:
     return tuple(ids) or None
 
 
-def pinned_projects(service: MammothService) -> Pins | None:
-    """The projects this credential is limited to, sorted; None when it is not limited."""
+def _fingerprint(auth: ResolvedAuth, profile: str | None) -> str | None:
+    """A digest naming this credential, workspace and endpoint; None when it has no stable one.
+
+    An OAuth login is named by its client and connection (``grant_id``, else the refresh
+    token's family id), never by the hourly access token or the rotating refresh token.
+    """
+    if auth.headers:
+        return None
+    if auth.api_token is not None:
+        identity = f"token:{auth.api_token}"
+    elif auth.api_key is not None:
+        identity = f"key:{auth.api_key}:{auth.api_secret}"
+    elif auth.token_provider is not None:
+        name = profile or profiles.get_selected()
+        credential = credentials.load_credential(name)
+        session = credential.oauth if credential is not None else None
+        if session is None:
+            return None
+        connection = session.grant_id
+        if connection is None:
+            family = session.refresh.partition(".")[0]
+            if not family.isdecimal():
+                return None
+            connection = int(family)
+        identity = f"oauth:{session.client_id}:{connection}"
+    else:
+        return None
+    parts = (identity, profile or "", auth.base_url, str(auth.workspace_id))
+    return hashlib.sha256("\0".join(parts).encode()).hexdigest()[:32]
+
+
+def _pin_cache_path(fingerprint: str) -> Path:
+    return cache_dir() / f"{_PIN_CACHE_PREFIX}{fingerprint}.json"
+
+
+def _read_pin_cache(path: Path) -> tuple[bool, Pins | None]:
+    """``(True, pins)`` for a fresh cached answer; ``(False, None)`` on a miss or any error."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        at, pins = data["at"], data["pins"]
+        if not isinstance(at, int | float) or not 0 <= time.time() - at < PIN_CACHE_TTL_SECONDS:
+            return False, None
+        if pins is None:
+            return True, None
+        if not isinstance(pins, list) or not all(_is_id(pin) for pin in pins) or not pins:
+            return False, None
+        return True, tuple(sorted(set(pins)))
+    except (OSError, ValueError, KeyError, TypeError):
+        return False, None
+
+
+def _write_pin_cache(path: Path, pins: Pins | None) -> None:
+    """Write the answer atomically, owner-only; a cache that cannot be written is skipped."""
+    try:
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump({"at": time.time(), "pins": list(pins) if pins else None}, handle)
+            os.chmod(tmp, 0o600)
+            os.replace(tmp, path)
+        except BaseException:
+            Path(tmp).unlink(missing_ok=True)
+            raise
+        for old in path.parent.glob(f"{_PIN_CACHE_PREFIX}*.json"):
+            if old != path and time.time() - old.stat().st_mtime > PIN_CACHE_TTL_SECONDS:
+                old.unlink(missing_ok=True)
+    except OSError:
+        return
+
+
+def pinned_projects(
+    service: MammothService,
+    auth: ResolvedAuth | None = None,
+    *,
+    profile: str | None = None,
+    refresh: bool = False,
+) -> Pins | None:
+    """The projects this credential is limited to, sorted; None when it is not limited.
+
+    With ``auth`` the answer comes from the on-disk cache when it is fresh, and a live
+    read refreshes the cache. ``refresh`` skips the cached answer (diagnostics, a 403).
+    Without ``auth`` the server is always asked.
+    """
+    path: Path | None = None
+    if auth is not None and not embedded.active() and _cache_enabled():
+        try:
+            fingerprint = _fingerprint(auth, profile)
+        except CliError:
+            fingerprint = None
+        if fingerprint is not None:
+            path = _pin_cache_path(fingerprint)
+            if not refresh:
+                hit, cached = _read_pin_cache(path)
+                if hit:
+                    return cached
+    pins = _live_pins(service)
+    if path is not None:
+        _write_pin_cache(path, pins)
+    return pins
+
+
+def _live_pins(service: MammothService) -> Pins | None:
     current = service.call(_CURRENT_SYMBOL)
 
     def read(key: str) -> Any:

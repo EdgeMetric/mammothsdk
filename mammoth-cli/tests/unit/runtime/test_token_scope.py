@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import time
+from pathlib import Path
+from typing import Any
+
 import pytest
 
 from mammoth_cli.commands.doctor import _scope_check
+from mammoth_cli.context import credentials
+from mammoth_cli.context.credentials import OAuthSession
+from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime.token_scope import refuse_pinned_project
+from mammoth_cli.runtime import token_scope
+from mammoth_cli.runtime.token_scope import pinned_projects, refuse_pinned_project
 
 
 def test_a_pinned_token_is_refused_with_the_project_it_is_limited_to() -> None:
@@ -204,3 +212,116 @@ def test_doctor_fails_when_the_selected_project_is_none_of_the_pinned_ones() -> 
     check = _scope_check((3, 7), selected_project=8)
     assert check["ok"] is False
     assert "use --project 3" in check["detail"]
+
+
+# --- the on-disk pin cache ----------------------------------------------------------
+
+
+class _CountingService:
+    """A service whose ``/workspaces/current`` answer is fixed and whose calls are counted."""
+
+    def __init__(self, current: dict[str, object]) -> None:
+        self.current = current
+        self.calls = 0
+
+    def call(self, _symbol: str, /, **_kwargs: object) -> object:
+        self.calls += 1
+        return self.current
+
+
+def _token_auth(token: str = "mm_abc") -> ResolvedAuth:
+    return ResolvedAuth(None, None, 7, "https://api.example.test", api_token=token)
+
+
+def _pins(
+    service: _CountingService, auth: ResolvedAuth | None = None, **kwargs: Any
+) -> token_scope.Pins | None:
+    return pinned_projects(service, auth, **kwargs)  # type: ignore[arg-type]
+
+
+def test_the_pin_is_read_live_once_then_from_the_cache() -> None:
+    service = _CountingService({"projects": [9, 4]})
+    auth = _token_auth()
+    assert _pins(service, auth) == (4, 9)
+    assert _pins(service, auth) == (4, 9)
+    assert service.calls == 1
+
+
+def test_an_unlimited_token_is_cached_too() -> None:
+    service = _CountingService({})
+    auth = _token_auth()
+    assert _pins(service, auth) is None
+    assert _pins(service, auth) is None
+    assert service.calls == 1
+
+
+def test_refresh_reads_live_and_updates_the_cache() -> None:
+    service = _CountingService({"project": 4})
+    auth = _token_auth()
+    assert _pins(service, auth) == (4,)
+    service.current = {"project": 5}
+    assert _pins(service, auth, refresh=True) == (5,)
+    assert _pins(service, auth) == (5,)
+    assert service.calls == 2
+
+
+def test_another_credential_does_not_share_the_answer() -> None:
+    service = _CountingService({"project": 4})
+    _pins(service, _token_auth("mm_one"))
+    _pins(service, _token_auth("mm_two"))
+    assert service.calls == 2
+
+
+def test_no_auth_means_no_cache() -> None:
+    service = _CountingService({"project": 4})
+    _pins(service)
+    _pins(service)
+    assert service.calls == 2
+
+
+def test_an_expired_entry_is_read_live(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = _CountingService({"project": 4})
+    auth = _token_auth()
+    _pins(service, auth)
+    later = time.time() + token_scope.PIN_CACHE_TTL_SECONDS + 1
+    monkeypatch.setattr(token_scope.time, "time", lambda: later)
+    _pins(service, auth)
+    assert service.calls == 2
+
+
+def test_a_corrupt_entry_falls_back_to_the_live_call() -> None:
+    service = _CountingService({"project": 4})
+    auth = _token_auth()
+    _pins(service, auth)
+    (path,) = token_scope.cache_dir().glob("pins-*.json")
+    path.write_text("{not json", encoding="utf-8")
+    assert _pins(service, auth) == (4,)
+    assert service.calls == 2
+
+
+def test_the_cache_file_is_private_and_holds_no_secret() -> None:
+    _pins(_CountingService({"project": 4}), _token_auth("mm_secretvalue"))
+    (path,) = token_scope.cache_dir().glob("pins-*.json")
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert "mm_secretvalue" not in path.read_text(encoding="utf-8")
+
+
+def test_an_oauth_login_is_keyed_by_its_connection_not_its_access_token(
+    isolated_cli_config: Path,
+) -> None:
+    def store(access: str, refresh: str) -> None:
+        credentials.store_credentials(
+            "work",
+            storage="file",
+            oauth=OAuthSession(
+                access=access, refresh=refresh, expires_at=1, client_id="cli", grant_id=11
+            ),
+        )
+
+    auth = ResolvedAuth(None, None, 7, "https://api.example.test", token_provider=lambda: "x")
+    service = _CountingService({"project": 4})
+    store("access-1", "1.aaa")
+    _pins(service, auth, profile="work")
+    store("access-2", "1.bbb")  # a refresh: new access and refresh tokens, same connection
+    _pins(service, auth, profile="work")
+    assert service.calls == 1
