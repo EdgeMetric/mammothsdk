@@ -34,7 +34,7 @@ Work in this order: later rows depend on earlier ones. **Ask before every step m
 | GitHub Latest release | `gh release edit cli-vX --latest` |
 | installer URL | Add the installers and `SHA256SUMS` to the CLI release. |
 | uv.lock pins | `cd mammoth-cli && poetry lock && uv lock`, commit both on a branch, PR. |
-| CHANGELOG release heading | On a branch: add `## mammoth-io X, mammoth-cli Y, mammoth-mcp-server Z (YYYY-MM-DD)` right below `## [Unreleased]` (each `###` below it already names its version), PR. |
+| CHANGELOG release heading | On a branch: move every entry under `## [Unreleased]` to a new `## mammoth-io X, mammoth-cli Y, mammoth-mcp-server Z (YYYY-MM-DD)` heading right below it (each `###` names its version), leave `## [Unreleased]` empty, PR. |
 | ⚠ MCP registry | Check the "live server card" row first: publish only a version that is deployed. `cd mammoth-mcp-server`, log in with the DNS key (`~/.config/mammoth/mcp-registry-key.pem`, recipe in mm-ai-docs `deploy/README.md`, step 5), `mcp-publisher validate`, `mcp-publisher publish`. A version publishes once. |
 | MCP server deployed | Deploy is outside this skill (`mammoth-mcp-server/deploy`). Tell the user. |
 | mm-ai-docs main skill version | The row names the `auto/cli-contract-<ver>` PR when it exists. Verify it before merging: in a worktree of the PR, install the published CLI in a fresh venv and run `MAMMOTH_CLI=<venv>/bin/mammoth npm run -s docs:capabilities:check` and `<venv>/bin/python ai_backend/scripts/sync_skill.py --from-package --check`. A digest-only drift of `mammoth-cli.tar.gz` with identical extracted contents is gzip bytes, not content. No PR: run the "Regenerate CLI contract" workflow in mm-ai-docs. ⚠ Merge. |
