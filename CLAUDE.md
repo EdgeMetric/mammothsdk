@@ -76,6 +76,7 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 ## Conventions
 
 - All enums extend `str, Enum` — serialize as strings in JSON, work with IDE autocomplete
+- **Every user-visible change adds a `CHANGELOG.md` entry under `## [Unreleased]` in the same PR**, in the matching `### Added/Changed/Deprecated/Removed/Fixed (next <packages>)` section. Tests, CI and refactors with no behaviour change may skip it. On publish, move everything under `[Unreleased]` to the new release heading (`## mammoth-io X, mammoth-cli Y, mammoth-mcp-server Z (YYYY-MM-DD)`, with each `###` naming its version) and leave `## [Unreleased]` empty
 - Version is set in **two places** (keep in sync): `pyproject.toml` and `mammoth/__init__.py` (CLI: `mammoth-cli/`, MCP server: `mammoth-mcp-server/`, same pair per package). They cannot be merged: Poetry 2 rejects a dynamic `[project] version` (`poetry version`/`check`/`build` run in the release workflows), and `importlib.metadata` goes stale in editable/`PYTHONPATH` checkouts and costs start-up time. Per-package unit tests and `scripts/release_status.py` fail when the two differ
 - Line length: 100 (black + ruff)
 - Python target: 3.12–3.14 (`from __future__ import annotations` used throughout)
