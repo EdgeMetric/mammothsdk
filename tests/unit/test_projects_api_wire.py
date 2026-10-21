@@ -73,20 +73,21 @@ async def test_list_with_offset_and_explicit_workspace(
 async def test_list_including_non_members_tags_each_project_with_membership(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
-    # Two answers are needed for the same route: the full list, then the member list.
-    answers = [
-        {"projects": [{"id": 1, "name": "A"}, {"id": 2, "name": "B"}]},
-        {"projects": [{"id": 2}]},
-    ]
-    server.answers[f"GET {WS}"] = answers[0]
+    # The same route answers differently by the `subscribed` filter: the unfiltered list holds
+    # both projects, the subscribed (member) list only project 2.
+    class BySubscribed(dict[str, Any]):
+        def get(self, key: str, default: Any = None) -> Any:
+            if server.requests[-1]["query"].get("subscribed") == "true":
+                return (200, {"projects": [{"id": 2}]})
+            return (200, {"projects": [{"id": 1, "name": "A"}, {"id": 2, "name": "B"}]})
+
+    server.answers = BySubscribed()
     page = await client.projects.list(include_non_members=True)
     first = _req(server, 0)
     assert "subscribed" not in first["query"]
-    # Without scripted per-call answers the member lookup sees the same payload,
-    # so both projects are members; the request itself is what must differ.
     second = _req(server, 1)
     assert second["query"] == {"fields": "id", "limit": "100", "subscribed": "true"}
-    assert [p["member"] for p in page["projects"]] == [True, True]
+    assert [(p["id"], p["member"]) for p in page["projects"]] == [(1, False), (2, True)]
 
 
 async def test_list_all_follows_offsets_until_a_short_page(

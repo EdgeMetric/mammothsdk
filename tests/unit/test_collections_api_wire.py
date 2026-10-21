@@ -408,3 +408,74 @@ async def test_upload_files_validates_before_any_request(
     with pytest.raises(MammothValidationError, match=message):
         await client.collections.upload_files(2, files, append_to_ds_id=append)
     assert server.requests == []
+
+
+# --- email updates: PUT /collections/{id}/email-updates ------------------------------------
+
+
+async def test_set_email_updates_puts_the_spec_settings_body(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.collections.set_email_updates(
+        2,
+        True,
+        "Asia/Kolkata",
+        trigger="schedule",
+        frequency="weekly",
+        weekday=0,
+        monthday=28,
+        time_of_day="07:30",
+        numbers={"11": ["k1", "k2"]},
+    )
+    assert _only(server) == {
+        "method": "PUT",
+        "path": "/collections/2/email-updates",
+        "query": {},
+        "body": {
+            "enabled": True,
+            "timezone": "Asia/Kolkata",
+            "trigger": "schedule",
+            "frequency": "weekly",
+            "weekday": 0,
+            "monthday": 28,
+            "time_of_day": "07:30",
+            "numbers": {"11": ["k1", "k2"]},
+        },
+    }
+    props = schema("EmailUpdateSettingsBody")["properties"]
+    assert set(_only(server)["body"]) <= set(props)
+    assert _only(server)["body"]["trigger"] in schema("Trigger")["enum"]
+    assert _only(server)["body"]["frequency"] in schema("Frequency")["enum"]
+
+
+async def test_set_email_updates_sends_only_the_required_fields_by_default(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.collections.set_email_updates(2, False, "UTC")
+    assert _only(server)["method"] == "PUT"
+    assert _only(server)["body"] == {"enabled": False, "timezone": "UTC"}
+    assert set(schema("EmailUpdateSettingsBody")["required"]) == {"enabled", "timezone"}
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"enabled": "yes", "timezone": "UTC"}, "`enabled` must be true or false"),
+        ({"enabled": True, "timezone": ""}, "`timezone` must be an IANA time zone name"),
+        ({"enabled": True, "timezone": "UTC", "trigger": "hourly"}, "`trigger` must be one of"),
+        ({"enabled": True, "timezone": "UTC", "frequency": "yearly"}, "`frequency` must be one of"),
+        ({"enabled": True, "timezone": "UTC", "weekday": 7}, "`weekday` must be 0"),
+        ({"enabled": True, "timezone": "UTC", "monthday": 29}, "`monthday` must be 1 to 28"),
+        ({"enabled": True, "timezone": "UTC", "time_of_day": "24:00"}, "`time_of_day` must be"),
+        ({"enabled": True, "timezone": "UTC", "numbers": {"1": "k"}}, "`numbers` must map"),
+    ],
+)
+async def test_set_email_updates_validates_before_any_request(
+    kwargs: dict[str, Any],
+    message: str,
+    server: RecordingServer,
+    client: MammothClient,  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError, match=message):
+        await client.collections.set_email_updates(2, **kwargs)
+    assert server.requests == []

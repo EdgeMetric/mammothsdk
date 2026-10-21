@@ -152,6 +152,7 @@ async def test_update_sends_the_patch_list(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=ValidationError,
     reason="BUG: PatchOperation.value is str|None; the spec's PatchOperation.value also takes "
     "a list of strings",
 )

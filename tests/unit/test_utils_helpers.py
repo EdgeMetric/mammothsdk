@@ -38,6 +38,7 @@ class TestFormatDateRange:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValueError,
         reason="BUG: a datetime with whole seconds is sent without '.%f'; the backend's "
         "strptime('%Y-%m-%dT%H:%M:%S.%fZ') rejects it",
     )
@@ -47,6 +48,7 @@ class TestFormatDateRange:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValueError,
         reason="BUG: timezone-aware datetimes are sent with '+00:00', not the 'Z' the backend "
         "requires",
     )

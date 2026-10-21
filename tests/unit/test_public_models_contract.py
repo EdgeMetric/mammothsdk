@@ -105,6 +105,7 @@ class TestDatasetModels:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValidationError,
         reason="BUG: DatasetSchema.created_by is int|None but spec DsInfo.created_by is a string",
     )
     def test_dataset_accepts_spec_string_created_by(self) -> None:
@@ -123,6 +124,7 @@ class TestDatasetModels:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValidationError,
         reason="BUG: DatasetPatchRequest.patch is a required list; spec DatasetPatchRequest "
         "takes a single `patch` operation or a `patches` list (both optional)",
     )
@@ -170,6 +172,7 @@ class TestDataviewModels:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValidationError,
         reason="BUG: DataviewSchema requires dataset_id but spec DataviewInfo names it ds_id",
     )
     def test_dataview_accepts_spec_dataview_info(self) -> None:
@@ -177,6 +180,7 @@ class TestDataviewModels:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValidationError,
         reason="BUG: DataviewsList cannot parse spec DataviewInfoList (items use ds_id)",
     )
     def test_dataview_list_accepts_spec_dataview_info_list(self) -> None:
@@ -189,6 +193,7 @@ class TestDataviewModels:
 
     @pytest.mark.xfail(
         strict=True,
+        raises=ValidationError,
         reason="BUG: ActiveUsersList expects 'users'; spec DataviewActiveUsers uses 'active_users'",
     )
     def test_active_users_accepts_spec_shape(self) -> None:

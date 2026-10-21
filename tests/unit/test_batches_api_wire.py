@@ -138,6 +138,7 @@ async def test_create_sends_optional_fields_under_the_spec_names(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="BUG: create(change_map=...) sends `change_map`, which is not a BatchesPostRequest "
     "property in the pinned spec; the server drops it silently",
 )

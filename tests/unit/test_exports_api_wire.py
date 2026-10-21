@@ -135,6 +135,7 @@ async def test_list_refuses_a_non_positive_dataset(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=AssertionError,
     reason="BUG: ExportStatus.QUEUED is not in the spec's PipelineItemStatus filter enum, so "
     "list(status=QUEUED) sends a value the server rejects",
 )

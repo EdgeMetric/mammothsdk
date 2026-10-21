@@ -323,6 +323,7 @@ async def test_preflights_get_the_dashboard_route(
 
 @pytest.mark.xfail(
     strict=True,
+    raises=MammothValidationError,
     reason="BUG: DashboardBiPreflightResponse requires figures_*, degraded, refusals and "
     "row/column counts, but the spec's PowerBiPreflightResponse only requires `exportable`",
 )
@@ -458,4 +459,110 @@ async def test_an_unreadable_file_is_reported_as_cannot_be_opened(
             await client.dashboards.import_workbook(path)
     finally:
         path.chmod(0o600)
+    assert server.requests == []
+
+
+# --- archive and share ----------------------------------------------------------
+
+
+@pytest.mark.parametrize("archived", [True, False])
+async def test_archive_posts_the_archived_flag_to_the_dashboard_route(
+    archived: bool, server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.dashboards.archive(5, archived)
+    assert _only(server) == {
+        "method": "POST",
+        "path": "/dashboards/5/archive",
+        "query": {},
+        "body": {"archived": archived},
+    }
+    assert schema("DashboardArchiveParams")["required"] == ["archived"]
+
+
+@pytest.mark.parametrize(
+    ("dashboard_id", "archived", "message"),
+    [
+        (0, True, "`dashboard_id` must be a positive"),
+        (True, True, "`dashboard_id` must be a positive"),
+        (5, 1, "`archived` must be a boolean"),
+        (5, None, "`archived` must be a boolean"),
+    ],
+)
+async def test_archive_refuses_bad_input_before_any_request(
+    dashboard_id: Any,
+    archived: Any,
+    message: str,
+    server: RecordingServer,
+    client: MammothClient,  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError, match=message):
+        await client.dashboards.archive(dashboard_id, archived)
+    assert server.requests == []
+
+
+async def test_share_publicly_posts_only_the_auth_type(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    from mammoth.models.dashboards import DashboardAuthType
+
+    await client.dashboards.share(5, DashboardAuthType.PUBLIC)
+    assert _only(server) == {
+        "method": "POST",
+        "path": "/dashboards/5/share",
+        "query": {},
+        "body": {"params": {"auth": {"type_of_auth": "public"}}},
+    }
+    assert schema("DashboardShareSpec")["required"] == ["params"]
+    assert schema("DashboardShareParams")["required"] == ["auth"]
+    assert set(_only(server)["body"]["params"]["auth"]) <= set(
+        schema("DashboardAuth")["properties"]
+    )
+
+
+async def test_share_with_mammoth_users_sends_each_users_email_role_and_flag(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    from mammoth.models.dashboards import DashboardAuthType, DashboardShareRole, DashboardShareUser
+
+    users = [
+        DashboardShareUser(email="a@x.io"),
+        DashboardShareUser(email="b@x.io", role=DashboardShareRole.EDITOR, shared=False),
+    ]
+    await client.dashboards.share(5, DashboardAuthType.MAMMOTH, users)
+    # The role names are the backend's permission constants (permission_service/v2/consts.py).
+    assert _only(server)["body"] == {
+        "params": {
+            "auth": {
+                "type_of_auth": "mammoth",
+                "options": {
+                    "users": [
+                        {"email": "a@x.io", "role": "dashboard_viewer", "shared": True},
+                        {"email": "b@x.io", "role": "dashboard_editor", "shared": False},
+                    ]
+                },
+            }
+        }
+    }
+
+
+async def test_share_drops_the_user_list_unless_the_auth_type_is_mammoth(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    from mammoth.models.dashboards import DashboardAuthType, DashboardShareUser
+
+    await client.dashboards.share(
+        5, DashboardAuthType.PASSWORD, [DashboardShareUser(email="a@x.io")]
+    )
+    assert _only(server)["body"] == {"params": {"auth": {"type_of_auth": "password"}}}
+
+
+async def test_share_refuses_a_bad_id_or_a_blank_email_before_any_request(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    from mammoth.models.dashboards import DashboardAuthType, DashboardShareUser
+
+    with pytest.raises(MammothValidationError, match="`dashboard_id` must be a positive"):
+        await client.dashboards.share(0, DashboardAuthType.PUBLIC)
+    with pytest.raises(MammothValidationError, match="email"):
+        await client.dashboards.share(5, DashboardAuthType.MAMMOTH, [DashboardShareUser(email="")])
     assert server.requests == []

@@ -12,9 +12,11 @@ from __future__ import annotations
 
 import inspect
 import re
+import sys
 import threading
 import typing
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -119,55 +121,103 @@ def _call_args(fn: Any, *, with_optionals: bool) -> tuple[dict[str, Any], list[s
     return kwargs, optional_names
 
 
+def _expected_operations() -> dict[str, tuple[str, str, dict[str, Any]]]:
+    """method name -> (HTTP method, path template, spec operation).
+
+    Taken from the spec plus the CLI's reviewed operationId -> command table
+    (``mammoth-cli/scripts/_command_map.py``), the same mapping the generator reads. Neither
+    is the SDK's own ``GENERATED_METHODS`` list or its path strings.
+    """
+    scripts = str(Path(__file__).resolve().parents[2] / "mammoth-cli" / "scripts")
+    sys.path.insert(0, scripts)
+    try:
+        from _command_map import OVERRIDES
+    finally:
+        sys.path.remove(scripts)
+    found: dict[str, tuple[str, str, dict[str, Any]]] = {}
+    for path, item in spec()["paths"].items():
+        for method, op in item.items():
+            command = OVERRIDES.get(op.get("operationId", "")) if method in _METHODS else None
+            if command and command.startswith("dashboard."):
+                name = command.removeprefix("dashboard.").replace(".", "_").replace("-", "_")
+                assert name not in found, f"two operations map to {name}"
+                found[name] = (method.upper(), path, op)
+    return found
+
+
+_METHODS = ("get", "post", "put", "patch", "delete")
+EXPECTED = _expected_operations()
+
+
 def _declared(op: dict[str, Any], location: str) -> set[str]:
     return {p["name"] for p in op.get("parameters", []) if p.get("in") == location}
 
 
-def test_generated_method_inventory_matches_the_module() -> None:
-    defined = {
-        n for n, v in vars(gen).items() if inspect.iscoroutinefunction(v) and not n.startswith("_")
+def test_generated_methods_are_exactly_the_non_handwritten_dashboard_operations() -> None:
+    generated = set(gen.GENERATED_METHODS)
+    assert len(gen.GENERATED_METHODS) == len(generated)
+    assert generated <= set(EXPECTED), sorted(generated - set(EXPECTED))
+    # Every other dashboard operation of the spec must be a hand-written DashboardsAPI method.
+    from mammoth.api import dashboards as hand
+
+    handwritten = {
+        name
+        for name in set(EXPECTED) - generated
+        if getattr(getattr(hand.DashboardsAPI, name, None), "__module__", None) == hand.__name__
     }
-    assert set(gen.GENERATED_METHODS) == defined
-    assert len(gen.GENERATED_METHODS) == len(set(gen.GENERATED_METHODS))
+    assert set(EXPECTED) - generated == handwritten, sorted(set(EXPECTED) - generated - handwritten)
+    assert {n for n, v in vars(gen).items() if inspect.iscoroutinefunction(v)} - {
+        n for n in vars(gen) if n.startswith("_")
+    } == generated
 
 
 @pytest.mark.parametrize("name", gen.GENERATED_METHODS)
-async def test_generated_method_hits_a_spec_operation(
+async def test_generated_method_hits_its_own_spec_operation(
     name: str, server: RecordingServer, client: MammothClient
 ) -> None:
-    fn = getattr(client.dashboards, name)
+    http_method, template, op = EXPECTED[name]
     kwargs, _ = _call_args(getattr(gen, name), with_optionals=False)
-    await fn(**kwargs)
+    await getattr(client.dashboards, name)(**kwargs)
 
     sent = server.requests[-1]
-    ops = _matching_ops(str(sent["method"]), str(sent["path"]))
-    assert ops, f"{name}: {sent['method']} {sent['path']} is not an operation in the pinned spec"
-    # A literal segment can satisfy a "{placeholder}" of another operation (".../analytics" vs
-    # ".../{dashboard_id}"), so every argument that names a placeholder must be in the path.
-    templates = _matching_templates(str(sent["method"]), str(sent["path"]))
+    assert (sent["method"], _template_regex(template).match(str(sent["path"])) is not None) == (
+        http_method,
+        True,
+    ), f"{name}: sent {sent['method']} {sent['path']}, spec operation is {http_method} {template}"
+    # A literal segment can also satisfy another "{placeholder}", so every argument that
+    # names a placeholder of this operation must appear in the path as given.
     segments = str(sent["path"]).split("/")
     for arg, value in kwargs.items():
-        if arg != "body" and any("{" + arg + "}" in t for t in templates):
-            assert (
-                str(value) in segments
-            ), f"{name}: `{arg}`={value!r} is missing from {sent['path']}"
+        if arg != "body" and "{" + arg + "}" in template:
+            assert str(value) in segments, f"{name}: `{arg}`={value!r} missing from {sent['path']}"
     # Optional query args are omitted; whatever is sent must be declared and every
     # required query parameter of the operation must be sent.
-    declared: set[str] = set().union(*(_declared(op, "query") for op in ops))
-    assert set(sent["query"]) <= declared, (name, sent["query"], declared)
-    if len(ops) == 1:
-        required = {
-            p["name"]
-            for p in ops[0].get("parameters", [])
-            if p.get("in") == "query" and p.get("required")
-        }
-        assert required <= set(sent["query"]), (name, required, sent["query"])
-    # A body is only sent for operations that declare one.
+    assert set(sent["query"]) <= _declared(op, "query"), (name, sent["query"])
+    required = {
+        p["name"] for p in op.get("parameters", []) if p.get("in") == "query" and p.get("required")
+    }
+    assert required <= set(sent["query"]), (name, required, sent["query"])
+    # A body is only sent when the operation declares one, and a required body is always sent.
+    body_spec = op.get("requestBody")
     if sent["body"] is not None:
-        assert any("requestBody" in op for op in ops), f"{name}: sends a body, spec has none"
-    # A spec operation with a required body must get one from the method.
-    if all(op.get("requestBody", {}).get("required") for op in ops):
+        assert body_spec, f"{name}: sends a body, the spec operation has none"
+        props = _body_properties(body_spec)
+        if props is not None and isinstance(sent["body"], dict):
+            assert set(sent["body"]) <= props, (name, set(sent["body"]) - props)
+    if body_spec and body_spec.get("required"):
         assert sent["body"] is not None, f"{name}: spec requires a body, none sent"
+
+
+def _body_properties(body_spec: dict[str, Any]) -> set[str] | None:
+    """Property names of a JSON request body schema, or None when it is not a plain object."""
+    content = body_spec.get("content", {}).get("application/json")
+    if not content:
+        return None
+    node = content.get("schema", {})
+    if "$ref" in node:
+        node = spec()["components"]["schemas"][node["$ref"].rsplit("/", 1)[-1]]
+    props = node.get("properties")
+    return set(props) if props else None
 
 
 @pytest.mark.parametrize("name", gen.GENERATED_METHODS)
