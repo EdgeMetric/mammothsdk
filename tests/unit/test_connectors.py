@@ -12,7 +12,7 @@ passing the plain ``name_key`` (e.g. ``"bigquery"``, as returned by
 from __future__ import annotations
 
 import base64
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
