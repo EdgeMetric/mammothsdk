@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mammoth_cli.commands.view import key_overlap
+from mammoth_cli.commands.view.join_check import key_overlap
 
 
 def test_key_overlap_weights_rows_and_treats_blank_keys_as_unmatched() -> None:

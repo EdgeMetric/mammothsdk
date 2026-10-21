@@ -10,6 +10,8 @@ import keyring.backend
 import keyring.errors
 import pytest
 
+from mammoth_cli.context import credentials
+
 
 class _MemoryKeyring(keyring.backend.KeyringBackend):
     """An in-process keyring backend so tests never touch the real OS keyring."""
@@ -41,6 +43,14 @@ def _isolated_keyring() -> None:
     keyring; each test gets an empty, disposable credential store.
     """
     keyring.set_keyring(_MemoryKeyring())
+    credentials.forget_loaded()
+
+
+@pytest.fixture(autouse=True)
+def _isolated_pin_cache(tmp_path_factory: pytest.TempPathFactory, monkeypatch: Any) -> None:
+    """Keep the on-disk pin cache of every unit test out of the developer's cache dir."""
+    directory = tmp_path_factory.mktemp("pin-cache")
+    monkeypatch.setattr("mammoth_cli.runtime.token_scope.cache_dir", lambda: directory)
 
 
 @pytest.fixture

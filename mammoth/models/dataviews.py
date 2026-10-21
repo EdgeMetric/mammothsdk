@@ -7,10 +7,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from ._base import MammothModel
 
 
-class DataviewColumn(BaseModel):
+class DataviewColumn(MammothModel):
     """Dataview column information."""
 
     model_config = ConfigDict(extra="allow")
@@ -21,7 +23,7 @@ class DataviewColumn(BaseModel):
     default_value: Any | None = None
 
 
-class DataviewProperties(BaseModel):
+class DataviewProperties(MammothModel):
     """Dataview properties configuration."""
 
     model_config = ConfigDict(extra="allow")
@@ -33,7 +35,7 @@ class DataviewProperties(BaseModel):
     has_transforms: bool | None = None
 
 
-class DataviewSchema(BaseModel):
+class DataviewSchema(MammothModel):
     """Dataview schema model."""
 
     model_config = ConfigDict(extra="allow")
@@ -51,7 +53,7 @@ class DataviewSchema(BaseModel):
     project_id: int | None = None
 
 
-class DataviewsList(BaseModel):
+class DataviewsList(MammothModel):
     """List of dataviews response."""
 
     model_config = ConfigDict(extra="allow")
@@ -62,7 +64,7 @@ class DataviewsList(BaseModel):
     offset: int | None = None
 
 
-class DataviewCreateRequest(BaseModel):
+class DataviewCreateRequest(MammothModel):
     """Dataview creation request."""
 
     model_config = ConfigDict(extra="allow")
@@ -72,7 +74,7 @@ class DataviewCreateRequest(BaseModel):
     clone_config_from: int | None = None
 
 
-class DataviewPatchData(BaseModel):
+class DataviewPatchData(MammothModel):
     """Dataview patch operation data."""
 
     model_config = ConfigDict(extra="allow")
@@ -82,7 +84,7 @@ class DataviewPatchData(BaseModel):
     value: Any | None = None
 
 
-class DataviewPatchRequest(BaseModel):
+class DataviewPatchRequest(MammothModel):
     """Dataview patch request."""
 
     model_config = ConfigDict(extra="allow")
@@ -90,7 +92,7 @@ class DataviewPatchRequest(BaseModel):
     patch: list[DataviewPatchData]
 
 
-class DataviewDataRequest(BaseModel):
+class DataviewDataRequest(MammothModel):
     """Dataview data request (POST method)."""
 
     model_config = ConfigDict(extra="allow")
@@ -103,7 +105,7 @@ class DataviewDataRequest(BaseModel):
     sort: str | None = None
 
 
-class DataviewDataResponse(BaseModel):
+class DataviewDataResponse(MammothModel):
     """Dataview data response."""
 
     model_config = ConfigDict(extra="allow")
@@ -116,7 +118,7 @@ class DataviewDataResponse(BaseModel):
     sequence: int | None = None
 
 
-class ActiveUser(BaseModel):
+class ActiveUser(MammothModel):
     """Active user on dataview."""
 
     model_config = ConfigDict(extra="allow")
@@ -127,7 +129,7 @@ class ActiveUser(BaseModel):
     last_active: datetime | None = None
 
 
-class ActiveUsersList(BaseModel):
+class ActiveUsersList(MammothModel):
     """List of active users on dataview."""
 
     model_config = ConfigDict(extra="allow")

@@ -11,7 +11,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import pexpect
 import pytest
 
 from mammoth_cli import __version__

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.view import wait_for_followon_job, wait_for_view_row_count
+from mammoth_cli.commands.view.settle import wait_for_followon_job, wait_for_view_row_count
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.verify import with_verify
 from mammoth_cli.services.testing import FakeMammothService

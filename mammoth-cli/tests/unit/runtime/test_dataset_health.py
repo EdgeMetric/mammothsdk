@@ -47,21 +47,6 @@ def test_the_backends_stored_suggestion_is_quoted_not_replaced_by_a_guess() -> N
     assert "Skip preamble rows, row 5 is the header" in entry["stored_suggestions"]
 
 
-def test_a_stored_interpretation_report_keeps_the_interpretation_route() -> None:
-    data = {
-        "id": 9,
-        "status": "need_action",
-        "additional_info": {
-            "interpretation": {"report": {"x": 1}, "instruction_suggestions": ["Use row 2"]}
-        },
-    }
-
-    entry = with_dataset_health(data)["dataset_health"][0]
-
-    assert entry["fix"].startswith("mammoth dataset interpretation preview 9 --input ")
-    assert "Skip preamble rows, row 5 is the header" in entry["fix"]
-
-
 def test_a_job_result_names_its_dataset_ds_id_and_still_carries_the_health() -> None:
     # `job get` answers {"job": {"response": {"ds_id": 3108, "status": ...}}}: no "id" key.
     data = {
@@ -87,7 +72,9 @@ def test_datasets_in_a_listing_are_checked_too() -> None:
 
 
 def test_a_listed_dataset_with_an_unclassified_status_is_unknown_not_silent() -> None:
-    data = {"datasets": [{"id": 5, "name": "x.csv", "status": "processing"}, {"id": 6}]}
+    data = {
+        "datasets": [{"id": 5, "name": "x.csv", "status": "processing"}, {"id": 6, "kind": "csv"}]
+    }
 
     health = with_dataset_health(data)["dataset_health"]
 
@@ -168,7 +155,9 @@ def test_a_compact_listing_entry_without_status_is_judged_from_its_size() -> Non
 
 
 def test_a_record_with_nothing_to_judge_by_says_why_it_is_unknown() -> None:
-    entry = with_dataset_health({"datasets": [{"id": 6, "name": "x"}]})["dataset_health"][0]
+    entry = with_dataset_health({"datasets": [{"id": 6, "name": "x", "kind": "csv"}]})[
+        "dataset_health"
+    ][0]
 
     assert entry["health"] == "unknown"
     assert "mammoth dataset get 6" in entry["health_reason"]

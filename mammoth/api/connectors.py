@@ -151,7 +151,12 @@ class ConnectorsAPI:
             project_id: Project ID (uses client default if not provided).
 
         Returns:
-            Dict with created connection info.
+            The server's 202 body, passed through unchanged. Its shape depends on the
+            connector: ``{connection_key, connection_config}`` for a created connection,
+            ``{job_id, status_code, failure_reason}`` when the server finishes the work
+            as a job, or ``{pending_id, access_token, picker_api_key}`` for a Google
+            connector that needs a file picked before the connection is final. Check
+            for the key you need rather than assuming one shape.
 
         Raises:
             MammothValidationError: If ``config`` is empty.

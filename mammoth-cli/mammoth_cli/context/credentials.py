@@ -486,6 +486,7 @@ def store_credentials(
     credential = Credential(
         api_token=api_token, api_key=api_key, api_secret=api_secret, oauth=oauth
     )
+    forget_loaded(profile)
     if storage == "file":
         _store_file(profile, credential)
         return "file"
@@ -519,15 +520,44 @@ def store_credentials(
     raise keyring_unavailable_error()
 
 
-def load_credential(profile: str) -> Credential | None:
+# What this process already loaded, by (config dir, profile). Every load costs a file read
+# and, for a keyring profile, a ~50 ms D-Bus call, and one command loads the same profile
+# from the resolver and from the OAuth token source. Every write below drops the entry.
+_loaded: dict[tuple[Path, str], Credential] = {}
+
+
+def forget_loaded(profile: str | None = None) -> None:
+    """Drop the per-process memo of loaded credentials (one profile, or all)."""
+    if profile is None:
+        _loaded.clear()
+        return
+    for key in [key for key in _loaded if key[1] == profile]:
+        del _loaded[key]
+
+
+def load_credential(profile: str, *, fresh: bool = False) -> Credential | None:
     """Load one profile's secret credential (token or key + secret).
 
     Tries the file store first, so a file-stored profile never waits on the
-    OS keyring, then the keyring.
+    OS keyring, then the keyring. A credential already loaded by this process is
+    returned as is until the CLI writes or deletes it; ``fresh`` reads the store again,
+    for a caller that waited on another process (the OAuth refresh lock).
 
     Raises:
         CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
     """
+    key = (config_dir(), profile)
+    if not fresh and key in _loaded:
+        return _loaded[key]
+    found = _load_uncached(profile)
+    if found is None:
+        _loaded.pop(key, None)
+    else:
+        _loaded[key] = found
+    return found
+
+
+def _load_uncached(profile: str) -> Credential | None:
     found = _load_file(profile)
     if found is not None:
         return found
@@ -551,6 +581,7 @@ def replace_oauth_session(profile: str, session: OAuthSession) -> str:
         CliError: ``keyring_unresponsive`` when the keyring hangs or fails.
     """
     credential = Credential(oauth=session)
+    forget_loaded(profile)
     if _load_file(profile) is not None:
         _store_file(profile, credential)
         return "file"
@@ -593,6 +624,7 @@ def delete_credentials(profile: str) -> bool:
     Returns:
         True if a credential was removed from either backend.
     """
+    forget_loaded(profile)
     removed_file = _delete_file(profile)
     removed_keyring = _delete_keyring(profile) if _keyring_available() else False
     return removed_keyring or removed_file

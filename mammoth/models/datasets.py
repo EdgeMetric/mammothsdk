@@ -7,10 +7,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from ._base import MammothModel
 
 
-class DatasetProperties(BaseModel):
+class DatasetProperties(MammothModel):
     """Dataset properties configuration."""
 
     model_config = ConfigDict(extra="allow")
@@ -24,7 +26,7 @@ class DatasetProperties(BaseModel):
     file_size: int | None = None
 
 
-class DatasetSchema(BaseModel):
+class DatasetSchema(MammothModel):
     """Dataset schema model."""
 
     model_config = ConfigDict(extra="allow")
@@ -42,7 +44,7 @@ class DatasetSchema(BaseModel):
     folder_id: int | None = None
 
 
-class DatasetsList(BaseModel):
+class DatasetsList(MammothModel):
     """List of datasets response."""
 
     model_config = ConfigDict(extra="allow")
@@ -53,7 +55,7 @@ class DatasetsList(BaseModel):
     offset: int | None = None
 
 
-class DatasetCreateSpec(BaseModel):
+class DatasetCreateSpec(MammothModel):
     """Dataset creation specification."""
 
     model_config = ConfigDict(extra="allow")
@@ -65,7 +67,7 @@ class DatasetCreateSpec(BaseModel):
     properties: DatasetProperties | None = None
 
 
-class DatasetPatchData(BaseModel):
+class DatasetPatchData(MammothModel):
     """Dataset patch operation data."""
 
     model_config = ConfigDict(extra="allow")
@@ -75,7 +77,7 @@ class DatasetPatchData(BaseModel):
     value: Any | None = None
 
 
-class DatasetPatchRequest(BaseModel):
+class DatasetPatchRequest(MammothModel):
     """Dataset patch request."""
 
     model_config = ConfigDict(extra="allow")
@@ -83,7 +85,7 @@ class DatasetPatchRequest(BaseModel):
     patch: list[DatasetPatchData]
 
 
-class DatasetDataResponse(BaseModel):
+class DatasetDataResponse(MammothModel):
     """Dataset data response."""
 
     model_config = ConfigDict(extra="allow")

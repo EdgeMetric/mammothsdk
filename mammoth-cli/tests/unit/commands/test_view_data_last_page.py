@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.view import _close_last_page
+from mammoth_cli.commands.view.data_read import _close_last_page
 
 
 def _page(*, offset: int, returned: int, total: int) -> dict[str, Any]:

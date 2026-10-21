@@ -147,12 +147,35 @@ def test_connector_update_blocked_without_confirmation(
 
 def test_connector_update_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"name": "New", "price_per_month": 5.0})
-    support_cmd.support_connector_update(
+    data, _meta = support_cmd.support_connector_update(
         _inv("support.connector.update", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert fake_service.call_log == [
         (_CONNECTOR_UPDATE, {"connector_id": 7, "name": "New", "price_per_month": 5.0})
     ]
+    assert isinstance(data, dict)
+    assert data["warnings"] == [support_cmd.CONNECTOR_PRICE_REMOVED]
+
+
+def test_connector_update_without_the_removed_price_has_no_warning(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"name": "New"})
+    data, _meta = support_cmd.support_connector_update(
+        _inv("support.connector.update", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert not (isinstance(data, dict) and "warnings" in data)
+
+
+def test_connector_create_warns_that_the_removed_price_has_no_effect(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(tmp_path, {"name": "Slack", "price_per_month": 3})
+    data, _meta = support_cmd.support_connector_create(
+        _inv("support.connector.create", input_file=doc, yes=True, confirm="Slack")
+    )
+    assert isinstance(data, dict)
+    assert data["warnings"] == [support_cmd.CONNECTOR_PRICE_REMOVED]
 
 
 # --- connector.delete --------------------------------------------------------------

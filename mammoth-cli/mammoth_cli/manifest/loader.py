@@ -8,16 +8,10 @@ loads them read-only; the build scripts generate them.
 from __future__ import annotations
 
 import functools
-import hashlib
 import json
-import os
-import tempfile
-import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
-import platformdirs
 
 SPEC_ROOT = Path(__file__).resolve().parent.parent.parent / "spec"
 MANIFEST_DIR = SPEC_ROOT / "manifests"
@@ -26,15 +20,19 @@ SCHEMA_PATH = MANIFEST_DIR / "schema-v1.json"
 OPENAPI_OPERATIONS_PATH = MANIFEST_DIR / "openapi-operations.yaml"
 SDK_METHODS_PATH = MANIFEST_DIR / "sdk-methods.yaml"
 
+COMPILED_DIR = MANIFEST_DIR / "compiled"
+COMPILED_COMMANDS = "commands"
+COMPILED_OPERATIONS = "openapi-operations"
+COMPILED_SDK_METHODS = "sdk-methods"
+
 MANIFEST_SCHEMA_VERSION = 1
-CACHE_ENV = "MAMMOTH_CLI_MANIFEST_CACHE"
-_LEGACY_CACHE_MAX_AGE_SECONDS = 7 * 24 * 3600
+_CLEANED_MARKER = ".manifest-cache-cleaned"
 
 
 def _read_yaml(path: Path) -> Any:
     if not path.exists():
         return None
-    # Imported here: a warm manifest cache means most runs never parse YAML.
+    # Imported here: the compiled JSON means most runs never parse YAML.
     import yaml
 
     # libyaml parses the 800 KiB of command manifests in ~0.2 s; the pure-Python
@@ -44,56 +42,40 @@ def _read_yaml(path: Path) -> Any:
 
 
 def cache_dir() -> Path:
-    """Return the directory the parsed-manifest cache lives in (not created)."""
+    """Return the user cache directory (not created); the manifests no longer live there."""
+    import platformdirs  # only the one-off cleanup needs it
+
     return Path(platformdirs.user_cache_dir("mammoth-cli", "Mammoth"))
 
 
-def _cache_enabled() -> bool:
-    return os.environ.get(CACHE_ENV, "1").strip().lower() not in {"0", "false", "no", "off"}
+def _tidy_legacy_caches() -> None:
+    """Delete the parsed-manifest caches older CLI versions left in the user cache dir.
 
-
-def _commands_fingerprint(paths: list[Path]) -> str:
-    """Identify the exact set of manifest files by name, size and mtime."""
-    digest = hashlib.sha256()
-    digest.update(str(MANIFEST_SCHEMA_VERSION).encode())
-    for path in paths:
-        stat = path.stat()
-        digest.update(f"{path.name}\0{stat.st_size}\0{stat.st_mtime_ns}\n".encode())
-    return digest.hexdigest()[:24]
-
-
-def _install_id() -> str:
-    """Identify this CLI install, so one install's cache never evicts another's."""
-    return hashlib.sha256(str(COMMANDS_DIR).encode()).hexdigest()[:8]
-
-
-def _commands_cache_path(fingerprint: str) -> Path:
-    return cache_dir() / f"commands-{_install_id()}-{fingerprint}.json"
-
-
-def _prune_stale_caches(current: Path) -> None:
-    """Delete this install's older cache files, and unattributable ones gone cold.
-
-    Every manifest edit or reinstall changes the fingerprint and so the file
-    name; without pruning they pile up forever. Runs only after a cache miss
-    wrote a new file. Files from before the install id was in the name cannot
-    be attributed, so they go only once untouched for a week.
+    Those versions wrote ``commands-*``, ``openapi-operations-*`` and ``sdk-methods-*``
+    files per install and per manifest edit, and they piled up (tens of MB). Nothing
+    writes them now. The scan runs once, guarded by a marker file; a cache dir that
+    does not exist yet has nothing to clean and costs a single ``stat``.
     """
-    cutoff = time.time() - _LEGACY_CACHE_MAX_AGE_SECONDS
-    for path in current.parent.glob("commands-*"):
-        if path == current:
-            continue
-        try:
-            ours = path.name.startswith(f"commands-{_install_id()}-")
-            if ours or path.stat().st_mtime < cutoff:
-                path.unlink()
-        except OSError:
-            continue
-
-
-def _read_commands_cache(path: Path) -> list[dict[str, Any]] | None:
+    directory = cache_dir()
+    marker = directory / _CLEANED_MARKER
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        if not directory.is_dir() or marker.exists():
+            return
+        for stem in ("commands", "openapi-operations", "sdk-methods"):
+            for path in directory.glob(f"{stem}-*"):
+                try:
+                    path.unlink()
+                except OSError:
+                    continue
+        marker.write_text("", encoding="utf-8")
+    except OSError:
+        return
+
+
+def _read_compiled(name: str) -> list[dict[str, Any]] | None:
+    """Return the pre-compiled JSON records for ``name``, or None when absent or unusable."""
+    try:
+        data = json.loads((COMPILED_DIR / f"{name}.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
@@ -101,56 +83,43 @@ def _read_commands_cache(path: Path) -> list[dict[str, Any]] | None:
     return data
 
 
-def _write_commands_cache(path: Path, records: list[dict[str, Any]]) -> bool:
-    """Write the cache atomically; a cache that cannot be written is simply skipped.
-
-    Returns:
-        True when the file was written.
-    """
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name, suffix=".tmp")
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(records, handle, separators=(",", ":"))
-        os.replace(tmp, path)
-    except OSError:
-        return False
-    return True
-
-
-def _read_yaml_cached(path: Path, root_key: str) -> list[dict[str, Any]]:
-    """Return ``path``'s top-level ``root_key`` list, via a JSON cache keyed by size and mtime.
-
-    The big single-file manifests (operations, SDK methods) used to be re-parsed
-    from YAML on every run that touched them, ~0.17 s for the operations file.
-    """
-    if not path.exists():
-        return []
-    cache_path: Path | None = None
-    prefix = f"{path.stem}-{_install_id()}-"
-    if _cache_enabled():
-        try:
-            stat = path.stat()
-            key = hashlib.sha256(
-                f"{MANIFEST_SCHEMA_VERSION}\0{stat.st_size}\0{stat.st_mtime_ns}".encode()
-            ).hexdigest()[:24]
-            cache_path = cache_dir() / f"{prefix}{key}.json"
-        except OSError:
-            cache_path = None
-        if cache_path is not None:
-            cached = _read_commands_cache(cache_path)
-            if cached is not None:
-                return cached
-    data = _read_yaml(path)
-    records = list(data.get(root_key, [])) if data else []
-    if cache_path is not None and _write_commands_cache(cache_path, records):
-        for old in cache_path.parent.glob(f"{prefix}*.json"):
-            if old != cache_path:
-                try:
-                    old.unlink()
-                except OSError:
-                    continue
+def _parse_yaml_commands() -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in sorted(COMMANDS_DIR.glob("*.yaml")):
+        data = _read_yaml(path)
+        if data:
+            records.extend(data.get("commands", []))
+    records.sort(key=lambda record: record["command_id"])
     return records
+
+
+def _parse_yaml_list(path: Path, root_key: str) -> list[dict[str, Any]]:
+    data = _read_yaml(path)
+    return list(data.get(root_key, [])) if data else []
+
+
+def parse_yaml_manifests() -> dict[str, list[dict[str, Any]]]:
+    """Parse the authoring YAML into the records stored under ``compiled/`` (name -> records)."""
+    return {
+        COMPILED_COMMANDS: _parse_yaml_commands(),
+        COMPILED_OPERATIONS: _parse_yaml_list(OPENAPI_OPERATIONS_PATH, "operations"),
+        COMPILED_SDK_METHODS: _parse_yaml_list(SDK_METHODS_PATH, "methods"),
+    }
+
+
+def compile_manifests() -> list[Path]:
+    """Write ``spec/manifests/compiled/*.json`` from the YAML; return the files written.
+
+    One record per line, so a manifest edit shows up as a small diff in review.
+    """
+    COMPILED_DIR.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name, records in parse_yaml_manifests().items():
+        lines = ",\n".join(json.dumps(record, separators=(",", ":")) for record in records)
+        path = COMPILED_DIR / f"{name}.json"
+        path.write_text(f"[\n{lines}\n]\n" if records else "[]\n", encoding="utf-8")
+        written.append(path)
+    return written
 
 
 @functools.lru_cache(maxsize=1)
@@ -161,46 +130,35 @@ def load_schema() -> dict[str, Any]:
 
 @functools.lru_cache(maxsize=1)
 def load_operations() -> list[dict[str, Any]]:
-    return _read_yaml_cached(OPENAPI_OPERATIONS_PATH, "operations")
+    _tidy_legacy_caches()
+    compiled = _read_compiled(COMPILED_OPERATIONS)
+    return (
+        compiled
+        if compiled is not None
+        else _parse_yaml_list(OPENAPI_OPERATIONS_PATH, "operations")
+    )
 
 
 @functools.lru_cache(maxsize=1)
 def load_sdk_methods() -> list[dict[str, Any]]:
-    return _read_yaml_cached(SDK_METHODS_PATH, "methods")
+    _tidy_legacy_caches()
+    compiled = _read_compiled(COMPILED_SDK_METHODS)
+    return compiled if compiled is not None else _parse_yaml_list(SDK_METHODS_PATH, "methods")
 
 
 @functools.lru_cache(maxsize=1)
 def load_commands() -> list[dict[str, Any]]:
     """Load every command record across all command group files, sorted by id.
 
-    The parsed records are cached as JSON under :func:`cache_dir`, keyed by the
-    manifest files' names, sizes and mtimes, so a normal invocation skips YAML
-    parsing entirely. Set ``MAMMOTH_CLI_MANIFEST_CACHE=0`` to bypass the cache.
+    Reads ``spec/manifests/compiled/commands.json``, generated from the YAML by
+    ``scripts/compile_manifests.py`` (a unit test fails when it is stale). A source
+    checkout without it parses the YAML in memory; nothing is written to disk.
     """
-    if not COMMANDS_DIR.exists():
-        return []
-    paths = sorted(COMMANDS_DIR.glob("*.yaml"))
-    cache_path: Path | None = None
-    if _cache_enabled():
-        try:
-            cache_path = _commands_cache_path(_commands_fingerprint(paths))
-        except OSError:
-            cache_path = None
-        if cache_path is not None:
-            cached = _read_commands_cache(cache_path)
-            if cached is not None:
-                return cached
-    records: list[dict[str, Any]] = []
-    for path in paths:
-        data = _read_yaml(path)
-        if not data:
-            continue
-        records.extend(data.get("commands", []))
-    records.sort(key=lambda record: record["command_id"])
-    if cache_path is not None:
-        if _write_commands_cache(cache_path, records):
-            _prune_stale_caches(cache_path)
-    return records
+    _tidy_legacy_caches()
+    compiled = _read_compiled(COMPILED_COMMANDS)
+    if compiled is not None:
+        return compiled
+    return _parse_yaml_commands() if COMMANDS_DIR.exists() else []
 
 
 @dataclass(frozen=True)

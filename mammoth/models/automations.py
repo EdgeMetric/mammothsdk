@@ -6,12 +6,13 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
+from ._base import MammothModel
 
 
-class AutomationInfo(BaseModel):
+class AutomationInfo(MammothModel):
     """Information about an automation."""
 
     model_config = ConfigDict(extra="allow")
@@ -24,7 +25,7 @@ class AutomationInfo(BaseModel):
     updated_at: str | None = None
 
 
-class ScheduleInfo(BaseModel):
+class ScheduleInfo(MammothModel):
     """Information about a schedule."""
 
     model_config = ConfigDict(extra="allow")
@@ -113,7 +114,7 @@ class OnRefreshAction(str, Enum):
 # ── Shared schedule param models ─────────────────────────────────────────────
 
 
-class RruleSpec(BaseModel):
+class RruleSpec(MammothModel):
     """Recurrence-rule specification sent inside a schedule create/update body.
 
     Attributes:
@@ -131,7 +132,7 @@ class RruleSpec(BaseModel):
     by_month_day: list[int] | None = None
 
 
-class PullDataExecutionParams(BaseModel):
+class PullDataExecutionParams(MammothModel):
     """Execution parameters for a ``pull_cloud_data`` work item.
 
     Attributes:
@@ -145,7 +146,7 @@ class PullDataExecutionParams(BaseModel):
     on_refresh_action: OnRefreshAction
 
 
-class WorkItemSpec(BaseModel):
+class WorkItemSpec(MammothModel):
     """A single work item in a schedule create/update body.
 
     All three fields are required when ``work_items`` is provided (backend
@@ -163,7 +164,7 @@ class WorkItemSpec(BaseModel):
     args: list[int]
 
 
-class ScheduleCreateSpec(BaseModel):
+class ScheduleCreateSpec(MammothModel):
     """Parameters for creating a schedule (shared by AutomationsAPI and SchedulesAPI).
 
     Attributes:
@@ -176,7 +177,7 @@ class ScheduleCreateSpec(BaseModel):
     work_items: list[WorkItemSpec] | None = None
 
 
-class SchedulePatchValue(BaseModel):
+class SchedulePatchValue(MammothModel):
     """Value payload for a ``replace + rrule`` schedule patch operation.
 
     Both fields are required when patching the rrule path.
@@ -255,7 +256,7 @@ class AlertType(str, Enum):
 # ── Automation param models ───────────────────────────────────────────────────
 
 
-class DataRefreshConfig(BaseModel):
+class DataRefreshConfig(MammothModel):
     """A single data-source entry for a ``run_data_retrieval`` task.
 
     Attributes:
@@ -265,7 +266,7 @@ class DataRefreshConfig(BaseModel):
     ds_id: int
 
 
-class TaskDetailsSpec(BaseModel):
+class TaskDetailsSpec(MammothModel):
     """Details payload for an automation task.
 
     Only the fields relevant to the chosen ``task_type`` need to be set; the
@@ -341,7 +342,7 @@ class TaskDetailsSpec(BaseModel):
     id: int | None = Field(default=None, gt=0)
 
 
-class AutomationTaskSpec(BaseModel):
+class AutomationTaskSpec(MammothModel):
     """A single task in an automation.
 
     Attributes:
@@ -355,14 +356,14 @@ class AutomationTaskSpec(BaseModel):
     conditions: list[dict[str, Any]] | None = None
 
 
-class UniqueSequenceColumn(BaseModel):
+class UniqueSequenceColumn(MammothModel):
     """The column a refresh reads to tell new rows from ones it already has."""
 
     c_name: str
     c_type: Literal["numeric", "date"]
 
 
-class ConditionDetailsSpec(BaseModel):
+class ConditionDetailsSpec(MammothModel):
     """Details for an automation condition.
 
     Fields are optional on the struct; required combinations are validated
@@ -390,7 +391,7 @@ class ConditionDetailsSpec(BaseModel):
     case_sensitive: bool = False
 
 
-class AutomationConditionSpec(BaseModel):
+class AutomationConditionSpec(MammothModel):
     """A single condition for an automation.
 
     Attributes:
@@ -402,7 +403,7 @@ class AutomationConditionSpec(BaseModel):
     details: ConditionDetailsSpec
 
 
-class PatchAutomationDetails(BaseModel):
+class PatchAutomationDetails(MammothModel):
     """Value payload for a ``replace + details`` automation patch operation.
 
     At least one field must be set (validated by the SDK).
@@ -416,7 +417,7 @@ class PatchAutomationDetails(BaseModel):
     condition_mode: AutomationConditionMode | None = None
 
 
-class AutomationPatchItem(BaseModel):
+class AutomationPatchItem(MammothModel):
     """A single JSON-patch operation for :meth:`AutomationsAPI.update`.
 
     Attributes:

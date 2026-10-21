@@ -39,9 +39,6 @@ htmlcov/
 *.egg
 *.egg-link
 
-# MCP server local config
-mammoth-mcp/.venv/
-mammoth-mcp/poetry.toml
 
 # Stale dev / scratch files
 test_debug.py
@@ -58,12 +55,10 @@ openapi.json
 # Env files
 .env
 *.env
-bridge/.env
 
 # Local-only reference / build output (not part of the SDK)
 mvc-service/
 site/
-bridge/
 *.docx
 
 
