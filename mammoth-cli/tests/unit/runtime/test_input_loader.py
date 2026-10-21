@@ -91,12 +91,15 @@ def test_malformed_json_says_what_the_parser_found_and_where() -> None:
     with pytest.raises(CliError) as excinfo:
         load_input_document(text, None)
     error = excinfo.value
+    # Python 3.14 names the trailing comma (column 26); 3.12 reports the next character.
+    with pytest.raises(json.JSONDecodeError) as parsed:
+        json.loads(text)
     assert error.details["line"] == 2
-    assert error.details["column"] == 26
-    assert "trailing comma" in error.details["parser_error"]
+    assert error.details["column"] == parsed.value.colno
+    assert error.details["parser_error"] == parsed.value.msg
     assert '"kpi",}' in error.details["near"]
     assert len(error.details["near"]) <= 40
-    assert "line 2 column 26" in error.message
+    assert f"line 2 column {parsed.value.colno}" in error.message
     assert error.details["near"] in error.hint
 
 

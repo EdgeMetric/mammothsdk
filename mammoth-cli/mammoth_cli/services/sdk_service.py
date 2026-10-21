@@ -195,7 +195,9 @@ class SdkMammothService:
             {"token_provider": auth.token_provider, "workspace_id": auth.workspace_id}
             if auth.token_provider is not None
             else (
-                {"api_token": auth.api_token}
+                # The resolver may already know the token's workspace: a hint saves the SDK
+                # asking for it again.
+                {"api_token": auth.api_token, "workspace_id": auth.workspace_id}
                 if auth.api_token is not None
                 else {
                     "api_key": auth.api_key,

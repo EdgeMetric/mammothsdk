@@ -57,7 +57,8 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 | `_advanced_ops.py` | join, lookup, json_extract, gen_ai, generate_sql, add_sql |
 
 ### Other key files
-- `_param_templates.py` — low-level payload builders for all task types
+- `_pure/builders.py` — per-operation payload builders (`build_<op>_params`); the mixins call these, and `builders.py` re-exports them publicly
+- `_param_templates.py` — standalone copy of the backend's param_templates; no SDK code imports it (only `tests/unit/test_transformations.py`), so use it as a payload-format reference
 - `_expression_parser.py` — math string expression → token list parser
 - `models/pipeline.py` — all enums (Operator, ColumnType, JoinType, etc.) and dataclasses (SetValue, CopySpec, etc.)
 - `api/` — 23 REST API sub-clients (CRUD operations)
@@ -67,7 +68,7 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 
 1. Add method to the appropriate mixin in `mammoth/_mixins/`
 2. Add dataclass to `mammoth/models/pipeline.py` if structured params needed
-3. Add payload builder to `mammoth/_param_templates.py`
+3. Add a `build_<op>_params` function to `mammoth/_pure/builders.py` (re-export it from `mammoth/builders.py`); the mixin method calls it
 4. Export new types from `mammoth/__init__.py`
 5. Add unit test to `tests/unit/test_transformations.py`
 6. Add integration test to `tests/integration/test_transformations.py`
@@ -75,7 +76,7 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 ## Conventions
 
 - All enums extend `str, Enum` — serialize as strings in JSON, work with IDE autocomplete
-- Version is set in **two places** (keep in sync): `pyproject.toml` and `mammoth/__init__.py`
+- Version is set in **two places** (keep in sync): `pyproject.toml` and `mammoth/__init__.py` (CLI: `mammoth-cli/`, MCP server: `mammoth-mcp-server/`, same pair per package). They cannot be merged: Poetry 2 rejects a dynamic `[project] version` (`poetry version`/`check`/`build` run in the release workflows), and `importlib.metadata` goes stale in editable/`PYTHONPATH` checkouts and costs start-up time. Per-package unit tests and `scripts/release_status.py` fail when the two differ
 - Line length: 100 (black + ruff)
 - Python target: 3.12–3.14 (`from __future__ import annotations` used throughout)
 - mypy strict mode with overrides for `api/` (return-value), `_mixins/` (attr-defined), and `view` (return-any)

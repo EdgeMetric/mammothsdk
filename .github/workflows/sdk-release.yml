@@ -1,8 +1,7 @@
 name: SDK Release
 
 # Publishes the mammoth-io SDK to PyPI on its own tag, independent of the CLI
-# release and of the combined publish.yml flow. This never publishes
-# mammoth-mcp. It runs only by manual dispatch; an authorized maintainer must
+# release. It runs only by manual dispatch; an authorized maintainer must
 # select an `sdk-vX.Y.Z` tag ref. Do not publish an `sdk-v*` release without
 # separate authorization.
 on:

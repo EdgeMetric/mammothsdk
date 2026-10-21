@@ -23,9 +23,13 @@ from mammoth.models.dashboard_generated import (
     ApplyTemplateSpec,
     AskParams,
     AskSpec,
+    AttachmentAction,
+    AttachmentCard,
+    AttachmentColour,
     AttachmentIntentForm,
     AttachmentJob,
     AttachmentResponse,
+    AttachmentSignals,
     AudienceAnonymous,
     AudienceCountries,
     AudienceCountry,
@@ -43,12 +47,14 @@ from mammoth.models.dashboard_generated import (
     AudienceViewport,
     BoardPreviewOut,
     BoardStatusModel,
+    BriefAsk,
     BulkWidgetDataParams,
     BulkWidgetDataSpec,
     CanvasMeta,
     CanvasResponse,
     ChangeAudienceParams,
     ChangeAudienceSpec,
+    ChatAttachmentResponse,
     ChatEditParams,
     ChatEditSpec,
     ChatRevision,
@@ -156,12 +162,14 @@ from mammoth.models.dashboard_generated import (
     ImportWorkbookForm,
     JobResponse,
     JobSchema,
+    LeftOut,
     LiveChartBroken,
     LiveChartListResponse,
     LiveChartOrigin,
     LiveChartRef,
     LiveChartResponse,
     LiveChartUsageResponse,
+    NumberCheck,
     ObjectJobSchema,
     OkResponse,
     OwnDataAcceptParams,
@@ -252,10 +260,14 @@ from mammoth.models.dashboard_generated import (
     TrackViewResponse,
     TrackViewSpec,
     Trigger,
+    UnavailableFileType,
     UnpublishedAuthor,
+    UnpublishedChange,
+    UnpublishedChangesResponse,
     UseTemplateParams,
     UseTemplateSpec,
     V3DashboardMetaType,
+    VideoStateResponse,
     VisibilityParams,
     VisibilitySpec,
     WidgetDataParams,
@@ -649,20 +661,26 @@ async def published_pdf_export(
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-async def video_export(self: Any, dashboard_id: int) -> ObjectJobSchema | JobResponse:
+async def video_export(
+    self: Any,
+    dashboard_id: int,
+    aspect: Literal["landscape", "square", "portrait", None] | None = None,
+) -> ObjectJobSchema | JobResponse:
     """Kick a motion-story video export."""
     path = "/dashboards/{dashboard_id}/video"
     path = path.replace("{dashboard_id}", str(dashboard_id))
-    params = None
+    params = {key: value for key, value in {"aspect": aspect}.items() if value is not None}
     response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
 
-async def published_video_export(self: Any, url: str) -> ObjectJobSchema | JobResponse:
+async def published_video_export(
+    self: Any, url: str, aspect: Literal["landscape", "square", "portrait", None] | None = None
+) -> ObjectJobSchema | JobResponse:
     """Kick a motion-story video export (published view)."""
     path = "/dashboards/url/{url}/video"
     path = path.replace("{url}", str(url))
-    params = None
+    params = {key: value for key, value in {"aspect": aspect}.items() if value is not None}
     response = await self._client._request_json("POST", path, params=params)
     return _typed_response(response, (ObjectJobSchema, JobResponse), allow_untyped=False)
 
@@ -750,13 +768,17 @@ async def published_pdf_artifact(self: Any, url: str, job_id: int) -> dict[str, 
     return response
 
 
-async def video_state(self: Any, dashboard_id: int) -> dict[str, Any]:
+async def video_state(
+    self: Any,
+    dashboard_id: int,
+    aspect: Literal["landscape", "square", "portrait", None] | None = None,
+) -> VideoStateResponse:
     """Motion-story video export state (never kicks a render)."""
     path = "/dashboards/{dashboard_id}/video-state"
     path = path.replace("{dashboard_id}", str(dashboard_id))
-    params = None
+    params = {key: value for key, value in {"aspect": aspect}.items() if value is not None}
     response = await self._client._request_json("GET", path, params=params)
-    return response
+    return _typed_response(response, (VideoStateResponse,), allow_untyped=False)
 
 
 async def oembed(

@@ -10,6 +10,36 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.
 
+### Added (next mammoth-io, mammoth-cli and mammoth-mcp-server)
+
+- SDK `await client.resolve_workspace_id()`. SDK calls on a token client look the workspace up without blocking the event loop; a direct `client.workspace_id` read inside a running loop still works, blocks for that one lookup and logs a one-time warning.
+- SDK `MammothClient(api_token=..., workspace_id=...)`: the workspace id is a hint that skips the lookup and sends no extra header.
+- SDK `MammothClient(http_client=...)` sends through a shared `httpx.AsyncClient`. Credentials go on each request, never on the shared client; a pool shared between users should keep no cookies.
+- New `.github/workflows/pr-checks.yml` runs the SDK, CLI and MCP checks (Python 3.12 and 3.14) on pull requests.
+
+### Changed (next mammoth-io, mammoth-cli and mammoth-mcp-server)
+
+- CLI: a project-scoped command no longer asks `GET /workspaces/current` every time. The token's project pin is cached on disk for an hour; `doctor`, `auth status` and the 403 hint read it live, and `auth login` and `auth logout` clear it. `MAMMOTH_CLI_PIN_CACHE=0` turns the cache off. Credentials load once per process. Measured on `project list`: about 1.6 to 2.0s and one request, from 2.4 to 3.9s and two.
+- CLI: command manifests ship pre-compiled as JSON. The CLI no longer writes a manifest cache to the user cache dir and removes the old `commands-*` files once.
+- CLI: `commands/view.py` is split into a `commands/view/` package, loaded per command; names stay reachable as `mammoth_cli.commands.view.X`.
+- SDK: Pydantic models build on first use (`defer_build`); importing the dashboard models takes about 0.26s instead of 0.40s.
+- MCP server: tool calls share one connection pool instead of a new TLS handshake per call, and the pool closes when the server stops. Its User-Agent is now `mammoth-mcp-server/<version> mammoth-io/<version>`.
+- OpenAPI spec re-pinned to production (728 operations); dashboard SDK and manifests regenerated.
+
+### Deprecated (next mammoth-io)
+
+- `SupportAPI.connector_create` and `connector_update`: `price_per_month` is no longer sent (production removed it from connectors) and a non-zero value raises a `DeprecationWarning`. CLI `support connector create` and `update` add a `warnings` entry when the input carries it.
+
+### Removed (next mammoth-io)
+
+- The legacy `mammoth-mcp` package, `bridge/`, the `mammoth-io[bridge]` extra and `publish.yml`. The hosted MCP server is `mammoth-mcp-server`.
+
+### Fixed (next mammoth-io, mammoth-cli)
+
+- `PipelineAPI.preview_task` refuses a `sample_size` outside 1 to 500 (the server's range) with `MammothValidationError`, and `view task preview` now forwards `sample_size`; before, the CLI dropped it and the server default always applied.
+- `SupportAPI.workspace_list` reads every page; it stopped at the server's first 50 workspaces.
+- `WorkspaceAPI.current` and `list` no longer look the workspace up first, which removed a duplicate `GET /workspaces/current` in the MCP server's token check.
+
 ### Added (mammoth-io 0.8.46, mammoth-cli 2.2.93)
 
 - `view transform convert-type`: `conversions[]` items take `input_formats` (list), `output_format` and `input_format_preference` (`uk` or `us`); `format` stays as an alias.

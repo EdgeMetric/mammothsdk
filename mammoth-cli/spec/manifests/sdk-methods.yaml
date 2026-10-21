@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 801
+method_count: 806
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -4060,7 +4060,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_video_export
-  signature: 'published_video_export(self: ''Any'', url: ''str'') -> ''ObjectJobSchema | JobResponse'''
+  signature: 'published_video_export(self: ''Any'', url: ''str'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.video.export
   alias_of: null
@@ -4915,7 +4916,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_export
-  signature: 'video_export(self: ''Any'', dashboard_id: ''int'') -> ''ObjectJobSchema | JobResponse'''
+  signature: 'video_export(self: ''Any'', dashboard_id: ''int'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.video.export
   alias_of: null
@@ -4927,7 +4929,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_state
-  signature: 'video_state(self: ''Any'', dashboard_id: ''int'') -> ''dict[str, Any]'''
+  signature: 'video_state(self: ''Any'', dashboard_id: ''int'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''VideoStateResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.video-state
   alias_of: null
@@ -5364,10 +5367,10 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_batch_data
   implementation_origin: mammoth.api.datasets.DatasetsAPI.get_batch_data
-  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | _list[str] | None'' = None,
-    limit: ''int'' = 50, offset: ''int'' = 0, workspace_id: ''int | None'' = None, project_id: ''int |
-    None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None) -> ''dict[str,
-    Any]'''
+  signature: 'get_batch_data(self, dataset_id: ''int'', batch_id: ''int'', columns: ''str | _list[str]
+    | None'' = None, limit: ''int'' = 50, offset: ''int'' = 0, workspace_id: ''int | None'' = None, project_id:
+    ''int | None'' = None, timeout: ''int | None'' = None, poll_interval: ''float | None'' = None) ->
+    ''dict[str, Any]'''
   openapi_operation_ids:
   - GetBatchData
   canonical_command: dataset.batch-data
@@ -5746,8 +5749,7 @@ methods:
 - sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
   implementation_origin: mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
   signature: 'conditional_format_replace(self, dataset_id: ''int'', dataview_id: ''int'', rules: ''_list[dict[str,
-    Any]]'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str,
-    Any]'''
+    Any]]'', workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.conditional-format.replace
   alias_of: null
@@ -9698,6 +9700,18 @@ methods:
   alias_of: null
   no_command_reason: SDK-only seam for a route the SDK has no method for, with the client's credentials
     and error handling; the CLI calls typed SDK methods instead.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.resolve_workspace_id
+  implementation_origin: mammoth.client.MammothClient.resolve_workspace_id
+  signature: resolve_workspace_id(self) -> 'int'
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null

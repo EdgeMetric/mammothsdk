@@ -37,6 +37,8 @@ PIPELINE_TERMINAL_STATES = frozenset({"ready", "runtime_error", "ref_error"})
 PIPELINE_RUNNING_STATES = frozenset({"modifying", "modified", "running"})
 
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
+ERR_SAMPLE_SIZE_RANGE = "`sample_size` must be an integer from 1 through 500, got {0!r}."
+PREVIEW_SAMPLE_SIZE_MAX = 500
 
 # Pipeline-item keys used to resolve the latest task sequence. Reads (data,
 # metadata) are scoped to a sequence: sequence 0 is the original dataset, and
@@ -345,11 +347,21 @@ class PipelineAPI:
             dataview_id: ID of the dataview.
             task_spec: Task specification to preview.
             dataset_id: Dataset ID (auto-detected if not provided).
-            sample_size: How many rows to sample; server default if omitted.
+            sample_size: How many rows to sample, 1 through 500; server default if
+                omitted.
 
         Returns:
             Preview result dict with sample data.
+
+        Raises:
+            MammothValidationError: If *sample_size* is not an integer from 1 through 500.
         """
+        if sample_size is not None and (
+            isinstance(sample_size, bool)
+            or not isinstance(sample_size, int)
+            or not 1 <= sample_size <= PREVIEW_SAMPLE_SIZE_MAX
+        ):
+            raise MammothValidationError(ERR_SAMPLE_SIZE_RANGE.format(sample_size))
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         response = await self._client._request_json(
             "POST",

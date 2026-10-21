@@ -1,6 +1,6 @@
 """Offline contract tests for the dashboard embed SDK bindings (CLI GAP)."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

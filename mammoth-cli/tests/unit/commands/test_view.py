@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view as view_cmd
+from mammoth_cli.commands.view import aggregate as view_aggregate
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import embedded
@@ -1042,7 +1043,7 @@ def test_data_compare_joins_pivot_rows_and_computes_exact_delta(
     def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
         return responses[int(invocation.extra_args[0])], {"profile": None}
 
-    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
     doc = _doc(
         tmp_path,
         {
@@ -1070,7 +1071,7 @@ def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
     def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
         return responses[int(invocation.extra_args[0])], {}
 
-    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
     doc = _doc(
         tmp_path,
         {
@@ -1099,7 +1100,7 @@ def test_data_compare_metric_only_is_a_single_row(
     def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
         return responses[int(invocation.extra_args[0])], {}
 
-    monkeypatch.setattr(view_cmd, "view_data_aggregate", fake_aggregate)
+    monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
     doc = _doc(tmp_path, {"metric": {"column": "Spend", "function": "SUM", "as_name": "Total"}})
     data = view_cmd.view_data_compare(
         _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
@@ -2546,6 +2547,14 @@ def test_task_preview_passes_task_spec(fake_service: FakeMammothService, tmp_pat
     view_cmd.view_task_preview(_inv("view.task.preview", extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
         (_TASK_PREVIEW, {"dataview_id": 7, "task_spec": {"kind": "math"}})
+    ]
+
+
+def test_task_preview_passes_sample_size(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _doc(tmp_path, {"task_spec": {"kind": "math"}, "sample_size": 20})
+    view_cmd.view_task_preview(_inv("view.task.preview", extra_args=["7"], input_file=doc))
+    assert _without_meta(fake_service.call_log) == [
+        (_TASK_PREVIEW, {"dataview_id": 7, "task_spec": {"kind": "math"}, "sample_size": 20})
     ]
 
 
