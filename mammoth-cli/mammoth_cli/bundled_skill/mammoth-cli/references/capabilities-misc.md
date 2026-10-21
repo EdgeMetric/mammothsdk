@@ -78,10 +78,6 @@ Ran once: `connector.active`, `connector.ai.session.list`, `connector.list`
 | `connector.query.generate` | observed blocker | blocked_missing_fixture: No real connector connection exists in workspace 4 (connector.list shows all is_added:false; connector.active returns []), matching the documented capabili |
 | `connector.query.status` | observed blocker | blocked_missing_fixture: No real connector connection exists in workspace 4 (connector list shows all is_added:false; connector active returns []) and creating one requires externa |
 
-## `data-app`
-
-Ran once: `data-app.list`
-
 ## `external-key`
 
 Ran once: `external-key.list`

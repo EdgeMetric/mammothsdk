@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 860 commands. 516 of them bind one of the 545 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 262 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
+The CLI publishes 860 commands. 672 of them bind one of the 769 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 261 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -17,27 +17,27 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 
 | Family | Commands | Ran once | Not supported | Untried |
 |---|---|---|---|---|
-| `dashboard` | 131 | 81 | 1 | 49 |
-| `support` | 66 | 9 | 0 | 57 |
-| `view` | 63 | 58 | 0 | 5 |
-| `billing` | 24 | 4 | 0 | 20 |
-| `connector` | 22 | 3 | 0 | 19 |
-| `workspace` | 20 | 7 | 0 | 13 |
-| `dataset` | 18 | 12 | 0 | 6 |
-| `project` | 17 | 15 | 0 | 2 |
-| `workflow` | 16 | 9 | 0 | 7 |
+| `dashboard` | 158 | 81 | 1 | 76 |
+| `support` | 112 | 9 | 0 | 103 |
+| `view` | 71 | 58 | 0 | 13 |
+| `agent` | 41 | 1 | 0 | 40 |
+| `workspace` | 27 | 7 | 0 | 20 |
+| `billing` | 26 | 4 | 0 | 22 |
+| `dataset` | 26 | 12 | 0 | 14 |
+| `connector` | 24 | 3 | 0 | 21 |
+| `workflow` | 23 | 9 | 0 | 14 |
+| `collection` | 21 | 0 | 0 | 21 |
+| `project` | 18 | 15 | 0 | 3 |
 | `parameter` | 14 | 7 | 0 | 7 |
-| `data-app` | 12 | 1 | 0 | 11 |
 | `browse` | 9 | 1 | 0 | 8 |
 | `automation` | 8 | 3 | 0 | 5 |
+| `file` | 8 | 5 | 0 | 3 |
 | `folder` | 8 | 8 | 0 | 0 |
 | `snippet` | 8 | 6 | 0 | 2 |
 | `user` | 7 | 3 | 0 | 4 |
 | `webhook` | 7 | 5 | 0 | 2 |
 | `addon` | 6 | 0 | 0 | 6 |
-| `agent` | 6 | 1 | 0 | 5 |
 | `batch` | 6 | 6 | 0 | 0 |
-| `file` | 6 | 5 | 0 | 1 |
 | `ai` | 5 | 3 | 0 | 2 |
 | `annotation` | 5 | 1 | 0 | 4 |
 | `client-app` | 5 | 0 | 0 | 5 |
@@ -47,6 +47,7 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 | `external-key` | 4 | 1 | 0 | 3 |
 | `trash` | 3 | 3 | 0 | 0 |
 | `activity` | 2 | 1 | 0 | 1 |
+| `auth` | 2 | 0 | 0 | 2 |
 | `job` | 2 | 2 | 0 | 0 |
 | `report` | 1 | 1 | 0 | 0 |
 

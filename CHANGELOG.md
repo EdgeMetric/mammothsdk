@@ -91,6 +91,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI `mammoth run`: Ctrl-C ends the whole run, `--continue` or not (rest `skipped`, exit 130); lines split on `\n` only (a raw U+2028 in a JSON string no longer breaks the line) and a UTF-8 BOM is accepted; FILE defaults to stdin and `--continue` works in any position (`mammoth run --continue < lines.jsonl`); `sys.exit()`/`sys.exit(0)` and a zero exit with no envelope count as success; a negative number (`-5`) is an argument, not a flag.
 - CLI: a remembered view -> dataset answer is retried after a 404 only for read-only calls (a write may have done part of its work), and an SDK without the store (mammoth-io 0.8.46) simply runs without the cache.
 
+### Changed (next mammoth-cli: server master re-pinned)
+
+- The master OpenAPI snapshot is re-pinned from `master-20261002` to `master-20261021` (`origin/master@29fe5d1ab8`, 756 operations), exported offline from server source as before. The release capability matrix now covers 769 operations, up from 545. 145 of the 146 `PENDING_SERVER_RELEASE` routes are on master and are removed from the list; only the agent-run verb helper's variable-suffix route stays.
+- 33 SDK routes are on neither master nor production, so the matrix reports them `removed_on_server`: `data-app` (12 commands; Data Apps were retired on the server on 2026-10-05, replaced by collections), `agent` definitions, charter, goldens and memory (19), `addon list` and `user change-password`.
+
 ### Release note (next mammoth-cli)
 
 - The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in the next mammoth-io. The release must raise the CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` (now `>=0.8.46`) to that version; until then the code runs without the cache on 0.8.46. Not bumped here.
