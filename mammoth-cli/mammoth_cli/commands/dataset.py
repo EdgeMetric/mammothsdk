@@ -1077,6 +1077,45 @@ def _validate_paging(document: dict[str, Any]) -> None:
             )
 
 
+def _batch_column_ids(
+    service: Any, dataset_id: int, project_id: int, columns: str | list[str]
+) -> str:
+    """The comma-separated column ids the batch-data route wants, from names or ids."""
+    response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+    dataset = response.get("dataset", response) if isinstance(response, dict) else {}
+    schema = dataset.get("data_schema") if isinstance(dataset, dict) else None
+    return resolve_batch_columns(schema, dataset_id, columns)
+
+
+def resolve_batch_columns(schema: Any, dataset_id: int, columns: str | list[str]) -> str:
+    """Column ids, comma-separated, for names or ids in ``columns`` (a list or one string).
+
+    The batch-data route refuses display names with a bare "invalid columns"; the dataset
+    schema maps each ``c_name`` to its ``c_id``. An id passes through; a name the schema
+    lacks is refused with the names it has.
+    """
+    if not isinstance(schema, list):
+        raise CliError(
+            code=CODE_API_ERROR,
+            message=f"Could not read dataset {dataset_id}'s columns to resolve 'columns'.",
+            exit_status=EXIT_API,
+        )
+    wanted = [n.strip() for n in columns.split(",")] if isinstance(columns, str) else columns
+    ids = {c["c_id"] for c in schema if isinstance(c, dict) and "c_id" in c}
+    by_name = {c["c_name"]: c["c_id"] for c in schema if isinstance(c, dict) and "c_name" in c}
+    resolved = [name if name in ids else by_name.get(name) for name in wanted]
+    missing = [name for name, found in zip(wanted, resolved, strict=True) if found is None]
+    if missing:
+        raise CliError(
+            code="unknown_column",
+            message=f"Column(s) not in dataset {dataset_id}: {', '.join(missing)}.",
+            exit_status=EXIT_USAGE,
+            hint="Use column names or ids from `mammoth dataset get`.",
+            details={"columns": missing, "available": sorted(by_name)},
+        )
+    return ",".join(str(found) for found in resolved)
+
+
 def dataset_batch_data(invocation: Invocation) -> HandlerResult:
     """Fetch data for a specific dataset batch."""
     project_id = require_project(invocation)
@@ -1091,6 +1130,9 @@ def dataset_batch_data(invocation: Invocation) -> HandlerResult:
     }
     _forward_optional(document, kwargs, ("columns", "limit", "offset", "timeout", "poll_interval"))
     with open_service(invocation) as (service, auth):
+        if kwargs.get("columns"):
+            columns = kwargs["columns"]
+            kwargs["columns"] = _batch_column_ids(service, dataset_id, project_id, columns)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
