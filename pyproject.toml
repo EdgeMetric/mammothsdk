@@ -82,6 +82,15 @@ markers = [
     "slow: Slow tests",
 ]
 
+[tool.coverage.report]
+# Code that exists only for the type checker never runs: `if TYPE_CHECKING:` imports and the
+# Protocol classes (e.g. mammoth/_mixins/_host.py) whose bodies are `...` stubs.
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "class .*\\(Protocol\\):",
+    "^\\s*\\.\\.\\.$",
+]
+
 [tool.black]
 line-length = 100
 target-version = ["py312"]

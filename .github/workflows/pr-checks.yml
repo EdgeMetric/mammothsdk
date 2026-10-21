@@ -40,6 +40,9 @@ jobs:
             sdk:
               - 'mammoth/**'
               - 'tests/**'
+              # SDK tests read the pinned spec and the generator's operation map.
+              - 'mammoth-cli/spec/openapi/openapi.json'
+              - 'mammoth-cli/scripts/_command_map.py'
               - 'pyproject.toml'
               - 'poetry.lock'
               - '.github/workflows/pr-checks.yml'

@@ -13,6 +13,15 @@ import pytest
 from mammoth.client import MammothClient
 
 
+def _decode_body(raw: bytes, content_type: str) -> object:
+    """JSON bodies are parsed; anything else (multipart) is kept as latin-1 text."""
+    if not raw:
+        return None
+    if content_type.startswith("multipart/"):
+        return raw.decode("latin-1")
+    return json.loads(raw)
+
+
 class RecordingServer(HTTPServer):
     """Records requests; ``answers`` maps ``"METHOD /path"`` (or ``"/path"``) to a body or
     to ``(status, body)``. Unscripted routes answer 200 ``{"ok": true}``."""
@@ -40,7 +49,7 @@ class _Handler(BaseHTTPRequestHandler):
                 "method": self.command,
                 "path": path,
                 "query": {k: v[0] for k, v in parse_qs(parts.query).items()},
-                "body": json.loads(raw) if raw and "json" in content_type else None,
+                "body": _decode_body(raw, content_type),
             }
         )
         self.server.wire.append({"content_type": content_type, "raw": raw})
@@ -61,7 +70,7 @@ class _Handler(BaseHTTPRequestHandler):
 @pytest.fixture
 def server() -> Iterator[RecordingServer]:
     srv = RecordingServer()
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True).start()
     yield srv
     srv.shutdown()
 
