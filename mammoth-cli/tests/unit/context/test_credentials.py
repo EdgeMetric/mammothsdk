@@ -365,3 +365,33 @@ def test_legacy_pair_still_loads_as_a_credential(isolated_cli_config: Path) -> N
 def test_credential_requires_exactly_one_kind(fields: dict[str, str]) -> None:
     with pytest.raises(ValueError):
         credentials.Credential(**fields)
+
+
+def test_load_credential_reads_the_store_once_per_process(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    credentials.store_credentials("work", api_token="mm_a", storage="file")
+    reads: list[str] = []
+    real = credentials._load_file
+
+    def counting(profile: str) -> credentials.Credential | None:
+        reads.append(profile)
+        return real(profile)
+
+    monkeypatch.setattr(credentials, "_load_file", counting)
+    first = credentials.load_credential("work")
+    assert credentials.load_credential("work") == first
+    assert reads == ["work"]
+    assert credentials.load_credential("work", fresh=True) == first
+    assert reads == ["work", "work"]
+
+
+def test_writes_and_deletes_drop_the_loaded_credential(isolated_cli_config: Path) -> None:
+    credentials.store_credentials("work", api_token="mm_a", storage="file")
+    first = credentials.load_credential("work")
+    assert first is not None and first.api_token == "mm_a"
+    credentials.store_credentials("work", api_token="mm_b", storage="file")
+    second = credentials.load_credential("work")
+    assert second is not None and second.api_token == "mm_b"
+    credentials.delete_credentials("work")
+    assert credentials.load_credential("work") is None

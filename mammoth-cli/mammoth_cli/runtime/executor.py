@@ -139,8 +139,9 @@ def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliErro
         from mammoth_cli.runtime.session import open_service
         from mammoth_cli.runtime.token_scope import pin_names, pinned_projects
 
-        with open_service(invocation) as (service, _auth):
-            pins = pinned_projects(service)
+        with open_service(invocation) as (service, auth):
+            # A refusal is the moment to check the real pin, not a cached answer.
+            pins = pinned_projects(service, auth, profile=invocation.profile, refresh=True)
             # Same session: the names cost one more read each, never a second login.
             names.update(pin_names(service, pins))
             return pins

@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 
 from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
-from mammoth_cli.context.resolver import resolve_auth
+from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
@@ -139,10 +139,12 @@ def _visible_projects(service: Any) -> list[dict[str, Any]]:
     return [p for p in service.list_all_projects() if isinstance(p, dict)]
 
 
-def _token_scope(service: MammothService) -> CliError | Pins | None:
+def _token_scope(
+    service: MammothService, auth: ResolvedAuth, profile: str | None
+) -> CliError | Pins | None:
     """The projects the token is limited to, or the error that kept doctor from learning it."""
     try:
-        return pinned_projects(service)
+        return pinned_projects(service, auth, profile=profile, refresh=True)
     except CliError as error:
         return error
 
@@ -336,10 +338,10 @@ def doctor(invocation: Invocation) -> HandlerResult:
         try:
             while True:
                 try:
-                    with open_service(invocation) as (service, _auth):
+                    with open_service(invocation) as (service, session_auth):
                         service.check_connection()
                         projects = _visible_projects(service)
-                        scope = _token_scope(service)
+                        scope = _token_scope(service, session_auth, invocation.profile)
                     break
                 except CliError as error:
                     # A 502/504 or timeout during an outage: with ``wait``,
