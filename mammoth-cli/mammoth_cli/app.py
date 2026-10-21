@@ -1454,7 +1454,9 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     from mammoth_cli.commands.schema import IN_PLACE_RECIPE, edits_view_in_place
 
     parts: list[str] = []
-    summary = live_command_summary(command_id)
+    # The generated index equals the handler's docstring (a unit test pins it) and reading it
+    # keeps the handler's module, and the SDK it imports, out of ``--help``.
+    summary = _indexed_summary(command_id) or live_command_summary(command_id)
     if summary:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
@@ -1619,7 +1621,9 @@ def _lazy_leaf_command(command_id: str) -> type[TyperCommand]:
                 info = CommandInfo(
                     name=self.name,
                     callback=_build_leaf(command_id),
-                    help=_command_help(command_id, command_by_id(command_id)),
+                    # The help text is read from this class's lazy ``help`` property; building
+                    # it here would import the contract and schema layers on every run.
+                    help="",
                     rich_help_panel=self.rich_help_panel,
                     context_settings=_leaf_context_settings(command_id),
                 )

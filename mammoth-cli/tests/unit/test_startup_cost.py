@@ -298,3 +298,78 @@ def test_keyring_backend_does_not_import_importlib_metadata() -> None:
         [sys.executable, "-c", probe], capture_output=True, text=True, check=True
     ).stdout
     assert out.strip() == "False"
+
+
+# Modules a run of a generic command must not import: each is needed on one path only
+# (``--help`` text, an OAuth sign-in or refresh, a YAML document, a pipeline wait).
+_RUN_PATH_PROBE = """
+import json, sys
+import typer
+from mammoth_cli import app
+root = typer.main.get_command(app.app)
+leaf = root.get_command(None, "project").get_command(None, "list")
+leaf.params, leaf.callback  # what a run reads; the help text is read only when printed
+from mammoth_cli.runtime import executor, input_loader, opens, state
+from mammoth_cli.output import render
+from mammoth_cli.context import resolver
+sys.stdout.write("\\n" + json.dumps([m for m in {watched!r} if m in sys.modules]))
+"""
+
+
+@pytest.mark.subprocess
+def test_running_a_command_imports_only_what_that_path_needs() -> None:
+    """Help-only, OAuth-only, YAML-only and pipeline-wait-only modules stay unloaded."""
+    import subprocess
+    import sys
+
+    watched = (
+        "mammoth_cli.commands.schema",
+        "mammoth_cli.context.oauth",
+        "mammoth_cli.context.oauth_loopback",
+        "http.server",
+        "webbrowser",
+        "yaml",
+        "mammoth.api.pipeline",
+    )
+    done = subprocess.run(
+        [sys.executable, "-c", _RUN_PATH_PROBE.format(watched=watched)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert json.loads(done.stdout.rsplit("\n", 1)[-1]) == [], done.stderr[-300:]
+
+
+@pytest.mark.subprocess
+def test_leaf_help_does_not_import_the_handler_module_or_http_stack() -> None:
+    """``project list --help`` takes its summary from the index, not the handler's module."""
+    watched = (
+        "mammoth_cli.commands.project",
+        "mammoth_cli.runtime.session",
+        "mammoth.client",
+        "httpx",
+    )
+    assert _loaded_heavy_modules("project", "list", "--help", watched=watched) == []
+
+
+def test_yaml_input_still_parses_and_reports_errors(tmp_path: Path) -> None:
+    """YAML is imported on first use; strict duplicate-key and syntax errors still map."""
+    from mammoth_cli.errors.envelope import CliError
+    from mammoth_cli.runtime.input_loader import load_input_document
+
+    good = tmp_path / "in.yaml"
+    good.write_text("a: 1\nb: [2, 3]\n", encoding="utf-8")
+    assert load_input_document(str(good), "yaml") == {"a": 1, "b": [2, 3]}
+    dup = tmp_path / "dup.yaml"
+    dup.write_text("a: 1\na: 2\n", encoding="utf-8")
+    with pytest.raises(CliError, match="duplicate"):
+        load_input_document(str(dup), "yaml")
+    broken = tmp_path / "broken.yaml"
+    broken.write_text("a: [1, 2\n", encoding="utf-8")
+    with pytest.raises(CliError, match="not valid yaml"):
+        load_input_document(str(broken), "yaml")
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text("{", encoding="utf-8")
+    with pytest.raises(CliError, match="not valid json"):
+        load_input_document(str(bad_json), "json")
