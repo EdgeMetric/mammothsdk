@@ -105,7 +105,7 @@ async def list_connected(
     filtered page cannot say whether more come after it. Every page of the
     catalogue is read instead, and the connected ones are kept.
     """
-    connected = [
+    connected: list[JsonValue] = [
         connector
         for connector in await read_every_connector(workspace_id, project_id)
         if isinstance(connector, dict)
@@ -113,7 +113,7 @@ async def list_connected(
         and count > 0
     ]
     listed: dict[str, JsonValue] = {
-        ConnectorFields.CONNECTORS: list(connected[offset : offset + limit]),
+        ConnectorFields.CONNECTORS: connected[offset : offset + limit],
         PageFields.TOTAL: len(connected),
     }
     if offset + limit < len(connected):

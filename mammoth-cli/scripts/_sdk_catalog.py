@@ -243,6 +243,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
         for name in ("enter submit discard status auto-run").split()
     },
     "view.export.csv": {"operation_ids": ["AddExport"], "method": "POST"},
+    "view.export.download": {"operation_ids": ["AddExport"], "method": "POST"},
     "view.pipeline.wait": {"operation_ids": [], "method": "GET"},
     "job.wait": {"operation_ids": ["GetJob"], "method": "GET"},
     "job.wait-many": {"operation_ids": ["GetJobs"], "method": "GET"},

@@ -885,6 +885,9 @@ _TARGETS: dict[str, str] = {
         "mammoth_cli.commands.view:view_conditional_format_delete_all"
     ),
     "view.conditional-format.list": "mammoth_cli.commands.view:view_conditional_format_list",
+    "view.conditional-format.replace": (
+        "mammoth_cli.commands.view:view_conditional_format_replace"
+    ),
     "view.conditional-format.update": "mammoth_cli.commands.view:view_conditional_format_update",
     "view.checkpoint.create": "mammoth_cli.commands.view:view_checkpoint_create",
     "view.checkpoint.delete": "mammoth_cli.commands.view:view_checkpoint_delete",
@@ -924,6 +927,7 @@ _TARGETS: dict[str, str] = {
     "view.task.update": "mammoth_cli.commands.view:view_task_update",
     "view.export.create": "mammoth_cli.commands.view:view_export_create",
     "view.export.csv": "mammoth_cli.commands.view:view_export_csv",
+    "view.export.download": "mammoth_cli.commands.view:view_export_download",
     "view.export.delete": "mammoth_cli.commands.view:view_export_delete",
     "view.export.get": "mammoth_cli.commands.view:view_export_get",
     "view.export.list": "mammoth_cli.commands.view:view_export_list",
@@ -1005,6 +1009,7 @@ _TARGETS: dict[str, str] = {
     "view.transform.generate-sql": "mammoth_cli.commands.view_ops:view_transform_generate_sql",
     "view.transform.increment-date": "mammoth_cli.commands.view_ops:view_transform_increment_date",
     "view.transform.join": "mammoth_cli.commands.view_ops:view_transform_join",
+    "view.column.format.set": "mammoth_cli.commands.view_ops:view_column_format_set",
     "view.transform.json-extract": "mammoth_cli.commands.view_ops:view_transform_json_extract",
     "view.transform.limit-rows": "mammoth_cli.commands.view_ops:view_transform_limit_rows",
     "view.transform.lookup": "mammoth_cli.commands.view_ops:view_transform_lookup",

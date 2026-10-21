@@ -69,6 +69,7 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 INPUT_ALIASES: dict[str, dict[str, str]] = {
     "view.transform.sort": {"sort_by": "order_by"},
     "view.transform.limit-rows": {"limit": "n"},
+    "view.export.download": {"format": "file_type"},
 }
 _SORT_COMMAND = "view.transform.sort"
 _SORT_DIRECTIONS = frozenset({"asc", "desc"})
@@ -393,6 +394,20 @@ def _sort_entry(entry: Any) -> Any:
     return [" ".join(words), "ASC"]
 
 
+#: ``dashboard v3 generate`` wants ``{"body": {"params": {...}}}``; these are the params an
+#: agent writes at the top level instead.
+_GENERATE_COMMAND = "dashboard.v3.generate"
+_GENERATE_PARAMS = ("intent", "dataview_id", "title")
+
+
+def _nest_generate_params(document: dict[str, Any]) -> None:
+    """Move top-level ``intent``/``dataview_id``/``title`` into ``body.params``, in place."""
+    flat = [key for key in _GENERATE_PARAMS if key in document]
+    if not flat or "body" in document:
+        return
+    document["body"] = {"params": {key: document.pop(key) for key in flat}}
+
+
 def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
     """Rename an aliased key to the command's own field, in place; refuse both together.
 
@@ -410,6 +425,8 @@ def apply_input_aliases(command_id: str, document: dict[str, Any]) -> None:
                 details={"field": field, "alias": alias},
             )
         document[field] = document.pop(alias)
+    if command_id == _GENERATE_COMMAND:
+        _nest_generate_params(document)
     entries = document.get("order_by")
     if command_id == _SORT_COMMAND and isinstance(entries, str):
         entries = [entries]

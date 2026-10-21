@@ -2528,7 +2528,8 @@
       "schema_id": "view.conditional-format.delete-all",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.conditional_format_delete",
       "bound_commands": [
-        "view.conditional-format.delete-all"
+        "view.conditional-format.delete-all",
+        "view.conditional-format.replace"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -8885,6 +8886,7 @@
       "schema_id": "view.update",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.update",
       "bound_commands": [
+        "view.column.format.set",
         "view.explore-panel.edit",
         "view.explore-panel.set",
         "view.transform.rename-columns",
@@ -12577,7 +12579,8 @@
       "schema_id": "view.conditional-format.create",
       "sdk_symbol": "mammoth.api.dataviews.DataviewsAPI.conditional_format_create",
       "bound_commands": [
-        "view.conditional-format.create"
+        "view.conditional-format.create",
+        "view.conditional-format.replace"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -12860,6 +12863,7 @@
         "view.export.create",
         "view.export.csv",
         "view.export.dataset",
+        "view.export.download",
         "view.export.elasticsearch",
         "view.export.email",
         "view.export.ftp",
