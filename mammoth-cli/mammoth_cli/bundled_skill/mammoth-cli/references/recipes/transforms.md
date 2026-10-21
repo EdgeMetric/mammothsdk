@@ -89,7 +89,8 @@ defaults to the other mark). `view data profile` lists such a column under
 A TEXT column of dates converts with `"to":"DATE"` and, on the same `conversions` entry,
 `"input_formats":["DD/MM/YYYY","YYYY-MM-DD"]` (every layout the column mixes),
 `"output_format":"DD-Mon-YYYY"` (how it displays) and
-`"input_format_preference":"uk"` or `"us"` (which way `03/04/2024` reads). Formats are
+`"input_format_preference":"uk"` or `"us"` (which way `03/04/2024` reads), or `"strict"`
+(an ambiguous day/month value becomes blank; a date whose day and month are equal still converts). Formats are
 Postgres date patterns.
 `view column format set` changes only how a DATE or number column
 shows, never its values.

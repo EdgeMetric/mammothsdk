@@ -198,7 +198,7 @@ def build_combine_params(
 
 
 _DATE_ONLY_FIELDS = ("input_formats", "output_format", "input_format_preference")
-_FORMAT_PREFERENCES = ("uk", "us")
+_FORMAT_PREFERENCES = ("uk", "us", "strict")
 
 
 def _date_format_info(c: ConversionSpec) -> dict[str, Any]:
@@ -206,7 +206,7 @@ def _date_format_info(c: ConversionSpec) -> dict[str, Any]:
 
     ``postgres_date_format`` (a string, or a list of parse formats), ``output_format``
     (``{"postgres_date_format": <display format>}``) and ``input_format_preference``
-    (``uk`` or ``us``) sit beside the python-style ``date_format``.
+    (``uk``, ``us`` or ``strict``) sit beside the python-style ``date_format``.
     """
     info: dict[str, Any] = {}
     if c.input_formats:
@@ -225,7 +225,7 @@ def _date_format_info(c: ConversionSpec) -> dict[str, Any]:
     if c.input_format_preference is not None:
         if c.input_format_preference not in _FORMAT_PREFERENCES:
             raise MammothValidationError(
-                f"convert {c.column!r}: input_format_preference must be 'uk' or 'us', "
+                f"convert {c.column!r}: input_format_preference must be 'uk', 'us' or 'strict', "
                 f"got {c.input_format_preference!r}."
             )
         info["input_format_preference"] = c.input_format_preference

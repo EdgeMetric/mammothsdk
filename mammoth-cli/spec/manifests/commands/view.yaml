@@ -5032,7 +5032,7 @@ commands:
   known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to count values that will
     not convert (they become empty). A DATE conversion of a text column takes input_formats (list of the
     layouts it mixes), output_format (display layout) and input_format_preference (uk or us for day/month
-    ambiguity) on the conversions entry; format (python-style date_format) still works.'
+    ambiguity; strict blanks ambiguous day/month values and converts equal-part dates) on the conversions entry; format (python-style date_format) still works.'
   reviewed_by: primary
 - command_id: view.transform.copy-columns
   command_path: view transform copy-columns
