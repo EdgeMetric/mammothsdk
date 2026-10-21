@@ -215,8 +215,10 @@ edits_target_commands:
 - view.bulk-delete
 - view.checkpoint.delete
 - view.checkpoint.update
+- view.column.format.set
 - view.conditional-format.create
 - view.conditional-format.delete-all
+- view.conditional-format.replace
 - view.conditional-format.update
 - view.data-check.create
 - view.data-check.delete

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 64,
+  "route_count": 65,
   "families": {
-    "view_export": 29,
+    "view_export": 30,
     "connector": 22,
     "external-key": 4,
     "webhook": 7
@@ -3330,6 +3330,62 @@
         "dataset_id": {
           "source": "input",
           "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "output_path": {
+          "source": "input",
+          "destination": "output_path",
+          "wire": "sdk_argument"
+        },
+        "timeout": {
+          "source": "input",
+          "destination": "timeout",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/exports",
+        "body": "json:s3 export + download",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "view.export.download",
+      "sdk_symbol": "mammoth.api.exports.ExportsAPI.to_file",
+      "field_destinations": {
+        "dataview_id": {
+          "source": "positional",
+          "destination": "dataview_id",
+          "wire": "path_or_context"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "file_type": {
+          "source": "input",
+          "destination": "file_type",
           "wire": "sdk_argument"
         },
         "output_path": {

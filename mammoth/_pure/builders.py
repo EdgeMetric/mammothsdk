@@ -197,6 +197,41 @@ def build_combine_params(
     return spec
 
 
+_DATE_ONLY_FIELDS = ("input_formats", "output_format", "input_format_preference")
+_FORMAT_PREFERENCES = ("uk", "us")
+
+
+def _date_format_info(c: ConversionSpec) -> dict[str, Any]:
+    """FORMAT keys for a DATE conversion, as the backend CONVERT validator reads them.
+
+    ``postgres_date_format`` (a string, or a list of parse formats), ``output_format``
+    (``{"postgres_date_format": <display format>}``) and ``input_format_preference``
+    (``uk`` or ``us``) sit beside the python-style ``date_format``.
+    """
+    info: dict[str, Any] = {}
+    if c.input_formats:
+        formats = list(c.input_formats)
+        if not all(isinstance(f, str) and f for f in formats):
+            raise MammothValidationError(
+                f"convert {c.column!r}: input_formats must be non-empty strings."
+            )
+        info["postgres_date_format"] = formats[0] if len(formats) == 1 else formats
+    if c.output_format is not None:
+        if not isinstance(c.output_format, str) or not c.output_format:
+            raise MammothValidationError(
+                f"convert {c.column!r}: output_format must be a non-empty string."
+            )
+        info["output_format"] = {"postgres_date_format": c.output_format}
+    if c.input_format_preference is not None:
+        if c.input_format_preference not in _FORMAT_PREFERENCES:
+            raise MammothValidationError(
+                f"convert {c.column!r}: input_format_preference must be 'uk' or 'us', "
+                f"got {c.input_format_preference!r}."
+            )
+        info["input_format_preference"] = c.input_format_preference
+    return info
+
+
 def build_convert_params(
     conversions: list[ConversionSpec],
     col_map: dict[str, str],
@@ -208,6 +243,9 @@ def build_convert_params(
     CONVERT validator requires a dict, not a bare string). A
     ``decimal_separator`` adds ``decimal_separator`` and ``thousands_separator``
     to it; the thousands separator defaults to the other of ``.`` and ``,``.
+    For a DATE target, ``input_formats``, ``output_format`` and
+    ``input_format_preference`` add ``postgres_date_format``, ``output_format``
+    and ``input_format_preference`` (see :func:`_date_format_info`).
     """
     convert_items: list[dict[str, Any]] = []
     for c in conversions:
@@ -215,7 +253,7 @@ def build_convert_params(
             "SOURCE": resolve_column(c.column, col_map, internal_names),
             "TO_TYPE": c.to.value,
         }
-        format_info: dict[str, str] = {}
+        format_info: dict[str, Any] = {}
         if c.format is not None:
             format_info["date_format"] = c.format
         if c.decimal_separator is not None:
@@ -225,6 +263,13 @@ def build_convert_params(
             )
         elif c.thousands_separator is not None:
             format_info["thousands_separator"] = c.thousands_separator
+        date_info = _date_format_info(c)
+        if date_info and c.to is not ColumnType.DATE:
+            raise MammothValidationError(
+                f"convert {c.column!r}: {', '.join(_DATE_ONLY_FIELDS)} apply only when "
+                f"to=DATE, got to={c.to.value}."
+            )
+        format_info.update(date_info)
         if format_info:
             item["FORMAT"] = format_info
         convert_items.append(item)

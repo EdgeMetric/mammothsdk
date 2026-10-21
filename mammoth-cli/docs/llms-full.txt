@@ -1324,6 +1324,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view checkpoint list 123 456
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
   example: mammoth view checkpoint update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'
+- `mammoth view column format set` [benign_mutation/none] -> mammoth.View.set_column_format
+  example: mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'
 - `mammoth view compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.compare
   example: mammoth view compare --input '{"pairs": [[1, 2]]}'
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
@@ -1332,6 +1334,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view conditional-format delete-all 123 456 --input '{"rule_id": "bca0ff33bd6f8ed1"}' --yes
 - `mammoth view conditional-format list` [read/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_list
   example: mammoth view conditional-format list 123 456
+- `mammoth view conditional-format replace` [destructive/prompt_or_yes] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
+  example: mammoth view conditional-format replace 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}' --yes
 - `mammoth view conditional-format update` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_update
   example: mammoth view conditional-format update 123 456 --input '{"rule": {"name": "Status"}}'
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
@@ -1408,6 +1412,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view export dataset 123 456
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 456 --yes
+- `mammoth view export download` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_file
+  example: mammoth view export download 123
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
   example: mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email
