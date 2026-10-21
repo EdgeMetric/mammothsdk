@@ -297,7 +297,7 @@ class TestConnectors:
         )
 
     async def test_connector_create_never_sends_the_removed_price(self):
-        """Prod dropped ``price_per_month`` from connectors; a caller's value warns and is not sent."""
+        """Prod dropped ``price_per_month``: a caller's value warns and is not sent."""
         api, mock_client = _make_api()
         mock_client._request_json = AsyncMock(return_value={})
         with pytest.warns(DeprecationWarning, match="price_per_month"):

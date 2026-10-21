@@ -879,13 +879,21 @@ _TARGETS: dict[str, str] = {
     "view.data.drivers": "mammoth_cli.commands.view_drivers:view_data_drivers",
     "view.data.forecast": "mammoth_cli.commands.view_forecast:view_data_forecast",
     "view.exportable-config.get": "mammoth_cli.commands.view.formatting:view_exportable_config_get",
-    "view.exportable-config.apply": "mammoth_cli.commands.view.formatting:view_exportable_config_apply",
-    "view.conditional-format.create": "mammoth_cli.commands.view.formatting:view_conditional_format_create",
+    "view.exportable-config.apply": (
+        "mammoth_cli.commands.view.formatting:view_exportable_config_apply"
+    ),
+    "view.conditional-format.create": (
+        "mammoth_cli.commands.view.formatting:view_conditional_format_create"
+    ),
     "view.conditional-format.delete-all": (
         "mammoth_cli.commands.view.formatting:view_conditional_format_delete_all"
     ),
-    "view.conditional-format.list": "mammoth_cli.commands.view.formatting:view_conditional_format_list",
-    "view.conditional-format.update": "mammoth_cli.commands.view.formatting:view_conditional_format_update",
+    "view.conditional-format.list": (
+        "mammoth_cli.commands.view.formatting:view_conditional_format_list"
+    ),
+    "view.conditional-format.update": (
+        "mammoth_cli.commands.view.formatting:view_conditional_format_update"
+    ),
     "view.checkpoint.create": "mammoth_cli.commands.view.checks:view_checkpoint_create",
     "view.checkpoint.delete": "mammoth_cli.commands.view.checks:view_checkpoint_delete",
     "view.checkpoint.get": "mammoth_cli.commands.view.checks:view_checkpoint_get",
@@ -954,14 +962,22 @@ _TARGETS: dict[str, str] = {
     "dashboard.live-chart.placement": "mammoth_cli.commands.dashboard:generated_dashboard",
     "dashboard.oembed": "mammoth_cli.commands.dashboard:generated_dashboard",
     "view.export.publish-db": "mammoth_cli.commands.view.export:view_export_publish_db",
-    "view.export.publish-db-update": "mammoth_cli.commands.view.export:view_export_publish_db_update",
+    "view.export.publish-db-update": (
+        "mammoth_cli.commands.view.export:view_export_publish_db_update"
+    ),
     "view.export.update": "mammoth_cli.commands.view.export:view_export_update",
     "view.export.dataset": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.export.managed-s3": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
+    "view.export.managed-s3": (
+        "mammoth_cli.commands.view.export_specialized:view_export_specialized"
+    ),
     "view.export.live-link": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.export.azure-blob": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
+    "view.export.azure-blob": (
+        "mammoth_cli.commands.view.export_specialized:view_export_specialized"
+    ),
     "view.export.bigquery": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.export.elasticsearch": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
+    "view.export.elasticsearch": (
+        "mammoth_cli.commands.view.export_specialized:view_export_specialized"
+    ),
     "view.export.email": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
     "view.export.ftp": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
     "view.export.mssql": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
@@ -972,7 +988,9 @@ _TARGETS: dict[str, str] = {
     "view.export.redshift": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
     "view.export.rest": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
     "view.export.sftp": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.export.sharepoint": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
+    "view.export.sharepoint": (
+        "mammoth_cli.commands.view.export_specialized:view_export_specialized"
+    ),
     "view.export.tableau": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
     "view.create": "mammoth_cli.commands.view_ops:view_create",
     "view.variants.create": "mammoth_cli.commands.view_ops:view_variants_create",
