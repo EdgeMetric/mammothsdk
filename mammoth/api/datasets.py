@@ -761,7 +761,7 @@ class DatasetsAPI:
         self,
         dataset_id: int,
         batch_id: int,
-        columns: str | None = None,
+        columns: str | _list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
         workspace_id: int | None = None,
@@ -769,7 +769,11 @@ class DatasetsAPI:
         timeout: int | None = None,
         poll_interval: float | None = None,
     ) -> dict[str, Any]:
-        """Get data for a batch; the API returns an asynchronous job."""
+        """Get data for a batch; the API returns an asynchronous job.
+
+        ``columns`` are column ids (``c_id`` of the dataset schema), a list or one
+        comma-separated string; the route refuses display names.
+        """
         if limit < 0 or limit > 100:
             raise MammothValidationError("limit must be between 0 and 100.")
         if offset < 0:
@@ -778,7 +782,7 @@ class DatasetsAPI:
         proj = self._proj(project_id)
         params: dict[str, Any] = {"limit": limit, "offset": offset}
         if columns is not None:
-            params["columns"] = columns
+            params["columns"] = columns if isinstance(columns, str) else ",".join(columns)
         response = await self._client._request_json(
             "GET",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches/{batch_id}/data",
@@ -829,7 +833,7 @@ class DatasetsAPI:
             file_name: Original name of the uploaded PDF file.
             file_id: Unique identifier for the uploaded PDF file in pdf2csv (optional).
             table_list: Indices of the tables to extract and convert into datasets
-                (optional; all tables are extracted if not provided).
+                (exactly one of table_list and is_preview_needed is required).
             delete_file_after_extract: Delete the file from storage after
                 extraction completes (default False).
             is_preview_needed: Whether a preview is required before dataset
@@ -844,10 +848,20 @@ class DatasetsAPI:
             async extraction).
 
         Raises:
-            MammothValidationError: If *file_object_id* ≤ 0.
+            MammothValidationError: If *file_object_id* ≤ 0, or table_list and
+                is_preview_needed are both given or both missing.
         """
         if file_object_id <= 0:
             raise MammothValidationError(ERR_FILE_OBJECT_ID_POSITIVE.format(file_object_id))
+        if table_list is None and is_preview_needed is None:
+            raise MammothValidationError(
+                "Give table_list (the table indices to extract) or is_preview_needed=True "
+                "(to preview the tables first); the API needs exactly one of them."
+            )
+        if table_list is not None and is_preview_needed is not None:
+            raise MammothValidationError("Give table_list or is_preview_needed, not both.")
+        if table_list is not None and user_instruction is not None:
+            raise MammothValidationError("user_instruction cannot be combined with table_list.")
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
 

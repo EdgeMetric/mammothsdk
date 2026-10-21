@@ -280,6 +280,59 @@ class TestColumnOps:
             ]
         }
 
+    def test_convert_date_formats_follow_the_backend_contract(self) -> None:
+        """mvc-service validation.py `_convert`: parse formats at the FORMAT top level,
+        the display format under `output_format`, the layout hint as `input_format_preference`."""
+        conversions = [
+            ConversionSpec(
+                column="Order Date",
+                to=ColumnType.DATE,
+                input_formats=["DD/MM/YYYY", "DD-Mon-YYYY"],
+                output_format="DD-Mon-YYYY",
+                input_format_preference="uk",
+            )
+        ]
+        assert b.build_convert_params(conversions, COLS, INTERNALS) == {
+            "CONVERT": [
+                {
+                    "SOURCE": "c3",
+                    "TO_TYPE": "DATE",
+                    "FORMAT": {
+                        "postgres_date_format": ["DD/MM/YYYY", "DD-Mon-YYYY"],
+                        "output_format": {"postgres_date_format": "DD-Mon-YYYY"},
+                        "input_format_preference": "uk",
+                    },
+                }
+            ]
+        }
+
+    def test_convert_one_input_format_is_a_string(self) -> None:
+        conversions = [ConversionSpec("Order Date", ColumnType.DATE, input_formats=["MM/DD/YYYY"])]
+        fmt = b.build_convert_params(conversions, COLS, INTERNALS)["CONVERT"][0]["FORMAT"]
+        assert fmt == {"postgres_date_format": "MM/DD/YYYY"}
+
+    def test_convert_format_alias_still_sends_date_format(self) -> None:
+        conversions = [
+            ConversionSpec(
+                "Order Date", ColumnType.DATE, format="%d/%m/%Y", output_format="YYYY-MM-DD"
+            )
+        ]
+        fmt = b.build_convert_params(conversions, COLS, INTERNALS)["CONVERT"][0]["FORMAT"]
+        assert fmt == {
+            "date_format": "%d/%m/%Y",
+            "output_format": {"postgres_date_format": "YYYY-MM-DD"},
+        }
+
+    def test_convert_rejects_a_preference_the_backend_refuses(self) -> None:
+        conversions = [ConversionSpec("Order Date", ColumnType.DATE, input_format_preference="eu")]  # type: ignore[arg-type]
+        with pytest.raises(MammothValidationError, match="'uk' or 'us'"):
+            b.build_convert_params(conversions, COLS, INTERNALS)
+
+    def test_convert_date_formats_need_a_date_target(self) -> None:
+        conversions = [ConversionSpec("Sales", ColumnType.TEXT, output_format="DD-Mon-YYYY")]
+        with pytest.raises(MammothValidationError, match="only when to=DATE"):
+            b.build_convert_params(conversions, COLS, INTERNALS)
+
     def test_convert_no_format(self) -> None:
         conversions = [ConversionSpec(column="Sales", to=ColumnType.TEXT)]
         spec = b.build_convert_params(conversions, COLS, INTERNALS)

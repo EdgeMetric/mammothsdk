@@ -122,6 +122,16 @@ Result: `ViewCheckpointUpdateResult`; mutation `benign_mutation`, confirmation `
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt sending a full AddCheckpointSpec body (matching create's shape) failed with invalid_input_field_type; update actually needs body.patches[] (CheckpointPatches/CheckPointPatch…
 
+### `view.column.format.set`
+
+Run: `mammoth view column format set`. Exact input fields: `mammoth schema get view.column.format.set`.
+
+Example: `mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewColumnFormatSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.compare`
 
 Run: `mammoth view compare`. Exact input fields: `mammoth schema get view.compare`.
@@ -161,6 +171,16 @@ Example: `mammoth view conditional-format list 123 456`. Placeholders are illust
 Result: `ViewConditionalFormatListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.17 — re-verification 2026-09-18 (2.0.16 fixes): exit 0 on release with CLI 2.0.17. With SDK 0.7.9 the one existing rule is returned as [{rule_id, cf_type, FORMAT, CONDITION, ...}]; with SDK 0.7.8 the same call returned [] (mapping keyed by rule id was discarded).…
+
+### `view.conditional-format.replace`
+
+Run: `mammoth view conditional-format replace`. Exact input fields: `mammoth schema get view.conditional-format.replace`.
+
+Example: `mammoth view conditional-format replace 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewConditionalFormatReplaceResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.conditional-format.update`
 
@@ -545,6 +565,16 @@ Example: `mammoth view export delete 123 456 --yes`. Illustrative only: append `
 Result: `ViewExportDeleteResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. Deleted export 2 -> {future_id:null,status:deleted,trigger_id:2}. Single invocation only.
+
+### `view.export.download`
+
+Run: `mammoth view export download`. Exact input fields: `mammoth schema get view.export.download`.
+
+Example: `mammoth view export download 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewExportDownloadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.export.elasticsearch`
 

@@ -196,6 +196,10 @@ DECLARATIONS["view.export.csv"] = _no(
     "a CSV export returns a one-time download link that settles synchronously; no CLI "
     "read command can re-fetch it"
 )
+DECLARATIONS["view.export.download"] = _no(
+    "a file download returns a one-time download link that settles synchronously; no CLI "
+    "read command can re-fetch it"
+)
 DECLARATIONS["view.export.managed-s3"] = _no(
     "S3 delivery is external; no CLI read command can confirm the object landed in the bucket"
 )

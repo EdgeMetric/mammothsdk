@@ -1055,6 +1055,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.conditional-format.create",
             "view.conditional-format.delete-all",
             "view.conditional-format.list",
+            "view.conditional-format.replace",
             "view.conditional-format.update",
             "view.checkpoint.create",
             "view.checkpoint.list",

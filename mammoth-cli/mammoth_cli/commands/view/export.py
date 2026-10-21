@@ -79,18 +79,42 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     signed download URL is returned instead so the host can hand it to its
     user. ``output_path`` is refused in that case.
     """
+    return _download_dataview(
+        invocation, "mammoth.api.exports.ExportsAPI.to_csv_url", ("output_path", "timeout")
+    )
+
+
+def view_export_download(invocation: Invocation) -> HandlerResult:
+    """Download a dataview to a local file as csv, xlsx, json, ndjson, xml, yaml or parquet.
+
+    Same as ``view export csv`` otherwise: ``--input '{"format": "xlsx", "output_path":
+    "out.xlsx"}'``; the default name carries the format's extension; an existing file is not
+    replaced unless ``--overwrite``; embedded, the signed download URL is returned instead.
+    """
+    return _download_dataview(
+        invocation,
+        "mammoth.api.exports.ExportsAPI.to_file_url",
+        ("output_path", "file_type", "timeout"),
+    )
+
+
+def _download_dataview(
+    invocation: Invocation, embedded_symbol: str, fields: tuple[str, ...]
+) -> HandlerResult:
+    """Shared body of ``view export csv`` and ``view export download``."""
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     document = invocation.load_input() or {}
     if embedded.active():
-        return _view_export_csv_embedded(invocation, dataview_id, document)
+        return _view_export_csv_embedded(invocation, dataview_id, document, embedded_symbol)
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
+    _forward_optional(document, kwargs, (*fields, "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         # The SDK's own default name needs the parent dataset, which is known here.
         target = kwargs.get("output_path")
         if target is None and kwargs.get(_DATASET_ID_FIELD) is not None:
-            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.csv"
+            extension = str(kwargs.get("file_type") or "csv").strip().lower().lstrip(".")
+            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.{extension}"
         if target is not None:
             refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
@@ -100,9 +124,9 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 
 
 def _view_export_csv_embedded(
-    invocation: Invocation, dataview_id: int, document: dict[str, Any]
+    invocation: Invocation, dataview_id: int, document: dict[str, Any], symbol: str
 ) -> HandlerResult:
-    """``view.export.csv`` for an embedded call: never writes a local file."""
+    """A download for an embedded call: never writes a local file."""
     if "output_path" in document:
         raise CliError(
             code=CODE_UNSUPPORTED_CONTRACT,
@@ -111,9 +135,9 @@ def _view_export_csv_embedded(
             hint="Drop output_path -- an embedded call returns a download_url instead.",
         )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("timeout", "dataset_id"))
+    _forward_optional(document, kwargs, ("file_type", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call("mammoth.api.exports.ExportsAPI.to_csv_url", **kwargs)
+        data = service.call(symbol, **kwargs)
     return {"download_url": data["url"]}, _meta(invocation, auth.workspace_id, None)
 
 

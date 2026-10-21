@@ -128,6 +128,34 @@ def _validate_output(output: str) -> None:
         )
 
 
+#: Error codes that mean "the --input document was wrong": the envelope then
+#: carries the command's input contract so the next call needs no ``schema get``.
+_INPUT_REJECTION_CODES = frozenset(
+    {
+        "unknown_input_field",
+        "invalid_input_field_type",
+        "missing_field",
+        "invalid_input",
+        "invalid_input_document",
+        "invalid_arguments",
+        "invalid_condition",
+        "invalid_condition_value",
+        "invalid_rule",
+    }
+)
+
+
+def _attach_input_contract(error: CliError, command_id: str) -> None:
+    """Add ``details["input_contract"]`` to an input-validation error, once."""
+    if error.code not in _INPUT_REJECTION_CODES or "input_contract" in error.details:
+        return
+    from mammoth_cli.commands.schema import input_contract
+
+    contract = input_contract(command_id)
+    if contract is not None:
+        error.details["input_contract"] = contract
+
+
 def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
     """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
     if invocation is None:
@@ -298,6 +326,7 @@ def run(
     run_log = _open_run_log(command_id, invocation)
 
     def fail(error: CliError, cause: BaseException | None = None) -> None:
+        _attach_input_contract(error, command_id)
         if run_log is not None:
             error.log_ref = run_log.ref
             run_log.finish(error.exit_status, error_code=error.code, exception=cause)

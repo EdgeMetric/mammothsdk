@@ -30,7 +30,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
@@ -535,6 +535,22 @@ class ConversionSpec:
         await view.convert_type([
             ConversionSpec(column="Amount", to=ColumnType.NUMERIC, decimal_separator=",")
         ])
+        # Text in two layouts -> a date, shown as 31-Jan-2026. Formats are Postgres
+        # templates (DD, MM, YYYY, Mon); a slash date that fits day-first and
+        # month-first is read as ``input_format_preference`` says.
+        await view.convert_type([
+            ConversionSpec(
+                column="Admitted",
+                to=ColumnType.DATE,
+                input_formats=["DD/MM/YYYY", "DD-Mon-YYYY"],
+                output_format="DD-Mon-YYYY",
+                input_format_preference="uk",
+            )
+        ])
+
+    ``format`` stays as the single python-style parse format (``date_format``).
+    ``input_formats``, ``output_format`` and ``input_format_preference`` apply to a
+    DATE target only.
     """
 
     column: str
@@ -542,6 +558,9 @@ class ConversionSpec:
     format: str | None = None
     decimal_separator: str | None = None
     thousands_separator: str | None = None
+    input_formats: list[str] | None = None
+    output_format: str | None = None
+    input_format_preference: Literal["uk", "us"] | None = None
 
 
 @dataclass

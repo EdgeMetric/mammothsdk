@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from mammoth_cli.commands.view._common import (
+    _COLUMNS_KEY,
     _FIND_DATASET_SYMBOL,
     _QUERY_DATA_SYMBOL,
     _ROWS_KEY,
@@ -96,12 +97,42 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         )
     page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
     data = _trim_rows(data, limit, page_size)
+    data = keep_columns(data, document.get("columns"))
     if document.get("sequence") is None:
         # The view's row count is its latest step's; a read at an earlier step differs.
         data = _with_paging_total(data, meta)
         data = _close_last_page(data, kwargs.get("offset"))
     data = _with_cli_paging(data, invocation, view_id, kwargs.get("offset"), page_size, limit)
     return data, meta
+
+
+def keep_columns(data: Any, columns: list[str] | None) -> Any:
+    """Keep only ``columns`` (display names) in a data page's rows and column header.
+
+    A name the page does not have is refused with the names it does have, so a typo
+    never reads as an empty column.
+    """
+    if columns is None or not isinstance(data, dict):
+        return data
+    rows = data.get(_ROWS_KEY)
+    if not isinstance(rows, list):
+        return data
+    first = rows[0] if rows else None
+    available = list(first) if isinstance(first, dict) else list(data.get(_COLUMNS_KEY) or [])
+    missing = [name for name in columns if name not in available]
+    if missing:
+        raise CliError(
+            code="unknown_column",
+            message=f"Column(s) not in the view: {', '.join(missing)}.",
+            exit_status=EXIT_USAGE,
+            hint="Use column display names from this view.",
+            details={"columns": missing, "available": available},
+        )
+    kept = {**data, _ROWS_KEY: DataRows([{c: row[c] for c in columns} for row in rows])}
+    if isinstance(data.get(_COLUMNS_KEY), list):
+        kept[_COLUMNS_KEY] = list(columns)
+    return kept
+
 
 
 def _with_cli_paging(

@@ -123,6 +123,47 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        rules = _cf_rules_for_document(
+            service, document, has_typed, (dataset_id, dataview_id, project_id)
+        )
+        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_conditional_format_replace(invocation: Invocation) -> HandlerResult:
+    """Replace every conditional-format rule on a view with new ones in one call.
+
+    Takes the input of ``view conditional-format create`` (typed fields or a raw ``rule``);
+    the old rules are deleted and the new ones created. Prompt or ``--yes``.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        scope = (dataset_id, dataview_id, project_id)
+        rules = _cf_rules_for_document(service, document, has_typed, scope)
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_PROMPT_OR_YES,
+            action=f"replace all conditional-format rules on view {dataview_id}",
+        )
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            rules=rules,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _cf_check_document(document: dict[str, Any]) -> bool:
+    """Whether the input uses the typed fields; refuses mixing them with ``rule`` or neither."""
     has_typed = any(field in document for field in cf_rules.TYPED_FIELDS)
     if "rule" in document and has_typed:
         raise CliError(
@@ -132,17 +173,20 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
         )
     if "rule" not in document and not has_typed:
         _require_field(document, "rule")
-    with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        if has_typed:
-            metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
-            column_map, column_types = _column_maps(metadata)
-            rules = cf_rules.build_rules(document, column_map, column_types)
-        else:
-            cf_rules.validate_rule(document["rule"])
-            rules = [document["rule"]]
-        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return has_typed
+
+
+def _cf_rules_for_document(
+    service: Any, document: dict[str, Any], has_typed: bool, scope: tuple[Any, ...]
+) -> list[dict[str, Any]]:
+    """The rule bodies an input document stands for (typed fields build one rule per column)."""
+    dataset_id, dataview_id, project_id = scope
+    if has_typed:
+        metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+        column_map, column_types = _column_maps(metadata)
+        return cf_rules.build_rules(document, column_map, column_types)
+    cf_rules.validate_rule(document["rule"])
+    return [document["rule"]]
 
 
 def _cf_sequence(rule: Any) -> int:

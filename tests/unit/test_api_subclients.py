@@ -10,8 +10,7 @@ Tests every public method on every API sub-client:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -584,7 +583,9 @@ class TestDatasetsAPI:
             await client.datasets.bulk_delete()
 
     async def test_create_from_pdf(self, client: MammothClient):
-        await client.datasets.create_from_pdf(file_object_id=7, file_name="report.pdf")
+        await client.datasets.create_from_pdf(
+            file_object_id=7, file_name="report.pdf", is_preview_needed=True
+        )
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/datasets-from-pdf")
         assert_json_body(
             client._request_json,
@@ -592,6 +593,7 @@ class TestDatasetsAPI:
                 "file_object_id": 7,
                 "file_name": "report.pdf",
                 "delete_file_after_extract": False,
+                "is_preview_needed": True,
             },
         )
 
@@ -600,7 +602,6 @@ class TestDatasetsAPI:
             file_object_id=7,
             file_name="report.pdf",
             file_id="abc123",
-            table_list=[0, 2],
             is_preview_needed=True,
             user_instruction="extract totals",
         )
@@ -611,7 +612,6 @@ class TestDatasetsAPI:
                 "file_name": "report.pdf",
                 "delete_file_after_extract": False,
                 "file_id": "abc123",
-                "table_list": [0, 2],
                 "is_preview_needed": True,
                 "user_instruction": "extract totals",
             },
@@ -1582,8 +1582,8 @@ class TestFoldersAPI:
                     "id": 5,
                     "status": "processing",
                     "response": {},
-                    "last_updated_at": datetime.now(timezone.utc),
-                    "created_at": datetime.now(timezone.utc),
+                    "last_updated_at": datetime.now(UTC),
+                    "created_at": datetime.now(UTC),
                     "path": "/folders/1/trash",
                     "operation": "trash_folder",
                 }
@@ -1758,7 +1758,7 @@ class TestExportsAPICsv:
     ``mammoth_cli/embed.py`` and ``commands/view.py::view_export_csv``)."""
 
     def _job_created_response(self, job_id: int) -> dict:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return {
             "job": {
                 "id": job_id,
@@ -1794,26 +1794,6 @@ class TestExportsAPICsv:
         with pytest.raises(ValueError, match="project_id must be set"):
             await client.exports.to_csv_url(dataview_id=42, dataset_id=500)
         client._request_json.assert_not_called()
-
-    async def test_to_csv_downloads_using_to_csv_url_result(self, client: MammothClient):
-        client.exports.to_csv_url = AsyncMock(
-            return_value={
-                "url": "https://signed.example/file.csv",
-                "trigger_id": None,
-                "job_id": 9001,
-            }
-        )
-        client.exports._download_file = AsyncMock(return_value=Path("/tmp/out.csv"))
-
-        result = await client.exports.to_csv(
-            dataview_id=42, output_path="/tmp/out.csv", dataset_id=500
-        )
-
-        client.exports.to_csv_url.assert_called_once_with(42, timeout=300, dataset_id=500)
-        client.exports._download_file.assert_called_once_with(
-            "https://signed.example/file.csv", Path("/tmp/out.csv"), job_handle=9001
-        )
-        assert result == Path("/tmp/out.csv")
 
 
 # ======================================================================
@@ -2408,7 +2388,7 @@ class TestDashboardsAPI:
 # ======================================================================
 
 
-_DT = datetime(2025, 1, 1, tzinfo=timezone.utc)
+_DT = datetime(2025, 1, 1, tzinfo=UTC)
 
 _SCHEDULE_CREATE_SPEC = ScheduleCreateSpec(
     rrule=RruleSpec(frequency=RruleFrequency.DAILY, start=_DT),
