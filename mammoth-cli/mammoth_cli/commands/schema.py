@@ -225,7 +225,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "file.list": "list show uploaded source files csv",
     "view.export.csv": "export download local CSV file artifact",
     "view.export.download": (
-        "export download local file artifact xlsx excel json ndjson xml yaml parquet csv "
+        "export download local file artifact xlsx excel json ndjson xml yaml parquet "
         "file type format"
     ),
     "view.export.dataset": (
@@ -965,7 +965,8 @@ IN_PLACE_RECIPE = (
     "EDITS THE GIVEN VIEW IN PLACE: this adds a step to the view and changes that view "
     "and its dataset's output. To make a NEW dataset and leave the source untouched: "
     "`mammoth view create SOURCE_DATASET_ID` (working view), do the steps on that working "
-    "view, then `mammoth view export dataset WORKING_VIEW_ID` (add dataset_name only if the user named it)."
+    "view, then `mammoth view export dataset WORKING_VIEW_ID` "
+    "(add dataset_name only if the user named it)."
 )
 _IN_PLACE_KEYWORDS = (
     "new dataset create make in place edits given view working view source untouched"

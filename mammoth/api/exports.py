@@ -50,15 +50,16 @@ _HOSTS_MAX = 100
 _list = list  # Alias to avoid shadowing by method name
 
 
-def _download_file_type(file_type: str) -> str:
+def _download_file_type(file_type: str) -> DownloadFileType:
     """The lower-cased ``file_type`` when it is a download format, else a validation error."""
     normalized = str(file_type).strip().lower().lstrip(".")
-    if normalized not in DOWNLOAD_FILE_TYPES:
-        raise MammothValidationError(
-            f"file_type must be one of {', '.join(DOWNLOAD_FILE_TYPES)}; got {file_type!r}.",
-            details={"file_type": file_type},
-        )
-    return normalized
+    for allowed in DOWNLOAD_FILE_TYPES:
+        if allowed == normalized:
+            return allowed
+    raise MammothValidationError(
+        f"file_type must be one of {', '.join(DOWNLOAD_FILE_TYPES)}; got {file_type!r}.",
+        details={"file_type": file_type},
+    )
 
 
 class ExportsAPI:

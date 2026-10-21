@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from mammoth.api.exports import DownloadFileType
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
 from tests.unit._loopback import RecordingServer, client, server  # noqa: F401
@@ -13,7 +14,7 @@ from tests.unit._loopback import RecordingServer, client, server  # noqa: F401
 DATAVIEWS = "/workspaces/1/projects/25654/datasets/500/dataviews/42"
 
 
-def _script(server: RecordingServer, file_type: str) -> None:
+def _script(server: RecordingServer, file_type: str) -> None:  # noqa: F811
     """The export create answers a job; the job answers success with a URL on this server."""
     url = f"http://127.0.0.1:{server.server_port}/files/out.{file_type}"
     job = {
@@ -30,7 +31,7 @@ def _script(server: RecordingServer, file_type: str) -> None:
     server.answers["GET /files/out." + file_type] = {"ok": True}
 
 
-def _export_body(server: RecordingServer) -> dict[str, object]:
+def _export_body(server: RecordingServer) -> dict[str, object]:  # noqa: F811
     posts = [r for r in server.requests if r["method"] == "POST"]
     assert len(posts) == 1
     body = posts[0]["body"]
@@ -40,7 +41,7 @@ def _export_body(server: RecordingServer) -> dict[str, object]:
 
 @pytest.mark.parametrize("file_type", ["csv", "xlsx", "json", "ndjson", "xml", "yaml", "parquet"])
 async def test_to_file_url_asks_the_backend_for_that_file_type(
-    client: MammothClient, server: RecordingServer, file_type: str  # noqa: F811
+    client: MammothClient, server: RecordingServer, file_type: DownloadFileType  # noqa: F811
 ) -> None:
     _script(server, file_type)
 
@@ -81,5 +82,5 @@ async def test_a_file_type_outside_the_download_menu_is_refused_before_any_reque
     client: MammothClient, server: RecordingServer  # noqa: F811
 ) -> None:
     with pytest.raises(MammothValidationError, match="csv, xlsx, json, ndjson, xml, yaml, parquet"):
-        await client.exports.to_file_url(42, "docx", dataset_id=500)
+        await client.exports.to_file_url(42, "docx", dataset_id=500)  # type: ignore[arg-type]
     assert server.requests == []

@@ -20,8 +20,8 @@ def test_find_fields_inline_the_nested_shape_of_conversions() -> None:
 def test_find_fields_keep_scalars_schema_free() -> None:
     record = command_by_id("view.transform.convert-type")
     assert record is not None
-    scalars = [f for f in _compact_accepted_fields(record) or [] if f["type"] == "integer"]
-    assert scalars and all("schema" not in f for f in scalars)
+    fields = {f["name"]: f for f in _compact_accepted_fields(record) or []}
+    assert [name for name, f in fields.items() if "schema" in f] == ["conversions"]
 
 
 def test_input_contract_names_fields_and_example() -> None:

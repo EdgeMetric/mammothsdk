@@ -2185,7 +2185,7 @@ def view_transform_math(invocation: Invocation) -> HandlerResult:
 def _math_into_column(
     invocation: Invocation, view_id: int, document: dict[str, Any], **dispatch: Any
 ) -> HandlerResult:
-    """The math write for a ``view transform math`` input ``document``, with its blank-input note."""
+    """The math write for a ``view transform math`` input ``document``, with its blank note."""
     kwargs = _bind_transform_inputs(invocation, document, "view.transform.math")
     blanks: dict[str, int] = {}
 

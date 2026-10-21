@@ -803,7 +803,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset create` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create
   example: mammoth dataset create --input '{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"}, "ds_creation_type": "weburl"}'
 - `mammoth dataset create-from-pdf` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.create_from_pdf
-  example: mammoth dataset create-from-pdf 123 --input '{"file_name": "report.pdf", "is_preview_needed": true}'
+  example: mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'
 - `mammoth dataset data` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_data
   example: mammoth dataset data 123
 - `mammoth dataset definition add` [benign_mutation/confirm_target] -> mammoth.api.datasets.DatasetsAPI.add_definition
@@ -1413,7 +1413,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 456 --yes
 - `mammoth view export download` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_file
-  example: mammoth view export download 123 --input '{"format": "xlsx"}'
+  example: mammoth view export download 123
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
   example: mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email

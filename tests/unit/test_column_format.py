@@ -1,4 +1,4 @@
-"""``View.set_column_format`` sends the FORMAT_INFO patch the backend's DisplayPropertiesUpdate reads."""
+"""``View.set_column_format`` sends the FORMAT_INFO patch the backend reads."""
 
 from __future__ import annotations
 
@@ -25,7 +25,9 @@ def _view_record(format_info: dict[str, dict[str, object]]) -> dict[str, object]
     }
 
 
-async def _view(client: MammothClient, server: RecordingServer, info: dict) -> View:  # noqa: F811
+async def _view(
+    client: MammothClient, server: RecordingServer, info: dict[str, dict[str, object]]  # noqa: F811
+) -> View:
     server.answers[f"GET {VIEW_PATH}"] = _view_record(info)
     return View(client, _view_record(info), 500)
 

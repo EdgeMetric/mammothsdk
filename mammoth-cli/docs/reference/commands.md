@@ -3729,7 +3729,7 @@ Total commands: 785.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.create_from_pdf`
-- Agent example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "report.pdf", "is_preview_needed": true}'`
+- Agent example: `mammoth dataset create-from-pdf 123 --input '{"file_name": "./sales.csv"}'`
 
 ### `mammoth dataset data`
 
@@ -6531,7 +6531,7 @@ Total commands: 785.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.to_file`
-- Agent example: `mammoth view export download 123 --input '{"format": "xlsx"}'`
+- Agent example: `mammoth view export download 123`
 
 ### `mammoth view export elasticsearch`
 
