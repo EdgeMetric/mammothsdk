@@ -6,10 +6,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ._base import MammothModel
 
 
-class FolderSchema(BaseModel):
+class FolderSchema(MammothModel):
     """Schema for a folder object."""
 
     id: int | None = Field(None, description="Unique identifier for the folder")
@@ -25,7 +27,7 @@ class FolderSchema(BaseModel):
     resource_path: str | None = Field(None, description="Resource path of the folder")
 
 
-class FoldersList(BaseModel):
+class FoldersList(MammothModel):
     """Schema for a list of folders with pagination."""
 
     folders: list[FolderSchema] = Field(default_factory=list, description="List of folder objects")
@@ -35,20 +37,20 @@ class FoldersList(BaseModel):
     next: str | None = Field(None, description="URL for the next page of results")
 
 
-class CreateFolder(BaseModel):
+class CreateFolder(MammothModel):
     """Schema for creating a new folder."""
 
     name: str = Field(..., min_length=1, description="Name for the new folder")
     parent_resource_id: str | None = Field(None, description="Parent folder resource ID")
 
 
-class FolderDetails(BaseModel):
+class FolderDetails(MammothModel):
     """Schema for folder creation response."""
 
     folder: FolderSchema = Field(..., description="Created folder details")
 
 
-class BulkFolderPatchRequest(BaseModel):
+class BulkFolderPatchRequest(MammothModel):
     """Schema for bulk folder operations (moving resources)."""
 
     source_folder_resource_id: str | None = Field(None, description="Source folder resource ID")

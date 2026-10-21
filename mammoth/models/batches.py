@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ._base import MammothModel
 
 
-class ColumnNameMapping(BaseModel):
+class ColumnNameMapping(MammothModel):
     model_config = ConfigDict(extra="forbid")
 
     destination_c_name: str
@@ -15,7 +17,7 @@ class ColumnNameMapping(BaseModel):
     expected_destination_c_type: Literal["TEXT", "NUMERIC", "DATE"]
 
 
-class ColumnIdMapping(BaseModel):
+class ColumnIdMapping(MammothModel):
     model_config = ConfigDict(extra="forbid")
 
     source_c_id: str
@@ -24,20 +26,20 @@ class ColumnIdMapping(BaseModel):
     action: Literal["add_column"] | None = None
 
 
-class NewDsDetails(BaseModel):
+class NewDsDetails(MammothModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str
 
 
-class ProjectedSourceColumn(BaseModel):
+class ProjectedSourceColumn(MammothModel):
     model_config = ConfigDict(extra="forbid")
 
     internal_name: str
     type: Literal["TEXT", "NUMERIC", "DATE"]
 
 
-class BatchesPostRequest(BaseModel):
+class BatchesPostRequest(MammothModel):
     """Release ``BatchesPostRequest`` with its source/file alternatives."""
 
     model_config = ConfigDict(extra="forbid")

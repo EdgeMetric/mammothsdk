@@ -5,12 +5,13 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 # ── Read/response models (existing, kept as-is) ──────────────────────────────
+from ._base import MammothModel
 
 
-class ConnectorInfo(BaseModel):
+class ConnectorInfo(MammothModel):
     """Information about a connector type."""
 
     model_config = ConfigDict(extra="allow")
@@ -22,7 +23,7 @@ class ConnectorInfo(BaseModel):
     category: str | None = None
 
 
-class ConnectionInfo(BaseModel):
+class ConnectionInfo(MammothModel):
     """Information about a specific connection."""
 
     model_config = ConfigDict(extra="allow")
@@ -36,7 +37,7 @@ class ConnectionInfo(BaseModel):
     updated_at: str | None = None
 
 
-class DsConfigInfo(BaseModel):
+class DsConfigInfo(MammothModel):
     """Information about a data source configuration."""
 
     model_config = ConfigDict(extra="allow")
@@ -65,7 +66,7 @@ class DsConfigPatchPath(str, Enum):
     UNIQUE_SEQUENCE_COLUMN = "unique_sequence_column"
 
 
-class DsConfigPatchOp(BaseModel):
+class DsConfigPatchOp(MammothModel):
     """A single JSON-patch operation for ds_config update.
 
     Attributes:

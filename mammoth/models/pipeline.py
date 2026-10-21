@@ -32,10 +32,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
-
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+
+from ._base import MammothModel
 
 
 class Operator(str, Enum):
@@ -624,7 +624,7 @@ class CrosstabSpec:
 # ── Pydantic response models ──────────────────────────────────
 
 
-class PipelineTaskInfo(BaseModel):
+class PipelineTaskInfo(MammothModel):
     """Information about a single pipeline task."""
 
     model_config = {"extra": "allow"}
@@ -637,7 +637,7 @@ class PipelineTaskInfo(BaseModel):
     params: dict[str, Any] | None = None
 
 
-class PipelineTasksList(BaseModel):
+class PipelineTasksList(MammothModel):
     """List of pipeline tasks."""
 
     model_config = {"extra": "allow"}
@@ -646,7 +646,7 @@ class PipelineTasksList(BaseModel):
     total: int | None = None
 
 
-class PipelineInfo(BaseModel):
+class PipelineInfo(MammothModel):
     """Pipeline state information."""
 
     model_config = {"extra": "allow"}

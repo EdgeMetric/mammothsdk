@@ -6,16 +6,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ._base import MammothModel
 
 
-class ValueWrapper(BaseModel):
+class ValueWrapper(MammothModel):
     """Wrapper for API values that come in {value: ...} format."""
 
     value: Any
 
 
-class ClientAppSchema(BaseModel):
+class ClientAppSchema(MammothModel):
     """Schema for a client app object.
 
     Every field is optional because ``fields=`` narrows what the API returns.
@@ -34,20 +36,20 @@ class ClientAppSchema(BaseModel):
     created_at: str | None = Field(None, description="Timestamp when the app was created")
 
 
-class ClientAppsListResponse(BaseModel):
+class ClientAppsListResponse(MammothModel):
     """Schema for client apps API response."""
 
     result: list[ClientAppSchema] = Field(..., description="List of client app objects")
 
 
-class ClientAppCreate(BaseModel):
+class ClientAppCreate(MammothModel):
     """Schema for creating a new client app."""
 
     app_name: str = Field(..., min_length=1, description="Name for the client app")
     description: str = Field("", description="Description for the app (the API requires the field)")
 
 
-class ClientAppPostResponse(BaseModel):
+class ClientAppPostResponse(MammothModel):
     """Schema for client app creation response (flat; carries the one-time token)."""
 
     app_name: str = Field(..., description="Name of the client app")
@@ -65,7 +67,7 @@ class ClientAppPostResponse(BaseModel):
     )
 
 
-class PatchOperation(BaseModel):
+class PatchOperation(MammothModel):
     """Schema for a single patch operation."""
 
     op: str = Field(..., description="Operation type (replace, add, remove)")
@@ -73,7 +75,7 @@ class PatchOperation(BaseModel):
     value: str | None = Field(None, description="New value for the field")
 
 
-class PatchRequest(BaseModel):
+class PatchRequest(MammothModel):
     """Schema for patch request containing multiple operations."""
 
     patch: list[PatchOperation] = Field(..., description="List of patch operations")
