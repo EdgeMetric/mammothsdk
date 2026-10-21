@@ -52,7 +52,8 @@ mammoth/                  # SDK package (published to PyPI)
   condition.py            # Condition builder with & | ~ operators
   models/pipeline.py      # Enums, dataclasses, Pydantic response models
   _mixins/                # View transformation methods (one file per category)
-  _param_templates.py     # Low-level payload builders
+  _pure/builders.py       # Per-operation payload builders (public via builders.py)
+  _param_templates.py     # Reference copy of the backend param templates (unused at runtime)
   _expression_parser.py   # Math expression → token list parser
   api/                    # REST API sub-clients (CRUD)
   helpers.py              # URL parser, utilities
@@ -169,6 +170,6 @@ Version is set in two places — keep them in sync:
 1. Add the method to the appropriate mixin in `mammoth/_mixins/`
 2. If it takes structured parameters, add a dataclass to `mammoth/models/pipeline.py`
 3. Export the dataclass from `mammoth/__init__.py`
-4. Add a payload builder to `mammoth/_param_templates.py`
+4. Add a `build_<op>_params` payload builder to `mammoth/_pure/builders.py` (re-export it from `mammoth/builders.py`)
 5. Add unit tests to `tests/unit/test_transformations.py`
 6. Add an integration test to `tests/integration/test_transformations.py`
