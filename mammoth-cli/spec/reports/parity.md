@@ -5,52 +5,52 @@ Generated from the reviewed manifests. Do not edit by hand.
 ## OpenAPI snapshot
 
 - Source: `https://app.mammoth.io/api/v2/docs/openapi.json`
-- SHA-256: `609edd7d3d613d73ef3de5670d6916c1bcc6252833283d2f0b6fad6ae58b82dd`
+- SHA-256: `c228e9d59c4263fc746ab8873ae6a3d87c25171b6bc4e6e313f685dd0083da29`
 - OpenAPI version: `3.1.0`
-- Paths: `465`
-- Operations: `651`
-- Schemas: `1246`
+- Paths: `530`
+- Operations: `728`
+- Schemas: `1354`
 
 ## Operation dispositions
 
 | Disposition | Count |
 |---|---:|
-| command | 598 |
+| command | 643 |
 | alias | 2 |
 | protocol_only | 11 |
 | internal_only | 40 |
 | deprecated | 0 |
 | server_unavailable | 0 |
-| unmapped | 0 |
-| **total** | **651** |
+| unmapped | 32 |
+| **total** | **728** |
 
 ## Public SDK method parity
 
-- Total public methods: `805`
-- With canonical command: `715`
+- Total public methods: `851`
+- With canonical command: `760`
 - Alias of another command: `38`
-- Reviewed SDK-only exemptions: `52`
+- Reviewed SDK-only exemptions: `53`
 
 ## Command surface
 
-- Canonical + convenience commands: `785`
+- Canonical + convenience commands: `830`
 
 ### Mutation classes
 
 | Mutation class | Count |
 |---|---:|
-| read | 309 |
+| read | 331 |
 | benign_mutation | 228 |
 | reversible_pipeline | 40 |
 | destructive | 67 |
-| high_impact | 99 |
+| high_impact | 122 |
 | external_effect | 42 |
 
 ### Acceptance evidence
 
 | Evidence class | Count |
 |---|---:|
-| contract_only_high_impact | 169 |
+| contract_only_high_impact | 214 |
 | contract_only_no_disposable_fixture | 148 |
 | live_disposable_project | 206 |
 | live_read_only | 262 |

@@ -2891,3 +2891,1987 @@ commands:
     command: support.template.export-dashboard
     ids: {}
     kind: object
+- command_id: support.billing.cancel-subscription
+  command_path: support billing cancel-subscription
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportCancelSubscription
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_cancel_subscription
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_cancel_subscription with validated request
+    fields.
+  request_model: SupportBillingCancelSubscriptionRequest
+  result_model: SupportBillingCancelSubscriptionResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing cancel-subscription WORKSPACE_ID --help
+  agent_example: 'mammoth support billing cancel-subscription 123 --input ''{"when": "period_end"}'' --yes
+    --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-BILLING-CANCEL-SUBSCRIPTION
+  contract_tests:
+  - CT-SUPPORT-BILLING-CANCEL-SUBSCRIPTION-HUMAN
+  - CT-SUPPORT-BILLING-CANCEL-SUBSCRIPTION-JSON
+  - CT-SUPPORT-BILLING-CANCEL-SUBSCRIPTION-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    `when` is required: now ends access and billing at once, period_end keeps the workspace until the
+    paid period ends. Check `support workspace entitlement WORKSPACE_ID` first.'
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.billing.change-plan
+  command_path: support billing change-plan
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportChangePlan
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: new_plan_id
+    type: int
+    required: true
+    metavar: NEW_PLAN_ID
+    falls_back_to_field: null
+    help: ID of the new plan.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_change_plan
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_change_plan with validated request fields.
+  request_model: SupportBillingChangePlanRequest
+  result_model: SupportBillingChangePlanResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing change-plan WORKSPACE_ID NEW_PLAN_ID --help
+  agent_example: mammoth support billing change-plan 123 456 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-BILLING-CHANGE-PLAN
+  contract_tests:
+  - CT-SUPPORT-BILLING-CHANGE-PLAN-HUMAN
+  - CT-SUPPORT-BILLING-CHANGE-PLAN-JSON
+  - CT-SUPPORT-BILLING-CHANGE-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    A workspace billed through a partner is refused: change it on the partner instead. Look the plan up
+    with `support plan catalog`; `when` is now or period_end. A change now is prorated and billed at once.'
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.billing.end-trial
+  command_path: support billing end-trial
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportEndTrial
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_end_trial
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_end_trial with validated request fields.
+  request_model: SupportBillingEndTrialRequest
+  result_model: SupportBillingEndTrialResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing end-trial WORKSPACE_ID --help
+  agent_example: mammoth support billing end-trial 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-BILLING-END-TRIAL
+  contract_tests:
+  - CT-SUPPORT-BILLING-END-TRIAL-HUMAN
+  - CT-SUPPORT-BILLING-END-TRIAL-JSON
+  - CT-SUPPORT-BILLING-END-TRIAL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    A workspace billed through a partner is refused: change it on the partner instead. Ends the trial
+    now and charges the plan; the card on file is billed.'
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.billing.refund
+  command_path: support billing refund
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportRefund
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_refund
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_refund with validated request fields.
+  request_model: SupportBillingRefundRequest
+  result_model: SupportBillingRefundResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing refund WORKSPACE_ID --help
+  agent_example: mammoth support billing refund 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-BILLING-REFUND
+  contract_tests:
+  - CT-SUPPORT-BILLING-REFUND-HUMAN
+  - CT-SUPPORT-BILLING-REFUND-JSON
+  - CT-SUPPORT-BILLING-REFUND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    A workspace billed through a partner is refused: change it on the partner instead. Moves money back
+    to the customer; `amount` is in cents and must be positive, omitted refunds the whole last payment.
+    It cannot be undone.'
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.billing.retry-payment
+  command_path: support billing retry-payment
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportRetryPayment
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_retry_payment
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_retry_payment with validated request fields.
+  request_model: SupportBillingRetryPaymentRequest
+  result_model: SupportBillingRetryPaymentResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing retry-payment WORKSPACE_ID --help
+  agent_example: mammoth support billing retry-payment 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-BILLING-RETRY-PAYMENT
+  contract_tests:
+  - CT-SUPPORT-BILLING-RETRY-PAYMENT-HUMAN
+  - CT-SUPPORT-BILLING-RETRY-PAYMENT-JSON
+  - CT-SUPPORT-BILLING-RETRY-PAYMENT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    A workspace billed through a partner is refused: change it on the partner instead. Charges the failed
+    invoice again; the card on file is billed.'
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.billing.start-trial
+  command_path: support billing start-trial
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportStartTrial
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.billing_start_trial
+  sdk_conversion: Call mammoth.api.support.SupportAPI.billing_start_trial with validated request fields.
+  request_model: SupportBillingStartTrialRequest
+  result_model: SupportBillingStartTrialResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support billing start-trial WORKSPACE_ID --help
+  agent_example: 'mammoth support billing start-trial 123 --input ''{"days": 14}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-BILLING-START-TRIAL
+  contract_tests:
+  - CT-SUPPORT-BILLING-START-TRIAL-HUMAN
+  - CT-SUPPORT-BILLING-START-TRIAL-JSON
+  - CT-SUPPORT-BILLING-START-TRIAL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Starts a trial of `days` (1-60) on the workspace. Check `support workspace entitlement WORKSPACE_ID`
+    first.
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.connector.bucket-impact
+  command_path: support connector bucket-impact
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportConnectorBucketImpact
+  positionals:
+  - name: connector_id
+    type: int
+    required: true
+    metavar: CONNECTOR_ID
+    falls_back_to_field: null
+    help: ID of the connector.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.connector_bucket_impact
+  sdk_conversion: Call mammoth.api.support.SupportAPI.connector_bucket_impact with validated request fields.
+  request_model: SupportConnectorBucketImpactRequest
+  result_model: SupportConnectorBucketImpactResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support connector bucket-impact CONNECTOR_ID --help
+  agent_example: mammoth support connector bucket-impact 123
+  unit_tests:
+  - UT-SUPPORT-CONNECTOR-BUCKET-IMPACT
+  contract_tests:
+  - CT-SUPPORT-CONNECTOR-BUCKET-IMPACT-HUMAN
+  - CT-SUPPORT-CONNECTOR-BUCKET-IMPACT-JSON
+  - CT-SUPPORT-CONNECTOR-BUCKET-IMPACT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.deal.activity
+  command_path: support deal activity
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDealActivity
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_activity
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_activity with validated request fields.
+  request_model: SupportDealActivityRequest
+  result_model: SupportDealActivityResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal activity DEAL_ID --help
+  agent_example: mammoth support deal activity 123
+  unit_tests:
+  - UT-SUPPORT-DEAL-ACTIVITY
+  contract_tests:
+  - CT-SUPPORT-DEAL-ACTIVITY-HUMAN
+  - CT-SUPPORT-DEAL-ACTIVITY-JSON
+  - CT-SUPPORT-DEAL-ACTIVITY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.deal.cancel-move-to-partner
+  command_path: support deal cancel-move-to-partner
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDealCancelMoveToPartner
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_cancel_move_to_partner
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_cancel_move_to_partner with validated request
+    fields.
+  request_model: SupportDealCancelMoveToPartnerRequest
+  result_model: SupportDealCancelMoveToPartnerResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal cancel-move-to-partner DEAL_ID --help
+  agent_example: mammoth support deal cancel-move-to-partner 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-DEAL-CANCEL-MOVE-TO-PARTNER
+  contract_tests:
+  - CT-SUPPORT-DEAL-CANCEL-MOVE-TO-PARTNER-HUMAN
+  - CT-SUPPORT-DEAL-CANCEL-MOVE-TO-PARTNER-JSON
+  - CT-SUPPORT-DEAL-CANCEL-MOVE-TO-PARTNER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Cancels the deal's pending move to a partner; read the deal first with `support deal get DEAL_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.deal.get
+    ids:
+      deal_id: positional.0
+    kind: object
+- command_id: support.deal.create
+  command_path: support deal create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportCreateDeal
+  positionals:
+  - name: workspace_id
+    type: int
+    required: false
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace to put the deal on; omit it and pass 'workspace_create'.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_create with validated request fields.
+  request_model: SupportDealCreateRequest
+  result_model: SupportDealCreateResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal create --help
+  agent_example: 'mammoth support deal create 123 --input ''{"base_plan_id": 3, "price": 1200.0}'' --yes
+    --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-DEAL-CREATE
+  contract_tests:
+  - CT-SUPPORT-DEAL-CREATE-HUMAN
+  - CT-SUPPORT-DEAL-CREATE-JSON
+  - CT-SUPPORT-DEAL-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Needs `base_plan_id` and exactly one of the WORKSPACE_ID argument or `workspace_create`. A deal sets
+    what the workspace is billed and entitled to.
+  reviewed_by: primary
+  readback:
+    command: support.deal.get
+    ids:
+      deal_id: result.id
+    kind: object
+- command_id: support.deal.get
+  command_path: support deal get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportGetDeal
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_get with validated request fields.
+  request_model: SupportDealGetRequest
+  result_model: SupportDealGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal get DEAL_ID --help
+  agent_example: mammoth support deal get 123
+  unit_tests:
+  - UT-SUPPORT-DEAL-GET
+  contract_tests:
+  - CT-SUPPORT-DEAL-GET-HUMAN
+  - CT-SUPPORT-DEAL-GET-JSON
+  - CT-SUPPORT-DEAL-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.deal.list
+  command_path: support deal list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportListDeals
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_list with validated request fields.
+  request_model: SupportDealListRequest
+  result_model: SupportDealListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal list --help
+  agent_example: mammoth support deal list
+  unit_tests:
+  - UT-SUPPORT-DEAL-LIST
+  contract_tests:
+  - CT-SUPPORT-DEAL-LIST-HUMAN
+  - CT-SUPPORT-DEAL-LIST-JSON
+  - CT-SUPPORT-DEAL-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.deal.move-to-partner
+  command_path: support deal move-to-partner
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDealMoveToPartner
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_move_to_partner
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_move_to_partner with validated request fields.
+  request_model: SupportDealMoveToPartnerRequest
+  result_model: SupportDealMoveToPartnerResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal move-to-partner DEAL_ID PARTNER_ID --help
+  agent_example: 'mammoth support deal move-to-partner 123 456 --input ''{"price": 900.0, "billing_interval":
+    "monthly"}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-DEAL-MOVE-TO-PARTNER
+  contract_tests:
+  - CT-SUPPORT-DEAL-MOVE-TO-PARTNER-HUMAN
+  - CT-SUPPORT-DEAL-MOVE-TO-PARTNER-JSON
+  - CT-SUPPORT-DEAL-MOVE-TO-PARTNER-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    Moves the deal''s billing under a partner (`when`: period_end or now). Undo a pending move with `support
+    deal cancel-move-to-partner DEAL_ID`.'
+  reviewed_by: primary
+  readback:
+    command: support.deal.get
+    ids:
+      deal_id: positional.0
+    kind: object
+- command_id: support.deal.opt-in
+  command_path: support deal opt-in
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDealOptIn
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_opt_in
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_opt_in with validated request fields.
+  request_model: SupportDealOptInRequest
+  result_model: SupportDealOptInResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal opt-in DEAL_ID --help
+  agent_example: 'mammoth support deal opt-in 123 --input ''{"everything": true}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-DEAL-OPT-IN
+  contract_tests:
+  - CT-SUPPORT-DEAL-OPT-IN-HUMAN
+  - CT-SUPPORT-DEAL-OPT-IN-JSON
+  - CT-SUPPORT-DEAL-OPT-IN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Releases opt-in rollout pins on the deal (`keys`, `connectors`, or `everything`), which can change
+    the workspace's entitlements at once.
+  reviewed_by: primary
+  readback:
+    command: support.deal.get
+    ids:
+      deal_id: positional.0
+    kind: object
+- command_id: support.deal.preview-entitlement
+  command_path: support deal preview-entitlement
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportPreviewDealEntitlement
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_preview_entitlement
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_preview_entitlement with validated request
+    fields.
+  request_model: SupportDealPreviewEntitlementRequest
+  result_model: SupportDealPreviewEntitlementResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal preview-entitlement DEAL_ID --help
+  agent_example: mammoth support deal preview-entitlement 123
+  unit_tests:
+  - UT-SUPPORT-DEAL-PREVIEW-ENTITLEMENT
+  contract_tests:
+  - CT-SUPPORT-DEAL-PREVIEW-ENTITLEMENT-HUMAN
+  - CT-SUPPORT-DEAL-PREVIEW-ENTITLEMENT-JSON
+  - CT-SUPPORT-DEAL-PREVIEW-ENTITLEMENT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.deal.update
+  command_path: support deal update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportUpdateDeal
+  positionals:
+  - name: deal_id
+    type: int
+    required: true
+    metavar: DEAL_ID
+    falls_back_to_field: null
+    help: ID of the deal.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.deal_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.deal_update with validated request fields.
+  request_model: SupportDealUpdateRequest
+  result_model: SupportDealUpdateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support deal update DEAL_ID --help
+  agent_example: 'mammoth support deal update 123 --input ''{"notes": "Renewal agreed"}'' --yes --confirm
+    123'
+  unit_tests:
+  - UT-SUPPORT-DEAL-UPDATE
+  contract_tests:
+  - CT-SUPPORT-DEAL-UPDATE-HUMAN
+  - CT-SUPPORT-DEAL-UPDATE-JSON
+  - CT-SUPPORT-DEAL-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Changes what the workspace is billed and entitled to; a bad status turns entitlements off. Read the
+    deal first with `support deal get DEAL_ID`, and preview the result with `support deal preview-entitlement
+    DEAL_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.deal.get
+    ids:
+      deal_id: positional.0
+    kind: object
+- command_id: support.entitlement.registry
+  command_path: support entitlement registry
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportEntitlementRegistry
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.entitlement_registry
+  sdk_conversion: Call mammoth.api.support.SupportAPI.entitlement_registry with validated request fields.
+  request_model: SupportEntitlementRegistryRequest
+  result_model: SupportEntitlementRegistryResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support entitlement registry --help
+  agent_example: mammoth support entitlement registry
+  unit_tests:
+  - UT-SUPPORT-ENTITLEMENT-REGISTRY
+  contract_tests:
+  - CT-SUPPORT-ENTITLEMENT-REGISTRY-HUMAN
+  - CT-SUPPORT-ENTITLEMENT-REGISTRY-JSON
+  - CT-SUPPORT-ENTITLEMENT-REGISTRY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.identity.get
+  command_path: support identity get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportGetIdentity
+  positionals:
+  - name: user_id
+    type: int
+    required: true
+    metavar: USER_ID
+    falls_back_to_field: null
+    help: ID of the user.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.identity_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.identity_get with validated request fields.
+  request_model: SupportIdentityGetRequest
+  result_model: SupportIdentityGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support identity get USER_ID --help
+  agent_example: mammoth support identity get 123
+  unit_tests:
+  - UT-SUPPORT-IDENTITY-GET
+  contract_tests:
+  - CT-SUPPORT-IDENTITY-GET-HUMAN
+  - CT-SUPPORT-IDENTITY-GET-JSON
+  - CT-SUPPORT-IDENTITY-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.identity.list
+  command_path: support identity list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportListIdentities
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.identity_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.identity_list with validated request fields.
+  request_model: SupportIdentityListRequest
+  result_model: SupportIdentityListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support identity list --help
+  agent_example: mammoth support identity list
+  unit_tests:
+  - UT-SUPPORT-IDENTITY-LIST
+  contract_tests:
+  - CT-SUPPORT-IDENTITY-LIST-HUMAN
+  - CT-SUPPORT-IDENTITY-LIST-JSON
+  - CT-SUPPORT-IDENTITY-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.activity
+  command_path: support partner activity
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportPartnerActivity
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_activity
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_activity with validated request fields.
+  request_model: SupportPartnerActivityRequest
+  result_model: SupportPartnerActivityResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner activity PARTNER_ID --help
+  agent_example: mammoth support partner activity 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-ACTIVITY
+  contract_tests:
+  - CT-SUPPORT-PARTNER-ACTIVITY-HUMAN
+  - CT-SUPPORT-PARTNER-ACTIVITY-JSON
+  - CT-SUPPORT-PARTNER-ACTIVITY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.billing
+  command_path: support partner billing
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportGetPartnerBilling
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_billing
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_billing with validated request fields.
+  request_model: SupportPartnerBillingRequest
+  result_model: SupportPartnerBillingResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner billing PARTNER_ID --help
+  agent_example: mammoth support partner billing 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-BILLING
+  contract_tests:
+  - CT-SUPPORT-PARTNER-BILLING-HUMAN
+  - CT-SUPPORT-PARTNER-BILLING-JSON
+  - CT-SUPPORT-PARTNER-BILLING-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.charge-invoices
+  command_path: support partner charge-invoices
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportChargePartnerInvoices
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_charge_invoices
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_charge_invoices with validated request fields.
+  request_model: SupportPartnerChargeInvoicesRequest
+  result_model: SupportPartnerChargeInvoicesResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner charge-invoices PARTNER_ID --help
+  agent_example: mammoth support partner charge-invoices 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CHARGE-INVOICES
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CHARGE-INVOICES-HUMAN
+  - CT-SUPPORT-PARTNER-CHARGE-INVOICES-JSON
+  - CT-SUPPORT-PARTNER-CHARGE-INVOICES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Charges every open invoice of the partner now; the partner's card on file is billed. Look at them
+    first with `support partner invoices PARTNER_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.partner.invoices
+    ids:
+      partner_id: positional.0
+    kind: object
+- command_id: support.partner.client.cancel-detach
+  command_path: support partner client cancel-detach
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportCancelDetachClient
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_client_cancel_detach
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_client_cancel_detach with validated request
+    fields.
+  request_model: SupportPartnerClientCancelDetachRequest
+  result_model: SupportPartnerClientCancelDetachResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner client cancel-detach PARTNER_ID WORKSPACE_ID --help
+  agent_example: mammoth support partner client cancel-detach 123 456 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CLIENT-CANCEL-DETACH
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CLIENT-CANCEL-DETACH-HUMAN
+  - CT-SUPPORT-PARTNER-CLIENT-CANCEL-DETACH-JSON
+  - CT-SUPPORT-PARTNER-CLIENT-CANCEL-DETACH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Cancels the client's pending detach; list the clients first with `support partner client list PARTNER_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.partner.client.list
+    ids:
+      partner_id: positional.0
+    kind: object
+- command_id: support.partner.client.delete
+  command_path: support partner client delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDeletePartnerClient
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_client_delete
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_client_delete with validated request fields.
+  request_model: SupportPartnerClientDeleteRequest
+  result_model: SupportPartnerClientDeleteResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner client delete PARTNER_ID WORKSPACE_ID --help
+  agent_example: mammoth support partner client delete 123 456 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CLIENT-DELETE
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CLIENT-DELETE-HUMAN
+  - CT-SUPPORT-PARTNER-CLIENT-DELETE-JSON
+  - CT-SUPPORT-PARTNER-CLIENT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Deletes the client workspace of the partner. List them first with `support partner client list PARTNER_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.partner.client.list
+    ids:
+      partner_id: positional.0
+    kind: object
+- command_id: support.partner.client.detach
+  command_path: support partner client detach
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportDetachClient
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_client_detach
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_client_detach with validated request fields.
+  request_model: SupportPartnerClientDetachRequest
+  result_model: SupportPartnerClientDetachResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner client detach PARTNER_ID WORKSPACE_ID --help
+  agent_example: 'mammoth support partner client detach 123 456 --input ''{"price": 900.0, "contact_email":
+    "owner@example.com"}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CLIENT-DETACH
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CLIENT-DETACH-HUMAN
+  - CT-SUPPORT-PARTNER-CLIENT-DETACH-JSON
+  - CT-SUPPORT-PARTNER-CLIENT-DETACH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    Turns the partner''s client into a direct customer: `price` (above 0) and `contact_email` are required.
+    Undo a pending detach with `support partner client cancel-detach PARTNER_ID WORKSPACE_ID`.'
+  reviewed_by: primary
+  readback:
+    command: support.partner.client.list
+    ids:
+      partner_id: positional.0
+    kind: object
+- command_id: support.partner.client.list
+  command_path: support partner client list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportListPartnerClients
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_client_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_client_list with validated request fields.
+  request_model: SupportPartnerClientListRequest
+  result_model: SupportPartnerClientListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner client list PARTNER_ID --help
+  agent_example: mammoth support partner client list 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CLIENT-LIST
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CLIENT-LIST-HUMAN
+  - CT-SUPPORT-PARTNER-CLIENT-LIST-JSON
+  - CT-SUPPORT-PARTNER-CLIENT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.create
+  command_path: support partner create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportCreatePartner
+  positionals:
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: Name of the new partner; or pass it via the 'name' input field.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_create
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_create with validated request fields.
+  request_model: SupportPartnerCreateRequest
+  result_model: SupportPartnerCreateResult
+  mutation_class: high_impact
+  edits_target: false
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner create --help
+  agent_example: mammoth support partner create 'Revenue report' --yes --confirm 'Revenue report'
+  unit_tests:
+  - UT-SUPPORT-PARTNER-CREATE
+  contract_tests:
+  - CT-SUPPORT-PARTNER-CREATE-HUMAN
+  - CT-SUPPORT-PARTNER-CREATE-JSON
+  - CT-SUPPORT-PARTNER-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Creates a partner record; no money moves.
+  reviewed_by: primary
+  readback:
+    command: support.partner.get
+    ids:
+      partner_id: result.id
+    kind: object
+- command_id: support.partner.get
+  command_path: support partner get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportGetPartner
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_get with validated request fields.
+  request_model: SupportPartnerGetRequest
+  result_model: SupportPartnerGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner get PARTNER_ID --help
+  agent_example: mammoth support partner get 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-GET
+  contract_tests:
+  - CT-SUPPORT-PARTNER-GET-HUMAN
+  - CT-SUPPORT-PARTNER-GET-JSON
+  - CT-SUPPORT-PARTNER-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.invoices
+  command_path: support partner invoices
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportListPartnerInvoices
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_invoices
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_invoices with validated request fields.
+  request_model: SupportPartnerInvoicesRequest
+  result_model: SupportPartnerInvoicesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner invoices PARTNER_ID --help
+  agent_example: mammoth support partner invoices 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-INVOICES
+  contract_tests:
+  - CT-SUPPORT-PARTNER-INVOICES-HUMAN
+  - CT-SUPPORT-PARTNER-INVOICES-JSON
+  - CT-SUPPORT-PARTNER-INVOICES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.list
+  command_path: support partner list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportListPartners
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_list with validated request fields.
+  request_model: SupportPartnerListRequest
+  result_model: SupportPartnerListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: single_page
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner list --help
+  agent_example: mammoth support partner list
+  unit_tests:
+  - UT-SUPPORT-PARTNER-LIST
+  contract_tests:
+  - CT-SUPPORT-PARTNER-LIST-HUMAN
+  - CT-SUPPORT-PARTNER-LIST-JSON
+  - CT-SUPPORT-PARTNER-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.partner.send-payment-link
+  command_path: support partner send-payment-link
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportSendPartnerPaymentLink
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_send_payment_link
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_send_payment_link with validated request
+    fields.
+  request_model: SupportPartnerSendPaymentLinkRequest
+  result_model: SupportPartnerSendPaymentLinkResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner send-payment-link PARTNER_ID --help
+  agent_example: mammoth support partner send-payment-link 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PARTNER-SEND-PAYMENT-LINK
+  contract_tests:
+  - CT-SUPPORT-PARTNER-SEND-PAYMENT-LINK-HUMAN
+  - CT-SUPPORT-PARTNER-SEND-PAYMENT-LINK-JSON
+  - CT-SUPPORT-PARTNER-SEND-PAYMENT-LINK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Emails the partner contact a payment link; the email goes out at once.
+  reviewed_by: primary
+  no_readback: emails the partner contact a payment link; the email is not readable through the API
+- command_id: support.partner.update
+  command_path: support partner update
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportUpdatePartner
+  positionals:
+  - name: partner_id
+    type: int
+    required: true
+    metavar: PARTNER_ID
+    falls_back_to_field: null
+    help: ID of the partner.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.partner_update
+  sdk_conversion: Call mammoth.api.support.SupportAPI.partner_update with validated request fields.
+  request_model: SupportPartnerUpdateRequest
+  result_model: SupportPartnerUpdateResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support partner update PARTNER_ID --help
+  agent_example: 'mammoth support partner update 123 --input ''{"notes": "Prefers invoices"}'' --yes --confirm
+    123'
+  unit_tests:
+  - UT-SUPPORT-PARTNER-UPDATE
+  contract_tests:
+  - CT-SUPPORT-PARTNER-UPDATE-HUMAN
+  - CT-SUPPORT-PARTNER-UPDATE-JSON
+  - CT-SUPPORT-PARTNER-UPDATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    An empty string clears contact_name, contact_email or notes. billing_method sets how the partner's
+    consolidated subscription is collected.
+  reviewed_by: primary
+  readback:
+    command: support.partner.get
+    ids:
+      partner_id: positional.0
+    kind: object
+- command_id: support.plan.catalog
+  command_path: support plan catalog
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportPlansCatalog
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_catalog
+  sdk_conversion: Call mammoth.api.support.SupportAPI.plan_catalog with validated request fields.
+  request_model: SupportPlanCatalogRequest
+  result_model: SupportPlanCatalogResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support plan catalog --help
+  agent_example: mammoth support plan catalog
+  unit_tests:
+  - UT-SUPPORT-PLAN-CATALOG
+  contract_tests:
+  - CT-SUPPORT-PLAN-CATALOG-HUMAN
+  - CT-SUPPORT-PLAN-CATALOG-JSON
+  - CT-SUPPORT-PLAN-CATALOG-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.search
+  command_path: support search
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportSearch
+  positionals:
+  - name: q
+    type: str
+    required: false
+    metavar: Q
+    falls_back_to_field: q
+    help: Text to search for (a workspace, user, deal or partner); or the 'q' field.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.search
+  sdk_conversion: Call mammoth.api.support.SupportAPI.search with validated request fields.
+  request_model: SupportSearchRequest
+  result_model: SupportSearchResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support search --help
+  agent_example: mammoth support search acme
+  unit_tests:
+  - UT-SUPPORT-SEARCH
+  contract_tests:
+  - CT-SUPPORT-SEARCH-HUMAN
+  - CT-SUPPORT-SEARCH-JSON
+  - CT-SUPPORT-SEARCH-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.triage
+  command_path: support triage
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportTriage
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.triage
+  sdk_conversion: Call mammoth.api.support.SupportAPI.triage with validated request fields.
+  request_model: SupportTriageRequest
+  result_model: SupportTriageResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support triage --help
+  agent_example: mammoth support triage
+  unit_tests:
+  - UT-SUPPORT-TRIAGE
+  contract_tests:
+  - CT-SUPPORT-TRIAGE-HUMAN
+  - CT-SUPPORT-TRIAGE-JSON
+  - CT-SUPPORT-TRIAGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.usage-tiles
+  command_path: support usage-tiles
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportUsageTiles
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.usage_tiles
+  sdk_conversion: Call mammoth.api.support.SupportAPI.usage_tiles with validated request fields.
+  request_model: SupportUsageTilesRequest
+  result_model: SupportUsageTilesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support usage-tiles --help
+  agent_example: mammoth support usage-tiles
+  unit_tests:
+  - UT-SUPPORT-USAGE-TILES
+  contract_tests:
+  - CT-SUPPORT-USAGE-TILES-HUMAN
+  - CT-SUPPORT-USAGE-TILES-JSON
+  - CT-SUPPORT-USAGE-TILES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.activity
+  command_path: support workspace activity
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceActivity
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_activity
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_activity with validated request fields.
+  request_model: SupportWorkspaceActivityRequest
+  result_model: SupportWorkspaceActivityResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace activity WORKSPACE_ID --help
+  agent_example: mammoth support workspace activity 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-ACTIVITY
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-ACTIVITY-HUMAN
+  - CT-SUPPORT-WORKSPACE-ACTIVITY-JSON
+  - CT-SUPPORT-WORKSPACE-ACTIVITY-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.archive
+  command_path: support workspace archive
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceArchive
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_archive with validated request fields.
+  request_model: SupportWorkspaceArchiveRequest
+  result_model: SupportWorkspaceArchiveResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace archive WORKSPACE_ID --help
+  agent_example: 'mammoth support workspace archive 123 --input ''{"storage_class": "GLACIER_IR", "confirm_name":
+    "Revenue report", "reason": "Customer left"}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-ARCHIVE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-HUMAN
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-JSON
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Moves the workspace's data to cold storage and takes it offline. Needs `storage_class` (GLACIER_IR
+    or DEEP_ARCHIVE) and `confirm_name`, the workspace's exact name (case sensitive). `cancel_billing`
+    also cancels billing. Read `support workspace archive-info WORKSPACE_ID` first. Reverse it with `support
+    workspace restore-archive WORKSPACE_ID`.
+  reviewed_by: primary
+  readback:
+    command: support.workspace.archive-info
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.workspace.archive-info
+  command_path: support workspace archive-info
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceArchiveInfo
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive_info
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_archive_info with validated request fields.
+  request_model: SupportWorkspaceArchiveInfoRequest
+  result_model: SupportWorkspaceArchiveInfoResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace archive-info WORKSPACE_ID --help
+  agent_example: mammoth support workspace archive-info 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-ARCHIVE-INFO
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-INFO-HUMAN
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-INFO-JSON
+  - CT-SUPPORT-WORKSPACE-ARCHIVE-INFO-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.chargebee-cancelled
+  command_path: support workspace chargebee-cancelled
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceChargebeeCancelled
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_chargebee_cancelled
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_chargebee_cancelled with validated request
+    fields.
+  request_model: SupportWorkspaceChargebeeCancelledRequest
+  result_model: SupportWorkspaceChargebeeCancelledResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace chargebee-cancelled WORKSPACE_ID --help
+  agent_example: mammoth support workspace chargebee-cancelled 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-CHARGEBEE-CANCELLED
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-CHARGEBEE-CANCELLED-HUMAN
+  - CT-SUPPORT-WORKSPACE-CHARGEBEE-CANCELLED-JSON
+  - CT-SUPPORT-WORKSPACE-CHARGEBEE-CANCELLED-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Records the workspace's Chargebee subscription as cancelled; use it only after the cancellation was
+    done in Chargebee.
+  reviewed_by: primary
+  readback:
+    command: support.workspace.entitlement
+    ids:
+      workspace_id: positional.0
+    kind: object
+- command_id: support.workspace.deal-seed
+  command_path: support workspace deal-seed
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceDealSeed
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_deal_seed
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_deal_seed with validated request fields.
+  request_model: SupportWorkspaceDealSeedRequest
+  result_model: SupportWorkspaceDealSeedResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace deal-seed WORKSPACE_ID --help
+  agent_example: mammoth support workspace deal-seed 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-DEAL-SEED
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-DEAL-SEED-HUMAN
+  - CT-SUPPORT-WORKSPACE-DEAL-SEED-JSON
+  - CT-SUPPORT-WORKSPACE-DEAL-SEED-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.entitlement
+  command_path: support workspace entitlement
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceEntitlement
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_entitlement
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_entitlement with validated request fields.
+  request_model: SupportWorkspaceEntitlementRequest
+  result_model: SupportWorkspaceEntitlementResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace entitlement WORKSPACE_ID --help
+  agent_example: mammoth support workspace entitlement 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-ENTITLEMENT
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-ENTITLEMENT-HUMAN
+  - CT-SUPPORT-WORKSPACE-ENTITLEMENT-JSON
+  - CT-SUPPORT-WORKSPACE-ENTITLEMENT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.invite.cancel
+  command_path: support workspace invite cancel
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportCancelWorkspaceInvite
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: invite_id
+    type: int
+    required: true
+    metavar: INVITE_ID
+    falls_back_to_field: null
+    help: ID of the invite.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_cancel
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_invite_cancel with validated request fields.
+  request_model: SupportWorkspaceInviteCancelRequest
+  result_model: SupportWorkspaceInviteCancelResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace invite cancel WORKSPACE_ID INVITE_ID --help
+  agent_example: mammoth support workspace invite cancel 123 456 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-INVITE-CANCEL
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-INVITE-CANCEL-HUMAN
+  - CT-SUPPORT-WORKSPACE-INVITE-CANCEL-JSON
+  - CT-SUPPORT-WORKSPACE-INVITE-CANCEL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Cancels the pending invite so its link stops working.
+  reviewed_by: primary
+  no_readback: returns a message naming the invited address; the support API has no invite list to read
+    back
+- command_id: support.workspace.invite.resend
+  command_path: support workspace invite resend
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportResendWorkspaceInvite
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: invite_id
+    type: int
+    required: true
+    metavar: INVITE_ID
+    falls_back_to_field: null
+    help: ID of the invite.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_resend
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_invite_resend with validated request fields.
+  request_model: SupportWorkspaceInviteResendRequest
+  result_model: SupportWorkspaceInviteResendResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace invite resend WORKSPACE_ID INVITE_ID --help
+  agent_example: mammoth support workspace invite resend 123 456 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-INVITE-RESEND
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-INVITE-RESEND-HUMAN
+  - CT-SUPPORT-WORKSPACE-INVITE-RESEND-JSON
+  - CT-SUPPORT-WORKSPACE-INVITE-RESEND-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Emails the invitee again at once.
+  reviewed_by: primary
+  no_readback: emails the invitee again; the email is not readable through the API
+- command_id: support.workspace.restore-archive
+  command_path: support workspace restore-archive
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - SupportWorkspaceArchiveRestore
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_restore_archive
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_restore_archive with validated request
+    fields.
+  request_model: SupportWorkspaceRestoreArchiveRequest
+  result_model: SupportWorkspaceRestoreArchiveResult
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace restore-archive WORKSPACE_ID --help
+  agent_example: mammoth support workspace restore-archive 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-RESTORE-ARCHIVE
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-RESTORE-ARCHIVE-HUMAN
+  - CT-SUPPORT-WORKSPACE-RESTORE-ARCHIVE-JSON
+  - CT-SUPPORT-WORKSPACE-RESTORE-ARCHIVE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
+    Brings an archived workspace back from cold storage. Check `support workspace archive-info WORKSPACE_ID`
+    first.
+  reviewed_by: primary
+  readback:
+    command: support.workspace.archive-info
+    ids:
+      workspace_id: positional.0
+    kind: object

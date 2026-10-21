@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 806
+method_count: 851
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -7860,6 +7860,94 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_cancel_subscription
+  implementation_origin: mammoth.api.support.SupportAPI.billing_cancel_subscription
+  signature: 'billing_cancel_subscription(self, workspace_id: ''int'', when: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.cancel-subscription
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_change_plan
+  implementation_origin: mammoth.api.support.SupportAPI.billing_change_plan
+  signature: 'billing_change_plan(self, workspace_id: ''int'', new_plan_id: ''int'', *, when: ''str''
+    = ''now'', storage_gb: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.change-plan
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_end_trial
+  implementation_origin: mammoth.api.support.SupportAPI.billing_end_trial
+  signature: 'billing_end_trial(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.end-trial
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_refund
+  implementation_origin: mammoth.api.support.SupportAPI.billing_refund
+  signature: 'billing_refund(self, workspace_id: ''int'', amount: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.refund
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_retry_payment
+  implementation_origin: mammoth.api.support.SupportAPI.billing_retry_payment
+  signature: 'billing_retry_payment(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.retry-payment
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.billing_start_trial
+  implementation_origin: mammoth.api.support.SupportAPI.billing_start_trial
+  signature: 'billing_start_trial(self, workspace_id: ''int'', days: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.billing.start-trial
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.connector_bucket_impact
+  implementation_origin: mammoth.api.support.SupportAPI.connector_bucket_impact
+  signature: 'connector_bucket_impact(self, connector_id: ''int'', bucket: ''str | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.connector.bucket-impact
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.connector_create
   implementation_origin: mammoth.api.support.SupportAPI.connector_create
   signature: 'connector_create(self, name: ''str'', *, description: ''str | None'' = None, price_per_month:
@@ -7967,6 +8055,142 @@ methods:
     -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.connector.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_activity
+  implementation_origin: mammoth.api.support.SupportAPI.deal_activity
+  signature: 'deal_activity(self, deal_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.activity
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_cancel_move_to_partner
+  implementation_origin: mammoth.api.support.SupportAPI.deal_cancel_move_to_partner
+  signature: 'deal_cancel_move_to_partner(self, deal_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.cancel-move-to-partner
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_create
+  implementation_origin: mammoth.api.support.SupportAPI.deal_create
+  signature: 'deal_create(self, base_plan_id: ''int'', *, price: ''float | None'' = None, billing_interval:
+    ''str | None'' = None, collection_method: ''str | None'' = None, currency: ''str | None'' = None,
+    ent_overrides: ''dict[str, Any] | None'' = None, custom_connectors: ''list[str] | None'' = None, contract_start:
+    ''str | None'' = None, contract_end: ''str | None'' = None, trial_end: ''str | None'' = None, payment_terms:
+    ''str | None'' = None, notes: ''str | None'' = None, contact_name: ''str | None'' = None, contact_email:
+    ''str | None'' = None, workspace_id: ''int | None'' = None, workspace_create: ''dict[str, Any] | None''
+    = None, customer_email: ''str | None'' = None, partner_id: ''int | None'' = None, billing_start: ''str
+    | None'' = None, billing_start_at: ''str | None'' = None, status: ''str | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_get
+  implementation_origin: mammoth.api.support.SupportAPI.deal_get
+  signature: 'deal_get(self, deal_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_list
+  implementation_origin: mammoth.api.support.SupportAPI.deal_list
+  signature: deal_list(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.deal.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_move_to_partner
+  implementation_origin: mammoth.api.support.SupportAPI.deal_move_to_partner
+  signature: 'deal_move_to_partner(self, deal_id: ''int'', partner_id: ''int'', price: ''float'', billing_interval:
+    ''str'', *, when: ''str'' = ''period_end'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.move-to-partner
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_opt_in
+  implementation_origin: mammoth.api.support.SupportAPI.deal_opt_in
+  signature: 'deal_opt_in(self, deal_id: ''int'', *, keys: ''list[str] | None'' = None, connectors: ''list[str]
+    | None'' = None, everything: ''bool'' = False) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.opt-in
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_preview_entitlement
+  implementation_origin: mammoth.api.support.SupportAPI.deal_preview_entitlement
+  signature: 'deal_preview_entitlement(self, deal_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.preview-entitlement
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.deal_update
+  implementation_origin: mammoth.api.support.SupportAPI.deal_update
+  signature: 'deal_update(self, deal_id: ''int'', *, price: ''float | None'' = None, billing_interval:
+    ''str | None'' = None, collection_method: ''str | None'' = None, currency: ''str | None'' = None,
+    base_plan_id: ''int | None'' = None, ent_overrides: ''dict[str, Any] | None'' = None, custom_connectors:
+    ''list[str] | None'' = None, contract_start: ''str | None'' = None, contract_end: ''str | None'' =
+    None, trial_end: ''str | None'' = None, payment_terms: ''str | None'' = None, notes: ''str | None''
+    = None, contact_name: ''str | None'' = None, contact_email: ''str | None'' = None, status: ''str |
+    None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.deal.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.entitlement_registry
+  implementation_origin: mammoth.api.support.SupportAPI.entitlement_registry
+  signature: entitlement_registry(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.entitlement.registry
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8088,6 +8312,31 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.identity_get
+  implementation_origin: mammoth.api.support.SupportAPI.identity_get
+  signature: 'identity_get(self, user_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.identity.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.identity_list
+  implementation_origin: mammoth.api.support.SupportAPI.identity_list
+  signature: 'identity_list(self, *, limit: ''int | None'' = None, offset: ''int | None'' = None, search:
+    ''str | None'' = None, sort: ''str | None'' = None, order: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.identity.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.ownership_transfer
   implementation_origin: mammoth.api.support.SupportAPI.ownership_transfer
   signature: 'ownership_transfer(self, workspace_id: ''int'', user_id: ''int'', new_role: ''str'' = ''workspace_owner'',
@@ -8101,11 +8350,191 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_activity
+  implementation_origin: mammoth.api.support.SupportAPI.partner_activity
+  signature: 'partner_activity(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.activity
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_billing
+  implementation_origin: mammoth.api.support.SupportAPI.partner_billing
+  signature: 'partner_billing(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.billing
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_charge_invoices
+  implementation_origin: mammoth.api.support.SupportAPI.partner_charge_invoices
+  signature: 'partner_charge_invoices(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.charge-invoices
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_cancel_detach
+  implementation_origin: mammoth.api.support.SupportAPI.partner_client_cancel_detach
+  signature: 'partner_client_cancel_detach(self, partner_id: ''int'', workspace_id: ''int'') -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.client.cancel-detach
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_delete
+  implementation_origin: mammoth.api.support.SupportAPI.partner_client_delete
+  signature: 'partner_client_delete(self, partner_id: ''int'', workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.client.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_detach
+  implementation_origin: mammoth.api.support.SupportAPI.partner_client_detach
+  signature: 'partner_client_detach(self, partner_id: ''int'', workspace_id: ''int'', price: ''float'',
+    contact_email: ''str'', *, billing_interval: ''str | None'' = None, collection_method: ''str | None''
+    = None, currency: ''str | None'' = None, base_plan_id: ''int | None'' = None, ent_overrides: ''dict[str,
+    Any] | None'' = None, custom_connectors: ''list[str] | None'' = None, contract_start: ''str | None''
+    = None, contract_end: ''str | None'' = None, trial_end: ''str | None'' = None, payment_terms: ''str
+    | None'' = None, notes: ''str | None'' = None, contact_name: ''str | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.client.detach
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_client_list
+  implementation_origin: mammoth.api.support.SupportAPI.partner_client_list
+  signature: 'partner_client_list(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.client.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_create
+  implementation_origin: mammoth.api.support.SupportAPI.partner_create
+  signature: 'partner_create(self, name: ''str'', *, contact_name: ''str | None'' = None, contact_email:
+    ''str | None'' = None, payment_terms: ''str | None'' = None, billing_method: ''str | None'' = None,
+    notes: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_get
+  implementation_origin: mammoth.api.support.SupportAPI.partner_get
+  signature: 'partner_get(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_invoices
+  implementation_origin: mammoth.api.support.SupportAPI.partner_invoices
+  signature: 'partner_invoices(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.invoices
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_list
+  implementation_origin: mammoth.api.support.SupportAPI.partner_list
+  signature: partner_list(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.partner.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_send_payment_link
+  implementation_origin: mammoth.api.support.SupportAPI.partner_send_payment_link
+  signature: 'partner_send_payment_link(self, partner_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.send-payment-link
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.partner_update
+  implementation_origin: mammoth.api.support.SupportAPI.partner_update
+  signature: 'partner_update(self, partner_id: ''int'', *, name: ''str | None'' = None, contact_name:
+    ''str | None'' = None, contact_email: ''str | None'' = None, payment_terms: ''str | None'' = None,
+    billing_method: ''str | None'' = None, status: ''str | None'' = None, notes: ''str | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.partner.update
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.plan_archive
   implementation_origin: mammoth.api.support.SupportAPI.plan_archive
   signature: 'plan_archive(self, plan_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.plan.archive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.plan_catalog
+  implementation_origin: mammoth.api.support.SupportAPI.plan_catalog
+  signature: plan_catalog(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.plan.catalog
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8279,6 +8708,18 @@ methods:
     -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.plan.update-storage-tiers
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.search
+  implementation_origin: mammoth.api.support.SupportAPI.search
+  signature: 'search(self, q: ''str'' = '''') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.search
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8521,6 +8962,30 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.triage
+  implementation_origin: mammoth.api.support.SupportAPI.triage
+  signature: triage(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.triage
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.usage_tiles
+  implementation_origin: mammoth.api.support.SupportAPI.usage_tiles
+  signature: usage_tiles(self) -> 'dict[str, Any]'
+  openapi_operation_ids: []
+  canonical_command: support.usage-tiles
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.user_list_all
   implementation_origin: mammoth.api.support.SupportAPI.user_list_all
   signature: 'user_list_all(self, fields: ''str | None'' = None, sort: ''str | None'' = None, offset:
@@ -8560,6 +9025,55 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_activity
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_activity
+  signature: 'workspace_activity(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.activity
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_archive
+  signature: 'workspace_archive(self, workspace_id: ''int'', storage_class: ''str'', confirm_name: ''str'',
+    *, reason: ''str | None'' = None, cancel_billing: ''bool'' = False) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.archive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_archive_info
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_archive_info
+  signature: 'workspace_archive_info(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.archive-info
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_chargebee_cancelled
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_chargebee_cancelled
+  signature: 'workspace_chargebee_cancelled(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.chargebee-cancelled
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_create
   implementation_origin: mammoth.api.support.SupportAPI.workspace_create
   signature: 'workspace_create(self, name: ''str'', user_email: ''str'', payment_frequency: ''str'', *,
@@ -8568,6 +9082,18 @@ methods:
     ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.workspace.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_deal_seed
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_deal_seed
+  signature: 'workspace_deal_seed(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.deal-seed
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8587,12 +9113,50 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_entitlement
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_entitlement
+  signature: 'workspace_entitlement(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.entitlement
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_get
   implementation_origin: mammoth.api.support.SupportAPI.workspace_get
   signature: 'workspace_get(self, workspace_id: ''int'', fields: ''str | None'' = None) -> ''dict[str,
     Any]'''
   openapi_operation_ids: []
   canonical_command: support.workspace.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_cancel
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_invite_cancel
+  signature: 'workspace_invite_cancel(self, workspace_id: ''int'', invite_id: ''int'') -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.invite.cancel
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_invite_resend
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_invite_resend
+  signature: 'workspace_invite_resend(self, workspace_id: ''int'', invite_id: ''int'') -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.invite.resend
   alias_of: null
   no_command_reason: null
   mutation_class: null
@@ -8617,6 +9181,18 @@ methods:
   signature: 'workspace_restore_access(self, workspace_id: ''int'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.workspace.restore-access
+  alias_of: null
+  no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_restore_archive
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_restore_archive
+  signature: 'workspace_restore_archive(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: support.workspace.restore-archive
   alias_of: null
   no_command_reason: null
   mutation_class: null

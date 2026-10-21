@@ -22,6 +22,11 @@ from __future__ import annotations
 import difflib
 from typing import Any
 
+#: The support deal / partner billing vocabularies (``mmsubscription`` constants).
+_BILLING_INTERVALS = ("monthly", "yearly", "annual")
+_COLLECTION_METHODS = ("send_invoice", "charge_automatically")
+_PAYMENT_TERMS = ("due_on_receipt", "net15", "net30", "net45", "net60")
+
 #: command id -> field -> accepted spellings (canonical casing).
 FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     "agent.message.set-request-kind": {
@@ -81,6 +86,37 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "trash.list": {
         "type": ("dataview", "dataset", "dashboard", "automation"),
+        "order": ("asc", "desc"),
+    },
+    "support.billing.cancel-subscription": {"when": ("now", "period_end")},
+    "support.billing.change-plan": {"when": ("now", "period_end")},
+    "support.deal.move-to-partner": {
+        "when": ("period_end", "now"),
+        "billing_interval": _BILLING_INTERVALS,
+    },
+    "support.deal.create": {
+        "billing_interval": _BILLING_INTERVALS,
+        "collection_method": _COLLECTION_METHODS,
+        "payment_terms": _PAYMENT_TERMS,
+        "status": ("active", "trial"),
+        "billing_start": ("now", "chargebee_term_end", "date"),
+    },
+    "support.deal.update": {
+        "billing_interval": _BILLING_INTERVALS,
+        "collection_method": _COLLECTION_METHODS,
+        "payment_terms": _PAYMENT_TERMS,
+        "status": ("active", "trial", "cancelled"),
+    },
+    "support.partner.client.detach": {
+        "billing_interval": _BILLING_INTERVALS,
+        "collection_method": _COLLECTION_METHODS,
+        "payment_terms": _PAYMENT_TERMS,
+    },
+    "support.partner.create": {"billing_method": _COLLECTION_METHODS},
+    "support.partner.update": {"billing_method": _COLLECTION_METHODS},
+    "support.workspace.archive": {"storage_class": ("GLACIER_IR", "DEEP_ARCHIVE")},
+    "support.identity.list": {
+        "sort": ("name", "email", "last_active"),
         "order": ("asc", "desc"),
     },
 }
@@ -171,6 +207,7 @@ OPEN_VOCABULARY_ALLOWLIST: dict[tuple[str, str], str] = {
         for cid in ("agent.access.set", "agent.create", "agent.update")
     },
     ("support.workspace.user.transfer", "role"): "SDK documents no closed list for this role",
+    ("support.partner.update", "status"): "partner statuses are server-defined (not listed)",
     ("notification.list", "status"): "notification statuses are not documented by the SDK",
     **{
         (cid, "status"): "status filters are server-defined; the SDK documents no closed list"
