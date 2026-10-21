@@ -26,6 +26,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.services.folder_ids import FolderIds
+from mammoth_cli.services.held_change import describe_held_change
 from mammoth_cli.services.protocol import MammothService
 
 CODE_TARGETS_UNRESOLVABLE = "dry_run_targets_unresolvable"
@@ -212,6 +213,36 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             container="sessions",
             id_field="session_id",
             label_paths=("title",),
+        ),
+    ),
+    "agent.access.grant.revoke": (
+        Sub(
+            "agent access grant",
+            "grant_id",
+            source="agent.access.grant.list",
+            container="",
+            label_paths=("user.email", "user.name", "user"),
+            name_fmt="agent access for {label}",
+        ),
+    ),
+    "agent.access.grant.update": (
+        Sub(
+            "agent access grant",
+            "grant_id",
+            source="agent.access.grant.list",
+            container="",
+            label_paths=("user.email", "user.name", "user"),
+            name_fmt="agent access for {label}",
+        ),
+    ),
+    "agent.access.request.resolve": (
+        Sub(
+            "agent access request",
+            "request_id",
+            source="agent.access.request.list",
+            container="",
+            label_paths=("text",),
+            name_fmt="open agent access request {request_id}: {label}",
         ),
     ),
     "annotation.delete": (
@@ -414,7 +445,18 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
 
 
 #: Commands that make a new resource and change no existing one: nothing to name.
-CREATES_ONLY: frozenset[str] = frozenset({"dataset.create", "dataset.create-from-pdf"})
+CREATES_ONLY: frozenset[str] = frozenset(
+    {
+        "dataset.create",
+        "dataset.create-from-pdf",
+        # Redeeming an Open tables link adds a new folder of tables.
+        "dataset.tool-claim.redeem",
+    }
+)
+
+#: Reads that name no dataset although their family would default to one: the link's
+#: token is the only input.
+READS_WITHOUT_TARGET: frozenset[str] = frozenset({"dataset.tool-claim.get"})
 
 
 def unresolvable_error(command_id: str, reason: str) -> CliError:
@@ -643,6 +685,87 @@ def _avatar_target(service: MammothService) -> list[dict[str, Any]]:
     return [{"type": "user avatar", "id": _path(record, "id"), "name": f"profile picture of {who}"}]
 
 
+def _settings_target(service: MammothService, arguments: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """``agent access settings update`` changes the workspace's AI Agent settings.
+
+    Reads the current settings and names each field given, from its current value to the new one.
+    """
+    current = service.call(_symbol_of("agent.access.settings.get"))
+    changes = {
+        key: {"from": _path(current, key), "to": value}
+        for key, value in arguments.items()
+        if value is not None
+    }
+    shown = "; ".join(
+        f"{key} {change['from']!r} -> {change['to']!r}" for key, change in changes.items()
+    )
+    return [
+        {
+            "type": "agent access settings",
+            "id": _path(current, "workspace_id"),
+            "name": f"AI Agent settings of the whole workspace: {shown}",
+            "changes": changes,
+        }
+    ]
+
+
+_ENTITLEMENT_READS = ("entitlements", "values", "features")
+
+
+def _entitlements_target(
+    service: MammothService, arguments: Mapping[str, Any]
+) -> list[dict[str, Any]]:
+    """``support plan update-entitlements`` changes a plan, and every workspace on it.
+
+    Names the plan (its read) and each entitlement key going to its new value. The plan read
+    carries no entitlement values, so the current ones appear only if a future read adds them.
+    """
+    plan_id = arguments.get("plan_id")
+    plan = service.call(_symbol_of("support.plan.get"), plan_id=plan_id)
+    name = _path(plan, "name")
+    if not isinstance(name, str) or not name:
+        raise _unresolved_name("plan", plan_id, _symbol_of("support.plan.get"), "name")
+    held: Mapping[str, Any] = {}
+    for key in _ENTITLEMENT_READS:
+        found = _path(plan, key)
+        if isinstance(found, Mapping):
+            held = found
+            break
+    values = arguments.get("values") or {}
+    changes = {
+        key: {"from": held.get(key, "not readable"), "to": value} for key, value in values.items()
+    }
+    shown = ", ".join(f"{key} -> {change['to']!r}" for key, change in changes.items())
+    return [
+        {
+            "type": "plan",
+            "id": plan_id,
+            "name": (
+                f"plan \u201c{name}\u201d and every workspace on it: set {shown} "
+                "(the plan's current values are not readable here)"
+                if not held
+                else f"plan \u201c{name}\u201d and every workspace on it: set {shown}"
+            ),
+            "changes": changes,
+        }
+    ]
+
+
+def _held_change_target(service: MammothService) -> list[dict[str, Any]]:
+    """``billing stripe held-change cancel`` voids the held plan change's unpaid invoice."""
+    held = service.call(_symbol_of("billing.stripe.held-change.get"))
+    return [
+        {
+            "type": "held plan change",
+            "id": _path(held, "plan_id"),
+            "name": (
+                f"held plan change ({describe_held_change(held)}); its unpaid invoice is voided, "
+                "or the change is applied instead if the invoice was already paid"
+            ),
+        }
+    ]
+
+
 def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, str] | None:
     """The (kind, id argument) a command changes, or None when it names none.
 
@@ -652,7 +775,7 @@ def _target_spec(command_id: str, would_call: Mapping[str, Any]) -> tuple[str, s
     """
     if command_id in COMMAND_TARGETS:
         return COMMAND_TARGETS[command_id]
-    if command_id in CREATES_ONLY:
+    if command_id in CREATES_ONLY or command_id in READS_WITHOUT_TARGET:
         return None
     record = command_by_id(command_id) or {}
     if record.get("mutation_class") == "destructive":
@@ -724,6 +847,12 @@ def resolve_targets(
         return _avatar_target(service)
     if command_id == "dataset.bulk-update":
         return _bulk_update_targets(service, command_id, arguments)
+    if command_id == "agent.access.settings.update":
+        return _settings_target(service, arguments)
+    if command_id == "support.plan.update-entitlements":
+        return _entitlements_target(service, arguments)
+    if command_id == "billing.stripe.held-change.cancel":
+        return _held_change_target(service)
     if command_id in SUBS:
         scope = {k: v for k, v in would_call.items() if k in ("view_id", "dataset_id")}
         merged = {**scope, **arguments}

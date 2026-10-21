@@ -39,11 +39,11 @@ operations:
   response_schemas:
   - GrantView
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.grant.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grants_list
   reviewed_by: primary
 - identity: POST /agents/access/grants
   method: POST
@@ -62,11 +62,11 @@ operations:
   response_schemas:
   - GrantResult
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.grant.give
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_give
   reviewed_by: primary
 - identity: DELETE /agents/access/grants/{grant_id}
   method: DELETE
@@ -84,11 +84,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.grant.revoke
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_revoke
   reviewed_by: primary
 - identity: PATCH /agents/access/grants/{grant_id}
   method: PATCH
@@ -106,11 +106,11 @@ operations:
   request_schema: GrantPatch
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.grant.update
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_update
   reviewed_by: primary
 - identity: GET /agents/access/me
   method: GET
@@ -129,11 +129,11 @@ operations:
   response_schemas:
   - AgentAccessMe
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.me
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_me
   reviewed_by: primary
 - identity: GET /agents/access/people
   method: GET
@@ -152,11 +152,11 @@ operations:
   response_schemas:
   - PersonView
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.people
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_people
   reviewed_by: primary
 - identity: GET /agents/access/projects/{project_id}/askers
   method: GET
@@ -175,11 +175,11 @@ operations:
   response_schemas:
   - ProjectAskers
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.askers
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_project_askers
   reviewed_by: primary
 - identity: GET /agents/access/reach
   method: GET
@@ -198,11 +198,11 @@ operations:
   response_schemas:
   - ReachProject
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.reach
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_reach
   reviewed_by: primary
 - identity: GET /agents/access/requests
   method: GET
@@ -221,11 +221,11 @@ operations:
   response_schemas:
   - AgentRequestItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.request.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_list
   reviewed_by: primary
 - identity: POST /agents/access/requests
   method: POST
@@ -244,11 +244,11 @@ operations:
   response_schemas:
   - AgentRequestItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.request.create
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_create
   reviewed_by: primary
 - identity: GET /agents/access/requests/mine
   method: GET
@@ -267,11 +267,11 @@ operations:
   response_schemas:
   - AgentRequestItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.request.mine
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_mine
   reviewed_by: primary
 - identity: PATCH /agents/access/requests/{request_id}
   method: PATCH
@@ -290,11 +290,11 @@ operations:
   response_schemas:
   - AgentRequestItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.request.resolve
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_resolve
   reviewed_by: primary
 - identity: POST /agents/access/requests/{request_id}/project-context
   method: POST
@@ -313,11 +313,11 @@ operations:
   response_schemas:
   - AgentRequestItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.request.add-to-context
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_add_to_context
   reviewed_by: primary
 - identity: POST /agents/access/saved-charts
   method: POST
@@ -336,11 +336,11 @@ operations:
   response_schemas:
   - SaveChartResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.chart.save
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_chart_save
   reviewed_by: primary
 - identity: GET /agents/access/settings
   method: GET
@@ -359,11 +359,11 @@ operations:
   response_schemas:
   - AgentSettings
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.settings.get
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_get
   reviewed_by: primary
 - identity: PATCH /agents/access/settings
   method: PATCH
@@ -382,11 +382,11 @@ operations:
   response_schemas:
   - AgentSettings
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.settings.update
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_update
   reviewed_by: primary
 - identity: GET /agents/access/tree
   method: GET
@@ -405,11 +405,11 @@ operations:
   response_schemas:
   - TreeProject
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.access.tree
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.access_tree
   reviewed_by: primary
 - identity: GET /agents/briefing
   method: GET
@@ -792,11 +792,11 @@ operations:
   response_schemas:
   - TurnFeedbackItem
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.session.feedback.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_feedback_list
   reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/messages
   method: GET
@@ -1270,11 +1270,11 @@ operations:
   request_schema: TurnFeedbackRequest
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: agent.turn.rate
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_rate
   reviewed_by: primary
 - identity: GET /browse
   method: GET
@@ -4466,11 +4466,11 @@ operations:
   response_schemas:
   - ChatAttachmentResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chat.attachment.upload
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload
   reviewed_by: primary
 - identity: GET /dashboards/{dashboard_id}/chat/attachments/{sha}
   method: GET
@@ -4487,8 +4487,9 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Web editor chat panel: bytes of a file attached to a dashboard''s AI chat (att:<sha>
+    thumbnails and page views); the caller already has the file.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -5785,11 +5786,11 @@ operations:
   response_schemas:
   - UnpublishedChangesResponse
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.unpublished
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.unpublished
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/video
   method: POST
@@ -6028,8 +6029,10 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: Server-Sent Events push of one job's progress. It works over curl, but it only arrives
+    sooner than polling for task previews, and 'job wait' already follows the same job to its end, so
+    a command would add nothing.
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -7092,11 +7095,11 @@ operations:
   response_schemas:
   - PlanEntitlementsResponseSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.plan.update-entitlements
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.plan_update_entitlements
   reviewed_by: primary
 - identity: GET /subscription/plans/{plan_id}/storage-options
   method: GET
@@ -8764,11 +8767,11 @@ operations:
   response_schemas:
   - ToolClaimStatus
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.tool-claim.get
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_get
   reviewed_by: primary
 - identity: POST /tool-claims
   method: POST
@@ -8786,8 +8789,10 @@ operations:
   response_schemas:
   - ToolClaimStart
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  disposition: internal_only
+  disposition_reason: 'Public web sign-up step of an emailed Open tables link: makes an account for a
+    visitor with none and returns a one-time browser sign-in URL; CLI users are already signed in and
+    use ''dataset tool-claim redeem''.'
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -10771,11 +10776,11 @@ operations:
   response_schemas:
   - BulkConnectionsListSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.connection.list-all
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_all_connections
   reviewed_by: primary
 - identity: PATCH /workspaces/{workspace_id}/projects/{project_id}/connections/{connection_key}/test
   method: PATCH
@@ -10793,11 +10798,11 @@ operations:
   response_schemas:
   - ConnectionTestResultSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.connection.test
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.test_connection
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections
   method: GET
@@ -12671,11 +12676,11 @@ operations:
   request_schema: null
   response_schemas: []
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: view.task.preview-cancel
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_cancel
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/tasks
   method: GET
@@ -14150,11 +14155,11 @@ operations:
   response_schemas:
   - ToolClaimTarget
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dataset.tool-claim.redeem
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_redeem
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/trash
   method: GET
@@ -15348,11 +15353,11 @@ operations:
   response_schemas:
   - HeldChangeResponseSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: billing.stripe.held-change.get
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_held_change_get
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/subscription/held-change/cancel
   method: POST
@@ -15370,11 +15375,11 @@ operations:
   response_schemas:
   - CancelHeldChangeResponseSchema
   deprecated: false
-  disposition: unmapped
-  disposition_reason: No reviewed CLI command or SDK symbol recorded.
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: billing.stripe.held-change.cancel
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.billing.BillingAPI.stripe_held_change_cancel
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/subscription/payment-methods
   method: GET

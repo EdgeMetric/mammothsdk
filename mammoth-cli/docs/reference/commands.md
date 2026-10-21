@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.93.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 830.
+Total commands: 859.
 
 ## activity
 
@@ -75,6 +75,133 @@ Total commands: 830.
 
 ## agent
 
+### `mammoth agent access askers`
+
+**Arguments**
+
+- `PROJECT_ID` (int, required) — ID of the project whose askers to list.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_project_askers`
+- Agent example: `mammoth agent access askers 123`
+
+### `mammoth agent access chart save`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+- `TURN_ID` (str, required) — ID of the turn.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_chart_save`
+- Agent example: `mammoth agent access chart save resource-123 resource-123`
+
+### `mammoth agent access grant give`
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_give`
+- Agent example: `mammoth agent access grant give --input '{"emails": ["analyst@example.com"], "level": "ask", "items": [{"project_id": 1}]}' --yes`
+
+### `mammoth agent access grant list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grants_list`
+- Agent example: `mammoth agent access grant list`
+
+### `mammoth agent access grant revoke`
+
+**Arguments**
+
+- `GRANT_ID` (int, required) — ID of the grant.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_revoke`
+- Agent example: `mammoth agent access grant revoke 123 --yes`
+
+### `mammoth agent access grant update`
+
+**Arguments**
+
+- `GRANT_ID` (int, required) — ID of the grant.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_grant_update`
+- Agent example: `mammoth agent access grant update 123`
+
+### `mammoth agent access me`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_me`
+- Agent example: `mammoth agent access me`
+
+### `mammoth agent access people`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_people`
+- Agent example: `mammoth agent access people`
+
+### `mammoth agent access reach`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_reach`
+- Agent example: `mammoth agent access reach`
+
+### `mammoth agent access request add-to-context`
+
+**Arguments**
+
+- `REQUEST_ID` (int, required) — ID of the request.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_add_to_context`
+- Agent example: `mammoth agent access request add-to-context 123`
+
+### `mammoth agent access request create`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_create`
+- Agent example: `mammoth agent access request create --input '{"kind": "access", "text": "Please share the Sales project"}'`
+
+### `mammoth agent access request list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_requests_list`
+- Agent example: `mammoth agent access request list`
+
+### `mammoth agent access request mine`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_requests_mine`
+- Agent example: `mammoth agent access request mine resource-123`
+
+### `mammoth agent access request resolve`
+
+**Arguments**
+
+- `REQUEST_ID` (int, required) — ID of the request.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_request_resolve`
+- Agent example: `mammoth agent access request resolve 123 --input '{"status": "done"}' --yes`
+
 ### `mammoth agent access set`
 
 **Arguments**
@@ -85,6 +212,27 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agent_definitions.AgentDefinitionsAPI.update`
 - Agent example: `mammoth agent access set revenue-assistant --input '{"role": "member", "propose": true}'`
+
+### `mammoth agent access settings get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_get`
+- Agent example: `mammoth agent access settings get`
+
+### `mammoth agent access settings update`
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_update`
+- Agent example: `mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123`
+
+### `mammoth agent access tree`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_tree`
+- Agent example: `mammoth agent access tree`
 
 ### `mammoth agent action delete`
 
@@ -584,6 +732,17 @@ Total commands: 830.
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_delete`
 - Agent example: `mammoth agent session delete resource-123 --yes`
 
+### `mammoth agent session feedback list`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_feedback_list`
+- Agent example: `mammoth agent session feedback list resource-123`
+
 ### `mammoth agent session list`
 
 - Mutation class: `read`
@@ -634,6 +793,18 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.turn_cancel`
 - Agent example: `mammoth agent turn cancel resource-123`
+
+### `mammoth agent turn rate`
+
+**Arguments**
+
+- `SESSION_ID` (str, required) — ID of the session.
+- `TURN_ID` (str, required) — ID of the turn.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.turn_rate`
+- Agent example: `mammoth agent turn rate resource-123 resource-123 --input '{"rating": "up"}'`
 
 ### `mammoth agent update`
 
@@ -1025,6 +1196,20 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_get`
 - Agent example: `mammoth billing stripe get`
+
+### `mammoth billing stripe held-change cancel`
+
+- Mutation class: `destructive`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_held_change_cancel`
+- Agent example: `mammoth billing stripe held-change cancel --yes --confirm 123`
+
+### `mammoth billing stripe held-change get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.billing.BillingAPI.stripe_held_change_get`
+- Agent example: `mammoth billing stripe held-change get`
 
 ### `mammoth billing stripe history`
 
@@ -1725,6 +1910,13 @@ Total commands: 830.
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_connections`
 - Agent example: `mammoth connector connection list postgres`
 
+### `mammoth connector connection list-all`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connectors.ConnectorsAPI.list_all_connections`
+- Agent example: `mammoth connector connection list-all`
+
 ### `mammoth connector connection query`
 
 **Arguments**
@@ -1736,6 +1928,17 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
 - Agent example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
+
+### `mammoth connector connection test`
+
+**Arguments**
+
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connectors.ConnectorsAPI.test_connection`
+- Agent example: `mammoth connector connection test prod-warehouse`
 
 ### `mammoth connector connection update`
 
@@ -2073,6 +2276,18 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
 - Agent example: `mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}'`
+
+### `mammoth dashboard chat attachment upload`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+- `FILE` (str, required) — Path to a local file to attach to the dashboard chat.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload`
+- Agent example: `mammoth dashboard chat attachment upload 123 notes.pdf`
 
 ### `mammoth dashboard chat edit`
 
@@ -3465,6 +3680,17 @@ Total commands: 830.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.trash`
 - Agent example: `mammoth dashboard trash 123`
 
+### `mammoth dashboard unpublished`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.unpublished`
+- Agent example: `mammoth dashboard unpublished 123`
+
 ### `mammoth dashboard update`
 
 **Arguments**
@@ -3926,6 +4152,20 @@ Total commands: 830.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.dataset.search`
 - Agent example: `mammoth dataset search 'New Year Sale'`
+
+### `mammoth dataset tool-claim get`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.tool_claim_get`
+- Agent example: `mammoth dataset tool-claim get --input '{"token": "replace-with-secret"}'`
+
+### `mammoth dataset tool-claim redeem`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.tool_claim_redeem`
+- Agent example: `mammoth dataset tool-claim redeem --input '{"token": "replace-with-secret"}'`
 
 ### `mammoth dataset trash`
 
@@ -5662,6 +5902,17 @@ Total commands: 830.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update`
 - Agent example: `mammoth support plan update 123 --yes --confirm 123`
+
+### `mammoth support plan update-entitlements`
+
+**Arguments**
+
+- `PLAN_ID` (int, required) — ID of the plan.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.plan_update_entitlements`
+- Agent example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123`
 
 ### `mammoth support plan update-storage-tiers`
 
@@ -7530,6 +7781,18 @@ Total commands: 830.
   `view.transform.substring`), and inspect one with
   `mammoth schema get view.transform.filter` before composing a
   transformation.
+
+### `mammoth view task preview-cancel`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+- `JOB_ID` (int, required) — ID of the job.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.preview_cancel`
+- Agent example: `mammoth view task preview-cancel 123 456`
 
 ### `mammoth view task update`
 

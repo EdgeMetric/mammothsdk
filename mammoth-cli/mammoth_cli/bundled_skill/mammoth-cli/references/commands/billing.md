@@ -92,6 +92,26 @@ Result: `BillingStripeGetResult`; mutation `read`, confirmation `none`, wait pol
 
 Status on release: untried; no live run recorded.
 
+### `billing.stripe.held-change.cancel`
+
+Run: `mammoth billing stripe held-change cancel`. Exact input fields: `mammoth schema get billing.stripe.held-change.cancel`.
+
+Example: `mammoth billing stripe held-change cancel --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `BillingStripeHeldChangeCancelResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `billing.stripe.held-change.get`
+
+Run: `mammoth billing stripe held-change get`. Exact input fields: `mammoth schema get billing.stripe.held-change.get`.
+
+Example: `mammoth billing stripe held-change get`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `BillingStripeHeldChangeGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `billing.stripe.history`
 
 Run: `mammoth billing stripe history`. Exact input fields: `mammoth schema get billing.stripe.history`.

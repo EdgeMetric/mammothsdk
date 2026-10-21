@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 225,
+  "route_count": 247,
   "families": {
     "activity": 2,
-    "agent": 54,
+    "agent": 73,
     "ai": 4,
     "automation": 8,
-    "billing": 25,
+    "billing": 27,
     "client-app": 5,
     "schedule": 5,
-    "support": 111,
+    "support": 112,
     "token": 3,
     "user": 8
   },
@@ -9136,6 +9136,837 @@
         "method": "PATCH",
         "path": "/self",
         "body": "json:SelfPatch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.me",
+      "operation_id": "GetAgentAccessMe",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_me",
+      "field_destinations": {
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "preview_user_id": {
+          "source": "input",
+          "destination": "preview_user_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/me",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.settings.get",
+      "operation_id": "GetAgentSettings",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_settings_get",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/settings",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.settings.update",
+      "operation_id": "UpdateAgentSettings",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_settings_update",
+      "field_destinations": {
+        "enabled": {
+          "source": "input",
+          "destination": "enabled",
+          "wire": "sdk_argument"
+        },
+        "can_make_changes": {
+          "source": "input",
+          "destination": "can_make_changes",
+          "wire": "sdk_argument"
+        },
+        "downloads": {
+          "source": "input",
+          "destination": "downloads",
+          "wire": "sdk_argument"
+        },
+        "viewers_explore": {
+          "source": "input",
+          "destination": "viewers_explore",
+          "wire": "sdk_argument"
+        },
+        "managers": {
+          "source": "input",
+          "destination": "managers",
+          "wire": "sdk_argument"
+        },
+        "role_exceptions": {
+          "source": "input",
+          "destination": "role_exceptions",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/agents/access/settings",
+        "body": "json:AgentSettingsPatch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.grant.list",
+      "operation_id": "ListAgentGrants",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_grants_list",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/grants",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.grant.give",
+      "operation_id": "GiveAgentAccess",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_grant_give",
+      "field_destinations": {
+        "emails": {
+          "source": "input",
+          "destination": "emails",
+          "wire": "sdk_argument"
+        },
+        "level": {
+          "source": "input",
+          "destination": "level",
+          "wire": "sdk_argument"
+        },
+        "items": {
+          "source": "input",
+          "destination": "items",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/agents/access/grants",
+        "body": "json:GrantRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.grant.update",
+      "operation_id": "ChangeAgentAccess",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_grant_update",
+      "field_destinations": {
+        "grant_id": {
+          "source": "positional",
+          "destination": "grant_id"
+        },
+        "level": {
+          "source": "input",
+          "destination": "level",
+          "wire": "sdk_argument"
+        },
+        "items": {
+          "source": "input",
+          "destination": "items",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/agents/access/grants/{grant_id}",
+        "body": "json:GrantPatch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.grant.revoke",
+      "operation_id": "RevokeAgentAccess",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_grant_revoke",
+      "field_destinations": {
+        "grant_id": {
+          "source": "positional",
+          "destination": "grant_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "DELETE",
+        "path": "/agents/access/grants/{grant_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.people",
+      "operation_id": "ListAgentPeople",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_people",
+      "field_destinations": {
+        "search": {
+          "source": "input",
+          "destination": "search",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/people",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.tree",
+      "operation_id": "GetAgentAccessTree",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_tree",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/tree",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.askers",
+      "operation_id": "GetAgentProjectAskers",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_project_askers",
+      "field_destinations": {
+        "project_id": {
+          "source": "positional",
+          "destination": "project_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/projects/{project_id}/askers",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.reach",
+      "operation_id": "GetAgentAccessReach",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_reach",
+      "field_destinations": {
+        "user_id": {
+          "source": "input",
+          "destination": "user_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/reach",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.request.list",
+      "operation_id": "ListAgentAccessRequests",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_requests_list",
+      "field_destinations": {
+        "status": {
+          "source": "input",
+          "destination": "status",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/requests",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.request.mine",
+      "operation_id": "ListMyAgentAccessRequests",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_requests_mine",
+      "field_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/requests/mine",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.request.create",
+      "operation_id": "CreateAgentAccessRequest",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_request_create",
+      "field_destinations": {
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "text": {
+          "source": "input",
+          "destination": "text",
+          "wire": "sdk_argument"
+        },
+        "project_id": {
+          "source": "input",
+          "destination": "project_id",
+          "wire": "sdk_argument"
+        },
+        "file_id": {
+          "source": "input",
+          "destination": "file_id",
+          "wire": "sdk_argument"
+        },
+        "asked": {
+          "source": "input",
+          "destination": "asked",
+          "wire": "sdk_argument"
+        },
+        "session_id": {
+          "source": "input",
+          "destination": "session_id",
+          "wire": "sdk_argument"
+        },
+        "turn_id": {
+          "source": "input",
+          "destination": "turn_id",
+          "wire": "sdk_argument"
+        },
+        "dashboard_id": {
+          "source": "input",
+          "destination": "dashboard_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/agents/access/requests",
+        "body": "json:CreateAgentRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.request.resolve",
+      "operation_id": "ResolveAgentAccessRequest",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_request_resolve",
+      "field_destinations": {
+        "request_id": {
+          "source": "positional",
+          "destination": "request_id"
+        },
+        "status": {
+          "source": "input",
+          "destination": "status",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PATCH",
+        "path": "/agents/access/requests/{request_id}",
+        "body": "json:ResolveAgentRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.request.add-to-context",
+      "operation_id": "AddAgentRequestToProjectContext",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_request_add_to_context",
+      "field_destinations": {
+        "request_id": {
+          "source": "positional",
+          "destination": "request_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/agents/access/requests/{request_id}/project-context",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.chart.save",
+      "operation_id": "SaveAgentChart",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_chart_save",
+      "field_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        },
+        "turn_id": {
+          "source": "positional",
+          "destination": "turn_id"
+        },
+        "dashboard_id": {
+          "source": "input",
+          "destination": "dashboard_id",
+          "wire": "sdk_argument"
+        },
+        "new_dashboard_name": {
+          "source": "input",
+          "destination": "new_dashboard_name",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/agents/access/saved-charts",
+        "body": "json:SaveChartRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.session.feedback.list",
+      "operation_id": "ListAgentTurnFeedback",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_feedback_list",
+      "field_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/sessions/{session_id}/feedback",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.turn.rate",
+      "operation_id": "RateAgentTurn",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.turn_rate",
+      "field_destinations": {
+        "session_id": {
+          "source": "positional",
+          "destination": "session_id"
+        },
+        "turn_id": {
+          "source": "positional",
+          "destination": "turn_id"
+        },
+        "rating": {
+          "source": "input",
+          "destination": "rating",
+          "wire": "sdk_argument"
+        },
+        "comment": {
+          "source": "input",
+          "destination": "comment",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/agents/sessions/{session_id}/turns/{turn_id}/feedback",
+        "body": "json:TurnFeedbackRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.held-change.get",
+      "operation_id": "GetHeldChange",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_held_change_get",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/subscription/held-change",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "billing.stripe.held-change.cancel",
+      "operation_id": "CancelHeldChange",
+      "sdk_symbol": "mammoth.api.billing.BillingAPI.stripe_held_change_cancel",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/subscription/held-change/cancel",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.plan.update-entitlements",
+      "operation_id": "UpdatePlanEntitlements",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.plan_update_entitlements",
+      "field_destinations": {
+        "plan_id": {
+          "source": "positional",
+          "destination": "plan_id"
+        },
+        "values": {
+          "source": "input",
+          "destination": "values",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/subscription/plans/{plan_id}/entitlements",
+        "body": "json:UpdatePlanEntitlementsRequestSchema",
         "checks": [
           "method",
           "path",

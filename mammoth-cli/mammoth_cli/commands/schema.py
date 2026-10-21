@@ -1676,6 +1676,13 @@ def _confirm_index(command_id: str, specs: tuple[PositionalSpec, ...], given: in
     return 0
 
 
+#: ``confirm_target`` commands whose target is the workspace (no positional), whose example
+#: carries ``--confirm`` with a sample workspace id so it reads as complete.
+_WORKSPACE_CONFIRM_EXAMPLES = frozenset(
+    {"agent.access.settings.update", "billing.stripe.held-change.cancel"}
+)
+
+
 def runnable_example(
     record: dict[str, Any],
     symbol: str | None,
@@ -1725,6 +1732,12 @@ def runnable_example(
         rest.append("--yes")
     if policy == "confirm_target" and "--confirm" not in rest and given:
         rest.extend(["--confirm", given[_confirm_index(command_id, specs, len(given))]])
+    if (
+        policy == "confirm_target"
+        and "--confirm" not in rest
+        and command_id in _WORKSPACE_CONFIRM_EXAMPLES
+    ):
+        rest.extend(["--confirm", "123"])  # the workspace id, like the other sample ids
     return shlex.join([*tokens[:start], *given, *rest])
 
 

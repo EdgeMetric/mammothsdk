@@ -262,6 +262,26 @@ Result: `DatasetSearchResult`; mutation `read`, confirmation `none`, wait policy
 
 Status on release: untried; no live run recorded.
 
+### `dataset.tool-claim.get`
+
+Run: `mammoth dataset tool-claim get`. Exact input fields: `mammoth schema get dataset.tool-claim.get`.
+
+Example: `mammoth dataset tool-claim get --input '{"token": "replace-with-secret"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetToolClaimGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.tool-claim.redeem`
+
+Run: `mammoth dataset tool-claim redeem`. Exact input fields: `mammoth schema get dataset.tool-claim.redeem`.
+
+Example: `mammoth dataset tool-claim redeem --input '{"token": "replace-with-secret"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetToolClaimRedeemResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.trash`
 
 Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.trash`.

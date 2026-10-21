@@ -9,7 +9,11 @@ edits_target_commands:
 - addon.storage.remove
 - addon.user.add
 - addon.user.remove
+- agent.access.grant.revoke
+- agent.access.grant.update
+- agent.access.request.resolve
 - agent.access.set
+- agent.access.settings.update
 - agent.action.delete
 - agent.charter.restore
 - agent.charter.set
@@ -55,6 +59,7 @@ edits_target_commands:
 - batch.update
 - billing.stripe.cancel
 - billing.stripe.end-trial
+- billing.stripe.held-change.cancel
 - billing.stripe.payment-method.delete
 - billing.stripe.payment-method.set-default
 - billing.stripe.resume
@@ -200,6 +205,7 @@ edits_target_commands:
 - support.plan.storage-option.update
 - support.plan.unarchive
 - support.plan.update
+- support.plan.update-entitlements
 - support.plan.update-storage-tiers
 - support.subscription.update
 - support.template.discard

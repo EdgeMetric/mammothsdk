@@ -259,6 +259,28 @@ S7_ROUTE_INVENTORY = frozenset(
         "user.preference.get",
         "user.preference.update",
         "user.update",
+        "agent.access.askers",
+        "agent.access.chart.save",
+        "agent.access.grant.give",
+        "agent.access.grant.list",
+        "agent.access.grant.revoke",
+        "agent.access.grant.update",
+        "agent.access.me",
+        "agent.access.people",
+        "agent.access.reach",
+        "agent.access.request.add-to-context",
+        "agent.access.request.create",
+        "agent.access.request.list",
+        "agent.access.request.mine",
+        "agent.access.request.resolve",
+        "agent.access.settings.get",
+        "agent.access.settings.update",
+        "agent.access.tree",
+        "agent.session.feedback.list",
+        "agent.turn.rate",
+        "billing.stripe.held-change.cancel",
+        "billing.stripe.held-change.get",
+        "support.plan.update-entitlements",
     }
 )
 
@@ -305,16 +327,16 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 225
+    assert ledger["route_count"] == 247
     assert ledger["families"] == {
         "activity": 2,
-        "agent": 54,
+        "agent": 73,
         "ai": 4,
         "automation": 8,
-        "billing": 25,
+        "billing": 27,
         "client-app": 5,
         "schedule": 5,
-        "support": 111,
+        "support": 112,
         "token": 3,
         "user": 8,
     }

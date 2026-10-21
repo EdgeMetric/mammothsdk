@@ -108,12 +108,22 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # bare ``<field>``: the values are the ones the API documents (OpenAPI enums, or
     # the SDK method's own docstring/validator), so each example is a call that works.
     "agent.message.set-request-kind": {"request_kind": "ask"},
+    "support.plan.update-entitlements": {"values": {"dashboardBranding": "no_branding"}},
+    "agent.access.settings.update": {"enabled": True},
     "agent.plan.edit-proposal": {"plan_id": "resource-123", "action": "rename", "key": "Status"},
     "agent.run.units.set": {
         "step": 1,
         "kind": "dataset",
         "units": [{"id": 12, "name": "Sales", "project_id": 3}],
     },
+    "agent.access.grant.give": {
+        "emails": ["analyst@example.com"],
+        "level": "ask",
+        "items": [{"project_id": 1}],
+    },
+    "agent.access.request.create": {"kind": "access", "text": "Please share the Sales project"},
+    "agent.access.request.resolve": {"status": "done"},
+    "agent.turn.rate": {"rating": "up"},
     "agent.session.set-visibility": {"visibility": "shared"},
     "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
     "annotation.create": {

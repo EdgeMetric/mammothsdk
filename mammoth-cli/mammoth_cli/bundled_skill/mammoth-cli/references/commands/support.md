@@ -652,6 +652,16 @@ Result: `SupportPlanUpdateResult`; mutation `high_impact`, confirmation `confirm
 
 Status on release: untried; no live run recorded.
 
+### `support.plan.update-entitlements`
+
+Run: `mammoth support plan update-entitlements`. Exact input fields: `mammoth schema get support.plan.update-entitlements`.
+
+Example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportPlanUpdateEntitlementsResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.plan.update-storage-tiers`
 
 Run: `mammoth support plan update-storage-tiers`. Exact input fields: `mammoth schema get support.plan.update-storage-tiers`.
