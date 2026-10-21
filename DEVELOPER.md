@@ -59,7 +59,8 @@ mammoth/                  # SDK package (published to PyPI)
   exceptions.py           # Exception hierarchy
   py.typed                # PEP 561 marker for type checkers
 
-mammoth-mcp/              # MCP server (separate package, not published here)
+mammoth-cli/              # Command-line interface (separate package)
+mammoth-mcp-server/       # Hosted MCP server (separate package)
 tests/
   unit/                   # Fast, no network — mock everything
   integration/            # Live API tests against release.mammoth.io
