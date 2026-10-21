@@ -1,11 +1,10 @@
 """Changing a dashboard: Mammoth's AI edits it, or it gets a new title."""
 
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
-
-from mammoth_mcp_server.tools import dashboard_edits
 
 from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool
 
@@ -13,6 +12,7 @@ DASHBOARD_ID = 42
 DASHBOARD = f"/dashboards/{DASHBOARD_ID}"
 CHAT = f"{DASHBOARD}/chat"
 JOB = "/jobs/41"
+SHORT_CALL = patch("mammoth_mcp_server.deadline.TOOL_CALL_SECONDS", 0.05)
 
 BOARD: dict[str, Any] = {
     "id": DASHBOARD_ID,
@@ -77,6 +77,16 @@ class TestAnAIEdit:
         assert "canvas" not in answer
         assert "next_step" not in answer
 
+    def test_an_edit_that_takes_a_while_is_waited_for(self) -> None:
+        running = {"job": {"id": 41, "status": "processing", "response": None}}
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=running)
+            api.answer("GET", JOB, EDITED)
+            answer = edit(change="Add a card with total revenue")
+
+        assert len(api.sent("GET", JOB)) == 2
+        assert answer["changed"] is True
+
     def test_an_edit_that_changed_nothing_says_it_was_not_applied(self) -> None:
         # The AI's message says what it meant to do, even when nothing landed.
         with a_fake_api() as api, as_caller():
@@ -94,10 +104,9 @@ class TestAnAIEdit:
         assert not api.sent("POST", f"{DASHBOARD}/action")
         assert "publish_dashboard" in answer["next_step"]
 
-    def test_an_edit_still_going_says_so(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(dashboard_edits, "BUILD_WAIT_SECONDS", 0.0)
+    def test_an_edit_still_going_says_so(self) -> None:
         running = {"job": {"id": 41, "status": "processing", "response": None}}
-        with a_fake_api() as api, as_caller():
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
             a_board(api, job=running)
             answer = edit(change="Add a card with total revenue")
 
