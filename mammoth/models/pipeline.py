@@ -560,7 +560,7 @@ class ConversionSpec:
     thousands_separator: str | None = None
     input_formats: list[str] | None = None
     output_format: str | None = None
-    input_format_preference: Literal["uk", "us"] | None = None
+    input_format_preference: Literal["uk", "us", "strict"] | None = None
 
 
 @dataclass

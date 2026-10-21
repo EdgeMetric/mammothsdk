@@ -325,8 +325,15 @@ class TestColumnOps:
 
     def test_convert_rejects_a_preference_the_backend_refuses(self) -> None:
         conversions = [ConversionSpec("Order Date", ColumnType.DATE, input_format_preference="eu")]  # type: ignore[arg-type]
-        with pytest.raises(MammothValidationError, match="'uk' or 'us'"):
+        with pytest.raises(MammothValidationError, match="'uk', 'us' or 'strict'"):
             b.build_convert_params(conversions, COLS, INTERNALS)
+
+    def test_convert_accepts_the_strict_preference(self) -> None:
+        conversions = [
+            ConversionSpec("Order Date", ColumnType.DATE, input_format_preference="strict")
+        ]
+        fmt = b.build_convert_params(conversions, COLS, INTERNALS)["CONVERT"][0]["FORMAT"]
+        assert fmt == {"input_format_preference": "strict"}
 
     def test_convert_date_formats_need_a_date_target(self) -> None:
         conversions = [ConversionSpec("Sales", ColumnType.TEXT, output_format="DD-Mon-YYYY")]

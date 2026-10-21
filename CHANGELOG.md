@@ -33,6 +33,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-io, mammoth-cli and mammoth-mcp-server)
 
+- `view transform convert-type`: `input_format_preference` also takes `strict` (an ambiguous day/month value becomes blank; a date whose day and month are equal converts). SDK `ConversionSpec` accepts it too.
 - SDK `await client.resolve_workspace_id()`. SDK calls on a token client look the workspace up without blocking the event loop; a direct `client.workspace_id` read inside a running loop still works, blocks for that one lookup and logs a one-time warning.
 - SDK `MammothClient(api_token=..., workspace_id=...)`: the workspace id is a hint that skips the lookup and sends no extra header.
 - SDK `MammothClient(http_client=...)` sends through a shared `httpx.AsyncClient`. Credentials go on each request, never on the shared client; a pool shared between users should keep no cookies.
