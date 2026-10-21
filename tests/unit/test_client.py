@@ -349,7 +349,7 @@ class TestWorkspaceHintAndLookup:
         assert client.workspace_id == 7
         await client.request_json("GET", "/ping")
         assert [r.url.path for r in seen] == ["/api/v2/ping"]
-        assert seen[0].headers["X-WORKSPACE-ID"] == "7"
+        assert "X-WORKSPACE-ID" not in seen[0].headers
         await shared.aclose()
 
     async def test_unknown_workspace_is_learned_asynchronously_before_a_url_is_built(self):
@@ -367,8 +367,6 @@ class TestWorkspaceHintAndLookup:
             base_url="https://lookup.example/api/v2",
             http_client=shared,
         )
-        with pytest.raises(RuntimeError, match="resolve_workspace_id"):
-            client.workspace_id  # noqa: B018
         client.set_project_id(1)
         await client.folders.list()
         assert client.workspace_id == 4242
@@ -422,3 +420,15 @@ class TestSharedHttpClient:
         client = MammothClient(api_token="mm_own", workspace_id=1)
         await client.close()
         assert client.session.is_closed
+
+
+async def test_direct_read_in_a_running_loop_still_works_and_warns_once(caplog):
+    import mammoth.client as client_module
+
+    client_module._blocking_lookup_warned = False
+    client = MammothClient(api_token="mm_direct_read", base_url="https://direct.example/api/v2")
+    response = httpx.Response(200, json={"id": 11}, request=httpx.Request("GET", "https://x"))
+    with patch("mammoth.client.httpx.get", return_value=response), caplog.at_level("WARNING"):
+        assert client.workspace_id == 11
+    assert sum("resolve_workspace_id" in r.getMessage() for r in caplog.records) == 1
+    await client.close()

@@ -330,6 +330,20 @@ def _read_error_detail(body: dict[str, Any]) -> str | None:
 
 _ApiT = TypeVar("_ApiT")
 
+_blocking_lookup_warned = False
+
+
+def _warn_once_blocking_lookup() -> None:
+    """Log, once per process, that a direct ``workspace_id`` read blocked the event loop."""
+    global _blocking_lookup_warned
+    if not _blocking_lookup_warned:
+        _blocking_lookup_warned = True
+        logging.getLogger("mammoth").warning(
+            "client.workspace_id made a blocking lookup inside a running event loop; "
+            "await client.resolve_workspace_id() first to avoid it"
+        )
+
+
 _TOKEN_WORKSPACES: dict[tuple[str, str], int] = {}
 _TOKEN_WORKSPACES_MAX = 64
 
@@ -749,8 +763,6 @@ class MammothClient:
             credential_headers = {}
         elif self.api_token is not None:
             credential_headers = {"Authorization": f"Bearer {self.api_token}"}
-            if workspace_id is not None:
-                credential_headers["X-WORKSPACE-ID"] = str(workspace_id)
         else:
             credential_headers = {
                 "X-API-KEY": str(self.api_key),
@@ -889,13 +901,10 @@ class MammothClient:
 
         Given at construction (required with ``api_key`` + ``api_secret``, a
         hint with an ``api_token``). A token client without a hint learns it
-        from the API once, on first use, and keeps it. Inside a running event
-        loop that lookup is made for you before any SDK call; if you read this
-        property first, ``await client.resolve_workspace_id()`` before it.
-
-        Raises:
-            RuntimeError: Read inside a running event loop before the workspace
-                is known, where the lookup would block the loop.
+        from the API once, on first use, and keeps it. SDK calls made from
+        async code learn it without blocking the event loop. Reading this
+        property first, inside a running loop, still works but blocks the loop
+        for that one lookup: ``await client.resolve_workspace_id()`` avoids it.
         """
         if self._workspace_id is None:
             token = self._token_provider() if self._token_provider else self.api_token
@@ -906,10 +915,7 @@ class MammothClient:
             except RuntimeError:
                 pass
             else:
-                raise RuntimeError(
-                    "workspace_id is not known yet and looking it up would block the event "
-                    "loop: await client.resolve_workspace_id() first, or pass workspace_id"
-                )
+                _warn_once_blocking_lookup()
             self._workspace_id = resolve_token_workspace_id(self.base_url, token, self.timeout)
         return self._workspace_id
 
