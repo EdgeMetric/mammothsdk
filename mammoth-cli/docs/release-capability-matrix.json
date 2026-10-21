@@ -1417,6 +1417,7 @@
     "project.memory.list",
     "project.needs-attention",
     "resolve",
+    "run",
     "skill.agents-md.install",
     "skill.show",
     "view.data.drivers",

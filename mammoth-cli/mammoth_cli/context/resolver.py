@@ -29,6 +29,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.shared import AUTH_MEMO
 from mammoth_cli.services.mapping import map_sdk_exception
 
 
@@ -179,6 +180,27 @@ def _env_token_login() -> ExplicitLogin | None:
 
 
 def resolve_auth(
+    invocation: Invocation,
+    explicit_login: ExplicitLogin | None = None,
+) -> ResolvedAuth:
+    """Resolve credentials, workspace id, and base url for one invocation.
+
+    Inside a ``mammoth run`` the answer is kept per profile (see
+    :func:`mammoth_cli.runtime.shared.remembering_auth`): the keyring, the profile file
+    and the environment token are read once for all the lines, not once per line. An
+    explicit login and an embedded call are never kept.
+    """
+    memo = AUTH_MEMO.get()
+    if memo is None or explicit_login is not None or embedded.active():
+        return _resolve_auth(invocation, explicit_login)
+    key = (invocation.profile, invocation.profile_is_default)
+    if key not in memo:
+        memo[key] = _resolve_auth(invocation, None)
+    remembered: ResolvedAuth = memo[key]
+    return remembered
+
+
+def _resolve_auth(
     invocation: Invocation,
     explicit_login: ExplicitLogin | None = None,
 ) -> ResolvedAuth:

@@ -54,6 +54,8 @@ _OPTION_PREFIX = "-"
 COMMAND_FLAGS: dict[str, frozenset[str]] = {
     "schema.get": frozenset({"--full"}),
     "schema.find": frozenset({"--unsupported"}),
+    # Keep going after a failed line instead of stopping at the first.
+    "run": frozenset({"--continue"}),
     # The compacted dashboard writes: --full returns the whole response.
     **{command_id: frozenset({FULL_FLAG}) for command_id in COMPACT_COMMANDS},
 }

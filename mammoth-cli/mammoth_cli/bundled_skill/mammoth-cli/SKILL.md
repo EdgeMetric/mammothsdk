@@ -61,6 +61,28 @@ downloads return `download_url`. Ask for a reload on `authentication_failed` onl
   `job get` recovery printed, never resubmit. `job wait` returns `outcome`
   (view rows and state, copy `runs`): no `view get` after it.
 
+## Several commands at once
+
+Every `mammoth` process pays about 0.9 s before its first request (start-up,
+credentials, a new connection). For three or more commands, write JSON Lines
+and run them in one process (`mammoth run -` reads stdin):
+
+```bash
+mammoth run steps.jsonl --profile NAME --project ID   # --continue runs past a failed line
+```
+
+```json
+{"cmd": "view task list", "args": ["290"]}
+{"cmd": "view get", "args": [290], "id": "v"}
+{"cmd": "dataset refresh", "args": [424], "flags": {"yes": true, "dry-run": true}}
+```
+
+`cmd` is the command path, `args` its positionals, `input` its `--input` document, `flags` the
+global flags by long name (`yes`, `confirm`, `dry-run`, `project`). Each line prints its normal
+envelope plus `line`, `cmd` and `exit`, then a summary. The run stops at the first failure
+(`exit` is that line's status). `run` has no global `--yes`: a mutating line carries its own.
+`--dry-run` applies to every line. Details: [machine output](references/machine-output.md#many-commands-one-process-mammoth-run).
+
 ## Find the command for a goal
 
 State the goal in plain words;

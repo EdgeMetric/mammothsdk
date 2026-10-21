@@ -32,7 +32,7 @@ from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
-from mammoth_cli.runtime import embedded, updates
+from mammoth_cli.runtime import embedded, linecapture, updates
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.runlog import RunLog
@@ -40,6 +40,11 @@ from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
 Producer = Callable[[], tuple[Any, dict[str, Any]]]
+
+#: ``meta_extra`` keys a streaming command (``run``) sets: it printed its own envelopes, so
+#: the executor prints none, and the process exits with the given status.
+STREAMED_META = "streamed"
+EXIT_STATUS_META = "exit_status"
 
 # Commands that act on the host machine (login, config, installs, upgrade); an
 # embedded call has no profile, keyring or shell to act on.
@@ -54,6 +59,8 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "skill.update",
         "skill.agents-md.install",
         "completion.install",
+        # Reads a JSON Lines file or the host's stdin.
+        "run",
         # Read or write the host's profile, run log or install state.
         "auth.status",
         "config.get",
@@ -246,7 +253,7 @@ def emit_success(
         next_commands=next_commands or None,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
-    if embedded.capture(normalize(envelope)):
+    if embedded.capture(normalize(envelope)) or linecapture.capture(normalize(envelope)):
         return
     render(envelope, output=output)
     if next_commands and output in _HUMAN_OUTPUTS:
@@ -265,7 +272,9 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
         output: The selected machine mode. Only ``ndjson`` selects lifecycle
             framing; all other machine errors retain the JSON envelope.
     """
-    if embedded.capture(normalize(error.to_envelope())):
+    if embedded.capture(normalize(error.to_envelope())) or linecapture.capture(
+        normalize(error.to_envelope())
+    ):
         return
     if machine:
         render(
@@ -338,7 +347,9 @@ def run(
 
     # The update notice is read from the daily cache (no network); the cache
     # itself is refreshed only after the command has produced its output.
-    update = updates.available_update(command_id)
+    # A ``mammoth run`` line leaves the update notice and the skill refresh to the run itself.
+    in_line = linecapture.active()
+    update = None if in_line else updates.available_update(command_id)
     report_failed = False
     write_exit = 0
     try:
@@ -351,14 +362,18 @@ def run(
             data, meta_extra = producer()
         # Re-read: a command that asked PyPI itself (doctor) refreshed the
         # cache, and its envelope must not carry the older answer.
-        update = updates.available_update(command_id)
-        emit_success(command_id, data, output, update_available=update, **meta_extra)
+        update = None if in_line else updates.available_update(command_id)
+        # A streaming command (``run``) printed its own envelopes and names its exit status.
+        streamed = bool(meta_extra.pop(STREAMED_META, False))
+        stream_exit = int(meta_extra.pop(EXIT_STATUS_META, 0) or 0)
+        if not streamed:
+            emit_success(command_id, data, output, update_available=update, **meta_extra)
         updates.emit_hint(update, output=output)
         # doctor prints its report either way; a failed report must not exit 0.
         report_failed = (
             command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
         )
-        write_exit = _verify_exit_status(data)
+        write_exit = stream_exit or _verify_exit_status(data)
     except CliError as error:
         running = (
             running_handle(error, command_id)
@@ -400,8 +415,9 @@ def run(
         raise typer.Exit(mapped_error.exit_status) from None
     if run_log is not None:
         run_log.finish(EXIT_AUTH if report_failed else write_exit)
-    updates.refresh_in_background(command_id)
-    _sync_skill_installs(command_id, output)
+    if not in_line:
+        updates.refresh_in_background(command_id)
+        _sync_skill_installs(command_id, output)
     if report_failed:
         raise typer.Exit(EXIT_AUTH)
     if write_exit:

@@ -278,6 +278,7 @@ _TARGETS: dict[str, str] = {
     "link": "mammoth_cli.commands.link:link",
     "resolve": "mammoth_cli.commands.resolve:resolve",
     "how": "mammoth_cli.commands.how:how",
+    "run": "mammoth_cli.commands.run:run",
     "capabilities": "mammoth_cli.commands.capabilities:capabilities",
     "completion.show": "mammoth_cli.commands.completion:completion_show",
     "completion.install": "mammoth_cli.commands.completion:completion_install",

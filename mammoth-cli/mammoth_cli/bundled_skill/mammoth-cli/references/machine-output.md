@@ -69,6 +69,36 @@ as it is, not one escaped JSON string. `json` emits one
 complete object; `ndjson` emits one complete envelope per line. Machine modes
 never emit color or progress.
 
+## Many commands, one process: `mammoth run`
+
+`mammoth run [FILE|-]` reads JSON Lines (one object per line, blank lines skipped) and runs each
+line in this one process: one credential load, one client and connection pool, warm caches.
+
+| key | type | meaning |
+|---|---|---|
+| `cmd` | string, required | the command path as in `meta.command`, for example `"view task list"` |
+| `args` | list | the positionals in order (strings or numbers). A flag the command itself declares (`"--full"`) is allowed here; global flags are not |
+| `input` | object | the `--input` document |
+| `flags` | object | global flags by long name without dashes: `{"project": 3633, "yes": true, "confirm": "42", "dry-run": true}`. Booleans take `true`/`false`, the others a string or number. `output`, `input`, `input-format`, `no-input`, `no-progress` and `color` are set by `run` and refused |
+| `id` | string or number | echoed on that line's envelope |
+
+Output is JSON Lines on stdout, one envelope per line: the envelope the single command prints
+(`data` and `meta`, or `error`) plus `line` (the physical line number), `cmd`, `exit` and the
+echoed `id`. The last line is the summary, which has no `line`: `data` holds `lines`, `ok`, `failed`,
+`skipped`, `stopped_at`, `failed_lines`, `continue`, `dry_run` and `exit`.
+
+- The run stops at the first failed line and exits with that line's status; the lines after it
+  are `skipped`. `--continue` runs every line and exits with the first failure's status.
+- A line is a command like any other. A mutating line without its own `"yes": true` (and
+  `"confirm"` where the command needs the target) fails that line with `confirmation_required`;
+  `run` has no global `--yes` or `--confirm` and refuses them.
+- `--dry-run`, `--profile`, `--project`, `--session` and the timeout flags given to `run` apply to
+  every line; a line's `flags` override all of them except `--dry-run`.
+- A bad line (invalid JSON, a duplicate or unknown key, a flag in `args`, a reserved flag) is an
+  `invalid_run_line` error for that line, exit 2. `run`, `auth login` and `auth logout` cannot be
+  lines (`run_command_refused`).
+- stdout carries only the envelopes; progress and diagnostics stay on stderr.
+
 ## Exit codes
 | code | meaning |
 |---|---|

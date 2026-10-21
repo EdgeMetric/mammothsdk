@@ -473,6 +473,7 @@ _LOCAL_COMMANDS = frozenset(
         "project.check",
         "project.ensure",
         "resolve",
+        "run",
         "folder.find",
         "how",
         "link",

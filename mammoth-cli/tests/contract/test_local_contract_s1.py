@@ -58,6 +58,7 @@ S1_ROUTES = (
     "project.check",
     "project.ensure",
     "resolve",
+    "run",
     "schema.find",
     "schema.get",
     "schema.list",
