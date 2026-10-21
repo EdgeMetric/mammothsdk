@@ -286,6 +286,11 @@ class ApiPaths:
     BROWSE = "/workspaces/{workspace_id}/browse"
     # The SDK's list sends no paging or filter, and the route pages by ten.
     CONNECTORS = "/workspaces/{workspace_id}/connectors"
+    # One connection, with the connector key base64-encoded as the route reads it.
+    CONNECTION = (
+        "/workspaces/{workspace_id}/projects/{project_id}"
+        "/connectors/{connector}/connections/{connection_key}"
+    )
     SELF = "/self"
 
 
@@ -504,11 +509,18 @@ class ConnectorFields:
     NAME = "disp_name"
     AVAILABLE = "is_available"
     LISTED = "name_key,disp_name,is_available"
+    # The route filters by `has_connections` only within the page it read,
+    # so the connected ones are found here: every page of the catalogue is
+    # read, at the route's largest page, with each connector's count.
+    LISTED_CONNECTED = LISTED + ",connection_count"
+    CONNECTION_COUNT = "connection_count"
+    EVERY_CONNECTOR = 100
+    # Pages read at most: far more connectors than Mammoth has.
+    MOST_CONNECTORS = 2000
     FIELDS = "fields"
     LIMIT = "limit"
     OFFSET = "offset"
     PROJECT_ID = "project_id"
-    HAS_CONNECTIONS = "has_connections"
     ACTION = "action"
     ADD_CONNECTOR = "addConnector"
     CONNECTOR = "connector"
@@ -619,6 +631,17 @@ class ConnectionFields:
     PROJECT_ID = "project_id"
     # A sample's column, as Mammoth names it.
     COLUMN_NAME = "c_name"
+    # What a connection is asked for: its schemas (`profiles`), or the form the
+    # web app draws for one schema, which lists that schema's tables.
+    CONCERN = "concern"
+    PROFILES = "profiles"
+    DS_CONFIG_SPEC = "ds_config_spec"
+    TABLES_AT = ("ux", "attributes", "tables", "items")
+    VALUE = "value"
+    IS_VALID = "is_valid"
+    SCHEMAS = "schemas"
+    SCHEMA_NAME = "schema"
+    TABLES = "tables"
     # Long enough for Mammoth to refuse the dataset; the pull itself runs on.
     CHECK_SECONDS = 15.0
 
@@ -717,9 +740,9 @@ class TokenClaims:
 
     # The one workspace the caller's token belongs to.
     WORKSPACE_ID = "workspace_id"
-    # The one project the user picked when they connected, or None when they
-    # picked "All projects". Mammoth refuses the token on any other project.
-    PROJECT_ID = "project_id"
+    # The projects the user picked when they connected, sorted, or None when
+    # they picked "All projects". Mammoth refuses the token on any other project.
+    PROJECT_IDS = "project_ids"
 
 
 class PipelineFields:
@@ -730,6 +753,8 @@ class PipelineFields:
     TASKS = "tasks"
     DRAFT_MODE = "draft_mode"
     NOT_DRAFTING = "off"
+    # Staged changes that have not run.
+    DRAFT_DIRTY = "dirty"
     DRAFT_OPERATION = "draft_operation"
     DRAFT_ON = "enter"
     DRAFT_OFF = "exit"
@@ -737,6 +762,83 @@ class PipelineFields:
     DRAFT_DISCARD = "discard"
     PATCHES = "patches"
     RUN = {"op": "command", "path": "run", "value": None}
+
+
+class StepFields:
+    """One step of a pipeline as the tasks route lists it, and what a tool says of it."""
+
+    ID = "id"
+    SEQUENCE = "sequence"
+    STATUS = "status"
+    SUSPENDED = "suspended"
+    PARAMS = "params"
+    # The columns a step reads: the ones the steps before it leave.
+    COLUMNS_READ = "prev_metadata"
+    RUN_STATE = "transform_status"
+    FAILED_STATES = frozenset({"ERROR", "REFERROR", "EXCEPTION"})
+    REFERENCE_ERRORS = "reference_errors"
+    # Inside `params`: which operation the step is, and what it makes.
+    TASK_KEY = "TASK_KEY"
+    NEW_COLUMN = "COLUMN"
+    INTERNAL_NAME = "INTERNAL_NAME"
+    # The keys of a stored step, besides its operation, that the edit route takes back.
+    KEPT_ON_PUT_BACK = ("CONDITION", "VERSION", "ORDER_BY", "ORDER", "PRESET")
+    # The edit route's patch.
+    OP = "op"
+    PATH = "path"
+    VALUE = "value"
+    REPLACE = "replace"
+    COMMAND = "command"
+    REPLACE_PARAMS = "params"
+    # What a change that would break a later step is refused with.
+    DEPENDENTS = "column_to_dependencies_dict"
+    # Inside it: the steps that read a column, and the view each is in.
+    TASKS = "tasks"
+    VIEW_ID = "dataview_id"
+    # What a tool reports.
+    STEP = "step"
+    STEP_ID = "step_id"
+    TASK = "task"
+    ERROR = "error"
+    PROBLEMS = "problems"
+    OUTCOME = "outcome"
+    NEXT_STEP = "next_step"
+    CHANGED = "changed"
+    RAN = "ran"
+    RUN_FAILED = "run_failed"
+    RUN_PENDING = "run_pending"
+    STAGED = "staged"
+    PUT_BACK = "put_back"
+    NOT_PUT_BACK = "not_put_back"
+
+
+class ExportFields:
+    """One export of a view as the exports route lists it, and what a tool says of it."""
+
+    ID = "id"
+    STATUS = "status"
+    SUSPENDED = "suspended"
+    SUSPENDING = "suspending"
+    DESTINATION = "handler_type"
+    SETTINGS = "target_properties"
+    EXTRA = "additional_properties"
+    WHEN = "trigger_type"
+    ON_A_SCHEDULE = "schedule"
+    SCHEDULE = "schedule"
+    # What an edit keeps of the stored export, besides its settings.
+    KEPT_ON_REPLACE = ("trigger_type", "additional_properties", "condition")
+    # Where the export runs: at the end of the pipeline, or after step `sequence`.
+    AT_THE_END = "end_of_pipeline"
+    SEQUENCE = "sequence"
+    # Names the export a save replaces.
+    TRIGGER_ID = "TRIGGER_ID"
+    # One run, as the export's run history lists it.
+    RUN_STATUS = "status"
+    FAILED = "failed"
+    # What a tool reports.
+    EXPORT = "export"
+    LAST_RUN = "last_run"
+    RECENT_RUNS = "recent_runs"
 
 
 class PageFields:

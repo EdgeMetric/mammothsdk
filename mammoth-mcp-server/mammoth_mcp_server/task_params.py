@@ -122,6 +122,18 @@ class _ColumnContext:
     column_types: dict[str, str]
 
 
+@dataclass(frozen=True)
+class StepPlace:
+    """Where an existing step stands in its pipeline, for a step that replaces it.
+
+    ``sequence`` is the step's place, and ``columns`` the columns it reads: the
+    ones the steps before it leave, as the API lists them for that step.
+    """
+
+    sequence: int
+    columns: list[dict[str, Any]]
+
+
 def _to_column_context(metadata: list[dict[str, Any]]) -> _ColumnContext:
     """Bundle raw column metadata into the builder-context the pure builders take."""
     return _ColumnContext(
@@ -246,13 +258,23 @@ def _build_math_param(op: MathOperation, cols: _ColumnContext) -> dict[str, Any]
 
     The expression string is tokenised against the display→internal map by the
     pysdk builder, so the agent writes the formula in display-name terms.
+
+    Raises:
+        MammothValidationError: The expression cannot be read against the
+            columns, in the parser's own words, e.g. for a column it names
+            that is not there.
     """
-    return build_math_params(
-        op.expression,
-        cols.col_map,
-        new_column=op.new_column,
-        column_type=op.column_type,
-    )
+    # The parser raises ValueError for an expression it cannot read. Caught
+    # here alone, so a ValueError from any other builder stays a bug.
+    try:
+        return build_math_params(
+            op.expression,
+            cols.col_map,
+            new_column=op.new_column,
+            column_type=op.column_type,
+        )
+    except ValueError as unread:
+        raise MammothValidationError(f"The operation does not fit the view: {unread}") from unread
 
 
 def _build_combine_param(op: CombineOperation, cols: _ColumnContext) -> dict[str, Any]:
@@ -635,20 +657,29 @@ def _build_unnest_param(op: UnnestOperation, cols: _ColumnContext) -> dict[str, 
 
 
 async def _build_sql_param(
-    client: MammothClient, op: SqlOperation, dataset_id: int, view_id: int
+    client: MammothClient,
+    op: SqlOperation,
+    dataset_id: int,
+    view_id: int,
+    place: StepPlace | None = None,
 ) -> dict[str, Any]:
     """Resolve a plain-English ``sql`` intent into a validated SQL task param.
 
     The API's AI writes the query and validates it against the view's columns
     and sample values. It is asked for the step after the view's last one, so
-    it grounds the query on the data that step leaves. The backend translates
-    the query's display names to internal names at run time.
+    it grounds the query on the data that step leaves; for a step that
+    replaces one, it is asked for that step's own place. The backend
+    translates the query's display names to internal names at run time.
 
     Raises:
         MammothValidationError: The AI wrote no valid query. The message is the
             AI's own reason, for the caller to rephrase the intent.
     """
-    sequence = await client.pipeline.latest_task_sequence(view_id, dataset_id) + 1
+    sequence = (
+        place.sequence
+        if place is not None
+        else await client.pipeline.latest_task_sequence(view_id, dataset_id) + 1
+    )
     answer = await client.ai.generate_sql(
         op.intent, sequence_number=sequence, dataset_id=dataset_id, dataview_id=view_id
     )
@@ -704,7 +735,11 @@ _FOREIGN_OPERATION_BUILDERS: dict[
 
 
 async def build_task_param(
-    client: MammothClient, op: TransformOperation, dataset_id: int, view_id: int
+    client: MammothClient,
+    op: TransformOperation,
+    dataset_id: int,
+    view_id: int,
+    place: StepPlace | None = None,
 ) -> dict[str, Any]:
     """Build the pipeline task param that adds one operation to a View.
 
@@ -717,15 +752,22 @@ async def build_task_param(
         op: The validated operation.
         dataset_id: The view's dataset.
         view_id: The view the step is for.
+        place: Where an existing step stands, for a step that replaces it:
+            then the names resolve against the columns that step reads, not
+            the columns after the view's last step.
 
     Raises:
         MammothColumnError: The operation names a column the View does not have.
         MammothValidationError: The operation's arguments do not fit together.
     """
     if isinstance(op, SqlOperation):
-        param = await _build_sql_param(client, op, dataset_id, view_id)
+        param = await _build_sql_param(client, op, dataset_id, view_id, place)
     else:
-        cols = await _column_context(client, view_id, dataset_id)
+        cols = (
+            _to_column_context(place.columns)
+            if place is not None
+            else await _column_context(client, view_id, dataset_id)
+        )
         if isinstance(op, JoinOperation | LookupOperation):
             foreign = await _column_context(client, op.foreign_view_id)
             param = _FOREIGN_OPERATION_BUILDERS[op.op](op, cols, foreign)

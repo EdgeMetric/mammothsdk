@@ -17,7 +17,7 @@ from mammoth.models.exports import AddExportSpec, HandlerType, TriggerType
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import ValidationError
 
-from ..consts import JobFields
+from ..consts import ExportFields, JobFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -28,6 +28,8 @@ DESTINATIONS = ", ".join(sorted(handler.value for handler in HandlerType))
 # Destinations mm-pysdk has no settings contract for. Their settings go to
 # the API unchecked, which judges them itself.
 _UNCHECKED = frozenset(HandlerType) - frozenset(EXPORT_CONTRACTS)
+# How many of an export's newest runs `get_export` shows.
+RECENT_RUNS = 5
 
 
 @mcp_server.tool(
@@ -133,7 +135,7 @@ async def list_exports(
 async def get_export(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, export_id: int
 ) -> dict[str, JsonValue]:
-    """Get one export of a view, including how its last run went.
+    """Get one export of a view, including how its last runs went.
 
     Args:
         workspace_id: Which workspace the view is in.
@@ -141,11 +143,28 @@ async def get_export(
         dataset_id: Which dataset the view belongs to.
         view_id: Which view.
         export_id: The export's `id`, as `list_exports` lists it.
+
+    Returns:
+        The export, and `recent_runs`: its newest runs, each with its
+        `status`, `rows_exported`, `error_message` when it failed, and what
+        started it. A failed run is what to tell the user about, and
+        `edit_export` is how to fix it.
     """
     async with build_client(workspace_id, project_id) as client:
-        return await read_sdk_errors(
+        export = await read_sdk_errors(
             client.exports.get(view_id, export_id, dataset_id=dataset_id, project_id=project_id)
         )
+        runs = await read_sdk_errors(
+            client.exports.runs(
+                view_id,
+                export_id,
+                limit=RECENT_RUNS,
+                dataset_id=dataset_id,
+                project_id=project_id,
+            )
+        )
+    recent: list[JsonValue] = [run.model_dump(mode="json") for run in runs.runs]
+    return {**export, ExportFields.RECENT_RUNS: recent}
 
 
 @mcp_server.tool(title="Delete export", annotations=DESTRUCTIVE)

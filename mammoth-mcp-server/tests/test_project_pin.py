@@ -1,8 +1,8 @@
-"""The one project a connection may act in.
+"""The projects a connection may act in.
 
-A user who picks a project on the consent screen fences their token to it:
+A user who picks projects on the consent screen fences their token to them:
 Mammoth refuses the token everywhere else. Nothing here asked Mammoth what
-that project was, so a tool asked the user again and a write died on an
+those projects were, so a tool asked the user again and a write died on an
 authorization error. These tests hold the three places that now read the pin.
 """
 
@@ -13,14 +13,15 @@ from mammoth.exceptions import MammothAPIError, MammothError
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.consts import BrowseFields, ListFields, UploadFields
-from mammoth_mcp_server.sdk import check_project, own_project
+from mammoth_mcp_server.sdk import check_project, only_project, own_projects
 from mammoth_mcp_server.tools.discovery import list_projects
 from mammoth_mcp_server.upload_app import request_upload
 from mammoth_mcp_server.upload_routes import RELAYED_STATUS, refused_status
 
 from .helpers import WORKSPACE, FakeRedis, a_fake_api, a_fake_store, as_caller, run
 
-PINNED, OTHER = 31, 32
+PINNED, OTHER, ALSO_PINNED = 31, 32, 33
+BOTH = [PINNED, ALSO_PINNED]
 PROJECTS_PATH = f"/workspaces/{WORKSPACE}/projects"
 BROWSE_PATH = f"/workspaces/{WORKSPACE}/browse"
 
@@ -32,11 +33,28 @@ def a_project(project_id: int) -> dict[str, object]:
 class TestTheCallersOwnProject:
     def test_a_pinned_caller_knows_their_project(self) -> None:
         with as_caller(project_id=PINNED):
-            assert own_project() == PINNED
+            assert own_projects() == [PINNED]
+            assert only_project() == PINNED
 
     def test_an_all_projects_caller_has_none(self) -> None:
         with as_caller():
-            assert own_project() is None
+            assert own_projects() is None
+            assert only_project() is None
+
+    def test_a_caller_pinned_to_several_has_no_only_project(self) -> None:
+        with as_caller(project_ids=BOTH):
+            assert own_projects() == BOTH
+            assert only_project() is None
+
+    def test_each_of_several_pinned_projects_is_allowed(self) -> None:
+        with as_caller(project_ids=BOTH):
+            check_project(PINNED)
+            check_project(ALSO_PINNED)
+
+    def test_a_project_outside_several_is_refused_naming_them_all(self) -> None:
+        with as_caller(project_ids=BOTH), pytest.raises(ToolError) as refused:
+            check_project(OTHER)
+        assert f"projects {PINNED}, {ALSO_PINNED}" in str(refused.value)
 
     def test_another_project_is_refused_before_mammoth_is_asked(self) -> None:
         with as_caller(project_id=PINNED), pytest.raises(ToolError) as refused:
@@ -97,6 +115,17 @@ class TestListingProjects:
                 run(list_projects(workspace_id=WORKSPACE))
         assert api.sent("GET", PROJECTS_PATH) == []
 
+    def test_a_caller_pinned_to_several_is_shown_each_of_them(self) -> None:
+        rows = [a_browsed_project(PINNED), a_browsed_project(ALSO_PINNED)]
+        with a_fake_api() as api:
+            api.answer("GET", BROWSE_PATH, {BrowseFields.RESOURCES: rows})
+            with as_caller(project_ids=BOTH):
+                found = run(list_projects(workspace_id=WORKSPACE))
+            asked = api.sent("GET", BROWSE_PATH)[0].url.params
+        assert asked[BrowseFields.IDS] == f"{PINNED},{ALSO_PINNED}"
+        assert found[ListFields.PROJECTS] == [a_project(PINNED), a_project(ALSO_PINNED)]
+        assert api.sent("GET", PROJECTS_PATH) == []
+
     def test_a_pinned_project_that_is_gone_lists_nothing(self) -> None:
         with a_fake_api() as api:
             api.answer("GET", BROWSE_PATH, {BrowseFields.RESOURCES: []})
@@ -135,6 +164,16 @@ class TestAskingForAnUpload:
         with as_caller(project_id=PINNED), pytest.raises(ToolError) as refused:
             run(request_upload(workspace_id=WORKSPACE, project_id=OTHER))
         assert str(PINNED) in str(refused.value)
+
+    def test_a_caller_pinned_to_several_must_name_one_of_them(self) -> None:
+        with as_caller(project_ids=BOTH), pytest.raises(ToolError) as refused:
+            run(request_upload(workspace_id=WORKSPACE))
+        assert f"{PINNED}, {ALSO_PINNED}" in str(refused.value)
+
+    def test_a_caller_pinned_to_several_may_land_in_any_of_them(self) -> None:
+        with as_caller(project_ids=BOTH):
+            minted = run(request_upload(workspace_id=WORKSPACE, project_id=ALSO_PINNED))
+        assert minted[UploadFields.UPLOAD_ID]
 
     def test_an_all_projects_caller_must_still_name_one(self) -> None:
         with as_caller(), pytest.raises(ToolError) as refused:

@@ -9,7 +9,7 @@ from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, List
 from ..sdk import (
     JsonValue,
     build_client,
-    own_project,
+    own_projects,
     own_workspace,
     read_sdk_errors,
     request_api,
@@ -46,17 +46,17 @@ async def list_projects(
 
     A project groups datasets, views and dashboards that belong together.
 
-    A connection the user limited to one project lists that project alone, and
-    that is the project every other tool must name.
+    A connection the user limited to some projects lists those alone, and those
+    are the projects every other tool may name.
 
     Args:
         workspace_id: Which workspace to look in.
         limit: How many projects to return.
         offset: How many projects to skip, for paging.
     """
-    pinned = own_project()
+    pinned = own_projects()
     if pinned is not None:
-        return await _the_pinned_project(workspace_id, pinned)
+        return await _the_pinned_projects(workspace_id, pinned)
     async with build_client(workspace_id) as client:
         page = await read_sdk_errors(
             client.browse.projects(
@@ -69,14 +69,14 @@ async def list_projects(
     return tidy_page(page, ListFields.PROJECTS, limit)
 
 
-async def _the_pinned_project(workspace_id: int, pinned: int) -> dict[str, JsonValue]:
-    """The one project a pinned connection may act in, asked for by its id.
+async def _the_pinned_projects(workspace_id: int, pinned: list[int]) -> dict[str, JsonValue]:
+    """The projects a pinned connection may act in, asked for by their ids, at once.
 
-    Paging is why this is not a filtered list: the pinned project sits on
+    Paging is why this is not a filtered list: a pinned project sits on
     whichever page of the workspace's projects its name sorts to, so filtering
-    one page answers "no projects" to a connection that has exactly one. The
-    browse route is the one route that takes a resource id, and the rows it
-    answers with are reshaped into the list this tool has always returned.
+    one page answers "no projects" to a connection that has some. The browse
+    route is the one route that takes resource ids, and the rows it answers
+    with are reshaped into the list this tool has always returned.
     """
     async with build_client(workspace_id) as client:
         found = await request_api(
@@ -86,7 +86,7 @@ async def _the_pinned_project(workspace_id: int, pinned: int) -> dict[str, JsonV
             query={
                 ApiFields.FIELDS: ApiFields.MINIMAL,
                 BrowseFields.TYPE: BrowseFields.PROJECT,
-                BrowseFields.IDS: pinned,
+                BrowseFields.IDS: ",".join(str(project) for project in pinned),
                 BrowseFields.LEVEL: BrowseFields.ITSELF,
             },
         )
