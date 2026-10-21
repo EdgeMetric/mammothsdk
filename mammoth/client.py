@@ -477,7 +477,7 @@ if TYPE_CHECKING:
     from mammoth.api.notifications import NotificationsAPI
     from mammoth.api.oauth_clients import OAuthClientsAPI
     from mammoth.api.parameters import ParametersAPI
-    from mammoth.api.pipeline import PipelineAPI
+    from mammoth.api.pipeline import DataviewDatasetStore, PipelineAPI
     from mammoth.api.pipeline_versions import PipelineVersionsAPI
     from mammoth.api.projects import ProjectsAPI
     from mammoth.api.reports import ReportsAPI
@@ -753,6 +753,9 @@ class MammothClient:
         self.retry_gateway_errors = retry_gateway_errors
 
         self.project_id: int | None = None
+        #: Optional store that keeps dataview -> dataset answers between processes
+        #: (:class:`mammoth.api.pipeline.DataviewDatasetStore`). None: kept in memory only.
+        self.dataview_dataset_store: DataviewDatasetStore | None = None
 
         self._owns_session = http_client is None
         self.session = (
