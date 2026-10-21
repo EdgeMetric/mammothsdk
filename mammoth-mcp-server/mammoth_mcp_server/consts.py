@@ -495,6 +495,35 @@ class DashboardFields:
     # Which version the numbers are from: "published" or "draft".
     VALUES_FROM = "values_from"
     DRAFT = "draft"
+    # What a finished AI edit reports that a model can use. The rest is the
+    # whole canvas and its layout.
+    CHANGED = "changed"
+    EDITED = (MESSAGE, CHANGED)
+    EDITING = "editing"
+    NEXT_STEP = "next_step"
+
+
+class EmbedFields:
+    """A dashboard's embed settings, as this server reports them."""
+
+    MODE = "mode"
+    KEY_MODE = "key"
+    SIGNED_MODE = "signed"
+    PUBLISHED = "published"
+    PUBLIC = "public"
+    HAS_SIGNING_SECRET = "has_signing_secret"
+    # The route's origins are the sites a user names.
+    ANY_SITE = "any_site"
+    ALLOWED_SITES = "allowed_sites"
+    KEY = "key"
+    EMBED_CODE = "embed_code"
+    ROW_LEVEL_SECURITY = "row_level_security"
+    NEXT_STEP = "next_step"
+    # The web app's frame height when none is saved.
+    HEIGHT = "height"
+    DEFAULT_HEIGHT = 640
+    # What a signed embed's host page puts in place of a token it signs per viewer.
+    TOKEN_PLACEHOLDER = "TOKEN"
 
 
 class ConnectorFields:

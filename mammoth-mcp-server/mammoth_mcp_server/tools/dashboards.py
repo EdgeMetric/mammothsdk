@@ -6,7 +6,8 @@ dashboard, and reading or setting its tags — and the rest ignore it.
 
 A dashboard is built on one view and holds its own canvas. `create_dashboard`
 makes an empty one; `generate_dashboard` has Mammoth's AI build one from a
-description.
+description, and `edit_dashboard` has it change one. `get_embed` gives the code
+that puts a published dashboard on another site.
 
 Every dashboard a tool here returns carries its two links: `share_url`, which
 opens the published board, and `editor_url`, which opens the builder. The one
@@ -81,8 +82,8 @@ async def create_dashboard(
 ) -> dict[str, JsonValue]:
     """Create an empty dashboard on a view, and return it.
 
-    The dashboard starts with nothing on it. Building its tiles is the web
-    app's job — a tool cannot lay out a canvas.
+    The dashboard starts with nothing on it. `edit_dashboard` has Mammoth's
+    AI build on it from a description.
 
     Args:
         workspace_id: Which workspace to act in.

@@ -3,6 +3,8 @@
 from . import (
     automations,
     connections,
+    dashboard_edits,
+    dashboard_embed,
     dashboards,
     data,
     discovery,
@@ -20,6 +22,8 @@ from . import (
 __all__ = [
     "automations",
     "connections",
+    "dashboard_edits",
+    "dashboard_embed",
     "dashboards",
     "data",
     "discovery",
