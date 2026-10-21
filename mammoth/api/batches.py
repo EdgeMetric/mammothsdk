@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -13,6 +14,12 @@ if TYPE_CHECKING:
 _list = list  # Alias to avoid shadowing by method name
 
 # ── Validation error constants ────────────────────────────────────────────────
+
+#: ``BatchesPostRequest`` has no ``change_map``: the server drops it, so the SDK no longer sends it.
+WARN_CHANGE_MAP_IGNORED = (
+    "`change_map` is ignored: the batches route has no change-tracking map and dropped it "
+    "silently, so the SDK no longer sends it."
+)
 
 ERR_BATCH_SOURCE_ID_POSITIVE = "`source_id` must be a positive integer, got {0}."
 ERR_BATCH_MAPPING_EMPTY = (
@@ -127,7 +134,8 @@ class BatchesAPI:
             project_id: Project ID (uses client default if not provided).
             new_ds_params: Optional params for creating a new dataset.
             is_validation_required: Whether to validate the batch.
-            change_map: Optional change-tracking column map.
+            change_map: Deprecated and ignored: the batches route has no such field, so it
+                was always dropped. Passing it warns (``DeprecationWarning``).
             delete_source_ds: Whether to delete the source dataset after batch
                 (default ``False``).
             expected_destination_c_type: Type stamped on every item of a
@@ -185,7 +193,7 @@ class BatchesAPI:
         if is_validation_required is not None:
             body["validate_only"] = is_validation_required
         if change_map is not None:
-            body["change_map"] = change_map
+            warnings.warn(WARN_CHANGE_MAP_IGNORED, DeprecationWarning, stacklevel=2)
         return await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/batches",

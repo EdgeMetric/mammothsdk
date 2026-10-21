@@ -133,12 +133,6 @@ async def test_list_refuses_a_non_positive_dataset(
     assert server.requests == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="BUG: ExportStatus.QUEUED is not in the spec's PipelineItemStatus filter enum, so "
-    "list(status=QUEUED) sends a value the server rejects",
-)
 def test_every_export_status_is_a_value_the_spec_filter_accepts() -> None:
     allowed = set(schema("PipelineItemStatus")["enum"])
     assert {s.value for s in ExportStatus} <= allowed

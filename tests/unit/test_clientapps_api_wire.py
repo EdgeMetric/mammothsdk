@@ -150,16 +150,10 @@ async def test_update_sends_the_patch_list(
     assert schema("PatchRequest")["required"] == ["patch"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ValidationError,
-    reason="BUG: PatchOperation.value is str|None; the spec's PatchOperation.value also takes "
-    "a list of strings",
-)
 def test_patch_operation_accepts_a_list_value_like_the_spec() -> None:
     value_schema: dict[str, Any] = schema("PatchOperation")["properties"]["value"]
     assert {"type": "array", "items": {"type": "string"}} in value_schema["oneOf"]
-    assert PatchOperation(op="add", path="scopes", value=["a", "b"]).value == ["a", "b"]  # type: ignore[arg-type]
+    assert PatchOperation(op="add", path="scopes", value=["a", "b"]).value == ["a", "b"]
 
 
 async def test_delete_sends_delete_and_returns_none(

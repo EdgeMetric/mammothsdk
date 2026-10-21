@@ -161,11 +161,24 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
                 "project_id": 180,
                 "new_ds_params": {"name": "n"},
                 "is_validation_required": True,
-                "change_map": {"x": "y"},
                 "delete_source_ds": True,
             },
         )
     ]
+
+
+def test_create_drops_change_map_with_a_warning(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATASET_GET] = _SCHEMA
+    fake_service.responses[_CREATE] = {"id": 3}
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"mapping": {"a": "a"}, "change_map": {"x": "y"}}), encoding="utf-8")
+    data, _ = batch_cmd.batch_create(
+        _inv("batch.create", project=180, extra_args=["9", "5"], input_file=str(doc))
+    )
+    assert "change_map" not in fake_service.call_log[-1][1]
+    assert data["warnings"] == [batch_cmd.CHANGE_MAP_IGNORED]
 
 
 # ── update ────────────────────────────────────────────────────────────────

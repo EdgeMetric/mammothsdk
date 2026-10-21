@@ -33,6 +33,12 @@ from mammoth_cli.services.append_blank_columns import (
 HandlerResult = tuple[Any, dict[str, Any]]
 
 
+CHANGE_MAP_IGNORED = (
+    "`change_map` has no effect: the batches route has no change-tracking map and drops it, "
+    "so it is not sent. Remove it from the input."
+)
+
+
 def _symbol(invocation: Invocation) -> str:
     """Return the reviewed backing SDK symbol for this command."""
     record = command_by_id(invocation.command_id)
@@ -307,8 +313,9 @@ def batch_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(
         document,
         kwargs,
-        ("new_ds_params", "is_validation_required", "change_map", "delete_source_ds"),
+        ("new_ds_params", "is_validation_required", "delete_source_ds"),
     )
+    notes = [CHANGE_MAP_IGNORED] if "change_map" in document else []
     # Deleting the source dataset is destructive, so gate it behind a
     # prompt/``--yes`` even though creating a batch is otherwise benign.
     if kwargs.get("delete_source_ds"):
@@ -324,6 +331,8 @@ def batch_create(invocation: Invocation) -> HandlerResult:
         data = service.call(_symbol(invocation), **kwargs)
     if warnings and isinstance(data, dict):
         data["mapping_check"] = {"warnings": warnings}
+    if notes and isinstance(data, dict):
+        data["warnings"] = [*data.get("warnings", []), *notes]
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

@@ -36,33 +36,25 @@ class TestFormatDateRange:
         assert text == "(from:'2026-01-02T03:04:05.678000Z',to:'2026-02-03T04:05:06.001000Z')"
         assert backend_parse_time_type(text) == {"from": a, "to": b}
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValueError,
-        reason="BUG: a datetime with whole seconds is sent without '.%f'; the backend's "
-        "strptime('%Y-%m-%dT%H:%M:%S.%fZ') rejects it",
-    )
     def test_whole_second_datetimes_are_accepted_by_the_backend(self) -> None:
         text = format_date_range(datetime(2026, 1, 2, 3, 4, 5), datetime(2026, 1, 3))
         backend_parse_time_type(text)
 
-    @pytest.mark.xfail(
-        strict=True,
-        raises=ValueError,
-        reason="BUG: timezone-aware datetimes are sent with '+00:00', not the 'Z' the backend "
-        "requires",
-    )
     def test_aware_datetimes_are_accepted_by_the_backend(self) -> None:
         a = datetime(2026, 1, 2, 3, 4, 5, 6, tzinfo=UTC)
         text = format_date_range(a, a + timedelta(days=1))
         backend_parse_time_type(text)
 
-    def test_aware_datetime_keeps_its_own_offset_and_gets_no_extra_z(self) -> None:
+    def test_aware_datetimes_are_sent_in_utc_with_a_z(self) -> None:
         tz = timezone(timedelta(hours=5, minutes=30))
         text = format_date_range(
             datetime(2026, 1, 2, 3, 4, 5, 6, tzinfo=tz), datetime(2026, 1, 2, tzinfo=UTC)
         )
-        assert text == "(from:'2026-01-02T03:04:05.000006+05:30',to:'2026-01-02T00:00:00+00:00')"
+        assert text == "(from:'2026-01-01T21:34:05.000006Z',to:'2026-01-02T00:00:00.000000Z')"
+        assert backend_parse_time_type(text) == {
+            "from": datetime(2026, 1, 1, 21, 34, 5, 6),
+            "to": datetime(2026, 1, 2),
+        }
 
 
 class TestParseJobIds:

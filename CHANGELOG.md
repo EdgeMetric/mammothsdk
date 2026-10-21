@@ -69,13 +69,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Deprecated (next mammoth-io)
 
+- `BatchesAPI.create`: `change_map` is no longer sent (the batches route has no such field and dropped it) and passing it raises a `DeprecationWarning`. CLI `batch create` adds a `warnings` entry when the input carries it.
 - `SupportAPI.connector_create` and `connector_update`: `price_per_month` is no longer sent (production removed it from connectors) and a non-zero value raises a `DeprecationWarning`. CLI `support connector create` and `update` add a `warnings` entry when the input carries it.
 
 ### Removed (next mammoth-io)
 
+- `ExportStatus.QUEUED`: the server's export statuses have no `queued`.
 - The legacy `mammoth-mcp` package, `bridge/`, the `mammoth-io[bridge]` extra and `publish.yml`. The hosted MCP server is `mammoth-mcp-server`.
 
 ### Fixed (next mammoth-io, mammoth-cli)
+
+- SDK models now match the server's request and response shapes, checked against the OpenAPI spec:
+  - `ProjectPatch` takes `patches` of `{op, path, value}` (path `name`, `properties` or `agent_memory`); `AddUsersToProject` takes `users` of `{user_id, role}`; `ProjectUserPatch` takes `patch` of `{op: replace, path: permissions, value: <role>}`; `ProjectsPatch` takes `patches` of role operations across projects. Roles are `project_admin` or `project_analyst`. The old shapes (`user_emails`, `role="editor"`, `project_ids`/`operations`) were never accepted by the server; no SDK call used them.
+  - `DatasetPatchRequest` accepts `patches` (a list) as well as `patch` (one operation), and refuses neither; `DatasetSchema.created_by` may be a string.
+  - `DataviewSchema.dataset_id` reads the server's `ds_id`; `ActiveUsersList` reads `active_users`, with each user's `id` as `user_id`.
+  - `DashboardBiPreflightResponse`: only `exportable` is required; the counts default to 0 and `refusals` to empty.
+  - `clientapps.PatchOperation.value` may be a list of strings.
+- `format_date_range` sends `%Y-%m-%dT%H:%M:%S.%fZ` in UTC, the only format the server parses; an aware datetime is converted to UTC.
 
 - CLI `mammoth run` refuses `run`, `auth login` and `auth logout` by the command the line resolves to in the Click tree, not by the literal `cmd` string: `{"cmd":"auth","args":["logout"]}` and `{"cmd":"run inner"}` are refused like `{"cmd":"auth logout"}`.
 - CLI `mammoth run`: Ctrl-C ends the whole run, `--continue` or not (rest `skipped`, exit 130); lines split on `\n` only (a raw U+2028 in a JSON string no longer breaks the line) and a UTF-8 BOM is accepted; FILE defaults to stdin and `--continue` works in any position (`mammoth run --continue < lines.jsonl`); `sys.exit()`/`sys.exit(0)` and a zero exit with no envelope count as success; a negative number (`-5`) is an argument, not a flag.

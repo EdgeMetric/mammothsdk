@@ -321,12 +321,6 @@ async def test_preflights_get_the_dashboard_route(
     assert "get" in spec()["paths"][f"/dashboards/{{dashboard_id}}/{target}"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=MammothValidationError,
-    reason="BUG: DashboardBiPreflightResponse requires figures_*, degraded, refusals and "
-    "row/column counts, but the spec's PowerBiPreflightResponse only requires `exportable`",
-)
 async def test_preflight_parses_an_answer_with_only_the_spec_required_field(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
@@ -334,6 +328,12 @@ async def test_preflight_parses_an_answer_with_only_the_spec_required_field(
     server.answers["GET /dashboards/3/powerbi"] = {"exportable": False, "blocked_reason": "x"}
     reply = await client.dashboards.powerbi_preflight(3)
     assert reply.exportable is False
+    assert (reply.figures_total, reply.degraded, reply.refusals, reply.row_count) == (
+        0,
+        False,
+        [],
+        0,
+    )
 
 
 # --- file uploads -------------

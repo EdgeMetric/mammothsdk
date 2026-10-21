@@ -72,7 +72,9 @@ class PatchOperation(MammothModel):
 
     op: str = Field(..., description="Operation type (replace, add, remove)")
     path: str = Field(..., description="JSON path to the field")
-    value: str | None = Field(None, description="New value for the field")
+    value: str | list[str] | None = Field(
+        None, description="New value for the field: a string, or a list of strings"
+    )
 
 
 class PatchRequest(MammothModel):
