@@ -60,7 +60,7 @@ Example: `mammoth data-app list`. Placeholders are illustrative; resolve IDs and
 
 Result: `DataAppListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.11 — Read-only sweep 2026-09-18: exit 0 on release with CLI 2.0.11; result keys: data_apps. Single read only; no fixture variants, error envelopes, or write paths assessed.
+Status on release: untried; no live run recorded.
 
 ### `data-app.pipeline-changes`
 
