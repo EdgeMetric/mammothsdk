@@ -452,7 +452,7 @@ def _unchanged_state(resolved_ids: dict[str, Any], base: Invocation) -> dict[str
     Nothing changed, so there are no new rows to sample and the data job is not run. ``None``
     (read the usual way) when the view or its parent is unknown or the read fails.
     """
-    from mammoth_cli.commands.view import _dataview_info
+    from mammoth_cli.commands.view.columns import _dataview_info
     from mammoth_cli.runtime.session import open_service
 
     view_id = _as_int(resolved_ids.get("view_id") or resolved_ids.get("dataview_id"))

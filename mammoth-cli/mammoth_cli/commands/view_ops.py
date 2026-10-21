@@ -29,26 +29,28 @@ from dataclasses import field as dataclass_field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from mammoth_cli.commands.view import (
+from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
-    BRIEF_VIEW_FIELDS,
-    UNFINISHED_STATE,
-    _dataview_metadata,
-    _display_name_map,
     _require_discovery_allowed,
     apply_column_renames,
-    brief_view_record,
+)
+from mammoth_cli.commands.view.columns import _dataview_metadata, _display_name_map
+from mammoth_cli.commands.view.export_dataset import reject_dataset_export_conflicts
+from mammoth_cli.commands.view.join_check import (
     join_after_snapshot,
     join_dry_run_preview,
     join_snapshot,
-    reject_dataset_export_conflicts,
+    with_join_check,
+)
+from mammoth_cli.commands.view.listing import BRIEF_VIEW_FIELDS, brief_view_record
+from mammoth_cli.commands.view.settle import (
+    UNFINISHED_STATE,
     sdk_saw_pipeline_ready,
     wait_for_followon_job,
     wait_for_pipeline_to_settle,
     wait_for_refreshed_view,
     wait_for_view_row_count,
-    with_join_check,
 )
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (

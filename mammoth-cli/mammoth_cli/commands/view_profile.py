@@ -20,12 +20,12 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
-from mammoth_cli.commands.view import (
-    _column_profile,
+from mammoth_cli.commands.view._common import (
     _read_meta,
     _require_int_positional_at,
     _resolve_dataset_id,
 )
+from mammoth_cli.commands.view.column_checks import _column_profile
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENTS, EXIT_USAGE, CliError
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.invocation import Invocation
