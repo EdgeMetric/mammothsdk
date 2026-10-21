@@ -359,6 +359,35 @@ class TestRunningNow:
 
         assert answer["outcome"] == "run_failed"
         assert "no route" in answer["next_step"]
+        # Mammoth recorded no run for it, so no older run stands in for it.
+        assert answer["last_run"] is None
+
+    def test_a_run_whose_job_fails_reports_the_run_mammoth_recorded(self) -> None:
+        failed = {"job": {"id": 41, "status": "failure", "response": {"message": "no route"}}}
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP], runs=(OLDER,), later_runs=(REFUSED_BY_SFTP, OLDER), job=failed)
+            answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
+
+        assert answer["outcome"] == "run_failed"
+        assert answer["last_run"]["id"] == REFUSED_BY_SFTP["id"]
+
+    def test_a_run_whose_job_fails_does_not_report_an_older_run(self) -> None:
+        failed = {"job": {"id": 41, "status": "failure", "response": {"message": "no route"}}}
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP], runs=(OLDER,), job=failed)
+            answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
+
+        assert answer["outcome"] == "run_failed"
+        assert answer["last_run"] is None
+
+    def test_a_route_that_answers_with_the_job_itself_is_waited_for(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP], runs=(OLDER,), later_runs=(SENT, OLDER))
+            api.answers[("PATCH", EXPORT)] = [(200, {"id": 41, "status": "processing"})]
+            answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
+
+        assert len(api.sent("GET", JOB)) == 1
+        assert answer["outcome"] == "ran"
 
 
 class TestReadingAnExport:
