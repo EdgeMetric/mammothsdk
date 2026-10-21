@@ -587,7 +587,7 @@ commands:
   secret_fields: []
   human_example: mammoth view column format set VIEW_ID --help
   agent_example: 'mammoth view column format set 123 --input ''{"formats": {"Admitted": {"date_format":
-    "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2, "currency_symbol": "$"}}, "dataset_id": 456}'''
+    "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'''
   unit_tests:
   - UT-VIEW-COLUMN-FORMAT-SET
   contract_tests:

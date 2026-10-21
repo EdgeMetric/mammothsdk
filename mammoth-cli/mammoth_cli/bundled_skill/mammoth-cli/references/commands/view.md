@@ -126,7 +126,7 @@ Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19
 
 Run: `mammoth view column format set`. Exact input fields: `mammoth schema get view.column.format.set`.
 
-Example: `mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2, "currency_symbol": "$"}}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewColumnFormatSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

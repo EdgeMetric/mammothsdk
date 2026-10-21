@@ -1325,7 +1325,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view checkpoint update` [benign_mutation/none] -> mammoth.api.checkpoints.CheckpointsAPI.update
   example: mammoth view checkpoint update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'
 - `mammoth view column format set` [benign_mutation/none] -> mammoth.View.set_column_format
-  example: mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2, "currency_symbol": "$"}}, "dataset_id": 456}'
+  example: mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'
 - `mammoth view compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.compare
   example: mammoth view compare --input '{"pairs": [[1, 2]]}'
 - `mammoth view conditional-format create` [benign_mutation/none] -> mammoth.api.dataviews.DataviewsAPI.conditional_format_create
