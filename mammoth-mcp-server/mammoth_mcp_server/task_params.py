@@ -258,13 +258,23 @@ def _build_math_param(op: MathOperation, cols: _ColumnContext) -> dict[str, Any]
 
     The expression string is tokenised against the display→internal map by the
     pysdk builder, so the agent writes the formula in display-name terms.
+
+    Raises:
+        MammothValidationError: The expression cannot be read against the
+            columns, in the parser's own words, e.g. for a column it names
+            that is not there.
     """
-    return build_math_params(
-        op.expression,
-        cols.col_map,
-        new_column=op.new_column,
-        column_type=op.column_type,
-    )
+    # The parser raises ValueError for an expression it cannot read. Caught
+    # here alone, so a ValueError from any other builder stays a bug.
+    try:
+        return build_math_params(
+            op.expression,
+            cols.col_map,
+            new_column=op.new_column,
+            column_type=op.column_type,
+        )
+    except ValueError as unread:
+        raise MammothValidationError(f"The operation does not fit the view: {unread}") from unread
 
 
 def _build_combine_param(op: CombineOperation, cols: _ColumnContext) -> dict[str, Any]:
