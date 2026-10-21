@@ -2550,6 +2550,14 @@ def test_task_preview_passes_task_spec(fake_service: FakeMammothService, tmp_pat
     ]
 
 
+def test_task_preview_passes_sample_size(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    doc = _doc(tmp_path, {"task_spec": {"kind": "math"}, "sample_size": 20})
+    view_cmd.view_task_preview(_inv("view.task.preview", extra_args=["7"], input_file=doc))
+    assert _without_meta(fake_service.call_log) == [
+        (_TASK_PREVIEW, {"dataview_id": 7, "task_spec": {"kind": "math"}, "sample_size": 20})
+    ]
+
+
 def test_task_update_requires_task_spec(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_task_update(_inv("view.task.update", extra_args=["7", "3"]))

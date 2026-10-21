@@ -441,7 +441,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
         "date display"
     ),
     "view.conditional-format.replace": (
-        "replace redo reset change all conditional formatting rules highlight colour color "
+        "replace redo reset swap all conditional formatting rules highlight colour color "
         "existing rules in one call"
     ),
     "view.transform.replace": "find replace substitute text value in columns",

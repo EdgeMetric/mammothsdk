@@ -518,7 +518,7 @@ def view_task_preview(invocation: Invocation) -> HandlerResult:
     task_spec = _require_field(document, "task_spec")
     kwargs: dict[str, Any] = {"dataview_id": dataview_id, "task_spec": task_spec}
     assert document is not None
-    _forward_optional(document, kwargs, ("dataset_id",))
+    _forward_optional(document, kwargs, ("dataset_id", "sample_size"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, None)
