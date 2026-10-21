@@ -9,7 +9,7 @@ import os
 import tempfile
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 import httpx
 
@@ -40,11 +40,25 @@ ERR_DOCS_URL = "`docs_url` must be a non-empty string."
 ERR_NOTES_LENGTH = "`notes` must be at most 2000 characters, got {0}."
 ERR_HOSTS_COUNT = "`hosts` must hold at most 100 hosts, got {0}."
 ERR_HOSTS_ENTRY = "`hosts` entries must be non-empty strings."
+#: File formats a dataview can be downloaded in (the web app's download menu).
+DownloadFileType = Literal["csv", "xlsx", "json", "ndjson", "xml", "yaml", "parquet"]
+DOWNLOAD_FILE_TYPES: tuple[DownloadFileType, ...] = get_args(DownloadFileType)
 _RUNS_LIMIT_MAX = 50
 _NOTES_MAX = 2000
 _HOSTS_MAX = 100
 
 _list = list  # Alias to avoid shadowing by method name
+
+
+def _download_file_type(file_type: str) -> str:
+    """The lower-cased ``file_type`` when it is a download format, else a validation error."""
+    normalized = str(file_type).strip().lower().lstrip(".")
+    if normalized not in DOWNLOAD_FILE_TYPES:
+        raise MammothValidationError(
+            f"file_type must be one of {', '.join(DOWNLOAD_FILE_TYPES)}; got {file_type!r}.",
+            details={"file_type": file_type},
+        )
+    return normalized
 
 
 class ExportsAPI:
@@ -727,28 +741,34 @@ class ExportsAPI:
 
         return await self.create(dataview_id, export_spec, dataset_id, project_id)
 
-    async def to_csv_url(
+    async def to_file_url(
         self,
         dataview_id: int,
+        file_type: DownloadFileType = "csv",
         timeout: int = 300,
         dataset_id: int | None = None,
     ) -> dict[str, Any]:
-        """Create a CSV export and return its signed download URL, undownloaded.
+        """Create a file export and return its signed download URL, undownloaded.
 
-        Creates a CSV export job and waits for completion, like :meth:`to_csv`,
-        but never writes a local file -- for a caller (for example a host
-        process running the CLI on a user's behalf) that hands the URL to
-        someone else instead.
+        Creates an export job in ``file_type`` and waits for completion, like
+        :meth:`to_file`, but never writes a local file -- for a caller (for example a
+        host process running the CLI on a user's behalf) that hands the URL to someone
+        else instead.
 
         Args:
             dataview_id: ID of the dataview to export.
+            file_type: One of :data:`DOWNLOAD_FILE_TYPES` (default ``"csv"``).
             timeout: Timeout in seconds (default 300).
             dataset_id: ID of the dataset (auto-detected if not provided).
 
         Returns:
             Dict with ``url`` (the signed download URL), ``trigger_id`` if the
             job reports one, and ``job_id`` of the completed export job.
+
+        Raises:
+            MammothValidationError: ``file_type`` is not a download format.
         """
+        file_type = _download_file_type(file_type)
         project_id = getattr(self._client, "project_id", None)
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
@@ -761,8 +781,8 @@ class ExportsAPI:
             handler_type=HandlerType.S3,
             trigger_type=TriggerType.NONE,
             target_properties={
-                "file": f"temp_export_{dataset_id}_{dataview_id}.csv",
-                "file_type": "csv",
+                "file": f"temp_export_{dataset_id}_{dataview_id}.{file_type}",
+                "file_type": file_type,
                 "include_hidden": False,
                 "is_format_set": True,
                 "use_format": True,
@@ -789,6 +809,62 @@ class ExportsAPI:
             raise ValueError(f"No download URL found in completed job {job_id}")
         raise ValueError("No job ID found in export result")
 
+    async def to_csv_url(
+        self,
+        dataview_id: int,
+        timeout: int = 300,
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Create a CSV export and return its signed download URL, undownloaded.
+
+        Same as :meth:`to_file_url` with ``file_type="csv"``.
+        """
+        return await self.to_file_url(dataview_id, "csv", timeout, dataset_id)
+
+    async def to_file(
+        self,
+        dataview_id: int,
+        output_path: str | Path | None = None,
+        file_type: DownloadFileType = "csv",
+        timeout: int = 300,
+        dataset_id: int | None = None,
+    ) -> Path:
+        """Download dataview data as a file in ``file_type``.
+
+        Creates an export job, waits for completion, and downloads the result.
+
+        Args:
+            dataview_id: ID of the dataview to export.
+            output_path: Path for the file (``dataview_<dataset>_<view>_export.<ext>``
+                if not provided).
+            file_type: One of :data:`DOWNLOAD_FILE_TYPES` (default ``"csv"``).
+            timeout: Timeout in seconds (default 300).
+            dataset_id: ID of the dataset (auto-detected if not provided).
+
+        Returns:
+            Path to the downloaded file.
+
+        Raises:
+            MammothValidationError: ``file_type`` is not a download format.
+        """
+        file_type = _download_file_type(file_type)
+        project_id = getattr(self._client, "project_id", None)
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+
+        if dataset_id is None:
+            dataset_id = await self._find_dataset_for_dataview(dataview_id)
+
+        if output_path is None:
+            output_path = f"dataview_{dataset_id}_{dataview_id}_export.{file_type}"
+
+        result = await self.to_file_url(
+            dataview_id, file_type, timeout=timeout, dataset_id=dataset_id
+        )
+        return await self._download_file(
+            result["url"], Path(output_path), job_handle=result["job_id"]
+        )
+
     async def to_csv(
         self,
         dataview_id: int,
@@ -798,31 +874,9 @@ class ExportsAPI:
     ) -> Path:
         """Download dataview data as a CSV file.
 
-        Creates a CSV export job, waits for completion, and downloads the result.
-
-        Args:
-            dataview_id: ID of the dataview to export.
-            output_path: Path for the CSV file (auto-generated if not provided).
-            timeout: Timeout in seconds (default 300).
-            dataset_id: ID of the dataset (auto-detected if not provided).
-
-        Returns:
-            Path to the downloaded CSV file.
+        Same as :meth:`to_file` with ``file_type="csv"``.
         """
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
-
-        if dataset_id is None:
-            dataset_id = await self._find_dataset_for_dataview(dataview_id)
-
-        if output_path is None:
-            output_path = f"dataview_{dataset_id}_{dataview_id}_export.csv"
-
-        output_path = Path(output_path)
-
-        result = await self.to_csv_url(dataview_id, timeout=timeout, dataset_id=dataset_id)
-        return await self._download_file(result["url"], output_path, job_handle=result["job_id"])
+        return await self.to_file(dataview_id, output_path, "csv", timeout, dataset_id)
 
     async def _download_file(
         self, url: str, output_path: Path, *, job_handle: int | None = None

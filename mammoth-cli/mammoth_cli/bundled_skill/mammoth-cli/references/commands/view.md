@@ -122,6 +122,16 @@ Result: `ViewCheckpointUpdateResult`; mutation `benign_mutation`, confirmation `
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. First attempt sending a full AddCheckpointSpec body (matching create's shape) failed with invalid_input_field_type; update actually needs body.patches[] (CheckpointPatches/CheckPointPatch…
 
+### `view.column.format.set`
+
+Run: `mammoth view column format set`. Exact input fields: `mammoth schema get view.column.format.set`.
+
+Example: `mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2, "currency_symbol": "$"}}, "dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewColumnFormatSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.compare`
 
 Run: `mammoth view compare`. Exact input fields: `mammoth schema get view.compare`.
@@ -161,6 +171,16 @@ Example: `mammoth view conditional-format list 123 456`. Placeholders are illust
 Result: `ViewConditionalFormatListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.17 — re-verification 2026-09-18 (2.0.16 fixes): exit 0 on release with CLI 2.0.17. With SDK 0.7.9 the one existing rule is returned as [{rule_id, cf_type, FORMAT, CONDITION, ...}]; with SDK 0.7.8 the same call returned [] (mapping keyed by rule id was discarded).…
+
+### `view.conditional-format.replace`
+
+Run: `mammoth view conditional-format replace`. Exact input fields: `mammoth schema get view.conditional-format.replace`.
+
+Example: `mammoth view conditional-format replace 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewConditionalFormatReplaceResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `view.conditional-format.update`
 
@@ -520,7 +540,7 @@ Status on release: ran once on CLI 2.0.27 — cross-project send 2026-09-19: exi
 
 Run: `mammoth view export csv`. Exact input fields: `mammoth schema get view.export.csv`.
 
-Example: `mammoth view export csv 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view export csv 123 --input '{"file_type": "xlsx"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewExportCsvResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 

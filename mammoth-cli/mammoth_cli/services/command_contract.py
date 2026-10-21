@@ -905,7 +905,7 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _DASHBOARD_FILTER_ADD_FIELDS
     elif command_id == "dashboard.filter.remove":
         special_fields = _DASHBOARD_FILTER_REMOVE_FIELDS
-    elif command_id == "view.conditional-format.create":
+    elif command_id in ("view.conditional-format.create", "view.conditional-format.replace"):
         special_fields = _VIEW_CF_CREATE_FIELDS
     elif command_id == "dashboard.filter.list":
         special_fields = ()

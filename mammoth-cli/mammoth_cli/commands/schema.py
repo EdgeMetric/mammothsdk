@@ -223,7 +223,10 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "folder.move": "move put dataset view dashboard resources into a folder directory",
     "file.delete": "delete remove uploaded source file csv",
     "file.list": "list show uploaded source files csv",
-    "view.export.csv": "export download local CSV file artifact",
+    "view.export.csv": (
+        "export download local file artifact csv xlsx excel json ndjson xml yaml parquet "
+        "file type format"
+    ),
     "view.export.dataset": (
         "send copy branch out create save the result rows into a new project from an "
         "existing append appending union stack monthly rows across datasets views "
@@ -430,6 +433,15 @@ _COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.transform.rename-columns": (
         "rename column columns header headers relabel change column name names title"
+    ),
+    "view.column.format.set": (
+        "format display column date format number format decimals decimal places currency "
+        "symbol percent percentage thousands separator show dates as how values look grid "
+        "date display"
+    ),
+    "view.conditional-format.replace": (
+        "replace redo reset change all conditional formatting rules highlight colour color "
+        "existing rules in one call"
     ),
     "view.transform.replace": "find replace substitute text value in columns",
     "view.transform.set-values": (
@@ -1183,17 +1195,51 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     ]
 
 
+_INLINE_SCHEMA_MAX_CHARS = 3000
+
+
 def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
-    """``_accepted_fields`` without the per-field JSON Schema.
+    """``_accepted_fields`` with a nested JSON Schema only where the type name is not enough.
 
     A find result inlines this for its top matches: enough to compose a call
-    (name, type, required, enum) without the nested-schema detail ``schema
-    get`` returns.
+    (name, type, required, enum) without a follow-up ``schema get``. A
+    non-scalar field (e.g. convert-type's ``conversions``) also carries its
+    JSON Schema, unless that would be larger than ``_INLINE_SCHEMA_MAX_CHARS``.
     """
     fields = _accepted_fields(record)
     if fields is None:
         return None
-    return [{key: field[key] for key in ("name", "type", "required", "enum")} for field in fields]
+    compact: list[dict[str, Any]] = []
+    for field in fields:
+        item = {key: field[key] for key in ("name", "type", "required", "enum")}
+        schema = field.get("schema")
+        if (
+            schema is not None
+            and not _is_scalar_field_schema(schema)
+            and len(json.dumps(schema, default=str)) <= _INLINE_SCHEMA_MAX_CHARS
+        ):
+            item["schema"] = schema
+        compact.append(item)
+    return compact
+
+
+def input_contract(command_id: str) -> dict[str, Any] | None:
+    """The input shape a rejected call should have used: fields (with nested shapes) and an example.
+
+    Attached to input-validation errors so the caller can correct the call
+    without a ``schema get`` round trip. ``None`` for a command with no
+    manifest record or no accepted fields.
+    """
+    record = command_by_id(command_id)
+    if record is None:
+        return None
+    fields = _compact_accepted_fields(record)
+    if fields is None:
+        return None
+    contract: dict[str, Any] = {"command_id": command_id, "accepted_fields": fields}
+    if record.get("agent_example"):
+        contract["agent_example"] = record["agent_example"]
+    return contract
 
 
 def _externally_supplied_fields(command_id: str) -> frozenset[str]:

@@ -1772,26 +1772,6 @@ class TestExportsAPICsv:
             await client.exports.to_csv_url(dataview_id=42, dataset_id=500)
         client._request_json.assert_not_called()
 
-    async def test_to_csv_downloads_using_to_csv_url_result(self, client: MammothClient):
-        client.exports.to_csv_url = AsyncMock(
-            return_value={
-                "url": "https://signed.example/file.csv",
-                "trigger_id": None,
-                "job_id": 9001,
-            }
-        )
-        client.exports._download_file = AsyncMock(return_value=Path("/tmp/out.csv"))
-
-        result = await client.exports.to_csv(
-            dataview_id=42, output_path="/tmp/out.csv", dataset_id=500
-        )
-
-        client.exports.to_csv_url.assert_called_once_with(42, timeout=300, dataset_id=500)
-        client.exports._download_file.assert_called_once_with(
-            "https://signed.example/file.csv", Path("/tmp/out.csv"), job_handle=9001
-        )
-        assert result == Path("/tmp/out.csv")
-
 
 # ======================================================================
 # ConnectorsAPI

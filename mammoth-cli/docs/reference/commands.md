@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.92.
+Generated from the reviewed command manifests for mammoth-cli 2.2.93.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 782.
+Total commands: 784.
 
 ## activity
 
@@ -6002,6 +6002,17 @@ Total commands: 782.
 - Backing SDK: `mammoth.api.checkpoints.CheckpointsAPI.update`
 - Agent example: `mammoth view checkpoint update 123 456 789 --input '{"body": {"patches": [{"op": "command", "path": "approve", "value": null}]}}'`
 
+### `mammoth view column format set`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.set_column_format`
+- Agent example: `mammoth view column format set 123 --input '{"formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2, "currency_symbol": "$"}}, "dataset_id": 456}'`
+
 ### `mammoth view compare`
 
 - Mutation class: `read`
@@ -6044,6 +6055,18 @@ Total commands: 782.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_list`
 - Agent example: `mammoth view conditional-format list 123 456`
+
+### `mammoth view conditional-format replace`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+- `DATASET_ID` (int, optional) — Exact parent dataset ID. Required for this command: pass it here or as the 'dataset_id' input field; only read commands may omit it and discover the parent.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dataviews.DataviewsAPI.conditional_format_replace`
+- Agent example: `mammoth view conditional-format replace 123 456 --input '{"columns": ["Q1", "Q2", "Q3"], "operator": "<", "value": 55, "color": "red"}' --yes`
 
 ### `mammoth view conditional-format update`
 
@@ -6472,8 +6495,8 @@ Total commands: 782.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
-- Backing SDK: `mammoth.api.exports.ExportsAPI.to_csv`
-- Agent example: `mammoth view export csv 123`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.to_file`
+- Agent example: `mammoth view export csv 123 --input '{"file_type": "xlsx"}'`
 
 ### `mammoth view export dataset`
 

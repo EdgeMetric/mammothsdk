@@ -2134,6 +2134,16 @@ def view_transform_rename_columns(invocation: Invocation) -> HandlerResult:
     return _dispatch_view(invocation, view_id, "rename_columns", **kwargs)
 
 
+def view_column_format_set(invocation: Invocation) -> HandlerResult:
+    """Set how columns display (date or number format; a view display setting, not a task)."""
+    view_id = _view_id(invocation)
+    document = invocation.load_input()
+    _require_field(document, "formats")
+    assert document is not None
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "set_column_format", **kwargs)
+
+
 def view_transform_sort(invocation: Invocation) -> HandlerResult:
     """Set the view's row order (a display setting, not a task). ``order_by`` is required.
 

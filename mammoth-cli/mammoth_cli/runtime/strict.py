@@ -69,6 +69,7 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 INPUT_ALIASES: dict[str, dict[str, str]] = {
     "view.transform.sort": {"sort_by": "order_by"},
     "view.transform.limit-rows": {"limit": "n"},
+    "view.export.csv": {"format": "file_type"},
 }
 _SORT_COMMAND = "view.transform.sort"
 _SORT_DIRECTIONS = frozenset({"asc", "desc"})

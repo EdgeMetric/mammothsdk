@@ -2816,6 +2816,47 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        rules = _cf_rules_for_document(
+            service, document, has_typed, (dataset_id, dataview_id, project_id)
+        )
+        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def view_conditional_format_replace(invocation: Invocation) -> HandlerResult:
+    """Replace every conditional-format rule on a view with new ones in one call.
+
+    Takes the input of ``view conditional-format create`` (typed fields or a raw ``rule``);
+    the old rules are deleted and the new ones created. Prompt or ``--yes``.
+    """
+    project_id = require_project(invocation)
+    dataview_id = _require_int_positional_at(invocation, 0, "view id")
+    document = invocation.load_input() or {}
+    has_typed = _cf_check_document(document)
+    with open_service(invocation) as (service, auth):
+        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
+        scope = (dataset_id, dataview_id, project_id)
+        rules = _cf_rules_for_document(service, document, has_typed, scope)
+        enforce_confirmation(
+            invocation,
+            policy=POLICY_PROMPT_OR_YES,
+            action=f"replace all conditional-format rules on view {dataview_id}",
+        )
+        data = service.call(
+            _symbol(invocation),
+            dataset_id=dataset_id,
+            dataview_id=dataview_id,
+            rules=rules,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _cf_check_document(document: dict[str, Any]) -> bool:
+    """Whether the input uses the typed fields; refuses mixing them with ``rule`` or neither."""
     has_typed = any(field in document for field in cf_rules.TYPED_FIELDS)
     if "rule" in document and has_typed:
         raise CliError(
@@ -2825,17 +2866,20 @@ def view_conditional_format_create(invocation: Invocation) -> HandlerResult:
         )
     if "rule" not in document and not has_typed:
         _require_field(document, "rule")
-    with open_service(invocation) as (service, auth):
-        dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
-        if has_typed:
-            metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
-            column_map, column_types = _column_maps(metadata)
-            rules = cf_rules.build_rules(document, column_map, column_types)
-        else:
-            cf_rules.validate_rule(document["rule"])
-            rules = [document["rule"]]
-        data = _create_cf_rules(service, invocation, rules, (dataset_id, dataview_id, project_id))
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return has_typed
+
+
+def _cf_rules_for_document(
+    service: Any, document: dict[str, Any], has_typed: bool, scope: tuple[Any, ...]
+) -> list[dict[str, Any]]:
+    """The rule bodies an input document stands for (typed fields build one rule per column)."""
+    dataset_id, dataview_id, project_id = scope
+    if has_typed:
+        metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+        column_map, column_types = _column_maps(metadata)
+        return cf_rules.build_rules(document, column_map, column_types)
+    cf_rules.validate_rule(document["rule"])
+    return [document["rule"]]
 
 
 def _cf_sequence(rule: Any) -> int:
@@ -3981,12 +4025,12 @@ def view_export_create(invocation: Invocation) -> HandlerResult:
 
 
 def view_export_csv(invocation: Invocation) -> HandlerResult:
-    """Export a dataview to a local CSV file.
+    """Download a dataview to a local file: csv by default, or ``file_type`` (xlsx, json, ...).
 
     With no --input the file is written to the current directory under an
     auto-generated name; the dataset is resolved from the view. Override with
-    ``--input '{"output_path": "path.csv"}'``. An existing file is not replaced
-    (``file_exists``) unless ``--overwrite`` is given.
+    ``--input '{"output_path": "path.xlsx", "file_type": "xlsx"}'``. An existing
+    file is not replaced (``file_exists``) unless ``--overwrite`` is given.
 
     Embedded (see ``mammoth_cli.runtime.embedded``), no file is written: the
     signed download URL is returned instead so the host can hand it to its
@@ -3997,13 +4041,14 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
     if embedded.active():
         return _view_export_csv_embedded(invocation, dataview_id, document)
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("output_path", "timeout", "dataset_id"))
+    _forward_optional(document, kwargs, ("output_path", "file_type", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
         # The SDK's own default name needs the parent dataset, which is known here.
         target = kwargs.get("output_path")
         if target is None and kwargs.get(_DATASET_ID_FIELD) is not None:
-            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.csv"
+            extension = str(kwargs.get("file_type") or "csv").strip().lower().lstrip(".")
+            target = f"dataview_{kwargs[_DATASET_ID_FIELD]}_{dataview_id}_export.{extension}"
         if target is not None:
             refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
@@ -4024,9 +4069,9 @@ def _view_export_csv_embedded(
             hint="Drop output_path -- an embedded call returns a download_url instead.",
         )
     kwargs: dict[str, Any] = {"dataview_id": dataview_id}
-    _forward_optional(document, kwargs, ("timeout", "dataset_id"))
+    _forward_optional(document, kwargs, ("file_type", "timeout", "dataset_id"))
     with open_service(invocation) as (service, auth):
-        data = service.call("mammoth.api.exports.ExportsAPI.to_csv_url", **kwargs)
+        data = service.call("mammoth.api.exports.ExportsAPI.to_file_url", **kwargs)
     return {"download_url": data["url"]}, _meta(invocation, auth.workspace_id, None)
 
 

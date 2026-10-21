@@ -7,7 +7,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothError, MammothValidationError
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -1288,6 +1288,69 @@ class DataviewsAPI:
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}/dataviews/{dataview_id}/conditional-format",
             params={"rule_id": rule_id},
         )
+
+    async def conditional_format_replace(
+        self,
+        dataset_id: int,
+        dataview_id: int,
+        rules: _list[dict[str, Any]],
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Replace every conditional formatting rule of a dataview with ``rules``.
+
+        Lists the current rules, deletes each, then creates the new ones, in one
+        call. The new rules are checked for emptiness before anything is deleted;
+        the backend checks each rule's body as it is created, so a rule it refuses
+        leaves the view with the rules already created. The error then names
+        ``deleted_rule_ids`` and ``created_rule_ids``.
+
+        Args:
+            dataset_id: ID of the dataset.
+            dataview_id: ID of the dataview.
+            rules: Rule bodies, each as :meth:`conditional_format_create` takes it.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            ``{"deleted_rule_ids": [...], "created_rule_ids": [...]}``.
+
+        Raises:
+            MammothValidationError: ``rules`` is empty (use
+                :meth:`conditional_format_delete` to clear a view).
+        """
+        if not rules:
+            raise MammothValidationError(
+                "conditional_format_replace needs at least one rule; delete rules with "
+                "conditional_format_delete to clear a view."
+            )
+        existing = await self.conditional_format_list(
+            dataset_id, dataview_id, workspace_id, project_id
+        )
+        old_ids = [str(rule["rule_id"]) for rule in existing if rule.get("rule_id") is not None]
+        deleted: _list[str] = []
+        created: _list[str] = []
+        try:
+            for rule_id in old_ids:
+                await self.conditional_format_delete(
+                    dataset_id, dataview_id, rule_id, workspace_id, project_id
+                )
+                deleted.append(rule_id)
+            known = set(old_ids)
+            for rule in rules:
+                response = await self.conditional_format_create(
+                    dataset_id, dataview_id, rule, workspace_id, project_id
+                )
+                new_ids = [key for key in response if key not in known and key not in created]
+                created.extend(new_ids)
+        except MammothError as error:
+            error.details = {
+                **error.details,
+                "deleted_rule_ids": deleted,
+                "created_rule_ids": created,
+            }
+            raise
+        return {"deleted_rule_ids": deleted, "created_rule_ids": created}
 
     async def draft_mode(
         self,
