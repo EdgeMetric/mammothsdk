@@ -22,19 +22,36 @@ class TestWhoATokenStandsFor:
         assert caller.resource == MCP_RESOURCE_URL
         assert caller.claims == {
             TokenClaims.WORKSPACE_ID: WORKSPACE,
-            TokenClaims.PROJECT_ID: None,
+            TokenClaims.PROJECT_IDS: None,
         }
 
     def test_the_caller_carries_the_project_they_are_pinned_to(self) -> None:
         with a_fake_api() as api:
-            knows_the_token(api, workspace_id=WORKSPACE, project=31)
+            knows_the_token(api, workspace_id=WORKSPACE, project=31, projects=[31])
             caller = run(token_verifier.verify_token(GOOD_TOKEN))
 
         assert caller is not None
         assert caller.claims == {
             TokenClaims.WORKSPACE_ID: WORKSPACE,
-            TokenClaims.PROJECT_ID: 31,
+            TokenClaims.PROJECT_IDS: [31],
         }
+
+    def test_the_caller_carries_every_project_they_picked(self) -> None:
+        with a_fake_api() as api:
+            knows_the_token(api, workspace_id=WORKSPACE, project=31, projects=[31, 33])
+            caller = run(token_verifier.verify_token(GOOD_TOKEN))
+
+        assert caller is not None
+        assert caller.claims[TokenClaims.PROJECT_IDS] == [31, 33]
+
+    def test_a_mammoth_that_sends_one_project_alone_pins_that_one(self) -> None:
+        # A server older than multi-project sign-in sends `project` alone.
+        with a_fake_api() as api:
+            knows_the_token(api, workspace_id=WORKSPACE, project=31)
+            caller = run(token_verifier.verify_token(GOOD_TOKEN))
+
+        assert caller is not None
+        assert caller.claims[TokenClaims.PROJECT_IDS] == [31]
 
     def test_a_connection_granted_read_only_carries_the_read_scope(self) -> None:
         # The scope is what the read-only check refuses every writing tool on.

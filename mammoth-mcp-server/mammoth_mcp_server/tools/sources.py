@@ -22,6 +22,7 @@ from ..consts import (
     ApiPaths,
     ConnectionFields,
     ConnectorFields,
+    PageFields,
     UploadFields,
 )
 from ..sdk import JsonValue, build_client, request_api
@@ -47,8 +48,8 @@ GAVE_UP = (
 CONNECTED = (
     "The user connected the source. They may still be picking its data in"
     " Mammoth: call `find_new_datasets` with `since` for what they bring in. For"
-    " a database, you can bring the data in yourself with `preview_query` and"
-    " `add_dataset_from_connection`."
+    " a database, you can bring the data in yourself with `list_tables`,"
+    " `preview_query` and `add_dataset_from_connection`."
 )
 NOT_A_TIME = (
     "`since` must be the time `connect_source` returned, such as 2026-10-14T09:00:00+00:00."
@@ -76,21 +77,70 @@ async def list_connectors(
     Returns:
         `connectors`: each one's `name_key` (what `connect_source` takes),
         `disp_name`, and `is_available`: false when the workspace's plan does
-        not include it.
+        not include it. With `connected_only`, also `connection_count`, and
+        `total`: how many are connected; `next_offset` is the offset of the
+        next page, when there is one.
     """
+    if connected_only:
+        return await list_connected(workspace_id, project_id, limit, offset)
     query: dict[str, str | int] = {
         ConnectorFields.FIELDS: ConnectorFields.LISTED,
         ConnectorFields.LIMIT: limit,
         ConnectorFields.OFFSET: offset,
         ConnectorFields.PROJECT_ID: project_id,
     }
-    if connected_only:
-        query[ConnectorFields.HAS_CONNECTIONS] = "true"
     async with build_client(workspace_id) as client:
         page = await request_api(
             client, "GET", ApiPaths.CONNECTORS.format(workspace_id=workspace_id), query=query
         )
     return tidy_page(page, ConnectorFields.CONNECTORS, limit)
+
+
+async def list_connected(
+    workspace_id: int, project_id: int, limit: int, offset: int
+) -> dict[str, JsonValue]:
+    """The connectors the project has a connection to, paged here.
+
+    The route filters by connections only within the page it read, so a
+    filtered page cannot say whether more come after it. Every page of the
+    catalogue is read instead, and the connected ones are kept.
+    """
+    connected: list[JsonValue] = [
+        connector
+        for connector in await read_every_connector(workspace_id, project_id)
+        if isinstance(connector, dict)
+        and isinstance(count := connector.get(ConnectorFields.CONNECTION_COUNT), int)
+        and count > 0
+    ]
+    listed: dict[str, JsonValue] = {
+        ConnectorFields.CONNECTORS: connected[offset : offset + limit],
+        PageFields.TOTAL: len(connected),
+    }
+    if offset + limit < len(connected):
+        listed[PageFields.NEXT_OFFSET] = offset + limit
+    return listed
+
+
+async def read_every_connector(workspace_id: int, project_id: int) -> list[JsonValue]:
+    """Every connector, with its connection count in the project, page by page."""
+    connectors: list[JsonValue] = []
+    async with build_client(workspace_id) as client:
+        for start in range(0, ConnectorFields.MOST_CONNECTORS, ConnectorFields.EVERY_CONNECTOR):
+            query: dict[str, str | int] = {
+                ConnectorFields.FIELDS: ConnectorFields.LISTED_CONNECTED,
+                ConnectorFields.LIMIT: ConnectorFields.EVERY_CONNECTOR,
+                ConnectorFields.OFFSET: start,
+                ConnectorFields.PROJECT_ID: project_id,
+            }
+            page = await request_api(
+                client, "GET", ApiPaths.CONNECTORS.format(workspace_id=workspace_id), query=query
+            )
+            items = page.get(ConnectorFields.CONNECTORS)
+            items = items if isinstance(items, list) else []
+            connectors.extend(items)
+            if len(items) < ConnectorFields.EVERY_CONNECTOR:
+                break
+    return connectors
 
 
 @mcp_server.tool(title="Find new datasets", annotations=READS)

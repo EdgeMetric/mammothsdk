@@ -12,6 +12,7 @@ revoked, or one that ran out, stops working here with the same request.
 """
 
 from mammoth.exceptions import MammothAuthError
+from mammoth.models.workspaces import CurrentWorkspace
 from mcp.server.auth.provider import AccessToken
 
 from . import sdk
@@ -27,9 +28,9 @@ class MammothTokenVerifier:
 
         The answer carries the resource Mammoth issued the token for, as it
         said it. The bearer check then turns away a token whose resource is
-        not this server, and a token with none. It carries the project the
-        user picked when they connected too, so a tool can act in it rather
-        than ask, and name it when the model reaches for another. A connection
+        not this server, and a token with none. It carries the projects the
+        user picked when they connected too, so a tool can act in them rather
+        than ask, and name them when the model reaches for another. A connection
         the user granted read-only carries the `read` scope, and only the tools
         that read run for it.
 
@@ -49,9 +50,20 @@ class MammothTokenVerifier:
             resource=issued.resource,
             claims={
                 TokenClaims.WORKSPACE_ID: issued.id,
-                TokenClaims.PROJECT_ID: issued.project,
+                TokenClaims.PROJECT_IDS: pinned_projects(issued),
             },
         )
+
+
+def pinned_projects(issued: CurrentWorkspace) -> list[int] | None:
+    """The projects a token is pinned to, or None for every project.
+
+    A Mammoth older than multi-project sign-in names one project alone, as
+    `project`; that one project is then the whole list.
+    """
+    if issued.projects:
+        return sorted(issued.projects)
+    return [issued.project] if issued.project is not None else None
 
 
 token_verifier = MammothTokenVerifier()

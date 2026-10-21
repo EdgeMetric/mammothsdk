@@ -17,6 +17,7 @@ from ..consts import (
     PREVIEW_ROWS_MAX,
     ListFields,
     PipelineFields,
+    StepFields,
 )
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
@@ -25,10 +26,12 @@ from ..shape import view_url
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
+    FIX_A_FAILED_STEP,
     OPERATION_NAMES,
     add_step,
     build_param,
     check_run,
+    problems_of,
     read_operation,
     wait_for_change,
 )
@@ -43,6 +46,12 @@ STEPS_RUN_ON = (
 DELETE_RUNS_ON = (
     "The step was deleted and the view's run is still going. Call get_pipeline"
     " later to see it end."
+)
+
+STAGED_NOT_RUN = (
+    "Changes are staged in draft mode and have not run, so the view's data does not"
+    ' show them yet. Tell the user. Call manage_draft with "run" to run them, or'
+    ' "drop" to throw them away.'
 )
 
 type DraftAction = Literal["start", "run", "drop", "stop"]
@@ -72,7 +81,9 @@ async def get_pipeline(
         `pipeline`: the state (`draft_mode` is off, clean or dirty; `auto_run`;
         `execution_state`). `steps`: each step's `id`, `sequence`, `status`
         and `params` (columns there are internal names). `mammoth_url`: the
-        page in Mammoth the view opens on.
+        page in Mammoth the view opens on. When a step is in error, or changes
+        are staged and not run: `problems` (each step in error, with why) and
+        `next_step`, what to tell the user and do.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     # Both reads go through one client rather than one each.
@@ -83,10 +94,12 @@ async def get_pipeline(
         state = await read_sdk_errors(
             pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
+    steps = tasks[PipelineFields.TASKS]
     return {
         PipelineFields.PIPELINE: state,
-        PipelineFields.STEPS: tasks[PipelineFields.TASKS],
+        PipelineFields.STEPS: steps,
         ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
+        **what_needs_doing(state, steps if isinstance(steps, list) else []),
     }
 
 
@@ -177,18 +190,28 @@ async def manage_draft(
             mode off. The view stays in draft mode after "run" and "drop".
 
     Returns:
-        The pipeline's state afterwards, as `get_pipeline` reports it. When
-        the run outlasts the call: the run's `job_id` and what to do next.
+        The pipeline's state afterwards, as `get_pipeline` reports it. After
+        "run", any step in error, as `problems`, and what to do, as
+        `next_step`. When the run outlasts the call: the run's `job_id` and
+        what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     answer = await change_draft(ids, DRAFT_ACTIONS[action])
-    if action == RUN_THE_DRAFT:
-        # Only the submit starts a run; the other three answer for themselves.
-        try:
-            await wait_for_job(workspace_id, answer)
-        except JobStillRunning as running:
-            return still_running(running, RUN_GOES_ON)
-    return await read_pipeline(ids)
+    if action != RUN_THE_DRAFT:
+        return await read_pipeline(ids)
+    # Only the submit starts a run; the other three answer for themselves.
+    try:
+        finished = await wait_for_job(workspace_id, answer)
+    except JobStillRunning as running:
+        return still_running(running, RUN_GOES_ON)
+    problems = problems_of(await read_steps(ids), finished)
+    if not problems:
+        return await read_pipeline(ids)
+    return {
+        **await read_pipeline(ids),
+        StepFields.PROBLEMS: list[JsonValue](problems),
+        StepFields.NEXT_STEP: FIX_A_FAILED_STEP,
+    }
 
 
 @mcp_server.tool(
@@ -293,6 +316,31 @@ def view_ids(workspace_id: int, project_id: int, dataset_id: int, view_id: int) 
         "dataset_id": dataset_id,
         "dataview_id": view_id,
     }
+
+
+def what_needs_doing(state: dict[str, JsonValue], steps: list[JsonValue]) -> dict[str, JsonValue]:
+    """What a model must tell the user about a pipeline: steps in error, or staged changes.
+
+    Nothing, for a pipeline that ran clean and has nothing staged.
+    """
+    problems = problems_of([step for step in steps if isinstance(step, dict)])
+    staged = state.get(PipelineFields.DRAFT_MODE) == PipelineFields.DRAFT_DIRTY
+    notes = [FIX_A_FAILED_STEP] if problems else []
+    notes += [STAGED_NOT_RUN] if staged else []
+    told: dict[str, JsonValue] = (
+        {StepFields.PROBLEMS: list[JsonValue](problems)} if problems else {}
+    )
+    return {**told, StepFields.NEXT_STEP: " ".join(notes)} if notes else told
+
+
+async def read_steps(ids: dict[str, int]) -> list[dict[str, JsonValue]]:
+    """Read every step of a view's pipeline, in order."""
+    async with _pipeline(ids) as pipeline:
+        listed = await read_sdk_errors(
+            pipeline.list_tasks(ids["dataview_id"], dataset_id=ids["dataset_id"])
+        )
+    steps = listed.get(PipelineFields.TASKS)
+    return [step for step in steps if isinstance(step, dict)] if isinstance(steps, list) else []
 
 
 async def run_in_one_draft(ids: dict[str, int], steps: list[TransformOperation]) -> None:

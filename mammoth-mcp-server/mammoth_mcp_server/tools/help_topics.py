@@ -54,6 +54,45 @@ done with a column: dates uploaded from a CSV arrive as TEXT and have to be
 converted before any date operation works.
 """
     ),
+    "pipeline": (
+        """\
+# Changing a pipeline
+
+A view's pipeline is its steps, in order. Each step reads the columns the
+steps before it leave.
+
+- Add steps with `add_transformations`. Change one with
+  `edit_transformation_step` ("replace", "suspend", "restore"). Delete one
+  with `delete_transformation_step`. Read the steps with `get_pipeline`.
+- Try a change on a sample first with `preview_transformation`.
+- An export is a step too: it sends the view's rows out. Change its settings,
+  suspend, restore or run it with `edit_export`; `get_export` shows its recent
+  runs. Ask the user before anything sends rows.
+
+## Run now, or draft
+
+- **Run now** (the default): one change, or steps that do not need each
+  other. Each tool runs the view and waits.
+- **Draft**: the user wants to look before anything runs, or changes need
+  each other, e.g. a step renames a column that later steps read. Call
+  `manage_draft` "start", make the changes, "run", then "stop". In draft mode
+  nothing runs, and the data does not show the changes, until "run".
+- `add_transformations` stages several steps in a draft of its own and runs
+  them once. You do not need draft mode for that.
+
+## When a step fails
+
+- A change that makes a step fail is undone by `edit_transformation_step`
+  (outcome "put_back"), so the view runs as before. Say what failed and why,
+  and offer a change that avoids it.
+- Mammoth refuses a change that removes a column a later step reads, and
+  nothing changes. Change those steps together, in draft mode.
+- `get_pipeline` lists every step in error under `problems`. A step can also
+  fail later, when new data arrives. Fix it with `edit_transformation_step`,
+  suspend it, or delete it. Never leave a step in error without telling the
+  user, with the view's `mammoth_url`.
+"""
+    ),
 }
 
 
@@ -62,7 +101,7 @@ async def get_help(topic: str) -> dict[str, JsonValue]:
     """Explain how Mammoth works. Read this before a first transformation.
 
     Args:
-        topic: Which topic to explain. One of: overview, columns.
+        topic: Which topic to explain. One of: overview, columns, pipeline.
     """
     if topic not in HELP_TOPICS:
         raise ToolError(f"No help topic '{topic}'. Topics: {', '.join(HELP_TOPICS)}")

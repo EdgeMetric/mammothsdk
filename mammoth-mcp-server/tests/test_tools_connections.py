@@ -59,6 +59,97 @@ class TestListConnections:
         assert found["connections"] == listed
 
 
+def a_job(job_id: int, response: dict[str, Any]) -> dict[str, Any]:
+    return {"job": {"id": job_id, "status": "success", "response": response}}
+
+
+def with_tables(*tables: str) -> dict[str, Any]:
+    """The answer of the `ds_config_spec` concern: the form the web app draws, tables in it."""
+    items = [{"name": table, "value": table} for table in tables]
+    return {
+        "is_valid": True,
+        "ds_config_spec": {"ux": {"attributes": {"tables": {"items": items}}}},
+    }
+
+
+class TestListTables:
+    CONNECTION = f"{connections_path('postgres')}/{KEY}"
+
+    def answer(self, api: Any, schemas: list[str], tables: dict[str, Any] | None = None) -> None:
+        """Mammoth lists the schemas in one job, then a schema's tables in another."""
+        api.answer("GET", self.CONNECTION, {"job_id": 51})
+        api.answer("GET", self.CONNECTION, {"job_id": 52})
+        api.answer(
+            "GET", "/jobs/51", a_job(51, {"profiles": [{"name": s, "value": s} for s in schemas]})
+        )
+        api.answer("GET", "/jobs/52", a_job(52, tables or with_tables("orders", "customers")))
+
+    def test_it_lists_the_tables_of_the_schema_asked_for(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.answer(api, ["public", "sales"])
+            found = call_tool("list_tables", schema="sales", **ON_POSTGRES)
+
+        assert found == {
+            "schemas": ["public", "sales"],
+            "schema": "sales",
+            "tables": ["orders", "customers"],
+        }
+        schemas, tables = api.sent("GET", self.CONNECTION)
+        assert schemas.url.params["concern"] == "profiles"
+        assert tables.url.params["concern"] == "ds_config_spec"
+        assert tables.url.params["profile"] == "sales"
+
+    def test_a_schema_mammoth_did_not_list_is_never_sent(self) -> None:
+        # Some databases put the schema straight into their own SQL.
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError) as refused:
+            self.answer(api, ["public", "sales"])
+            call_tool("list_tables", schema="x'; DROP TABLE t; --", **ON_POSTGRES)
+
+        assert "public, sales" in str(refused.value)
+        (only,) = api.sent("GET", self.CONNECTION)
+        assert only.url.params["concern"] == "profiles"
+
+    def test_with_several_schemas_and_none_asked_for_it_lists_the_schemas(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.answer(api, ["public", "sales"])
+            found = call_tool("list_tables", **ON_POSTGRES)
+
+        assert found["schemas"] == ["public", "sales"]
+        assert "tables" not in found
+        assert "schema" in found["next_step"]
+        assert len(api.sent("GET", self.CONNECTION)) == 1
+
+    def test_the_only_schema_is_picked_by_itself(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.answer(api, ["dbo"])
+            found = call_tool("list_tables", **ON_POSTGRES)
+
+        assert found["schema"] == "dbo"
+        assert found["tables"] == ["orders", "customers"]
+
+    def test_a_database_without_schemas_lists_its_tables_at_once(self) -> None:
+        # MySQL and Redshift name no schemas: a connection reads one database.
+        with a_fake_api() as api, as_caller():
+            self.answer(api, [])
+            found = call_tool("list_tables", **ON_POSTGRES)
+
+        assert found["tables"] == ["orders", "customers"]
+        assert "profile" not in api.sent("GET", self.CONNECTION)[1].url.params
+
+    def test_a_connection_the_database_refuses_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError) as refused:
+            self.answer(api, [], {"is_valid": False, "message": "password authentication failed"})
+            call_tool("list_tables", **ON_POSTGRES)
+
+        assert "password authentication failed" in str(refused.value)
+
+    def test_a_source_that_is_not_a_database_is_refused_before_anything_is_sent(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError):
+            call_tool("list_tables", **{**ON_POSTGRES, "connector_key": "hubspot"})
+
+        assert api.requests == []
+
+
 class TestPreviewQuery:
     def test_it_returns_the_first_rows_the_database_sends(self) -> None:
         with a_fake_api() as api, as_caller():

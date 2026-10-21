@@ -257,7 +257,8 @@ async def preview_query(
 ) -> dict[str, JsonValue]:
     """Run a query on a database connection and show its first rows. Nothing is saved.
 
-    Use it before `add_dataset_from_connection`. Ask the user first: the query
+    Use it before `add_dataset_from_connection`, and `list_tables` before it
+    to name a table that is there. Ask the user first: the query
     runs on their own database. Show it to them.
 
     Many clients draw a form under this call, with the query, the name, the

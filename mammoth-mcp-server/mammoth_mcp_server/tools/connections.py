@@ -6,16 +6,17 @@ their data is chosen with SQL, and the database account of the connection
 decides what the query may read.
 """
 
+import base64
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ConnectionFields, ConnectorFields
-from ..dataset_app import check_query
+from ..consts import ApiPaths, ConnectionFields, ConnectorFields, ErrorFields
+from ..dataset_app import NOT_A_DATABASE, check_query
 from ..jobs import JobStillRunning, wait_for_job
-from ..sdk import JsonValue, build_client, read_sdk_errors
+from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..tool_kinds import DESTRUCTIVE, READS
 
@@ -28,6 +29,12 @@ NEEDS_A_COLUMN = (
     " whose value tells rows apart, such as an id or an update time."
 )
 NOT_A_TIME = "`{field}` must be a time such as 2026-10-16T06:00:00+00:00."
+PICK_A_SCHEMA = (
+    "The database has several schemas. Ask the user which one, or pick the one"
+    " the data is plainly in, and call `list_tables` again with `schema`."
+)
+NOT_A_SCHEMA = "This connection has no schema {schema!r}. Its schemas: {schemas}."
+REFUSED = "The database refused the connection: {reason}"
 ADDED = (
     "Mammoth is bringing the data in. Call `find_new_datasets` with `since`"
     " now: it waits until the dataset is ready."
@@ -57,6 +64,97 @@ async def list_connections(
             client.connectors.list_connections(connector_key, project_id=project_id)
         )
     return {ConnectionFields.CONNECTIONS: list[JsonValue](listed)}
+
+
+@mcp_server.tool(title="List tables", annotations=READS)
+async def list_tables(
+    workspace_id: int,
+    project_id: int,
+    connector_key: str,
+    connection_key: str,
+    schema: str | None = None,
+) -> dict[str, JsonValue]:
+    """List the tables of a database connection the project already has.
+
+    Call it before writing the query for `preview_query`, so the query names
+    a table that is there.
+
+    Args:
+        workspace_id: Which workspace the project is in.
+        project_id: Which project.
+        connector_key: The database's `name_key`, such as "postgres".
+        connection_key: What `list_connections` returned.
+        schema: Which schema's tables. Leave it out at first: a database with
+            one schema, or none, lists its tables at once.
+
+    Returns:
+        `schemas`: the database's schemas. `schema` and `tables`: the tables
+        in that schema. With several schemas and none asked for: `schemas`
+        and `next_step`.
+    """
+    if connector_key not in ConnectionFields.DATABASES:
+        raise ToolError(NOT_A_DATABASE)
+    connection = Connection(workspace_id, project_id, connector_key, connection_key)
+    schemas = await connection.schemas()
+    if schema is None and len(schemas) == 1:
+        (schema,) = schemas
+    if schema is None and schemas:
+        return {
+            ConnectionFields.SCHEMAS: list[JsonValue](schemas),
+            ConnectorFields.NEXT_STEP: PICK_A_SCHEMA,
+        }
+    # Some databases put the schema straight into their own SQL: send only one Mammoth listed.
+    if schema is not None and schema not in schemas:
+        raise ToolError(NOT_A_SCHEMA.format(schema=schema, schemas=", ".join(schemas)))
+    listed: Json = {ConnectionFields.SCHEMAS: list[JsonValue](schemas)}
+    if schema is not None:
+        listed[ConnectionFields.SCHEMA_NAME] = schema
+    listed[ConnectionFields.TABLES] = list[JsonValue](await connection.tables(schema))
+    return listed
+
+
+@dataclass(frozen=True)
+class Connection:
+    """One connection of a project, asked through the route the web app's data page uses."""
+
+    workspace_id: int
+    project_id: int
+    connector_key: str
+    connection_key: str
+
+    async def schemas(self) -> list[str]:
+        answer = await self.ask({ConnectionFields.CONCERN: ConnectionFields.PROFILES})
+        return values_of(answer.get(ConnectionFields.PROFILES))
+
+    async def tables(self, schema: str | None) -> list[str]:
+        query: dict[str, str | int] = {ConnectionFields.CONCERN: ConnectionFields.DS_CONFIG_SPEC}
+        if schema is not None:
+            query[ConnectionFields.PROFILE] = schema
+        answer = await self.ask(query)
+        if answer.get(ConnectionFields.IS_VALID) is False:
+            raise ToolError(REFUSED.format(reason=answer.get(ErrorFields.MESSAGE)))
+        found: JsonValue = answer.get(ConnectionFields.DS_CONFIG_SPEC)
+        for key in ConnectionFields.TABLES_AT:
+            found = found.get(key) if isinstance(found, dict) else None
+        return values_of(found)
+
+    async def ask(self, query: dict[str, str | int]) -> Json:
+        """Start the job that asks the connection, and wait for its answer."""
+        path = ApiPaths.CONNECTION.format(
+            workspace_id=self.workspace_id,
+            project_id=self.project_id,
+            connector=base64.b64encode(self.connector_key.encode()).decode(),
+            connection_key=self.connection_key,
+        )
+        async with build_client(self.workspace_id, self.project_id) as client:
+            started = await request_api(client, "GET", path, query=query)
+        return await wait_for_job(self.workspace_id, started)
+
+
+def values_of(items: JsonValue) -> list[str]:
+    """The `value` of each `{"name", "value"}` item a connector lists."""
+    listed = items if isinstance(items, list) else []
+    return [str(one[ConnectionFields.VALUE]) for one in listed if isinstance(one, dict)]
 
 
 @mcp_server.tool(title="Add a dataset from a connection", annotations=DESTRUCTIVE)
