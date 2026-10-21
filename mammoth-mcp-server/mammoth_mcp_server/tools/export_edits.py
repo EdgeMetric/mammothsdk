@@ -179,9 +179,11 @@ def replaced_export(
         ToolError: If the changed settings do not fit the destination.
     """
     stored = export.get(ExportFields.SETTINGS)
+    # Only a setting the caller sets to null is dropped; a stored null stays.
+    dropped = {name for name, value in settings.items() if value is None}
     merged = {**(stored if isinstance(stored, dict) else {}), **settings}
     kept: dict[str, JsonValue] = {
-        name: value for name, value in merged.items() if value is not None
+        name: value for name, value in merged.items() if name not in dropped
     }
     spec = build_export(str(export.get(ExportFields.DESTINATION)), kept, view_id, run_now=False)
     stays = {
@@ -190,9 +192,25 @@ def replaced_export(
     return {
         **spec.model_dump(mode="json", exclude_none=True),
         **stays,
+        **place_of(export),
         ExportFields.TRIGGER_ID: export.get(ExportFields.ID),
         **schedule_of(export),
     }
+
+
+def place_of(export: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """Where the export runs: at the end of the pipeline, or after a step.
+
+    A save that names a sequence pins the export after that step, so an
+    export at the end is saved without one, as the web app saves it, and
+    stays at the end when steps are added later.
+    """
+    if export.get(ExportFields.AT_THE_END) is False:
+        return {
+            ExportFields.AT_THE_END: False,
+            ExportFields.SEQUENCE: export.get(ExportFields.SEQUENCE),
+        }
+    return {ExportFields.AT_THE_END: True, ExportFields.SEQUENCE: None}
 
 
 def schedule_of(export: dict[str, JsonValue]) -> dict[str, JsonValue]:

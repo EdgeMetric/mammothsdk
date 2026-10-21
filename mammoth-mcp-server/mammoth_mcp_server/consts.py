@@ -824,13 +824,10 @@ class ExportFields:
     ON_A_SCHEDULE = "schedule"
     SCHEDULE = "schedule"
     # What an edit keeps of the stored export, besides its settings.
-    KEPT_ON_REPLACE = (
-        "trigger_type",
-        "end_of_pipeline",
-        "sequence",
-        "additional_properties",
-        "condition",
-    )
+    KEPT_ON_REPLACE = ("trigger_type", "additional_properties", "condition")
+    # Where the export runs: at the end of the pipeline, or after step `sequence`.
+    AT_THE_END = "end_of_pipeline"
+    SEQUENCE = "sequence"
     # Names the export a save replaces.
     TRIGGER_ID = "TRIGGER_ID"
     # One run, as the export's run history lists it.
