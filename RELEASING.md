@@ -20,6 +20,14 @@ its build backend is Hatchling. The CI workflow and checked-in lockfile are
 still Poetry-based during this migration; keep the commands below aligned with
 CI until that migration is completed.
 
+## Is everything released?
+
+`python3 scripts/release_status.py` checks every release surface against `main` (read-only):
+version files, PyPI, tags, GitHub releases, CHANGELOG, `uv.lock`, the installer URLs, the MCP
+registry and live server card, the mm-ai-docs skill on `main` and on docs.mammoth.io, and the
+mm-website changelog. Each failing row prints its fix. The `release-sync` skill
+(`.claude/skills/release-sync`) runs it, applies the fixes, and checks again.
+
 ## Preferred path — tag-triggered CI (hands-off, signed)
 
 Pushing a version tag runs the matching release workflow, which builds
