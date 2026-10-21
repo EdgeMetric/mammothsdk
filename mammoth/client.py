@@ -806,8 +806,11 @@ class MammothClient:
         """
         if self._workspace_id is not None:
             return api
+        workspace_free: frozenset[str] = getattr(type(api), "WORKSPACE_FREE", frozenset())
         for name in dir(type(api)):
-            if name.startswith("_") or not inspect.iscoroutinefunction(getattr(type(api), name)):
+            if name.startswith("_") or name in workspace_free:
+                continue
+            if not inspect.iscoroutinefunction(getattr(type(api), name)):
                 continue
             setattr(api, name, self._resolve_first(getattr(api, name)))
         return api

@@ -108,6 +108,31 @@ class AskSpec(MammothModel):
     params: AskParams
 
 
+class AttachmentAction(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["purpose", "apply_look", "apply_brief"]
+    purpose: Annotated[str | None, Field(max_length=40)] = None
+    card: AttachmentCard | None = None
+    save_context: bool | None = None
+
+
+class AttachmentCard(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    instruction: Annotated[str | None, Field(max_length=4000)] = None
+    signals: AttachmentSignals | None = None
+    left_out: Annotated[list[LeftOut] | None, Field(max_length=20)] = None
+    colours: Annotated[list[AttachmentColour] | None, Field(max_length=10)] = None
+    must_cover: Annotated[list[BriefAsk] | None, Field(max_length=20)] = None
+    call_out: Annotated[list[BriefAsk] | None, Field(max_length=20)] = None
+    number_checks: Annotated[list[NumberCheck] | None, Field(max_length=20)] = None
+
+
+class AttachmentColour(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    hex: str
+    name: Annotated[str, Field(max_length=40)]
+
+
 class AttachmentIntentForm(MammothModel):
     model_config = ConfigDict(extra="forbid")
     target_dataview_id: int
@@ -123,6 +148,14 @@ class AttachmentResponse(MammothModel):
     attachment_id: int
     filename: str
     kind: str
+
+
+class AttachmentSignals(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    primary: str
+    accents: Annotated[list[str] | None, Field(max_length=4)] = None
+    ground: str | None = None
+    fontName: str | None = None
 
 
 class AudienceAnonymous(MammothModel):
@@ -208,7 +241,10 @@ class AudienceSummaryItem(MammothModel):
     views_7d: int
     people_7d: int
     views_30d: int
+    embed_renders_7d: int | None = None
+    embed_renders_30d: int | None = None
     last_viewed_at: str | None = None
+    published_since: str | None = None
     daily_14: list[int]
 
 
@@ -265,6 +301,14 @@ class BoardStatusModel(MammothModel):
     by_name: str | None = None
 
 
+class BriefAsk(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    ask: str
+    lands_as: str
+    carried: bool
+    reason: str | None = None
+
+
 class BulkWidgetDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     widgets: Annotated[list[WidgetDataParams], Field(min_length=1, max_length=100)]
@@ -308,6 +352,7 @@ class CanvasResponse(MammothModel):
     specs: dict[str, Any] | None = None
     meta: CanvasMeta
     dashboard_id: int | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
 
 
 class ChangeAudienceParams(MammothModel):
@@ -321,9 +366,22 @@ class ChangeAudienceSpec(MammothModel):
     params: ChangeAudienceParams
 
 
+class ChatAttachmentResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    ref: str
+    name: str
+    kind: Literal["image", "document", "text"]
+    media_type: str
+    byte_size: int
+    pages: int | None = None
+    pages_read: int | None = None
+    words: int | None = None
+    truncated: bool | None = None
+
+
 class ChatEditParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
-    prompt: Annotated[str, Field(min_length=1)]
+    prompt: str | None = None
     scope: dict[str, Any] | None = None
     selected_fig: int | None = None
     active_page_id: str | None = None
@@ -331,6 +389,8 @@ class ChatEditParams(MammothModel):
     conversation_history: list[dict[str, Any]] | None = None
     client_turn_id: str | None = None
     change: list[dict[str, Any]] | dict[str, Any] | None = None
+    attachments: Annotated[list[str] | None, Field(max_length=5)] = None
+    attachment_action: AttachmentAction | None = None
 
 
 class ChatEditSpec(MammothModel):
@@ -608,6 +668,10 @@ class DashboardModelType(MammothModel):
     page_count: int | None = None
     shared_by_name: str | None = None
     collection_ids: list[int] | None = None
+    personal: bool | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
+    source_files: list[UnavailableFileType] | None = None
+    shared_with_count: int | None = None
 
 
 class DashboardPlaceResponse(MammothModel):
@@ -1171,6 +1235,12 @@ class JobSchema(MammothModel):
     operation: str
 
 
+class LeftOut(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    item: str
+    reason: str
+
+
 class LiveChartBroken(MammothModel):
     model_config = ConfigDict(extra="allow")
     reasons: list[str]
@@ -1224,6 +1294,13 @@ class LiveChartUsageResponse(MammothModel):
     embeds: list[EmbedPlaceResponse]
     dashboards: list[DashboardPlaceResponse]
     link_views_30d: int
+
+
+class NumberCheck(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    brief_says: str
+    about: str
+    data_shows: str | None = None
 
 
 class ObjectJobSchema(MammothModel):
@@ -1845,11 +1922,38 @@ class Trigger(RootModel[Literal["new_data", "schedule"]]):
     model_config = ConfigDict(defer_build=True)
 
 
+class UnavailableFileType(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    id: int
+    name: str
+
+
 class UnpublishedAuthor(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     user_name: str | None = None
     count: int
+
+
+class UnpublishedChange(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    sequence: int | None = None
+    user_id: int | None = None
+    user_name: str | None = None
+    at: str | None = None
+    kind: Literal["edit", "assistant", "sync", "undo"]
+    label: str | None = None
+    scopes: list[dict[str, Any]] | None = None
+
+
+class UnpublishedChangesResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    published_sequence: int
+    head_sequence: int
+    published_history_index: int | None = None
+    count: int
+    changes: list[UnpublishedChange] | None = None
 
 
 class UseTemplateParams(MammothModel):
@@ -1887,6 +1991,19 @@ class V3DashboardMetaType(MammothModel):
     unpublished_authors: list[UnpublishedAuthor] | None = None
     role: str | None = None
     project_id: int | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
+
+
+class VideoStateResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    status: Literal["none", "ready", "stale"]
+    stale: bool
+    sequence: int | None = None
+    seconds: float | None = None
+    bytes: int | None = None
+    url: str | None = None
+    blocked: Literal["rls", None] | None = None
+    blocked_reason: str | None = None
 
 
 class VisibilityParams(MammothModel):
@@ -1955,9 +2072,13 @@ __all__ = [
     "ApplyTemplateSpec",
     "AskParams",
     "AskSpec",
+    "AttachmentAction",
+    "AttachmentCard",
+    "AttachmentColour",
     "AttachmentIntentForm",
     "AttachmentJob",
     "AttachmentResponse",
+    "AttachmentSignals",
     "AudienceAnonymous",
     "AudienceCountries",
     "AudienceCountry",
@@ -1975,12 +2096,14 @@ __all__ = [
     "AudienceViewport",
     "BoardPreviewOut",
     "BoardStatusModel",
+    "BriefAsk",
     "BulkWidgetDataParams",
     "BulkWidgetDataSpec",
     "CanvasMeta",
     "CanvasResponse",
     "ChangeAudienceParams",
     "ChangeAudienceSpec",
+    "ChatAttachmentResponse",
     "ChatEditParams",
     "ChatEditSpec",
     "ChatRevision",
@@ -2089,12 +2212,14 @@ __all__ = [
     "ImportWorkbookForm",
     "JobResponse",
     "JobSchema",
+    "LeftOut",
     "LiveChartBroken",
     "LiveChartListResponse",
     "LiveChartOrigin",
     "LiveChartRef",
     "LiveChartResponse",
     "LiveChartUsageResponse",
+    "NumberCheck",
     "ObjectJobSchema",
     "OkResponse",
     "OwnDataAcceptParams",
@@ -2185,10 +2310,14 @@ __all__ = [
     "TrackViewResponse",
     "TrackViewSpec",
     "Trigger",
+    "UnavailableFileType",
     "UnpublishedAuthor",
+    "UnpublishedChange",
+    "UnpublishedChangesResponse",
     "UseTemplateParams",
     "UseTemplateSpec",
     "V3DashboardMetaType",
+    "VideoStateResponse",
     "VisibilityParams",
     "VisibilitySpec",
     "WidgetDataParams",

@@ -29,7 +29,7 @@ from typing import Any
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, CliError
-from mammoth_cli.manifest.loader import _cache_enabled, cache_dir
+from mammoth_cli.manifest.loader import cache_dir
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.labels import label, project_name
 from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
@@ -42,9 +42,15 @@ _CURRENT_SYMBOL = "mammoth.api.workspace.WorkspaceAPI.current"
 #: How long a cached pin answer is trusted.
 PIN_CACHE_TTL_SECONDS = 3600
 _PIN_CACHE_PREFIX = "pins-"
+#: Set to 0, false, no or off to read the pin live on every command.
+PIN_CACHE_ENV = "MAMMOTH_CLI_PIN_CACHE"
 
 #: Above this many pinned projects, messages give ids only: one name read per project.
 MAX_NAMED_PINS = 5
+
+
+def _cache_enabled() -> bool:
+    return os.environ.get(PIN_CACHE_ENV, "1").strip().lower() not in {"0", "false", "no", "off"}
 
 
 def _is_id(value: object) -> bool:

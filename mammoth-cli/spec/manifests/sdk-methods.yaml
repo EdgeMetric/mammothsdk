@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 801
+method_count: 802
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -4048,7 +4048,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.published_video_export
-  signature: 'published_video_export(self: ''Any'', url: ''str'') -> ''ObjectJobSchema | JobResponse'''
+  signature: 'published_video_export(self: ''Any'', url: ''str'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.published.video.export
   alias_of: null
@@ -4903,7 +4904,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_export
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_export
-  signature: 'video_export(self: ''Any'', dashboard_id: ''int'') -> ''ObjectJobSchema | JobResponse'''
+  signature: 'video_export(self: ''Any'', dashboard_id: ''int'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''ObjectJobSchema | JobResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.video.export
   alias_of: null
@@ -4915,7 +4917,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.video_state
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.video_state
-  signature: 'video_state(self: ''Any'', dashboard_id: ''int'') -> ''dict[str, Any]'''
+  signature: 'video_state(self: ''Any'', dashboard_id: ''int'', aspect: "Literal[''landscape'', ''square'',
+    ''portrait'', None] | None" = None) -> ''VideoStateResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.video-state
   alias_of: null
@@ -9646,6 +9649,18 @@ methods:
   alias_of: null
   no_command_reason: SDK-only seam for a route the SDK has no method for, with the client's credentials
     and error handling; the CLI calls typed SDK methods instead.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.resolve_workspace_id
+  implementation_origin: mammoth.client.MammothClient.resolve_workspace_id
+  signature: resolve_workspace_id(self) -> 'int'
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null

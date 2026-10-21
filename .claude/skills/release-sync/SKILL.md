@@ -22,7 +22,6 @@ Report the table to the user in short form: what is behind, and what you will do
 
 Work in this order: later rows depend on earlier ones. **Ask before every step marked ⚠**
 (irreversible or public), unless the user already said to do the releases in this conversation.
-Never touch `mammoth-mcp` (the old package): it is not part of this loop.
 
 | Row | Fix |
 |---|---|
@@ -30,7 +29,7 @@ Never touch `mammoth-mcp` (the old package): it is not part of this loop.
 | ⚠ on PyPI (mammoth-io) | Tag `sdk-vX` on the release commit and push (CI publishes), or the local path in `RELEASING.md`. The SDK goes before the CLI. |
 | ⚠ on PyPI (mammoth-cli) | Same with `cli-vX`, after mammoth-io resolves on PyPI. |
 | ⚠ on PyPI (mammoth-mcp-server) | No CI workflow. Run its tests (`cd mammoth-mcp-server && uv run --with-editable . --with pytest --with pytest-asyncio --with ../ python -m pytest tests -q`), then `SOURCE_DATE_EPOCH=1700000000 uv build --out-dir <scratch>`, `uvx twine check`, `uvx twine upload -r pypi --non-interactive <scratch>/*`. |
-| tag missing | `git tag -a <prefix>X -m "<package> X" <release commit> && git push origin <prefix>X`. Prefixes: `sdk-v`, `cli-v`, `mcp-server-v` (never `mcp-v`: that one publishes the old `mammoth-mcp`). |
+| tag missing | `git tag -a <prefix>X -m "<package> X" <release commit> && git push origin <prefix>X`. Prefixes: `sdk-v`, `cli-v`, `mcp-server-v`. |
 | GitHub release missing | Use the **PyPI files**, not a rebuild: download the wheel and sdist from `https://pypi.org/pypi/<pkg>/<ver>/json`. CLI: add `mammoth-install.sh`/`.ps1` from the tag (`git show cli-vX:mammoth-cli/installers/…`) and `SHA256SUMS`, `gh release create cli-vX --verify-tag --latest`. SDK and MCP server: `--latest=false`, wheel + sdist (+ `SHA256SUMS`). |
 | GitHub Latest release | `gh release edit cli-vX --latest` |
 | installer URL | Add the installers and `SHA256SUMS` to the CLI release. |
