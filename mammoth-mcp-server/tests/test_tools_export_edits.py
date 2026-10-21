@@ -116,7 +116,56 @@ class TestReplacingSettings:
         assert value["TRIGGER_ID"] == EXPORT_ID
         assert value["DATAVIEW_ID"] == VIEW
         assert value["run_immediately"] is False
-        assert (value["trigger_type"], value["sequence"]) == ("pipeline", 2)
+        assert value["trigger_type"] == "pipeline"
+
+    def test_an_export_at_the_end_stays_at_the_end(self) -> None:
+        # A save that names a sequence pins the export there, so a step added
+        # later would run after it. Seen on a dev server.
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP])
+            call_tool(
+                "edit_export",
+                export_id=EXPORT_ID,
+                change="replace",
+                settings={"directory": "/out"},
+                **IDS,
+            )
+
+        value = the_patch(api)["value"]
+        assert value["end_of_pipeline"] is True
+        assert value.get("sequence") is None
+
+    def test_an_export_inside_the_pipeline_keeps_its_place(self) -> None:
+        inside = {**deepcopy(TO_SFTP), "end_of_pipeline": False}
+        with a_fake_api() as api, as_caller():
+            a_view(api, [inside])
+            call_tool(
+                "edit_export",
+                export_id=EXPORT_ID,
+                change="replace",
+                settings={"directory": "/out"},
+                **IDS,
+            )
+
+        value = the_patch(api)["value"]
+        assert (value["end_of_pipeline"], value["sequence"]) == (False, 2)
+
+    def test_a_stored_setting_that_is_null_is_kept(self) -> None:
+        stored = deepcopy(TO_SFTP)
+        stored["target_properties"]["private_key"] = None
+        with a_fake_api() as api, as_caller():
+            a_view(api, [stored])
+            call_tool(
+                "edit_export",
+                export_id=EXPORT_ID,
+                change="replace",
+                settings={"directory": "/out"},
+                **IDS,
+            )
+
+        settings = the_patch(api)["value"]["target_properties"]
+        assert "private_key" in settings
+        assert settings["private_key"] is None
 
     def test_a_setting_given_null_is_dropped(self) -> None:
         with a_fake_api() as api, as_caller():
