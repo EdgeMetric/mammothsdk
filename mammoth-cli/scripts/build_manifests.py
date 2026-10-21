@@ -659,4 +659,8 @@ if __name__ == "__main__":
     result = build()
     import json
 
+    from mammoth_cli.manifest.loader import compile_manifests
+
+    compile_manifests()
+
     print(json.dumps(result, indent=2))
