@@ -1286,6 +1286,29 @@ class TestPipelineAPI:
         )
         assert client._request_json.call_args.kwargs["params"] == {"sample_size": 25}
 
+    @pytest.mark.parametrize("size", [1, 500])
+    async def test_preview_task_accepts_the_ends_of_the_sample_range(
+        self, client: MammothClient, size: int
+    ):
+        await client.pipeline.preview_task(
+            dataview_id=42, task_spec={"MATH": {}}, dataset_id=500, sample_size=size
+        )
+        assert client._request_json.call_args.kwargs["params"] == {"sample_size": size}
+
+    @pytest.mark.parametrize("size", [0, -1, 501, 2.5, "10", True])
+    async def test_preview_task_refuses_a_sample_size_the_server_would_reject(
+        self, client: MammothClient, size: object
+    ):
+        """Prod caps ``sample_size`` at 1..500, so the SDK says so before the call."""
+        with pytest.raises(MammothValidationError, match="from 1 through 500"):
+            await client.pipeline.preview_task(
+                dataview_id=42,
+                task_spec={"MATH": {}},
+                dataset_id=500,
+                sample_size=size,  # type: ignore[arg-type]
+            )
+        client._request_json.assert_not_called()
+
     async def test_preview_task_that_names_no_size_leaves_the_route_its_own(
         self, client: MammothClient
     ):

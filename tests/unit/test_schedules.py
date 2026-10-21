@@ -11,7 +11,7 @@ reading the backend source, not a live call. See docs/release-status.md
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

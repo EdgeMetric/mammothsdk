@@ -8,10 +8,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ._base import MammothModel
 
 
-class SheetInfo(BaseModel):
+class SheetInfo(MammothModel):
     """Information about a sheet in an Excel file."""
 
     sheet_name: str = Field(..., min_length=1, description="Name of the sheet")
@@ -19,7 +21,7 @@ class SheetInfo(BaseModel):
     num_cols: int = Field(..., description="Number of columns in the sheet")
 
 
-class AdditionalInfo(BaseModel):
+class AdditionalInfo(MammothModel):
     """Additional information about a file."""
 
     append_to_ds_id: int | None = Field(None, description="Dataset ID to append to")
@@ -35,7 +37,7 @@ class AdditionalInfo(BaseModel):
     url: str | None = Field(None, description="URL of the file")
 
 
-class StatusInfo(BaseModel):
+class StatusInfo(MammothModel):
     """Status information for a file."""
 
     extracting: str | None = Field(None, description="Extracting status information")
@@ -48,7 +50,7 @@ class StatusInfo(BaseModel):
     is_empty: bool = Field(False, description="Whether the file is empty")
 
 
-class FileSchema(BaseModel):
+class FileSchema(MammothModel):
     """Schema for a file object."""
 
     id: int | None = Field(None, description="Unique identifier for the file")
@@ -62,13 +64,13 @@ class FileSchema(BaseModel):
     additional_info: AdditionalInfo | None = Field(None, description="Additional file information")
 
 
-class FileDetails(BaseModel):
+class FileDetails(MammothModel):
     """Response model for file details."""
 
     file: FileSchema
 
 
-class FilesList(BaseModel):
+class FilesList(MammothModel):
     """Response model for listing files."""
 
     files: list[FileSchema] = Field(..., description="List of files")
@@ -77,7 +79,7 @@ class FilesList(BaseModel):
     next: str = Field(..., description="URL for the next page of results")
 
 
-class ExtractSheetsPatch(BaseModel):
+class ExtractSheetsPatch(MammothModel):
     """Configuration for extracting sheets from Excel files."""
 
     sheets: list[str] = Field(..., description="Names of sheets to extract")
@@ -89,7 +91,7 @@ class ExtractSheetsPatch(BaseModel):
     )
 
 
-class PdfUserInstruction(BaseModel):
+class PdfUserInstruction(MammothModel):
     """A plain-English instruction for how to read a PDF."""
 
     instruction: str = Field(..., description="What to extract, in plain English")
@@ -99,7 +101,7 @@ class PdfUserInstruction(BaseModel):
     )
 
 
-class ExtractPdfTablesPatch(BaseModel):
+class ExtractPdfTablesPatch(MammothModel):
     """Configuration for extracting tables or content from a PDF file.
 
     This is the extraction setting a destination dataset's saved recipe replays for
@@ -136,7 +138,7 @@ class FilePatchPath(str, Enum):
     EXTRACT_PDF_TABLES = "extract_pdf_tables"
 
 
-class FilePatchData(BaseModel):
+class FilePatchData(MammothModel):
     """Data for a single patch operation."""
 
     op: FilePatchOperation = Field(..., description="Operation to perform")
@@ -144,7 +146,7 @@ class FilePatchData(BaseModel):
     value: str | ExtractSheetsPatch | ExtractPdfTablesPatch = Field(..., description="Value to set")
 
 
-class FilePatchRequest(BaseModel):
+class FilePatchRequest(MammothModel):
     """Request model for patching file configuration."""
 
     patch: list[FilePatchData] = Field(..., description="List of patch operations")

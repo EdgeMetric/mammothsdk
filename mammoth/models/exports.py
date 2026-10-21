@@ -8,9 +8,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
 from mammoth.models.jobs import JobResponse
+
+from ._base import MammothModel
 
 
 class HandlerType(str, Enum):
@@ -91,7 +93,7 @@ class ExportStatus(str, Enum):
     SUSPENDING = "suspending"
 
 
-class S3TargetProperties(BaseModel):
+class S3TargetProperties(MammothModel):
     """Configuration properties for S3 export destinations."""
 
     file: str = Field(..., description="Output filename")
@@ -101,7 +103,7 @@ class S3TargetProperties(BaseModel):
     use_format: bool = Field(..., description="Apply formatting")
 
 
-class AddExportSpec(BaseModel):
+class AddExportSpec(MammothModel):
     """Specification for adding export tasks to dataview pipeline."""
 
     DATAVIEW_ID: int = Field(
@@ -156,7 +158,7 @@ class AddExportSpec(BaseModel):
         return self
 
 
-class ItemExportInfo(BaseModel):
+class ItemExportInfo(MammothModel):
     """Information about an individual export in the pipeline."""
 
     id: int | None = Field(None, description="Unique identifier for the export")
@@ -194,7 +196,7 @@ class ItemExportInfo(BaseModel):
     )
 
 
-class PipelineExportsPaginated(BaseModel):
+class PipelineExportsPaginated(MammothModel):
     """Paginated response for pipeline exports."""
 
     limit: int = Field(10, description="Setting limit would limit the items received in the page")
@@ -203,7 +205,7 @@ class PipelineExportsPaginated(BaseModel):
     exports: list[ItemExportInfo] = Field(..., description="List of export items")
 
 
-class PipelineExportsModificationResp(BaseModel):
+class PipelineExportsModificationResp(MammothModel):
     """Response for export modification operations."""
 
     trigger_id: int = Field(..., description="Id of the export")
@@ -228,14 +230,14 @@ class ExportRunTrigger(str, Enum):
     SCHEDULE = "schedule"
 
 
-class ExportRunDestination(BaseModel):
+class ExportRunDestination(MammothModel):
     """Where one export run sent its rows."""
 
     handler_type: str | None = Field(None, description="Export handler, such as S3 or REST_API")
     target: str | None = Field(None, description="Human-readable destination")
 
 
-class ExportRun(BaseModel):
+class ExportRun(MammothModel):
     """One run of a saved pipeline export."""
 
     id: int = Field(..., description="Run ID")
@@ -249,14 +251,14 @@ class ExportRun(BaseModel):
     triggered_by: ExportRunTrigger = Field(..., description="manual, pipeline or schedule")
 
 
-class ExportRuns(BaseModel):
+class ExportRuns(MammothModel):
     """Run history of one saved export, newest first."""
 
     export_id: int = Field(..., description="ID of the export")
     runs: list[ExportRun] = Field(..., description="Recent runs, newest first")
 
 
-class ExportHostPolicy(BaseModel):
+class ExportHostPolicy(MammothModel):
     """Which hosts custom export destinations (REST API, webhook) may send to."""
 
     restricted: bool = Field(

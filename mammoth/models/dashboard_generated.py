@@ -5,17 +5,19 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel
+from pydantic import ConfigDict, Field, RootModel
+
+from ._base import MammothModel
 
 
-class AddPagesParams(BaseModel):
+class AddPagesParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     pages: Annotated[list[dict[str, Any]], Field(min_length=1)]
     base_sequence: int | None = None
     activity: dict[str, Any] | None = None
 
 
-class AddPagesResponse(BaseModel):
+class AddPagesResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     bake_job_id: int
@@ -23,28 +25,28 @@ class AddPagesResponse(BaseModel):
     message: str | None = None
 
 
-class AddPagesSpec(BaseModel):
+class AddPagesSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: AddPagesParams
 
 
-class AdhocQueryParams(BaseModel):
+class AdhocQueryParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     descriptor: dict[str, Any]
 
 
-class AdhocQueryResponse(BaseModel):
+class AdhocQueryResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     job_id: int
     descriptor_id: str
 
 
-class AdhocQuerySpec(BaseModel):
+class AdhocQuerySpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: AdhocQueryParams
 
 
-class AppendFigureParams(BaseModel):
+class AppendFigureParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     dataview_id: int
     figure: dict[str, Any]
@@ -54,7 +56,7 @@ class AppendFigureParams(BaseModel):
     on_duplicate: Literal["add", "refuse", "replace"] | None = None
 
 
-class AppendFigureResponse(BaseModel):
+class AppendFigureResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     bake_job_id: int
@@ -64,23 +66,23 @@ class AppendFigureResponse(BaseModel):
     page_title: str | None = None
 
 
-class AppendFigureSpec(BaseModel):
+class AppendFigureSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: AppendFigureParams
 
 
-class ApplyContextReviewParams(BaseModel):
+class ApplyContextReviewParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     keep: list[str] | None = None
     base_sequence: int | None = None
 
 
-class ApplyContextReviewSpec(BaseModel):
+class ApplyContextReviewSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ApplyContextReviewParams
 
 
-class ApplyTemplateParams(BaseModel):
+class ApplyTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
     target_dataview_id: Annotated[int, Field(ge=1.0)]
@@ -88,12 +90,12 @@ class ApplyTemplateParams(BaseModel):
     overrides: dict[str, Any] | None = None
 
 
-class ApplyTemplateSpec(BaseModel):
+class ApplyTemplateSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ApplyTemplateParams
 
 
-class AskParams(BaseModel):
+class AskParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     question: Annotated[str, Field(min_length=1, max_length=2000)]
     ask_id: Annotated[str | None, Field(max_length=64)] = None
@@ -101,55 +103,88 @@ class AskParams(BaseModel):
     conversation_history: list[dict[str, Any]] | None = None
 
 
-class AskSpec(BaseModel):
+class AskSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: AskParams
 
 
-class AttachmentIntentForm(BaseModel):
+class AttachmentAction(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["purpose", "apply_look", "apply_brief"]
+    purpose: Annotated[str | None, Field(max_length=40)] = None
+    card: AttachmentCard | None = None
+    save_context: bool | None = None
+
+
+class AttachmentCard(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    instruction: Annotated[str | None, Field(max_length=4000)] = None
+    signals: AttachmentSignals | None = None
+    left_out: Annotated[list[LeftOut] | None, Field(max_length=20)] = None
+    colours: Annotated[list[AttachmentColour] | None, Field(max_length=10)] = None
+    must_cover: Annotated[list[BriefAsk] | None, Field(max_length=20)] = None
+    call_out: Annotated[list[BriefAsk] | None, Field(max_length=20)] = None
+    number_checks: Annotated[list[NumberCheck] | None, Field(max_length=20)] = None
+
+
+class AttachmentColour(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    hex: str
+    name: Annotated[str, Field(max_length=40)]
+
+
+class AttachmentIntentForm(MammothModel):
     model_config = ConfigDict(extra="forbid")
     target_dataview_id: int
 
 
-class AttachmentJob(BaseModel):
+class AttachmentJob(MammothModel):
     model_config = ConfigDict(extra="allow")
     future_id: int
 
 
-class AttachmentResponse(BaseModel):
+class AttachmentResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     attachment_id: int
     filename: str
     kind: str
 
 
-class AudienceAnonymous(BaseModel):
+class AttachmentSignals(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    primary: str
+    accents: Annotated[list[str] | None, Field(max_length=4)] = None
+    ground: str | None = None
+    fontName: str | None = None
+
+
+class AudienceAnonymous(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     public_views: int
     password_views: int
 
 
-class AudienceCountries(BaseModel):
+class AudienceCountries(MammothModel):
     model_config = ConfigDict(extra="allow")
     coverage: float
     items: list[AudienceCountry]
 
 
-class AudienceCountry(BaseModel):
+class AudienceCountry(MammothModel):
     model_config = ConfigDict(extra="allow")
     code: str
     views: int
 
 
-class AudienceDailyPoint(BaseModel):
+class AudienceDailyPoint(MammothModel):
     model_config = ConfigDict(extra="allow")
     date: str
     views: int
     people: int
 
 
-class AudienceDevices(BaseModel):
+class AudienceDevices(MammothModel):
     model_config = ConfigDict(extra="allow")
     coverage: float
     desktop: int
@@ -157,28 +192,28 @@ class AudienceDevices(BaseModel):
     tablet: int
 
 
-class AudienceNeverOpened(BaseModel):
+class AudienceNeverOpened(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     name: str
     invited_at: str | None = None
 
 
-class AudiencePage(BaseModel):
+class AudiencePage(MammothModel):
     model_config = ConfigDict(extra="allow")
     page_id: str
     views: int
     avg_seconds: int | None = None
 
 
-class AudiencePrevTotals(BaseModel):
+class AudiencePrevTotals(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     people: int
     avg_seconds: int | None = None
 
 
-class AudienceResponse(BaseModel):
+class AudienceResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     range_days: int
     as_of: str
@@ -201,28 +236,31 @@ class AudienceResponse(BaseModel):
     last_viewed_at: str | None = None
 
 
-class AudienceSummaryItem(BaseModel):
+class AudienceSummaryItem(MammothModel):
     model_config = ConfigDict(extra="allow")
     views_7d: int
     people_7d: int
     views_30d: int
+    embed_renders_7d: int | None = None
+    embed_renders_30d: int | None = None
     last_viewed_at: str | None = None
+    published_since: str | None = None
     daily_14: list[int]
 
 
-class AudienceSummaryResponse(BaseModel):
+class AudienceSummaryResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     items: dict[str, Any]
 
 
-class AudienceTile(BaseModel):
+class AudienceTile(MammothModel):
     model_config = ConfigDict(extra="allow")
     page_id: str
     tile_id: str
     views: int
 
 
-class AudienceTotals(BaseModel):
+class AudienceTotals(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     people: int
@@ -232,7 +270,7 @@ class AudienceTotals(BaseModel):
     prev: AudiencePrevTotals
 
 
-class AudienceViewer(BaseModel):
+class AudienceViewer(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     name: str
@@ -241,13 +279,13 @@ class AudienceViewer(BaseModel):
     seconds: int
 
 
-class AudienceViewport(BaseModel):
+class AudienceViewport(MammothModel):
     model_config = ConfigDict(extra="allow")
     coverage: float
     buckets: dict[str, Any]
 
 
-class BoardPreviewOut(BaseModel):
+class BoardPreviewOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboard_id: int
     title: str
@@ -257,24 +295,32 @@ class BoardPreviewOut(BaseModel):
     choices: list[FigureOut]
 
 
-class BoardStatusModel(BaseModel):
+class BoardStatusModel(MammothModel):
     model_config = ConfigDict(extra="allow")
     state: Literal["active", "archived", "trashed"]
     by_name: str | None = None
 
 
-class BulkWidgetDataParams(BaseModel):
+class BriefAsk(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    ask: str
+    lands_as: str
+    carried: bool
+    reason: str | None = None
+
+
+class BulkWidgetDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     widgets: Annotated[list[WidgetDataParams], Field(min_length=1, max_length=100)]
     rls_preview_value: str | None = None
 
 
-class BulkWidgetDataSpec(BaseModel):
+class BulkWidgetDataSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: BulkWidgetDataParams
 
 
-class CanvasMeta(BaseModel):
+class CanvasMeta(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     signature_token: str | None = None
@@ -299,29 +345,43 @@ class CanvasMeta(BaseModel):
     rls_scoped: bool | None = None
 
 
-class CanvasResponse(BaseModel):
+class CanvasResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     canvas: dict[str, Any]
     plan: dict[str, Any] | None = None
     specs: dict[str, Any] | None = None
     meta: CanvasMeta
     dashboard_id: int | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
 
 
-class ChangeAudienceParams(BaseModel):
+class ChangeAudienceParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     audience: Literal["workspace", "public", "sites"]
     allowed_origins: list[str] | None = None
 
 
-class ChangeAudienceSpec(BaseModel):
+class ChangeAudienceSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ChangeAudienceParams
 
 
-class ChatEditParams(BaseModel):
+class ChatAttachmentResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    ref: str
+    name: str
+    kind: Literal["image", "document", "text"]
+    media_type: str
+    byte_size: int
+    pages: int | None = None
+    pages_read: int | None = None
+    words: int | None = None
+    truncated: bool | None = None
+
+
+class ChatEditParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
-    prompt: Annotated[str, Field(min_length=1)]
+    prompt: str | None = None
     scope: dict[str, Any] | None = None
     selected_fig: int | None = None
     active_page_id: str | None = None
@@ -329,14 +389,16 @@ class ChatEditParams(BaseModel):
     conversation_history: list[dict[str, Any]] | None = None
     client_turn_id: str | None = None
     change: list[dict[str, Any]] | dict[str, Any] | None = None
+    attachments: Annotated[list[str] | None, Field(max_length=5)] = None
+    attachment_action: AttachmentAction | None = None
 
 
-class ChatEditSpec(BaseModel):
+class ChatEditSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ChatEditParams
 
 
-class ChatRevision(BaseModel):
+class ChatRevision(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     updated_at: str | None = None
@@ -344,7 +406,7 @@ class ChatRevision(BaseModel):
     updated_by_name: str | None = None
 
 
-class ColumnRoster(BaseModel):
+class ColumnRoster(MammothModel):
     model_config = ConfigDict(extra="allow")
     row_count: int | None = None
     columns: list[RosterColumn] | None = None
@@ -352,17 +414,17 @@ class ColumnRoster(BaseModel):
     on_board_count: int | None = None
 
 
-class CommentParams(BaseModel):
+class CommentParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     body: Annotated[str, Field(min_length=1, max_length=2000)]
 
 
-class CommentSpec(BaseModel):
+class CommentSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: CommentParams
 
 
-class ContextExtractParams(BaseModel):
+class ContextExtractParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     name: str
     size: int | None = None
@@ -371,7 +433,7 @@ class ContextExtractParams(BaseModel):
     content: str | None = None
 
 
-class ContextExtractResponse(BaseModel):
+class ContextExtractResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     file: dict[str, Any] | None = None
     rejected: dict[str, Any] | None = None
@@ -382,17 +444,17 @@ class ContextExtractResponse(BaseModel):
     skipped: dict[str, Any] | None = None
 
 
-class ContextExtractSpec(BaseModel):
+class ContextExtractSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ContextExtractParams
 
 
-class ContextListResponse(BaseModel):
+class ContextListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     contexts: list[dict[str, Any]] | None = None
 
 
-class ContextParams(BaseModel):
+class ContextParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     name: str | None = None
     type: str | None = None
@@ -404,35 +466,35 @@ class ContextParams(BaseModel):
     guardrails: str | None = None
 
 
-class ContextResponse(BaseModel):
+class ContextResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     context: dict[str, Any]
 
 
-class ContextSpec(BaseModel):
+class ContextSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ContextParams | None = None
 
 
-class CreateBlankParams(BaseModel):
+class CreateBlankParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     dataview_id: int
     style: str | None = None
     title: str | None = None
 
 
-class CreateBlankResponse(BaseModel):
+class CreateBlankResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     sequence: int
 
 
-class CreateBlankSpec(BaseModel):
+class CreateBlankSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: CreateBlankParams
 
 
-class CreateLiveChartParams(BaseModel):
+class CreateLiveChartParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     view_id: Annotated[int, Field(ge=1.0)]
     figure: dict[str, Any]
@@ -442,28 +504,28 @@ class CreateLiveChartParams(BaseModel):
     origin: LiveChartOrigin | None = None
 
 
-class CreateLiveChartResponse(BaseModel):
+class CreateLiveChartResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboard_id: int
     job_id: int | None = None
 
 
-class CreateLiveChartSpec(BaseModel):
+class CreateLiveChartSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: CreateLiveChartParams
 
 
-class CreateSessionParams(BaseModel):
+class CreateSessionParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     title: Annotated[str | None, Field(max_length=200)] = None
 
 
-class CreateSessionSpec(BaseModel):
+class CreateSessionSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: CreateSessionParams | None = None
 
 
-class CreatorDashboardHtmlType(BaseModel):
+class CreatorDashboardHtmlType(MammothModel):
     model_config = ConfigDict(extra="allow")
     html: str
     sources: list[int]
@@ -485,7 +547,7 @@ class CreatorDashboardHtmlType(BaseModel):
     workspace_id: int | None = None
 
 
-class CustomStyleParams(BaseModel):
+class CustomStyleParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     signals: dict[str, Any] | None = None
     tokens: dict[str, Any] | None = None
@@ -494,7 +556,7 @@ class CustomStyleParams(BaseModel):
     source: dict[str, Any] | None = None
 
 
-class CustomStyleSpec(BaseModel):
+class CustomStyleSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: CustomStyleParams | None = None
 
@@ -514,10 +576,10 @@ class DashboardAction(
         ]
     ]
 ):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
-class DashboardActionParams(BaseModel):
+class DashboardActionParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     enabled: bool | None = None
     view_id: int | None = None
@@ -526,13 +588,13 @@ class DashboardActionParams(BaseModel):
     filter_column: str | None = None
 
 
-class DashboardActionSpec(BaseModel):
+class DashboardActionSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     action: DashboardAction
     params: DashboardActionParams | None = None
 
 
-class DashboardAnalyticsResponse(BaseModel):
+class DashboardAnalyticsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     total_views: int
     average_time_spent_seconds: float | None = None
@@ -540,43 +602,43 @@ class DashboardAnalyticsResponse(BaseModel):
     current_concurrent_viewers: int
 
 
-class DashboardArchiveParams(BaseModel):
+class DashboardArchiveParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     archived: bool
 
 
-class DashboardAuth(BaseModel):
+class DashboardAuth(MammothModel):
     model_config = ConfigDict(extra="forbid")
     type_of_auth: Literal["mammoth", "public", "password"]
     options: dict[str, Any] | None = None
     sequence: int | None = None
 
 
-class DashboardAuthResponse(BaseModel):
+class DashboardAuthResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     type_of_auth: Literal["mammoth", "public", "password"]
     options: dict[str, Any] | None = None
     sequence: int | None = None
 
 
-class DashboardEditParams(BaseModel):
+class DashboardEditParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     op: mmai_dashboard_schema_OpValues
     path: mmai_dashboard_schema_PathValues
     value: str | dict[str, Any]
 
 
-class DashboardEditSpec(BaseModel):
+class DashboardEditSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     patch: list[DashboardEditParams]
 
 
-class DashboardListSchema(BaseModel):
+class DashboardListSchema(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboards: list[DashboardModelType]
 
 
-class DashboardModelType(BaseModel):
+class DashboardModelType(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     updated_at: str
@@ -606,26 +668,30 @@ class DashboardModelType(BaseModel):
     page_count: int | None = None
     shared_by_name: str | None = None
     collection_ids: list[int] | None = None
+    personal: bool | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
+    source_files: list[UnavailableFileType] | None = None
+    shared_with_count: int | None = None
 
 
-class DashboardPlaceResponse(BaseModel):
+class DashboardPlaceResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboard_id: int
     title: str
     figure_id: str
 
 
-class DashboardShareParams(BaseModel):
+class DashboardShareParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     auth: DashboardAuth
 
 
-class DashboardShareSpec(BaseModel):
+class DashboardShareSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: DashboardShareParams
 
 
-class DashboardSource(BaseModel):
+class DashboardSource(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     name: str
@@ -635,82 +701,82 @@ class DashboardSource(BaseModel):
     workspace_name: str
 
 
-class DashboardSourcesType(BaseModel):
+class DashboardSourcesType(MammothModel):
     model_config = ConfigDict(extra="allow")
     sources: list[DashboardSource]
 
 
 class DashboardStatus(RootModel[Literal["draft", "published", "archived", "deleted", "error"]]):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
-class DashboardTagsParams(BaseModel):
+class DashboardTagsParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     tags: list[str] | None = None
 
 
-class DashboardViewConfigType(BaseModel):
+class DashboardViewConfigType(MammothModel):
     model_config = ConfigDict(extra="allow")
     auto_sync: bool
     is_sync_pending: bool
     last_synced_at: str | None = None
 
 
-class DefaultStyleParams(BaseModel):
+class DefaultStyleParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     styleId: Annotated[str, Field(min_length=1)]
 
 
-class DefaultStyleResponse(BaseModel):
+class DefaultStyleResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     style_id: str
 
 
-class DefaultStyleSpec(BaseModel):
+class DefaultStyleSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: DefaultStyleParams
 
 
-class DeriveStyleParams(BaseModel):
+class DeriveStyleParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     signals: dict[str, Any] | None = None
 
 
-class DeriveStyleResponse(BaseModel):
+class DeriveStyleResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     style_tokens: dict[str, Any]
 
 
-class DeriveStyleSpec(BaseModel):
+class DeriveStyleSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: DeriveStyleParams | None = None
 
 
-class DescriptorDataParams(BaseModel):
+class DescriptorDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     descriptor_ids: Annotated[list[str], Field(min_length=1, max_length=200)]
     filter_state: dict[str, Any] | None = None
     rls_preview_value: str | None = None
 
 
-class DescriptorDataSpec(BaseModel):
+class DescriptorDataSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: DescriptorDataParams
 
 
-class DigestPrefResponse(BaseModel):
+class DigestPrefResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     enabled: bool
     explicit: bool | None = None
     default_on: bool | None = None
 
 
-class DigestPrefSpec(BaseModel):
+class DigestPrefSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     enabled: bool | None = None
 
 
-class DraftHeadResponse(BaseModel):
+class DraftHeadResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     head_sequence: int
     base_sequence: int | None = None
@@ -718,7 +784,7 @@ class DraftHeadResponse(BaseModel):
     moves: list[DraftMove] | None = None
 
 
-class DraftMove(BaseModel):
+class DraftMove(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     user_id: int | None = None
@@ -728,13 +794,13 @@ class DraftMove(BaseModel):
     label: str | None = None
 
 
-class DuplicateDashboardResponse(BaseModel):
+class DuplicateDashboardResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     swap_job_id: int | None = None
 
 
-class EmailUpdateOut(BaseModel):
+class EmailUpdateOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     enabled: bool
@@ -753,7 +819,7 @@ class EmailUpdateOut(BaseModel):
     left_out: dict[str, Any] | None = None
 
 
-class EmailUpdateSettingsBody(BaseModel):
+class EmailUpdateSettingsBody(MammothModel):
     model_config = ConfigDict(extra="forbid")
     enabled: bool
     trigger: Trigger | None = None
@@ -765,23 +831,23 @@ class EmailUpdateSettingsBody(BaseModel):
     numbers: dict[str, Any] | None = None
 
 
-class EmailUpdateSubscriptionBody(BaseModel):
+class EmailUpdateSubscriptionBody(MammothModel):
     model_config = ConfigDict(extra="forbid")
     subscribed: bool
 
 
-class EmailUpdateSubscriptionOut(BaseModel):
+class EmailUpdateSubscriptionOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     available: bool
     subscribed: bool
 
 
-class EmailUpdateSummaryList(BaseModel):
+class EmailUpdateSummaryList(MammothModel):
     model_config = ConfigDict(extra="allow")
     updates: list[EmailUpdateSummaryOut]
 
 
-class EmailUpdateSummaryOut(BaseModel):
+class EmailUpdateSummaryOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     collection_id: int | None = None
     dashboard_id: int | None = None
@@ -796,12 +862,12 @@ class EmailUpdateSummaryOut(BaseModel):
     unsubscribed: list[str] | None = None
 
 
-class EmailUpdateTestOut(BaseModel):
+class EmailUpdateTestOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     sent: int
 
 
-class EmailUpdatesOut(BaseModel):
+class EmailUpdatesOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     update: EmailUpdateOut | None = None
     people: int
@@ -810,14 +876,14 @@ class EmailUpdatesOut(BaseModel):
     covered_by: list[str] | None = None
 
 
-class EmbedPlaceResponse(BaseModel):
+class EmbedPlaceResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     origin: str
     renders_30d: int
     last_seen_at: str | None = None
 
 
-class EngagementActionDay(BaseModel):
+class EngagementActionDay(MammothModel):
     model_config = ConfigDict(extra="allow")
     pdf: int
     link_copy: int
@@ -827,7 +893,7 @@ class EngagementActionDay(BaseModel):
     date: str
 
 
-class EngagementActions(BaseModel):
+class EngagementActions(MammothModel):
     model_config = ConfigDict(extra="allow")
     pdf: int
     link_copy: int
@@ -837,13 +903,13 @@ class EngagementActions(BaseModel):
     daily: list[EngagementActionDay]
 
 
-class EngagementAnonymous(BaseModel):
+class EngagementAnonymous(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     seconds: int
 
 
-class EngagementDailyPoint(BaseModel):
+class EngagementDailyPoint(MammothModel):
     model_config = ConfigDict(extra="allow")
     date: str
     views: int
@@ -852,7 +918,7 @@ class EngagementDailyPoint(BaseModel):
     prev_people: int
 
 
-class EngagementDevices(BaseModel):
+class EngagementDevices(MammothModel):
     model_config = ConfigDict(extra="allow")
     desktop: int
     mobile: int
@@ -860,7 +926,7 @@ class EngagementDevices(BaseModel):
     coverage: float
 
 
-class EngagementEvent(BaseModel):
+class EngagementEvent(MammothModel):
     model_config = ConfigDict(extra="allow")
     at: str
     kind: Literal["published", "edited", "refreshed", "shared"]
@@ -868,7 +934,7 @@ class EngagementEvent(BaseModel):
     label: str
 
 
-class EngagementPage(BaseModel):
+class EngagementPage(MammothModel):
     model_config = ConfigDict(extra="allow")
     page_id: str
     name: str
@@ -878,7 +944,7 @@ class EngagementPage(BaseModel):
     tiles: list[EngagementTile]
 
 
-class EngagementPerson(BaseModel):
+class EngagementPerson(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     name: str
@@ -894,14 +960,14 @@ class EngagementPerson(BaseModel):
     can_remind: bool
 
 
-class EngagementPersonResponse(BaseModel):
+class EngagementPersonResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     name: str
     visits: list[EngagementVisit]
 
 
-class EngagementPrevTotals(BaseModel):
+class EngagementPrevTotals(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     people: int
@@ -909,7 +975,7 @@ class EngagementPrevTotals(BaseModel):
     questions: int
 
 
-class EngagementReach(BaseModel):
+class EngagementReach(MammothModel):
     model_config = ConfigDict(extra="allow")
     shared: int
     opened: int
@@ -918,7 +984,7 @@ class EngagementReach(BaseModel):
     prev: EngagementReachCounts
 
 
-class EngagementReachCounts(BaseModel):
+class EngagementReachCounts(MammothModel):
     model_config = ConfigDict(extra="allow")
     shared: int
     opened: int
@@ -926,25 +992,25 @@ class EngagementReachCounts(BaseModel):
     engaged: int
 
 
-class EngagementRemindResponse(BaseModel):
+class EngagementRemindResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     sent: list[int]
     skipped: list[EngagementRemindSkip]
 
 
-class EngagementRemindSkip(BaseModel):
+class EngagementRemindSkip(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     reason: Literal["not_shared", "opened", "no_email", "recently_reminded", "send_failed"]
     next_at: str | None = None
 
 
-class EngagementRemindSpec(BaseModel):
+class EngagementRemindSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     user_ids: Annotated[list[int], Field(min_length=1, max_length=200)]
 
 
-class EngagementResponse(BaseModel):
+class EngagementResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     range_days: int
     as_of: str
@@ -965,27 +1031,27 @@ class EngagementResponse(BaseModel):
     events: list[EngagementEvent]
 
 
-class EngagementRule(BaseModel):
+class EngagementRule(MammothModel):
     model_config = ConfigDict(extra="allow")
     seconds: int
     pages: int
 
 
-class EngagementSurface(BaseModel):
+class EngagementSurface(MammothModel):
     model_config = ConfigDict(extra="allow")
     app: int
     link: int
     embed: int
 
 
-class EngagementTile(BaseModel):
+class EngagementTile(MammothModel):
     model_config = ConfigDict(extra="allow")
     tile_id: str
     title: str | None = None
     seen_pct: float
 
 
-class EngagementTotals(BaseModel):
+class EngagementTotals(MammothModel):
     model_config = ConfigDict(extra="allow")
     views: int
     people: int
@@ -996,7 +1062,7 @@ class EngagementTotals(BaseModel):
     prev: EngagementPrevTotals
 
 
-class EngagementVisit(BaseModel):
+class EngagementVisit(MammothModel):
     model_config = ConfigDict(extra="allow")
     started_at: str | None = None
     seconds: int | None = None
@@ -1005,14 +1071,14 @@ class EngagementVisit(BaseModel):
     surface: Literal["app", "link", "embed"]
 
 
-class EngagementVisitPage(BaseModel):
+class EngagementVisitPage(MammothModel):
     model_config = ConfigDict(extra="allow")
     page_id: str
     name: str
     seconds: int
 
 
-class ExemplarExtractParams(BaseModel):
+class ExemplarExtractParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     name: str
     size: int | None = None
@@ -1023,7 +1089,7 @@ class ExemplarExtractParams(BaseModel):
     table_item_id: int | None = None
 
 
-class ExemplarExtractResponse(BaseModel):
+class ExemplarExtractResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     spec: dict[str, Any] | None = None
     rejected: dict[str, Any] | None = None
@@ -1035,39 +1101,39 @@ class ExemplarExtractResponse(BaseModel):
     scopes: list[dict[str, Any]] | None = None
 
 
-class ExemplarExtractSpec(BaseModel):
+class ExemplarExtractSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ExemplarExtractParams
 
 
-class ExtractBrandParams(BaseModel):
+class ExtractBrandParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     url: Annotated[str, Field(min_length=1)]
 
 
-class ExtractBrandSpec(BaseModel):
+class ExtractBrandSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ExtractBrandParams
 
 
-class FeedbackParams(BaseModel):
+class FeedbackParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     rating: Literal["up", "down", None] | None = None
 
 
-class FeedbackSpec(BaseModel):
+class FeedbackSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: FeedbackParams | None = None
 
 
-class FigureIntentParams(BaseModel):
+class FigureIntentParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     intent: str | None = None
     kind: str | None = None
     fields: dict[str, Any] | None = None
 
 
-class FigureIntentResponse(BaseModel):
+class FigureIntentResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     kind: str
     added: dict[str, Any] | None = None
@@ -1079,25 +1145,25 @@ class FigureIntentResponse(BaseModel):
     intent_applied: bool
 
 
-class FigureIntentSpec(BaseModel):
+class FigureIntentSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: FigureIntentParams | None = None
 
 
-class FigureOut(BaseModel):
+class FigureOut(MammothModel):
     model_config = ConfigDict(extra="allow")
     key: str
     label: str
     value: str | None = None
 
 
-class FigurePageTarget(BaseModel):
+class FigurePageTarget(MammothModel):
     model_config = ConfigDict(extra="forbid")
     id: str | None = None
     new_title: Annotated[str | None, Field(max_length=80)] = None
 
 
-class FormatFloorApplied(BaseModel):
+class FormatFloorApplied(MammothModel):
     model_config = ConfigDict(extra="allow")
     filters_added: int | None = None
     pages_added: list[str] | None = None
@@ -1105,14 +1171,14 @@ class FormatFloorApplied(BaseModel):
     charts_composed: int | None = None
 
 
-class FormatPreviewNotShown(BaseModel):
+class FormatPreviewNotShown(MammothModel):
     model_config = ConfigDict(extra="allow")
     what: str
     count: int
     reason: str
 
 
-class FormatPreviewResponse(BaseModel):
+class FormatPreviewResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     style: str
     charts_carried: int | None = None
@@ -1127,10 +1193,10 @@ class FormatPreviewResponse(BaseModel):
 
 
 class Frequency(RootModel[Literal["daily", "weekdays", "weekly", "monthly"]]):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
-class GenerateDashboardV3Params(BaseModel):
+class GenerateDashboardV3Params(MammothModel):
     model_config = ConfigDict(extra="forbid")
     intent: str | None = None
     dataview_id: Annotated[int, Field(ge=1.0)]
@@ -1142,23 +1208,23 @@ class GenerateDashboardV3Params(BaseModel):
     design_from: Annotated[int | None, Field(ge=1)] = None
 
 
-class GenerateDashboardV3Spec(BaseModel):
+class GenerateDashboardV3Spec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: GenerateDashboardV3Params
 
 
-class ImportWorkbookForm(BaseModel):
+class ImportWorkbookForm(MammothModel):
     model_config = ConfigDict(extra="forbid")
     file: str
     project_id: int | None = None
 
 
-class JobResponse(BaseModel):
+class JobResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     job: JobSchema
 
 
-class JobSchema(BaseModel):
+class JobSchema(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: Annotated[int, Field(ge=0.0)]
     status: Literal["success", "failure", "processing", "error"]
@@ -1169,25 +1235,31 @@ class JobSchema(BaseModel):
     operation: str
 
 
-class LiveChartBroken(BaseModel):
+class LeftOut(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    item: str
+    reason: str
+
+
+class LiveChartBroken(MammothModel):
     model_config = ConfigDict(extra="allow")
     reasons: list[str]
     since: str
 
 
-class LiveChartListResponse(BaseModel):
+class LiveChartListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     items: list[LiveChartRef]
 
 
-class LiveChartOrigin(BaseModel):
+class LiveChartOrigin(MammothModel):
     model_config = ConfigDict(extra="forbid")
     session_id: Annotated[str, Field(min_length=1, max_length=64)]
     message_id: Annotated[str, Field(min_length=1, max_length=64)]
     chart_index: Annotated[int, Field(ge=0.0, le=99.0)]
 
 
-class LiveChartRef(BaseModel):
+class LiveChartRef(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboard_id: int
     message_id: str
@@ -1197,7 +1269,7 @@ class LiveChartRef(BaseModel):
     view_name: str | None = None
 
 
-class LiveChartResponse(BaseModel):
+class LiveChartResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     dashboard_id: int
     title: str
@@ -1217,37 +1289,44 @@ class LiveChartResponse(BaseModel):
     oembed: bool
 
 
-class LiveChartUsageResponse(BaseModel):
+class LiveChartUsageResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     embeds: list[EmbedPlaceResponse]
     dashboards: list[DashboardPlaceResponse]
     link_views_30d: int
 
 
-class ObjectJobSchema(BaseModel):
+class NumberCheck(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    brief_says: str
+    about: str
+    data_shows: str | None = None
+
+
+class ObjectJobSchema(MammothModel):
     model_config = ConfigDict(extra="allow")
     status_code: int | None = None
     job_id: int | None = None
     failure_reason: str | None = None
 
 
-class OkResponse(BaseModel):
+class OkResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     ok: bool
 
 
-class OwnDataAcceptParams(BaseModel):
+class OwnDataAcceptParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     choice: Literal["proposal", "partial", "reshape"] | None = None
     exclude: Annotated[list[str] | None, Field(max_length=20)] = None
 
 
-class OwnDataAcceptSpec(BaseModel):
+class OwnDataAcceptSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: OwnDataAcceptParams
 
 
-class OwnDataStartParams(BaseModel):
+class OwnDataStartParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     ingest_job_id: Annotated[int | None, Field(ge=1)] = None
     dataset_id: Annotated[int | None, Field(ge=1)] = None
@@ -1255,12 +1334,12 @@ class OwnDataStartParams(BaseModel):
     file_name: Annotated[str | None, Field(max_length=255)] = None
 
 
-class OwnDataStartSpec(BaseModel):
+class OwnDataStartSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: OwnDataStartParams
 
 
-class PdfExportParams(BaseModel):
+class PdfExportParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     data: dict[str, Any] | None = None
     paper: str | None = None
@@ -1268,17 +1347,17 @@ class PdfExportParams(BaseModel):
     compare: dict[str, Any] | None = None
 
 
-class PdfExportSpec(BaseModel):
+class PdfExportSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: PdfExportParams
 
 
-class PendingTemplateResponse(BaseModel):
+class PendingTemplateResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     slug: str | None = None
 
 
-class PlanPageParams(BaseModel):
+class PlanPageParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     intent: str | None = None
     archetype: str | None = None
@@ -1287,7 +1366,7 @@ class PlanPageParams(BaseModel):
     page_id: str | None = None
 
 
-class PlanPageResponse(BaseModel):
+class PlanPageResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     page: dict[str, Any]
     composed: bool
@@ -1295,12 +1374,12 @@ class PlanPageResponse(BaseModel):
     preview: list[dict[str, Any]] | None = None
 
 
-class PlanPageSpec(BaseModel):
+class PlanPageSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: PlanPageParams | None = None
 
 
-class PowerBiPreflightResponse(BaseModel):
+class PowerBiPreflightResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     exportable: bool
     blocked_reason: str | None = None
@@ -1313,13 +1392,13 @@ class PowerBiPreflightResponse(BaseModel):
     column_count: int | None = None
 
 
-class PowerBiRefusal(BaseModel):
+class PowerBiRefusal(MammothModel):
     model_config = ConfigDict(extra="allow")
     title: str
     reason: str
 
 
-class PresenceParams(BaseModel):
+class PresenceParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     client_id: Annotated[str, Field(min_length=1, max_length=64)]
     page_id: Annotated[str | None, Field(max_length=128)] = None
@@ -1330,19 +1409,19 @@ class PresenceParams(BaseModel):
     leave: bool | None = None
 
 
-class PresenceResponse(BaseModel):
+class PresenceResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     others: list[PresentEditor] | None = None
     status: BoardStatusModel
     head: DraftHeadResponse | None = None
 
 
-class PresenceSpec(BaseModel):
+class PresenceSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: PresenceParams
 
 
-class PresentEditor(BaseModel):
+class PresentEditor(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     user_name: str | None = None
@@ -1352,7 +1431,7 @@ class PresentEditor(BaseModel):
     idle: bool | None = None
 
 
-class PreviewTemplateParams(BaseModel):
+class PreviewTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
     target_dataview_id: Annotated[int, Field(ge=1.0)]
@@ -1361,7 +1440,7 @@ class PreviewTemplateParams(BaseModel):
     overrides: dict[str, Any] | None = None
 
 
-class PreviewTemplateResponse(BaseModel):
+class PreviewTemplateResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     canvas: dict[str, Any]
     plan: dict[str, Any] | None = None
@@ -1374,12 +1453,12 @@ class PreviewTemplateResponse(BaseModel):
     coverage: dict[str, Any] | None = None
 
 
-class PreviewTemplateSpec(BaseModel):
+class PreviewTemplateSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: PreviewTemplateParams
 
 
-class PublicTemplateListResponse(BaseModel):
+class PublicTemplateListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     templates: list[dict[str, Any]] | None = None
     total: int | None = None
@@ -1389,24 +1468,24 @@ class PublicTemplateListResponse(BaseModel):
     formats: list[dict[str, Any]] | None = None
 
 
-class PublicTemplateResponse(BaseModel):
+class PublicTemplateResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     template: dict[str, Any]
 
 
-class QaInsightsFeedback(BaseModel):
+class QaInsightsFeedback(MammothModel):
     model_config = ConfigDict(extra="allow")
     up: int
     down: int
 
 
-class QaInsightsFields(BaseModel):
+class QaInsightsFields(MammothModel):
     model_config = ConfigDict(extra="allow")
     measure: str | None = None
     dimension: str | None = None
 
 
-class QaInsightsGroup(BaseModel):
+class QaInsightsGroup(MammothModel):
     model_config = ConfigDict(extra="allow")
     text: str
     count: int
@@ -1417,7 +1496,7 @@ class QaInsightsGroup(BaseModel):
     fields: QaInsightsFields | None = None
 
 
-class QaInsightsResponse(BaseModel):
+class QaInsightsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     range_days: int
     questions_total: int
@@ -1425,85 +1504,85 @@ class QaInsightsResponse(BaseModel):
     groups: list[QaInsightsGroup]
 
 
-class QaSettingsParams(BaseModel):
+class QaSettingsParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     allow_viewer_qa: bool
 
 
-class QaSettingsResponse(BaseModel):
+class QaSettingsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     allow_viewer_qa: bool
     can_manage: bool | None = None
     public_link: bool | None = None
 
 
-class QaSettingsSpec(BaseModel):
+class QaSettingsSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: QaSettingsParams
 
 
-class RecordPlacementParams(BaseModel):
+class RecordPlacementParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     dashboard_id: Annotated[int, Field(ge=1.0)]
     figure_id: Annotated[str, Field(min_length=1, max_length=64)]
 
 
-class RecordPlacementSpec(BaseModel):
+class RecordPlacementSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: RecordPlacementParams
 
 
-class RenameSessionParams(BaseModel):
+class RenameSessionParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     title: Annotated[str, Field(min_length=1, max_length=200)]
 
 
-class RenameSessionSpec(BaseModel):
+class RenameSessionSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: RenameSessionParams
 
 
-class RenameTemplateParams(BaseModel):
+class RenameTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     title: Annotated[str, Field(min_length=1, max_length=80)]
     description: Annotated[str | None, Field(max_length=240)] = None
 
 
-class RenameTemplateSpec(BaseModel):
+class RenameTemplateSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: RenameTemplateParams
 
 
-class RenderFigureSvgResponse(BaseModel):
+class RenderFigureSvgResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     svg: str
 
 
-class RenderFigureSvgSpec(BaseModel):
+class RenderFigureSvgSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     spec: dict[str, Any]
     style_id: str | None = None
 
 
-class ResolveTemplateMappingParams(BaseModel):
+class ResolveTemplateMappingParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
     target_dataview_id: Annotated[int, Field(ge=1.0)]
 
 
-class ResolveTemplateMappingResponse(BaseModel):
+class ResolveTemplateMappingResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     mapping: dict[str, Any]
     fidelity: dict[str, Any]
     target_fields: dict[str, Any] | None = None
 
 
-class ResolveTemplateMappingSpec(BaseModel):
+class ResolveTemplateMappingSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ResolveTemplateMappingParams
 
 
-class RestoreCanvasParams(BaseModel):
+class RestoreCanvasParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     target_sequence: Annotated[int, Field(ge=1.0)]
     base_sequence: int | None = None
@@ -1511,31 +1590,31 @@ class RestoreCanvasParams(BaseModel):
     activity: dict[str, Any] | None = None
 
 
-class RestoreCanvasSpec(BaseModel):
+class RestoreCanvasSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: RestoreCanvasParams
 
 
-class ReviewContextParams(BaseModel):
+class ReviewContextParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     scope: str | None = None
     note: Annotated[str | None, Field(max_length=1000)] = None
     fresh: bool | None = None
 
 
-class ReviewContextSpec(BaseModel):
+class ReviewContextSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ReviewContextParams | None = None
 
 
-class RlsAssignmentEntry(BaseModel):
+class RlsAssignmentEntry(MammothModel):
     model_config = ConfigDict(extra="forbid")
     email: str
     all_access: bool | None = None
     values: list[str] | None = None
 
 
-class RlsAssignmentView(BaseModel):
+class RlsAssignmentView(MammothModel):
     model_config = ConfigDict(extra="allow")
     email: str
     all_access: bool
@@ -1543,36 +1622,36 @@ class RlsAssignmentView(BaseModel):
     value_missing: bool
 
 
-class RlsAssignmentsParams(BaseModel):
+class RlsAssignmentsParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     assignments: list[RlsAssignmentEntry] | None = None
 
 
-class RlsAssignmentsResponse(BaseModel):
+class RlsAssignmentsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     enabled: bool
     filter_column: str | None = None
     assignments: list[RlsAssignmentView]
 
 
-class RlsAssignmentsSpec(BaseModel):
+class RlsAssignmentsSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: RlsAssignmentsParams
 
 
-class RlsColumnsResponse(BaseModel):
+class RlsColumnsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     columns: list[str]
 
 
-class RlsDistinctValuesResponse(BaseModel):
+class RlsDistinctValuesResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     column: str
     total: int
     values: list[Any]
 
 
-class RosterColumn(BaseModel):
+class RosterColumn(MammothModel):
     model_config = ConfigDict(extra="allow")
     name: str
     label: str
@@ -1600,26 +1679,26 @@ class RosterColumn(BaseModel):
     on_board: bool | None = None
 
 
-class RosterCorrelation(BaseModel):
+class RosterCorrelation(MammothModel):
     model_config = ConfigDict(extra="allow")
     a: str
     b: str
     r: float
 
 
-class RosterGeoDim(BaseModel):
+class RosterGeoDim(MammothModel):
     model_config = ConfigDict(extra="allow")
     field: str
     scope: str
 
 
-class RosterHierarchy(BaseModel):
+class RosterHierarchy(MammothModel):
     model_config = ConfigDict(extra="allow")
     outer: str
     inner: str
 
 
-class RosterSignals(BaseModel):
+class RosterSignals(MammothModel):
     model_config = ConfigDict(extra="allow")
     correlations: list[RosterCorrelation] | None = None
     hierarchy: RosterHierarchy | None = None
@@ -1627,7 +1706,7 @@ class RosterSignals(BaseModel):
     geo_dims: list[RosterGeoDim] | None = None
 
 
-class SaveCanvasParams(BaseModel):
+class SaveCanvasParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     canvas: dict[str, Any]
     base_sequence: int | None = None
@@ -1639,7 +1718,7 @@ class SaveCanvasParams(BaseModel):
     accepts_merge: bool | None = None
 
 
-class SaveCanvasResponse(BaseModel):
+class SaveCanvasResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     sequence: int
     merged: bool | None = None
@@ -1651,35 +1730,35 @@ class SaveCanvasResponse(BaseModel):
     format_floor: FormatFloorApplied | None = None
 
 
-class SaveCanvasSpec(BaseModel):
+class SaveCanvasSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: SaveCanvasParams
 
 
-class SaveTemplateParams(BaseModel):
+class SaveTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     dashboard_id: Annotated[int, Field(ge=1.0)]
     title: Annotated[str, Field(min_length=1, max_length=80)]
     description: Annotated[str | None, Field(max_length=240)] = None
 
 
-class SaveTemplateSpec(BaseModel):
+class SaveTemplateSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: SaveTemplateParams
 
 
-class SessionListResponse(BaseModel):
+class SessionListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     mine: list[dict[str, Any]] | None = None
     shared: list[dict[str, Any]] | None = None
 
 
-class SessionResponse(BaseModel):
+class SessionResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     session: dict[str, Any]
 
 
-class ShareDashboardHtmlType(BaseModel):
+class ShareDashboardHtmlType(MammothModel):
     model_config = ConfigDict(extra="allow")
     html: str
     title: str
@@ -1690,12 +1769,12 @@ class ShareDashboardHtmlType(BaseModel):
     workspace_id: int | None = None
 
 
-class SignatureListResponse(BaseModel):
+class SignatureListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     signatures: list[dict[str, Any]] | None = None
 
 
-class SignatureParams(BaseModel):
+class SignatureParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     name: str | None = None
     logo: str | None = None
@@ -1705,42 +1784,42 @@ class SignatureParams(BaseModel):
     layout: str | None = None
 
 
-class SignatureResponse(BaseModel):
+class SignatureResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     signature: dict[str, Any]
 
 
-class SignatureSpec(BaseModel):
+class SignatureSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: SignatureParams | None = None
 
 
-class SqlQueryDataResponse(BaseModel):
+class SqlQueryDataResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     data: list[dict[str, Any]]
 
 
-class StyleListResponse(BaseModel):
+class StyleListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     styles: list[dict[str, Any]] | None = None
 
 
-class StylePresetsResponse(BaseModel):
+class StylePresetsResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     presets: list[dict[str, Any]] | None = None
 
 
-class StyleResponse(BaseModel):
+class StyleResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     style: dict[str, Any]
 
 
-class StyleTokensResponse(BaseModel):
+class StyleTokensResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     tokens: dict[str, Any]
 
 
-class SwapDataParams(BaseModel):
+class SwapDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     dataview_id: Annotated[int, Field(ge=1.0)]
     mapping: dict[str, Any] | None = None
@@ -1748,12 +1827,12 @@ class SwapDataParams(BaseModel):
     currency: Annotated[str | None, Field(max_length=8)] = None
 
 
-class SwapDataSpec(BaseModel):
+class SwapDataSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: SwapDataParams
 
 
-class SwapFitParams(BaseModel):
+class SwapFitParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
     target_dataview_ids: Annotated[list[int], Field(min_length=1, max_length=60)]
@@ -1761,7 +1840,7 @@ class SwapFitParams(BaseModel):
     seconds_budget: Annotated[float | None, Field(le=30)] = None
 
 
-class SwapFitResponse(BaseModel):
+class SwapFitResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     fits: list[dict[str, Any]] | None = None
     cell_budget: int
@@ -1770,22 +1849,22 @@ class SwapFitResponse(BaseModel):
     seconds_budget: float | None = None
 
 
-class SwapFitSpec(BaseModel):
+class SwapFitSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: SwapFitParams
 
 
-class TagMergeParams(BaseModel):
+class TagMergeParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     target_id: int
 
 
-class TagRenameParams(BaseModel):
+class TagRenameParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     name: str
 
 
-class TemplateDetailResponse(BaseModel):
+class TemplateDetailResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     template: dict[str, Any]
     self_fit: dict[str, Any]
@@ -1793,13 +1872,13 @@ class TemplateDetailResponse(BaseModel):
     explore: dict[str, Any] | None = None
 
 
-class TemplateFitResponse(BaseModel):
+class TemplateFitResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     fits: list[dict[str, Any]] | None = None
     dataview_id: int
 
 
-class TemplateListResponse(BaseModel):
+class TemplateListResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     templates: list[dict[str, Any]] | None = None
     use_cases: list[dict[str, Any]] | None = None
@@ -1808,31 +1887,31 @@ class TemplateListResponse(BaseModel):
     formats: list[dict[str, Any]] | None = None
 
 
-class TextBlockSpec(BaseModel):
+class TextBlockSpec(MammothModel):
     model_config = ConfigDict(extra="allow")
     kind: str
     title: str | None = None
     text: str
 
 
-class TrackActionSpec(BaseModel):
+class TrackActionSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     action: str
 
 
-class TrackHeartbeatSpec(BaseModel):
+class TrackHeartbeatSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     session_id: str
     page_id: Annotated[str | None, Field(max_length=200)] = None
     visible_tiles: Annotated[list[str] | None, Field(max_length=200)] = None
 
 
-class TrackViewResponse(BaseModel):
+class TrackViewResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     session_id: str | None = None
 
 
-class TrackViewSpec(BaseModel):
+class TrackViewSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     viewport_w: Annotated[int | None, Field(le=100000)] = None
     surface: Annotated[str | None, Field(max_length=24)] = None
@@ -1840,17 +1919,44 @@ class TrackViewSpec(BaseModel):
 
 
 class Trigger(RootModel[Literal["new_data", "schedule"]]):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
-class UnpublishedAuthor(BaseModel):
+class UnavailableFileType(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    id: int
+    name: str
+
+
+class UnpublishedAuthor(MammothModel):
     model_config = ConfigDict(extra="allow")
     user_id: int
     user_name: str | None = None
     count: int
 
 
-class UseTemplateParams(BaseModel):
+class UnpublishedChange(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    sequence: int | None = None
+    user_id: int | None = None
+    user_name: str | None = None
+    at: str | None = None
+    kind: Literal["edit", "assistant", "sync", "undo"]
+    label: str | None = None
+    scopes: list[dict[str, Any]] | None = None
+
+
+class UnpublishedChangesResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    published_sequence: int
+    head_sequence: int
+    published_history_index: int | None = None
+    count: int
+    changes: list[UnpublishedChange] | None = None
+
+
+class UseTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     project_id: Annotated[int, Field(ge=1.0)]
     request_token: Annotated[str | None, Field(max_length=64)] = None
@@ -1863,12 +1969,12 @@ class UseTemplateParams(BaseModel):
     header_treatment: Literal["photo", "pattern", "gradient", "plain", None] | None = None
 
 
-class UseTemplateSpec(BaseModel):
+class UseTemplateSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: UseTemplateParams
 
 
-class V3DashboardMetaType(BaseModel):
+class V3DashboardMetaType(MammothModel):
     model_config = ConfigDict(extra="allow")
     id: int
     title: str
@@ -1885,19 +1991,32 @@ class V3DashboardMetaType(BaseModel):
     unpublished_authors: list[UnpublishedAuthor] | None = None
     role: str | None = None
     project_id: int | None = None
+    unavailable_files: list[UnavailableFileType] | None = None
 
 
-class VisibilityParams(BaseModel):
+class VideoStateResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    status: Literal["none", "ready", "stale"]
+    stale: bool
+    sequence: int | None = None
+    seconds: float | None = None
+    bytes: int | None = None
+    url: str | None = None
+    blocked: Literal["rls", None] | None = None
+    blocked_reason: str | None = None
+
+
+class VisibilityParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     visibility: str
 
 
-class VisibilitySpec(BaseModel):
+class VisibilitySpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: VisibilityParams
 
 
-class WidgetDataParams(BaseModel):
+class WidgetDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     widget_id: Annotated[
         str,
@@ -1909,295 +2028,33 @@ class WidgetDataParams(BaseModel):
     drilldown_filters: dict[str, Any] | None = None
 
 
-class WidgetDataResponse(BaseModel):
+class WidgetDataResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     data: list[dict[str, Any]]
 
 
-class WidgetDataSpec(BaseModel):
+class WidgetDataSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: WidgetDataParams
 
 
 class mmai_dashboard_schema_OpValues(RootModel[Literal["add", "replace"]]):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
 class mmai_dashboard_schema_PathValues(
     RootModel[Literal["intent", "title", "theme", "pages", "filters"]]
 ):
-    pass
+    model_config = ConfigDict(defer_build=True)
 
 
-class mmai_dashboards_v3_schema_ChatHistoryResponse(BaseModel):
+class mmai_dashboards_v3_schema_ChatHistoryResponse(MammothModel):
     model_config = ConfigDict(extra="allow")
     messages: list[dict[str, Any]] | None = None
     sequence: int
     history_index: int | None = None
     revisions: list[ChatRevision] | None = None
 
-
-_MODEL_NAMESPACE = {name: value for name, value in globals().items() if isinstance(value, type)}
-for _model_name in [
-    "AddPagesParams",
-    "AddPagesResponse",
-    "AddPagesSpec",
-    "AdhocQueryParams",
-    "AdhocQueryResponse",
-    "AdhocQuerySpec",
-    "AppendFigureParams",
-    "AppendFigureResponse",
-    "AppendFigureSpec",
-    "ApplyContextReviewParams",
-    "ApplyContextReviewSpec",
-    "ApplyTemplateParams",
-    "ApplyTemplateSpec",
-    "AskParams",
-    "AskSpec",
-    "AttachmentIntentForm",
-    "AttachmentJob",
-    "AttachmentResponse",
-    "AudienceAnonymous",
-    "AudienceCountries",
-    "AudienceCountry",
-    "AudienceDailyPoint",
-    "AudienceDevices",
-    "AudienceNeverOpened",
-    "AudiencePage",
-    "AudiencePrevTotals",
-    "AudienceResponse",
-    "AudienceSummaryItem",
-    "AudienceSummaryResponse",
-    "AudienceTile",
-    "AudienceTotals",
-    "AudienceViewer",
-    "AudienceViewport",
-    "BoardPreviewOut",
-    "BoardStatusModel",
-    "BulkWidgetDataParams",
-    "BulkWidgetDataSpec",
-    "CanvasMeta",
-    "CanvasResponse",
-    "ChangeAudienceParams",
-    "ChangeAudienceSpec",
-    "ChatEditParams",
-    "ChatEditSpec",
-    "ChatRevision",
-    "ColumnRoster",
-    "CommentParams",
-    "CommentSpec",
-    "ContextExtractParams",
-    "ContextExtractResponse",
-    "ContextExtractSpec",
-    "ContextListResponse",
-    "ContextParams",
-    "ContextResponse",
-    "ContextSpec",
-    "CreateBlankParams",
-    "CreateBlankResponse",
-    "CreateBlankSpec",
-    "CreateLiveChartParams",
-    "CreateLiveChartResponse",
-    "CreateLiveChartSpec",
-    "CreateSessionParams",
-    "CreateSessionSpec",
-    "CreatorDashboardHtmlType",
-    "CustomStyleParams",
-    "CustomStyleSpec",
-    "DashboardAction",
-    "DashboardActionParams",
-    "DashboardActionSpec",
-    "DashboardAnalyticsResponse",
-    "DashboardArchiveParams",
-    "DashboardAuth",
-    "DashboardAuthResponse",
-    "DashboardEditParams",
-    "DashboardEditSpec",
-    "DashboardListSchema",
-    "DashboardModelType",
-    "DashboardPlaceResponse",
-    "DashboardShareParams",
-    "DashboardShareSpec",
-    "DashboardSource",
-    "DashboardSourcesType",
-    "DashboardStatus",
-    "DashboardTagsParams",
-    "DashboardViewConfigType",
-    "DefaultStyleParams",
-    "DefaultStyleResponse",
-    "DefaultStyleSpec",
-    "DeriveStyleParams",
-    "DeriveStyleResponse",
-    "DeriveStyleSpec",
-    "DescriptorDataParams",
-    "DescriptorDataSpec",
-    "DigestPrefResponse",
-    "DigestPrefSpec",
-    "DraftHeadResponse",
-    "DraftMove",
-    "DuplicateDashboardResponse",
-    "EmailUpdateOut",
-    "EmailUpdateSettingsBody",
-    "EmailUpdateSubscriptionBody",
-    "EmailUpdateSubscriptionOut",
-    "EmailUpdateSummaryList",
-    "EmailUpdateSummaryOut",
-    "EmailUpdateTestOut",
-    "EmailUpdatesOut",
-    "EmbedPlaceResponse",
-    "EngagementActionDay",
-    "EngagementActions",
-    "EngagementAnonymous",
-    "EngagementDailyPoint",
-    "EngagementDevices",
-    "EngagementEvent",
-    "EngagementPage",
-    "EngagementPerson",
-    "EngagementPersonResponse",
-    "EngagementPrevTotals",
-    "EngagementReach",
-    "EngagementReachCounts",
-    "EngagementRemindResponse",
-    "EngagementRemindSkip",
-    "EngagementRemindSpec",
-    "EngagementResponse",
-    "EngagementRule",
-    "EngagementSurface",
-    "EngagementTile",
-    "EngagementTotals",
-    "EngagementVisit",
-    "EngagementVisitPage",
-    "ExemplarExtractParams",
-    "ExemplarExtractResponse",
-    "ExemplarExtractSpec",
-    "ExtractBrandParams",
-    "ExtractBrandSpec",
-    "FeedbackParams",
-    "FeedbackSpec",
-    "FigureIntentParams",
-    "FigureIntentResponse",
-    "FigureIntentSpec",
-    "FigureOut",
-    "FigurePageTarget",
-    "FormatFloorApplied",
-    "FormatPreviewNotShown",
-    "FormatPreviewResponse",
-    "Frequency",
-    "GenerateDashboardV3Params",
-    "GenerateDashboardV3Spec",
-    "ImportWorkbookForm",
-    "JobResponse",
-    "JobSchema",
-    "LiveChartBroken",
-    "LiveChartListResponse",
-    "LiveChartOrigin",
-    "LiveChartRef",
-    "LiveChartResponse",
-    "LiveChartUsageResponse",
-    "ObjectJobSchema",
-    "OkResponse",
-    "OwnDataAcceptParams",
-    "OwnDataAcceptSpec",
-    "OwnDataStartParams",
-    "OwnDataStartSpec",
-    "PdfExportParams",
-    "PdfExportSpec",
-    "PendingTemplateResponse",
-    "PlanPageParams",
-    "PlanPageResponse",
-    "PlanPageSpec",
-    "PowerBiPreflightResponse",
-    "PowerBiRefusal",
-    "PresenceParams",
-    "PresenceResponse",
-    "PresenceSpec",
-    "PresentEditor",
-    "PreviewTemplateParams",
-    "PreviewTemplateResponse",
-    "PreviewTemplateSpec",
-    "PublicTemplateListResponse",
-    "PublicTemplateResponse",
-    "QaInsightsFeedback",
-    "QaInsightsFields",
-    "QaInsightsGroup",
-    "QaInsightsResponse",
-    "QaSettingsParams",
-    "QaSettingsResponse",
-    "QaSettingsSpec",
-    "RecordPlacementParams",
-    "RecordPlacementSpec",
-    "RenameSessionParams",
-    "RenameSessionSpec",
-    "RenameTemplateParams",
-    "RenameTemplateSpec",
-    "RenderFigureSvgResponse",
-    "RenderFigureSvgSpec",
-    "ResolveTemplateMappingParams",
-    "ResolveTemplateMappingResponse",
-    "ResolveTemplateMappingSpec",
-    "RestoreCanvasParams",
-    "RestoreCanvasSpec",
-    "ReviewContextParams",
-    "ReviewContextSpec",
-    "RlsAssignmentEntry",
-    "RlsAssignmentView",
-    "RlsAssignmentsParams",
-    "RlsAssignmentsResponse",
-    "RlsAssignmentsSpec",
-    "RlsColumnsResponse",
-    "RlsDistinctValuesResponse",
-    "RosterColumn",
-    "RosterCorrelation",
-    "RosterGeoDim",
-    "RosterHierarchy",
-    "RosterSignals",
-    "SaveCanvasParams",
-    "SaveCanvasResponse",
-    "SaveCanvasSpec",
-    "SaveTemplateParams",
-    "SaveTemplateSpec",
-    "SessionListResponse",
-    "SessionResponse",
-    "ShareDashboardHtmlType",
-    "SignatureListResponse",
-    "SignatureParams",
-    "SignatureResponse",
-    "SignatureSpec",
-    "SqlQueryDataResponse",
-    "StyleListResponse",
-    "StylePresetsResponse",
-    "StyleResponse",
-    "StyleTokensResponse",
-    "SwapDataParams",
-    "SwapDataSpec",
-    "SwapFitParams",
-    "SwapFitResponse",
-    "SwapFitSpec",
-    "TagMergeParams",
-    "TagRenameParams",
-    "TemplateDetailResponse",
-    "TemplateFitResponse",
-    "TemplateListResponse",
-    "TextBlockSpec",
-    "TrackActionSpec",
-    "TrackHeartbeatSpec",
-    "TrackViewResponse",
-    "TrackViewSpec",
-    "Trigger",
-    "UnpublishedAuthor",
-    "UseTemplateParams",
-    "UseTemplateSpec",
-    "V3DashboardMetaType",
-    "VisibilityParams",
-    "VisibilitySpec",
-    "WidgetDataParams",
-    "WidgetDataResponse",
-    "WidgetDataSpec",
-    "mmai_dashboard_schema_OpValues",
-    "mmai_dashboard_schema_PathValues",
-    "mmai_dashboards_v3_schema_ChatHistoryResponse",
-]:
-    globals()[_model_name].model_rebuild(_types_namespace=_MODEL_NAMESPACE)
 
 __all__ = [
     "AddPagesParams",
@@ -2215,9 +2072,13 @@ __all__ = [
     "ApplyTemplateSpec",
     "AskParams",
     "AskSpec",
+    "AttachmentAction",
+    "AttachmentCard",
+    "AttachmentColour",
     "AttachmentIntentForm",
     "AttachmentJob",
     "AttachmentResponse",
+    "AttachmentSignals",
     "AudienceAnonymous",
     "AudienceCountries",
     "AudienceCountry",
@@ -2235,12 +2096,14 @@ __all__ = [
     "AudienceViewport",
     "BoardPreviewOut",
     "BoardStatusModel",
+    "BriefAsk",
     "BulkWidgetDataParams",
     "BulkWidgetDataSpec",
     "CanvasMeta",
     "CanvasResponse",
     "ChangeAudienceParams",
     "ChangeAudienceSpec",
+    "ChatAttachmentResponse",
     "ChatEditParams",
     "ChatEditSpec",
     "ChatRevision",
@@ -2349,12 +2212,14 @@ __all__ = [
     "ImportWorkbookForm",
     "JobResponse",
     "JobSchema",
+    "LeftOut",
     "LiveChartBroken",
     "LiveChartListResponse",
     "LiveChartOrigin",
     "LiveChartRef",
     "LiveChartResponse",
     "LiveChartUsageResponse",
+    "NumberCheck",
     "ObjectJobSchema",
     "OkResponse",
     "OwnDataAcceptParams",
@@ -2445,10 +2310,14 @@ __all__ = [
     "TrackViewResponse",
     "TrackViewSpec",
     "Trigger",
+    "UnavailableFileType",
     "UnpublishedAuthor",
+    "UnpublishedChange",
+    "UnpublishedChangesResponse",
     "UseTemplateParams",
     "UseTemplateSpec",
     "V3DashboardMetaType",
+    "VideoStateResponse",
     "VisibilityParams",
     "VisibilitySpec",
     "WidgetDataParams",

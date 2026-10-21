@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.commands.view import COLUMN_CHECK_ISSUES
+from mammoth_cli.commands.view.column_checks import COLUMN_CHECK_ISSUES
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.dataset_health import with_dataset_health
 from mammoth_cli.services.command_contract import resolve_command_contract

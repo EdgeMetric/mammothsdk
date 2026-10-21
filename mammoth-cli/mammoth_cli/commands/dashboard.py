@@ -16,7 +16,8 @@ from typing import Any, Literal, cast
 
 from pydantic import ValidationError
 
-from mammoth_cli.commands.view import _FIND_DATASET_SYMBOL, view_profiles
+from mammoth_cli.commands.view._common import _FIND_DATASET_SYMBOL
+from mammoth_cli.commands.view.upload import view_profiles
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,

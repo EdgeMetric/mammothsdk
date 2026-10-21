@@ -123,6 +123,25 @@ def _forward_optional(
         kwargs[field] = value
 
 
+CONNECTOR_PRICE_REMOVED = (
+    "`price_per_month` has no effect on connectors: the server no longer has a price "
+    "on them (they are access, not a priced line item), and the SDK does not send it. "
+    "Remove it from the input."
+)
+
+
+def _connector_price_notes(document: dict[str, Any]) -> list[str]:
+    """Say so when the input still carries the removed connector ``price_per_month``."""
+    return [CONNECTOR_PRICE_REMOVED] if "price_per_month" in document else []
+
+
+def _with_warnings(data: Any, warnings: list[str]) -> Any:
+    """Attach ``warnings`` to a dict result; leave anything else as the server sent it."""
+    if warnings and isinstance(data, dict):
+        return {**data, "warnings": warnings}
+    return data
+
+
 def _meta(invocation: Invocation, workspace_id: int) -> dict[str, Any]:
     """Build the common envelope metadata for a support command (no project scope)."""
     return {
@@ -152,11 +171,12 @@ def support_connector_create(invocation: Invocation) -> HandlerResult:
     document = _bound_document(invocation)
     name = _require_positional_or_field(invocation, document, "name", "connector name")
     kwargs: dict[str, Any] = {"name": name}
+    notes = _connector_price_notes(document)
     _forward_optional(document, kwargs, ("description", "price_per_month", "enabled"))
     _confirm(invocation, action=f"create connector '{name}'", target=name)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
+    return _with_warnings(data, notes), _meta(invocation, auth.workspace_id)
 
 
 def support_connector_update(invocation: Invocation) -> HandlerResult:
@@ -164,11 +184,12 @@ def support_connector_update(invocation: Invocation) -> HandlerResult:
     connector_id = _require_int_positional(invocation, "connector id")
     document = _bound_document(invocation)
     kwargs: dict[str, Any] = {"connector_id": connector_id}
+    notes = _connector_price_notes(document)
     _forward_optional(document, kwargs, ("name", "description", "price_per_month", "enabled"))
     _confirm(invocation, action=f"update connector {connector_id}", target=str(connector_id))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id)
+    return _with_warnings(data, notes), _meta(invocation, auth.workspace_id)
 
 
 def support_connector_delete(invocation: Invocation) -> HandlerResult:

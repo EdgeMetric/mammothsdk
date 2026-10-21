@@ -135,7 +135,7 @@ def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     return document[field]
 
 
-def _meta(invocation: Invocation, workspace_id: int, project_id: int) -> dict[str, Any]:
+def _meta(invocation: Invocation, workspace_id: int, project_id: int | None) -> dict[str, Any]:
     """Build the common envelope metadata for a dataset command."""
     return {
         "profile": invocation.profile,
@@ -862,7 +862,7 @@ def _dataset_total(service: Any, project_id: int, page: dict[str, Any], offset: 
     """The project's whole dataset count. The list route sends none, so a page that
     is the last one counts itself; otherwise the ids are read once, here, in one call."""
     if not page.get("more"):
-        return int(offset) + page["shown"]
+        return int(offset) + int(page["shown"])
     everything = service.call(
         "mammoth.api.datasets.DatasetsAPI.list_all", project_id=project_id, fields="id"
     )
@@ -1593,7 +1593,7 @@ def dataset_rename(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     name = _require_field(document, "name")
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
-    if document.get("unique") is not False:
+    if document is None or document.get("unique") is not False:
         kwargs["unique"] = True
     with open_service(invocation) as (service, auth):
         try:

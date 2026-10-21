@@ -24,6 +24,24 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory
 from mammoth_cli.testing import make_runner
 
+
+def _set_open_service(monkeypatch: pytest.MonkeyPatch, module: Any, replacement: Any) -> None:
+    """Patch ``open_service`` in every module that looks it up.
+
+    The ``view`` package spreads its handlers over submodules, each importing
+    ``open_service`` itself, so the patch must land on each of them.
+    """
+    import importlib
+
+    if module.__name__ != "mammoth_cli.commands.view":
+        monkeypatch.setattr(module, "open_service", replacement)
+        return
+    for name in module._SUBMODULES:
+        submodule = importlib.import_module(f"{module.__name__}.{name}")
+        if "open_service" in vars(submodule):
+            monkeypatch.setattr(submodule, "open_service", replacement)
+
+
 WORKSPACE = 4
 DATASET = 731
 VIEW = 278
@@ -59,7 +77,7 @@ def _bound_service(monkeypatch: pytest.MonkeyPatch, service: Any):
     def context(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 17})()
 
-    monkeypatch.setattr(view_cmd, "open_service", context)
+    _set_open_service(monkeypatch, view_cmd, context)
     yield
 
 

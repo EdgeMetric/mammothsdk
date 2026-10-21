@@ -1,9 +1,9 @@
 """The shared release SemVer validator must accept only strict SemVer.
 
 ``scripts/validate_semver.sh`` is the single source of truth for the version
-check performed by all three tag-triggered release workflows (sdk-release.yml,
-cli-release.yml, publish.yml). This test drives the real script over a table of
-valid and invalid version strings and asserts its exit code, so the three
+check performed by both tag-triggered release workflows (sdk-release.yml,
+cli-release.yml). This test drives the real script over a table of
+valid and invalid version strings and asserts its exit code, so the two
 workflows cannot silently disagree about what a legal version is.
 """
 

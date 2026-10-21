@@ -1,0 +1,188 @@
+name: PR checks
+
+# Fast pull-request gate for the three packages in this repository. A job runs
+# only when files it depends on changed. It only reads the repository; it never
+# publishes, tags, or creates a release. Slow cross-OS, installer and docs
+# checks stay in the manual cli-ci.yml.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      sdk: ${{ steps.filter.outputs.sdk }}
+      cli: ${{ steps.filter.outputs.cli }}
+      mcp: ${{ steps.filter.outputs.mcp }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # The CLI and the MCP server install the SDK from this checkout, so an SDK
+      # change also runs their jobs.
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            sdk:
+              - 'mammoth/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+              - '.github/workflows/pr-checks.yml'
+            cli:
+              - 'mammoth-cli/**'
+              - 'mammoth/**'
+              - 'pyproject.toml'
+              - '.github/workflows/pr-checks.yml'
+            mcp:
+              - 'mammoth-mcp-server/**'
+              - 'mammoth/**'
+              - 'pyproject.toml'
+              - '.github/workflows/pr-checks.yml'
+
+  sdk:
+    name: sdk (py${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.sdk == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The SDK supports 3.12 through 3.14; test both ends. Lint and types
+        # run once, on the floor.
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+
+      - name: Install the SDK and dev tools
+        run: uv pip install --system -e . --group dev
+
+      - name: Black
+        if: matrix.python-version == '3.12'
+        run: black --check -t py312 mammoth/ tests/
+
+      - name: Ruff
+        if: matrix.python-version == '3.12'
+        run: ruff check mammoth/
+
+      - name: Mypy (strict)
+        if: matrix.python-version == '3.12'
+        run: mypy mammoth/
+
+      - name: Unit tests
+        run: pytest tests/unit -q -p no:cacheprovider
+
+  cli:
+    name: cli (py${{ matrix.python-version }})
+    needs: changes
+    if: needs.changes.outputs.cli == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: mammoth-cli
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # uv is also on PATH for the installer tests, which call it directly.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            mammoth-cli/pyproject.toml
+            mammoth-cli/uv.lock
+
+      # Install the in-repo SDK first so the CLI's mammoth-io constraint is met
+      # by this checkout (the SDK shipped alongside), never by PyPI. A PR that
+      # changes both is tested together.
+      - name: Install the in-repo SDK, the CLI, and dev tools
+        run: uv pip install --system -e .. -e . --group dev
+
+      - name: Ruff
+        if: matrix.python-version == '3.12'
+        run: ruff check mammoth_cli/ tests/ scripts/
+
+      - name: Mypy (strict)
+        if: matrix.python-version == '3.12'
+        run: mypy mammoth_cli/
+
+      # Same whole-tree invocation as cli-ci.yml with the process-spawning
+      # (subprocess) and slow fuzz suites deselected by marker. Packaging tests
+      # that need `poetry build` skip themselves when poetry is absent.
+      - name: Tests
+        run: pytest tests -m "not live and not fuzz and not subprocess" -q -p no:cacheprovider
+
+  mcp:
+    name: mcp-server
+    needs: changes
+    if: needs.changes.outputs.mcp == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mammoth-mcp-server
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            mammoth-mcp-server/pyproject.toml
+
+      # The in-repo SDK first, so the server is tested against this checkout.
+      - name: Install the in-repo SDK, the server, and dev tools
+        run: uv pip install --system -e .. -e . --group dev
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Mypy
+        run: mypy mammoth_mcp_server/
+
+      - name: Tests
+        run: pytest tests -q -p no:cacheprovider

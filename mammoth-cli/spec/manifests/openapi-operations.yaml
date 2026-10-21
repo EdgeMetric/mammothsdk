@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-operation_count: 651
+operation_count: 728
 operations:
 - identity: POST /accept-invite
   method: POST
@@ -21,6 +21,395 @@ operations:
   canonical_command: workspace.accept-invite
   alias_of: null
   sdk_symbol: mammoth.api.workspaces.WorkspacesAPI.accept_invite
+  reviewed_by: primary
+- identity: GET /agents/access/grants
+  method: GET
+  path: /agents/access/grants
+  operation_id: ListAgentGrants
+  tags:
+  - AI
+  - Agents
+  summary: Who can ask without opening the data (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - GrantView
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/access/grants
+  method: POST
+  path: /agents/access/grants
+  operation_id: GiveAgentAccess
+  tags:
+  - AI
+  - Agents
+  summary: Give people access to ask about projects (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: GrantRequest
+  response_schemas:
+  - GrantResult
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: DELETE /agents/access/grants/{grant_id}
+  method: DELETE
+  path: /agents/access/grants/{grant_id}
+  operation_id: RevokeAgentAccess
+  tags:
+  - AI
+  - Agents
+  summary: Revoke a person's access (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PATCH /agents/access/grants/{grant_id}
+  method: PATCH
+  path: /agents/access/grants/{grant_id}
+  operation_id: ChangeAgentAccess
+  tags:
+  - AI
+  - Agents
+  summary: Change a person's access (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: GrantPatch
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/me
+  method: GET
+  path: /agents/access/me
+  operation_id: GetAgentAccessMe
+  tags:
+  - AI
+  - Agents
+  summary: What the agent may do for the caller in this workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentAccessMe
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/people
+  method: GET
+  path: /agents/access/people
+  operation_id: ListAgentPeople
+  tags:
+  - AI
+  - Agents
+  summary: 'Everyone else: members and what their own access gives their agent'
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PersonView
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/projects/{project_id}/askers
+  method: GET
+  path: /agents/access/projects/{project_id}/askers
+  operation_id: GetAgentProjectAskers
+  tags:
+  - AI
+  - Agents
+  summary: How many people can ask about a project without opening it
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ProjectAskers
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/reach
+  method: GET
+  path: /agents/access/reach
+  operation_id: GetAgentAccessReach
+  tags:
+  - AI
+  - Agents
+  summary: What one person's agent can see
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ReachProject
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/requests
+  method: GET
+  path: /agents/access/requests
+  operation_id: ListAgentAccessRequests
+  tags:
+  - AI
+  - Agent access
+  summary: List the workspace's agent requests (owners and admins)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentRequestItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/access/requests
+  method: POST
+  path: /agents/access/requests
+  operation_id: CreateAgentAccessRequest
+  tags:
+  - AI
+  - Agent access
+  summary: Ask for access or a change, or flag an answer, from the chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: CreateAgentRequest
+  response_schemas:
+  - AgentRequestItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/requests/mine
+  method: GET
+  path: /agents/access/requests/mine
+  operation_id: ListMyAgentAccessRequests
+  tags:
+  - AI
+  - Agent access
+  summary: The caller's own requests made from one chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentRequestItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PATCH /agents/access/requests/{request_id}
+  method: PATCH
+  path: /agents/access/requests/{request_id}
+  operation_id: ResolveAgentAccessRequest
+  tags:
+  - AI
+  - Agent access
+  summary: Close a request (owners, admins and the file's keeper)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ResolveAgentRequest
+  response_schemas:
+  - AgentRequestItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/access/requests/{request_id}/project-context
+  method: POST
+  path: /agents/access/requests/{request_id}/project-context
+  operation_id: AddAgentRequestToProjectContext
+  tags:
+  - AI
+  - Agent access
+  summary: Add a thumbs-down's correction to the project's agent context (owners and admins)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentRequestItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/access/saved-charts
+  method: POST
+  path: /agents/access/saved-charts
+  operation_id: SaveAgentChart
+  tags:
+  - AI
+  - Agent access
+  summary: Save the chart of an answer to my own dashboard (Explore level)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: SaveChartRequest
+  response_schemas:
+  - SaveChartResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/settings
+  method: GET
+  path: /agents/access/settings
+  operation_id: GetAgentSettings
+  tags:
+  - AI
+  - Agents
+  summary: The workspace's AI Agent controls (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AgentSettings
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PATCH /agents/access/settings
+  method: PATCH
+  path: /agents/access/settings
+  operation_id: UpdateAgentSettings
+  tags:
+  - AI
+  - Agents
+  summary: Change the workspace's AI Agent controls (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: AgentSettingsPatch
+  response_schemas:
+  - AgentSettings
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/access/tree
+  method: GET
+  path: /agents/access/tree
+  operation_id: GetAgentAccessTree
+  tags:
+  - AI
+  - Agents
+  summary: The projects and files the Give access tree offers (managers only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - TreeProject
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /agents/briefing
   method: GET
@@ -382,6 +771,29 @@ operations:
   deprecated: false
   disposition: internal_only
   disposition_reason: 'Web chat panel: tests the credentials typed into a chat card.'
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /agents/sessions/{session_id}/feedback
+  method: GET
+  path: /agents/sessions/{session_id}/feedback
+  operation_id: ListAgentTurnFeedback
+  tags:
+  - AI
+  - Agents
+  summary: List the ratings the creator gave one chat's replies
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - TurnFeedbackItem
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -838,6 +1250,28 @@ operations:
   deprecated: false
   disposition: internal_only
   disposition_reason: Server-Sent Events stream of one agent turn; a terminal cannot hold it.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /agents/sessions/{session_id}/turns/{turn_id}/feedback
+  method: POST
+  path: /agents/sessions/{session_id}/turns/{turn_id}/feedback
+  operation_id: RateAgentTurn
+  tags:
+  - AI
+  - Agents
+  summary: Rate one agent reply (creator only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: TurnFeedbackRequest
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -4016,6 +4450,49 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_edit
   reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/chat/attachments
+  method: POST
+  path: /dashboards/{dashboard_id}/chat/attachments
+  operation_id: UploadChatAttachment
+  tags:
+  - Dashboard v3
+  summary: Keep a file the user attaches in the editor's AI chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChatAttachmentResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/chat/attachments/{sha}
+  method: GET
+  path: /dashboards/{dashboard_id}/chat/attachments/{sha}
+  operation_id: GetChatAttachment
+  tags:
+  - Dashboard v3
+  summary: A file attached in this board's AI chat
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /dashboards/{dashboard_id}/columns
   method: GET
   path: /dashboards/{dashboard_id}/columns
@@ -5292,6 +5769,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.trash
   reviewed_by: primary
+- identity: GET /dashboards/{dashboard_id}/unpublished
+  method: GET
+  path: /dashboards/{dashboard_id}/unpublished
+  operation_id: GetUnpublishedChanges
+  tags:
+  - Dashboard v3
+  summary: Draft changes since the published version
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - UnpublishedChangesResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/video
   method: POST
   path: /dashboards/{dashboard_id}/video
@@ -5328,7 +5827,8 @@ operations:
   - apiSecret
   - workspaceId
   request_schema: null
-  response_schemas: []
+  response_schemas:
+  - VideoStateResponse
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
@@ -5512,6 +6012,27 @@ operations:
   canonical_command: job.get
   alias_of: null
   sdk_symbol: mammoth.api.jobs.JobsAPI.get_job
+  reviewed_by: primary
+- identity: GET /jobs/{job_id}/stream
+  method: GET
+  path: /jobs/{job_id}/stream
+  operation_id: StreamJob
+  tags:
+  - Jobs
+  summary: Stream a job until it is done
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: DELETE /notifications
   method: DELETE
@@ -6555,6 +7076,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.plan_archive
   reviewed_by: primary
+- identity: PUT /subscription/plans/{plan_id}/entitlements
+  method: PUT
+  path: /subscription/plans/{plan_id}/entitlements
+  operation_id: UpdatePlanEntitlements
+  tags:
+  - Subscription Plans
+  summary: Edit a plan's entitlement values (its matrix column)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: UpdatePlanEntitlementsRequestSchema
+  response_schemas:
+  - PlanEntitlementsResponseSchema
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /subscription/plans/{plan_id}/storage-options
   method: GET
   path: /subscription/plans/{plan_id}/storage-options
@@ -6731,6 +7274,733 @@ operations:
   alias_of: null
   sdk_symbol: null
   reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/cancel-subscription
+  method: POST
+  path: /support/billing/{workspace_id}/cancel-subscription
+  operation_id: SupportCancelSubscription
+  tags:
+  - Billing Actions Support
+  summary: Cancel a workspace's subscription (or its deal), now or at period end
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: CancelSubscriptionData
+  response_schemas:
+  - CancelOutcome
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/change-plan
+  method: POST
+  path: /support/billing/{workspace_id}/change-plan
+  operation_id: SupportChangePlan
+  tags:
+  - Billing Actions Support
+  summary: Change a workspace's self-serve plan
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ChangePlanData
+  response_schemas:
+  - ActionMessage
+  - ChargebeeMoved
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/end-trial
+  method: POST
+  path: /support/billing/{workspace_id}/end-trial
+  operation_id: SupportEndTrial
+  tags:
+  - Billing Actions Support
+  summary: End trial and start billing
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ActionMessage
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/refund
+  method: POST
+  path: /support/billing/{workspace_id}/refund
+  operation_id: SupportRefund
+  tags:
+  - Billing Actions Support
+  summary: Refund a workspace's most recent payment (full, or partial via ?amount cents)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ActionResult
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/retry-payment
+  method: POST
+  path: /support/billing/{workspace_id}/retry-payment
+  operation_id: SupportRetryPayment
+  tags:
+  - Billing Actions Support
+  summary: Retry payment for a past-due workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ActionResult
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/billing/{workspace_id}/start-trial
+  method: POST
+  path: /support/billing/{workspace_id}/start-trial
+  operation_id: SupportStartTrial
+  tags:
+  - Billing Actions Support
+  summary: Start a Pro trial on an existing workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: StartTrialData
+  response_schemas:
+  - TrialStarted
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/connectors/{connector_id}/bucket-impact
+  method: GET
+  path: /support/connectors/{connector_id}/bucket-impact
+  operation_id: SupportConnectorBucketImpact
+  tags:
+  - Catalog Support
+  summary: What a connector bucket move does to access (read-only)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ConnectorBucketImpact
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/deals
+  method: GET
+  path: /support/deals
+  operation_id: SupportListDeals
+  tags:
+  - Deals Support
+  summary: List deals
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DealListResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/deals
+  method: POST
+  path: /support/deals
+  operation_id: SupportCreateDeal
+  tags:
+  - Deals Support
+  summary: Create deal
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DealCreate
+  response_schemas:
+  - DealIdsResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/deals/{deal_id}
+  method: GET
+  path: /support/deals/{deal_id}
+  operation_id: SupportGetDeal
+  tags:
+  - Deals Support
+  summary: Get deal
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DealResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PUT /support/deals/{deal_id}
+  method: PUT
+  path: /support/deals/{deal_id}
+  operation_id: SupportUpdateDeal
+  tags:
+  - Deals Support
+  summary: Update deal
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DealUpdate
+  response_schemas:
+  - DealIdsResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/deals/{deal_id}/activity
+  method: GET
+  path: /support/deals/{deal_id}/activity
+  operation_id: SupportDealActivity
+  tags:
+  - Deals Support
+  summary: Deal activity feed
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DealActivityResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: DELETE /support/deals/{deal_id}/move-to-partner
+  method: DELETE
+  path: /support/deals/{deal_id}/move-to-partner
+  operation_id: SupportDealCancelMoveToPartner
+  tags:
+  - Deals Support
+  summary: Cancel a scheduled move under a partner
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MessageResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/deals/{deal_id}/move-to-partner
+  method: POST
+  path: /support/deals/{deal_id}/move-to-partner
+  operation_id: SupportDealMoveToPartner
+  tags:
+  - Deals Support
+  summary: Move a direct deal under a partner
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DealMoveToPartner
+  response_schemas:
+  - DealMoveResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/deals/{deal_id}/opt-in
+  method: POST
+  path: /support/deals/{deal_id}/opt-in
+  operation_id: SupportDealOptIn
+  tags:
+  - Deals Support
+  summary: Opt a deal in to catalog changes
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DealOptIn
+  response_schemas:
+  - DealPinsResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/deals/{deal_id}/preview-entitlement
+  method: GET
+  path: /support/deals/{deal_id}/preview-entitlement
+  operation_id: SupportPreviewDealEntitlement
+  tags:
+  - Deals Support
+  summary: Preview a deal's resolved entitlement
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - DealEntitlementResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/entitlements
+  method: GET
+  path: /support/entitlements
+  operation_id: SupportEntitlementRegistry
+  tags:
+  - Catalog Support
+  summary: Entitlement registry
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - EntitlementRegistry
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/identities
+  method: GET
+  path: /support/identities
+  operation_id: SupportListIdentities
+  tags:
+  - Users Identity Support
+  summary: List users (identity-first, with workspace counts)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - IdentityPage
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/identities/{user_id}
+  method: GET
+  path: /support/identities/{user_id}
+  operation_id: SupportGetIdentity
+  tags:
+  - Users Identity Support
+  summary: User identity detail (memberships + roles)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - IdentityDetail
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners
+  method: GET
+  path: /support/partners
+  operation_id: SupportListPartners
+  tags:
+  - Partners Support
+  summary: List partners
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerListResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/partners
+  method: POST
+  path: /support/partners
+  operation_id: SupportCreatePartner
+  tags:
+  - Partners Support
+  summary: Create partner
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: PartnerCreate
+  response_schemas:
+  - PartnerRefResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners/{partner_id}
+  method: GET
+  path: /support/partners/{partner_id}
+  operation_id: SupportGetPartner
+  tags:
+  - Partners Support
+  summary: Get partner
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PUT /support/partners/{partner_id}
+  method: PUT
+  path: /support/partners/{partner_id}
+  operation_id: SupportUpdatePartner
+  tags:
+  - Partners Support
+  summary: Update partner
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: PartnerUpdate
+  response_schemas:
+  - PartnerRefResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners/{partner_id}/activity
+  method: GET
+  path: /support/partners/{partner_id}/activity
+  operation_id: SupportPartnerActivity
+  tags:
+  - Partners Support
+  summary: Partner admin activity feed
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerActivityResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners/{partner_id}/billing
+  method: GET
+  path: /support/partners/{partner_id}/billing
+  operation_id: SupportGetPartnerBilling
+  tags:
+  - Partners Support
+  summary: Partner consolidated billing (total + per-client line breakdown)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerBillingResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/partners/{partner_id}/charge-invoices
+  method: POST
+  path: /support/partners/{partner_id}/charge-invoices
+  operation_id: SupportChargePartnerInvoices
+  tags:
+  - Partners Support
+  summary: Charge the partner's open invoices (recover an incomplete subscription)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChargeInvoicesResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners/{partner_id}/invoices
+  method: GET
+  path: /support/partners/{partner_id}/invoices
+  operation_id: SupportListPartnerInvoices
+  tags:
+  - Partners Support
+  summary: Partner consolidated Stripe invoices
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerInvoicesResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/partners/{partner_id}/send-payment-link
+  method: POST
+  path: /support/partners/{partner_id}/send-payment-link
+  operation_id: SupportSendPartnerPaymentLink
+  tags:
+  - Partners Support
+  summary: Email the partner a link to add/update their payment method
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MessageResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/partners/{partner_id}/workspaces
+  method: GET
+  path: /support/partners/{partner_id}/workspaces
+  operation_id: SupportListPartnerClients
+  tags:
+  - Partners Support
+  summary: List partner client workspaces
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PartnerClientsResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: DELETE /support/partners/{partner_id}/workspaces/{workspace_id}
+  method: DELETE
+  path: /support/partners/{partner_id}/workspaces/{workspace_id}
+  operation_id: SupportDeletePartnerClient
+  tags:
+  - Partners Support
+  summary: Delete a client workspace (removes its line item — prorated)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MessageResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: DELETE /support/partners/{partner_id}/workspaces/{workspace_id}/detach
+  method: DELETE
+  path: /support/partners/{partner_id}/workspaces/{workspace_id}/detach
+  operation_id: SupportCancelDetachClient
+  tags:
+  - Partners Support
+  summary: Cancel a scheduled detach to direct billing
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - MessageResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/partners/{partner_id}/workspaces/{workspace_id}/detach
+  method: POST
+  path: /support/partners/{partner_id}/workspaces/{workspace_id}/detach
+  operation_id: SupportDetachClient
+  tags:
+  - Partners Support
+  summary: Detach a client workspace to direct billing
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: DetachToDirect
+  response_schemas:
+  - DetachResponse
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/plans/catalog
+  method: GET
+  path: /support/plans/catalog
+  operation_id: SupportPlansCatalog
+  tags:
+  - Catalog Support
+  summary: Plan catalog (current / legacy / system + storage ladder + matrix)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - PlansCatalog
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /support/project-moves/{move_id}
   method: GET
   path: /support/project-moves/{move_id}
@@ -6775,6 +8045,28 @@ operations:
   alias_of: null
   sdk_symbol: null
   reviewed_by: primary
+- identity: GET /support/search
+  method: GET
+  path: /support/search
+  operation_id: SupportSearch
+  tags:
+  - Admin Home Support
+  summary: Global admin search (workspaces / partners / users)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - SearchResults
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /support/sms
   method: GET
   path: /support/sms
@@ -6796,6 +8088,50 @@ operations:
   canonical_command: support.plan.chargebee-list
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.plan_chargebee_list
+  reviewed_by: primary
+- identity: GET /support/triage
+  method: GET
+  path: /support/triage
+  operation_id: SupportTriage
+  tags:
+  - Admin Home Support
+  summary: Admin triage (needs-you) items
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - TriageItems
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/usage-tiles
+  method: GET
+  path: /support/usage-tiles
+  operation_id: SupportUsageTiles
+  tags:
+  - Admin Home Support
+  summary: Admin home headline counts
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - UsageTiles
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: PATCH /support/users
   method: PATCH
@@ -6954,6 +8290,138 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.workspace_update
   reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/activity
+  method: GET
+  path: /support/workspaces/{workspace_id}/activity
+  operation_id: SupportWorkspaceActivity
+  tags:
+  - Workspaces Support
+  summary: Workspace admin activity feed
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkspaceActivity
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/archive
+  method: GET
+  path: /support/workspaces/{workspace_id}/archive
+  operation_id: SupportWorkspaceArchiveInfo
+  tags:
+  - Workspaces Support
+  summary: Cold archive eligibility and progress
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ArchiveInfo
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/workspaces/{workspace_id}/archive
+  method: POST
+  path: /support/workspaces/{workspace_id}/archive
+  operation_id: SupportWorkspaceArchive
+  tags:
+  - Workspaces Support
+  summary: Archive a workspace to cold storage, or retry a failed archive
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: WorkspaceArchiveRequest
+  response_schemas:
+  - ArchiveRun
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/workspaces/{workspace_id}/chargebee-cancelled
+  method: POST
+  path: /support/workspaces/{workspace_id}/chargebee-cancelled
+  operation_id: SupportWorkspaceChargebeeCancelled
+  tags:
+  - Workspaces Support
+  summary: Confirm the old Chargebee subscription was cancelled
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChargebeeCancelled
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/deal-seed
+  method: GET
+  path: /support/workspaces/{workspace_id}/deal-seed
+  operation_id: SupportWorkspaceDealSeed
+  tags:
+  - Workspaces Support
+  summary: Deal terms seeded from the workspace's live subscription
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkspaceDealSeed
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: GET /support/workspaces/{workspace_id}/entitlement
+  method: GET
+  path: /support/workspaces/{workspace_id}/entitlement
+  operation_id: SupportWorkspaceEntitlement
+  tags:
+  - Workspaces Support
+  summary: Resolved entitlement for a workspace
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WorkspaceEntitlement
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /support/workspaces/{workspace_id}/projects
   method: GET
   path: /support/workspaces/{workspace_id}/projects
@@ -7016,6 +8484,28 @@ operations:
   deprecated: false
   disposition: internal_only
   disposition_reason: 'Staff-only support route: starts a cross-workspace project move.'
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/workspaces/{workspace_id}/restore
+  method: POST
+  path: /support/workspaces/{workspace_id}/restore
+  operation_id: SupportWorkspaceArchiveRestore
+  tags:
+  - Workspaces Support
+  summary: Restore an archived workspace, or retry a failed restore
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ArchiveRun
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
   canonical_command: null
   alias_of: null
   sdk_symbol: null
@@ -7193,6 +8683,50 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_add
   reviewed_by: primary
+- identity: DELETE /support/workspaces/{workspace_id}/users/invites/{invite_id}
+  method: DELETE
+  path: /support/workspaces/{workspace_id}/users/invites/{invite_id}
+  operation_id: SupportCancelWorkspaceInvite
+  tags:
+  - Users Support
+  summary: Cancel a pending workspace invite
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - InviteMessage
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /support/workspaces/{workspace_id}/users/invites/{invite_id}/resend
+  method: POST
+  path: /support/workspaces/{workspace_id}/users/invites/{invite_id}/resend
+  operation_id: SupportResendWorkspaceInvite
+  tags:
+  - Users Support
+  summary: Resend a pending workspace invite
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - InviteMessage
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: DELETE /support/workspaces/{workspace_id}/users/{user_id}
   method: DELETE
   path: /support/workspaces/{workspace_id}/users/{user_id}
@@ -7213,6 +8747,50 @@ operations:
   canonical_command: support.workspace.user.remove
   alias_of: null
   sdk_symbol: mammoth.api.support.SupportAPI.workspace_user_remove
+  reviewed_by: primary
+- identity: GET /tool-claims
+  method: GET
+  path: /tool-claims
+  operation_id: GetToolClaim
+  tags:
+  - Tool claims
+  summary: What an Open tables link opens
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ToolClaimStatus
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /tool-claims
+  method: POST
+  path: /tool-claims
+  operation_id: StartToolClaim
+  tags:
+  - Tool claims
+  summary: Open an Open tables link without being signed in
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ToolClaimTokenInput
+  response_schemas:
+  - ToolClaimStart
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /unsubscribe
   method: GET
@@ -9177,6 +10755,50 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.projects.ProjectsAPI.checkpoint_list
   reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connections
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connections
+  operation_id: ListAllConnections
+  tags:
+  - Connections
+  summary: List All Connections
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - BulkConnectionsListSchema
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: PATCH /workspaces/{workspace_id}/projects/{project_id}/connections/{connection_key}/test
+  method: PATCH
+  path: /workspaces/{workspace_id}/projects/{project_id}/connections/{connection_key}/test
+  operation_id: TestConnection
+  tags:
+  - Connections
+  summary: Test Connection Health
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ConnectionTestResultSchema
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections
   method: GET
   path: /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections
@@ -9215,6 +10837,7 @@ operations:
   response_schemas:
   - OauthTokenExchangeResponse
   - ObjectJobSchema
+  - GetConnectionSchema
   deprecated: false
   disposition: command
   disposition_reason: User-initiated production operation.
@@ -11033,6 +12656,27 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_task
   reviewed_by: primary
+- identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/task_preview/{job_id}
+  method: DELETE
+  path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/task_preview/{job_id}
+  operation_id: CancelTaskPreview
+  tags:
+  - Dataview pipeline Task preview
+  summary: Cancel a task preview
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/tasks
   method: GET
   path: /workspaces/{workspace_id}/projects/{project_id}/datasets/{dataset_id}/dataviews/{dataview_id}/pipeline/tasks
@@ -12490,6 +14134,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.ai.AIAPI.get_suggestions
   reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/tool-claims
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/tool-claims
+  operation_id: RedeemToolClaim
+  tags:
+  - Tool claims
+  summary: Add an Open tables link's tables to a project
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ToolClaimTokenInput
+  response_schemas:
+  - ToolClaimTarget
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/trash
   method: GET
   path: /workspaces/{workspace_id}/projects/{project_id}/trash
@@ -13665,6 +15331,50 @@ operations:
   canonical_command: billing.stripe.end-trial
   alias_of: null
   sdk_symbol: mammoth.api.billing.BillingAPI.stripe_end_trial
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/subscription/held-change
+  method: GET
+  path: /workspaces/{workspace_id}/subscription/held-change
+  operation_id: GetHeldChange
+  tags:
+  - Stripe Subscriptions
+  summary: Get the plan change waiting for payment
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - HeldChangeResponseSchema
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/subscription/held-change/cancel
+  method: POST
+  path: /workspaces/{workspace_id}/subscription/held-change/cancel
+  operation_id: CancelHeldChange
+  tags:
+  - Stripe Subscriptions
+  summary: Cancel the plan change waiting for payment
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - CancelHeldChangeResponseSchema
+  deprecated: false
+  disposition: unmapped
+  disposition_reason: No reviewed CLI command or SDK symbol recorded.
+  canonical_command: null
+  alias_of: null
+  sdk_symbol: null
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/subscription/payment-methods
   method: GET

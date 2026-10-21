@@ -8,7 +8,7 @@ blocked by a separate backend defect (see docs/release-status.md 2.0.46).
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
