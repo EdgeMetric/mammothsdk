@@ -40,7 +40,7 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
-from mammoth_cli.runtime import embedded, parents, view_dataset_cache
+from mammoth_cli.runtime import dryrun, embedded, parents, view_dataset_cache
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -293,8 +293,10 @@ class SdkMammothService:
             with spinner(self._progress):
                 return self._run(method(**kwargs))
         except Exception as exc:
-            if self._forget_stale_resolutions(exc):
+            if self._forget_stale_resolutions(exc) and dryrun.is_read_symbol(sdk_symbol):
                 # A remembered view -> dataset answer was wrong: ask the server once more.
+                # Only a read is replayed: a write may have done part of its work before
+                # the 404 (add a step, then poll), and sending it twice could do it twice.
                 try:
                     with spinner(self._progress):
                         return self._run(method(**kwargs))
@@ -311,9 +313,14 @@ class SdkMammothService:
         if not (isinstance(exc, MammothAPIError) and exc.status_code == 404):
             return False
         pipeline = self._client.pipeline
-        stale = pipeline.stored_dataview_resolutions()
+        # An older SDK has no store: nothing was read from disk, so nothing is stale.
+        stored = getattr(pipeline, "stored_dataview_resolutions", None)
+        forget = getattr(pipeline, "forget_dataview_dataset", None)
+        if stored is None or forget is None:
+            return False
+        stale = stored()
         for dataview_id in stale:
-            pipeline.forget_dataview_dataset(dataview_id)
+            forget(dataview_id)
         return bool(stale)
 
     def _prepare_call(self, sdk_symbol: str, kwargs: dict[str, Any]) -> tuple[Any, dict[str, Any]]:

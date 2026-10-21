@@ -100,6 +100,11 @@ def _read_symbols() -> frozenset[str]:
     )
 
 
+def is_read_symbol(symbol: str) -> bool:
+    """True when the SDK method behind ``symbol`` only reads (safe to send twice)."""
+    return symbol in _read_symbols() or symbol == DATAVIEW_GET
+
+
 def _read_view_methods() -> frozenset[str]:
     return frozenset(
         symbol.rsplit(".", 1)[1]

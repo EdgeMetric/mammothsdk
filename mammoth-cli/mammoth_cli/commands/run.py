@@ -36,7 +36,7 @@ import io
 import json
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
@@ -55,6 +55,7 @@ from mammoth_cli.runtime.executor import EXIT_STATUS_META, STREAMED_META
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.shared import remembering_auth
+from mammoth_cli.runtime.strict import NEGATIVE_NUMBER
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -200,7 +201,39 @@ def _no_constant(name: str) -> Any:
     raise ValueError(f"{name} is not a JSON number")
 
 
-def parse_line(number: int, text: str, defaults: dict[str, str], command_flags: Any) -> LineSpec:
+def resolve_command_id(tokens: Sequence[str]) -> str:
+    """The command id these tokens run, walked through the real Click tree.
+
+    ``cmd`` and ``args`` are one argv to Click: ``["auth", "logout"]`` and ``["auth"]`` plus
+    the argument ``"logout"`` run the same command, and ``"run inner"`` is ``run`` with the
+    positional ``inner``. The walk descends while the next token names a subcommand and stops
+    at the first token that does not (a positional); the refusals are checked against what it
+    reaches, never against how the line spelled it.
+    """
+    import click
+
+    node: Any = _click_root()
+    ctx = click.Context(node)
+    path: list[str] = []
+    for token in tokens:
+        lookup = getattr(node, "get_command", None)
+        if lookup is None:
+            break
+        child = lookup(ctx, token)
+        if child is None:
+            break
+        path.append(child.name or token)
+        node = child
+    return ".".join(path)
+
+
+def parse_line(
+    number: int,
+    text: str,
+    defaults: dict[str, str],
+    command_flags: Any,
+    resolve: Callable[[Sequence[str]], str] = resolve_command_id,
+) -> LineSpec:
     """Validate one JSON line and build the argv it runs as.
 
     Raises:
@@ -229,24 +262,29 @@ def parse_line(number: int, text: str, defaults: dict[str, str], command_flags: 
             "'cmd' must be the command path, for example \"view task list\".",
             cmd=cmd if isinstance(cmd, str) else None,
         )
-    command_id = ".".join(words)
+    args = line.get("args", [])
+    if not isinstance(args, list):
+        raise _line_error("'args' must be a list of strings or numbers.")
+    if any(isinstance(arg, bool) or not isinstance(arg, str | int | float) for arg in args):
+        raise _line_error("'args' must hold strings or numbers only.")
+    tokens = [*words, *(str(arg) for arg in args)]
+    command_id = resolve(tokens)
     if command_id in REFUSED_COMMANDS:
         raise CliError(
             code=CODE_RUN_COMMAND_REFUSED,
             message=REFUSED_COMMANDS[command_id],
             exit_status=EXIT_USAGE,
-            details={"cmd": " ".join(words)},
+            details={"cmd": " ".join(words), "command": command_id.replace(".", " ")},
         )
     argv = list(words)
-    args = line.get("args", [])
     allowed_flags = command_flags(command_id)
-    if not isinstance(args, list):
-        raise _line_error("'args' must be a list of strings or numbers.")
     for arg in args:
-        if isinstance(arg, bool) or not isinstance(arg, str | int | float):
-            raise _line_error("'args' must hold strings or numbers only.")
         token = str(arg)
-        if token.startswith("-") and token not in allowed_flags:
+        if (
+            token.startswith("-")
+            and token not in allowed_flags
+            and not NEGATIVE_NUMBER.match(token)
+        ):
             raise _line_error(
                 f"argument '{token}' looks like a flag; put global flags in 'flags'.",
                 flag=token,
@@ -290,7 +328,7 @@ def _click_root() -> Any:
     return typer.main.get_command(app)
 
 
-def execute_line(argv: Sequence[str]) -> tuple[int, dict[str, Any]]:
+def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str, Any]]:
     """Run ``argv`` as a command in this process; return its exit status and envelope."""
     from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS
 
@@ -309,7 +347,10 @@ def execute_line(argv: Sequence[str]) -> tuple[int, dict[str, Any]]:
             kept.append(cancelled.to_envelope())
             exit_status = cancelled.exit_status
         except SystemExit as exc:
-            exit_status = exc.code if isinstance(exc.code, int) else EXIT_API
+            # sys.exit() and sys.exit(0) are a clean exit; a message is a failure.
+            exit_status = (
+                0 if exc.code is None else exc.code if isinstance(exc.code, int) else EXIT_API
+            )
         except KeyboardInterrupt:
             exit_status = EXIT_INTERRUPT
             kept.append(
@@ -329,13 +370,17 @@ def execute_line(argv: Sequence[str]) -> tuple[int, dict[str, Any]]:
     if kept:
         return exit_status, kept[-1]
     stray = buffer.getvalue().strip()
+    if exit_status == 0:
+        # Help or version text: the command succeeded and printed no envelope.
+        text = {"text": stray[:500]} if stray else None
+        return 0, Result(data=text, meta=Meta(command=command)).to_envelope()
     silent = CliError(
         code="no_output",
         message="This command printed text only (help or version) and no envelope.",
-        exit_status=exit_status or EXIT_USAGE,
+        exit_status=exit_status,
         details={"text": stray[:500]} if stray else {},
     )
-    return exit_status or EXIT_USAGE, silent.to_envelope()
+    return exit_status, silent.to_envelope()
 
 
 def _write(envelope: dict[str, Any]) -> None:
@@ -364,11 +409,11 @@ def _read_source(source: str) -> str:
                 exit_status=EXIT_USAGE,
                 hint="Pass a file (mammoth run commands.jsonl) or pipe the lines in.",
             )
-        data = sys.stdin.read(MAX_RUN_BYTES + 1)
+        data = sys.stdin.read(MAX_RUN_BYTES + 1).removeprefix("\ufeff")
     else:
         path = Path(source)
         try:
-            with path.open("r", encoding="utf-8") as handle:
+            with path.open("r", encoding="utf-8-sig") as handle:
                 data = handle.read(MAX_RUN_BYTES + 1)
         except FileNotFoundError:
             raise CliError(
@@ -415,12 +460,17 @@ def _command_flags(command_id: str) -> frozenset[str]:
 def run(invocation: Invocation) -> HandlerResult:
     """Run many commands in one process: JSON Lines of cmd, args, input and flags."""
     _refuse_global_confirmation(invocation)
-    source = invocation.positional("file") or "-"
+    # ``--continue`` is the command's own flag; wherever it came in, it is not the FILE.
+    operands = [arg for arg in invocation.extra_args if arg != "--continue"]
+    declared = invocation.positionals.get("file")
+    source = (operands[0] if operands else declared if declared != "--continue" else None) or "-"
     keep_going = "--continue" in invocation.extra_args
+    # Only "\n" ends a line: str.splitlines() also splits on U+2028, U+2029, U+0085 and
+    # U+001C-1E, which JSON writers leave raw inside strings, and would shift line numbers.
     numbered = [
-        (number, text.strip())
-        for number, text in enumerate(_read_source(str(source)).splitlines(), start=1)
-        if text.strip()
+        (number, text.strip(" \t\r"))
+        for number, text in enumerate(_read_source(str(source)).split("\n"), start=1)
+        if text.strip(" \t\r")
     ]
     if not numbered:
         raise CliError(
@@ -439,7 +489,7 @@ def run(invocation: Invocation) -> HandlerResult:
             try:
                 spec = parse_line(number, text, defaults, _command_flags)
                 cmd, line_id = spec.cmd, spec.line_id
-                exit_status, envelope = execute_line(spec.argv)
+                exit_status, envelope = execute_line(spec.argv, spec.cmd)
             except CliError as error:
                 cmd = cmd or _best_effort_cmd(text)
                 exit_status, envelope = error.exit_status, error.to_envelope()
@@ -456,6 +506,13 @@ def run(invocation: Invocation) -> HandlerResult:
             totals.failed += 1
             totals.failures.append(number)
             run_exit = run_exit or exit_status
+            if exit_status == EXIT_INTERRUPT:
+                # Ctrl-C ends the whole run, --continue or not: the lines after it are
+                # skipped, never started.
+                run_exit = EXIT_INTERRUPT
+                totals.stopped_at = number
+                totals.skipped = len(numbered) - position - 1
+                break
             if not keep_going:
                 totals.stopped_at = number
                 totals.skipped = len(numbered) - position - 1

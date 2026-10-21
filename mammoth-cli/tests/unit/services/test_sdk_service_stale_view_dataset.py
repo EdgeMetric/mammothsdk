@@ -20,6 +20,10 @@ AUTH = ResolvedAuth(
 )
 
 
+READ = "mammoth.api.dataviews.DataviewsAPI.get"
+WRITE = "mammoth.api.pipeline.PipelineAPI.add_task"
+
+
 class _Pipeline:
     def __init__(self, stored: set[int]) -> None:
         self.stored = stored
@@ -64,7 +68,7 @@ def test_404_after_a_stored_answer_retries_once(
     pipeline = _Pipeline({290})
     service._client.__dict__["pipeline"] = pipeline
     attempts = _wire(service, monkeypatch, [MammothAPIError("gone", status_code=404), "ok"])
-    assert service.call("x.y") == "ok"
+    assert service.call(READ) == "ok"
     assert len(attempts) == 2
     assert pipeline.forgotten == [290]
 
@@ -76,7 +80,7 @@ def test_404_without_a_stored_answer_is_not_retried(
     service._client.__dict__["pipeline"] = pipeline
     attempts = _wire(service, monkeypatch, [MammothAPIError("gone", status_code=404), "ok"])
     with pytest.raises(CliError) as excinfo:
-        service.call("x.y")
+        service.call(READ)
     assert excinfo.value.exit_status == 5
     assert len(attempts) == 1
 
@@ -92,7 +96,7 @@ def test_second_404_surfaces_after_one_retry(
         [MammothAPIError("gone", status_code=404), MammothAPIError("gone", status_code=404)],
     )
     with pytest.raises(CliError) as excinfo:
-        service.call("x.y")
+        service.call(READ)
     assert excinfo.value.exit_status == 5
     assert len(attempts) == 2
 
@@ -104,6 +108,37 @@ def test_other_errors_are_not_retried(
     service._client.__dict__["pipeline"] = pipeline
     attempts = _wire(service, monkeypatch, [MammothAPIError("boom", status_code=500), "ok"])
     with pytest.raises(CliError):
-        service.call("x.y")
+        service.call(READ)
     assert len(attempts) == 1
     assert pipeline.forgotten == []
+
+
+def test_a_write_is_never_replayed_after_a_404(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """add_task may have run before a later step 404ed: sending it again could add two."""
+    pipeline = _Pipeline({290})
+    service._client.__dict__["pipeline"] = pipeline
+    attempts = _wire(service, monkeypatch, [MammothAPIError("gone", status_code=404), "ok"])
+    with pytest.raises(CliError) as excinfo:
+        service.call(WRITE)
+    assert excinfo.value.exit_status == 5
+    assert len(attempts) == 1
+    # The stale entry is still dropped, so the next command asks the server.
+    assert pipeline.forgotten == [290]
+
+
+def test_an_older_sdk_without_the_store_just_raises_the_404(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """mammoth-io 0.8.46 has no stored_dataview_resolutions(): no AttributeError, no retry."""
+
+    class OldPipeline:
+        pass
+
+    service._client.__dict__["pipeline"] = OldPipeline()
+    attempts = _wire(service, monkeypatch, [MammothAPIError("gone", status_code=404), "ok"])
+    with pytest.raises(CliError) as excinfo:
+        service.call(READ)
+    assert excinfo.value.exit_status == 5
+    assert len(attempts) == 1

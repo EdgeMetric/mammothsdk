@@ -33,6 +33,7 @@ or not-yet-backed commands.
 from __future__ import annotations
 
 import math
+import re
 from collections.abc import Iterable, Mapping
 from typing import Any
 
@@ -49,6 +50,8 @@ from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import TypeValidationError, is_opaque_mapping, validate_value
 
 _OPTION_PREFIX = "-"
+#: A negative number (``-5``, ``-0.25``, ``-1e3``) is a value, not an option.
+NEGATIVE_NUMBER = re.compile(r"^-(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
 
 #: Flags a few commands take in place of the ``--input`` field of the same name.
 COMMAND_FLAGS: dict[str, frozenset[str]] = {
@@ -140,7 +143,11 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
     flags = COMMAND_FLAGS.get(command_id, frozenset())
     tokens = [token for token in extra_args if token not in flags]
     for token in tokens:
-        if token.startswith(_OPTION_PREFIX) and token != _OPTION_PREFIX:
+        if (
+            token.startswith(_OPTION_PREFIX)
+            and token != _OPTION_PREFIX
+            and not NEGATIVE_NUMBER.match(token)
+        ):
             hint, hint_details = _unknown_option_hint(command_id, token)
             raise CliError(
                 code=CODE_UNKNOWN_OPTION,

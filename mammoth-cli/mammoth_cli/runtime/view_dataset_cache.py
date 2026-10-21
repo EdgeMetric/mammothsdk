@@ -77,7 +77,7 @@ class ViewDatasetStore:
             try:
                 with os.fdopen(fd, "w", encoding="utf-8") as handle:
                     json.dump({"entries": entries}, handle)
-                os.chmod(tmp, 0o600)
+                # mkstemp creates the file 0600 (the test pins it): owner-only from the start.
                 os.replace(tmp, self._path)
             except BaseException:
                 Path(tmp).unlink(missing_ok=True)

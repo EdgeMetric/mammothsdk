@@ -62,6 +62,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-io, mammoth-cli)
 
+- CLI `mammoth run` refuses `run`, `auth login` and `auth logout` by the command the line resolves to in the Click tree, not by the literal `cmd` string: `{"cmd":"auth","args":["logout"]}` and `{"cmd":"run inner"}` are refused like `{"cmd":"auth logout"}`.
+- CLI `mammoth run`: Ctrl-C ends the whole run, `--continue` or not (rest `skipped`, exit 130); lines split on `\n` only (a raw U+2028 in a JSON string no longer breaks the line) and a UTF-8 BOM is accepted; FILE defaults to stdin and `--continue` works in any position (`mammoth run --continue < lines.jsonl`); `sys.exit()`/`sys.exit(0)` and a zero exit with no envelope count as success; a negative number (`-5`) is an argument, not a flag.
+- CLI: a remembered view -> dataset answer is retried after a 404 only for read-only calls (a write may have done part of its work), and an SDK without the store (mammoth-io 0.8.46) simply runs without the cache.
+
+### Release note (next mammoth-cli)
+
+- The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in the next mammoth-io. The release must raise the CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` (now `>=0.8.46`) to that version; until then the code runs without the cache on 0.8.46. Not bumped here.
+
 - `PipelineAPI.preview_task` refuses a `sample_size` outside 1 to 500 (the server's range) with `MammothValidationError`, and `view task preview` now forwards `sample_size`; before, the CLI dropped it and the server default always applied.
 - `SupportAPI.workspace_list` reads every page; it stopped at the server's first 50 workspaces.
 - `WorkspaceAPI.current` and `list` no longer look the workspace up first, which removed a duplicate `GET /workspaces/current` in the MCP server's token check.

@@ -1128,6 +1128,34 @@ def _positional_param(spec: PositionalSpec) -> inspect.Parameter:
     )
 
 
+def _reflow_command_flags(
+    command_id: str,
+    positional_names: tuple[str, ...],
+    resolved: dict[str, Any],
+    trailing: list[str],
+) -> list[str]:
+    """Keep a command's own flag (``run --continue``) out of its positional slots.
+
+    The leaf ignores unknown options, so Click hands ``--continue`` to the first free
+    positional when it comes first (``mammoth run --continue < lines.jsonl`` read the file
+    ``--continue``). The flag is lifted out wherever it sits, the positionals are filled
+    from the remaining tokens in order, and the flag is returned among the trailing tokens
+    the handler reads.
+    """
+    from mammoth_cli.runtime.strict import COMMAND_FLAGS
+
+    flags = COMMAND_FLAGS.get(command_id)
+    if not flags or not any(resolved[name] in flags for name in positional_names):
+        return trailing
+    tokens = [resolved[name] for name in positional_names if resolved[name] is not None]
+    tokens.extend(trailing)
+    found = [token for token in tokens if token in flags]
+    rest = [token for token in tokens if token not in flags]
+    for index, name in enumerate(positional_names):
+        resolved[name] = rest[index] if index < len(rest) else None
+    return [*rest[len(positional_names) :], *found]
+
+
 def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable[..., None]:
     """Return a Typer callback bound to one manifest command id.
 
@@ -1164,6 +1192,7 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
         if is_group_callback and ctx.invoked_subcommand is not None:
             return
         resolved = {name: params.pop(name) for name in positional_names}
+        trailing = _reflow_command_flags(command_id, positional_names, resolved, list(ctx.args))
         present = {name: value for name, value in resolved.items() if value is not None}
         # Mirror the bound positionals (in declared order) into extra_args ahead
         # of any genuine surplus tokens, so handlers reading extra_args by index
@@ -1172,7 +1201,7 @@ def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable
         invocation = Invocation(
             command_id=command_id,
             positionals=present,
-            extra_args=[*mirrored, *ctx.args],
+            extra_args=[*mirrored, *trailing],
             **params,
         )
         _execute(invocation)
@@ -1432,7 +1461,8 @@ _RUN_HELP_NOTE = (
     "input its --input document, flags the global flags by long name (yes, confirm, dry-run, "
     "project). Prints each line's envelope plus line, cmd and exit, then a summary; stops at "
     "the first failed line (exit = its status) unless --continue. No global --yes: a "
-    "mutating line carries its own. --dry-run, --profile and --project apply to every line."
+    "mutating line carries its own. --dry-run, --profile and --project apply to every line. "
+    "FILE defaults to stdin; --continue may come before or after it."
 )
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,

@@ -88,7 +88,11 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
 `skipped`, `stopped_at`, `failed_lines`, `continue`, `dry_run` and `exit`.
 
 - The run stops at the first failed line and exits with that line's status; the lines after it
-  are `skipped`. `--continue` runs every line and exits with the first failure's status.
+  are `skipped`. `--continue` (before or after FILE) runs every line and exits with the first
+  failure's status. Ctrl-C ends the whole run either way: the lines after it are `skipped` and the
+  exit is 130. FILE defaults to stdin, so `mammoth run --continue < steps.jsonl` works.
+- Only `\n` ends a line (a raw U+2028 inside a JSON string stays in it), a UTF-8 BOM is accepted,
+  and `line` counts physical lines, blank ones included.
 - A line is a command like any other. A mutating line without its own `"yes": true` (and
   `"confirm"` where the command needs the target) fails that line with `confirmation_required`;
   `run` has no global `--yes` or `--confirm` and refuses them.
@@ -96,7 +100,7 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
   every line; a line's `flags` override all of them except `--dry-run`.
 - A bad line (invalid JSON, a duplicate or unknown key, a flag in `args`, a reserved flag) is an
   `invalid_run_line` error for that line, exit 2. `run`, `auth login` and `auth logout` cannot be
-  lines (`run_command_refused`).
+  lines, however `cmd` and `args` spell them (`run_command_refused`).
 - stdout carries only the envelopes; progress and diagnostics stay on stderr.
 
 ## Exit codes
