@@ -86,6 +86,14 @@ A TEXT column that writes numbers with a decimal comma (`1.234,5`) converts with
 defaults to the other mark). `view data profile` lists such a column under
 `summary.mixed_number_format` when its values mix notations.
 
+A TEXT column of dates converts with `"to":"DATE"` and, on the same `conversions` entry,
+`"input_formats":["DD/MM/YYYY","YYYY-MM-DD"]` (every layout the column mixes),
+`"output_format":"DD-Mon-YYYY"` (how it displays) and
+`"input_format_preference":"uk"` or `"us"` (which way `03/04/2024` reads). Formats are
+Postgres date patterns.
+`view column format set` changes only how a DATE or number column
+shows, never its values.
+
 In a math `expression`, write a multi-word display name bare (`Quantity * Unit
 Price`) or quoted (`Quantity * \"Unit Price\"` inside the JSON string).
 

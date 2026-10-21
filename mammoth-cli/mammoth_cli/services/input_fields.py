@@ -371,6 +371,15 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "color": "red",
     },
     "view.conditional-format.delete-all": {"rule_id": "bca0ff33bd6f8ed1"},
+    "view.conditional-format.replace": {
+        "columns": ["Q1", "Q2", "Q3"],
+        "operator": "<",
+        "value": 55,
+        "color": "red",
+    },
+    "view.column.format.set": {
+        "formats": {"Admitted": {"date_format": "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}
+    },
     "dataset.bulk-delete": {"dataset_ids": [456, 457]},
     "batch.bulk-delete": {"ids": [11, 12]},
     "folder.move": {"resource_ids": [8024], "target_folder_resource_id": "root"},
@@ -507,7 +516,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
 #: resource identity. It is not a View method argument; the service uses it to
 #: fetch the view from its exact parent instead of project-wide discovery,
 #: which non-read view commands refuse.
-_RESOURCE_DATASET_PREFIXES = ("view.transform.", "view.draft.")
+_RESOURCE_DATASET_PREFIXES = ("view.transform.", "view.draft.", "view.column.")
 
 
 def accepts_resource_dataset(command_id: str) -> bool:

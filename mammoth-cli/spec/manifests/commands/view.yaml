@@ -550,6 +550,59 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: view.column.format.set
+  command_path: view column format set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - Patch
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._column_ops.ColumnOpsMixin.set_column_format
+  sdk_conversion: Call mammoth._mixins._column_ops.ColumnOpsMixin.set_column_format with validated request
+    fields.
+  request_model: ViewColumnFormatSetRequest
+  result_model: ViewColumnFormatSetResult
+  mutation_class: benign_mutation
+  edits_target: true
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  live_test: LT-VIEW-COLUMN-FORMAT-SET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view column format set VIEW_ID --help
+  agent_example: 'mammoth view column format set 123 --input ''{"formats": {"Admitted": {"date_format":
+    "%d-%b-%Y"}, "Revenue": {"decimal_spec": 2}}, "dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-COLUMN-FORMAT-SET
+  contract_tests:
+  - CT-VIEW-COLUMN-FORMAT-SET-HUMAN
+  - CT-VIEW-COLUMN-FORMAT-SET-JSON
+  - CT-VIEW-COLUMN-FORMAT-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'A view display setting (the web grid''s column format menu), not a pipeline task:
+    it changes how values show, not the stored values, and adds no task. Date columns take date_format
+    (python style, %d-%b-%Y) or postgres_date_format (DD-Mon-YYYY); numeric columns take decimal_spec
+    (decimal places), currency_symbol, is_percentage, thousands_separator, decimal_separator. Keys given
+    replace the same keys of the column''s format; the rest are kept. To change how TEXT is read as a
+    date, use view transform convert-type.'
+  reviewed_by: primary
 - command_id: view.conditional-format.create
   command_path: view conditional-format create
   disposition: command
@@ -709,6 +762,65 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.conditional-format.replace
+  command_path: view conditional-format replace
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateConditionalFormat
+  - DeleteConditionalFormat
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  - name: dataset_id
+    type: int
+    required: false
+    metavar: DATASET_ID
+    falls_back_to_field: dataset_id
+    help: 'Exact parent dataset ID. Required for this command: pass it here or as the ''dataset_id'' input
+      field; only read commands may omit it and discover the parent.'
+  options: []
+  sdk_symbol: mammoth.api.dataviews.DataviewsAPI.conditional_format_replace
+  sdk_conversion: Call mammoth.api.dataviews.DataviewsAPI.conditional_format_replace with validated request
+    fields.
+  request_model: ViewConditionalFormatReplaceRequest
+  result_model: ViewConditionalFormatReplaceResult
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  readback:
+    command: view.conditional-format.list
+    ids:
+      view_id: positional.0
+    kind: object
+  live_test: LT-VIEW-CONDITIONAL-FORMAT-REPLACE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view conditional-format replace VIEW_ID --help
+  agent_example: 'mammoth view conditional-format replace 123 456 --input ''{"columns": ["Q1", "Q2", "Q3"],
+    "operator": "<", "value": 55, "color": "red"}'' --yes'
+  unit_tests:
+  - UT-VIEW-CONDITIONAL-FORMAT-REPLACE
+  contract_tests:
+  - CT-VIEW-CONDITIONAL-FORMAT-REPLACE-HUMAN
+  - CT-VIEW-CONDITIONAL-FORMAT-REPLACE-JSON
+  - CT-VIEW-CONDITIONAL-FORMAT-REPLACE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Same input as view conditional-format create (typed fields or a raw rule). Deletes
+    every existing rule of the view, then creates the new ones, in one call; a refused rule leaves the
+    rules created so far and the error names deleted_rule_ids and created_rule_ids. To add a rule beside
+    the others use create.
   reviewed_by: primary
 - command_id: view.conditional-format.update
   command_path: view conditional-format update
@@ -2566,6 +2678,49 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: view.export.download
+  command_path: view export download
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddExport
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.to_file
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.to_file with validated request fields.
+  request_model: ViewExportDownloadRequest
+  result_model: ViewExportDownloadResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  no_readback: a file download returns a one-time download link that settles synchronously; no CLI read command
+    can re-fetch it
+  live_test: LT-VIEW-EXPORT-DOWNLOAD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view export download DATAVIEW_ID --help
+  agent_example: mammoth view export download 123
+  unit_tests:
+  - UT-VIEW-EXPORT-DOWNLOAD
+  contract_tests:
+  - CT-VIEW-EXPORT-DOWNLOAD-HUMAN
+  - CT-VIEW-EXPORT-DOWNLOAD-JSON
+  - CT-VIEW-EXPORT-DOWNLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g. mammoth view export download 123 --input ''{"format": "xlsx"}'' (csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is given.'
   reviewed_by: primary
 - command_id: view.export.elasticsearch
   command_path: view export elasticsearch
@@ -4875,7 +5030,9 @@ commands:
   draft_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-DRAFT
   undo_test: LT-VIEW-TRANSFORM-CONVERT-TYPE-UNDO
   known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to count values that will
-    not convert (they become empty).'
+    not convert (they become empty). A DATE conversion of a text column takes input_formats (list of the
+    layouts it mixes), output_format (display layout) and input_format_preference (uk or us for day/month
+    ambiguity) on the conversions entry; format (python-style date_format) still works.'
   reviewed_by: primary
 - command_id: view.transform.copy-columns
   command_path: view transform copy-columns
