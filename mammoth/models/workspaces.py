@@ -6,10 +6,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from ._base import MammothModel
 
 
-class WorkspaceSchema(BaseModel):
+class WorkspaceSchema(MammothModel):
     """Schema for a workspace object."""
 
     id: int | None = Field(None, description="Unique identifier for the workspace")
@@ -31,7 +33,7 @@ class WorkspaceSchema(BaseModel):
     total_users: int | None = Field(None, description="Total number of users in the workspace")
 
 
-class CurrentWorkspace(BaseModel):
+class CurrentWorkspace(MammothModel):
     """What a credential is fenced to: its workspace, the server its token was
     issued for, the projects it may act in, and whether the user granted it
     read-only.
@@ -48,7 +50,7 @@ class CurrentWorkspace(BaseModel):
     read_only: bool = False
 
 
-class WorkspacesSchema(BaseModel):
+class WorkspacesSchema(MammothModel):
     """Schema for a list of workspaces with pagination."""
 
     workspaces: list[WorkspaceSchema] = Field(..., description="List of workspace objects")
@@ -77,7 +79,7 @@ class WorkspacePatchPath(str, Enum):
     BILLING_CYCLE = "billing_cycle"
 
 
-class WorkspacePatchOp(BaseModel):
+class WorkspacePatchOp(MammothModel):
     """A single JSON-patch operation for workspace update.
 
     Attributes:
@@ -128,7 +130,7 @@ class WorkspaceRoleType(str, Enum):
     WORKSPACE_GUEST = "workspace_guest"
 
 
-class UserRolePatchOp(BaseModel):
+class UserRolePatchOp(MammothModel):
     """A single JSON-patch operation for workspace user update.
 
     Attributes:

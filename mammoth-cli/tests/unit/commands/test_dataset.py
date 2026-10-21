@@ -607,6 +607,10 @@ def test_batch_data_rejects_invalid_paging_before_service(
 def test_batch_data_forwards_ids_and_paging(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    # Column names resolve to the ids the route wants through the dataset's schema.
+    fake_service.responses[_GET] = {
+        "data_schema": [{"c_name": "a", "c_id": "column_a"}, {"c_name": "b", "c_id": "column_b"}]
+    }
     dataset_cmd.dataset_batch_data(
         _inv(
             "dataset.batch-data",
@@ -616,6 +620,7 @@ def test_batch_data_forwards_ids_and_paging(
         )
     )
     assert fake_service.call_log == [
+        (_GET, {"dataset_id": 7, "project_id": 180}),
         (
             _BATCH_DATA,
             {
@@ -624,9 +629,9 @@ def test_batch_data_forwards_ids_and_paging(
                 "project_id": 180,
                 "limit": 10,
                 "offset": 2,
-                "columns": "a,b",
+                "columns": "column_a,column_b",
             },
-        )
+        ),
     ]
 
 

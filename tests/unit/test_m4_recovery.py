@@ -56,7 +56,8 @@ class _Response:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise requests.HTTPError(response=self)
+            request = httpx.Request("GET", "https://test.invalid")
+            raise httpx.HTTPStatusError(str(self.status_code), request=request, response=self)
 
     def close(self) -> None:
         self.closed = True

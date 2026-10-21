@@ -303,7 +303,7 @@ def build_models() -> str:
         class_name: str, schema: dict[str, Any], extra: str, response_context: bool
     ) -> list[str]:
         block = [
-            f"class {class_name}(BaseModel):",
+            f"class {class_name}(MammothModel):",
             f'    model_config = ConfigDict(extra="{extra}")',
         ]
         required = set(schema.get("required", []))
@@ -357,7 +357,13 @@ def build_models() -> str:
                 body.extend(render_class(variant, schema, "allow", response_context=True))
                 emitted.append(variant)
         else:
-            body.extend([f"class {name}(RootModel[{schema_annotation(schema)}]):", "    pass", ""])
+            body.extend(
+                [
+                    f"class {name}(RootModel[{schema_annotation(schema)}]):",
+                    "    model_config = ConfigDict(defer_build=True)",
+                    "",
+                ]
+            )
             emitted.append(name)
 
     needs_field = any("Annotated[" in line for line in body)
@@ -367,9 +373,9 @@ def build_models() -> str:
         else "from typing import Any, Literal"
     )
     pydantic_imports = (
-        "from pydantic import BaseModel, ConfigDict, Field, RootModel"
+        "from pydantic import ConfigDict, Field, RootModel"
         if needs_field
-        else "from pydantic import BaseModel, ConfigDict, RootModel"
+        else "from pydantic import ConfigDict, RootModel"
     )
     lines = [
         "# ruff: noqa: N801, N815",
@@ -380,16 +386,12 @@ def build_models() -> str:
         "",
         pydantic_imports,
         "",
+        "from ._base import MammothModel",
+        "",
     ]
     lines.extend(body)
     lines.extend(
         [
-            "_MODEL_NAMESPACE = {",
-            "    name: value for name, value in globals().items() if isinstance(value, type)",
-            "}",
-            f"for _model_name in {emitted!r}:",
-            "    globals()[_model_name].model_rebuild(_types_namespace=_MODEL_NAMESPACE)",
-            "",
             f"__all__ = {emitted!r}",
         ]
     )

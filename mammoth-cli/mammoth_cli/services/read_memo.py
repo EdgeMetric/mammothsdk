@@ -50,7 +50,7 @@ def prefetch(service: Any, calls: Sequence[tuple[str, dict[str, Any]]]) -> list[
     Returns one result per call, in order: the value, or the ``CliError`` that call raised.
     A service with no memo (a stand-in) still gets the reads run together.
     """
-    results = service.call_many(list(calls))
+    results: list[Any] = service.call_many(list(calls))
     memo = getattr(service, "memo", None)
     if isinstance(memo, ReadMemo):
         for (symbol, kwargs), result in zip(calls, results, strict=True):

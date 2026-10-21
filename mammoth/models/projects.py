@@ -7,17 +7,19 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ._base import MammothModel
 
 
-class ProjectProperties(BaseModel):
+class ProjectProperties(MammothModel):
     """Schema for project properties."""
 
     # This can be extended based on actual project properties structure
     pass
 
 
-class ProjectSchema(BaseModel):
+class ProjectSchema(MammothModel):
     """Schema for a project object."""
 
     id: int | None = Field(None, description="Unique identifier for the project")
@@ -33,7 +35,7 @@ class ProjectSchema(BaseModel):
     )
 
 
-class ProjectList(BaseModel):
+class ProjectList(MammothModel):
     """Schema for a list of projects with pagination."""
 
     projects: list[ProjectSchema] = Field(..., description="List of project objects")
@@ -42,14 +44,14 @@ class ProjectList(BaseModel):
     offset: int = Field(..., description="Number of results skipped")
 
 
-class ProjectCreate(BaseModel):
+class ProjectCreate(MammothModel):
     """Schema for creating a new project."""
 
     name: str = Field(..., min_length=1, description="Name for the new project")
     description: str | None = Field(None, description="Optional description for the project")
 
 
-class PatchOperation(BaseModel):
+class PatchOperation(MammothModel):
     """Schema for a single patch operation."""
 
     op: str = Field(..., description="Operation type (replace, add, remove)")
@@ -57,33 +59,33 @@ class PatchOperation(BaseModel):
     value: Any | None = Field(None, description="New value for the field")
 
 
-class ProjectPatch(BaseModel):
+class ProjectPatch(MammothModel):
     """Schema for project patch operations."""
 
     patch: list[PatchOperation] = Field(..., description="List of patch operations")
 
 
-class AddUsersToProject(BaseModel):
+class AddUsersToProject(MammothModel):
     """Schema for adding users to a project."""
 
     user_emails: list[str] = Field(..., description="List of user email addresses to add")
     role: str | None = Field("editor", description="Role for the users (editor, admin)")
 
 
-class ProjectUserPatch(BaseModel):
+class ProjectUserPatch(MammothModel):
     """Schema for updating user role in a project."""
 
     role: str = Field(..., description="New role for the user (editor, admin)")
 
 
-class ProjectsPatch(BaseModel):
+class ProjectsPatch(MammothModel):
     """Schema for bulk project operations."""
 
     project_ids: list[int] = Field(..., description="List of project IDs to update")
     operations: list[PatchOperation] = Field(..., description="Operations to perform on projects")
 
 
-class DataSyncPatchValue(BaseModel):
+class DataSyncPatchValue(MammothModel):
     """Target and desired data-sync settings for one resource."""
 
     model_config = ConfigDict(extra="forbid")
@@ -94,7 +96,7 @@ class DataSyncPatchValue(BaseModel):
     run_pending_update: bool | None = None
 
 
-class DataSyncPatchItem(BaseModel):
+class DataSyncPatchItem(MammothModel):
     """One release-defined data-sync JSON-PATCH operation."""
 
     model_config = ConfigDict(extra="forbid")
@@ -104,7 +106,7 @@ class DataSyncPatchItem(BaseModel):
     value: DataSyncPatchValue
 
 
-class DataSyncPatchRequest(BaseModel):
+class DataSyncPatchRequest(MammothModel):
     """Typed request for bulk resource data-sync updates."""
 
     model_config = ConfigDict(extra="forbid")

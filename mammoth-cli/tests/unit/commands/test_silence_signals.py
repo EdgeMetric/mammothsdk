@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mammoth_cli.commands.view import COLUMN_CHECK_ISSUES, _with_column_warnings
+from mammoth_cli.commands.view.column_checks import COLUMN_CHECK_ISSUES, _with_column_warnings
 
 
 def test_clean_page_says_it_was_checked() -> None:

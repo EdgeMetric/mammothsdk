@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 from live_harness import LiveCli, open_live_service, upload_csv
 
-from mammoth_cli.commands.view import upload_preview
+from mammoth_cli.commands.view.upload import upload_preview
 from mammoth_cli.errors.envelope import CliError
 
 pytestmark = pytest.mark.live

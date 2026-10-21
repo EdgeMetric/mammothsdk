@@ -115,7 +115,8 @@ def test_schema_find_inlines_accepted_fields_and_agent_example_for_top_matches_o
         assert match["agent_example"]
         assert match["accepted_fields"]
         for field in match["accepted_fields"]:
-            assert set(field) == {"name", "type", "required", "enum"}
+            # A field with a nested shape also carries its "schema".
+            assert set(field) - {"schema"} == {"name", "type", "required", "enum"}
 
     for match in result["matches"][3:]:
         assert "accepted_fields" not in match

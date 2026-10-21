@@ -109,7 +109,7 @@ def _result_made(
     invocation: Invocation, record: dict[str, Any], result: dict[str, Any]
 ) -> list[str]:
     """The ``kind:id`` of each object the result names as ``<kind>_id``."""
-    kinds = _RESULT_KINDS
+    kinds: tuple[str, ...] = _RESULT_KINDS
     if invocation.command_id in _MAKES_DATASET or _new_kind(record) == "dataset":
         kinds = ("dataset", *kinds)
     keys = (_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds)

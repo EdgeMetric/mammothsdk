@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ._base import MammothModel
 
 
 class ExternalKeyType(str, Enum):
@@ -16,7 +18,7 @@ class ExternalKeyType(str, Enum):
     GROK = "grok"
 
 
-class ModelConfigSpec(BaseModel):
+class ModelConfigSpec(MammothModel):
     """Optional per-key model configuration overrides.
 
     Only the fields you set are sent; unset fields fall back to the provider's

@@ -2,6 +2,7 @@
 
 from unittest.mock import patch
 
+import httpx
 import pytest
 from starlette.testclient import TestClient
 
@@ -9,6 +10,7 @@ from mammoth_mcp_server import store
 from mammoth_mcp_server.app import check_settings, create_app
 from mammoth_mcp_server.config import MCP_OAUTH_URL, MCP_RESOURCE_URL, SERVER_URL
 from mammoth_mcp_server.consts import ErrorFields, UploadFields
+from mammoth_mcp_server.sdk import shared_http_client
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket
 
 from .helpers import (
@@ -318,3 +320,25 @@ class TestWhatTheServerRefusesToStartWithout:
             pytest.raises(RuntimeError, match="MCP_ENCRYPTION_KEY"),
         ):
             check_settings()
+
+
+class TestTheConnectionPoolFollowsTheServer:
+    def test_stopping_the_server_closes_the_pool_the_tools_shared(self, redis: FakeRedis) -> None:
+        async def open_pool():
+            return shared_http_client()
+
+        pool = run(open_pool())
+        with TestClient(create_app(), base_url=SERVER_URL):
+            assert not pool.is_closed
+        assert pool.is_closed
+
+    def test_the_shared_pool_keeps_no_cookie_for_the_next_caller(self) -> None:
+        async def open_pool():
+            return shared_http_client()
+
+        pool = run(open_pool())
+        request = httpx.Request("GET", "https://app.mammoth.io/api/v2/workspaces/current")
+        pool.cookies.extract_cookies(
+            httpx.Response(200, headers={"set-cookie": "sess=one-user; Path=/"}, request=request)
+        )
+        assert not pool.cookies

@@ -560,8 +560,8 @@ def is_fresh(session: OAuthSession, now: float | None = None) -> bool:
     return session.expires_at - (now if now is not None else time.time()) > REFRESH_MARGIN_SECONDS
 
 
-def _stored_session(profile: str) -> OAuthSession:
-    credential = credentials.load_credential(profile)
+def _stored_session(profile: str, *, fresh: bool = False) -> OAuthSession:
+    credential = credentials.load_credential(profile, fresh=fresh)
     if credential is None or credential.oauth is None:
         raise login_expired_error(profile)
     return credential.oauth
@@ -598,7 +598,7 @@ def refresh_session(profile: str, base_url: str) -> OAuthSession:
     """
     with _file_lock(profile):
         # Another process may have refreshed while this one waited.
-        session = _stored_session(profile)
+        session = _stored_session(profile, fresh=True)
         if is_fresh(session):
             _log_refresh(profile, session, None, "skipped_fresh")
             return session

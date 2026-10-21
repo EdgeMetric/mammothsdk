@@ -5,9 +5,29 @@ from __future__ import annotations
 import json
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.runtime.invocation import Invocation
+
+
+def _set_open_service(monkeypatch: pytest.MonkeyPatch, module: Any, replacement: Any) -> None:
+    """Patch ``open_service`` in every module that looks it up.
+
+    The ``view`` package spreads its handlers over submodules, each importing
+    ``open_service`` itself, so the patch must land on each of them.
+    """
+    import importlib
+
+    if module.__name__ != "mammoth_cli.commands.view":
+        monkeypatch.setattr(module, "open_service", replacement)
+        return
+    for name in module._SUBMODULES:
+        submodule = importlib.import_module(f"{module.__name__}.{name}")
+        if "open_service" in vars(submodule):
+            monkeypatch.setattr(submodule, "open_service", replacement)
 
 
 def test_items_all_follows_bounded_offsets_on_exact_parent(
@@ -41,7 +61,7 @@ def test_items_all_follows_bounded_offsets_on_exact_parent(
     def bound(_invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
 
-    monkeypatch.setattr(view_cmd, "open_service", bound)
+    _set_open_service(monkeypatch, view_cmd, bound)
     invocation = Invocation(
         "view.pipeline.items-all",
         output="json",
