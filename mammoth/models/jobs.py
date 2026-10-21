@@ -8,7 +8,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ._base import MammothModel
 
 
 class JobStatus(str, Enum):
@@ -20,7 +22,7 @@ class JobStatus(str, Enum):
     ERROR = "error"
 
 
-class JobSchema(BaseModel):
+class JobSchema(MammothModel):
     """Job schema model."""
 
     id: int = Field(..., description="Job ID")
@@ -34,19 +36,19 @@ class JobSchema(BaseModel):
     operation: str = Field(..., description="Operation is async task name which Job is tracking")
 
 
-class JobResponse(BaseModel):
+class JobResponse(MammothModel):
     """Job response model."""
 
     job: JobSchema = Field(..., description="Job information")
 
 
-class JobsGetResponse(BaseModel):
+class JobsGetResponse(MammothModel):
     """Multiple jobs response model."""
 
     jobs: list[JobSchema] = Field(..., description="List of jobs")
 
 
-class ObjectJobSchema(BaseModel):
+class ObjectJobSchema(MammothModel):
     """Object job schema model."""
 
     status_code: int | None = Field(None, description="Status code")

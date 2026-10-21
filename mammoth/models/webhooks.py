@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
+
+from ._base import MammothModel
 
 
 class WebhookMode(str, Enum):
@@ -16,7 +18,7 @@ class WebhookMode(str, Enum):
     COMBINE = "combine"
 
 
-class WebhookInfo(BaseModel):
+class WebhookInfo(MammothModel):
     """Information about a webhook dataset (matches WebhookStandardSchema)."""
 
     model_config = ConfigDict(extra="allow")
@@ -30,7 +32,7 @@ class WebhookInfo(BaseModel):
     secret: str | None = None
 
 
-class WebhookCreate(BaseModel):
+class WebhookCreate(MammothModel):
     """Specification for creating a webhook dataset (matches WebhookSpec)."""
 
     name: str = "Generic Webhook"
