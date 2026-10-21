@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from typer.testing import CliRunner
 
+from mammoth_cli import app as app_module
 from mammoth_cli.app import _group_description, app
 from mammoth_cli.manifest.loader import load_commands
 
@@ -105,3 +106,21 @@ def test_help_input_types_keep_their_brackets() -> None:
     )
     assert _short_type("mammoth.condition.Condition | None") == "condition"
     assert _short_type("int") == "int"
+
+
+def test_sdk_backed_leaf_help_reads_the_installed_sdk_not_the_index(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The CLI accepts a range of SDK versions, so a stale index must not win for those."""
+    command_id = "workspace.current"
+    live = app_module.live_command_summary(command_id)
+    assert live
+    monkeypatch.setattr(app_module, "_summary_index", lambda: {command_id: "STALE INDEX TEXT"})
+    help_text = app_module._command_help(command_id, None) or ""
+    assert "STALE INDEX TEXT" not in help_text
+    assert live in help_text
+
+
+def test_handler_backed_leaf_help_still_reads_the_index(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(app_module, "_summary_index", lambda: {"project.list": "INDEX TEXT"})
+    assert "INDEX TEXT" in (app_module._command_help("project.list", None) or "")

@@ -1423,6 +1423,13 @@ def _indexed_summary(command_id: str) -> str | None:
     return _summary_index().get(command_id)
 
 
+def _sdk_backed(command_id: str) -> bool:
+    """Whether the command's help comes from an SDK method's docstring."""
+    from mammoth_cli.commands.registry import _TARGETS
+
+    return _TARGETS.get(command_id, "").endswith(":generated_dashboard")
+
+
 #: A line of ``--help`` a command needs that its handler's shared docstring cannot carry.
 _RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
 _HELP_NOTES = {
@@ -1455,8 +1462,10 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
 
     parts: list[str] = []
     # The generated index equals the handler's docstring (a unit test pins it) and reading it
-    # keeps the handler's module, and the SDK it imports, out of ``--help``.
-    summary = _indexed_summary(command_id) or live_command_summary(command_id)
+    # keeps the handler's module, and the SDK it imports, out of ``--help``. A command built from
+    # an SDK method reads it live: the installed SDK may be newer than the index.
+    summary = None if _sdk_backed(command_id) else _indexed_summary(command_id)
+    summary = summary or live_command_summary(command_id)
     if summary:
         parts.append(summary)
     if record is not None and edits_view_in_place(record):
