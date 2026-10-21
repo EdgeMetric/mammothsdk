@@ -9,6 +9,7 @@ from mammoth_mcp_server import store
 from mammoth_mcp_server.app import check_settings, create_app
 from mammoth_mcp_server.config import MCP_OAUTH_URL, MCP_RESOURCE_URL, SERVER_URL
 from mammoth_mcp_server.consts import ErrorFields, UploadFields
+from mammoth_mcp_server.sdk import shared_http_client
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket
 
 from .helpers import (
@@ -318,3 +319,14 @@ class TestWhatTheServerRefusesToStartWithout:
             pytest.raises(RuntimeError, match="MCP_ENCRYPTION_KEY"),
         ):
             check_settings()
+
+
+class TestTheConnectionPoolFollowsTheServer:
+    def test_stopping_the_server_closes_the_pool_the_tools_shared(self, redis: FakeRedis) -> None:
+        async def open_pool():
+            return shared_http_client()
+
+        pool = run(open_pool())
+        with TestClient(create_app(), base_url=SERVER_URL):
+            assert not pool.is_closed
+        assert pool.is_closed

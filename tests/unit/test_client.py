@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 from mammoth.client import MammothClient
@@ -99,7 +100,6 @@ class TestClientInit:
             {"api_key": "k", "workspace_id": 1},
             {"api_token": "mm_x", "api_key": "k", "api_secret": "s", "workspace_id": 1},
             {"api_token": "  "},
-            {"api_token": "mm_x", "workspace_id": 1},
         ],
     )
     async def test_credential_combinations_are_validated(self, kwargs):
@@ -332,3 +332,93 @@ def test_user_agent_prefixes_the_sdk_agent() -> None:
     assert (
         MammothClient(api_token="mm_unit").session.headers["User-Agent"].startswith("mammoth-io/")
     )
+
+
+class TestWorkspaceHintAndLookup:
+    """The workspace of a token client: hinted, or learned without blocking the loop."""
+
+    async def test_token_accepts_a_workspace_hint_and_never_looks_it_up(self):
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={"ok": True})
+
+        shared = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        client = MammothClient(api_token="mm_hint", workspace_id=7, http_client=shared)
+        assert client.workspace_id == 7
+        await client.request_json("GET", "/ping")
+        assert [r.url.path for r in seen] == ["/api/v2/ping"]
+        assert seen[0].headers["X-WORKSPACE-ID"] == "7"
+        await shared.aclose()
+
+    async def test_unknown_workspace_is_learned_asynchronously_before_a_url_is_built(self):
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if request.url.path.endswith("/workspaces/current"):
+                return httpx.Response(200, json={"id": 4242})
+            return httpx.Response(200, json=[])
+
+        shared = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        client = MammothClient(
+            api_token="mm_lookup_async",
+            base_url="https://lookup.example/api/v2",
+            http_client=shared,
+        )
+        with pytest.raises(RuntimeError, match="resolve_workspace_id"):
+            client.workspace_id  # noqa: B018
+        client.set_project_id(1)
+        await client.folders.list()
+        assert client.workspace_id == 4242
+        assert [r.url.path for r in seen][0].endswith("/workspaces/current")
+        assert "4242" in str(seen[1].url)
+        await shared.aclose()
+
+    async def test_resolve_workspace_id_is_a_no_op_once_known(self):
+        client = MammothClient(api_key="k", api_secret="s", workspace_id=3)
+        assert await client.resolve_workspace_id() == 3
+        await client.close()
+
+
+class TestSharedHttpClient:
+    """Two callers sharing one pool: each sends its own credentials, nobody closes the pool."""
+
+    async def test_each_client_sends_its_own_authorization_and_close_keeps_the_pool(self):
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={})
+
+        shared = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        first = MammothClient(api_token="mm_first", workspace_id=1, http_client=shared)
+        second = MammothClient(
+            api_token="mm_second", workspace_id=2, http_client=shared, user_agent="tool/1"
+        )
+        key_client = MammothClient(
+            api_key="kk", api_secret="ss", workspace_id=3, http_client=shared
+        )
+        await first.request_json("GET", "/a")
+        await second.request_json("GET", "/b")
+        await key_client.request_json("GET", "/c")
+        assert seen[0].headers["Authorization"] == "Bearer mm_first"
+        assert seen[1].headers["Authorization"] == "Bearer mm_second"
+        assert seen[1].headers["User-Agent"].startswith("tool/1 mammoth-io/")
+        assert seen[2].headers["X-API-KEY"] == "kk"
+        assert "Authorization" not in seen[2].headers
+        assert seen[2].headers["X-WORKSPACE-ID"] == "3"
+        for header in ("Authorization", "X-API-KEY", "X-API-SECRET", "X-WORKSPACE-ID"):
+            assert header not in shared.headers
+        first.set_workspace_id(9)
+        assert "X-WORKSPACE-ID" not in shared.headers
+        await first.close()
+        await second.close()
+        assert not shared.is_closed
+        await shared.aclose()
+
+    async def test_an_owned_pool_is_closed(self):
+        client = MammothClient(api_token="mm_own", workspace_id=1)
+        await client.close()
+        assert client.session.is_closed

@@ -9,6 +9,7 @@ from mammoth_mcp_server.sdk import (
     API_ERROR_PREFIX,
     UNREADABLE_API_ERROR,
     build_client,
+    close_http_client,
     read_sdk_errors,
     request_api,
 )
@@ -26,7 +27,9 @@ class TestTheClientATooLCallIsGiven:
         with as_caller(token="mm_theirs"):
             client = run(a_client())
 
-        assert client.session.headers["authorization"] == "Bearer mm_theirs"
+        # The credentials ride on each request; the shared pool holds none.
+        assert client._default_headers["Authorization"] == "Bearer mm_theirs"
+        assert "authorization" not in client.session.headers
 
     def test_the_client_acts_in_the_workspace_the_token_is_for(self) -> None:
         # Left to the SDK, the client would ask the API which workspace the
@@ -63,7 +66,8 @@ class TestTheClientATooLCallIsGiven:
         with as_caller():
             client = run(a_client())
 
-        assert client.session.is_closed
+        # The shared pool stays open for the next call; the client's own session closes.
+        assert not client.session.is_closed
         assert client.download_session.is_closed
 
     def test_the_client_asks_a_running_job_as_often_as_a_tool_does(self) -> None:
@@ -126,3 +130,22 @@ class TestARouteTheSdkHasNoMethodFor:
             api.answer("GET", "/workspaces", {"message": "No such workspace"}, status=404)
             with pytest.raises(ToolError, match="No such workspace"):
                 run(self.ask("GET", "/workspaces"))
+
+
+class TestTheSharedConnectionPool:
+    def test_every_client_sends_through_one_pool_and_closing_a_client_leaves_it_open(self) -> None:
+        with as_caller(token="mm_first"):
+            first = run(a_client())
+        with as_caller(token="mm_second"):
+            second = run(a_client())
+
+        assert first.session is second.session
+        assert not first.session.is_closed
+
+    def test_the_pool_is_closed_once_when_the_server_stops(self) -> None:
+        with as_caller():
+            pool = run(a_client()).session
+        run(close_http_client())
+
+        assert pool.is_closed
+        run(close_http_client())
