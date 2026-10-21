@@ -7,6 +7,8 @@ import os
 import stat
 from pathlib import Path
 
+import pytest
+
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.runtime import view_dataset_cache
 from mammoth_cli.services.testing import FakeMammothService
@@ -33,6 +35,38 @@ def test_login_forgets_remembered_view_datasets(
     os.chmod(doc, stat.S_IRUSR | stat.S_IWUSR)
     result = make_runner().invoke(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
+    )
+    assert result.exit_code == 0, result.stderr
+    assert not kept.exists()
+
+
+def test_oauth_login_forgets_remembered_view_datasets(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from mammoth_cli.context import oauth
+
+    session = credentials.OAuthSession(
+        access=_TOKEN, refresh="r" * 40, expires_at=4102444800, client_id="cid"
+    )
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: session)
+    fake_service.responses["mammoth.api.workspace.WorkspaceAPI.get"] = {"id": 4, "name": "W"}
+    kept = _seed()
+    result = make_runner().invoke(
+        [
+            "auth",
+            "login",
+            "--method",
+            "oauth",
+            "--no-browser",
+            "--storage",
+            "file",
+            "--output",
+            "json",
+            "--no-input",
+        ],
+        env={},
     )
     assert result.exit_code == 0, result.stderr
     assert not kept.exists()

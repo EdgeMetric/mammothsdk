@@ -6,7 +6,7 @@ Every command returns the standard JSON envelope. On nonzero exit, read the erro
 
 Run: `mammoth run`. Exact input fields: `mammoth schema get run`.
 
-Example: `mammoth run commands.jsonl --profile NAME`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth run commands.jsonl`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `RunResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

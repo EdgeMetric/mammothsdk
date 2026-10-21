@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 806
+method_count: 811
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -7022,6 +7022,43 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.DataviewDatasetStore.drop
+  implementation_origin: mammoth.api.pipeline.DataviewDatasetStore.drop
+  signature: 'drop(self, workspace_id: ''int'', project_id: ''int'', dataview_id: ''int'') -> ''None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.DataviewDatasetStore.get
+  implementation_origin: mammoth.api.pipeline.DataviewDatasetStore.get
+  signature: 'get(self, workspace_id: ''int'', project_id: ''int'', dataview_id: ''int'') -> ''int | None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.DataviewDatasetStore.put
+  implementation_origin: mammoth.api.pipeline.DataviewDatasetStore.put
+  signature: 'put(self, workspace_id: ''int'', project_id: ''int'', dataview_id: ''int'', dataset_id:
+    ''int'') -> ''None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.add_task
   implementation_origin: mammoth.api.pipeline.PipelineAPI.add_task
   signature: 'add_task(self, dataview_id: ''int'', task_spec: ''dict[str, Any] | list[dict[str, Any]]'',
@@ -7098,6 +7135,18 @@ methods:
   alias_of: null
   no_command_reason: SDK-only dataview->dataset resolver seam used by public view conveniences; not a
     CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.forget_dataview_dataset
+  implementation_origin: mammoth.api.pipeline.PipelineAPI.forget_dataview_dataset
+  signature: 'forget_dataview_dataset(self, dataview_id: ''int'') -> ''None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null
@@ -7229,6 +7278,18 @@ methods:
   canonical_command: view.pipeline.rerun
   alias_of: null
   no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.stored_dataview_resolutions
+  implementation_origin: mammoth.api.pipeline.PipelineAPI.stored_dataview_resolutions
+  signature: stored_dataview_resolutions(self) -> 'frozenset[int]'
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null

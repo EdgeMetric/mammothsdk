@@ -22,6 +22,7 @@ AUTH = ResolvedAuth(
 
 READ = "mammoth.api.dataviews.DataviewsAPI.get"
 WRITE = "mammoth.api.pipeline.PipelineAPI.add_task"
+POST_READ = "mammoth.api.activity_logs.ActivityLogsAPI.export"  # read-class, but a POST
 
 
 class _Pipeline:
@@ -142,3 +143,34 @@ def test_an_older_sdk_without_the_store_just_raises_the_404(
         service.call(READ)
     assert excinfo.value.exit_status == 5
     assert len(attempts) == 1
+
+
+def test_a_read_class_post_is_never_replayed_after_a_404(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """activity export is read-class but POSTs and may start a job: not sent twice."""
+    pipeline = _Pipeline({290})
+    service._client.__dict__["pipeline"] = pipeline
+    attempts = _wire(service, monkeypatch, [MammothAPIError("gone", status_code=404), "ok"])
+    with pytest.raises(CliError):
+        service.call(POST_READ)
+    assert len(attempts) == 1
+    assert pipeline.forgotten == [290]
+
+
+@pytest.mark.parametrize(
+    "symbol, expected",
+    [
+        ("mammoth.client.ViewsResource.get", True),
+        ("mammoth.api.pipeline.PipelineAPI.list_tasks", True),
+        ("mammoth.api.dataviews.DataviewsAPI.get", True),
+        (POST_READ, False),
+        ("mammoth.api.dataviews.DataviewsAPI.query_data", False),
+        ("mammoth.api.pipeline.PipelineAPI.add_task", False),
+        ("mammoth.api.nowhere.Made.up", False),
+    ],
+)
+def test_only_get_reads_are_replayable(symbol: str, expected: bool) -> None:
+    from mammoth_cli.runtime import dryrun
+
+    assert dryrun.is_get_symbol(symbol) is expected

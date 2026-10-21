@@ -4774,7 +4774,7 @@ Total commands: 786.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.run.run`
-- Agent example: `mammoth run commands.jsonl --profile NAME`
+- Agent example: `mammoth run commands.jsonl`
 
 ## schedule
 

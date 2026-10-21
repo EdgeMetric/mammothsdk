@@ -293,9 +293,9 @@ class SdkMammothService:
             with spinner(self._progress):
                 return self._run(method(**kwargs))
         except Exception as exc:
-            if self._forget_stale_resolutions(exc) and dryrun.is_read_symbol(sdk_symbol):
+            if self._forget_stale_resolutions(exc) and dryrun.is_get_symbol(sdk_symbol):
                 # A remembered view -> dataset answer was wrong: ask the server once more.
-                # Only a read is replayed: a write may have done part of its work before
+                # Only a GET read is replayed: a write may have done part of its work before
                 # the 404 (add a step, then poll), and sending it twice could do it twice.
                 try:
                     with spinner(self._progress):

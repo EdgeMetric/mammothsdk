@@ -1048,7 +1048,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## run
 
 - `mammoth run` [read/none] -> mammoth_cli.commands.run.run
-  example: mammoth run commands.jsonl --profile NAME
+  example: mammoth run commands.jsonl
 
 ## schedule
 
