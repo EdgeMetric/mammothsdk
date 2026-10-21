@@ -9,18 +9,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (mammoth-mcp-server 0.2.7)
 
 - A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.
+
 ### Added (mammoth-mcp-server 0.2.6)
 
-- `edit_transformation_step` changes one step of a view's pipeline: `replace` (the step does a new operation, built on the columns that step reads, and a column it makes keeps its internal name so later steps still find it), `suspend` or `restore`. In draft mode the change is staged. Otherwise it runs at once, and a change that makes a step fail that did not fail before is undone, with the failing steps and their errors in `problems`. A change Mammoth refuses because a later step reads a column it removes names those columns and says to make the changes together in draft mode. A step of another view is refused before anything is sent.
-- `get_pipeline` lists the steps in error under `problems` and says what to do in `next_step`; it also says when changes are staged in draft mode and have not run. `manage_draft` "run" reports the steps the run broke.
+- `edit_transformation_step` changes one step of a view's pipeline: `replace` (the step does a new operation, built on the columns that step reads, and a column it makes keeps its internal name so later steps still find it), `suspend` or `restore`. In draft mode the change is staged, and only the steps it breaks are blamed on it. Otherwise it runs at once, and a change that makes a step fail that did not fail before is undone, with the failing steps and their errors in `problems`. A change Mammoth refuses because a later step reads a column it removes names those columns and says to make the changes together in draft mode. A step of another view is refused before anything is sent.
+- `get_pipeline` lists the steps in error under `problems` and says what to do in `next_step`; it also says when changes are staged in draft mode and have not run, steps in error or not. `manage_draft` "run" reports the steps the run broke.
 - `get_help` topic `pipeline`: when to run at once and when to use draft mode, and what to do when a step fails.
-- `edit_export` changes one export of a view: `replace` (only the settings named change, null drops one, a masked password is kept, a scheduled export keeps its schedule; nothing is sent), `suspend`, `restore`, or `run` (sends the rows now and reports the run's rows or its error, with how to fix it). An export of another view, and a command that cannot do anything (suspend twice, run a suspended export), are refused before anything is sent.
+- `edit_export` changes one export of a view: `replace` (only the settings named change, null drops one, a masked password is kept, a scheduled export keeps its schedule; nothing is sent), `suspend`, `restore`, or `run` (sends the rows now and reports the run's rows or its error, with how to fix it; a run Mammoth has not recorded yet is `run_pending`, never an older run). An export of another view, and a command that cannot do anything (suspend twice, run a suspended export), are refused before anything is sent.
 - `get_export` shows the export's recent runs, with each failed run's error.
 
 ### Fixed (mammoth-mcp-server 0.2.6)
 
-- An operation whose expression names a column the view does not have (e.g. `math`) is refused with the parser's reason, not "Error executing tool".
+- An operation whose expression names a column the view does not have (e.g. `math`) is refused with the parser's reason, not "Error executing tool". Only the `math` builder's parse errors are read so: an error in any other builder is not blamed on the operation.
 - A failed run's message says what to do next: fix the step with `edit_transformation_step`, suspend it, or delete it.
+
+### Added (mammoth-mcp-server 0.2.5)
+
+- `list_tables` lists the tables of a database connection the project already has, so the user can ask "which tables are in my Postgres?" and Claude names a real table in its query. It lists the schemas first: with one schema, or none (MySQL, Redshift), the tables come at once; with several, Claude picks one. Mammoth reads the tables with the connector's own query, as its data page does. Some databases put the schema name straight into that query, so a schema Mammoth did not list is never sent.
+
+### Fixed (mammoth-mcp-server 0.2.5)
+
+- `list_connectors` with `connected_only` listed every connector. Mammoth filters by connections only when it counts them, and only within the page it read, so the tool now reads every page of connectors with their counts, keeps the connected ones and pages them itself, with `total` and `next_offset`.
+
+## mammoth-io 0.8.45, mammoth-cli 2.2.92, mammoth-mcp-server 0.2.4 (2026-10-21)
+
+Covers mammoth-io 0.8.24 to 0.8.45, mammoth-cli 2.2.46 to 2.2.92 and mammoth-mcp-server 0.1.1 to
+0.2.4; each section names the version it shipped in.
 
 ### Added (mammoth-cli 2.2.92)
 
@@ -231,14 +245,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `view data aggregate` adds `currency_note` only when a measure reads as money.
 - `mammoth doctor` prints the exact `mammoth auth login --profile NAME` command for a legacy API key + secret profile.
 - Preconditions shown by `schema get` no longer carry internal test-harness text (fixture requirements, evidence provenance, variance codes).
-
-### Added (mammoth-mcp-server 0.2.5)
-
-- `list_tables` lists the tables of a database connection the project already has, so the user can ask "which tables are in my Postgres?" and Claude names a real table in its query. It lists the schemas first: with one schema, or none (MySQL, Redshift), the tables come at once; with several, Claude picks one. Mammoth reads the tables with the connector's own query, as its data page does. Some databases put the schema name straight into that query, so a schema Mammoth did not list is never sent.
-
-### Fixed (mammoth-mcp-server 0.2.5)
-
-- `list_connectors` with `connected_only` listed every connector. Mammoth filters by connections only when it counts them, and only within the page it read, so the tool now asks for the count and one page of every connector, and pages the connected ones itself.
 
 ### Added (mammoth-mcp-server 0.2.4)
 

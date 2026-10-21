@@ -509,17 +509,18 @@ class ConnectorFields:
     NAME = "disp_name"
     AVAILABLE = "is_available"
     LISTED = "name_key,disp_name,is_available"
-    # The route filters by `has_connections` only when it counts each
-    # connector's connections, and only within the page it read. So the
-    # connected ones are read in one page of every connector, the route's
-    # largest, and paged here.
+    # The route filters by `has_connections` only within the page it read,
+    # so the connected ones are found here: every page of the catalogue is
+    # read, at the route's largest page, with each connector's count.
     LISTED_CONNECTED = LISTED + ",connection_count"
+    CONNECTION_COUNT = "connection_count"
     EVERY_CONNECTOR = 100
+    # Pages read at most: far more connectors than Mammoth has.
+    MOST_CONNECTORS = 2000
     FIELDS = "fields"
     LIMIT = "limit"
     OFFSET = "offset"
     PROJECT_ID = "project_id"
-    HAS_CONNECTIONS = "has_connections"
     ACTION = "action"
     ADD_CONNECTOR = "addConnector"
     CONNECTOR = "connector"

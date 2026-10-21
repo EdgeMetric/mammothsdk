@@ -85,26 +85,49 @@ class TestListConnectors:
         assert "has_connections" not in sent.url.params
 
     def test_the_connectors_the_project_already_uses_can_be_asked_for_alone(self) -> None:
+        used = {**HUBSPOT, "connection_count": 2}
+        unused = {**HUBSPOT, "name_key": "salesforce", "connection_count": 0}
         with a_fake_api() as api, as_caller():
-            api.answer("GET", CONNECTORS, {"connectors": [], "next": ""})
-            call_tool("list_connectors", connected_only=True, **IDS)
+            api.answer("GET", CONNECTORS, {"connectors": [used, unused], "next": "http://next"})
+            listed = call_tool("list_connectors", connected_only=True, **IDS)
 
+        assert listed["connectors"] == [used]
         (sent,) = api.sent("GET", CONNECTORS)
-        assert sent.url.params["has_connections"] == "true"
-        # The route skips the filter unless it counts each connector's connections.
         assert sent.url.params["fields"] == "name_key,disp_name,is_available,connection_count"
+        assert sent.url.params["project_id"] == str(PROJECT)
 
-    def test_the_connected_ones_are_paged_after_the_route_filters_them(self) -> None:
-        connected = [{**HUBSPOT, "name_key": key, "connection_count": 1} for key in ("a", "b", "c")]
+    def test_a_connected_connector_after_the_first_hundred_is_listed(self) -> None:
+        # The route filters by connections only within the page it read, so
+        # every page of the catalogue is read, until a page that is not full.
+        full = [{**HUBSPOT, "name_key": f"c{n}", "connection_count": 0} for n in range(100)]
+        late = {**HUBSPOT, "name_key": "zendesk", "connection_count": 1}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", CONNECTORS, {"connectors": full, "next": "http://next"})
+            api.answer("GET", CONNECTORS, {"connectors": [late], "next": "http://next"})
+            listed = call_tool("list_connectors", connected_only=True, **IDS)
+
+        assert listed["connectors"] == [late]
+        pages = [
+            (r.url.params["limit"], r.url.params["offset"]) for r in api.sent("GET", CONNECTORS)
+        ]
+        assert pages == [("100", "0"), ("100", "100")]
+        assert all("has_connections" not in r.url.params for r in api.sent("GET", CONNECTORS))
+
+    def test_the_connected_ones_are_paged_here_and_say_when_there_are_more(self) -> None:
+        connected = [{**HUBSPOT, "name_key": f"c{n}", "connection_count": 1} for n in range(12)]
         with a_fake_api() as api, as_caller():
             api.answer("GET", CONNECTORS, {"connectors": connected, "next": "http://next"})
-            listed = call_tool("list_connectors", connected_only=True, limit=1, offset=1, **IDS)
+            first = call_tool("list_connectors", connected_only=True, limit=10, **IDS)
+            last = call_tool("list_connectors", connected_only=True, limit=10, offset=10, **IDS)
+            exact = call_tool("list_connectors", connected_only=True, limit=12, **IDS)
 
-        # The route pages before it filters, so one page of every connector is asked for.
-        (sent,) = api.sent("GET", CONNECTORS)
-        assert (sent.url.params["limit"], sent.url.params["offset"]) == ("100", "0")
-        assert [one["name_key"] for one in listed["connectors"]] == ["b"]
-        assert "next" not in listed
+        assert [one["name_key"] for one in first["connectors"]] == [f"c{n}" for n in range(10)]
+        assert (first["total"], first["next_offset"]) == (12, 10)
+        assert [one["name_key"] for one in last["connectors"]] == ["c10", "c11"]
+        assert last["total"] == 12
+        assert "next_offset" not in last
+        assert "next_offset" not in exact
+        assert "next" not in first
 
 
 class TestConnectSource:
