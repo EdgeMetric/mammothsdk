@@ -326,7 +326,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support plan update-entitlements`. Exact input fields: `mammoth schema get support.plan.update-entitlements`.
 
-Example: `mammoth support plan update-entitlements 123 --input '{"values": {"name": true}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": true}}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPlanUpdateEntitlementsResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

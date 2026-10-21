@@ -29,6 +29,7 @@ from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmat
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.held_change import describe_held_change
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -412,13 +413,26 @@ def billing_stripe_held_change_get(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, None)
 
 
+HELD_CHANGE_GET = "mammoth.api.billing.BillingAPI.stripe_held_change_get"
+
+
 def billing_stripe_held_change_cancel(invocation: Invocation) -> HandlerResult:
-    """Cancel the held plan change. ``--yes --confirm WS`` required."""
+    """Cancel the held plan change. ``--yes --confirm WS`` required.
+
+    Irreversible: it voids the unpaid invoice. When the invoice was paid meanwhile the change
+    is applied instead and the result says ``landed``. The held change is read first so the
+    confirmation (and a dry run) name what would be cancelled.
+    """
     with open_service(invocation) as (service, auth):
+        held = service.call(HELD_CHANGE_GET)
         enforce_confirmation(
             invocation,
             policy=POLICY_CONFIRM_TARGET,
-            action=f"cancel the held plan change of workspace {auth.workspace_id}",
+            action=(
+                f"cancel the held plan change of workspace {auth.workspace_id} "
+                f"({describe_held_change(held)}); this voids its unpaid invoice and cannot be "
+                "undone. If the invoice was already paid, the change is applied instead"
+            ),
             target=str(auth.workspace_id),
         )
         data = service.call(_symbol(invocation))

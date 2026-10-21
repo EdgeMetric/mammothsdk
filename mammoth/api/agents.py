@@ -6,6 +6,7 @@ import asyncio
 import time
 import uuid
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 from mammoth.exceptions import MammothAPIError, MammothValidationError
 
@@ -795,8 +796,7 @@ class AgentsAPI:
             "role_exceptions": role_exceptions,
         }
         body = {key: value for key, value in fields.items() if value is not None}
-        if not body:
-            raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("settings"))
+        check_settings_update(body)
         return await self._client._request_json("PATCH", "/agents/access/settings", json=body)
 
     async def access_grants_list(self) -> list[dict[str, Any]]:
@@ -829,12 +829,7 @@ class AgentsAPI:
             MammothValidationError: If *emails* or *items* is empty, or *level* is not
                 ``"ask"`` or ``"explore"``.
         """
-        if not emails:
-            raise MammothValidationError(ERR_ACCESS_NEEDS_PEOPLE)
-        if not items:
-            raise MammothValidationError(ERR_ACCESS_NEEDS_ITEMS)
-        if level not in VALID_GRANT_LEVELS:
-            raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+        check_grant_give(emails, level, items)
         return await self._client._request_json(
             "POST",
             "/agents/access/grants",
@@ -858,12 +853,10 @@ class AgentsAPI:
             Empty dict (the server answers 204).
 
         Raises:
-            MammothValidationError: If nothing to change was given, or *level* is invalid.
+            MammothValidationError: If nothing to change was given, *level* is invalid, or
+                *items* is empty (leave it out to keep the coverage).
         """
-        if level is None and items is None:
-            raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("grant"))
-        if level is not None and level not in VALID_GRANT_LEVELS:
-            raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+        check_grant_update(level, items)
         body: dict[str, Any] = {}
         if level is not None:
             body["level"] = level
@@ -1010,10 +1003,7 @@ class AgentsAPI:
         Raises:
             MammothValidationError: If *kind* is invalid or *text* is empty or too long.
         """
-        if kind not in VALID_REQUEST_KINDS:
-            raise MammothValidationError(ERR_REQUEST_KIND_INVALID.format(kind))
-        if not text or len(text) > REQUEST_TEXT_MAX:
-            raise MammothValidationError(ERR_REQUEST_TEXT_LENGTH.format(REQUEST_TEXT_MAX))
+        check_request_create(kind, text)
         fields: dict[str, Any] = {
             "project_id": project_id,
             "file_id": file_id,
@@ -1039,8 +1029,7 @@ class AgentsAPI:
         Raises:
             MammothValidationError: If *status* is not one of the three.
         """
-        if status not in VALID_RESOLVE_STATUSES:
-            raise MammothValidationError(ERR_RESOLVE_STATUS_INVALID.format(status))
+        check_request_resolve(status)
         return await self._client._request_json(
             "PATCH", f"/agents/access/requests/{request_id}", json={"status": status}
         )
@@ -1109,7 +1098,9 @@ class AgentsAPI:
             MammothValidationError: If *session_id* is empty.
         """
         _require_id("session_id", session_id)
-        return await self._client._request_list("GET", f"/agents/sessions/{session_id}/feedback")
+        return await self._client._request_list(
+            "GET", f"/agents/sessions/{quote(session_id, safe='')}/feedback"
+        )
 
     async def turn_rate(
         self, session_id: str, turn_id: str, rating: str, comment: str | None = None
@@ -1133,15 +1124,13 @@ class AgentsAPI:
         """
         _require_id("session_id", session_id)
         _require_id("turn_id", turn_id)
-        if rating not in VALID_RATINGS:
-            raise MammothValidationError(ERR_RATING_INVALID.format(rating))
-        if comment is not None and len(comment) > REQUEST_TEXT_MAX:
-            raise MammothValidationError(ERR_COMMENT_LENGTH.format(REQUEST_TEXT_MAX))
+        check_rating(rating, comment)
         body: dict[str, Any] = {"rating": rating}
         if comment is not None:
             body["comment"] = comment
+        session, turn = quote(session_id, safe=""), quote(turn_id, safe="")
         return await self._client._request_json(
-            "POST", f"/agents/sessions/{session_id}/turns/{turn_id}/feedback", json=body
+            "POST", f"/agents/sessions/{session}/turns/{turn}/feedback", json=body
         )
 
     async def _run_action(self, session_id: str, run_id: str, action: str) -> dict[str, Any]:
@@ -1150,6 +1139,54 @@ class AgentsAPI:
         return await self._client._request_json(
             "POST", f"/agents/sessions/{session_id}/runs/{run_id}/{action}"
         )
+
+
+def check_settings_update(fields: dict[str, Any]) -> None:
+    """Refuse a settings change that names no field (also run by the CLI before a dry run)."""
+    if not any(value is not None for value in fields.values()):
+        raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("settings"))
+
+
+def check_grant_give(emails: list[str], level: str, items: list[dict[str, Any]]) -> None:
+    """Refuse a grant the server would refuse (also run by the CLI before a dry run)."""
+    if not emails:
+        raise MammothValidationError(ERR_ACCESS_NEEDS_PEOPLE)
+    if not items:
+        raise MammothValidationError(ERR_ACCESS_NEEDS_ITEMS)
+    if level not in VALID_GRANT_LEVELS:
+        raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+
+
+def check_grant_update(level: str | None, items: list[dict[str, Any]] | None) -> None:
+    """Refuse a grant change the server would refuse (nothing given, bad level, no items)."""
+    if level is None and items is None:
+        raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("grant"))
+    if level is not None and level not in VALID_GRANT_LEVELS:
+        raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
+    if items is not None and not items:
+        raise MammothValidationError(ERR_ACCESS_NEEDS_ITEMS)
+
+
+def check_request_create(kind: str, text: str) -> None:
+    """Refuse a request the server would refuse (unknown kind, empty or long text)."""
+    if kind not in VALID_REQUEST_KINDS:
+        raise MammothValidationError(ERR_REQUEST_KIND_INVALID.format(kind))
+    if not text or len(text) > REQUEST_TEXT_MAX:
+        raise MammothValidationError(ERR_REQUEST_TEXT_LENGTH.format(REQUEST_TEXT_MAX))
+
+
+def check_request_resolve(status: str) -> None:
+    """Refuse a status a request cannot be closed with (``open`` reopens nothing)."""
+    if status not in VALID_RESOLVE_STATUSES:
+        raise MammothValidationError(ERR_RESOLVE_STATUS_INVALID.format(status))
+
+
+def check_rating(rating: str, comment: str | None) -> None:
+    """Refuse a rating the server would refuse (not up or down, comment too long)."""
+    if rating not in VALID_RATINGS:
+        raise MammothValidationError(ERR_RATING_INVALID.format(rating))
+    if comment is not None and len(comment) > REQUEST_TEXT_MAX:
+        raise MammothValidationError(ERR_COMMENT_LENGTH.format(REQUEST_TEXT_MAX))
 
 
 def _require_id(name: str, value: str) -> None:

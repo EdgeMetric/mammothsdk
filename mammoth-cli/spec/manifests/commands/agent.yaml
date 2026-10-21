@@ -2562,7 +2562,7 @@ commands:
   request_model: AgentAccessGrantRevokeRequest
   result_model: AgentAccessGrantRevokeResult
   mutation_class: destructive
-  edits_target: false
+  edits_target: true
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -2607,7 +2607,7 @@ commands:
   request_model: AgentAccessGrantUpdateRequest
   result_model: AgentAccessGrantUpdateResult
   mutation_class: benign_mutation
-  edits_target: false
+  edits_target: true
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2913,9 +2913,9 @@ commands:
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_resolve with validated request fields.
   request_model: AgentAccessRequestResolveRequest
   result_model: AgentAccessRequestResolveResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
+  mutation_class: destructive
+  edits_target: true
+  confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_disposable_project
@@ -2925,7 +2925,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent access request resolve REQUEST_ID --help
-  agent_example: 'mammoth agent access request resolve 123 --input ''{"status": "done"}'''
+  agent_example: 'mammoth agent access request resolve 123 --input ''{"status": "done"}'' --yes'
   unit_tests:
   - UT-AGENT-ACCESS-REQUEST-RESOLVE
   contract_tests:
@@ -2934,7 +2934,7 @@ commands:
   - CT-AGENT-ACCESS-REQUEST-RESOLVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: null
+  known_restrictions: 'Irreversible: a resolved request cannot be reopened, and the requester is told. status is done, declined or dismissed (''open'' is refused). Prompts, or pass --yes.'
   reviewed_by: primary
   readback:
     command: agent.access.request.list
@@ -2986,19 +2986,19 @@ commands:
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_settings_update with validated request fields.
   request_model: AgentAccessSettingsUpdateRequest
   result_model: AgentAccessSettingsUpdateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
+  mutation_class: high_impact
+  edits_target: true
+  confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-SETTINGS-UPDATE
-  live_exemption_reason: null
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent access settings update --help
-  agent_example: mammoth agent access settings update
+  agent_example: mammoth agent access settings update --yes
   unit_tests:
   - UT-AGENT-ACCESS-SETTINGS-UPDATE
   contract_tests:
@@ -3007,7 +3007,7 @@ commands:
   - CT-AGENT-ACCESS-SETTINGS-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Only a manager of the workspace's AI Agent settings can change them. Only the fields given change.
+  known_restrictions: Only a manager of the workspace's AI Agent settings can change them. Changes the AI agent for the whole workspace, not one project; only the fields given change. Needs --yes and --confirm WORKSPACE_ID (the refusal prints the exact target). --dry-run reads the current settings and shows each field going from its current to its new value.
   reviewed_by: primary
   readback:
     command: agent.access.settings.get

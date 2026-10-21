@@ -6030,8 +6030,9 @@ operations:
   response_schemas: []
   deprecated: false
   disposition: internal_only
-  disposition_reason: Server-Sent Events stream of one job until it is done; a terminal cannot hold it,
-    and 'job wait' polls the same job.
+  disposition_reason: Server-Sent Events push of one job's progress. It works over curl, but it only arrives
+    sooner than polling for task previews, and 'job wait' already follows the same job to its end, so
+    a command would add nothing.
   canonical_command: null
   alias_of: null
   sdk_symbol: null

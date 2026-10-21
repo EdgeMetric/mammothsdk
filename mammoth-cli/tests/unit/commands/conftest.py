@@ -32,3 +32,32 @@ def fake_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
     # A token names its workspace and the CLI learns it from the server; no network here.
     monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_a, **_k: 4)
     return service
+
+
+@pytest.fixture
+def block_real_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail closed: a request that would leave the machine raises instead of being sent.
+
+    The SDK's default base URL is production (``https://app.mammoth.io/api/v2``) and the login
+    helpers use a dummy token, so a dry-run probe whose target reads are not faked really reaches
+    production and is answered 401. Only loopback hosts (the ``_loopback`` test server) pass.
+    """
+    import httpx
+
+    real_async = httpx.AsyncHTTPTransport.handle_async_request
+    real_sync = httpx.HTTPTransport.handle_request
+
+    def _check(request: httpx.Request) -> None:
+        if request.url.host not in {"127.0.0.1", "localhost", "::1"}:
+            raise AssertionError(f"test tried to reach the network: {request.method} {request.url}")
+
+    async def _async(self: httpx.AsyncHTTPTransport, request: httpx.Request) -> httpx.Response:
+        _check(request)
+        return await real_async(self, request)
+
+    def _sync(self: httpx.HTTPTransport, request: httpx.Request) -> httpx.Response:
+        _check(request)
+        return real_sync(self, request)
+
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", _async)
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", _sync)

@@ -136,9 +136,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent access request resolve`. Exact input fields: `mammoth schema get agent.access.request.resolve`.
 
-Example: `mammoth agent access request resolve 123 --input '{"status": "done"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent access request resolve 123 --input '{"status": "done"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `AgentAccessRequestResolveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AgentAccessRequestResolveResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -166,9 +166,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent access settings update`. Exact input fields: `mammoth schema get agent.access.settings.update`.
 
-Example: `mammoth agent access settings update`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent access settings update --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `AgentAccessSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `AgentAccessSettingsUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

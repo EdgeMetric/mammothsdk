@@ -59,6 +59,13 @@ _list = list  # Alias to avoid shadowing by method name
 # ── Validation error constants ────────────────────────────────────────────────
 
 ERR_DASHBOARD_ID_POSITIVE = "`dashboard_id` must be a positive integer, got {0}."
+ERR_CHAT_ATTACHMENT_EMPTY = "The file is empty: {0}"
+ERR_CHAT_ATTACHMENT_TOO_LARGE = (
+    "The file is {0} bytes; a chat attachment is at most 20 MB (a picture must also fit in "
+    "2 MB once scaled to 1500 px)."
+)
+# The chat keeps a file up to 20 MB (backend MAX_DOCUMENT_BYTES).
+CHAT_ATTACHMENT_MAX_BYTES = 20 * 1024 * 1024
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
 ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0}."
 ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
@@ -455,8 +462,9 @@ class DashboardsAPI:
     async def chat_attachment_upload(self, dashboard_id: int, file: str | Path) -> dict[str, Any]:
         """Keep a file the user attaches in a dashboard's editor chat, to read in a turn.
 
-        One picture (PNG, JPEG, WebP or GIF, scaled to 1500 px), PDF or Word file (up to 20
-        MB, the first 50 pages read), or a text file. It is kept with the board's chat,
+        One picture (PNG, JPEG, WebP or GIF), PDF or Word file, or a text file, up to 20 MB.
+        A picture is scaled to 1500 px and refused when it is still over 2 MB after that;
+        a PDF or Word file has its first 50 pages read. It is kept with the board's chat,
         once per content, never on the board itself. A spreadsheet is refused (it belongs
         in the data import), as is a ``.pbix`` or ``.twb`` workbook (use
         :meth:`attachment_create`).
@@ -471,11 +479,19 @@ class DashboardsAPI:
             document, ``pages``, ``pages_read``, ``words`` and ``truncated``.
 
         Raises:
-            MammothValidationError: If *dashboard_id* is not positive or *file* is not a
-                readable local file.
+            MammothValidationError: If *dashboard_id* is not positive, *file* is not a
+                readable local file, or it is empty or over 20 MB.
         """
         if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        try:
+            size = Path(file).stat().st_size
+        except (TypeError, ValueError, OSError):
+            size = None  # `_post_workbook` names the problem (missing or unreadable file)
+        if size == 0:
+            raise MammothValidationError(ERR_CHAT_ATTACHMENT_EMPTY.format(file))
+        if size is not None and size > CHAT_ATTACHMENT_MAX_BYTES:
+            raise MammothValidationError(ERR_CHAT_ATTACHMENT_TOO_LARGE.format(size))
         return await self._post_workbook(file, f"/dashboards/{dashboard_id}/chat/attachments")
 
     async def _post_workbook(self, file: str | Path, endpoint: str) -> dict[str, Any]:

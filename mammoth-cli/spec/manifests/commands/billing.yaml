@@ -952,8 +952,8 @@ commands:
     fields.
   request_model: BillingStripeHeldChangeCancelRequest
   result_model: BillingStripeHeldChangeCancelResult
-  mutation_class: high_impact
-  edits_target: false
+  mutation_class: destructive
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -973,7 +973,7 @@ commands:
   - CT-BILLING-STRIPE-HELD-CHANGE-CANCEL-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Cancels the plan change the workspace is holding. Read `billing stripe held-change get` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
+  known_restrictions: 'Irreversible: voids the unpaid invoice of the plan change the workspace is holding. If that invoice was already paid, the change is applied instead and the result says landed: true. Read `billing stripe held-change get` first; the confirmation and --dry-run name the held plan. Needs --yes and --confirm WORKSPACE_ID (the refusal prints the exact target).'
   reviewed_by: primary
   readback:
     command: billing.stripe.held-change.get

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from typing import TYPE_CHECKING, Any, cast
+from urllib.parse import quote
 
 from mammoth.exceptions import MammothValidationError
 from mammoth.models.connectors import DsConfigPatchOp, DsConfigPatchPath
@@ -188,7 +189,7 @@ class ConnectorsAPI:
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
-            f"/connections/{connection_key}/test",
+            f"/connections/{quote(connection_key, safe='')}/test",
         )
 
     async def create_connection(

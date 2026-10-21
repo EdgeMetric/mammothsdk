@@ -2911,7 +2911,7 @@ commands:
   request_model: SupportPlanUpdateEntitlementsRequest
   result_model: SupportPlanUpdateEntitlementsResult
   mutation_class: high_impact
-  edits_target: false
+  edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -2922,8 +2922,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan update-entitlements PLAN_ID --help
-  agent_example: 'mammoth support plan update-entitlements 123 --input ''{"values": {"name": true}}''
-    --yes --confirm 123'
+  agent_example: 'mammoth support plan update-entitlements 123 --input ''{"values": {"dashboardBranding": true}}'' --yes --confirm 123'
   unit_tests:
   - UT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS
   contract_tests:
@@ -2932,7 +2931,7 @@ commands:
   - CT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Changes what every workspace on the plan is granted. Read `support plan get` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
+  known_restrictions: Changes what every workspace on the plan is granted, at once. Legacy and system plans are read-only. Read `support plan get` first. Needs --yes and --confirm PLAN_ID (the refusal prints the exact target). --dry-run names the plan and the new values; the plan's current values are not readable from a mapped read, so compare with the plans matrix.
   reviewed_by: primary
   readback:
     command: support.plan.get

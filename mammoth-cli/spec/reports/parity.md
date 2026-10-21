@@ -40,9 +40,9 @@ Generated from the reviewed manifests. Do not edit by hand.
 | Mutation class | Count |
 |---|---:|
 | read | 323 |
-| benign_mutation | 239 |
+| benign_mutation | 237 |
 | reversible_pipeline | 40 |
-| destructive | 68 |
+| destructive | 70 |
 | high_impact | 101 |
 | external_effect | 43 |
 
@@ -50,9 +50,9 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 | Evidence class | Count |
 |---|---:|
-| contract_only_high_impact | 173 |
+| contract_only_high_impact | 174 |
 | contract_only_no_disposable_fixture | 149 |
-| live_disposable_project | 217 |
+| live_disposable_project | 216 |
 | live_read_only | 275 |
 
 ## Protocol-only operations

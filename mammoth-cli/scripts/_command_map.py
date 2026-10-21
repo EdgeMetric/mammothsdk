@@ -93,8 +93,9 @@ INTERNAL_ONLY: dict[str, str] = {
         "(att:<sha> thumbnails and page views); the caller already has the file."
     ),
     "StreamJob": (
-        "Server-Sent Events stream of one job until it is done; a terminal cannot hold it, "
-        "and 'job wait' polls the same job."
+        "Server-Sent Events push of one job's progress. It works over curl, but it only "
+        "arrives sooner than polling for task previews, and 'job wait' already follows the "
+        "same job to its end, so a command would add nothing."
     ),
     "StartToolClaim": (
         "Public web sign-up step of an emailed Open tables link: makes an account for a "
@@ -223,6 +224,49 @@ PENDING_SERVER_RELEASE.update(
 PENDING_SERVER_RELEASE["POST /agents/sessions/{}/runs/{}/{}"] = PENDING_SERVER_RELEASE[
     "POST /agents/sessions/{}/runs/{}/stop"
 ]
+# --- feat/agent-access-ops: on server master since the pinned master snapshot
+# (master-20261002) was exported, and in the live prod openapi.json. Agent access, turn
+# feedback, dashboard unpublished changes, plan entitlements, tool claims, connection
+# overview and test, task preview cancel and the held plan change. Kept as its own block
+# so it merges cleanly beside other branches' blocks.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@cdbc7a6ed2"
+        for method, path in (
+            ("GET", "/agents/access/grants"),
+            ("POST", "/agents/access/grants"),
+            ("PATCH", "/agents/access/grants/{}"),
+            ("DELETE", "/agents/access/grants/{}"),
+            ("GET", "/agents/access/me"),
+            ("GET", "/agents/access/people"),
+            ("GET", "/agents/access/projects/{}/askers"),
+            ("GET", "/agents/access/reach"),
+            ("GET", "/agents/access/requests"),
+            ("POST", "/agents/access/requests"),
+            ("GET", "/agents/access/requests/mine"),
+            ("PATCH", "/agents/access/requests/{}"),
+            ("POST", "/agents/access/requests/{}/project-context"),
+            ("POST", "/agents/access/saved-charts"),
+            ("GET", "/agents/access/settings"),
+            ("PATCH", "/agents/access/settings"),
+            ("GET", "/agents/access/tree"),
+            ("GET", "/agents/sessions/{}/feedback"),
+            ("POST", "/agents/sessions/{}/turns/{}/feedback"),
+            ("GET", "/dashboards/{}/unpublished"),
+            ("PUT", "/subscription/plans/{}/entitlements"),
+            ("GET", "/tool-claims"),
+            ("POST", "/workspaces/{}/projects/{}/tool-claims"),
+            ("GET", "/workspaces/{}/projects/{}/connections"),
+            ("PATCH", "/workspaces/{}/projects/{}/connections/{}/test"),
+            (
+                "DELETE",
+                "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/task_preview/{}",
+            ),
+            ("GET", "/workspaces/{}/subscription/held-change"),
+            ("POST", "/workspaces/{}/subscription/held-change/cancel"),
+        )
+    }
+)
 
 # --- Operations that alias another command (identical behavior) ------------
 OP_ALIAS: dict[str, str] = {

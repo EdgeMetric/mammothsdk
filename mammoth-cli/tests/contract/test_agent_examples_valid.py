@@ -52,6 +52,7 @@ _TARGET_RESOLVED_AT_RUN_TIME = frozenset(
         "addon.storage.remove",
         "addon.user.add",
         "addon.user.remove",
+        "agent.access.settings.update",
         "billing.invoice.charge",
         "billing.stripe.cancel",
         "billing.stripe.checkout-url",

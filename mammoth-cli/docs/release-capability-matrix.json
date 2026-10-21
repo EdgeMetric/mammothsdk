@@ -36,8 +36,8 @@
     {
       "method": "GET",
       "path": "/agents/access/grants",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_grants_list"
       ],
@@ -48,8 +48,8 @@
     {
       "method": "POST",
       "path": "/agents/access/grants",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_grant_give"
       ],
@@ -60,8 +60,8 @@
     {
       "method": "DELETE",
       "path": "/agents/access/grants/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_grant_revoke"
       ],
@@ -72,8 +72,8 @@
     {
       "method": "PATCH",
       "path": "/agents/access/grants/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_grant_update"
       ],
@@ -84,8 +84,8 @@
     {
       "method": "GET",
       "path": "/agents/access/me",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_me"
       ],
@@ -96,8 +96,8 @@
     {
       "method": "GET",
       "path": "/agents/access/people",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_people"
       ],
@@ -108,8 +108,8 @@
     {
       "method": "GET",
       "path": "/agents/access/projects/{}/askers",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_project_askers"
       ],
@@ -120,8 +120,8 @@
     {
       "method": "GET",
       "path": "/agents/access/reach",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_reach"
       ],
@@ -132,8 +132,8 @@
     {
       "method": "GET",
       "path": "/agents/access/requests",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_requests_list"
       ],
@@ -144,8 +144,8 @@
     {
       "method": "POST",
       "path": "/agents/access/requests",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_request_create"
       ],
@@ -156,8 +156,8 @@
     {
       "method": "GET",
       "path": "/agents/access/requests/mine",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_requests_mine"
       ],
@@ -168,8 +168,8 @@
     {
       "method": "PATCH",
       "path": "/agents/access/requests/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_request_resolve"
       ],
@@ -180,8 +180,8 @@
     {
       "method": "POST",
       "path": "/agents/access/requests/{}/project-context",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_request_add_to_context"
       ],
@@ -192,8 +192,8 @@
     {
       "method": "POST",
       "path": "/agents/access/saved-charts",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_chart_save"
       ],
@@ -204,8 +204,8 @@
     {
       "method": "GET",
       "path": "/agents/access/settings",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_settings_get"
       ],
@@ -216,8 +216,8 @@
     {
       "method": "PATCH",
       "path": "/agents/access/settings",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_settings_update"
       ],
@@ -228,8 +228,8 @@
     {
       "method": "GET",
       "path": "/agents/access/tree",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.access_tree"
       ],
@@ -264,8 +264,8 @@
     {
       "method": "GET",
       "path": "/agents/sessions/{}/feedback",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.turn_feedback_list"
       ],
@@ -406,8 +406,8 @@
     {
       "method": "POST",
       "path": "/agents/sessions/{}/turns/{}/feedback",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.agents.AgentsAPI.turn_rate"
       ],
@@ -991,8 +991,8 @@
     {
       "method": "GET",
       "path": "/dashboards/{}/unpublished",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.dashboard_generated.unpublished",
         "mammoth.api.dashboards.DashboardsAPI.unpublished"
@@ -1028,8 +1028,8 @@
     {
       "method": "PUT",
       "path": "/subscription/plans/{}/entitlements",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.plan_update_entitlements"
       ],
@@ -1040,8 +1040,8 @@
     {
       "method": "GET",
       "path": "/tool-claims",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.datasets.DatasetsAPI.tool_claim_get"
       ],
@@ -1400,8 +1400,8 @@
     {
       "method": "GET",
       "path": "/workspaces/{}/projects/{}/connections",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.connectors.ConnectorsAPI.list_all_connections"
       ],
@@ -1412,8 +1412,8 @@
     {
       "method": "PATCH",
       "path": "/workspaces/{}/projects/{}/connections/{}/test",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.connectors.ConnectorsAPI.test_connection"
       ],
@@ -1508,8 +1508,8 @@
     {
       "method": "DELETE",
       "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/task_preview/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.pipeline.PipelineAPI.preview_cancel"
       ],
@@ -1604,8 +1604,8 @@
     {
       "method": "POST",
       "path": "/workspaces/{}/projects/{}/tool-claims",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.datasets.DatasetsAPI.tool_claim_redeem"
       ],
@@ -1700,8 +1700,8 @@
     {
       "method": "GET",
       "path": "/workspaces/{}/subscription/held-change",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.billing.BillingAPI.stripe_held_change_get"
       ],
@@ -1712,8 +1712,8 @@
     {
       "method": "POST",
       "path": "/workspaces/{}/subscription/held-change/cancel",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.billing.BillingAPI.stripe_held_change_cancel"
       ],

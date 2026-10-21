@@ -21,6 +21,9 @@ class RecordingServer(HTTPServer):
         super().__init__(("127.0.0.1", 0), _Handler)
         self.requests: list[dict[str, object]] = []
         self.answers: dict[str, object] = {}
+        #: Per request, parallel to ``requests``: the ``content_type`` header and the ``raw``
+        #: body bytes (what a multipart upload needs; ``requests`` keeps only decoded JSON).
+        self.wire: list[dict[str, object]] = []
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -29,6 +32,7 @@ class _Handler(BaseHTTPRequestHandler):
     def _answer(self) -> None:
         length = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(length) if length else b""
+        content_type = self.headers.get("Content-Type") or ""
         parts = urlsplit(self.path)
         path = parts.path.removeprefix("/api/v2")
         self.server.requests.append(
@@ -36,9 +40,10 @@ class _Handler(BaseHTTPRequestHandler):
                 "method": self.command,
                 "path": path,
                 "query": {k: v[0] for k, v in parse_qs(parts.query).items()},
-                "body": json.loads(raw) if raw else None,
+                "body": json.loads(raw) if raw and "json" in content_type else None,
             }
         )
+        self.server.wire.append({"content_type": content_type, "raw": raw})
         scripted = self.server.answers.get(f"{self.command} {path}", self.server.answers.get(path))
         status, body = scripted if isinstance(scripted, tuple) else (200, scripted or {"ok": True})
         self.send_response(status)
