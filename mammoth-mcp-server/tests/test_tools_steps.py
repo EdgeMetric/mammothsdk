@@ -1,5 +1,6 @@
 """Changing one step of a pipeline, and what a model is told when the change breaks it."""
 
+import re
 from copy import deepcopy
 from typing import Any
 from unittest.mock import patch
@@ -8,8 +9,10 @@ import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.consts import JobFields
+from mammoth_mcp_server.server import mcp_server
+from mammoth_mcp_server.task_params import _OPERATION_BUILDERS
 
-from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool
+from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool, run
 
 PROJECT, DATASET, VIEW = 3, 5, 9
 VIEW_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}/datasets/{DATASET}/dataviews/{VIEW}"
@@ -129,6 +132,10 @@ class TestReplacingAStep:
         assert answer["outcome"] == "changed"
         assert answer["problems"] == []
         assert answer["step"]["id"] == 101
+        assert len(api.sent("GET", TASKS)) == 2
+        assert len(api.sent("GET", PIPELINE)) == 2
+        assert answer["mammoth_url"].endswith(f"/views/{VIEW}")
+        assert "mammoth_url" not in answer["pipeline"]
 
     def test_a_column_of_the_same_name_keeps_its_internal_name(self) -> None:
         # Step 2 reads `total` by its internal name; a new one would lose it.
@@ -159,7 +166,11 @@ class TestReplacingAStep:
             )
 
         [sent] = patches(api)
-        assert sent["value"]["MATH"]["AS"]["INTERNAL_NAME"] != "column_total"
+        fresh = sent["value"]["MATH"]["AS"]["INTERNAL_NAME"]
+        # Not the old column's name, nor a column's the step reads: that would overwrite it.
+        assert fresh not in {"column_total"} | {
+            c["internal_name"] for c in MAKES_TOTAL["prev_metadata"]
+        }
 
     def test_a_column_a_later_step_makes_is_not_there_to_use(self) -> None:
         # `total` exists only after step 1, so step 1 cannot read it.
@@ -174,6 +185,24 @@ class TestReplacingAStep:
                     **IDS,
                 )
 
+        assert api.sent("PATCH", STEP) == []
+
+    def test_a_bug_in_a_builder_is_not_blamed_on_the_operation(self) -> None:
+        def broken(*_: object) -> dict[str, Any]:
+            raise ValueError("invalid literal for int() with base 10: 'abc'")
+
+        with a_fake_api() as api, as_caller(), patch.dict(_OPERATION_BUILDERS, {"delete": broken}):
+            a_view(api, [MAKES_TOTAL, READS_TOTAL])
+            with pytest.raises(Exception) as error:
+                call_tool(
+                    "edit_transformation_step",
+                    step_id=101,
+                    change="replace",
+                    operation={"op": "delete", "columns": ["qty"]},
+                    **IDS,
+                )
+
+        assert "does not fit the view" not in str(error.value)
         assert api.sent("PATCH", STEP) == []
 
     def test_without_an_operation_it_is_refused(self) -> None:
@@ -256,6 +285,28 @@ class TestInDraftMode:
         assert answer["outcome"] == "staged"
         assert 'manage_draft with "run"' in answer["next_step"]
         assert api.sent("GET", RUN_JOB) == []
+
+
+class TestInDraftModeWithAStepAlreadyFailing:
+    UNRELATED: dict[str, Any] = {
+        **deepcopy(READS_TOTAL),
+        "id": 103,
+        "sequence": 3,
+        "params": {"MATH": {"AS": {"COLUMN": "other"}}, "TASK_KEY": "MATH"},
+    }
+
+    def test_only_the_steps_this_change_breaks_are_blamed_on_it(self) -> None:
+        steps = [MAKES_TOTAL, failing(READS_TOTAL), self.UNRELATED]
+        with a_fake_api() as api, as_caller():
+            a_view(api, steps, draft_mode="dirty")
+            api.answer("PATCH", f"{TASKS}/103", {"status": "done", "future_id": None})
+            answer = call_tool("edit_transformation_step", step_id=103, change="suspend", **IDS)
+
+        assert answer["outcome"] == "staged"
+        # Step 102 is still listed, as in error before this change.
+        assert [problem["step_id"] for problem in answer["problems"]] == [102]
+        assert "change them first" not in answer["next_step"]
+        assert "in error before this change" in answer["next_step"]
 
 
 class TestAChangeMammothRefuses:
@@ -468,6 +519,15 @@ class TestTellingTheUserWhatIsWrong:
         assert "problems" not in answer
         assert "have not run" in answer["next_step"]
 
+    def test_a_step_in_error_and_staged_changes_are_both_told(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, [MAKES_TOTAL, failing(READS_TOTAL)], draft_mode="dirty")
+            answer = call_tool("get_pipeline", **IDS)
+
+        assert [problem["step_id"] for problem in answer["problems"]] == [102]
+        assert "edit_transformation_step" in answer["next_step"]
+        assert "have not run" in answer["next_step"]
+
     def test_a_clean_pipeline_has_nothing_to_tell(self) -> None:
         with a_fake_api() as api, as_caller():
             a_view(api, [MAKES_TOTAL])
@@ -485,9 +545,12 @@ class TestTellingTheUserWhatIsWrong:
         assert [problem["step_id"] for problem in answer["problems"]] == [102]
         assert "edit_transformation_step" in answer["next_step"]
 
-    def test_the_help_explains_when_to_draft_and_what_to_do_on_an_error(self) -> None:
+    def test_every_tool_the_pipeline_help_names_is_one_the_server_offers(self) -> None:
+        # A tool renamed or dropped would leave the help sending the model nowhere.
         with as_caller():
             text = call_tool("get_help", topic="pipeline")["help"]
+        offered = {tool.name for tool in run(mcp_server.list_tools())}
 
-        assert "Run now, or draft" in text
-        assert "When a step fails" in text
+        named = set(re.findall(r"`([a-z_]+)`", text))
+        assert named - offered == {"problems", "mammoth_url"}
+        assert {"edit_transformation_step", "manage_draft", "edit_export"} <= named

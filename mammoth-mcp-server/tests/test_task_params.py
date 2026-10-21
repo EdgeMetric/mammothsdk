@@ -17,6 +17,7 @@ from mammoth_mcp_server.sdk import build_client
 from mammoth_mcp_server.task_params import (
     _FOREIGN_OPERATION_BUILDERS,
     _OPERATION_BUILDERS,
+    StepPlace,
     build_task_param,
 )
 from mammoth_mcp_server.transform_operations import TransformOperation
@@ -51,13 +52,13 @@ def a_view(api: FakeApi, dataset_id: int, view_id: int, read: dict) -> None:
     api.answer("GET", view_path(dataset_id, view_id), {"id": view_id, **read})
 
 
-def build(api: FakeApi, operation: dict) -> dict:
+def build(api: FakeApi, operation: dict, place: StepPlace | None = None) -> dict:
     """Build the task through a real client over `api`, as the caller."""
 
     async def built() -> dict:
         async with build_client(WORKSPACE, PROJECT) as client:
             return await build_task_param(
-                client, OPERATION.validate_python(operation), DATASET, VIEW
+                client, OPERATION.validate_python(operation), DATASET, VIEW, place
             )
 
     with as_caller():
@@ -164,6 +165,19 @@ class TestAStepTheAiWrites:
         assert asked.url.params["dataset_id"] == str(DATASET)
         assert asked.url.params["dataview_id"] == str(VIEW)
         assert "SELECT 1" in str(param)
+
+    def test_a_step_that_replaces_one_asks_for_that_steps_own_place(self) -> None:
+        # The query is grounded on the columns before the replaced step, not
+        # after the view's last one: the view's steps are not read at all.
+        with a_fake_api() as api:
+            api.answer(
+                "POST", SQL_GENERATION, {"response": {"status_code": "SQ01", "result": "SELECT 1"}}
+            )
+            build(api, self.SQL, StepPlace(sequence=2, columns=[]))
+
+        [asked] = api.sent("POST", SQL_GENERATION)
+        assert api.body(asked)["params"]["sequence_number"] == 2
+        assert api.sent("GET", f"{view_path(DATASET, VIEW)}/pipeline/items") == []
 
     def test_a_query_the_ai_could_not_write_is_refused_with_its_reason(self) -> None:
         with a_fake_api() as api:

@@ -38,6 +38,7 @@ TO_SFTP: dict[str, Any] = {
 STARTED = {"job": {"id": 41}}
 DONE = {"job": {"id": 41, "status": "success", "response": {}}}
 SENT = {"id": 7, "status": "success", "rows_exported": 4, "triggered_by": "manual"}
+OLDER = {"id": 6, "status": "success", "rows_exported": 3, "triggered_by": "pipeline"}
 REFUSED_BY_SFTP = {
     "id": 8,
     "status": "failed",
@@ -64,11 +65,17 @@ def a_view(
     *listings: list[dict[str, Any]],
     runs: tuple[dict[str, Any], ...] = (),
     job: dict[str, Any] = DONE,
+    later_runs: tuple[dict[str, Any], ...] | None = None,
 ) -> None:
-    """A view whose exports list as each listing in turn, the last from then on."""
+    """A view whose exports list as each listing in turn, the last from then on.
+
+    Its runs list as `runs`, and as `later_runs` from the second read on.
+    """
     for exports in listings:
         api.answer("GET", EXPORTS, {"limit": 10, "offset": 0, "next": "", "exports": exports})
     api.answer("GET", RUNS, {"export_id": EXPORT_ID, "runs": list(runs)})
+    if later_runs is not None:
+        api.answer("GET", RUNS, {"export_id": EXPORT_ID, "runs": list(later_runs)})
     api.answer("PATCH", EXPORT, STARTED)
     api.answer("GET", JOB, job)
 
@@ -308,16 +315,35 @@ class TestSuspendingAndRestoring:
 class TestRunningNow:
     def test_a_run_reports_the_rows_it_sent(self) -> None:
         with a_fake_api() as api, as_caller():
-            a_view(api, [TO_SFTP], runs=(SENT,))
+            a_view(api, [TO_SFTP], runs=(OLDER,), later_runs=(SENT, OLDER))
             answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
 
         assert the_patch(api) == {"op": "command", "path": "run", "value": None}
         assert answer["outcome"] == "ran"
         assert answer["last_run"]["rows_exported"] == 4
 
+    def test_a_run_mammoth_has_not_recorded_yet_is_not_reported_as_this_one(self) -> None:
+        # Yesterday's run is still the newest one after this run's job ends.
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP], runs=(SENT,))
+            answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
+
+        assert answer["outcome"] == "run_pending"
+        assert "get_export" in answer["next_step"]
+        assert answer["last_run"] is None
+
+    def test_a_route_that_answers_with_a_job_id_alone_is_waited_for(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, [TO_SFTP], runs=(OLDER,), later_runs=(SENT, OLDER))
+            api.answers[("PATCH", EXPORT)] = [(200, {"job_id": 41})]
+            answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
+
+        assert len(api.sent("GET", JOB)) == 1
+        assert answer["outcome"] == "ran"
+
     def test_a_failed_run_says_why_and_how_to_fix_it(self) -> None:
         with a_fake_api() as api, as_caller():
-            a_view(api, [TO_SFTP], runs=(REFUSED_BY_SFTP,))
+            a_view(api, [TO_SFTP], runs=(), later_runs=(REFUSED_BY_SFTP,))
             answer = call_tool("edit_export", export_id=EXPORT_ID, change="run", **IDS)
 
         assert answer["outcome"] == "run_failed"
@@ -342,5 +368,7 @@ class TestReadingAnExport:
             api.answer("GET", RUNS, {"export_id": EXPORT_ID, "runs": [REFUSED_BY_SFTP, SENT]})
             answer = call_tool("get_export", export_id=EXPORT_ID, **IDS)
 
+        [asked] = api.sent("GET", RUNS)
+        assert asked.url.params["limit"] == "5"
         assert [run["status"] for run in answer["recent_runs"]] == ["failed", "success"]
         assert answer["recent_runs"][0]["error_message"] == "Authentication failed"

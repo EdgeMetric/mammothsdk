@@ -20,7 +20,6 @@ from ..consts import JobFields, ListFields, PipelineFields, StepFields, TaskFiel
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..shape import view_url
 from ..task_params import StepPlace
 from ..tool_kinds import DESTRUCTIVE
 from .pipeline import read_pipeline, read_steps, view_ids
@@ -49,8 +48,11 @@ STAGED_NOTE = (
     " throw them away."
 )
 STAGED_BREAKS = (
-    "The steps in `problems` now read a column that is not there, and will fail"
+    "Steps {steps} in `problems` now read a column that is not there, and will fail"
     " when the draft runs: change them first."
+)
+STAGED_FAILED_BEFORE = (
+    "Steps {steps} in `problems` were in error before this change too: it did not" " cause them."
 )
 PUT_BACK_NOTE = (
     "The change made the steps in `problems` fail, so it was undone: the step is as"
@@ -118,14 +120,29 @@ async def edit_transformation_step(
         return still_running(running, EDIT_RUNS_ON)
     after = await read_steps(ids)
     if drafting:
-        staged = problems_of(after)
-        note = f"{STAGED_NOTE} {STAGED_BREAKS}" if staged else STAGED_NOTE
-        return await report(ids, step_id, StepFields.STAGED, note, staged)
+        note = staged_note(failing_ids(before), failing_ids(after))
+        return await report(ids, after, step_id, StepFields.STAGED, note, problems_of(after))
     failing_before = failing_ids(before)
-    if failing_ids(after, run) <= failing_before:
-        note = STILL_FAILING_NOTE if failing_ids(after, run) else CHANGED_NOTE
-        return await report(ids, step_id, StepFields.CHANGED, note, problems_of(after, run))
+    failing_after = failing_ids(after, run)
+    if failing_after <= failing_before:
+        note = STILL_FAILING_NOTE if failing_after else CHANGED_NOTE
+        return await report(ids, after, step_id, StepFields.CHANGED, note, problems_of(after, run))
     return await put_back(ids, step, change, problems_of(after, run), failing_before)
+
+
+def staged_note(failing_before: set[int], failing_after: set[int]) -> str:
+    """What to say of a staged change: which failing steps it breaks, and which it did not."""
+    notes = [STAGED_NOTE]
+    if broken := failing_after - failing_before:
+        notes.append(STAGED_BREAKS.format(steps=listed(broken)))
+    if still := failing_after & failing_before:
+        notes.append(STAGED_FAILED_BEFORE.format(steps=listed(still)))
+    return " ".join(notes)
+
+
+def listed(step_ids: set[int]) -> str:
+    """Step ids as a sentence lists them, in order."""
+    return ", ".join(str(step_id) for step_id in sorted(step_ids))
 
 
 def find_step(steps: list[dict[str, JsonValue]], step_id: int) -> dict[str, JsonValue]:
@@ -344,11 +361,14 @@ async def put_back(
         return still_running(running, EDIT_RUNS_ON)
     except ToolError as error:
         note = NOT_PUT_BACK_NOTE.format(error=error)
-        return await report(ids, step_id, StepFields.NOT_PUT_BACK, note, problems)
-    if failing_ids(await read_steps(ids), run) <= failing_before:
-        return await report(ids, step_id, StepFields.PUT_BACK, PUT_BACK_NOTE, problems)
+        return await report(
+            ids, await read_steps(ids), step_id, StepFields.NOT_PUT_BACK, note, problems
+        )
+    steps = await read_steps(ids)
+    if failing_ids(steps, run) <= failing_before:
+        return await report(ids, steps, step_id, StepFields.PUT_BACK, PUT_BACK_NOTE, problems)
     note = NOT_PUT_BACK_NOTE.format(error="the view still fails after the step was put back")
-    return await report(ids, step_id, StepFields.NOT_PUT_BACK, note, problems)
+    return await report(ids, steps, step_id, StepFields.NOT_PUT_BACK, note, problems)
 
 
 def undo_patch(
@@ -369,25 +389,31 @@ def undo_patch(
 
 async def report(
     ids: dict[str, int],
+    steps: list[dict[str, JsonValue]],
     step_id: int,
     outcome: str,
     note: str,
-    problems: list[dict[str, JsonValue]] | None = None,
+    problems: list[dict[str, JsonValue]],
 ) -> dict[str, JsonValue]:
-    """What a change came to: the step now, the steps in error, and what to do."""
-    steps = await read_steps(ids)
-    async with build_client(ids["workspace_id"], ids["project_id"]) as client:
-        state = await read_sdk_errors(
-            client.pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
-        )
+    """What a change came to: the step now, the steps in error, and what to do.
+
+    Args:
+        ids: The view's path ids.
+        steps: The view's steps, read after the change.
+        step_id: The step that was changed.
+        outcome: What the change came to, e.g. "changed".
+        note: What to tell the user.
+        problems: The steps in error.
+    """
+    # The pipeline is read again: the change moves it on, e.g. a draft goes dirty.
+    state = await read_pipeline(ids)
+    url = state.pop(ListFields.MAMMOTH_URL)
     now = [step for step in steps if step.get(StepFields.ID) == step_id]
     return {
         StepFields.OUTCOME: outcome,
         StepFields.NEXT_STEP: note,
-        StepFields.PROBLEMS: list[JsonValue](problems or []),
+        StepFields.PROBLEMS: list[JsonValue](problems),
         StepFields.STEP: now[0] if now else None,
         PipelineFields.PIPELINE: state,
-        ListFields.MAMMOTH_URL: view_url(
-            ids["workspace_id"], ids["project_id"], ids["dataview_id"]
-        ),
+        ListFields.MAMMOTH_URL: url,
     }

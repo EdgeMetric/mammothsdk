@@ -45,6 +45,11 @@ REPLACED_NOTE = (
 SUSPENDED_NOTE = "The export no longer runs when the view runs. Tell the user."
 RESTORED_NOTE = "The export runs again when the view runs. Tell the user."
 RAN_NOTE = "Tell the user the rows were sent: `last_run` says how many, and where."
+RUN_PENDING_NOTE = (
+    "The run's job ended, but Mammoth has not recorded the run yet, so how it went"
+    " is not known. Do not run it again: call get_export in a minute, and tell the"
+    " user what its newest run says."
+)
 RUN_FAILED_NOTE = (
     "The run failed: `last_run` says why. Tell the user. Fix the settings with"
     ' edit_export "replace" (get_export_schema lists them), then "run" again; or'
@@ -83,14 +88,17 @@ async def edit_export(
             `get_export_schema` names them.
 
     Returns:
-        `outcome`: "changed", "ran" or "run_failed". `next_step`: what to tell
-        the user. `export`: the export afterwards. `last_run`: after "run",
-        how it went. `mammoth_url`: the view in Mammoth.
+        `outcome`: "changed", "ran", "run_failed" or "run_pending" (Mammoth
+        has not recorded the run yet). `next_step`: what to tell the user.
+        `export`: the export afterwards. `last_run`: after "run", how it went.
+        `mammoth_url`: the view in Mammoth.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     async with build_client(workspace_id, project_id) as client:
         export = find_export(await read_view_exports(client, ids), export_id)
         patch = export_patch(view_id, export, change, settings)
+        # The newest run before this one, so an older run is not reported as this one.
+        before = await last_run(client, ids, export_id)
         try:
             await send_export_change(client, ids, export_id, patch)
         except JobStillRunning as running:
@@ -99,10 +107,12 @@ async def edit_export(
             if change != RUN:
                 raise
             note = f"{RUN_FAILED_NOTE} Mammoth said: {failed}"
-            return await report(client, ids, export_id, StepFields.RUN_FAILED, note)
+            run = await run_since(client, ids, export_id, before)
+            return await report(client, ids, export_id, StepFields.RUN_FAILED, note, run)
         if change != RUN:
-            return await report(client, ids, export_id, StepFields.CHANGED, CHANGE_NOTES[change])
-        return await report_run(client, ids, export_id)
+            note = CHANGE_NOTES[change]
+            return await report(client, ids, export_id, StepFields.CHANGED, note, before)
+        return await report_run(client, ids, export_id, before)
 
 
 CHANGE_NOTES = {REPLACE: REPLACED_NOTE, SUSPEND: SUSPENDED_NOTE, RESTORE: RESTORED_NOTE}
@@ -244,21 +254,27 @@ async def send_export_change(
             project_id=ids["project_id"],
         )
     )
-    if JobFields.JOB in answer:
+    # The route names its job either way: under `job`, or as `job_id` alone.
+    if JobFields.JOB in answer or JobFields.JOB_ID in answer:
         await wait_for_job(ids["workspace_id"], answer)
 
 
 async def report(
-    client: MammothClient, ids: dict[str, int], export_id: int, outcome: str, note: str
+    client: MammothClient,
+    ids: dict[str, int],
+    export_id: int,
+    outcome: str,
+    note: str,
+    run: JsonValue,
 ) -> dict[str, JsonValue]:
-    """What a change came to: the export now, and what to do."""
+    """What a change came to: the export now, its newest run, and what to do."""
     exports = await read_view_exports(client, ids)
     now = [export for export in exports if export.get(ExportFields.ID) == export_id]
     return {
         StepFields.OUTCOME: outcome,
         StepFields.NEXT_STEP: note,
         ExportFields.EXPORT: now[0] if now else None,
-        ExportFields.LAST_RUN: await last_run(client, ids, export_id),
+        ExportFields.LAST_RUN: run,
         ListFields.MAMMOTH_URL: view_url(
             ids["workspace_id"], ids["project_id"], ids["dataview_id"]
         ),
@@ -266,14 +282,24 @@ async def report(
 
 
 async def report_run(
-    client: MammothClient, ids: dict[str, int], export_id: int
+    client: MammothClient, ids: dict[str, int], export_id: int, before: JsonValue
 ) -> dict[str, JsonValue]:
-    """How a run the tool started went, from the export's newest run."""
+    """How a run the tool started went, from a run newer than `before`."""
+    run = await run_since(client, ids, export_id, before)
+    if not isinstance(run, dict):
+        return await report(client, ids, export_id, StepFields.RUN_PENDING, RUN_PENDING_NOTE, None)
+    if run.get(ExportFields.RUN_STATUS) == ExportFields.FAILED:
+        return await report(client, ids, export_id, StepFields.RUN_FAILED, RUN_FAILED_NOTE, run)
+    return await report(client, ids, export_id, StepFields.RAN, RAN_NOTE, run)
+
+
+async def run_since(
+    client: MammothClient, ids: dict[str, int], export_id: int, before: JsonValue
+) -> JsonValue:
+    """The export's newest run when it is newer than `before`, else None."""
     run = await last_run(client, ids, export_id)
-    failed = isinstance(run, dict) and run.get(ExportFields.RUN_STATUS) == ExportFields.FAILED
-    if failed:
-        return await report(client, ids, export_id, StepFields.RUN_FAILED, RUN_FAILED_NOTE)
-    return await report(client, ids, export_id, StepFields.RAN, RAN_NOTE)
+    old_id = before.get(ExportFields.ID) if isinstance(before, dict) else None
+    return run if isinstance(run, dict) and run.get(ExportFields.ID) != old_id else None
 
 
 async def last_run(client: MammothClient, ids: dict[str, int], export_id: int) -> JsonValue:

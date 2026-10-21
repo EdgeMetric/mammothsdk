@@ -324,14 +324,13 @@ def what_needs_doing(state: dict[str, JsonValue], steps: list[JsonValue]) -> dic
     Nothing, for a pipeline that ran clean and has nothing staged.
     """
     problems = problems_of([step for step in steps if isinstance(step, dict)])
-    if problems:
-        return {
-            StepFields.PROBLEMS: list[JsonValue](problems),
-            StepFields.NEXT_STEP: FIX_A_FAILED_STEP,
-        }
-    if state.get(PipelineFields.DRAFT_MODE) == PipelineFields.DRAFT_DIRTY:
-        return {StepFields.NEXT_STEP: STAGED_NOT_RUN}
-    return {}
+    staged = state.get(PipelineFields.DRAFT_MODE) == PipelineFields.DRAFT_DIRTY
+    notes = [FIX_A_FAILED_STEP] if problems else []
+    notes += [STAGED_NOT_RUN] if staged else []
+    told: dict[str, JsonValue] = (
+        {StepFields.PROBLEMS: list[JsonValue](problems)} if problems else {}
+    )
+    return {**told, StepFields.NEXT_STEP: " ".join(notes)} if notes else told
 
 
 async def read_steps(ids: dict[str, int]) -> list[dict[str, JsonValue]]:

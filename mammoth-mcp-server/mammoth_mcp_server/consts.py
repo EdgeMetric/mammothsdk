@@ -806,6 +806,7 @@ class StepFields:
     CHANGED = "changed"
     RAN = "ran"
     RUN_FAILED = "run_failed"
+    RUN_PENDING = "run_pending"
     STAGED = "staged"
     PUT_BACK = "put_back"
     NOT_PUT_BACK = "not_put_back"

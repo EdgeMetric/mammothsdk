@@ -110,9 +110,6 @@ async def explain_build_errors(
         )
     except (MammothColumnError, MammothValidationError) as error:
         raise ToolError(error.message) from error
-    except ValueError as error:
-        # The expression parser's own words, e.g. for a column it cannot read.
-        raise ToolError(f"The operation does not fit the view: {error}") from error
 
 
 async def wait_for_change(workspace_id: int, answer: dict[str, JsonValue]) -> dict[str, JsonValue]:
