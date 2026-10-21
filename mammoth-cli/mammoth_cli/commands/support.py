@@ -12,6 +12,7 @@ seam to the public SDK method named by the command's reviewed manifest
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from mammoth_cli.errors.envelope import (
@@ -1081,6 +1082,12 @@ def _admin_ids(invocation: Invocation, ids: tuple[str, ...]) -> dict[str, int]:
                 message=f"The {human} argument '{raw}' is not an integer.",
                 exit_status=EXIT_USAGE,
             ) from exc
+        if found[name] <= 0:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"The {human} argument '{raw}' must be a positive integer.",
+                exit_status=EXIT_USAGE,
+            )
     return found
 
 
@@ -1089,13 +1096,16 @@ def _admin_call(
     *,
     ids: tuple[str, ...] = (),
     required: tuple[str, ...] = (),
-    action: str | None = None,
+    action: str | Callable[[dict[str, Any]], str] | None = None,
+    target: str | None = None,
 ) -> HandlerResult:
     """Run one admin-console SDK method: positional ids, ``--input`` fields, confirmation.
 
-    ``ids`` are the integer positionals, in order; the first one is the confirmation target.
-    ``required`` are ``--input`` fields the SDK method takes without a default. ``action``
-    is the confirmation text (``{name}`` fills an id); a command without one is a read.
+    ``ids`` are the integer positionals, in order; the first one is the confirmation target
+    unless ``target`` names another id. ``required`` are ``--input`` fields the SDK method
+    takes without a default. ``action`` is the confirmation text (``{name}`` fills an id), or
+    a function of the call's arguments for text that depends on them; a command without one
+    is a read.
     """
     kwargs: dict[str, Any] = _admin_ids(invocation, ids)
     document = _bound_document(invocation)
@@ -1105,7 +1115,8 @@ def _admin_call(
         if field not in kwargs:
             kwargs[field] = value
     if action is not None:
-        _confirm(invocation, action=action.format(**kwargs), target=str(kwargs[ids[0]]))
+        text = action(kwargs) if callable(action) else action.format(**kwargs)
+        _confirm(invocation, action=text, target=str(kwargs[target or ids[0]]))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
@@ -1124,7 +1135,15 @@ def support_deal_create(invocation: Invocation) -> HandlerResult:
     elif isinstance(created, dict) and created.get("name"):
         target = str(created["name"])
     else:
-        target = str(kwargs["base_plan_id"])
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A deal needs a workspace: pass a workspace id or a workspace_create name.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Pass the workspace id as a positional argument, or "
+                '\'workspace_create\': {"name": ..., "user_email": ...} in --input.'
+            ),
+        )
     _confirm(invocation, action=f"create a deal for {target}", target=target)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
@@ -1144,7 +1163,7 @@ def support_partner_create(invocation: Invocation) -> HandlerResult:
 
 
 def support_search(invocation: Invocation) -> HandlerResult:
-    """Search workspaces, users, deals and partners. The text is a positional or `q`."""
+    """Search workspaces, partners and users. The text is a positional or `q`."""
     document = _bound_document(invocation)
     text = _string_positional(invocation) or document.get("q")
     with open_service(invocation) as (service, auth):
@@ -1152,12 +1171,41 @@ def support_search(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+def _refund_action(kwargs: dict[str, Any]) -> str:
+    """Confirmation text for a refund; refuse both-or-neither of ``amount`` and ``full``."""
+    amount = kwargs.get("amount")
+    full = bool(kwargs.get("full"))
+    if (amount is not None) == full:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="A refund needs exactly one of 'amount' (cents) or 'full': true.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Pass --input '{\"amount\": 500}' for a partial refund in cents, or "
+                "--input '{\"full\": true}' to refund the whole payment."
+            ),
+        )
+    if amount is not None and (
+        not isinstance(amount, int) or isinstance(amount, bool) or amount <= 0
+    ):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The refund 'amount' must be a positive whole number of cents.",
+            exit_status=EXIT_USAGE,
+        )
+    how = "FULL" if full else f"{amount} cents of"
+    return f"refund {how} the last payment of workspace {kwargs['workspace_id']} (irreversible)"
+
+
 def support_billing_start_trial(invocation: Invocation) -> HandlerResult:
     """Start a trial on a workspace. Workspace id is positional; `days` (1-60) is optional."""
     return _admin_call(
         invocation,
         ids=("workspace_id",),
-        action="start a trial on workspace {workspace_id}",
+        action=(
+            "start a trial on workspace {workspace_id}: this REPLACES its billing and "
+            "cancels a live paid Stripe subscription"
+        ),
     )
 
 
@@ -1180,11 +1228,11 @@ def support_billing_retry_payment(invocation: Invocation) -> HandlerResult:
 
 
 def support_billing_refund(invocation: Invocation) -> HandlerResult:
-    """Refund a workspace's last payment: all of it, or `amount` (cents) of it."""
+    """Refund a workspace's last payment: `amount` (cents) of it, or all of it with `full`."""
     return _admin_call(
         invocation,
         ids=("workspace_id",),
-        action="refund the last payment of workspace {workspace_id}",
+        action=_refund_action,
     )
 
 
@@ -1232,9 +1280,16 @@ def support_deal_get(invocation: Invocation) -> HandlerResult:
     return _admin_call(invocation, ids=("deal_id",))
 
 
+def _deal_update_action(kwargs: dict[str, Any]) -> str:
+    """Confirmation text for a deal update; a cancellation says so."""
+    if kwargs.get("status") == "cancelled":
+        return f"CANCEL deal {kwargs['deal_id']} (status=cancelled ends the deal)"
+    return f"update deal {kwargs['deal_id']}"
+
+
 def support_deal_update(invocation: Invocation) -> HandlerResult:
     """Update a deal's terms or status. Deal id is positional; the changes come from `--input`."""
-    return _admin_call(invocation, ids=("deal_id",), action="update deal {deal_id}")
+    return _admin_call(invocation, ids=("deal_id",), action=_deal_update_action)
 
 
 def support_deal_activity(invocation: Invocation) -> HandlerResult:
@@ -1256,13 +1311,24 @@ def support_deal_opt_in(invocation: Invocation) -> HandlerResult:
     )
 
 
+def _move_to_partner_action(kwargs: dict[str, Any]) -> str:
+    """Confirmation text for a move; ``when=now`` cancels the subscription and refunds."""
+    base = f"move deal {kwargs['deal_id']} to partner {kwargs['partner_id']}"
+    if kwargs.get("when") == "now":
+        return (
+            f"{base} NOW: cancels the workspace's subscription prorated "
+            "and refunds the unused time"
+        )
+    return f"{base} at period end"
+
+
 def support_deal_move_to_partner(invocation: Invocation) -> HandlerResult:
     """Schedule a direct deal to move under a partner. Deal and partner ids are positional."""
     return _admin_call(
         invocation,
         ids=("deal_id", "partner_id"),
         required=("price", "billing_interval"),
-        action="move deal {deal_id} to partner {partner_id}",
+        action=_move_to_partner_action,
     )
 
 
@@ -1343,7 +1409,8 @@ def support_partner_client_delete(invocation: Invocation) -> HandlerResult:
     return _admin_call(
         invocation,
         ids=("partner_id", "workspace_id"),
-        action="delete client workspace {workspace_id} of partner {partner_id}",
+        action="delete client workspace {workspace_id} of partner {partner_id} (irreversible)",
+        target="workspace_id",
     )
 
 
@@ -1354,6 +1421,7 @@ def support_partner_client_detach(invocation: Invocation) -> HandlerResult:
         ids=("partner_id", "workspace_id"),
         required=("price", "contact_email"),
         action="detach client workspace {workspace_id} from partner {partner_id}",
+        target="workspace_id",
     )
 
 
@@ -1363,6 +1431,7 @@ def support_partner_client_cancel_detach(invocation: Invocation) -> HandlerResul
         invocation,
         ids=("partner_id", "workspace_id"),
         action="cancel the pending detach of workspace {workspace_id} from partner {partner_id}",
+        target="workspace_id",
     )
 
 

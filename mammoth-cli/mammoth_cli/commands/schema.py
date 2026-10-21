@@ -829,7 +829,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "support.partner.client.delete": "platform admin remove a partner client workspace",
     "support.partner.client.detach": "platform admin detach a partner client into a direct deal",
     "support.partner.client.cancel-detach": "platform admin cancel a pending client detach",
-    "support.search": "platform admin command palette find workspace user deal partner by text",
+    "support.search": "platform admin command palette find workspace partner user by text",
     "support.triage": "platform admin attention queue failed payments expiring trials",
     "support.usage-tiles": "platform admin usage overview tiles totals",
     "support.workspace.activity": "platform admin workspace history audit log",
@@ -1658,6 +1658,24 @@ compact_contract = _compact_contract
 _DISTINCT_IDS = ("123", "456", "789", "1011")
 
 
+#: Commands whose ``--confirm`` is a positional other than the first: the change lands on the
+#: workspace (second), not on the partner it belongs to.
+_CONFIRM_POSITIONAL: dict[str, str] = {
+    "support.partner.client.delete": "workspace_id",
+    "support.partner.client.detach": "workspace_id",
+    "support.partner.client.cancel-detach": "workspace_id",
+}
+
+
+def _confirm_index(command_id: str, specs: tuple[PositionalSpec, ...], given: int) -> int:
+    """Index, among the example's positionals, of the one ``--confirm`` must repeat."""
+    name = _CONFIRM_POSITIONAL.get(command_id)
+    for index, spec in enumerate(specs):
+        if spec.name == name and index < given:
+            return index
+    return 0
+
+
 def runnable_example(
     record: dict[str, Any],
     symbol: str | None,
@@ -1706,7 +1724,7 @@ def runnable_example(
     if policy in {"prompt_or_yes", "confirm_target", "yes_always"} and "--yes" not in rest:
         rest.append("--yes")
     if policy == "confirm_target" and "--confirm" not in rest and given:
-        rest.extend(["--confirm", given[0]])
+        rest.extend(["--confirm", given[_confirm_index(command_id, specs, len(given))]])
     return shlex.join([*tokens[:start], *given, *rest])
 
 

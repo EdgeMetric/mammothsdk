@@ -42,8 +42,8 @@ Generated from the reviewed manifests. Do not edit by hand.
 | read | 331 |
 | benign_mutation | 228 |
 | reversible_pipeline | 40 |
-| destructive | 67 |
-| high_impact | 122 |
+| destructive | 69 |
+| high_impact | 120 |
 | external_effect | 42 |
 
 ### Acceptance evidence

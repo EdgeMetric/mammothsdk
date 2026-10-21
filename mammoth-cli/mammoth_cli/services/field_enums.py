@@ -113,7 +113,10 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
         "payment_terms": _PAYMENT_TERMS,
     },
     "support.partner.create": {"billing_method": _COLLECTION_METHODS},
-    "support.partner.update": {"billing_method": _COLLECTION_METHODS},
+    "support.partner.update": {
+        "billing_method": _COLLECTION_METHODS,
+        "status": ("active", "inactive"),
+    },
     "support.workspace.archive": {"storage_class": ("GLACIER_IR", "DEEP_ARCHIVE")},
     "support.identity.list": {
         "sort": ("name", "email", "last_active"),
@@ -207,7 +210,6 @@ OPEN_VOCABULARY_ALLOWLIST: dict[tuple[str, str], str] = {
         for cid in ("agent.access.set", "agent.create", "agent.update")
     },
     ("support.workspace.user.transfer", "role"): "SDK documents no closed list for this role",
-    ("support.partner.update", "status"): "partner statuses are server-defined (not listed)",
     ("notification.list", "status"): "notification statuses are not documented by the SDK",
     **{
         (cid, "status"): "status filters are server-defined; the SDK documents no closed list"

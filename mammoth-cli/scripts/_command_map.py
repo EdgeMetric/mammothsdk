@@ -169,6 +169,60 @@ PENDING_SERVER_RELEASE.update(
         for method, suffix in (("GET", ""), ("POST", ""), ("DELETE", "/{}"))
     }
 )
+# Support admin console (45 routes): on server master since bd054e3685 (2026-10-06), after the
+# pinned master snapshot (master-20261002) was exported.
+PENDING_SERVER_RELEASE.update(
+    {
+        f"{method} {path}": "origin/master@cdbc7a6ed2"
+        for method, path in (
+            ("POST", "/support/billing/{}/cancel-subscription"),
+            ("POST", "/support/billing/{}/change-plan"),
+            ("POST", "/support/billing/{}/end-trial"),
+            ("POST", "/support/billing/{}/refund"),
+            ("POST", "/support/billing/{}/retry-payment"),
+            ("POST", "/support/billing/{}/start-trial"),
+            ("GET", "/support/connectors/{}/bucket-impact"),
+            ("GET", "/support/deals"),
+            ("POST", "/support/deals"),
+            ("GET", "/support/deals/{}"),
+            ("PUT", "/support/deals/{}"),
+            ("GET", "/support/deals/{}/activity"),
+            ("DELETE", "/support/deals/{}/move-to-partner"),
+            ("POST", "/support/deals/{}/move-to-partner"),
+            ("POST", "/support/deals/{}/opt-in"),
+            ("GET", "/support/deals/{}/preview-entitlement"),
+            ("GET", "/support/entitlements"),
+            ("GET", "/support/identities"),
+            ("GET", "/support/identities/{}"),
+            ("GET", "/support/partners"),
+            ("POST", "/support/partners"),
+            ("GET", "/support/partners/{}"),
+            ("PUT", "/support/partners/{}"),
+            ("GET", "/support/partners/{}/activity"),
+            ("GET", "/support/partners/{}/billing"),
+            ("POST", "/support/partners/{}/charge-invoices"),
+            ("GET", "/support/partners/{}/invoices"),
+            ("POST", "/support/partners/{}/send-payment-link"),
+            ("GET", "/support/partners/{}/workspaces"),
+            ("DELETE", "/support/partners/{}/workspaces/{}"),
+            ("DELETE", "/support/partners/{}/workspaces/{}/detach"),
+            ("POST", "/support/partners/{}/workspaces/{}/detach"),
+            ("GET", "/support/plans/catalog"),
+            ("GET", "/support/search"),
+            ("GET", "/support/triage"),
+            ("GET", "/support/usage-tiles"),
+            ("GET", "/support/workspaces/{}/activity"),
+            ("GET", "/support/workspaces/{}/archive"),
+            ("POST", "/support/workspaces/{}/archive"),
+            ("POST", "/support/workspaces/{}/chargebee-cancelled"),
+            ("GET", "/support/workspaces/{}/deal-seed"),
+            ("GET", "/support/workspaces/{}/entitlement"),
+            ("POST", "/support/workspaces/{}/restore"),
+            ("DELETE", "/support/workspaces/{}/users/invites/{}"),
+            ("POST", "/support/workspaces/{}/users/invites/{}/resend"),
+        )
+    }
+)
 # On server master (and release) since the pinned master snapshot, for mammoth-io 0.8.44.
 PENDING_SERVER_RELEASE.update(
     {

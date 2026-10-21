@@ -3061,7 +3061,7 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.billing_refund with validated request fields.
   request_model: SupportBillingRefundRequest
   result_model: SupportBillingRefundResult
-  mutation_class: high_impact
+  mutation_class: destructive
   edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
@@ -3073,7 +3073,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support billing refund WORKSPACE_ID --help
-  agent_example: mammoth support billing refund 123 --yes --confirm 123
+  agent_example: 'mammoth support billing refund 123 --input ''{"amount": 500}'' --yes --confirm 123'
   unit_tests:
   - UT-SUPPORT-BILLING-REFUND
   contract_tests:
@@ -3084,8 +3084,9 @@ commands:
   undo_test: null
   known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
     A workspace billed through a partner is refused: change it on the partner instead. Moves money back
-    to the customer; `amount` is in cents and must be positive, omitted refunds the whole last payment.
-    It cannot be undone.'
+    to the customer, and it cannot be undone. Exactly one of `amount` (positive whole cents, a partial
+    refund) or `full: true` (the whole last payment) is required: neither, or both, is refused, so a refund
+    is never full by omission. The confirmation text names the amount or FULL.'
   reviewed_by: primary
   readback:
     command: support.workspace.entitlement
@@ -3180,8 +3181,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
-    Starts a trial of `days` (1-60) on the workspace. Check `support workspace entitlement WORKSPACE_ID`
-    first.
+    Starts a trial of `days` (1-60) on the workspace. It REPLACES the workspace's billing and cancels
+    a live paid Stripe subscription. Check `support workspace entitlement WORKSPACE_ID` first.
   reviewed_by: primary
   readback:
     command: support.workspace.entitlement
@@ -3486,7 +3487,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
-    Moves the deal''s billing under a partner (`when`: period_end or now). Undo a pending move with `support
+    Moves the deal''s billing under a partner (`when`: period_end or now). With `when` now, the workspace''s
+    subscription is cancelled prorated and the unused time is refunded. Undo a pending move with `support
     deal cancel-move-to-partner DEAL_ID`.'
   reviewed_by: primary
   readback:
@@ -3906,7 +3908,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support partner client cancel-detach PARTNER_ID WORKSPACE_ID --help
-  agent_example: mammoth support partner client cancel-detach 123 456 --yes --confirm 123
+  agent_example: mammoth support partner client cancel-detach 123 456 --yes --confirm 456
   unit_tests:
   - UT-SUPPORT-PARTNER-CLIENT-CANCEL-DETACH
   contract_tests:
@@ -3916,7 +3918,8 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
-    Cancels the client's pending detach; list the clients first with `support partner client list PARTNER_ID`.
+    Cancels the client's pending detach. Confirm with the WORKSPACE id (`--confirm WORKSPACE_ID`, the
+    second argument), not the partner id. List the clients first with `support partner client list PARTNER_ID`.
   reviewed_by: primary
   readback:
     command: support.partner.client.list
@@ -3947,7 +3950,7 @@ commands:
   sdk_conversion: Call mammoth.api.support.SupportAPI.partner_client_delete with validated request fields.
   request_model: SupportPartnerClientDeleteRequest
   result_model: SupportPartnerClientDeleteResult
-  mutation_class: high_impact
+  mutation_class: destructive
   edits_target: true
   confirmation: confirm_target
   wait_policy: not_async
@@ -3959,7 +3962,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support partner client delete PARTNER_ID WORKSPACE_ID --help
-  agent_example: mammoth support partner client delete 123 456 --yes --confirm 123
+  agent_example: mammoth support partner client delete 123 456 --yes --confirm 456
   unit_tests:
   - UT-SUPPORT-PARTNER-CLIENT-DELETE
   contract_tests:
@@ -3969,7 +3972,9 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
-    Deletes the client workspace of the partner. List them first with `support partner client list PARTNER_ID`.
+    Deletes the client workspace of the partner, and it cannot be undone. Confirm with the WORKSPACE id
+    (`--confirm WORKSPACE_ID`, the second argument), not the partner id. List them first with `support
+    partner client list PARTNER_ID`.
   reviewed_by: primary
   readback:
     command: support.partner.client.list
@@ -4013,7 +4018,7 @@ commands:
   secret_fields: []
   human_example: mammoth support partner client detach PARTNER_ID WORKSPACE_ID --help
   agent_example: 'mammoth support partner client detach 123 456 --input ''{"price": 900.0, "contact_email":
-    "owner@example.com"}'' --yes --confirm 123'
+    "owner@example.com"}'' --yes --confirm 456'
   unit_tests:
   - UT-SUPPORT-PARTNER-CLIENT-DETACH
   contract_tests:
@@ -4024,6 +4029,7 @@ commands:
   undo_test: null
   known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
     Turns the partner''s client into a direct customer: `price` (above 0) and `contact_email` are required.
+    Confirm with the WORKSPACE id (`--confirm WORKSPACE_ID`, the second argument), not the partner id.
     Undo a pending detach with `support partner client cancel-detach PARTNER_ID WORKSPACE_ID`.'
   reviewed_by: primary
   readback:
@@ -4528,7 +4534,7 @@ commands:
   mutation_class: high_impact
   edits_target: true
   confirmation: confirm_target
-  wait_policy: not_async
+  wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
@@ -4547,11 +4553,12 @@ commands:
   - CT-SUPPORT-WORKSPACE-ARCHIVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
-    Moves the workspace's data to cold storage and takes it offline. Needs `storage_class` (GLACIER_IR
-    or DEEP_ARCHIVE) and `confirm_name`, the workspace's exact name (case sensitive). `cancel_billing`
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    Moves the workspace''s data to cold storage and takes it offline. The server answers 202 and queues
+    a job: poll `support workspace archive-info WORKSPACE_ID` until the archive has finished. Needs `storage_class`
+    (GLACIER_IR or DEEP_ARCHIVE) and `confirm_name`, the workspace''s exact name (case sensitive). `cancel_billing`
     also cancels billing. Read `support workspace archive-info WORKSPACE_ID` first. Reverse it with `support
-    workspace restore-archive WORKSPACE_ID`.
+    workspace restore-archive WORKSPACE_ID`.'
   reviewed_by: primary
   readback:
     command: support.workspace.archive-info
@@ -4848,7 +4855,7 @@ commands:
   mutation_class: high_impact
   edits_target: true
   confirmation: confirm_target
-  wait_policy: not_async
+  wait_policy: returns_job
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
@@ -4866,9 +4873,10 @@ commands:
   - CT-SUPPORT-WORKSPACE-RESTORE-ARCHIVE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Platform admin only (super or tech admin); a sales admin can read but not write.
-    Brings an archived workspace back from cold storage. Check `support workspace archive-info WORKSPACE_ID`
-    first.
+  known_restrictions: 'Platform admin only (super or tech admin); a sales admin can read but not write.
+    Brings an archived workspace back from cold storage. The server answers 202 and queues a job: poll
+    `support workspace archive-info WORKSPACE_ID` until the restore has finished. Check `support workspace
+    archive-info WORKSPACE_ID` first.'
   reviewed_by: primary
   readback:
     command: support.workspace.archive-info

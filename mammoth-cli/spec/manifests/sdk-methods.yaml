@@ -7899,13 +7899,13 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.billing_refund
   implementation_origin: mammoth.api.support.SupportAPI.billing_refund
-  signature: 'billing_refund(self, workspace_id: ''int'', amount: ''int | None'' = None) -> ''dict[str,
-    Any]'''
+  signature: 'billing_refund(self, workspace_id: ''int'', amount: ''int | None'' = None, *, full: ''bool''
+    = False) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: support.billing.refund
   alias_of: null
   no_command_reason: null
-  mutation_class: null
+  mutation_class: destructive
   wait_policy: null
   pagination_policy: null
   secret_fields: []
@@ -8406,7 +8406,7 @@ methods:
   canonical_command: support.partner.client.delete
   alias_of: null
   no_command_reason: null
-  mutation_class: null
+  mutation_class: destructive
   wait_policy: null
   pagination_policy: null
   secret_fields: []
@@ -9046,7 +9046,7 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: returns_job
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
@@ -9196,7 +9196,7 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: returns_job
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary

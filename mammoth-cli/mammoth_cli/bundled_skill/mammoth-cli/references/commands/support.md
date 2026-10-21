@@ -36,9 +36,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support billing refund`. Exact input fields: `mammoth schema get support.billing.refund`.
 
-Example: `mammoth support billing refund 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support billing refund 123 --input '{"amount": 500}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `SupportBillingRefundResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportBillingRefundResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -416,7 +416,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support partner client cancel-detach`. Exact input fields: `mammoth schema get support.partner.client.cancel-detach`.
 
-Example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPartnerClientCancelDetachResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -426,9 +426,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support partner client delete`. Exact input fields: `mammoth schema get support.partner.client.delete`.
 
-Example: `mammoth support partner client delete 123 456 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support partner client delete 123 456 --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `SupportPartnerClientDeleteResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportPartnerClientDeleteResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -436,7 +436,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth support partner client detach`. Exact input fields: `mammoth schema get support.partner.client.detach`.
 
-Example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 456`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `SupportPartnerClientDetachResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 
@@ -928,7 +928,7 @@ Run: `mammoth support workspace archive`. Exact input fields: `mammoth schema ge
 
 Example: `mammoth support workspace archive 123 --input '{"storage_class": "GLACIER_IR", "confirm_name": "Revenue report", "reason": "Customer left"}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `SupportWorkspaceArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportWorkspaceArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
 Status on release: untried; no live run recorded.
 
@@ -1048,7 +1048,7 @@ Run: `mammoth support workspace restore-archive`. Exact input fields: `mammoth s
 
 Example: `mammoth support workspace restore-archive 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
-Result: `SupportWorkspaceRestoreArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+Result: `SupportWorkspaceRestoreArchiveResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `returns_job`.
 
 Status on release: untried; no live run recorded.
 

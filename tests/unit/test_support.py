@@ -1063,10 +1063,22 @@ class TestBillingActions:
         await api.billing_retry_payment(12)
         call.assert_called_once_with("POST", "/support/billing/12/retry-payment")
 
-    async def test_refund_full(self):
+    async def test_refund_full_is_explicit(self):
         api, call = _call_api()
-        await api.billing_refund(12)
+        await api.billing_refund(12, full=True)
         call.assert_called_once_with("POST", "/support/billing/12/refund", params=None)
+
+    async def test_refund_without_amount_or_full_is_refused(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="full"):
+            await api.billing_refund(12)
+        call.assert_not_called()
+
+    async def test_refund_with_amount_and_full_is_refused(self):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="full"):
+            await api.billing_refund(12, amount=100, full=True)
+        call.assert_not_called()
 
     async def test_refund_partial_sends_cents_as_query(self):
         api, call = _call_api()
@@ -1077,6 +1089,27 @@ class TestBillingActions:
         api, call = _call_api()
         with pytest.raises(MammothValidationError, match="amount"):
             await api.billing_refund(12, amount=0)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("amount", [-1, 2.5, "500", True])
+    async def test_refund_rejects_non_int_or_negative_amount(self, amount):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="amount"):
+            await api.billing_refund(12, amount=amount)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("bad", ["5", 2.5, True, None])
+    async def test_ids_must_be_real_integers(self, bad):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="workspace_id"):
+            await api.billing_end_trial(bad)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("days", ["7", 7.5, True])
+    async def test_start_trial_days_must_be_an_int(self, days):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="days"):
+            await api.billing_start_trial(12, days=days)
         call.assert_not_called()
 
     async def test_change_plan_defaults_to_now(self):
@@ -1181,11 +1214,16 @@ class TestDeals:
 
     async def test_create_on_existing_workspace_sends_only_given_fields(self):
         api, call = _call_api({"id": 1, "workspace_id": 5})
-        await api.deal_create(3, workspace_id=5, price=99.5, billing_interval="year")
+        await api.deal_create(3, workspace_id=5, price=99.5, billing_interval="yearly")
         call.assert_called_once_with(
             "POST",
             "/support/deals",
-            json={"base_plan_id": 3, "workspace_id": 5, "price": 99.5, "billing_interval": "year"},
+            json={
+                "base_plan_id": 3,
+                "workspace_id": 5,
+                "price": 99.5,
+                "billing_interval": "yearly",
+            },
         )
 
     async def test_create_with_new_workspace(self):
@@ -1249,14 +1287,14 @@ class TestDeals:
 
     async def test_move_to_partner_defaults_to_period_end(self):
         api, call = _call_api()
-        await api.deal_move_to_partner(4, 2, 40.0, "month")
+        await api.deal_move_to_partner(4, 2, 40.0, "monthly")
         call.assert_called_once_with(
             "POST",
             "/support/deals/4/move-to-partner",
             json={
                 "partner_id": 2,
                 "price": 40.0,
-                "billing_interval": "month",
+                "billing_interval": "monthly",
                 "when": "period_end",
             },
         )
@@ -1264,11 +1302,11 @@ class TestDeals:
     async def test_move_to_partner_validates_inputs(self):
         api, call = _call_api()
         with pytest.raises(MammothValidationError, match="price"):
-            await api.deal_move_to_partner(4, 2, -1.0, "month")
+            await api.deal_move_to_partner(4, 2, -1.0, "monthly")
         with pytest.raises(MammothValidationError, match="when"):
-            await api.deal_move_to_partner(4, 2, 1.0, "month", when="never")
+            await api.deal_move_to_partner(4, 2, 1.0, "monthly", when="never")
         with pytest.raises(MammothValidationError, match="partner_id"):
-            await api.deal_move_to_partner(4, 0, 1.0, "month")
+            await api.deal_move_to_partner(4, 0, 1.0, "monthly")
         call.assert_not_called()
 
     async def test_cancel_move_to_partner(self):
@@ -1286,7 +1324,9 @@ class TestIdentities:
     async def test_list_without_filters(self):
         api, call = _call_api()
         await api.identity_list()
-        call.assert_called_once_with("GET", "/support/identities", params=None)
+        call.assert_called_once_with(
+            "GET", "/support/identities", params={"limit": 100, "offset": 0}
+        )
 
     async def test_list_with_filters(self):
         api, call = _call_api()
@@ -1297,10 +1337,29 @@ class TestIdentities:
             params={"limit": 20, "offset": 40, "search": "ann", "sort": "email", "order": "desc"},
         )
 
+    async def test_list_follows_the_pages_to_the_end(self):
+        api, call = _call_api()
+        call.side_effect = [
+            {"users": [{"id": i} for i in range(100)]},
+            {"users": [{"id": i} for i in range(100, 130)]},
+        ]
+        result = await api.identity_list()
+        assert [u["id"] for u in result["users"]] == list(range(130))
+        offsets = [c.kwargs["params"]["offset"] for c in call.call_args_list]
+        assert offsets == [0, 100]
+
+    async def test_list_stops_on_a_repeated_page(self):
+        api, call = _call_api()
+        page = {"users": [{"id": i} for i in range(100)]}
+        call.side_effect = [page, page]
+        result = await api.identity_list()
+        assert len(result["users"]) == 100
+        assert call.call_count == 2
+
     async def test_list_keeps_a_zero_offset(self):
         api, call = _call_api()
         await api.identity_list(offset=0)
-        assert call.call_args.kwargs["params"] == {"offset": 0}
+        assert call.call_args.kwargs["params"]["offset"] == 0
 
     async def test_get(self):
         api, call = _call_api()
@@ -1380,7 +1439,7 @@ class TestPartners:
     async def test_client_detach_sends_terms(self):
         api, call = _call_api()
         await api.partner_client_detach(
-            2, 15, 120.0, "ap@client.test", billing_interval="year", notes="moved"
+            2, 15, 120.0, "ap@client.test", billing_interval="yearly", notes="moved"
         )
         call.assert_called_once_with(
             "POST",
@@ -1388,7 +1447,7 @@ class TestPartners:
             json={
                 "price": 120.0,
                 "contact_email": "ap@client.test",
-                "billing_interval": "year",
+                "billing_interval": "yearly",
                 "notes": "moved",
             },
         )
@@ -1506,4 +1565,34 @@ class TestWorkspaceAdmin:
             await api.workspace_invite_cancel(8, 0)
         with pytest.raises(MammothValidationError, match="workspace_id"):
             await api.workspace_invite_resend(0, 1)
+        call.assert_not_called()
+
+
+class TestBillingIntervalAndTypes:
+    @pytest.mark.parametrize("interval", ["month", "year", "weekly"])
+    async def test_a_billing_interval_outside_the_server_cycles_is_refused(self, interval):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_create(3, workspace_id=5, price=1.0, billing_interval=interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_update(3, billing_interval=interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.deal_move_to_partner(4, 2, 1.0, interval)
+        with pytest.raises(MammothValidationError, match="billing_interval"):
+            await api.partner_client_detach(2, 15, 1.0, "a@b.co", billing_interval=interval)
+        call.assert_not_called()
+
+    @pytest.mark.parametrize("interval", ["monthly", "yearly", "annual"])
+    async def test_the_server_cycles_are_accepted(self, interval):
+        api, call = _call_api()
+        await api.deal_update(3, billing_interval=interval)
+        assert call.call_args.kwargs["json"]["billing_interval"] == interval
+
+    @pytest.mark.parametrize("price", ["9", True, None])
+    async def test_a_non_number_price_is_a_validation_error(self, price):
+        api, call = _call_api()
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.deal_move_to_partner(4, 2, price, "monthly")
+        with pytest.raises(MammothValidationError, match="price"):
+            await api.partner_client_detach(2, 15, price, "a@b.co")
         call.assert_not_called()

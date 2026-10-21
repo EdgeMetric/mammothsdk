@@ -787,8 +787,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/cancel-subscription",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_cancel_subscription"
       ],
@@ -799,8 +799,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/change-plan",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_change_plan"
       ],
@@ -811,8 +811,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/end-trial",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_end_trial"
       ],
@@ -823,8 +823,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/refund",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_refund"
       ],
@@ -835,8 +835,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/retry-payment",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_retry_payment"
       ],
@@ -847,8 +847,8 @@
     {
       "method": "POST",
       "path": "/support/billing/{}/start-trial",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.billing_start_trial"
       ],
@@ -859,8 +859,8 @@
     {
       "method": "GET",
       "path": "/support/connectors/{}/bucket-impact",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.connector_bucket_impact"
       ],
@@ -871,8 +871,8 @@
     {
       "method": "GET",
       "path": "/support/deals",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_list"
       ],
@@ -883,8 +883,8 @@
     {
       "method": "POST",
       "path": "/support/deals",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_create"
       ],
@@ -895,8 +895,8 @@
     {
       "method": "GET",
       "path": "/support/deals/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_get"
       ],
@@ -907,8 +907,8 @@
     {
       "method": "PUT",
       "path": "/support/deals/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_update"
       ],
@@ -919,8 +919,8 @@
     {
       "method": "GET",
       "path": "/support/deals/{}/activity",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_activity"
       ],
@@ -931,8 +931,8 @@
     {
       "method": "DELETE",
       "path": "/support/deals/{}/move-to-partner",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_cancel_move_to_partner"
       ],
@@ -943,8 +943,8 @@
     {
       "method": "POST",
       "path": "/support/deals/{}/move-to-partner",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_move_to_partner"
       ],
@@ -955,8 +955,8 @@
     {
       "method": "POST",
       "path": "/support/deals/{}/opt-in",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_opt_in"
       ],
@@ -967,8 +967,8 @@
     {
       "method": "GET",
       "path": "/support/deals/{}/preview-entitlement",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.deal_preview_entitlement"
       ],
@@ -979,8 +979,8 @@
     {
       "method": "GET",
       "path": "/support/entitlements",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.entitlement_registry"
       ],
@@ -991,8 +991,8 @@
     {
       "method": "GET",
       "path": "/support/identities",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.identity_list"
       ],
@@ -1003,8 +1003,8 @@
     {
       "method": "GET",
       "path": "/support/identities/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.identity_get"
       ],
@@ -1015,8 +1015,8 @@
     {
       "method": "GET",
       "path": "/support/partners",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_list"
       ],
@@ -1027,8 +1027,8 @@
     {
       "method": "POST",
       "path": "/support/partners",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_create"
       ],
@@ -1039,8 +1039,8 @@
     {
       "method": "GET",
       "path": "/support/partners/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_get"
       ],
@@ -1051,8 +1051,8 @@
     {
       "method": "PUT",
       "path": "/support/partners/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_update"
       ],
@@ -1063,8 +1063,8 @@
     {
       "method": "GET",
       "path": "/support/partners/{}/activity",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_activity"
       ],
@@ -1075,8 +1075,8 @@
     {
       "method": "GET",
       "path": "/support/partners/{}/billing",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_billing"
       ],
@@ -1087,8 +1087,8 @@
     {
       "method": "POST",
       "path": "/support/partners/{}/charge-invoices",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_charge_invoices"
       ],
@@ -1099,8 +1099,8 @@
     {
       "method": "GET",
       "path": "/support/partners/{}/invoices",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_invoices"
       ],
@@ -1111,8 +1111,8 @@
     {
       "method": "POST",
       "path": "/support/partners/{}/send-payment-link",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_send_payment_link"
       ],
@@ -1123,8 +1123,8 @@
     {
       "method": "GET",
       "path": "/support/partners/{}/workspaces",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_client_list"
       ],
@@ -1135,8 +1135,8 @@
     {
       "method": "DELETE",
       "path": "/support/partners/{}/workspaces/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_client_delete"
       ],
@@ -1147,8 +1147,8 @@
     {
       "method": "DELETE",
       "path": "/support/partners/{}/workspaces/{}/detach",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_client_cancel_detach"
       ],
@@ -1159,8 +1159,8 @@
     {
       "method": "POST",
       "path": "/support/partners/{}/workspaces/{}/detach",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.partner_client_detach"
       ],
@@ -1171,8 +1171,8 @@
     {
       "method": "GET",
       "path": "/support/plans/catalog",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.plan_catalog"
       ],
@@ -1183,8 +1183,8 @@
     {
       "method": "GET",
       "path": "/support/search",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.search"
       ],
@@ -1195,8 +1195,8 @@
     {
       "method": "GET",
       "path": "/support/triage",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.triage"
       ],
@@ -1207,8 +1207,8 @@
     {
       "method": "GET",
       "path": "/support/usage-tiles",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.usage_tiles"
       ],
@@ -1219,8 +1219,8 @@
     {
       "method": "GET",
       "path": "/support/workspaces/{}/activity",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_activity"
       ],
@@ -1231,8 +1231,8 @@
     {
       "method": "GET",
       "path": "/support/workspaces/{}/archive",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_archive_info"
       ],
@@ -1243,8 +1243,8 @@
     {
       "method": "POST",
       "path": "/support/workspaces/{}/archive",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_archive"
       ],
@@ -1255,8 +1255,8 @@
     {
       "method": "POST",
       "path": "/support/workspaces/{}/chargebee-cancelled",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_chargebee_cancelled"
       ],
@@ -1267,8 +1267,8 @@
     {
       "method": "GET",
       "path": "/support/workspaces/{}/deal-seed",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_deal_seed"
       ],
@@ -1279,8 +1279,8 @@
     {
       "method": "GET",
       "path": "/support/workspaces/{}/entitlement",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_entitlement"
       ],
@@ -1291,8 +1291,8 @@
     {
       "method": "POST",
       "path": "/support/workspaces/{}/restore",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_restore_archive"
       ],
@@ -1303,8 +1303,8 @@
     {
       "method": "DELETE",
       "path": "/support/workspaces/{}/users/invites/{}",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_invite_cancel"
       ],
@@ -1315,8 +1315,8 @@
     {
       "method": "POST",
       "path": "/support/workspaces/{}/users/invites/{}/resend",
-      "state": "removed_on_server",
-      "pending_in": null,
+      "state": "pending_server_release",
+      "pending_in": "origin/master@cdbc7a6ed2",
       "sdk_symbols": [
         "mammoth.api.support.SupportAPI.workspace_invite_resend"
       ],

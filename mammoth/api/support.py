@@ -47,6 +47,15 @@ MOVE_WHEN = ("period_end", "now")
 ERR_MOVE_WHEN = '`when` must be "period_end" or "now", got {value!r}.'
 ERR_PRICE_NEGATIVE = "`price` must be 0 or more."
 ERR_PRICE_POSITIVE = "`price` must be above 0."
+BILLING_INTERVALS = ("monthly", "yearly", "annual")
+ERR_BILLING_INTERVAL = (
+    '`billing_interval` must be one of "monthly", "yearly" or "annual", got {value!r}.'
+)
+ERR_REFUND_AMOUNT = (
+    "Give either `amount` (a partial refund in cents) or `full=True`, not both or neither."
+)
+IDENTITY_LIST_PAGE_SIZE = 100
+IDENTITY_LIST_MAX_PAGES = 1000
 ERR_DEAL_WORKSPACE = "Provide exactly one of `workspace_id` or `workspace_create`."
 ERR_DEAL_NO_CHANGE = "Provide at least one deal field to change."
 ERR_DEAL_OPT_IN_EMPTY = "Provide `keys`, `connectors` or `everything=True`."
@@ -89,8 +98,24 @@ def _check_id(name: str, value: int) -> None:
     Raises:
         MammothValidationError: If *value* is not a positive integer.
     """
-    if value <= 0:
+    if not _is_int(value) or value <= 0:
         raise MammothValidationError(_ERR_ID.format(name=name, value=value))
+
+
+def _is_int(value: Any) -> bool:
+    """True for a real integer (``bool`` is not one)."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_number(value: Any) -> bool:
+    """True for an ``int`` or ``float`` (``bool`` is not one)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _check_interval(value: str | None) -> None:
+    """Validate a billing interval against the cycles the server accepts."""
+    if value is not None and value not in BILLING_INTERVALS:
+        raise MammothValidationError(ERR_BILLING_INTERVAL.format(value=value))
 
 
 class SupportAPI:
@@ -1484,7 +1509,7 @@ class SupportAPI:
         _check_id("workspace_id", workspace_id)
         body: dict[str, Any] = {}
         if days is not None:
-            if not TRIAL_DAYS_MIN <= days <= TRIAL_DAYS_MAX:
+            if not _is_int(days) or not TRIAL_DAYS_MIN <= days <= TRIAL_DAYS_MAX:
                 raise MammothValidationError(ERR_TRIAL_DAYS)
             body["days"] = days
         return await self._client._request_json(
@@ -1525,20 +1550,27 @@ class SupportAPI:
             "POST", f"/support/billing/{workspace_id}/retry-payment"
         )
 
-    async def billing_refund(self, workspace_id: int, amount: int | None = None) -> dict[str, Any]:
+    async def billing_refund(
+        self, workspace_id: int, amount: int | None = None, *, full: bool = False
+    ) -> dict[str, Any]:
         """Refund a workspace's most recent payment, in full or in part.
 
         Args:
             workspace_id: ID of the target workspace (must be a positive integer).
-            amount: Partial refund in cents (positive integer). Omit to refund in full.
+            amount: Partial refund in cents (positive integer).
+            full: ``True`` to refund the whole payment. Exactly one of *amount* and
+                *full* is required, so a refund is never full by omission.
 
         Returns:
             Dict with ``message`` and the payment service ``result``.
 
         Raises:
-            MammothValidationError: If *workspace_id* or *amount* is not a positive integer.
+            MammothValidationError: If *workspace_id* or *amount* is not a positive integer,
+                or not exactly one of *amount* and *full* is given.
         """
         _check_id("workspace_id", workspace_id)
+        if (amount is not None) == bool(full):
+            raise MammothValidationError(ERR_REFUND_AMOUNT)
         params: dict[str, Any] | None = None
         if amount is not None:
             _check_id("amount", amount)
@@ -1740,6 +1772,7 @@ class SupportAPI:
                 not exactly one of *workspace_id* / *workspace_create* is given.
         """
         _check_id("base_plan_id", base_plan_id)
+        _check_interval(billing_interval)
         if bool(workspace_id) == bool(workspace_create):
             raise MammothValidationError(ERR_DEAL_WORKSPACE)
         body = _drop_none(
@@ -1818,6 +1851,7 @@ class SupportAPI:
                 field to change is given.
         """
         _check_id("deal_id", deal_id)
+        _check_interval(billing_interval)
         body = _drop_none(
             price=price,
             billing_interval=billing_interval,
@@ -1933,8 +1967,9 @@ class SupportAPI:
         """
         _check_id("deal_id", deal_id)
         _check_id("partner_id", partner_id)
-        if price < 0:
+        if not _is_number(price) or price < 0:
             raise MammothValidationError(ERR_PRICE_NEGATIVE)
+        _check_interval(billing_interval)
         if when not in MOVE_WHEN:
             raise MammothValidationError(ERR_MOVE_WHEN.format(value=when))
         body = {
@@ -1978,17 +2013,39 @@ class SupportAPI:
         """List users identity-first, each with workspace counts.
 
         Args:
-            limit: Page size, 0 to 100 (the server default applies when omitted).
-            offset: Rows to skip.
+            limit: Page size used for each request, 1 to 100 (default 100). All pages
+                are read; this does not cap the result.
+            offset: Row to start from.
             search: Filter by email or name.
             sort: ``name``, ``email`` or ``last_active``.
             order: ``asc`` or ``desc``.
 
         Returns:
-            Dict with ``users``, ``offset``, ``limit`` and a ``next`` page link.
+            Dict with every matching user under ``users``; the pages are followed to the
+            end (a repeated page stops the loop).
         """
-        params = _drop_none(limit=limit, offset=offset, search=search, sort=sort, order=order)
-        return await self._client._request_json("GET", "/support/identities", params=params or None)
+        size = min(limit, IDENTITY_LIST_PAGE_SIZE) if limit else IDENTITY_LIST_PAGE_SIZE
+        start = offset or 0
+        users: list[Any] = []
+        seen: set[Any] = set()
+        previous: list[Any] | None = None
+        for page_number in range(IDENTITY_LIST_MAX_PAGES):
+            params = _drop_none(
+                limit=size, offset=start + page_number * size, search=search, sort=sort, order=order
+            )
+            result = await self._client._request_json("GET", "/support/identities", params=params)
+            page = result.get("users")
+            if not isinstance(page, list):
+                return result
+            if page == previous:
+                break
+            previous = page
+            fresh = [u for u in page if not isinstance(u, dict) or u.get("id") not in seen]
+            seen.update(u["id"] for u in fresh if isinstance(u, dict) and "id" in u)
+            users.extend(fresh)
+            if not fresh or len(page) < size:
+                break
+        return {"users": users}
 
     async def identity_get(self, user_id: int) -> dict[str, Any]:
         """Get one user's identity: workspace memberships and roles.
@@ -2276,8 +2333,9 @@ class SupportAPI:
         """
         _check_id("partner_id", partner_id)
         _check_id("workspace_id", workspace_id)
-        if price <= 0:
+        if not _is_number(price) or price <= 0:
             raise MammothValidationError(ERR_PRICE_POSITIVE)
+        _check_interval(billing_interval)
         body = _drop_none(
             price=price,
             contact_email=contact_email,

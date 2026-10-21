@@ -140,6 +140,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     "snippet.create": {"code": "SELECT * FROM orders", "language": "sql"},
     "support.billing.cancel-subscription": {"when": "period_end"},
+    "support.billing.refund": {"amount": 500},
     "support.billing.start-trial": {"days": 14},
     "support.deal.create": {"base_plan_id": 3, "price": 1200.0},
     "support.deal.move-to-partner": {"price": 900.0, "billing_interval": "monthly"},

@@ -1111,8 +1111,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support billing change-plan 123 456 --yes --confirm 123
 - `mammoth support billing end-trial` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.billing_end_trial
   example: mammoth support billing end-trial 123 --yes --confirm 123
-- `mammoth support billing refund` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.billing_refund
-  example: mammoth support billing refund 123 --yes --confirm 123
+- `mammoth support billing refund` [destructive/confirm_target] -> mammoth.api.support.SupportAPI.billing_refund
+  example: mammoth support billing refund 123 --input '{"amount": 500}' --yes --confirm 123
 - `mammoth support billing retry-payment` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.billing_retry_payment
   example: mammoth support billing retry-payment 123 --yes --confirm 123
 - `mammoth support billing start-trial` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.billing_start_trial
@@ -1188,11 +1188,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth support partner charge-invoices` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.partner_charge_invoices
   example: mammoth support partner charge-invoices 123 --yes --confirm 123
 - `mammoth support partner client cancel-detach` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.partner_client_cancel_detach
-  example: mammoth support partner client cancel-detach 123 456 --yes --confirm 123
-- `mammoth support partner client delete` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.partner_client_delete
-  example: mammoth support partner client delete 123 456 --yes --confirm 123
+  example: mammoth support partner client cancel-detach 123 456 --yes --confirm 456
+- `mammoth support partner client delete` [destructive/confirm_target] -> mammoth.api.support.SupportAPI.partner_client_delete
+  example: mammoth support partner client delete 123 456 --yes --confirm 456
 - `mammoth support partner client detach` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.partner_client_detach
-  example: mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 123
+  example: mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 456
 - `mammoth support partner client list` [read/none] -> mammoth.api.support.SupportAPI.partner_client_list
   example: mammoth support partner client list 123
 - `mammoth support partner create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.partner_create

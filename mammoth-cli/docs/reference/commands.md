@@ -5026,10 +5026,10 @@ Total commands: 830.
 
 - `WORKSPACE_ID` (int, required) — ID of the workspace.
 
-- Mutation class: `high_impact`
+- Mutation class: `destructive`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.billing_refund`
-- Agent example: `mammoth support billing refund 123 --yes --confirm 123`
+- Agent example: `mammoth support billing refund 123 --input '{"amount": 500}' --yes --confirm 123`
 
 ### `mammoth support billing retry-payment`
 
@@ -5424,7 +5424,7 @@ Total commands: 830.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.partner_client_cancel_detach`
-- Agent example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 123`
+- Agent example: `mammoth support partner client cancel-detach 123 456 --yes --confirm 456`
 
 ### `mammoth support partner client delete`
 
@@ -5433,10 +5433,10 @@ Total commands: 830.
 - `PARTNER_ID` (int, required) — ID of the partner.
 - `WORKSPACE_ID` (int, required) — ID of the workspace.
 
-- Mutation class: `high_impact`
+- Mutation class: `destructive`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.partner_client_delete`
-- Agent example: `mammoth support partner client delete 123 456 --yes --confirm 123`
+- Agent example: `mammoth support partner client delete 123 456 --yes --confirm 456`
 
 ### `mammoth support partner client detach`
 
@@ -5448,7 +5448,7 @@ Total commands: 830.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.partner_client_detach`
-- Agent example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 123`
+- Agent example: `mammoth support partner client detach 123 456 --input '{"price": 900.0, "contact_email": "owner@example.com"}' --yes --confirm 456`
 
 ### `mammoth support partner client list`
 
