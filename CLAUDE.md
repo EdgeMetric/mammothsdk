@@ -4,32 +4,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**mammoth-io** — Python SDK for the [Mammoth Analytics](https://mammoth.io) platform. Wraps the REST API with rich View objects, operator-overloaded condition builders, and export helpers. Published to PyPI as `mammoth-io`.
+Monorepo for the [Mammoth Analytics](https://mammoth.io) client stack. Three packages, each released to PyPI:
+
+| Dir | Package | What |
+|-----|---------|------|
+| `mammoth/` | `mammoth-io` | Python SDK: REST sub-clients, rich `View` objects, `Condition` builders, export helpers |
+| `mammoth-cli/` | `mammoth-cli` | `mammoth` CLI on top of the SDK; manifest-driven (`spec/manifests/`), typer |
+| `mammoth-mcp-server/` | `mammoth-mcp-server` | MCP server on top of the SDK |
+
+The CLI and MCP server import the in-repo SDK, so an SDK change can break them: run their checks too.
 
 ## Commands
 
 ```bash
-# Setup
-poetry install                    # or: pip install -e ".[dev]"
+# Setup (CI uses uv; the dev tools are the `dev` dependency group)
+uv venv && uv pip install -e . --group dev                    # SDK
+cd mammoth-cli && uv pip install -e .. -e . --group dev       # CLI (same for mammoth-mcp-server)
 
-# Tests
-pytest tests/unit/ -v             # unit tests only (~2s, no API calls)
-pytest tests/integration/ -v      # live API tests (requires credentials)
-pytest tests/unit/test_transformations.py::TestMath -v  # single test class
-
-# Lint & format
-black -t py312 mammoth/ tests/             # format
-ruff check mammoth/               # lint (add --fix to auto-fix)
-mypy mammoth/                     # type check (strict mode)
-
-# All checks before commit
+# SDK checks (run from the repo root); unit tests take about 100s
 black -t py312 mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/unit/ -q
+pytest tests/unit/test_transformations.py::TestMath -v        # one class
+pytest tests/integration/ -v                                  # live API, needs credentials
+
+# CLI checks (run from mammoth-cli/); the full suite takes about 7 minutes
+ruff check mammoth_cli/ tests/ scripts/ && PYTHONPATH=.. mypy mammoth_cli/
+pytest tests -m "not live and not fuzz and not subprocess" -q
+
+# MCP server checks (run from mammoth-mcp-server/)
+ruff check . && mypy mammoth_mcp_server/ && pytest tests -q
 ```
+
+`.github/workflows/pr-checks.yml` is the source of truth for these commands; it runs them on Python 3.12 and 3.14.
+
+Run the targeted test files first and the full suites once, at the end.
 
 ## Architecture
 
 ### Core classes
-- **MammothClient** (`client.py`) — entry point; authenticates via api_token (Bearer `mm_...`) + workspace_id; exposes 23 sub-clients as attributes (views, projects, datasets, pipeline, exports, etc.)
+- **MammothClient** (`client.py`) — entry point; authenticates with `api_token` (Bearer `mm_...`), looking up the workspace itself (`workspace_id=` is an optional hint that skips the lookup); about 44 sub-clients (views, projects, datasets, pipeline, exports, support, ...) are created lazily on first attribute access
 - **View** (`view.py`) — rich domain object wrapping a dataview; 25+ transformation methods organized via **mixin pattern** in `_mixins/`; metadata accessed via `view.display_names`, `view.column_types`, `view.columns`
 - **Condition** (`condition.py`) — filter builder with `&` (AND), `|` (OR), `~` (NOT) operator overloading
 - **ViewExport** (`view.py`) — export helper: `view.export.to_csv()`, `to_postgres()`, `to_s3()`, etc.
@@ -61,7 +73,7 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 - `_param_templates.py` — standalone copy of the backend's param_templates; no SDK code imports it (only `tests/unit/test_transformations.py`), so use it as a payload-format reference
 - `_expression_parser.py` — math string expression → token list parser
 - `models/pipeline.py` — all enums (Operator, ColumnType, JoinType, etc.) and dataclasses (SetValue, CopySpec, etc.)
-- `api/` — 23 REST API sub-clients (CRUD operations)
+- `api/` — REST API sub-clients (CRUD operations), one module per area
 - `exceptions.py` — MammothError hierarchy (MammothAPIError, MammothAuthError, MammothColumnError, MammothTransformError, MammothJobTimeoutError, MammothJobFailedError)
 
 ## Adding a New Transformation
@@ -72,6 +84,19 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 4. Export new types from `mammoth/__init__.py`
 5. Add unit test to `tests/unit/test_transformations.py`
 6. Add integration test to `tests/integration/test_transformations.py`
+
+## CLI: adding a command or covering a new API operation
+
+- A command is a `command_id` (e.g. `support.workspace.get`) mapped in `mammoth-cli/mammoth_cli/commands/registry.py` to `"module:function"`, plus a hand-written manifest in `mammoth-cli/spec/manifests/commands/<group>.yaml`.
+- Every operation in the pinned prod OpenAPI spec has a row in `spec/manifests/openapi-operations.yaml` with a `disposition`. `unmapped` means a real gap.
+  - Cover a gap with an SDK method plus a CLI command.
+  - If no terminal user should drive the operation, add it with a reason to `INTERNAL_ONLY` or `PROTOCOL_ONLY` in `scripts/_command_map.py`.
+- Regenerate after any change. Re-running must produce no diff.
+  - `scripts/build_manifests.py`, then `scripts/compile_manifests.py` (the CLI reads the compiled JSON).
+  - `scripts/build_parity_report.py`.
+  - `scripts/gen_docs.py`.
+  - See `mammoth-cli/docs/capability-drift-workflow.md`.
+- Live check: `mammoth --profile <name> ...` against a dev server, never prod, unless the change is read-only.
 
 ## Conventions
 
@@ -84,3 +109,6 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 - Backend reference code lives in `mvc-service/` (param_templates, constants) — useful for verifying payload formats
 - Upload types numbers and ISO dates (`2026-01-31`) on its own; other date formats and number columns with text (`N/A`) upload as TEXT and need `convert_type` before date or math operations. Never convert a column to the type it already has: the pipeline goes to `ref_error` (verified on release, 2026-09-25)
 - `FillDirection.FIRST_VALUE` is the forward fill (previous row); `LAST_VALUE` is the back-fill (next row)
+- IMPORTANT: `black` on Python 3.14 rewrites `except (A, B):` to `except A, B:`, which is a syntax error on 3.12. Check every black run for it
+- Python 3.14 evaluates annotations lazily, so a missing import can pass there and fail on 3.12. Run the touched tests on 3.12 too
+- Never send `price_per_month` (removed on prod). `PipelineAPI.preview_task` accepts `sample_size` only in 1..500
