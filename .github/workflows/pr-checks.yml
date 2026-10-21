@@ -89,7 +89,7 @@ jobs:
 
       - name: Ruff
         if: matrix.python-version == '3.12'
-        run: ruff check mammoth/
+        run: ruff check mammoth/ tests/
 
       - name: Mypy (strict)
         if: matrix.python-version == '3.12'
@@ -134,6 +134,10 @@ jobs:
       # changes both is tested together.
       - name: Install the in-repo SDK, the CLI, and dev tools
         run: uv pip install --system -e .. -e . --group dev
+
+      - name: Black
+        if: matrix.python-version == '3.12'
+        run: black --check -t py312 mammoth_cli/ tests/ scripts/
 
       - name: Ruff
         if: matrix.python-version == '3.12'
