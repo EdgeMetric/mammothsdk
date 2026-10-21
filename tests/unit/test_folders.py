@@ -11,7 +11,7 @@ resource id (see T2-J-013).
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

@@ -125,13 +125,13 @@ def _forward_optional(
             kwargs[field] = document[field]
 
 
-def _pin_or_none(service: Any) -> Pins | None:
+def _pin_or_none(service: Any, auth: Any, invocation: Invocation) -> Pins | None:
     """The projects the token is limited to; None when unlimited or the lookup fails.
 
     A failed lookup never blocks the command: the server still enforces the pin.
     """
     try:
-        return pinned_projects(service)
+        return pinned_projects(service, auth, profile=invocation.profile)
     except Exception:
         return None
 
@@ -172,7 +172,7 @@ def project_list(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
     _forward_optional(document, kwargs, ("offset", "include_non_members"))
     with open_service(invocation) as (service, auth):
-        pins = _pin_or_none(service)
+        pins = _pin_or_none(service, auth, invocation)
         data = service.call(_symbol(invocation), **kwargs)
     if pins is not None:
         data = _only_pinned(data, pins)
@@ -195,7 +195,7 @@ def project_get(invocation: Invocation) -> HandlerResult:
     """Get one project by id (positional or active project)."""
     project_id = _project_id(invocation)
     with open_service(invocation) as (service, auth):
-        pins = _pin_or_none(service)
+        pins = _pin_or_none(service, auth, invocation)
         if pins is not None and project_id not in pins:
             limited = "one project" if len(pins) == 1 else "some projects"
             raise CliError(
@@ -856,7 +856,7 @@ def _map_checks[T](
 def _preview_dataset(
     service: Any, _auth: Any, args: tuple[Any, int | None, int | None]
 ) -> dict[str, Any]:
-    from mammoth_cli.commands.view import upload_preview
+    from mammoth_cli.commands.view.upload import upload_preview
 
     dataset, project_id, view_id = args
     dataset_id = dataset.get("id") if isinstance(dataset, dict) else None

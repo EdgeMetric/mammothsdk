@@ -119,4 +119,6 @@ class TestWhoMammothSeesCalling:
             call_tool("list_projects", workspace_id=WORKSPACE)
 
         [sent] = api.sent("GET", f"/workspaces/{WORKSPACE}/projects")
-        assert sent.headers["user-agent"] == USER_AGENT == f"mammoth-mcp-server/{__version__}"
+        # The server names itself first; the SDK adds its own name after it.
+        assert f"mammoth-mcp-server/{__version__}" == USER_AGENT
+        assert sent.headers["user-agent"].split()[0] == USER_AGENT

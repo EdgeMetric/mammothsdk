@@ -1,26 +1,24 @@
 """Contract guard: exactly one publication path per distribution.
 
-This monorepo ships THREE PyPI distributions — ``mammoth-io`` (repo root),
-``mammoth-cli`` (``mammoth-cli/``), and ``mammoth-mcp`` (``mammoth-mcp/``). The
-release design is that each is published by EXACTLY ONE tag-triggered workflow
-and by no other path (currently dispatched manually; see the trigger test):
+This monorepo publishes two PyPI distributions from workflows — ``mammoth-io``
+(repo root) and ``mammoth-cli`` (``mammoth-cli/``). The release design is that
+each is published by EXACTLY ONE tag-triggered workflow and by no other path
+(currently dispatched manually; see the trigger test):
 
 * ``mammoth-io``  -> ``sdk-release.yml`` (tag ``sdk-v*``)
 * ``mammoth-cli`` -> ``cli-release.yml`` (tag ``cli-v*``; also cuts a GitHub Release)
-* ``mammoth-mcp`` -> ``publish.yml``     (tag ``mcp-v*``)
 
-The historical hazard: ``publish.yml`` triggered on ``release: published`` and
-published both ``mammoth-io`` and ``mammoth-mcp``. Because ``cli-release.yml``
-creates a GitHub Release, that gave ``mammoth-io`` a SECOND publication path and
-re-published MCP on every CLI release. This guard makes the invariant explicit
-and enforceable:
+The historical hazard: the retired ``publish.yml`` triggered on ``release:
+published`` and published ``mammoth-io`` alongside the old ``mammoth-mcp``.
+Because ``cli-release.yml`` creates a GitHub Release, that gave ``mammoth-io`` a
+SECOND publication path. This guard makes the invariant explicit and
+enforceable:
 
-(a) each of the three distributions is published by exactly one workflow;
+(a) each distribution is published by exactly one workflow;
 (b) no workflow that publishes is triggered by a ``release:`` event (only tag
     pushes); and
 (c) the distribution each publishing workflow ships is inferred from its build
-    working-directory (repo root -> mammoth-io, ``mammoth-cli`` -> mammoth-cli,
-    ``mammoth-mcp`` -> mammoth-mcp).
+    working-directory (repo root -> mammoth-io, ``mammoth-cli`` -> mammoth-cli).
 """
 
 from __future__ import annotations
@@ -44,10 +42,9 @@ _WORKDIR_TO_DIST = {
     None: "mammoth-io",
     ".": "mammoth-io",
     "mammoth-cli": "mammoth-cli",
-    "mammoth-mcp": "mammoth-mcp",
 }
 
-_ALL_DISTRIBUTIONS = {"mammoth-io", "mammoth-cli", "mammoth-mcp"}
+_ALL_DISTRIBUTIONS = {"mammoth-io", "mammoth-cli"}
 
 
 def _workflow_docs() -> dict[str, dict]:
@@ -118,10 +115,10 @@ def _publishing_workflows() -> dict[str, dict]:
     return {name: doc for name, doc in _workflow_docs().items() if _workflow_publishes(doc)}
 
 
-def test_at_least_the_three_expected_workflows_publish() -> None:
-    """Sanity: publishing workflows exist and cover the three distributions."""
+def test_the_expected_workflows_publish() -> None:
+    """Sanity: publishing workflows exist and cover every distribution."""
     publishers = _publishing_workflows()
-    assert publishers, "no workflow publishes to PyPI; expected three"
+    assert publishers, "no workflow publishes to PyPI; expected two"
     dists = {_published_distribution(doc) for doc in publishers.values()}
     assert (
         dists == _ALL_DISTRIBUTIONS
@@ -141,7 +138,7 @@ def test_each_distribution_has_exactly_one_publisher() -> None:
             f"{dist} must be published by exactly one workflow, but is published by "
             f"{workflows or 'none'}. Each distribution needs a single, dedicated "
             f"tag-triggered publication path (mammoth-io=sdk-release.yml, "
-            f"mammoth-cli=cli-release.yml, mammoth-mcp=publish.yml)."
+            f"mammoth-cli=cli-release.yml)."
         )
 
 

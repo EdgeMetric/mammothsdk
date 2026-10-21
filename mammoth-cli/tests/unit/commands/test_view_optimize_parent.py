@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mammoth_cli.commands.view import _check_parent_matches
+from mammoth_cli.commands.view._common import _check_parent_matches
 from mammoth_cli.errors.envelope import CliError
 
 

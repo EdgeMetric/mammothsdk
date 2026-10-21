@@ -7,15 +7,21 @@ and every customer script use, so a tool can only do what a customer could.
 
 The client is built fresh for each call. It has to be: it carries the caller's
 own credentials, and two MCP requests in flight belong to two different people.
-Fresh per call means closed per call too, so `build_client` hands the client out
-of an `async with` rather than returning one: a client holds two HTTP connection
-pools, and a server that runs for weeks cannot leave them to the collector.
+The connection pool is not fresh per call. Every client sends through one
+process-wide `httpx.AsyncClient`, so a tool call does not pay a new TLS
+handshake. That is safe because the SDK puts the caller's credentials on each
+request and never on the shared client. `build_client` still hands the client
+out of an `async with`: the block closes what the client owns (its download
+session), and leaves the shared pool open.
 """
 
+import asyncio
 from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
+from http.cookiejar import DefaultCookiePolicy
 from typing import TypeVar
 
+import httpx
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothError
 from mcp.server.auth.middleware.auth_context import get_access_token
@@ -32,7 +38,7 @@ from .consts import (
 )
 from .deadline import seconds_left, start_the_clock
 
-type JsonValue = (dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None)
+type JsonValue = dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None
 
 # One file in a multipart request: its name, its bytes and its media type.
 type FileUpload = tuple[str, bytes, str]
@@ -47,6 +53,37 @@ UNREADABLE_API_ERROR = "the API returned an error with no message"
 
 _api_url = API_URL
 _api_root = API_ROOT
+
+# The one connection pool every client sends through, and the loop it opened on.
+# A pool is tied to its loop, so a different loop (a test's, a restarted worker)
+# gets a pool of its own rather than the stale one.
+_http_client: httpx.AsyncClient | None = None
+_http_client_loop: asyncio.AbstractEventLoop | None = None
+
+
+def shared_http_client() -> httpx.AsyncClient:
+    """The process-wide connection pool, opened on first use.
+
+    It carries no credentials: each client the SDK builds on it sends its own
+    caller's token with every request. It keeps no cookies either: a cookie one
+    caller's response set would otherwise go out with the next caller's request.
+    A pool left on a loop that is gone is not closed: its loop cannot run the close.
+    """
+    global _http_client, _http_client_loop
+    loop = asyncio.get_running_loop()
+    if _http_client is None or _http_client.is_closed or _http_client_loop is not loop:
+        _http_client = httpx.AsyncClient(timeout=ROUTE_TIMEOUT_SECONDS, follow_redirects=False)
+        _http_client.cookies.jar.set_policy(DefaultCookiePolicy(allowed_domains=[]))
+        _http_client_loop = loop
+    return _http_client
+
+
+async def close_http_client() -> None:
+    """Close the connection pool, when the server stops. Safe to call when none is open."""
+    global _http_client, _http_client_loop
+    pool, _http_client, _http_client_loop = _http_client, None, None
+    if pool is not None:
+        await pool.aclose()
 
 
 def set_api_url(url: str, api_root: str | None = None) -> None:
@@ -111,8 +148,8 @@ async def build_client(
         )
     start_the_clock()
     client = client_with(access_token.token, job_timeout=max(1.0, seconds_left()))
-    # Named here, the client does not ask the API which workspace its bearer
-    # is for, with a request that blocks every other caller this worker serves.
+    # Named here, the client does not spend a request asking the API which
+    # workspace its bearer is for.
     client.set_workspace_id(own_workspace)
     if project_id is not None:
         client.set_project_id(project_id)
@@ -204,8 +241,9 @@ def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> Mammot
         # A person is waiting on this answer. The SDK's own default suits a
         # script that started a long build and would add whole seconds here.
         job_poll_seconds=JOB_POLL_SECONDS,
+        user_agent=USER_AGENT,
+        http_client=shared_http_client(),
     )
-    client.session.headers["User-Agent"] = USER_AGENT
     return client
 
 

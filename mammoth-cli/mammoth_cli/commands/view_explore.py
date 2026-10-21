@@ -12,18 +12,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from mammoth_cli.commands.view import (
+from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     _EXPLORE_PANEL_GET_SYMBOL,
     _METADATA_KEY,
     _meta,
-    _read_explore_panel,
     _require_field,
     _require_int_positional_at,
     _symbol,
     _verified_dataset_id,
     apply_column_renames,
 )
+from mammoth_cli.commands.view.lifecycle import _read_explore_panel
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project

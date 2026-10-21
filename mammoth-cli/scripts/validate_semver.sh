@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Strict SemVer validator shared by the three tag-triggered release workflows
-# (.github/workflows/sdk-release.yml, cli-release.yml, publish.yml).
+# Strict SemVer validator shared by the tag-triggered release workflows
+# (.github/workflows/sdk-release.yml, cli-release.yml).
 #
-# Each workflow strips its own tag prefix (sdk-v / cli-v / mcp-v) and passes the
+# Each workflow strips its own tag prefix (sdk-v / cli-v) and passes the
 # remaining version string here, so the acceptance rule lives in exactly ONE
-# place instead of three inline copies that could drift apart.
+# place instead of inline copies that could drift apart.
 #
 # A version is accepted only when it is STRICT SemVer:
 #     MAJOR.MINOR.PATCH[-prerelease][+build]

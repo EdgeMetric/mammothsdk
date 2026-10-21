@@ -30,6 +30,10 @@ class WorkspaceAPI:
         users = client.workspaces.list_users()
     """
 
+    #: Methods that never read the client's workspace: a token client does not
+    #: look it up before them (``current`` is the very request that would).
+    WORKSPACE_FREE = frozenset({"list", "current"})
+
     def __init__(self, client: MammothClient) -> None:
         self._client = client
 

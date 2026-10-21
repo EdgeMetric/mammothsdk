@@ -12,7 +12,9 @@ passing the plain ``name_key`` (e.g. ``"bigquery"``, as returned by
 from __future__ import annotations
 
 import base64
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from mammoth.api.connectors import ConnectorsAPI
 
@@ -65,6 +67,24 @@ class TestConnectorsAPICreateConnection:
             f"/workspaces/2/projects/100/connectors/{_b64('postgres')}/connections",
             json={"hostname": "h"},
         )
+
+
+class TestConnectorsAPICreateConnectionResponseShapes:
+    """The 202 body is a oneOf on prod; the SDK hands every shape back untouched."""
+
+    @pytest.mark.parametrize(
+        "body",
+        [
+            {"connection_key": "c1", "connection_config": {"hostname": "h"}},
+            {"job_id": 7, "status_code": None, "failure_reason": None},
+            {"pending_id": "p1", "access_token": "t", "picker_api_key": "k"},
+        ],
+    )
+    async def test_every_202_shape_comes_back_unchanged(self, body):
+        api, mock_client = _make_api()
+        mock_client._request_json.return_value = body
+        result = await api.create_connection("google_sheets", config={"code": "abc"})
+        assert result == body
 
 
 class TestConnectorsAPIGetConnection:

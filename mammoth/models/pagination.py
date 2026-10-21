@@ -10,12 +10,14 @@ from __future__ import annotations
 
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from ._base import MammothModel
 
 T = TypeVar("T")
 
 
-class Page(BaseModel, Generic[T]):
+class Page(MammothModel, Generic[T]):
     """One page of an offset-paginated collection.
 
     Attributes:

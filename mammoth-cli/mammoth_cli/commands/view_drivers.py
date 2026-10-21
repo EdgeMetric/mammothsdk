@@ -19,11 +19,8 @@ import re
 from collections import Counter
 from typing import Any
 
-from mammoth_cli.commands.view import (
-    _require_int_positional_at,
-    aggregate_on,
-    open_aggregate_source,
-)
+from mammoth_cli.commands.view._common import _require_int_positional_at
+from mammoth_cli.commands.view.aggregate import aggregate_on, open_aggregate_source
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import period_analysis as pa
