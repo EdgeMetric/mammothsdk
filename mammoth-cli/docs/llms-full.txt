@@ -62,7 +62,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth agent access settings get` [read/none] -> mammoth.api.agents.AgentsAPI.access_settings_get
   example: mammoth agent access settings get
 - `mammoth agent access settings update` [high_impact/confirm_target] -> mammoth.api.agents.AgentsAPI.access_settings_update
-  example: mammoth agent access settings update --yes
+  example: mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123
 - `mammoth agent access tree` [read/none] -> mammoth.api.agents.AgentsAPI.access_tree
   example: mammoth agent access tree
 - `mammoth agent action delete` [destructive/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.action_delete
@@ -272,7 +272,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth billing stripe get` [read/none] -> mammoth.api.billing.BillingAPI.stripe_get
   example: mammoth billing stripe get
 - `mammoth billing stripe held-change cancel` [destructive/confirm_target] -> mammoth.api.billing.BillingAPI.stripe_held_change_cancel
-  example: mammoth billing stripe held-change cancel --yes
+  example: mammoth billing stripe held-change cancel --yes --confirm 123
 - `mammoth billing stripe held-change get` [read/none] -> mammoth.api.billing.BillingAPI.stripe_held_change_get
   example: mammoth billing stripe held-change get
 - `mammoth billing stripe history` [read/none] -> mammoth.api.billing.BillingAPI.stripe_history
@@ -1224,7 +1224,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth support plan update` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update
   example: mammoth support plan update 123 --yes --confirm 123
 - `mammoth support plan update-entitlements` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update_entitlements
-  example: mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": true}}' --yes --confirm 123
+  example: mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123
 - `mammoth support plan update-storage-tiers` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update_storage_tiers
   example: mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123
 - `mammoth support subscription create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_create

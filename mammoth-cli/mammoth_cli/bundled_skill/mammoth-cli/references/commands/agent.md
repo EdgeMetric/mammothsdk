@@ -166,7 +166,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent access settings update`. Exact input fields: `mammoth schema get agent.access.settings.update`.
 
-Example: `mammoth agent access settings update --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `AgentAccessSettingsUpdateResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
 

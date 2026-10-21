@@ -964,7 +964,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth billing stripe held-change cancel --help
-  agent_example: mammoth billing stripe held-change cancel --yes
+  agent_example: mammoth billing stripe held-change cancel --yes --confirm 123
   unit_tests:
   - UT-BILLING-STRIPE-HELD-CHANGE-CANCEL
   contract_tests:

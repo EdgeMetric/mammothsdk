@@ -225,7 +225,7 @@ Total commands: 814.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_update`
-- Agent example: `mammoth agent access settings update --yes`
+- Agent example: `mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123`
 
 ### `mammoth agent access tree`
 
@@ -1202,7 +1202,7 @@ Total commands: 814.
 - Mutation class: `destructive`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.billing.BillingAPI.stripe_held_change_cancel`
-- Agent example: `mammoth billing stripe held-change cancel --yes`
+- Agent example: `mammoth billing stripe held-change cancel --yes --confirm 123`
 
 ### `mammoth billing stripe held-change get`
 
@@ -5564,7 +5564,7 @@ Total commands: 814.
 - Mutation class: `high_impact`
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_entitlements`
-- Agent example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": true}}' --yes --confirm 123`
+- Agent example: `mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123`
 
 ### `mammoth support plan update-storage-tiers`
 

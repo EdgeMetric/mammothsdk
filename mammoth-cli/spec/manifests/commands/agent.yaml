@@ -2998,7 +2998,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth agent access settings update --help
-  agent_example: mammoth agent access settings update --yes
+  agent_example: 'mammoth agent access settings update --input ''{"enabled": true}'' --yes --confirm 123'
   unit_tests:
   - UT-AGENT-ACCESS-SETTINGS-UPDATE
   contract_tests:

@@ -1066,14 +1066,18 @@ _TARGETS: dict[str, str] = {
     "agent.session.feedback.list": "mammoth_cli.commands.dashboard:generated_dashboard",
     "agent.turn.rate": "mammoth_cli.commands.dashboard:generated_dashboard",
     "billing.stripe.held-change.get": "mammoth_cli.commands.billing:billing_stripe_held_change_get",
-    "billing.stripe.held-change.cancel": "mammoth_cli.commands.billing:billing_stripe_held_change_cancel",
+    "billing.stripe.held-change.cancel": (
+        "mammoth_cli.commands.billing:billing_stripe_held_change_cancel"
+    ),
     "support.plan.update-entitlements": "mammoth_cli.commands.dashboard:generated_dashboard",
     "connector.connection.list-all": "mammoth_cli.commands.dashboard:generated_dashboard",
     "connector.connection.test": "mammoth_cli.commands.dashboard:generated_dashboard",
     "view.task.preview-cancel": "mammoth_cli.commands.dashboard:generated_dashboard",
     "dataset.tool-claim.get": "mammoth_cli.commands.dashboard:generated_dashboard",
     "dataset.tool-claim.redeem": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.chat.attachment.upload": "mammoth_cli.commands.dashboard:dashboard_chat_attachment_upload",
+    "dashboard.chat.attachment.upload": (
+        "mammoth_cli.commands.dashboard:dashboard_chat_attachment_upload"
+    ),
     "dashboard.unpublished": "mammoth_cli.commands.dashboard:generated_dashboard",
 }
 

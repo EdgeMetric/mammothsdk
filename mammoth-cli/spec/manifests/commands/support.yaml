@@ -2922,7 +2922,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth support plan update-entitlements PLAN_ID --help
-  agent_example: 'mammoth support plan update-entitlements 123 --input ''{"values": {"dashboardBranding": true}}'' --yes --confirm 123'
+  agent_example: 'mammoth support plan update-entitlements 123 --input ''{"values": {"dashboardBranding": "no_branding"}}'' --yes --confirm 123'
   unit_tests:
   - UT-SUPPORT-PLAN-UPDATE-ENTITLEMENTS
   contract_tests:

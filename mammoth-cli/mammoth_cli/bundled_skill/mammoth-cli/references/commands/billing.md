@@ -96,7 +96,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth billing stripe held-change cancel`. Exact input fields: `mammoth schema get billing.stripe.held-change.cancel`.
 
-Example: `mammoth billing stripe held-change cancel --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+Example: `mammoth billing stripe held-change cancel --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
 
 Result: `BillingStripeHeldChangeCancelResult`; mutation `destructive`, confirmation `confirm_target`, wait policy `not_async`.
 

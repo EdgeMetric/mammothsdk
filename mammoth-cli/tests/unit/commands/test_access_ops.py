@@ -420,7 +420,7 @@ def test_grant_revoke_goes_ahead_with_the_right_confirm(fake_service: FakeMammot
 
 
 _ENTITLE = ["support", "plan", "update-entitlements", "12", "--input"]
-_ENTITLE_INPUT = '{"values": {"dashboardBranding": true}}'
+_ENTITLE_INPUT = '{"values": {"dashboardBranding": "no_branding"}}'
 
 
 def test_update_entitlements_is_refused_without_yes(fake_service: FakeMammothService) -> None:
@@ -555,7 +555,7 @@ def test_entitlements_dry_run_names_the_plan_and_the_new_values(
     target = json.loads(result.output)["data"]["targets"][0]
     assert target["type"] == "plan" and target["id"] == 12
     assert "Team" in target["name"] and "every workspace on it" in target["name"]
-    assert target["changes"] == {"dashboardBranding": {"from": "not readable", "to": True}}
+    assert target["changes"] == {"dashboardBranding": {"from": "not readable", "to": "no_branding"}}
 
 
 def test_held_change_cancel_dry_run_is_irreversible_and_names_the_plan(
