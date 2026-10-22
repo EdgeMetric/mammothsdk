@@ -31,6 +31,12 @@ RUN python -m venv /opt/venv \
 
 FROM python:3.13-slim
 
+# The system CA store is refreshed on every build (PRD-3142, eMudhra CA
+# distrusted), not inherited from the base image's last rebuild.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 # Runs as nobody's owner: the server writes no files and needs no root.
 RUN useradd --create-home --uid 10001 mcp
 COPY --from=build /opt/venv /opt/venv
