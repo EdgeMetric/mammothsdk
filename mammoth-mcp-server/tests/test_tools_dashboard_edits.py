@@ -115,6 +115,9 @@ class TestAnAIEdit:
 
         assert answer["status"] == "editing"
         assert answer["id"] == DASHBOARD_ID
+        # The edit's own report is in its job: a later call can pick it up.
+        assert answer["job_id"] == 41
+        assert "job_id=41" in answer["next_step"]
         assert "do not send the change again" in answer["next_step"]
 
     def test_a_board_on_the_older_engine_is_refused_before_anything_is_sent(self) -> None:
@@ -163,3 +166,99 @@ def test_an_edit_that_names_nothing_to_change_is_refused() -> None:
             edit()
 
     assert not api.requests
+
+
+# Mammoth's reply to a two-part ask, as prague answered it: the chart was
+# replaced, so `changed` is true, but the count it was asked for did not land.
+PARTLY = (
+    "Rebuilt the **Customers by Subscription Month** chart. It now counts customer records"
+    " per month.\n\n"
+    "- count customers in each month, not add up a number column — not on the board — no"
+    " chart was added\n"
+    "- order the months by calendar — applied"
+)
+
+
+def edited(message: str, changed: bool = True) -> dict[str, Any]:
+    return {
+        "job": {"id": 41, "status": "success", "response": {"message": message, "changed": changed}}
+    }
+
+
+class TestAnEditThatOnlyPartlyLanded:
+    def test_what_mammoth_says_did_not_land_is_named(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(PARTLY))
+            answer = edit(change="Count customers per month, in calendar order")
+
+        assert answer["changed"] is True
+        assert answer["partial"] is True
+        assert answer["not_done"] == [
+            "count customers in each month, not add up a number column:"
+            " not on the board — no chart was added"
+        ]
+        assert "not_done" in answer["next_step"]
+
+    def test_what_mammoth_could_not_do_is_named(self) -> None:
+        message = (
+            "Added a Customers card.\n\n"
+            "_Built: KPI cards updated. Couldn\u2019t do: a revenue chart; a map by planet._"
+        )
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(message))
+            answer = edit(change="Add a customers card, a revenue chart and a map")
+
+        assert answer["not_done"] == ["a revenue chart", "a map by planet"]
+
+    def test_an_edit_whose_asks_all_landed_is_not_partial(self) -> None:
+        message = "Done.\n\n- add a card — applied\n- sort by month — applied"
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(message))
+            answer = edit(change="Add a card and sort by month")
+
+        assert "partial" not in answer
+        assert "not_done" not in answer
+        assert "next_step" not in answer
+
+    def test_an_edit_that_changed_nothing_is_not_partial(self) -> None:
+        # Nothing landed, so the note is "nothing changed", not "part of it".
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(PARTLY, changed=False))
+            answer = edit(change="Count customers per month, in calendar order")
+
+        assert "partial" not in answer
+        assert "Nothing on the dashboard changed" in answer["next_step"]
+
+    def test_a_dash_in_the_prose_is_not_read_as_an_ask(self) -> None:
+        # Only a list line ("- ask — status") is Mammoth's report of an ask.
+        message = "Added the chart — it counts customers — and sorted it."
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(message))
+            answer = edit(change="Add a chart")
+
+        assert "partial" not in answer
+
+
+class TestPickingUpAnEditThatOutlastedTheCall:
+    def test_the_job_is_waited_for_again_and_reported(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(PARTLY))
+            answer = edit(job_id=41)
+
+        # Nothing new is sent to the dashboard's chat.
+        assert not api.sent("POST", CHAT)
+        assert api.sent("GET", JOB)
+        assert answer["changed"] is True
+        assert answer["partial"] is True
+        assert answer["id"] == DASHBOARD_ID
+
+    @pytest.mark.parametrize(
+        "more", [{"change": "Add a card"}, {"title": "Sales"}, {"any_site": True}]
+    )
+    def test_a_job_id_with_anything_new_is_refused(self, more: dict[str, Any]) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api)
+            with pytest.raises(ToolError, match="job_id"):
+                edit(job_id=41, **more)
+
+        assert not api.requests

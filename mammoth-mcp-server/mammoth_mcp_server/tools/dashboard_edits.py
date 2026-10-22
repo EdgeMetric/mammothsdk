@@ -5,7 +5,16 @@ the change asked for, and changes the board's draft. The share link opens the
 published version, so it shows the board as it was until the board is
 published again — which is `publish_dashboard`'s job, and the user's to ask
 for. Embed settings are not part of the draft: they apply at once.
+
+Mammoth reports `changed` when the turn saved a new board, not when the board
+does what was asked: an AI that swaps a chart for one that still misses the ask
+has changed the board. What did not land is in the reply itself, written by
+Mammoth's own check rather than by the AI, in two forms (mvc-service
+`dashboards_v3/llm/controls.py`): a line per ask, `- <ask> — <status>`, when the
+user asked for two things or more, and a `Couldn’t do: <note>; <note>` block.
 """
+
+import re
 
 from mammoth.api.dashboard_generated import chat_edit
 from mammoth.api.dashboards import DashboardsAPI
@@ -13,7 +22,7 @@ from mammoth.models.dashboard_generated import ChatEditParams, ChatEditSpec
 from mammoth.models.dashboards import DashboardPatchItem, DashboardPatchOp, DashboardPatchPath
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ENGINE_V3, DashboardFields
+from ..consts import ENGINE_V3, DashboardFields, JobFields
 from ..jobs import JobStillRunning, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -22,6 +31,10 @@ from .dashboard_embed import EmbedMode, change_embed, check_embed_change
 from .dashboards import read_dashboard
 
 NOTHING_TO_CHANGE = "Say what to change: a change, a new title, or the embed settings."
+JOB_ALONE = (
+    "job_id picks up an edit already sent: call it with nothing else to change, then"
+    " send any new change on its own."
+)
 OLDER_ENGINE_EDIT = (
     "Dashboard {id} is on Mammoth's older engine, which Mammoth's AI cannot edit."
     " The user can change it in the editor, at {editor_url}."
@@ -35,10 +48,17 @@ STILL_PUBLISHED = (
     "The share link still shows the published version. Ask the user, then call"
     " publish_dashboard to put this change out."
 )
-STILL_EDITING = (
-    "Mammoth's AI is still making the change. get_dashboard shows the dashboard once"
-    " it is done: do not send the change again."
+PARTLY_DONE = (
+    "Part of the change did not land: `not_done` lists it, from Mammoth's own check."
+    " Tell the user what was done and what was not; do not say the whole change was made."
 )
+STILL_EDITING = (
+    "Mammoth's AI is still making the change. Call edit_dashboard with job_id={job_id}"
+    " and nothing else to get what it did: do not send the change again."
+)
+# One line per ask, as Mammoth lists them when the user asked for several things.
+ASK_LINE = re.compile(r"^- (?P<ask>.+?) — (?P<status>.+?)\s*$", re.MULTILINE)
+COULD_NOT = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*(?:\n\s*\n|$)", re.DOTALL)
 
 
 @mcp_server.tool(title="Edit dashboard", annotations=DESTRUCTIVE)
@@ -50,6 +70,7 @@ async def edit_dashboard(
     embed_mode: EmbedMode | None = None,
     any_site: bool | None = None,
     allowed_sites: list[str] | None = None,
+    job_id: int | None = None,
 ) -> dict[str, JsonValue]:
     """Have Mammoth's AI change a dashboard, rename it, or choose how it embeds.
 
@@ -76,17 +97,24 @@ async def edit_dashboard(
         any_site: true lets any site show the board.
         allowed_sites: Only these sites may show the board, as origins
             ("https://acme.com", "https://*.acme.com"). At most 20.
+        job_id: Pick up an edit an earlier call left "editing", from its
+            `job_id`, and report what it did. Sends nothing new.
 
     Returns:
         The dashboard afterwards, as `get_dashboard` reports it without
         numbers. After an AI edit, `changed` says whether anything changed,
         and `message` is the AI's reply. When `changed` is false, nothing was
-        applied, whatever `message` says. After an embed change, `embed` is
+        applied, whatever `message` says. When `partial` is true, part of it
+        did not land: `not_done` lists what. After an embed change, `embed` is
         the embed afterwards. `next_step`, when present, says what to tell the
         user. A big change can still be going when this returns: then `status`
-        is "editing".
+        is "editing", with the `job_id` to pick it up by.
     """
     embeds = not (embed_mode is None and any_site is None and allowed_sites is None)
+    if job_id is not None:
+        if change or title or embeds:
+            raise ToolError(JOB_ALONE)
+        return await finish_edit(workspace_id, dashboard_id, {JobFields.JOB_ID: job_id})
     if not (change or title or embeds):
         raise ToolError(NOTHING_TO_CHANGE)
     check_embed_change(any_site, allowed_sites)
@@ -101,18 +129,30 @@ async def edit_dashboard(
             else None
         )
         started = await start_edit(client.dashboards, dashboard_id, change) if change else None
+    finished = await finish_edit(workspace_id, dashboard_id, started, drafted=bool(change or title))
+    return {**finished, **({} if embed is None else {DashboardFields.EMBED: embed})}
+
+
+async def finish_edit(
+    workspace_id: int,
+    dashboard_id: int,
+    started: dict[str, JsonValue] | None,
+    drafted: bool = True,
+) -> dict[str, JsonValue]:
+    """Wait for the AI edit, if one was sent, and report the dashboard after it."""
     try:
         edit = {} if started is None else await wait_for_edit(workspace_id, started)
-    except JobStillRunning:
+    except JobStillRunning as running:
+        job_id = running.job[JobFields.ID]
         return {
             DashboardFields.ID: dashboard_id,
             DashboardFields.STATUS: DashboardFields.EDITING,
-            DashboardFields.NEXT_STEP: STILL_EDITING,
+            DashboardFields.JOB_ID: job_id,
+            DashboardFields.NEXT_STEP: STILL_EDITING.format(job_id=job_id),
         }
     async with build_client(workspace_id) as client:
         after = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
-    told = what_to_tell(edit, after) if change or title else {}
-    return {**after, **edit, **told, **({} if embed is None else {DashboardFields.EMBED: embed})}
+    return {**after, **edit, **(what_to_tell(edit, after) if drafted else {})}
 
 
 def refuse_older_engine(dashboard: dict[str, JsonValue], change: str) -> None:
@@ -145,7 +185,30 @@ async def wait_for_edit(workspace_id: int, started: dict[str, JsonValue]) -> dic
     edit's result is in its job alone, and no tool reads the job afterwards.
     """
     edited = await wait_for_job(workspace_id, started)
-    return {field: edited[field] for field in DashboardFields.EDITED if field in edited}
+    edit = {field: edited[field] for field in DashboardFields.EDITED if field in edited}
+    missed: list[JsonValue] = list(not_done(edited.get(DashboardFields.MESSAGE)))
+    if missed and edit.get(DashboardFields.CHANGED) is True:
+        edit[DashboardFields.PARTIAL] = True
+    return {**edit, **({DashboardFields.NOT_DONE: missed} if missed else {})}
+
+
+def not_done(message: object) -> list[str]:
+    """What Mammoth's own check says did not land, from the reply to an edit.
+
+    An ask listed with any status but "applied", and each note under
+    "Couldn’t do:". A dash in the AI's prose is not a list line, so it is not
+    read as an ask.
+    """
+    if not isinstance(message, str):
+        return []
+    asks = [
+        f"{line['ask']}: {line['status']}"
+        for line in ASK_LINE.finditer(message)
+        if line["status"] != DashboardFields.ASK_APPLIED
+    ]
+    refused = COULD_NOT.search(message)
+    notes = refused["notes"].split(";") if refused else []
+    return [*asks, *(note.strip() for note in notes if note.strip())]
 
 
 def new_title(title: str) -> DashboardPatchItem:
@@ -158,9 +221,11 @@ def new_title(title: str) -> DashboardPatchItem:
 def what_to_tell(
     edit: dict[str, JsonValue], dashboard: dict[str, JsonValue]
 ) -> dict[str, JsonValue]:
-    """The note on an edit that did not land, or on a change its share link does not show yet."""
+    """The note on an edit that did not land, in full or in part, or not yet on the share link."""
     if edit.get(DashboardFields.CHANGED) is False:
         return {DashboardFields.NEXT_STEP: NOT_APPLIED}
-    if dashboard.get(DashboardFields.PUBLISHED):
-        return {DashboardFields.NEXT_STEP: STILL_PUBLISHED}
-    return {}
+    notes = [
+        *([PARTLY_DONE] if edit.get(DashboardFields.PARTIAL) else []),
+        *([STILL_PUBLISHED] if dashboard.get(DashboardFields.PUBLISHED) else []),
+    ]
+    return {DashboardFields.NEXT_STEP: " ".join(notes)} if notes else {}
