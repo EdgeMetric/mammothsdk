@@ -184,7 +184,7 @@ async def update_automation(
 async def delete_automation(
     workspace_id: int, project_id: int, automation_id: int
 ) -> dict[str, JsonValue]:
-    """Move an automation to the trash, where it can still be restored.
+    """Move an automation to the trash. `undo` with what="trash" restores it.
 
     Args:
         workspace_id: Which workspace the project is in.

@@ -14,6 +14,7 @@ from . import (
     sources,
     steps,
     transformations,
+    undo,
     views,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "sources",
     "steps",
     "transformations",
+    "undo",
     "views",
 ]
