@@ -18,6 +18,7 @@ from ..consts import (
     ListFields,
     PipelineFields,
     StepFields,
+    VersionFields,
 )
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
@@ -67,7 +68,11 @@ DRAFT_ACTIONS: dict[str, str] = {
 
 @mcp_server.tool(title="Get pipeline", annotations=READS)
 async def get_pipeline(
-    workspace_id: int, project_id: int, dataset_id: int, view_id: int
+    workspace_id: int,
+    project_id: int,
+    dataset_id: int,
+    view_id: int,
+    include_versions: bool = False,
 ) -> dict[str, JsonValue]:
     """Get a view's pipeline: its state and its steps, in order.
 
@@ -76,6 +81,8 @@ async def get_pipeline(
         project_id: Which project the view is in.
         dataset_id: Which dataset the view belongs to.
         view_id: Which view.
+        include_versions: Also list the pipeline's latest versions, to put it
+            back as it was with `undo`. Mammoth saves one after each change.
 
     Returns:
         `pipeline`: the state (`draft_mode` is off, clean or dirty; `auto_run`;
@@ -83,7 +90,9 @@ async def get_pipeline(
         and `params` (columns there are internal names). `mammoth_url`: the
         page in Mammoth the view opens on. When a step is in error, or changes
         are staged and not run: `problems` (each step in error, with why) and
-        `next_step`, what to tell the user and do.
+        `next_step`, what to tell the user and do. With `include_versions`,
+        `versions`: the latest first, each with its `id`, `name`, the
+        `modification_type` that made it, `created_at` and `change_summary`.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     # Both reads go through one client rather than one each.
@@ -95,12 +104,31 @@ async def get_pipeline(
             pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
     steps = tasks[PipelineFields.TASKS]
+    versions = {VersionFields.VERSIONS: await read_versions(ids)} if include_versions else {}
     return {
         PipelineFields.PIPELINE: state,
         PipelineFields.STEPS: steps,
         ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
         **what_needs_doing(state, steps if isinstance(steps, list) else []),
+        **versions,
     }
+
+
+async def read_versions(ids: dict[str, int]) -> list[JsonValue]:
+    """A view's latest pipeline versions, newest first, with what a model needs of each."""
+    async with build_client(ids["workspace_id"], ids["project_id"]) as client:
+        listed = await read_sdk_errors(
+            client.pipeline_versions.list(
+                ids["dataset_id"],
+                ids["dataview_id"],
+                sort=VersionFields.NEWEST_FIRST,
+                limit=VersionFields.LISTED,
+            )
+        )
+    return [
+        {field: version[field] for field in VersionFields.ITEM_FIELDS if field in version}
+        for version in listed[VersionFields.VERSIONS]
+    ]
 
 
 @mcp_server.tool(title="Delete transformation step", annotations=DESTRUCTIVE)

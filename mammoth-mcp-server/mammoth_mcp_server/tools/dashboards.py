@@ -227,7 +227,7 @@ async def set_dashboard_tags(
 
 @mcp_server.tool(title="Delete dashboard", annotations=DESTRUCTIVE)
 async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonValue]:
-    """Move a dashboard to the trash, where it can still be restored.
+    """Move a dashboard to the trash. `undo` with what="trash" restores it.
 
     Args:
         workspace_id: Which workspace to act in.

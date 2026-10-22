@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (mammoth-mcp-server 0.2.9)
+
+- `undo` takes a change back. With what="trash" it restores views, datasets, dashboards and automations from the project's trash and reports which came back. With what="pipeline" it puts a view's pipeline back as one of its versions had it; Mammoth saves the pipeline as it was first, so a rollback can be taken back too.
+- `list_trash` lists what a project's trash holds: each item's type and id (what `undo` takes), name, and days left before Mammoth deletes it for good.
+- `get_pipeline` with `include_versions` lists the view's latest 10 pipeline versions, newest first, with what made each one.
+
+### Changed (mammoth-mcp-server 0.2.9)
+
+- `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
+
 ### Added (mammoth-mcp-server 0.2.7)
 
 - A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.

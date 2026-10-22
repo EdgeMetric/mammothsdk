@@ -49,6 +49,7 @@ TOOLS = {
     "list_files",
     "list_projects",
     "list_tables",
+    "list_trash",
     "list_views",
     "list_workspaces",
     "manage_draft",
@@ -60,6 +61,7 @@ TOOLS = {
     "run_pipeline",
     "set_dashboard_tags",
     "set_date_format",
+    "undo",
     "unlock_file",
     "update_automation",
     "upload_file",
@@ -114,6 +116,7 @@ READ_ONLY = {
     "list_files",
     "list_projects",
     "list_tables",
+    "list_trash",
     "list_views",
     "list_workspaces",
     "preview_transformation",
@@ -136,6 +139,7 @@ DESTRUCTIVE = {
     "publish_dashboard",
     "review_unreadable_rows",
     "run_pipeline",
+    "undo",
     "update_automation",
 }
 

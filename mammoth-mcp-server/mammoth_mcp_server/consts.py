@@ -397,6 +397,35 @@ class ViewFields:
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
+    NEXT_STEP = "next_step"
+
+
+class TrashFields:
+    """The trash of a project, as its route lists it and this server reports it."""
+
+    ITEMS = "items"
+    TYPE = "type"
+    # A dataset that is not in the trash, sent only so the web app can group
+    # its trashed views under it. Nothing to restore.
+    IS_ACTIVE_PARENT = "is_active_parent"
+    # What a model needs of a trashed item to restore it and tell the user.
+    ITEM_FIELDS = ("id", "type", "name", "dataset_id", "trashed_at", "days_until_purge")
+    RETENTION_DAYS = "retention_days"
+    TOTAL = "total"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    LISTED = 50
+
+
+class VersionFields:
+    """A view's pipeline versions, as the versions route lists them."""
+
+    VERSIONS = "versions"
+    # Newest first, as the route writes a sort.
+    NEWEST_FIRST = "(id:desc)"
+    LISTED = 10
+    ITEM_FIELDS = ("id", "name", "modification_type", "created_at", "change_summary")
+    NEXT_STEP = "next_step"
 
 
 class TaskFields:

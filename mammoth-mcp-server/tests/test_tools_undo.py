@@ -1,0 +1,219 @@
+"""Taking a change back: restore what was trashed, or put a pipeline back as it was."""
+
+from typing import Any
+from unittest.mock import patch
+
+import pytest
+from mcp.server.mcpserver.exceptions import ToolError
+
+from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool
+
+PROJECT, DATASET, VIEW = 3, 5, 9
+PROJECT_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}"
+VIEW_PATH = f"{PROJECT_PATH}/datasets/{DATASET}/dataviews/{VIEW}"
+TRASH = f"{PROJECT_PATH}/trash"
+RESTORE = f"{TRASH}/restore"
+VERSIONS = f"{VIEW_PATH}/pipeline/versions"
+JOB = "/jobs/41"
+IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
+VIEW_IDS = {**IDS, "dataset_id": DATASET, "view_id": VIEW}
+
+STARTED = {"job": {"id": 41}}
+RUNNING = {"job": {"id": 41, "status": "processing", "response": None}}
+SHORT_CALL = patch("mammoth_mcp_server.deadline.TOOL_CALL_SECONDS", 0.05)
+
+
+def done(response: dict[str, Any]) -> dict[str, Any]:
+    return {"job": {"id": 41, "status": "success", "response": response}}
+
+
+TRASHED_VIEW = {
+    "id": VIEW,
+    "type": "dataview",
+    "name": "Cleaned",
+    "project_id": PROJECT,
+    "dataset_id": DATASET,
+    "trashed_at": "2026-10-22T06:00:00",
+    "trashed_by": {"id": 19, "name": "Api Tests"},
+    "days_until_purge": 29,
+    "cascade_trash_event_id": None,
+    "folder_resource_id": None,
+    "original_folder_path": [],
+}
+# Sent only so the web app can group a trashed view under its dataset.
+LIVE_PARENT = {"id": DATASET, "type": "dataset", "name": "Customers", "is_active_parent": True}
+TRASH_LIST = {
+    "items": [TRASHED_VIEW, LIVE_PARENT],
+    "total": 1,
+    "retention_days": 30,
+    "limit": 50,
+    "offset": 0,
+    "next": None,
+}
+VERSION_LIST = {
+    "versions": [
+        {
+            "id": 202,
+            "dataview_id": VIEW,
+            "name": "Version 3",
+            "modification_type": "DELETE_TASK",
+            "created_at": "2026-10-22T06:10:00",
+            "created_by": 19,
+            "note": None,
+            "change_summary": {"deleted": 1},
+        },
+        {
+            "id": 201,
+            "dataview_id": VIEW,
+            "name": "Version 2",
+            "modification_type": "ADD_TASK",
+            "created_at": "2026-10-22T06:00:00",
+            "created_by": 19,
+            "note": None,
+            "change_summary": {"added": 1},
+        },
+    ],
+    "limit": 10,
+    "offset": 10,
+    "next": None,
+}
+PIPELINE_STATE = {"draft_mode": "off", "auto_run": True, "execution_state": "ready"}
+TASKS = {"tasks": [{"id": 77, "sequence": 1, "status": "ready", "params": {}}]}
+
+
+def a_view(api: FakeApi, job: dict[str, Any] | None = None) -> None:
+    api.answer("POST", f"{VIEW_PATH}/trash", STARTED)
+    api.answer("GET", TRASH, TRASH_LIST)
+    api.answer("POST", RESTORE, STARTED)
+    api.answer("GET", VERSIONS, VERSION_LIST)
+    api.answer("POST", f"{VERSIONS}/201", STARTED)
+    api.answer("GET", f"{VIEW_PATH}/pipeline", PIPELINE_STATE)
+    api.answer("GET", f"{VIEW_PATH}/pipeline/tasks", TASKS)
+    api.answer("GET", JOB, job or done({}))
+
+
+class TestDeletingViews:
+    def test_a_view_goes_to_the_trash_not_away_for_good(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            answer = call_tool("delete_views", dataset_id=DATASET, view_ids=[VIEW], **IDS)
+
+        assert api.sent("POST", f"{VIEW_PATH}/trash")
+        assert not api.sent("DELETE", VIEW_PATH)
+        assert answer["deleted"] == [VIEW]
+        assert "undo" in answer["next_step"]
+
+    def test_a_view_the_trash_refuses_is_reported_and_the_rest_go_on(self) -> None:
+        other = f"{PROJECT_PATH}/datasets/{DATASET}/dataviews/10/trash"
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            api.answer("POST", other, {"message": "Other views depend on this one"}, status=400)
+            answer = call_tool("delete_views", dataset_id=DATASET, view_ids=[10, VIEW], **IDS)
+
+        assert answer["deleted"] == [VIEW]
+        [failed] = answer["failed"]
+        assert failed["view_id"] == 10
+        assert "depend" in failed["error"]
+
+
+class TestListingTheTrash:
+    def test_what_can_be_restored_is_listed(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            trash = call_tool("list_trash", **IDS)
+
+        assert trash["items"] == [
+            {
+                "id": VIEW,
+                "type": "dataview",
+                "name": "Cleaned",
+                "dataset_id": DATASET,
+                "trashed_at": "2026-10-22T06:00:00",
+                "days_until_purge": 29,
+            }
+        ]
+        assert trash["retention_days"] == 30
+
+    def test_one_kind_is_listed_when_asked_for(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            call_tool("list_trash", kind="dashboard", **IDS)
+
+        [sent] = api.sent("GET", TRASH)
+        assert sent.url.params["type"] == "dashboard"
+
+
+class TestRestoringFromTheTrash:
+    def test_the_items_named_are_restored_and_waited_for(self) -> None:
+        restored = done({"succeeded": [{"type": "dataview", "id": VIEW}], "failed": []})
+        with a_fake_api() as api, as_caller():
+            a_view(api, job=restored)
+            answer = call_tool(
+                "undo", what="trash", items=[{"type": "dataview", "id": VIEW}], **IDS
+            )
+
+        [sent] = api.sent("POST", RESTORE)
+        assert api.body(sent) == {"items": [{"type": "dataview", "id": VIEW}]}
+        assert answer["succeeded"] == [{"type": "dataview", "id": VIEW}]
+        assert answer["failed"] == []
+
+    @pytest.mark.parametrize("items", [None, []])
+    def test_restoring_names_what_to_restore(self, items: list[Any] | None) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            with pytest.raises(ToolError, match="list_trash"):
+                call_tool("undo", what="trash", items=items, **IDS)
+
+        assert not api.requests
+
+
+class TestPuttingAPipelineBack:
+    def test_the_version_named_is_applied_and_the_pipeline_read_after(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            answer = call_tool(
+                "undo", what="pipeline", dataset_id=DATASET, view_id=VIEW, version_id=201, **IDS
+            )
+
+        assert api.sent("POST", f"{VERSIONS}/201")
+        assert answer["steps"] == TASKS["tasks"]
+        # Mammoth saved the pipeline as it was before applying, so this is undone the same way.
+        assert "include_versions" in answer["next_step"]
+
+    def test_a_pipeline_still_going_back_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_view(api, job=RUNNING)
+            answer = call_tool(
+                "undo", what="pipeline", dataset_id=DATASET, view_id=VIEW, version_id=201, **IDS
+            )
+
+        assert answer["status"] == "processing"
+        assert "do not call undo again" in answer["note"]
+
+    def test_a_pipeline_undo_names_the_view_and_the_version(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            with pytest.raises(ToolError, match="version_id"):
+                call_tool("undo", what="pipeline", dataset_id=DATASET, view_id=VIEW, **IDS)
+
+        assert not api.requests
+
+
+class TestThePipelinesVersions:
+    def test_the_latest_versions_come_with_the_pipeline_when_asked_for(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            answer = call_tool("get_pipeline", include_versions=True, **VIEW_IDS)
+
+        [sent] = api.sent("GET", VERSIONS)
+        assert sent.url.params["sort"] == "(id:desc)"
+        assert [version["id"] for version in answer["versions"]] == [202, 201]
+        assert answer["versions"][0]["change_summary"] == {"deleted": 1}
+
+    def test_a_plain_read_does_not_list_them(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            answer = call_tool("get_pipeline", **VIEW_IDS)
+
+        assert "versions" not in answer
+        assert not api.sent("GET", VERSIONS)
