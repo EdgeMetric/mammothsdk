@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from mammoth_cli.context.resolver import ExplicitLogin
+    from mammoth_cli.runtime.embed_pool import EmbedRuntime
 
 
 @dataclass
@@ -24,6 +25,8 @@ class EmbeddedCall:
 
     login: ExplicitLogin
     envelopes: list[dict[str, Any]] = field(default_factory=list)
+    #: The host's shared loop and HTTP pool, or None for a client of the call's own.
+    runtime: EmbedRuntime | None = None
 
 
 _CURRENT: ContextVar[EmbeddedCall | None] = ContextVar("mammoth_cli_embedded", default=None)

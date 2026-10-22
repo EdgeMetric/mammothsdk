@@ -34,6 +34,11 @@ from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_INTERRUPT, EXIT_USAGE, CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.embed_pool import (  # noqa: F401 -- shared_pool, close_shared_pool: public
+    EmbedRuntime,
+    close_shared_pool,
+    shared_pool,
+)
 
 
 def invoke(
@@ -46,6 +51,7 @@ def invoke(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    runtime: EmbedRuntime | None = None,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -66,6 +72,10 @@ def invoke(
             unless ``args`` already sets one.
         return_running: Send ``--return-running`` so a wait that runs out
             returns a ``status: running`` handle instead of a timeout error.
+        runtime: A host-owned :class:`EmbedRuntime` (or :func:`shared_pool`): the
+            call sends its requests through its one connection pool and loop, so
+            keep-alive connections are reused across calls and users. Omitted, the
+            call builds and closes a pool of its own.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -80,7 +90,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    call = embedded.EmbeddedCall(login=login)
+    call = embedded.EmbeddedCall(login=login, runtime=runtime)
     token = embedded.enter(call)
     try:
         _run(argv)
