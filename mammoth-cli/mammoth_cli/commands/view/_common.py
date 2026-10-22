@@ -9,6 +9,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
@@ -188,6 +189,38 @@ def _view_parent_dataset_id(service: Any, invocation: Invocation, view_id: int) 
     return dataset_id
 
 
+def _explain_swapped_ids(
+    service: Any, error: CliError, invocation: Invocation, view_id: int, dataset_id: int
+) -> None:
+    """Raise a clear refusal when a not-found call was given DATASET_ID then VIEW_ID.
+
+    The arguments are ``VIEW_ID [DATASET_ID]``; passing them the other way round
+    only produces a bare 404. If the first number is really a view of the second,
+    say so. Any other outcome leaves the original error to be re-raised.
+    """
+    if error.code != CODE_RESOURCE_NOT_FOUND:
+        return
+    try:
+        parent = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=dataset_id))
+    except CliError:
+        return
+    if parent != view_id:
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=(
+            f"{view_id} is a dataset id and {dataset_id} is its view; "
+            "the order is VIEW_ID DATASET_ID"
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f"Run it again as: mammoth {invocation.command_path} {dataset_id} {view_id}"
+            " (same options)"
+        ),
+        details={"view_id": dataset_id, "dataset_id": view_id},
+    ) from error
+
+
 def _verified_dataset_id(
     service: Any, invocation: Invocation, view_id: int, document: dict[str, Any]
 ) -> int:
@@ -199,7 +232,12 @@ def _verified_dataset_id(
     explicit = _int_positional_at(invocation, 1, "dataset id")
     if explicit is None and document.get(_DATASET_ID_FIELD) is not None:
         explicit = _int_field(document[_DATASET_ID_FIELD], _DATASET_ID_FIELD)
-    real = _view_parent_dataset_id(service, invocation, view_id)
+    try:
+        real = _view_parent_dataset_id(service, invocation, view_id)
+    except CliError as exc:
+        if explicit is not None:
+            _explain_swapped_ids(service, exc, invocation, view_id, explicit)
+        raise
     if explicit is not None:
         _check_parent_matches(view_id, explicit, real)
     return real

@@ -1017,6 +1017,41 @@ def test_the_customer_postgres_export_points_to_publish_db() -> None:
     assert "publish-db" in _COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
 
 
+def test_find_inlines_the_positionals_in_order() -> None:
+    """A find result names VIEW_ID before the optional DATASET_ID, so a caller need not guess."""
+    top = find_schemas("open explore cards")["matches"][0]
+    assert top["command_id"] == "view.explore-panel.set"
+    assert [(p["metavar"], p["required"]) for p in top["positionals"]] == [
+        ("VIEW_ID", True),
+        ("DATASET_ID", False),
+    ]
+
+
+def test_an_optional_trailing_positional_field_is_not_required() -> None:
+    schema = get_schema("view.explore-panel.set")
+    assert schema is not None
+    required = {field["name"]: field["required"] for field in schema["accepted_fields"]}
+    assert required == {"dataset_id": False, "panel": True}
+
+
+def test_explore_panel_set_does_not_claim_to_open_cards_in_the_ui() -> None:
+    schema = get_schema("view.explore-panel.set")
+    assert schema is not None
+    assert "in the UI" not in json.dumps(schema)
+
+
+@pytest.mark.parametrize(
+    "command_id", ["view.transform.first-name", "view.transform.update-column"]
+)
+def test_one_call_transforms_do_not_claim_to_submit_the_draft(command_id: str) -> None:
+    """Since 2.2.97 a draft-mode step stays staged; the schema must not say it submits."""
+    schema = get_schema(command_id)
+    assert schema is not None
+    text = json.dumps(schema)
+    assert "the draft is submitted" not in text
+    assert "draft stays unsubmitted" in text
+
+
 def test_view_summary_dataset_id_is_optional_like_its_positional() -> None:
     # #284: accepted_fields said required while the positional said optional.
     schema = get_schema("view.summary")

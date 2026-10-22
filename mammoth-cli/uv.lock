@@ -537,7 +537,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.2.98"
+version = "2.2.99"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },

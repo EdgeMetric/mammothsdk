@@ -2373,6 +2373,10 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
         record = command_by_id(entry["command_id"])
         if record is None:
             continue
+        entry["positionals"] = [
+            {key: item[key] for key in ("name", "metavar", "type", "required")}
+            for item in _positionals(entry["command_id"])
+        ]
         fields = _compact_accepted_fields(record)
         if fields is not None:
             entry["accepted_fields"] = fields
