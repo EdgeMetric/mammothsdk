@@ -18,7 +18,7 @@ from typing import Literal, TypedDict
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import TrashFields, VersionFields
+from ..consts import PageFields, PipelineFields, TrashFields, VersionFields
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -42,9 +42,12 @@ NAME_THE_VERSION = (
     " get_pipeline lists them with include_versions."
 )
 PUT_BACK = (
-    "The pipeline is back as that version had it. Mammoth saved it as it was just"
-    " before, as a new version: get_pipeline with include_versions lists it, to"
-    " take this back the same way."
+    "The pipeline is back as that version had it. get_pipeline with include_versions"
+    " lists the version from just before this; undo with it takes this back."
+)
+STILL_RUNNING = (
+    "The view is running again with these steps: get_pipeline shows their results"
+    " once the run is done."
 )
 STILL_PUTTING_BACK = (
     "Mammoth is still putting the pipeline back. get_pipeline shows it once it is"
@@ -54,7 +57,7 @@ STILL_PUTTING_BACK = (
 
 @mcp_server.tool(title="List trash", annotations=READS)
 async def list_trash(
-    workspace_id: int, project_id: int, kind: TrashKind | None = None
+    workspace_id: int, project_id: int, kind: TrashKind | None = None, offset: int = 0
 ) -> dict[str, JsonValue]:
     """List what is in a project's trash and can still be restored with `undo`.
 
@@ -63,26 +66,32 @@ async def list_trash(
         project_id: Which project.
         kind: Only "dataview", "dataset", "dashboard" or "automation". Omit for
             all of them.
+        offset: How many items to skip, for the next page: `next_offset`.
 
     Returns:
         `items`: each item's `type` and `id` (what `undo` takes), `name`, the
         `dataset_id` of a view, `trashed_at`, and `days_until_purge`, after
         which Mammoth deletes it for good. `total`, and `retention_days`: how
-        long the trash keeps an item.
+        long the trash keeps an item. `next_offset`, when there are more.
     """
     async with build_client(workspace_id, project_id) as client:
         listed = await read_sdk_errors(
-            client.trash.list(project_id=project_id, type=kind, limit=TrashFields.LISTED)
+            client.trash.list(
+                project_id=project_id, type=kind, limit=TrashFields.LISTED, offset=offset
+            )
         )
     items: list[JsonValue] = [
         {field: item[field] for field in TrashFields.ITEM_FIELDS if field in item}
         for item in listed[TrashFields.ITEMS]
         if not item.get(TrashFields.IS_ACTIVE_PARENT)
     ]
+    total = listed.get(PageFields.TOTAL)
+    after = offset + TrashFields.LISTED
     return {
         TrashFields.ITEMS: items,
-        TrashFields.TOTAL: listed.get(TrashFields.TOTAL),
+        PageFields.TOTAL: total,
         TrashFields.RETENTION_DAYS: listed.get(TrashFields.RETENTION_DAYS),
+        **({PageFields.NEXT_OFFSET: after} if isinstance(total, int) and after < total else {}),
     }
 
 
@@ -156,5 +165,10 @@ async def put_pipeline_back(
     except JobStillRunning as running:
         return still_running(running, STILL_PUTTING_BACK)
     pipeline = await get_pipeline(workspace_id, project_id, dataset_id, view_id)
-    notes = [note for note in (pipeline.get(VersionFields.NEXT_STEP), PUT_BACK) if note]
-    return {**pipeline, VersionFields.NEXT_STEP: " ".join(str(note) for note in notes)}
+    state = pipeline[PipelineFields.PIPELINE]
+    still_going = (
+        isinstance(state, dict) and state.get(VersionFields.EXECUTION_STATE) != VersionFields.IDLE
+    )
+    told = (pipeline.get(VersionFields.NEXT_STEP), PUT_BACK, STILL_RUNNING if still_going else None)
+    notes = [str(note) for note in told if note]
+    return {**pipeline, VersionFields.NEXT_STEP: " ".join(notes)}
