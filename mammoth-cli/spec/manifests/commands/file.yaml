@@ -399,6 +399,7 @@ commands:
     metavar: FILES
     falls_back_to_field: files
     help: Path to a local file to upload; or pass one or more via the 'files' field.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.upload
   sdk_conversion: Call mammoth.api.files.FilesAPI.upload with validated request fields.
@@ -450,6 +451,7 @@ commands:
     metavar: FOLDER_PATH
     falls_back_to_field: folder_path
     help: Path to a local folder to upload; or pass it via the 'folder_path' input field.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.files.FilesAPI.upload_folder
   sdk_conversion: Call mammoth.api.files.FilesAPI.upload_folder with validated request fields.

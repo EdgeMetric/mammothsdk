@@ -2513,6 +2513,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local template file (.zip).
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.template_inspect
   sdk_conversion: Call mammoth.api.support.SupportAPI.template_inspect with validated request fields.
@@ -2604,6 +2605,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local PNG, JPEG or WebP image (1 MB at most).
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.support.SupportAPI.template_thumbnail_set
   sdk_conversion: Call mammoth.api.support.SupportAPI.template_thumbnail_set with validated request fields.

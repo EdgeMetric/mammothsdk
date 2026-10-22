@@ -26,6 +26,7 @@ Example::
 from __future__ import annotations
 
 import copy
+import time
 from collections.abc import Sequence
 from typing import Any
 
@@ -136,7 +137,7 @@ def invoke_many(
     with shared_services():
         for index, args in enumerate(commands):
             if failed is not None:
-                envelopes.append(_skipped(index, failed))
+                envelopes.append(_timed(_skipped(index, failed), 0))
                 continue
             argv = _argv(
                 args,
@@ -156,16 +157,73 @@ def invoke_many(
 
 
 def _invoke_one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
-    """Run ``argv`` as ``login`` in its own embedded call; its envelope."""
+    """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
+    started = time.perf_counter()
     call = embedded.EmbeddedCall(login=login)
+    embedded.install_stream_guards()
     token = embedded.enter(call)
     try:
         _run(argv)
     finally:
         embedded.leave(token)
-    if call.envelopes:
-        return call.envelopes[-1]
-    return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    return _timed(_outcome(call), round((time.perf_counter() - started) * 1000))
+
+
+def _timed(envelope: dict[str, Any], elapsed_ms: int) -> dict[str, Any]:
+    """``envelope`` with ``elapsed_ms`` on its ``meta`` (success) or its ``error``."""
+    body = envelope.get("error", envelope.get("meta"))
+    if isinstance(body, dict):
+        body["elapsed_ms"] = elapsed_ms
+    return envelope
+
+
+def _outcome(call: embedded.EmbeddedCall) -> dict[str, Any]:
+    """The one envelope a finished call stands for; anything else is an error to fix.
+
+    Text on stdout, or a second envelope, means a command broke the one-envelope
+    contract. Returning the one envelope and dropping the rest would hide that, so
+    the call fails and says what it saw. Text on stderr (a library's log line, a
+    warning) is not a contract break: it never reaches the host's stderr, and rides
+    on the envelope as ``meta.stderr`` or ``error.details.stderr`` instead.
+    """
+    out = "".join(call.stray["stdout"]).strip()[:_STRAY_CHARS]
+    err = "".join(call.stray["stderr"]).strip()[:_STRAY_CHARS]
+    if out:
+        details: dict[str, Any] = {"stdout": out, "envelopes": len(call.envelopes)}
+        if err:
+            details["stderr"] = err
+        return _error(
+            "stray_output", "The command wrote text outside its envelope.", EXIT_API, details
+        )
+    if len(call.envelopes) > 1:
+        details = {"envelopes": [_describe(item) for item in call.envelopes]}
+        if err:
+            details["stderr"] = err
+        return _error(
+            "multiple_envelopes",
+            f"The command produced {len(call.envelopes)} envelopes; it should produce one.",
+            EXIT_API,
+            details,
+        )
+    if not call.envelopes:
+        return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    envelope = call.envelopes[0]
+    if err:
+        if isinstance(envelope.get("error"), dict):
+            envelope["error"].setdefault("details", {})["stderr"] = err
+        elif isinstance(envelope.get("meta"), dict):
+            envelope["meta"]["stderr"] = err
+    return envelope
+
+
+#: Stray text kept in the error, as ``mammoth run`` keeps it.
+_STRAY_CHARS = 500
+
+
+def _describe(envelope: dict[str, Any]) -> str:
+    """One short label for an envelope: its error code, or ``data``."""
+    error = envelope.get("error")
+    return str(error.get("code")) if isinstance(error, dict) else "data"
 
 
 def _failed(envelope: dict[str, Any]) -> bool:
@@ -248,7 +306,7 @@ def _capture_help(root: Command, argv: list[str]) -> bool:
         text = _help_text(root, command_tokens)
     else:
         return False
-    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth")
+    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth", exit=0)
     embedded.capture(Result(data={"help": text}, meta=meta).to_envelope())
     return True
 
@@ -288,5 +346,9 @@ def _help_text(root: Command, tokens: list[str]) -> str:
     return plain.get_help(context)
 
 
-def _error(code: str, message: str, exit_status: int) -> dict[str, Any]:
-    return CliError(code=code, message=message, exit_status=exit_status).to_envelope()
+def _error(
+    code: str, message: str, exit_status: int, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    return CliError(
+        code=code, message=message, exit_status=exit_status, details=details or {}
+    ).to_envelope()

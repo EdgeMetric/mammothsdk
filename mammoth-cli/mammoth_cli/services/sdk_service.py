@@ -231,7 +231,9 @@ class SdkMammothService:
                 # After construction: the client sets its credential headers in
                 # ``__init__``, and a forwarded session must replace them.
                 self._client.session.headers.update(auth.headers)
-            run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
+            # An embedded call takes the run from ``ExplicitLogin.headers``: this
+            # process's environment is shared by every user the host serves.
+            run_id = "" if embedded.active() else os.environ.get(AGENT_RUN_ENV, "").strip()
             if run_id:
                 # A leg of a durable agent run names its run, so the server can
                 # refuse the run's own resume and extend.

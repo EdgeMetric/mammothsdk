@@ -257,3 +257,17 @@ def test_reads_kept_ahead_of_a_write_do_not_reach_the_next_command(
     invoke_many([["project", "list"]] * 2, login=_login(workspace_id=5))
 
     assert seen == [False, False]
+
+
+def test_every_envelope_carries_its_wall_time(
+    lookups: list[str], built: list[FakeMammothService]
+) -> None:
+    envelopes = invoke_many(
+        [["project", "list"], ["project", "no-such-command"], ["project", "list"]],
+        login=_login(workspace_id=5),
+    )
+
+    assert isinstance(envelopes[0]["meta"]["elapsed_ms"], int)
+    assert isinstance(envelopes[1]["error"]["elapsed_ms"], int)
+    assert envelopes[2]["error"]["elapsed_ms"] == 0
+    assert isinstance(invoke(["project", "list"], login=_login(5))["meta"]["elapsed_ms"], int)

@@ -153,6 +153,7 @@
         "required": {"type": "boolean"},
         "metavar": {"$ref": "#/$defs/no_placeholder"},
         "falls_back_to_field": {"type": ["string", "null"]},
+        "kind": {"enum": ["local_path"]},
         "help": {"$ref": "#/$defs/no_placeholder"}
       }
     },

@@ -8,11 +8,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-cli)
 
-- CLI `mammoth_cli.embed.invoke_many(commands, *, login, ..., stop_on_error=True)`: an embedding host runs several commands as one user and gets one envelope per command, in order. The commands share one scope, so each one reuses the client and connection the earlier ones opened for the same login and project (the way the lines of a `mammoth run` do); the services close when the batch ends. It stops at the first command that fails (an `error` envelope or a non-zero `meta.exit`) and gives each later command a `skipped` error envelope with its `index`, `reason: earlier_command_failed` and the `failed_index`; `stop_on_error=False` runs them all. Nothing is written to stdout. The project-pin read (`GET /workspaces/current`, which an embedded call cannot cache on disk) is made once per batch, not once per command, also inside a `mammoth run`. Five `project list` calls against koyal took 5.2s as one batch with a workspace hint, against 9.9s as five `invoke` calls (one run each).
+- CLI `mammoth_cli.embed.invoke_many(commands, *, login, ..., stop_on_error=True)`: an embedding host runs several commands as one user and gets one envelope per command, in order. The commands share one scope, so each one reuses the client and connection the earlier ones opened for the same login and project (the way the lines of a `mammoth run` do); the services close when the batch ends. It stops at the first command that fails (an `error` envelope or a non-zero `meta.exit`) and gives each later command a `skipped` error envelope with its `index`, `reason: earlier_command_failed` and the `failed_index`; `stop_on_error=False` runs them all. Nothing is written to stdout. Each envelope of `invoke` and `invoke_many` carries the command's wall time as `meta.elapsed_ms` (`error.elapsed_ms` on a failure; 0 for a `skipped` one). The project-pin read (`GET /workspaces/current`, which an embedded call cannot cache on disk) is made once per batch, not once per command, also inside a `mammoth run`. Five `project list` calls against koyal took 5.2s as one batch with a workspace hint, against 9.9s as five `invoke` calls (one run each).
+- CLI: every envelope carries its exit status: `meta.exit` on a success (0, or 1 or 3 when a write's read-back failed or was partial) and `error.exit` on a failure, the same number a `mammoth run` line shows. An embedding host no longer maps `error.code` to a status itself.
+- CLI: `schema get` marks a positional or input field that takes a path on the machine running the CLI with `kind: local_path` (manifest `positionals[].kind`, `accepted_fields[].kind`), so a host does not match the help text.
 
 ### Changed (next mammoth-cli)
 
 - CLI: an embedded token login (`ExplicitLogin(api_token=..., workspace_id=...)`) now takes the workspace id as a hint instead of refusing it, so a call no longer asks the server `GET /workspaces/current` first. A wrong hint is caught on the first refusal (koyal answers a request to another workspace with a 401 "Invalid token"; a 403 is checked the same way): the CLI then asks the token's own workspace once and, when it differs, returns `workspace_mismatch` (exit 3, with both ids in `details`) instead of the refusal. A login without the hint is unchanged.
+- CLI embedding (`mammoth_cli.embed.invoke`): the commands that take a local path are refused as `not_available_embedded`, derived from the `kind: local_path` marker. New in the list: `dashboard chat attachment upload`, `connector draft sample`, `collection files upload`, `dashboard attachment-create` and `dashboard import-workbook` (the last keeps its `intent_only_dashboards` refusal); a command added later with a marked path is refused without another edit.
+- CLI embedding: text a command writes to stdout during an `invoke` call no longer reaches the host process; the call returns a `stray_output` error (the first 500 characters in `error.details.stdout`) so the command gets fixed. Text on stderr (an SDK log line, a Python warning) is kept out of the host's stderr too but does not fail the call: it comes back as `meta.stderr` on a success or `error.details.stderr` on a failure, up to 500 characters. A per-context stream guard does this, not `contextlib.redirect_stdout`, so concurrent calls and the host's other threads do not see each other's output; it refuses bytes like a real text stream and routes `.buffer` the same way.
+- CLI embedding: a call that produced more than one envelope returns a `multiple_envelopes` error (listing what it saw) instead of silently keeping the last.
+- CLI embedding: `MAMMOTH_AGENT_RUN` in the process environment is ignored; the run header comes from `ExplicitLogin.headers`.
+
+### Fixed (next mammoth-cli)
+
+- CLI: the lazily built command tree (`LazyLeafCommand`, the cached Click root) is built under a lock, so threads making their first call together build it once.
 
 ### Fixed (next mammoth-mcp-server)
 
@@ -82,8 +92,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Release note (mammoth-io 0.8.48, mammoth-cli 2.2.95)
 
-- The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in the next mammoth-io. The release must raise the CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` (now `>=0.8.46`) to that version; until then the code runs without the cache on 0.8.46. Not bumped here.
-- The 28 routes the agent access, held-change, entitlement, connection, task-preview-cancel, tool-claim and unpublished commands call are listed in `PENDING_SERVER_RELEASE` (as `origin/master@cdbc7a6ed2`), so the release capability matrix no longer reports them `removed_on_server`; the server release that serves them is not out yet.
+- The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in mammoth-io 0.8.48. The CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` is therefore `>=0.8.48`; on an older SDK (0.8.46 and earlier) the code runs without the cache.
+- The 28 routes the agent access, held-change, entitlement, connection, task-preview-cancel, tool-claim and unpublished commands call are served by the pinned server master (`origin/master@29fe5d1ab8`), so they are not in `PENDING_SERVER_RELEASE`: the list holds one entry, the agent-run verb helper's variable-suffix route (see the re-pin note above). The server release that puts master on production is not out yet, so on production these commands can still answer 404.
 - SDK: `connection_key`, `session_id` and `turn_id` are URL-encoded in their request paths.
 ## mammoth-io 0.8.47, mammoth-cli 2.2.94, mammoth-mcp-server 0.2.7 (2026-10-21)
 

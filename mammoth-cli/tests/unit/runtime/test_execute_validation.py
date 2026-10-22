@@ -47,6 +47,7 @@ def test_ndjson_error_is_one_terminal_frame_on_stderr(capsys: pytest.CaptureFixt
             "authorization_required": False,
             "code": "interrupted",
             "details": {},
+            "exit": 130,
             "hint": None,
             "message": "stopped",
             "recovery_commands": [],

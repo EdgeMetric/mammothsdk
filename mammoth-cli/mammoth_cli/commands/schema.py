@@ -24,6 +24,7 @@ from typing import Any, cast
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
+from mammoth_cli.runtime.local_paths import local_path_fields
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.field_enums import field_enum, with_enum
@@ -33,7 +34,7 @@ from mammoth_cli.services.input_fields import (
     handler_owned_fields,
 )
 from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positionals import LOCAL_PATH, PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
 # Agent examples carry no ``--output json --no-input``: a piped run already
@@ -1225,6 +1226,7 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     body_schema = openapi_body_schema_for(
         tuple(str(item) for item in record.get("operation_ids", []))
     )
+    path_fields = local_path_fields(record["command_id"], record.get("positionals", []))
     return [
         {
             "name": field.name,
@@ -1239,6 +1241,8 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
                 and body_schema is not None
                 else json_schema(field.annotation, field.name)
             ),
+            # Only where it applies: a host that cannot read the path refuses the command.
+            **({"kind": LOCAL_PATH} if field.name in path_fields else {}),
         }
         for field in contract.accepted_fields
         if field.name not in excluded
@@ -1263,7 +1267,9 @@ def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | N
         return None
     compact: list[dict[str, Any]] = []
     for field in fields:
-        item = {key: field[key] for key in ("name", "type", "required", "enum")}
+        item: dict[str, Any] = {
+            key: field[key] for key in ("name", "type", "required", "enum", "kind") if key in field
+        }
         schema = field.get("schema")
         if (
             schema is not None

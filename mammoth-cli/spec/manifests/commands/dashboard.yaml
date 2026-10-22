@@ -146,6 +146,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local workbook.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_pbix
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.assess_pbix with validated request fields.
@@ -186,6 +187,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local workbook.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.assess_twb
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.assess_twb with validated request fields.
@@ -1740,6 +1742,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local workbook.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.import_workbook
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.import_workbook with validated request fields.
@@ -5341,6 +5344,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local PNG, JPEG or WebP image (1 MB at most).
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.template_thumbnail_set with validated request
@@ -6393,6 +6397,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local workbook.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.attachment_create
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.attachment_create with validated request fields.
@@ -6984,6 +6989,7 @@ commands:
     metavar: FILE
     falls_back_to_field: null
     help: Path to a local file to attach to the dashboard chat.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload with validated request
