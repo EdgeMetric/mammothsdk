@@ -16,6 +16,11 @@ from typing import Any
 SHARED: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("SHARED", default=None)
 
 
+#: Answers that cannot change while a service is open (the projects its credential is
+#: pinned to), by ``id`` of the service; ``None`` outside :func:`shared_services`.
+FIXED_ANSWERS: ContextVar[dict[int, Any] | None] = ContextVar("FIXED_ANSWERS", default=None)
+
+
 #: The credentials one ``mammoth run`` has resolved so far, by profile; ``None`` outside
 #: :func:`remembering_auth`.
 AUTH_MEMO: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("AUTH_MEMO", default=None)
@@ -53,9 +58,11 @@ def shared_services() -> Iterator[None]:
         return
     opened: dict[tuple[Any, ...], Any] = {}
     token = SHARED.set(opened)
+    answers = FIXED_ANSWERS.set({})
     try:
         yield
     finally:
+        FIXED_ANSWERS.reset(answers)
         SHARED.reset(token)
         for service in opened.values():
             # Closing must not hide the command's own result.

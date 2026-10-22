@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-cli)
+
+- CLI `mammoth_cli.embed.invoke_many(commands, *, login, ..., stop_on_error=True)`: an embedding host runs several commands as one user and gets one envelope per command, in order. The commands share one scope, so each one reuses the client and connection the earlier ones opened for the same login and project (the way the lines of a `mammoth run` do); the services close when the batch ends. It stops at the first command that fails (an `error` envelope or a non-zero `meta.exit`) and gives each later command a `skipped` error envelope with its `index`, `reason: earlier_command_failed` and the `failed_index`; `stop_on_error=False` runs them all. Nothing is written to stdout. The project-pin read (`GET /workspaces/current`, which an embedded call cannot cache on disk) is made once per batch, not once per command, also inside a `mammoth run`. Five `project list` calls against koyal took 5.2s as one batch with a workspace hint, against 9.9s as five `invoke` calls (one run each).
+
+### Changed (next mammoth-cli)
+
+- CLI: an embedded token login (`ExplicitLogin(api_token=..., workspace_id=...)`) now takes the workspace id as a hint instead of refusing it, so a call no longer asks the server `GET /workspaces/current` first. A wrong hint is caught on the first refusal (koyal answers a request to another workspace with a 401 "Invalid token"; a 403 is checked the same way): the CLI then asks the token's own workspace once and, when it differs, returns `workspace_mismatch` (exit 3, with both ids in `details`) instead of the refusal. A login without the hint is unchanged.
+
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
 ### Added (mammoth-io 0.8.48, mammoth-cli 2.2.95)

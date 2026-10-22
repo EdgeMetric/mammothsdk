@@ -33,6 +33,7 @@ from mammoth_cli.errors.envelope import CODE_AUTHORIZATION_REQUIRED, EXIT_AUTH, 
 from mammoth_cli.manifest.loader import cache_dir
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.labels import label, project_name
+from mammoth_cli.runtime.shared import FIXED_ANSWERS
 from mammoth_cli.services.mapping import PINNED_PROJECT_HINT
 from mammoth_cli.services.protocol import MammothService
 
@@ -157,8 +158,15 @@ def pinned_projects(
 
     With ``auth`` the answer comes from the on-disk cache when it is fresh, and a live
     read refreshes the cache. ``refresh`` skips the cached answer (diagnostics, a 403).
-    Without ``auth`` the server is always asked.
+    Without ``auth`` the server is asked. Either way a service shared by the commands of
+    one batch or run (:func:`~mammoth_cli.runtime.shared.shared_services`) asks once
+    and keeps the answer while it is open; an embedded call has no disk cache, so this
+    is the only one it has.
     """
+    fixed = FIXED_ANSWERS.get()
+    if fixed is not None and not refresh and id(service) in fixed:
+        kept: Pins | None = fixed[id(service)]
+        return kept
     path: Path | None = None
     if auth is not None and not embedded.active() and _cache_enabled():
         try:
@@ -174,6 +182,8 @@ def pinned_projects(
     pins = _live_pins(service)
     if path is not None:
         _write_pin_cache(path, pins)
+    if fixed is not None:
+        fixed[id(service)] = pins
     return pins
 
 
