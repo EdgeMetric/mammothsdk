@@ -369,7 +369,6 @@ def _dispatch_view(
     prepare: Callable[[Any, int, dict[str, Any]], Any] | None = None,
     reduces_rows: bool = False,
     waits_for_run: bool = False,
-    apply_draft: bool = False,
     **kwargs: Any,
 ) -> HandlerResult:
     """Open the service, dispatch a View method call, and build the envelope.
@@ -378,10 +377,8 @@ def _dispatch_view(
     then waits for that task's own run to finish (see
     :func:`wait_for_added_task_run`) before ``after`` and the read-back, and
     carries that run as ``run``; a pipeline definition reading ``ready`` is not
-    proof the task ran. ``apply_draft`` (with ``waits_for_run``) makes a step
-    staged in draft mode run in this same call: the draft is submitted and the
-    wait is on the added task's own run. A draft that already held other staged
-    steps is left staged, because submitting would run steps the caller never named.
+    proof the task ran. A step staged in draft mode is never submitted here and has
+    no run to wait on: the draft stays the user's to submit.
 
     ``before(service, dataset_id)`` runs ahead of the call and its value is
     handed to ``after(service, dataset_id, state, data)``, which returns the
@@ -438,11 +435,6 @@ def _dispatch_view(
             if waits_for_run and dataset_id is not None
             else None
         )
-        held_steps = (
-            _draft_has_pending_changes(service, view_id)
-            if apply_draft and dataset_id is not None
-            else True
-        )
         rows_before = (
             _view_row_count(service, int(dataset_id), view_id, invocation.project)
             if auto_row_check and dataset_id is not None
@@ -482,11 +474,6 @@ def _dispatch_view(
             parents.remember(
                 _profile_name(invocation), auth.workspace_id, {view_id: int(dataset_id)}
             )
-        if apply_draft and not held_steps and dataset_id is not None and _is_staged(data):
-            service.call_view(view_id, "submit_draft", dataset_id=int(dataset_id))
-            data = {key: value for key, value in data.items() if key != "message"}
-            data["status"] = "done"
-            data["draft_applied"] = True
         settled = _settled_write(service, data) if dataset_id is not None else None
         if settled is not None:
             _forget_reads(service)  # the state read-back must see the view as the write left it
@@ -693,12 +680,6 @@ def _forget_reads(service: Any) -> None:
 def _is_staged(data: Any) -> bool:
     """Whether a write only staged its step in a draft, so no run is to be waited on."""
     return isinstance(data, dict) and data.get("status") == "staged"
-
-
-def _draft_has_pending_changes(service: Any, view_id: int) -> bool:
-    """Whether the view's draft already holds staged steps (``False`` outside draft mode)."""
-    status = service.call(_DRAFT_STATUS_SYMBOL, dataview_id=view_id)
-    return bool(status.get("has_pending_changes")) if isinstance(status, dict) else False
 
 
 def _mark_staged_in_draft(service: Any, dataset_id: int, view_id: int, data: Any) -> Any:
@@ -2215,8 +2196,8 @@ def _keep_data(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
 def view_transform_update_column(invocation: Invocation) -> HandlerResult:
     """Overwrite a column with a math expression in one call; ``column``, ``expression`` required.
 
-    ``view transform math`` with ``existing_column``, except that a step staged
-    in draft mode is submitted here and the result waits on its own task's run.
+    ``view transform math`` with ``existing_column``, with the result waiting on
+    its own task's run (a step staged in draft mode stays staged).
     """
     view_id = _view_id(invocation)
     document = invocation.load_input()
@@ -2228,7 +2209,7 @@ def view_transform_update_column(invocation: Invocation) -> HandlerResult:
         "existing_column": column,
     }
     return _math_into_column(
-        invocation, view_id, math_document, after=_keep_data, waits_for_run=True, apply_draft=True
+        invocation, view_id, math_document, after=_keep_data, waits_for_run=True
     )
 
 
@@ -2239,8 +2220,8 @@ _FIRST_WORD_PATTERN = r"^\S+"
 def view_transform_first_name(invocation: Invocation) -> HandlerResult:
     """Extract the first word of a text column, in one call. ``column`` is required.
 
-    ``view transform substring`` with the first-word regex, with the same draft
-    apply and own-task wait as ``view transform update-column``.
+    ``view transform substring`` with the first-word regex, with the same own-task
+    wait as ``view transform update-column``.
     """
     view_id = _view_id(invocation)
     document = invocation.load_input()
@@ -2256,7 +2237,6 @@ def view_transform_first_name(invocation: Invocation) -> HandlerResult:
         "substring",
         after=_keep_data,
         waits_for_run=True,
-        apply_draft=True,
         **kwargs,
     )
 
