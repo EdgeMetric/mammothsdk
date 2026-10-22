@@ -411,7 +411,6 @@ class TrashFields:
     # What a model needs of a trashed item to restore it and tell the user.
     ITEM_FIELDS = ("id", "type", "name", "dataset_id", "trashed_at", "days_until_purge")
     RETENTION_DAYS = "retention_days"
-    TOTAL = "total"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     LISTED = 50
@@ -426,6 +425,9 @@ class VersionFields:
     LISTED = 10
     ITEM_FIELDS = ("id", "name", "modification_type", "created_at", "change_summary")
     NEXT_STEP = "next_step"
+    # A view whose run is over. Putting a version back runs the view again.
+    EXECUTION_STATE = "execution_state"
+    IDLE = "idle"
 
 
 class TaskFields:

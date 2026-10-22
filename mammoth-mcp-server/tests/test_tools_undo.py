@@ -77,7 +77,7 @@ VERSION_LIST = {
     "offset": 10,
     "next": None,
 }
-PIPELINE_STATE = {"draft_mode": "off", "auto_run": True, "execution_state": "ready"}
+PIPELINE_STATE = {"draft_mode": "off", "auto_run": True, "execution_state": "idle"}
 TASKS = {"tasks": [{"id": 77, "sequence": 1, "status": "ready", "params": {}}]}
 
 
@@ -133,6 +133,35 @@ class TestListingTheTrash:
             }
         ]
         assert trash["retention_days"] == 30
+        assert "next_offset" not in trash
+
+    def test_a_trash_with_more_than_a_page_says_where_the_next_starts(self) -> None:
+        # Seen live: 55 views in the trash, 50 to a page.
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", TRASH, {**TRASH_LIST, "total": 55, "offset": 50})
+            a_view(api)
+            trash = call_tool("list_trash", offset=50, **IDS)
+
+        [sent] = api.sent("GET", TRASH)
+        assert sent.url.params["offset"] == "50"
+        # 50 + 50 covers all 55: this is the last page.
+        assert "next_offset" not in trash
+
+    def test_the_first_page_of_a_long_trash_names_the_next(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", TRASH, {**TRASH_LIST, "total": 55})
+            a_view(api)
+            trash = call_tool("list_trash", **IDS)
+
+        assert trash["next_offset"] == 50
+
+    def test_a_trash_that_fills_one_page_exactly_has_no_next(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", TRASH, {**TRASH_LIST, "total": 50})
+            a_view(api)
+            trash = call_tool("list_trash", **IDS)
+
+        assert "next_offset" not in trash
 
     def test_one_kind_is_listed_when_asked_for(self) -> None:
         with a_fake_api() as api, as_caller():
@@ -177,8 +206,22 @@ class TestPuttingAPipelineBack:
 
         assert api.sent("POST", f"{VERSIONS}/201")
         assert answer["steps"] == TASKS["tasks"]
-        # Mammoth saved the pipeline as it was before applying, so this is undone the same way.
+        # The version from just before the undo is listed, so this is undone the same way.
         assert "include_versions" in answer["next_step"]
+        assert "running" not in answer["next_step"]
+
+    def test_a_view_still_running_after_the_undo_says_so(self) -> None:
+        # Seen live: the apply's job ends before the view's run does.
+        with a_fake_api() as api, as_caller():
+            api.answer(
+                "GET", f"{VIEW_PATH}/pipeline", {**PIPELINE_STATE, "execution_state": "submitted"}
+            )
+            a_view(api)
+            answer = call_tool(
+                "undo", what="pipeline", dataset_id=DATASET, view_id=VIEW, version_id=201, **IDS
+            )
+
+        assert "running again" in answer["next_step"]
 
     def test_a_pipeline_still_going_back_says_so(self) -> None:
         with a_fake_api() as api, as_caller(), SHORT_CALL:
