@@ -505,7 +505,6 @@ S2_COMMANDS = frozenset(
     {
         "addon.connector.add",
         "addon.connector.remove",
-        "addon.list",
         "addon.storage.add",
         "addon.storage.remove",
         "addon.user.add",
@@ -691,7 +690,7 @@ S4_COMMANDS = frozenset(
 S6_COMMANDS = frozenset(
     record["command_id"]
     for record in load_commands()
-    if str(record["command_id"]).split(".", 1)[0] in {"dashboard", "data-app", "report", "template"}
+    if str(record["command_id"]).split(".", 1)[0] in {"dashboard", "report", "template"}
 )
 # S7 owns these remaining families.  Exporting the manifest-derived inventory
 # here keeps the shared interface available to its worker without claiming

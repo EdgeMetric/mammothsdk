@@ -48,10 +48,6 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
-    # Data apps were replaced by collections and the API is blocked, but the request shape
-    # is still the one required ``body``: show it rather than a handoff to ``schema get``.
-    "data-app.create": ((), {"body": {"name": "Revenue app"}}),
-    "data-app.update": (("123",), {"body": {"name": "Revenue app"}}),
     "view.transform.batch": (
         ("123",),
         {
@@ -942,9 +938,6 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "view.draft.auto-run": (
         "stop prevent re-running rerun automatically when source changes auto run enable disable"
     ),
-    "data-app.create": (
-        "page portal form others drop upload a file cleaned the same way self service"
-    ),
     # "does automation support pdf" -- what an automation reads, writes, triggers on
     # and accepts is answered by the server, not by memory.
     "automation.capabilities": (
@@ -1002,12 +995,6 @@ _SCOPE_REQUIREMENTS: dict[str, dict[str, Any]] = {
         "required_context": ["project_id"],
         "target_fields": ["user_id", "invite_id"],
         "target_rule": "exactly one target field is required by the backend contract",
-    },
-    "data-app.share": {
-        "kind": "workspace",
-        "required_context": ["workspace_id"],
-        "target_fields": ["data_app_id"],
-        "target_rule": "data_app_id is a required positional",
     },
     "view.exportable-config.apply": {
         "kind": "project",
@@ -2014,7 +2001,7 @@ def _runnable_example(
         else:
             tokens.extend(["--input", json.dumps(document)])
     tokens.extend(_OUTPUT_JSON_NO_INPUT)
-    if record["command_id"] in {"project.user.update", "data-app.share", "workspace.user.add"}:
+    if record["command_id"] in {"project.user.update", "workspace.user.add"}:
         # These published high-impact examples must satisfy the same policy
         # their manifests advertise; otherwise discovery emits a command that
         # deterministically fails before dispatch.

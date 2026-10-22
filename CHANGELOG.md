@@ -72,8 +72,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `BatchesAPI.create`: `change_map` is no longer sent (the batches route has no such field and dropped it) and passing it raises a `DeprecationWarning`. CLI `batch create` adds a `warnings` entry when the input carries it.
 - `SupportAPI.connector_create` and `connector_update`: `price_per_month` is no longer sent (production removed it from connectors) and a non-zero value raises a `DeprecationWarning`. CLI `support connector create` and `update` add a `warnings` entry when the input carries it.
 
-### Removed (next mammoth-io)
+### Removed (next mammoth-io, mammoth-cli)
 
+- 43 CLI commands and the SDK calls behind them, whose server routes exist on neither server master nor production. Each one failed against the server, or the CLI refused it before sending:
+  - `data-app` (12 commands) and `client.data_apps`: Data Apps were retired on the server on 2026-10-05; collections replace them.
+  - `agent` definitions (29 commands: `agent list/get/create/update/delete/publish/disable/roles`, `agent charter`, `goldens`, `memory`, `scratch`, `projects`, `team`, `feedback list`, `access set`) and `client.agent_definitions`: the server feature was never merged. Agent chat, sessions, runs, plans and `agent access` grants are unchanged.
+  - `addon list` and `AddonsAPI.list` (the server has no add-on list; the add/remove commands stay), and `user change-password` and `UserProfileAPI.change_password` (the web app's Profile settings > Reset Password does this).
 - `ExportStatus.QUEUED`: the server's export statuses have no `queued`.
 - The legacy `mammoth-mcp` package, `bridge/`, the `mammoth-io[bridge]` extra and `publish.yml`. The hosted MCP server is `mammoth-mcp-server`.
 

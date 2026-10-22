@@ -364,13 +364,7 @@ def not_available_error(command: str, *, web_path: str, instead: str | None = No
 # Features the backend removed or never shipped. Matched by exact command id or
 # by ``prefix.`` so a whole family can be listed once. The command fails before
 # any API call, and ``schema``/``capability`` discovery hides these commands.
-FEATURE_UNAVAILABLE_FAMILIES: dict[str, tuple[str, str, list[str]]] = {
-    "data-app.": (
-        "Data apps were removed from Mammoth.",
-        "Build the same view of your data as a dashboard instead.",
-        ["mammoth dashboard find SUBSTRING", "mammoth schema find dashboard"],
-    ),
-}
+FEATURE_UNAVAILABLE_FAMILIES: dict[str, tuple[str, str, list[str]]] = {}
 #: One answer for "refresh this dataset daily", shared by ``schedule create`` and the
 #: automation 4AUTO006 refusal so the two never send the reader round in a circle.
 REFRESH_FILE_DATASET_HINT = (

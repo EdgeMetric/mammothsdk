@@ -450,7 +450,6 @@ def _remember_token_workspace(key: tuple[str, str], response: httpx.Response) ->
 if TYPE_CHECKING:
     from mammoth.api.activity_logs import ActivityLogsAPI
     from mammoth.api.addons import AddonsAPI
-    from mammoth.api.agent_definitions import AgentDefinitionsAPI
     from mammoth.api.agents import AgentsAPI
     from mammoth.api.ai import AIAPI
     from mammoth.api.annotations import AnnotationsAPI
@@ -464,7 +463,6 @@ if TYPE_CHECKING:
     from mammoth.api.connector_ai import ConnectorAIAPI
     from mammoth.api.connectors import ConnectorsAPI
     from mammoth.api.dashboards import DashboardsAPI
-    from mammoth.api.data_apps import DataAppsAPI
     from mammoth.api.data_checks import DataChecksAPI
     from mammoth.api.datasets import DatasetsAPI
     from mammoth.api.dataviews import DataviewsAPI
@@ -522,13 +520,11 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "addons": ("mammoth.api.addons", "AddonsAPI"),
     "reports": ("mammoth.api.reports", "ReportsAPI"),
     "agents": ("mammoth.api.agents", "AgentsAPI"),
-    "agent_definitions": ("mammoth.api.agent_definitions", "AgentDefinitionsAPI"),
     "annotations": ("mammoth.api.annotations", "AnnotationsAPI"),
     "billing": ("mammoth.api.billing", "BillingAPI"),
     "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
     "collections": ("mammoth.api.collections", "CollectionsAPI"),
     "connector_ai": ("mammoth.api.connector_ai", "ConnectorAIAPI"),
-    "data_apps": ("mammoth.api.data_apps", "DataAppsAPI"),
     "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
     "derivatives": ("mammoth.api.derivatives", "DerivativesAPI"),
     "notifications": ("mammoth.api.notifications", "NotificationsAPI"),
@@ -594,12 +590,10 @@ class MammothClient:
         addons: AddonsAPI
         reports: ReportsAPI
         agents: AgentsAPI
-        agent_definitions: AgentDefinitionsAPI
         annotations: AnnotationsAPI
         billing: BillingAPI
         checkpoints: CheckpointsAPI
         connector_ai: ConnectorAIAPI
-        data_apps: DataAppsAPI
         data_checks: DataChecksAPI
         derivatives: DerivativesAPI
         notifications: NotificationsAPI

@@ -21,7 +21,6 @@ from mammoth_cli.errors.envelope import (
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
-    not_available_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import (
@@ -113,19 +112,6 @@ def user_avatar_upload(invocation: Invocation) -> HandlerResult:
         # caller sees the settled result (no-op for non-job payloads).
         data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id)
-
-
-def user_change_password(invocation: Invocation) -> HandlerResult:
-    """Retired: the server has no route that changes a password for a signed-in user.
-
-    ``POST /user/change_password`` is gone from API v2, and the older emailed-link
-    reset is not an API-token flow. The command stays so a caller gets a clear
-    answer instead of a bare 404.
-    """
-    raise not_available_error(
-        "user change-password",
-        web_path="the account menu > Profile settings > Reset Password",
-    )
 
 
 def user_delete_account(invocation: Invocation) -> HandlerResult:

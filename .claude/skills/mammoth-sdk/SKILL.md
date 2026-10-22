@@ -71,7 +71,7 @@ Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent 
 | `client.addons` | AddonsAPI | Workspace addons |
 | `client.reports` | ReportsAPI | Report listing |
 
-Also on the client (method names in [references/api-reference.md](references/api-reference.md#other-sub-clients)): `agents`, `annotations`, `billing`, `checkpoints`, `connector_ai`, `data_apps`, `data_checks`, `derivatives`, `notifications`, `parameters`, `pipeline_versions`, `snippets`, `support`, `templates`, `trash`, `users`, `workflows`, and `workspace` (cross-workspace calls; note `workspaces` is `WorkspaceAPI`).
+Also on the client (method names in [references/api-reference.md](references/api-reference.md#other-sub-clients)): `agents`, `annotations`, `billing`, `checkpoints`, `connector_ai`, `data_checks`, `derivatives`, `notifications`, `parameters`, `pipeline_versions`, `snippets`, `support`, `templates`, `trash`, `users`, `workflows`, and `workspace` (cross-workspace calls; note `workspaces` is `WorkspaceAPI`).
 
 ### View Object
 

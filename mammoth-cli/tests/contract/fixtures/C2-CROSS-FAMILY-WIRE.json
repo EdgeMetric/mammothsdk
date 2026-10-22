@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "mammoth-cli/spec/openapi/openapi.json",
   "source_policy": "Expected method/path/body/query values are authored here; this fixture is not generated from command contracts or SDK signatures.",
-  "route_inventory": {"s2": 94, "s6": 106, "total": 200},
+  "route_inventory": {"s2": 93, "s6": 94, "total": 187},
   "covered_route_ids": [
     "project.list", "project.create", "project.update", "project.user.add", "project.delete",
     "dataset.list", "dataset.create", "dataset.update", "dataset.data",
@@ -10,7 +10,7 @@
     "dashboard.list", "dashboard.analytics", "dashboard.action", "dashboard.data.draft",
     "dashboard.widget-data", "dashboard.canvas.get", "dashboard.rls.value.list", "dashboard.query",
     "dashboard.context.delete", "dashboard.style.token.list", "dashboard.template.list",
-    "data-app.list", "data-app.create", "data-app.update", "report.list", "template.update"
+    "report.list", "template.update"
   ],
   "cases": [
     {"id":"project-list","route":"project.list","expected":{"method":"GET","path":"/workspaces/17/projects","kwargs":{"params":{"fields":"id,name","limit":13,"subscribed":"true"}}}},
@@ -39,9 +39,6 @@
     {"id":"dashboard-context-delete","route":"dashboard.context.delete","expected":{"method":"DELETE","path":"/dashboards/v3/contexts/C2_CONTEXT","kwargs":{"params":null}}},
     {"id":"dashboard-style-token-list","route":"dashboard.style.token.list","expected":{"method":"GET","path":"/dashboards/v3/styles/tokens","kwargs":{"params":{"id":"C2_STYLE"}}}},
     {"id":"dashboard-template-list","route":"dashboard.template.list","expected":{"method":"GET","path":"/dashboards/v3/templates","kwargs":{"params":null}}},
-    {"id":"data-app-list","route":"data-app.list","expected":{"method":"GET","path":"/data-apps","kwargs":{"params":{"workspace_id":17}}}},
-    {"id":"data-app-create","route":"data-app.create","expected":{"method":"POST","path":"/data-apps","kwargs":{"json":{"name":"C2_APP","source_dataview_id":1002}}}},
-    {"id":"data-app-update","route":"data-app.update","expected":{"method":"POST","path":"/data-apps/1101/settings","kwargs":{"json":{"C2_SETTING":"C2_VALUE"}}}},
     {"id":"report-list","route":"report.list","expected":{"method":"GET","path":"/reports","kwargs":{"params":{"limit":31,"offset":5}}}},
     {"id":"template-update","route":"template.update","expected":{"method":"PATCH","path":"/workspaces/17/templates/1201","kwargs":{"json":{"C2_TEMPLATE":"C2_VALUE"}}}}
   ]

@@ -330,18 +330,6 @@ OVERRIDES: dict[str, str] = {
     "DeleteDashboardTag": "dashboard.tags.delete",
     "MergeDashboardTags": "dashboard.tags.merge",
     # Data apps.
-    "ListDataApps": "data-app.list",
-    "CreateDataApp": "data-app.create",
-    "DeleteDataAppEndpoint": "data-app.delete",
-    "GetDataAppDetails": "data-app.get",
-    "GetDataAppActiveJob": "data-app.active-job",
-    "UploadToDataApp": "data-app.upload",
-    "GetDataAppJob": "data-app.job",
-    "GetPipelineChanges": "data-app.pipeline-changes",
-    "UpdateDataApp": "data-app.update",
-    "ShareDataApp": "data-app.share",
-    "RemoveSharedUser": "data-app.user.remove",
-    "ListSharedUsers": "data-app.user.list",
     # Projects.
     "GetProject": "project.list",
     "CreateProject": "project.create",

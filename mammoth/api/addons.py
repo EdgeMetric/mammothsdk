@@ -56,18 +56,6 @@ class AddonsAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    async def list(self) -> dict[str, Any]:
-        """List active addons for the workspace.
-
-        Retired: the server no longer serves ``GET /workspaces/{id}/addons``, so this
-        call answers 404. The web app lists add-ons under Settings > Plan.
-
-        Returns:
-            Dict with addon information.
-        """
-        ws = self._ws()
-        return await self._client._request_json("GET", f"/workspaces/{ws}/addons")
-
     async def add_connector(
         self,
         connector_id: int | None = None,

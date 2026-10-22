@@ -299,13 +299,6 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.addons.AddonsAPI.list
-  canonical_command: addon.list
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: single_page
-  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.addons.AddonsAPI.remove_connector
   canonical_command: addon.connector.remove
   alias_of: null
@@ -324,139 +317,6 @@ sdk_methods:
   canonical_command: addon.user.remove
   alias_of: null
   mutation_class: high_impact
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_restore
-  canonical_command: agent.charter.restore
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.charter_versions
-  canonical_command: agent.charter.versions
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.create
-  canonical_command: agent.create
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.delete
-  canonical_command: agent.delete
-  alias_of: null
-  mutation_class: destructive
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.disable
-  canonical_command: agent.disable
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.feedback_list
-  canonical_command: agent.feedback.list
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.get
-  canonical_command: agent.get
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_add
-  canonical_command: agent.goldens.add
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_list
-  canonical_command: agent.goldens.list
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_remove
-  canonical_command: agent.goldens.remove
-  alias_of: null
-  mutation_class: destructive
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_run
-  canonical_command: agent.goldens.run
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.goldens_status
-  canonical_command: agent.goldens.status
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.list
-  canonical_command: agent.list
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_delete
-  canonical_command: agent.memory.remove
-  alias_of: null
-  mutation_class: destructive
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_list
-  canonical_command: agent.memory.list
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.notes_upsert
-  canonical_command: agent.memory.add
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.publish
-  canonical_command: agent.publish
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.roles
-  canonical_command: agent.roles
-  alias_of: null
-  mutation_class: read
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.agent_definitions.AgentDefinitionsAPI.update
-  canonical_command: agent.update
-  alias_of: null
-  mutation_class: benign_mutation
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
@@ -2913,90 +2773,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.active_job
-  canonical_command: data-app.active-job
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.create
-  canonical_command: data-app.create
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.delete
-  canonical_command: data-app.delete
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.get
-  canonical_command: data-app.get
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.job
-  canonical_command: data-app.job
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.list
-  canonical_command: data-app.list
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.pipeline_changes
-  canonical_command: data-app.pipeline-changes
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.share
-  canonical_command: data-app.share
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.update
-  canonical_command: data-app.update
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.upload
-  canonical_command: data-app.upload
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_list
-  canonical_command: data-app.user.list
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
-- sdk_symbol: mammoth.api.data_apps.DataAppsAPI.user_remove
-  canonical_command: data-app.user.remove
-  alias_of: null
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
-  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.data_checks.DataChecksAPI.create
   canonical_command: view.data-check.create
   alias_of: null
@@ -5343,15 +5119,6 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.user_profile.UserProfileAPI.change_password
-  canonical_command: user.change-password
-  alias_of: null
-  mutation_class: high_impact
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids: []
-  notes: 'BLOCKED[B18 PASSWORD_ENDPOINT_UNSPECIFIED]: absent from public OpenAPI; remains reserved and
-    contract-only. Secrets use hidden prompt/permission-checked input/stdin, never normal flags.'
 - sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
   canonical_command: auth.connected-apps.list
   alias_of: null
@@ -6342,8 +6109,6 @@ notes_on_dispositions:
 - 'UserProfileAPI.update / update_preferences / ActivityLogsAPI.list: "BLOCKED[B17 VARIADIC_INPUT_UNTYPED]"
   — fields are **Any; "Generate strict OpenAPI-backed request models; unrecognized fields must fail before
   transport."'
-- 'UserProfileAPI.change_password: "BLOCKED[B18]" — "absent from the public OpenAPI. It remains reserved
-  and contract-only until a pinned contract and secret/redaction metadata exist."'
 - 'ActivityLogsAPI.export: "BLOCKED[B19 ACTIVITY_EXPORT_UNTYPED_ASYNC]" — format, filters, and download/job
   response are raw; add typed result union before registering the command.'
 - 'ClientAppsAPI.update: "BLOCKED[B21]" — PatchOperation.op/path/value are arbitrary strings; add enums/path-dependent

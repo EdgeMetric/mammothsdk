@@ -7,7 +7,6 @@ Tests:
 - Fix 4: dict coercion for copy_columns, convert_type, bulk_replace, split_column, pivot
 - Fix 6a: datasets.browse removed
 - Fix 6b: datasets.update uses plural endpoint; datasets.rename convenience
-- Fix 8: addons.list
 """
 
 from __future__ import annotations
@@ -219,15 +218,3 @@ class TestDatasetsUpdate:
         assert args[0][0] == "PATCH"
         assert args[0][1].endswith("/datasets/123")
         assert args[1]["json"] == {"patch": {"op": "replace", "path": "name", "value": "New Name"}}
-
-
-# ── Fix 8: addons.list ──────────────────────────────────
-
-
-class TestAddonsList:
-    async def test_list_calls_get(self, mock_client: MammothClient):
-        await mock_client.addons.list()
-        mock_client._request_json.assert_called_once()
-        args = mock_client._request_json.call_args
-        assert args[0][0] == "GET"
-        assert "/addons" in args[0][1]

@@ -16,7 +16,6 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
-from mammoth_cli.commands import data_app as data_app_cmd
 from mammoth_cli.commands import report as report_cmd
 from mammoth_cli.commands import template as template_cmd
 from mammoth_cli.commands.registry import HANDLERS
@@ -63,7 +62,7 @@ def fake_family_service(
     def context(_invocation: Invocation) -> _ServiceContext:
         return _ServiceContext()
 
-    for module in (dashboard_cmd, data_app_cmd, report_cmd, template_cmd):
+    for module in (dashboard_cmd, report_cmd, template_cmd):
         monkeypatch.setattr(module, "open_service", context)
     return service
 
@@ -86,11 +85,11 @@ def _ledger() -> dict[str, Any]:
 def test_s6_ledger_closes_exact_106_route_surface() -> None:
     ledger = _ledger()
     routes = ledger["routes"]
-    assert ledger["route_count"] == 105
-    assert ledger["families"] == {"dashboard": 87, "data-app": 12, "report": 1, "template": 5}
-    assert len(routes) == 105
+    assert ledger["route_count"] == 93
+    assert ledger["families"] == {"dashboard": 87, "report": 1, "template": 5}
+    assert len(routes) == 93
     ids = {route["command_id"] for route in routes}
-    assert len(ids) == 105
+    assert len(ids) == 93
     for route in routes:
         command_id = route["command_id"]
         record = command_by_id(command_id)
@@ -128,13 +127,6 @@ def test_s6_ledger_closes_exact_106_route_surface() -> None:
             "dashboard.update",
             ["17"],
             {"patch": []},
-        ),
-        (
-            data_app_cmd,
-            data_app_cmd.data_app_create,
-            "data-app.create",
-            [],
-            {"body": {"name": "S6"}},
         ),
         (report_cmd, report_cmd.report_list, "report.list", [], {"limit": 913, "offset": 17}),
         (
@@ -188,13 +180,6 @@ def test_distinctive_fields_reach_owned_family_destinations(
             yes=True,
         )
     )
-    data_app_cmd.data_app_upload(
-        _inv(
-            "data-app.upload",
-            extra_args=["23", "/tmp/s6-upload.csv"],
-            input_file=_write(tmp_path, {"append_to_ds_id": 917}),
-        )
-    )
     report_cmd.report_list(
         _inv("report.list", input_file=_write(tmp_path, {"limit": 919, "offset": 923}))
     )
@@ -217,10 +202,6 @@ def test_distinctive_fields_reach_owned_family_destinations(
                 "params_enabled": False,
                 "params_view_id": 913,
             },
-        ),
-        (
-            "mammoth.api.data_apps.DataAppsAPI.upload",
-            {"data_app_id": 23, "file": "/tmp/s6-upload.csv", "append_to_ds_id": 917},
         ),
         (
             "mammoth.api.reports.ReportsAPI.list",

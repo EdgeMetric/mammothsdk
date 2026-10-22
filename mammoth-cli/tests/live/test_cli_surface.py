@@ -169,15 +169,6 @@ def test_a_context_is_created_and_deleting_it_needs_confirmation(live_cli: LiveC
     assert context not in _context_ids(live_cli)
 
 
-# -- data-app --------------------------------------------------------------
-
-
-def test_data_app_user_remove_rejects_the_email_as_an_input_field(live_cli: LiveCli) -> None:
-    error = live_cli.err("data-app", "user", "remove", "123", "--yes", *_input({"email": "a@b.co"}))
-
-    assert error["code"] == "missing_argument"
-
-
 # -- explore panel ---------------------------------------------------------
 
 _PANEL = {

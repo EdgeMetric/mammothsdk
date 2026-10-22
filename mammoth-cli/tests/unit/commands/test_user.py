@@ -73,23 +73,6 @@ def test_avatar_upload_uses_input_field(fake_service: FakeMammothService, tmp_pa
     assert fake_service.call_log == [(_AVATAR_UPLOAD, {"file": "photo.jpg"})]
 
 
-# --- change-password -----------------------------------------------------------
-
-
-def test_change_password_is_retired_and_names_the_web_app(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    """POST /user/change_password is gone from the server; no request is sent."""
-    doc = _write(tmp_path, {"current_password": "old", "new_password": "new"})
-    with pytest.raises(CliError) as excinfo:
-        user_cmd.user_change_password(
-            _inv("user.change-password", input_file=doc, yes=True, confirm="4")
-        )
-    assert excinfo.value.code == "not_available"
-    assert "Reset Password" in (excinfo.value.hint or "")
-    assert fake_service.call_log == []
-
-
 # --- delete-account -----------------------------------------------------------
 
 

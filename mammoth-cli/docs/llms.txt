@@ -24,8 +24,8 @@
 ## Command families
 
 - `activity` (2 commands)
-- `addon` (7 commands)
-- `agent` (73 commands)
+- `addon` (6 commands)
+- `agent` (44 commands)
 - `ai` (5 commands)
 - `annotation` (5 commands)
 - `auth` (5 commands)
@@ -43,7 +43,6 @@
 - `connector` (25 commands)
 - `context` (4 commands)
 - `dashboard` (159 commands)
-- `data-app` (12 commands)
 - `dataset` (30 commands)
 - `doctor` (1 commands)
 - `external-key` (4 commands)
@@ -68,7 +67,7 @@
 - `token` (3 commands)
 - `trash` (3 commands)
 - `upgrade` (1 commands)
-- `user` (8 commands)
+- `user` (7 commands)
 - `version` (1 commands)
 - `view` (145 commands)
 - `webhook` (7 commands)

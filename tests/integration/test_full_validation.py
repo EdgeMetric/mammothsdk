@@ -277,22 +277,6 @@ class TestExternalKeys:
 
 
 # ═══════════════════════════════════════════════════════════════
-#  13. Addons (may not exist on all workspaces)
-# ═══════════════════════════════════════════════════════════════
-
-
-class TestAddons:
-    """Addon listing — verifies clean error when endpoint is unavailable."""
-
-    async def test_list(self, val_client: MammothClient) -> None:
-        try:
-            result = await val_client.addons.list()
-            assert isinstance(result, (dict, list))
-        except MammothAPIError:
-            pass  # Expected if addons not available
-
-
-# ═══════════════════════════════════════════════════════════════
 #  14. Schedules (may require orchestration addon)
 # ═══════════════════════════════════════════════════════════════
 

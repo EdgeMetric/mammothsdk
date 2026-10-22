@@ -82,7 +82,6 @@ READERS: dict[str, Reader] = {
     "external-key": Reader("external-key.get", "key_id", wrap="external_key", name_key="key_name"),
     "schedule": Reader("schedule.get", "schedule_id", ("project_id",), name_key="task_name"),
     "workflow": Reader("workflow.get", "workflow_id", ("project_id",)),
-    "data-app": Reader("data-app.get", "data_app_id"),
     "dashboard": Reader("dashboard.get", "dashboard_id", name_key="title"),
     "project": Reader("project.get", "project"),
     # ``WorkspaceAPI.get_user`` reads the member list (``__full``) and returns the
@@ -394,15 +393,6 @@ SUBS: dict[str, tuple[Sub, ...]] = {
             name_fmt="{connector_key} › {connection_key} › config {label}",
         ),
     ),
-    "data-app.user.remove": (
-        Sub(
-            "data app user",
-            "email",
-            "data-app",
-            "data_app_id",
-            name_fmt="{label} › access to {parent}",
-        ),
-    ),
     "workspace.invite.delete": (_INVITE_SUB,),
     "workspace.invite.revoke": (_INVITE_SUB,),
     "notification.delete": (Sub("notification", "notification_id"),),
@@ -435,7 +425,6 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "schedule.delete": ("schedule", "schedule_id"),
     "workflow.delete": ("workflow", "workflow_id"),
     "workflow.save-undo": ("workflow", "workflow_id"),
-    "data-app.delete": ("data-app", "data_app_id"),
     "dashboard.delete": ("dashboard", "dashboard_id"),
     "project.delete": ("project", "project_id"),
     "project.bulk-delete": ("project", "project_ids"),

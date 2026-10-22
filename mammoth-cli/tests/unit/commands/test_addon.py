@@ -91,18 +91,6 @@ def test_connector_remove_forwards_single_id(
     assert fake_service.call_log == [(_CONNECTOR_REMOVE, {"connector_id": 7})]
 
 
-# --- list --------------------------------------------------------------------------
-
-
-def test_list_is_retired_and_names_the_web_app(fake_service: FakeMammothService) -> None:
-    """GET /workspaces/{id}/addons is gone from the server and nothing replaces it."""
-    with pytest.raises(CliError) as excinfo:
-        addon_cmd.addon_list(_inv("addon.list"))
-    assert excinfo.value.code == "not_available"
-    assert "Settings > Plan" in (excinfo.value.hint or "")
-    assert fake_service.call_log == []
-
-
 # --- storage add ---------------------------------------------------------------
 
 

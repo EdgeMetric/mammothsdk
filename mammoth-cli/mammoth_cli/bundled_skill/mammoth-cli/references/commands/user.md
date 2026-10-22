@@ -22,18 +22,6 @@ Result: `UserAvatarUploadResult`; mutation `benign_mutation`, confirmation `none
 
 Status on release: untried; no live run recorded.
 
-### `user.change-password`
-
-Run: `mammoth user change-password`. Exact input fields: `mammoth schema get user.change-password`.
-
-Example: `mammoth user change-password --input /private/path/request.json --yes`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
-
-Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
-
-Result: `UserChangePasswordResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
 ### `user.delete-account`
 
 Run: `mammoth user delete-account`. Exact input fields: `mammoth schema get user.delete-account`.

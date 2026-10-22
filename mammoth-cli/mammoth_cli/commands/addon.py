@@ -2,9 +2,9 @@
 
 None of these commands are project-scoped: every mutation acts on the
 workspace's addon set (connector addons, storage, and user seats) resolved
-from the caller's credentials. ``addon list`` is a plain read. Every mutation
-is ``high_impact`` and requires ``--yes --confirm WORKSPACE_ID``, enforced
-against the authenticated ``auth.workspace_id`` after the service is opened
+from the caller's credentials. Every command is ``high_impact`` and requires
+``--yes --confirm WORKSPACE_ID``, enforced against the authenticated
+``auth.workspace_id`` after the service is opened
 (mirroring ``project.py``'s ``project_bulk_update`` and ``workspace.py``'s
 ``workspace_update``). All request fields come from the strict ``--input``
 document; none of these commands take a positional argument. Handlers
@@ -22,7 +22,6 @@ from mammoth_cli.errors.envelope import (
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_USAGE,
     CliError,
-    not_available_error,
 )
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.confirm import POLICY_CONFIRM_TARGET, enforce_confirmation
@@ -112,21 +111,6 @@ def addon_connector_remove(invocation: Invocation) -> HandlerResult:
         )
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
-
-
-def addon_list(invocation: Invocation) -> HandlerResult:
-    """Retired: the server has no route that lists a workspace's addons.
-
-    ``GET /workspaces/{id}/addons`` is gone (the server serves only the add and
-    remove routes under ``/addons/*``), and nothing replaces it: the Stripe
-    subscription's ``addons`` field is never filled in. The command stays so a
-    caller gets a clear answer instead of a bare 404.
-    """
-    raise not_available_error(
-        "addon list",
-        web_path="Settings > Plan (Billing & Invoices), where the add-ons are listed",
-        instead="`billing stripe status` shows the storage allowance and plan.",
-    )
 
 
 def addon_storage_add(invocation: Invocation) -> HandlerResult:

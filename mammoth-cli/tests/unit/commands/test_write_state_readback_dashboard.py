@@ -1,10 +1,10 @@
 """Unit tests for the D-077 ``state`` read-back on the families this agent
-owns: dashboard, data-app, snippet, annotation, template.
+owns: dashboard, snippet, annotation, template.
 
 Unlike the generic mechanism tests (``tests/unit/runtime/test_state.py``,
 fake ``command_by_id``/``HANDLERS``), these exercise the *real* manifest
-declarations landed in ``spec/manifests/commands/{dashboard,data-app,snippet,
-annotation,template}.yaml`` against the *real* registered command handlers,
+declarations landed in ``spec/manifests/commands/{dashboard,snippet,annotation,
+template}.yaml`` against the *real* registered command handlers,
 through ``with_state`` directly -- one test per readback kind actually used
 by these families (object), one showing the empty-``ids`` parent-
 listing pattern used by several deletes, and one confirming ``no_readback``
@@ -24,7 +24,6 @@ from mammoth_cli.testing import login_default_profile
 
 _DASHBOARD_GET = "mammoth.api.dashboards.DashboardsAPI.get"
 _ANNOTATION_LIST = "mammoth.api.annotations.AnnotationsAPI.list"
-_DATA_APP_GET = "mammoth.api.data_apps.DataAppsAPI.get"
 _SNIPPET_GET = "mammoth.api.snippets.SnippetsAPI.get"
 _TEMPLATE_LIST = "mammoth.api.templates.TemplatesAPI.list"
 
@@ -104,19 +103,9 @@ def test_template_delete_readback_is_parent_listing_with_empty_ids(
 
 
 # ---------------------------------------------------------------------------
-# kind: object -- data-app and snippet families, each keyed off the write's
+# kind: object -- snippet family, each keyed off the write's
 # own positional id.
 # ---------------------------------------------------------------------------
-
-
-def test_data_app_update_readback_is_kind_object(fake_service: FakeMammothService) -> None:
-    fake_service.responses[_DATA_APP_GET] = {"id": 55, "name": "Ops app"}
-    result = with_state(_inv("data-app.update", ["55"]), {"status": "done"})
-    assert result["state"] == {
-        "kind": "object",
-        "read_by": "data-app.get 55",
-        "object": {"id": 55, "name": "Ops app"},
-    }
 
 
 def test_snippet_duplicate_readback_sources_id_from_result(

@@ -22,16 +22,6 @@ Result: `AddonConnectorRemoveResult`; mutation `high_impact`, confirmation `conf
 
 Status on release: untried; no live run recorded.
 
-### `addon.list`
-
-Run: `mammoth addon list`. Exact input fields: `mammoth schema get addon.list`.
-
-Example: `mammoth addon list`. Placeholders are illustrative; resolve IDs and input from observed reads.
-
-Result: `AddonListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
-
-Status on release: untried; no live run recorded.
-
 ### `addon.storage.add`
 
 Run: `mammoth addon storage add`. Exact input fields: `mammoth schema get addon.storage.add`.
