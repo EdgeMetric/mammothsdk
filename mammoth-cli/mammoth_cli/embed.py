@@ -81,14 +81,51 @@ def invoke(
         return_running=return_running,
     )
     call = embedded.EmbeddedCall(login=login)
+    embedded.install_stream_guards()
     token = embedded.enter(call)
     try:
         _run(argv)
     finally:
         embedded.leave(token)
+    return _outcome(call)
+
+
+def _outcome(call: embedded.EmbeddedCall) -> dict[str, Any]:
+    """The one envelope a finished call stands for; anything else is an error to fix.
+
+    Text a command wrote to stdout or stderr, or a second envelope, means a command
+    broke the one-envelope contract. Returning the one envelope and dropping the rest
+    would hide that, so the call fails and says what it saw.
+    """
+    stray = {name: "".join(parts).strip() for name, parts in call.stray.items()}
+    stray = {name: text[:_STRAY_CHARS] for name, text in stray.items() if text}
+    if stray:
+        return _error(
+            "stray_output",
+            "The command wrote text outside its envelope.",
+            EXIT_API,
+            details={**stray, "envelopes": len(call.envelopes)},
+        )
+    if len(call.envelopes) > 1:
+        return _error(
+            "multiple_envelopes",
+            f"The command produced {len(call.envelopes)} envelopes; it should produce one.",
+            EXIT_API,
+            details={"envelopes": [_describe(item) for item in call.envelopes]},
+        )
     if call.envelopes:
-        return call.envelopes[-1]
+        return call.envelopes[0]
     return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+
+
+#: Stray text kept in the error, as ``mammoth run`` keeps it.
+_STRAY_CHARS = 500
+
+
+def _describe(envelope: dict[str, Any]) -> str:
+    """One short label for an envelope: its error code, or ``data``."""
+    error = envelope.get("error")
+    return str(error.get("code")) if isinstance(error, dict) else "data"
 
 
 def _argv(
@@ -154,7 +191,7 @@ def _capture_help(root: Command, argv: list[str]) -> bool:
         text = _help_text(root, command_tokens)
     else:
         return False
-    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth")
+    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth", exit=0)
     embedded.capture(Result(data={"help": text}, meta=meta).to_envelope())
     return True
 
@@ -194,5 +231,9 @@ def _help_text(root: Command, tokens: list[str]) -> str:
     return plain.get_help(context)
 
 
-def _error(code: str, message: str, exit_status: int) -> dict[str, Any]:
-    return CliError(code=code, message=message, exit_status=exit_status).to_envelope()
+def _error(
+    code: str, message: str, exit_status: int, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    return CliError(
+        code=code, message=message, exit_status=exit_status, details=details or {}
+    ).to_envelope()

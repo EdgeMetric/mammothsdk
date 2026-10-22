@@ -29,6 +29,9 @@ class Meta:
     #: One to three ready-to-run commands that usually come next, filled in
     #: with this result's ids (:mod:`mammoth_cli.runtime.next_commands`).
     next_commands: list[str] | None = None
+    #: The process exit status the command ends with (0, or 1/3 for a write whose
+    #: read-back failed or was partial), as a ``mammoth run`` line carries it.
+    exit: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         # Null fields are omitted: every call pays for meta, and a missing key
@@ -44,6 +47,7 @@ class Meta:
             "opens": self.opens,
             "update_available": self.update_available,
             "next_commands": self.next_commands,
+            "exit": self.exit,
         }
         return {key: value for key, value in document.items() if value is not None}
 

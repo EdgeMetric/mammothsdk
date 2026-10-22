@@ -8,6 +8,9 @@ captured envelope therefore live in a :class:`contextvars.ContextVar`, never in
 
 from __future__ import annotations
 
+import sys
+import threading
+import warnings
 from collections.abc import Callable, Iterable
 from concurrent.futures import Executor
 from contextvars import ContextVar, copy_context
@@ -24,6 +27,8 @@ class EmbeddedCall:
 
     login: ExplicitLogin
     envelopes: list[dict[str, Any]] = field(default_factory=list)
+    #: Text written to ``sys.stdout`` / ``sys.stderr`` while the call ran, by stream name.
+    stray: dict[str, list[str]] = field(default_factory=lambda: {"stdout": [], "stderr": []})
 
 
 _CURRENT: ContextVar[EmbeddedCall | None] = ContextVar("mammoth_cli_embedded", default=None)
@@ -68,3 +73,71 @@ def pool_map[T, R](pool: Executor, fn: Callable[[T], R], items: Iterable[T]) -> 
     """
     jobs = [(copy_context(), item) for item in items]
     return list(pool.map(lambda job: job[0].run(fn, job[1]), jobs))
+
+
+class _RoutedStream:
+    """A ``sys.stdout`` / ``sys.stderr`` stand-in that keeps an embedded call's text out.
+
+    ``contextlib.redirect_stdout`` swaps the stream for the whole process, so one
+    call's redirect would catch the host's other threads (and theirs, this
+    call's). This proxy is installed once and decides per write: in a context that
+    runs an embedded call the text goes to that call's buffer, anywhere else to the
+    stream that was there before. Everything else (``isatty``, ``encoding``,
+    ``fileno``...) is the real stream's.
+    """
+
+    def __init__(self, real: Any, name: str) -> None:
+        self._real = real
+        self._name = name
+
+    def write(self, text: str) -> int:
+        call = _CURRENT.get()
+        if call is None:
+            return int(self._real.write(text))
+        call.stray[self._name].append(text)
+        return len(text)
+
+    def writelines(self, lines: Iterable[str]) -> None:
+        for line in lines:
+            self.write(line)
+
+    def flush(self) -> None:
+        if _CURRENT.get() is None:
+            self._real.flush()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._real, name)
+
+
+_INSTALL_LOCK = threading.Lock()
+_ORIGINAL_SHOWWARNING = warnings.showwarning
+
+
+def _showwarning(message: Any, category: Any, filename: Any, lineno: Any, *rest: Any) -> None:
+    """Python's warning printer, except that an embedded call's warnings are not printed.
+
+    They would reach the stderr guard and fail a call that did its work; a
+    warning is not output the command chose to write.
+    """
+    if _CURRENT.get() is None:
+        _ORIGINAL_SHOWWARNING(message, category, filename, lineno, *rest)
+
+
+def install_stream_guards() -> None:
+    """Route embedded calls' stdout and stderr to their buffers; safe to call repeatedly.
+
+    Idempotent and thread-safe. A stream someone else swapped in since the last call
+    (a test's capture, a ``redirect_stdout`` that ended) is wrapped again, so every
+    embedded call starts guarded.
+    """
+    for name in ("stdout", "stderr"):
+        stream = getattr(sys, name)
+        if stream is not None and not isinstance(stream, _RoutedStream):
+            with _INSTALL_LOCK:
+                stream = getattr(sys, name)
+                if stream is not None and not isinstance(stream, _RoutedStream):
+                    setattr(sys, name, _RoutedStream(stream, name))
+    if warnings.showwarning is _ORIGINAL_SHOWWARNING:
+        with _INSTALL_LOCK:
+            if warnings.showwarning is _ORIGINAL_SHOWWARNING:
+                warnings.showwarning = _showwarning  # type: ignore[assignment]

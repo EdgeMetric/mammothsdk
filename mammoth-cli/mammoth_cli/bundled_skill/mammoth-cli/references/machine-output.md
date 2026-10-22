@@ -2,12 +2,13 @@
 
 ## Success envelope (stdout)
 ```json
-{"schema_version":1,"data":<result>,"meta":{"command":"project list","profile":"default","workspace_id":4,"project_id":180}}
+{"schema_version":1,"data":<result>,"meta":{"command":"project list","profile":"default","workspace_id":4,"project_id":180,"exit":0}}
 ```
 
 Compact single-line JSON when stdout is not a terminal (pretty when it is;
 `MAMMOTH_JSON_PRETTY=1` forces pretty). `meta` carries only the keys that have a
-value: `pagination` appears on paged reads, `update_available`
+value: `exit` is the exit status (0, or 1 or 3 for a write whose read-back failed
+or was partial); `pagination` appears on paged reads, `update_available`
 (`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
 a day, after a command, never blocking). Run its `command` before starting a
 task, not in the middle of one. `next_commands` appears after a main-flow
@@ -18,7 +19,7 @@ when they fit the task; a write that did not verify has none.
 
 ## Error envelope (stderr)
 ```json
-{"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
+{"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "exit": 1, "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
 
 A mistyped command, option or column carries `details.did_you_mean`: the nearest

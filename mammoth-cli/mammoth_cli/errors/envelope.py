@@ -181,6 +181,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_op": "There is nothing to change, so this step isn't needed.",
     "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",
+    "stray_output": "This step printed text it should not have, so its result was discarded.",
+    "multiple_envelopes": "This step returned more than one result, so none was used.",
     "nonfinite_input_number": _S_BAD_INPUT,
     "not_authenticated": _S_SIGN_IN,
     "not_implemented": _S_UNAVAILABLE,
@@ -271,6 +273,9 @@ class CliError(Exception):
             "retryable": self.retryable,
             "authorization_required": self.authorization_required,
             "recovery_commands": list(self.recovery_commands),
+            # The process exit status this error ends a terminal run with, so an
+            # embedder reads it from the envelope instead of mapping the code.
+            "exit": self.exit_status,
         }
         if self.log_ref is not None:
             error["log_ref"] = dict(self.log_ref)

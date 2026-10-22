@@ -54,7 +54,7 @@ def login_default_profile(*, workspace_id: int = 4) -> None:
 def sample_success_envelope() -> dict[str, Any]:
     result = Result(
         data={"id": 1, "name": "example"},
-        meta=Meta(command="dataset list", profile="default", workspace_id=4, project_id=42),
+        meta=Meta(command="dataset list", profile="default", workspace_id=4, project_id=42, exit=0),
     )
     return result.to_envelope()
 

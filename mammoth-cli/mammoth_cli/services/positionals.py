@@ -45,6 +45,16 @@ _VIEW_METHOD_MODULE = "mammoth.view"
 _MIXIN_MODULE_PREFIX = "mammoth._mixins"
 
 
+#: The ``kind`` of a positional or input field that takes a path on the CLI's own machine.
+LOCAL_PATH = "local_path"
+
+#: Input fields (not positionals) that read a host path, by command. A positional that
+#: falls back to a field marks that field too, so this lists only fields with no positional.
+LOCAL_PATH_INPUT_FIELDS: dict[str, frozenset[str]] = {
+    "collection.files.upload": frozenset({"files"}),
+}
+
+
 @dataclass(frozen=True)
 class PositionalSpec:
     """One positional argument of a CLI command, derived from the SDK signature.
@@ -74,6 +84,12 @@ class PositionalSpec:
     help: str
     falls_back_to_field: str | None = None
     fills_sdk_param: str | None = None
+    kind: str | None = None
+    """``"local_path"`` when the value is a path on the machine running the CLI.
+
+    A host that embeds the CLI has no such machine to read from, so every command
+    with a local-path positional or input field is refused there
+    (:func:`mammoth_cli.runtime.local_paths.local_path_commands`)."""
     example_value: str | None = None
     """A concrete, resolvable value for the generated runnable example.
 
@@ -91,7 +107,7 @@ class PositionalSpec:
 
     def as_manifest(self) -> dict[str, Any]:
         """Serialize to the manifest/schema JSON shape (type as ``'int'``/``'str'``)."""
-        return {
+        record: dict[str, Any] = {
             "name": self.name,
             "type": self.type.__name__,
             "required": self.required,
@@ -99,6 +115,9 @@ class PositionalSpec:
             "falls_back_to_field": self.falls_back_to_field,
             "help": self.help,
         }
+        if self.kind is not None:
+            record["kind"] = self.kind
+        return record
 
 
 def _optional_project_id() -> tuple[PositionalSpec, ...]:
@@ -162,6 +181,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            kind=LOCAL_PATH,
             example_value="card.png",
         ),
     ),
@@ -206,6 +226,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local template file (.zip).",
+            kind=LOCAL_PATH,
             example_value="template.zip",
         ),
     ),
@@ -215,6 +236,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local template file (.zip).",
+            kind=LOCAL_PATH,
             example_value="template.zip",
         ),
     ),
@@ -225,6 +247,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            kind=LOCAL_PATH,
             example_value="card.png",
         ),
     ),
@@ -345,6 +368,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
+            kind=LOCAL_PATH,
             example_value="Sales.twb",
         ),
     ),
@@ -354,6 +378,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
+            kind=LOCAL_PATH,
             example_value="Sales.pbix",
         ),
     ),
@@ -363,6 +388,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
+            kind=LOCAL_PATH,
             example_value="Sales.pbix",
         ),
     ),
@@ -373,6 +399,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local CSV, TSV or Excel file shaped like the table wanted.",
+            kind=LOCAL_PATH,
             example_value="deals_2026-10.csv",
         ),
     ),
@@ -383,6 +410,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local file to attach to the dashboard chat.",
+            kind=LOCAL_PATH,
             example_value="notes.pdf",
         ),
     ),
@@ -392,6 +420,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local workbook.",
+            kind=LOCAL_PATH,
             example_value="Sales.twbx",
         ),
     ),
@@ -671,6 +700,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=False,
             help="Path to a local file to upload; or pass one or more via the 'files' field.",
+            kind=LOCAL_PATH,
             falls_back_to_field="files",
             example_value="./sales.csv",
         ),
@@ -1254,6 +1284,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=False,
             help="Path to a local folder to upload; or pass it via the 'folder_path' input field.",
+            kind=LOCAL_PATH,
             falls_back_to_field="folder_path",
         ),
     ),
@@ -1266,6 +1297,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=False,
             help="Path to a local image to upload; or pass it via the 'file' input field.",
+            kind=LOCAL_PATH,
             falls_back_to_field="file",
         ),
     ),

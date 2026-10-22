@@ -373,7 +373,7 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
     if exit_status == 0:
         # Help or version text: the command succeeded and printed no envelope.
         text = {"text": stray[:500]} if stray else None
-        return 0, Result(data=text, meta=Meta(command=command)).to_envelope()
+        return 0, Result(data=text, meta=Meta(command=command, exit=0)).to_envelope()
     silent = CliError(
         code="no_output",
         message="This command printed text only (help or version) and no envelope.",
@@ -528,7 +528,7 @@ def run(invocation: Invocation) -> HandlerResult:
         "dry_run": invocation.dry_run,
         "exit": run_exit,
     }
-    meta = Meta(command="run", profile=invocation.profile)
+    meta = Meta(command="run", profile=invocation.profile, exit=run_exit)
     _write(Result(data=summary, meta=meta).to_envelope())
     return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
 
