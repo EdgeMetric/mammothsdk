@@ -638,7 +638,7 @@ Run: `mammoth dashboard live-chart create`. Exact input fields: `mammoth schema 
 
 Example: `mammoth dashboard live-chart create --input '{"body": {"params": {"view_id": 1, "figure": {}, "title": "Revenue report"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DashboardLiveChartCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DashboardLiveChartCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
 
 Status on release: untried; no live run recorded.
 

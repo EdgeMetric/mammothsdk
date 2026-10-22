@@ -10329,7 +10329,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.list
-  signature: 'list(self, limit: ''int'' = 100) -> ''dict[str, Any]'''
+  signature: 'list(self, limit: ''int'' = 100, fields: ''str'' = ''id,name'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workspace.list
   alias_of: null

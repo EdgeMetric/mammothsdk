@@ -62,6 +62,9 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     # ``job get`` is an immediate status read; only wait commands implement
     # the CLI's timeout/polling behavior.
     "job.get": frozenset({"timeout"}),
+    # ``view export rest-fill`` always waits for its job, bounded by ``--job-timeout``
+    # (``--return-running`` hands back the running job); the SDK's own switches are not inputs.
+    "view.export.rest-fill": frozenset({"wait", "timeout"}),
     # ``PipelineAPI.get_draft_status`` carries a legacy ``dataset_id`` alongside
     # the ``dataview_id`` the handler forwards from the view positional; the
     # handler never reads it, so it must not be advertised as an --input field.
@@ -105,6 +108,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # bare ``<field>``: the values are the ones the API documents (OpenAPI enums, or
     # the SDK method's own docstring/validator), so each example is a call that works.
     "agent.message.set-request-kind": {"request_kind": "ask"},
+    # The sampled 1 is outside the server's 60..3600 seconds (#283).
+    "dashboard.embed.lifetime.set": {"token_ttl": 900},
+    # The format is the point of this command; csv has its own (#282).
+    "view.export.download": {"file_type": "xml"},
     "support.plan.update-entitlements": {"values": {"dashboardBranding": "no_branding"}},
     # Server-master routes: drill, rows behind a mark, describe-a-chart, chart types,
     # file routing and connector drafts.

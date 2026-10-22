@@ -59,6 +59,7 @@ CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
 CODE_AUTHORIZATION_REQUIRED = "authorization_required"
+CODE_PLAN_LIMIT = "plan_limit"
 CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
@@ -111,6 +112,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "feature_unavailable": "Mammoth no longer offers this feature.",
     "export_failed": "The export ran but ended in an error.",
     "export_not_found": "No export run was found for that request.",
+    "plan_limit": "The workspace's plan or usage limit doesn't allow this.",
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
     "has_dependents": "Other items still depend on this, so it was not deleted.",
     "delete_not_applied": "The delete was accepted but the item is still there.",

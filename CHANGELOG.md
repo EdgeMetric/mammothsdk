@@ -6,6 +6,31 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io, mammoth-cli)
+
+- SDK `WorkspaceAPI.list(fields=...)` asks `GET /workspaces` for the given fields (default `"id,name"`, as before), e.g. `"id,name,download_file_types"`; `mammoth workspace list --input '{"fields": "..."}'` passes it (#272).
+- CLI `workspace user list --project ID` lists that project's members with their roles; `schema find` reaches it for "project members" and "my role". The project was dropped before (#256).
+- CLI `--reveal` on `dashboard embed secret rotate` and `dashboard embed preview-token create` prints the new signing secret or preview token, which the API shows only once. Without it they stay masked as before (#278).
+
+### Changed (next mammoth-cli)
+
+- CLI: a plan or AI-quota refusal (`4SUBS101`–`4SUBS106`, e.g. `AI_QUOTA_EXHAUSTED`, `FEATURE_NOT_AVAILABLE_ON_PLAN`) is the new error code `plan_limit` (exit 4), with the backend's message and a hint about the plan and quota, instead of `authorization_required` with "check the ids" (#254).
+- CLI: `dashboard live-chart create` waits for the chart's bake job (bounded by `--job-timeout`) and reads the chart back; the result keeps `dashboard_id` and `job_id`. Before, it returned the queued job with no wait or readback (#281).
+- CLI: `dashboard live-chart create`, `dashboard template apply` and `dashboard v3 generate` send an explicit `--project` as the new board's `project_id`; without it the server still uses the source view's project (#280).
+- CLI: `view export rest-fill` refuses `wait` and `timeout` in `--input` instead of ignoring them; it always waits, for at most `--job-timeout` seconds (#279).
+
+### Fixed (next mammoth-io, mammoth-cli)
+
+- SDK `DashboardsAPI.embed_lifetime_set` refuses a `token_ttl` that is not an integer (a bool, a string) as well as one outside 60–3600. CLI `dashboard embed lifetime set --dry-run` applies the same check, and its example now uses `900` instead of the invalid `1` (#283).
+
+### Fixed (next mammoth-cli)
+
+- CLI: a backend `PERMISSION_ERROR` (`4PERM002`) sent as an HTTP 400 is `authorization_required` (exit 4) with the backend's message, not a generic `api_error` telling the caller to correct the request (#277).
+- CLI: `dashboard embed config get` shows `has_signing_secret` as `true`/`false`; key redaction never masks a boolean (#278).
+- CLI: `--help` and `schema get` list the values of a `Literal` field: `view export download` shows `file_type (csv | xlsx | json | ndjson | xml | yaml | parquet)` and `schema get` reports its `enum`. A long type in `--help` is cut at a word with `...`, never inside a value (it showed `'par`). The command's docstring and example name `file_type` (#282).
+- CLI: `schema get view.summary` reports `dataset_id` as optional, as its positional is, and `schema find` sends column-statistics searches to `view data profile` rather than `view summary` (#284).
+- CLI: `file upload` of a file that made no dataset (a PDF waiting for table extraction) reports `status: no_dataset` with a message and `verify.needs_user`, not `ready` (#255).
+
 ## mammoth-cli 2.2.97 (2026-10-22)
 
 ### Fixed (mammoth-cli 2.2.97)

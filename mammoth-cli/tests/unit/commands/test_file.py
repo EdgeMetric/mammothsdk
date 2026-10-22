@@ -536,6 +536,19 @@ def test_upload_result_shows_what_mammoth_made_of_each_file(
     assert hint["detail"].startswith("Convert price to NUMERIC first")
 
 
+def test_an_upload_that_made_no_dataset_is_not_ready(fake_service: FakeMammothService) -> None:
+    # #255: a PDF ends in action_needed with no dataset; it was reported ready and verified.
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [], "errors": {}}
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"]))
+    assert data["status"] == "no_dataset"
+    assert data["next_command"] == "mammoth file list"
+    verify = with_verify(data)["verify"]
+    assert verify["state"] == "no_dataset"
+    assert "no dataset was made" in (verify["needs_user"] or "")
+
+
 def test_upload_result_names_revenue_to_add_before_a_dashboard(
     fake_service: FakeMammothService,
 ) -> None:

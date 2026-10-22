@@ -269,9 +269,9 @@ async def test_embed_lifetime_set_rejects_invalid_workspace_id(workspace_id: obj
     client._request_json.assert_not_called()
 
 
-@pytest.mark.parametrize("token_ttl", [59, 3601, 0, -1])
-async def test_embed_lifetime_set_rejects_out_of_range_ttl(token_ttl: int) -> None:
+@pytest.mark.parametrize("token_ttl", [59, 3601, 0, -1, True, "900", None])
+async def test_embed_lifetime_set_rejects_out_of_range_ttl(token_ttl: object) -> None:
     api, client = _api()
     with pytest.raises(MammothValidationError, match="token_ttl"):
-        await api.embed_lifetime_set(3, token_ttl)
+        await api.embed_lifetime_set(3, token_ttl)  # type: ignore[arg-type]
     client._request_json.assert_not_called()

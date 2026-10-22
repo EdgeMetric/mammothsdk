@@ -202,9 +202,11 @@ def workspace_get(invocation: Invocation) -> HandlerResult:
 def workspace_list(invocation: Invocation) -> HandlerResult:
     """List accessible workspaces."""
     document = invocation.load_input() or {}
-    limit = int(document.get("limit", 100))
+    kwargs: dict[str, Any] = {"limit": int(document.get("limit", 100))}
+    if document.get("fields") is not None:
+        kwargs["fields"] = str(document["fields"])
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), limit=limit)
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -353,11 +355,14 @@ def workspace_user_list(invocation: Invocation) -> HandlerResult:
     """List users in the client's own workspace, with their roles and status.
 
     Asks for the backend's ``__full`` field set unless ``--input`` names another,
-    so each user carries ``user_roles`` and ``status``.
+    so each user carries ``user_roles`` and ``status``. An explicit ``--project``
+    keeps only that project's members (a saved default project does not).
     """
     document = invocation.load_input() or {}
     kwargs: dict[str, Any] = {"fields": _USER_LIST_FIELDS}
-    _forward_optional(document, kwargs, ("fields", "project_id"))
+    _forward_optional(document, kwargs, ("fields",))
+    if invocation.project is not None:
+        kwargs["project_id"] = invocation.project
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id)
