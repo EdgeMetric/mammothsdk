@@ -1038,3 +1038,15 @@ def test_explore_panel_set_does_not_claim_to_open_cards_in_the_ui() -> None:
     schema = get_schema("view.explore-panel.set")
     assert schema is not None
     assert "in the UI" not in json.dumps(schema)
+
+
+@pytest.mark.parametrize(
+    "command_id", ["view.transform.first-name", "view.transform.update-column"]
+)
+def test_one_call_transforms_do_not_claim_to_submit_the_draft(command_id: str) -> None:
+    """Since 2.2.97 a draft-mode step stays staged; the schema must not say it submits."""
+    schema = get_schema(command_id)
+    assert schema is not None
+    text = json.dumps(schema)
+    assert "the draft is submitted" not in text
+    assert "draft stays unsubmitted" in text
