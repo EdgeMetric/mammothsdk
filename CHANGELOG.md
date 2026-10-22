@@ -14,6 +14,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - CLI: an embedded token login (`ExplicitLogin(api_token=..., workspace_id=...)`) now takes the workspace id as a hint instead of refusing it, so a call no longer asks the server `GET /workspaces/current` first. A wrong hint is caught on the first refusal (koyal answers a request to another workspace with a 401 "Invalid token"; a 403 is checked the same way): the CLI then asks the token's own workspace once and, when it differs, returns `workspace_mismatch` (exit 3, with both ids in `details`) instead of the refusal. A login without the hint is unchanged.
 
+### Fixed (next mammoth-mcp-server)
+
+- MCP server: the `mammoth-io` floor is raised from `>=0.8.39` to `>=0.8.47`. The server builds every client with `MammothClient(http_client=...)`, which is new in mammoth-io 0.8.47, so 0.2.7 installed next to an older SDK failed on its first request with `TypeError: unexpected keyword argument 'http_client'`.
+
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
 ### Added (mammoth-io 0.8.48, mammoth-cli 2.2.95)
