@@ -79,7 +79,8 @@ A successful command prints this shape to stdout.
 The `data` field holds the command result. The `meta` field records the command
 name, active profile, workspace and project; keys without a value are omitted.
 `meta.exit` is the process exit status: 0, or 1 or 3 when a write's read-back
-failed or was partial.
+failed or was partial. In an embedded call (`mammoth_cli.embed.invoke`), `meta.stderr`
+holds up to 500 characters a library wrote to stderr during the call, when there were any.
 `meta.pagination` appears on paged reads. `meta.update_available` appears as
 `{"current", "latest", "command"}` when the daily PyPI check has seen a newer
 CLI; run its `command` when it suits you (see [upgrade](../upgrade.md)).
@@ -120,7 +121,7 @@ Each field has a fixed meaning.
 | `code` | Stable machine identifier for the failure. Branch on this. |
 | `message` | Human-readable summary. Do not parse it. |
 | `hint` | Optional suggestion for fixing the problem. |
-| `details` | Structured context about the failure. |
+| `details` | Structured context about the failure. In an embedded call it may hold `stderr`, up to 500 characters written to stderr during the call. |
 | `request_id` | Server request id, or `null`. Cite it in support tickets. |
 | `retryable` | `true` when a retry may succeed. |
 | `authorization_required` | `true` when the caller must authenticate. |

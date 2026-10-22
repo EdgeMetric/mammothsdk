@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import sys
 import threading
-import warnings
 from collections.abc import Callable, Iterable
 from concurrent.futures import Executor
 from contextvars import ContextVar, copy_context
@@ -82,15 +81,20 @@ class _RoutedStream:
     call's redirect would catch the host's other threads (and theirs, this
     call's). This proxy is installed once and decides per write: in a context that
     runs an embedded call the text goes to that call's buffer, anywhere else to the
-    stream that was there before. Everything else (``isatty``, ``encoding``,
-    ``fileno``...) is the real stream's.
+    stream that was there before. Like a real text stream it refuses bytes (Click
+    probes with ``write(b"")`` to tell text from binary), and its ``buffer`` is routed
+    the same way, so no write path reaches the host's stream from inside a call.
+    Everything else (``isatty``, ``encoding``, ``fileno``...) is the real stream's.
     """
 
     def __init__(self, real: Any, name: str) -> None:
         self._real = real
         self._name = name
+        self._buffer = _RoutedBuffer(real, name)
 
     def write(self, text: str) -> int:
+        if not isinstance(text, str):
+            raise TypeError(f"write() argument must be str, not {type(text).__name__}")
         call = _CURRENT.get()
         if call is None:
             return int(self._real.write(text))
@@ -105,22 +109,39 @@ class _RoutedStream:
         if _CURRENT.get() is None:
             self._real.flush()
 
+    @property
+    def buffer(self) -> Any:
+        if not hasattr(self._real, "buffer"):
+            raise AttributeError("buffer")
+        return self._buffer
+
     def __getattr__(self, name: str) -> Any:
         return getattr(self._real, name)
 
 
+class _RoutedBuffer:
+    """The ``buffer`` of a :class:`_RoutedStream`: bytes are decoded into the call's text."""
+
+    def __init__(self, real: Any, name: str) -> None:
+        self._real = real
+        self._name = name
+
+    def write(self, data: bytes) -> int:
+        call = _CURRENT.get()
+        if call is None:
+            return int(self._real.buffer.write(data))
+        call.stray[self._name].append(bytes(data).decode("utf-8", errors="replace"))
+        return len(data)
+
+    def flush(self) -> None:
+        if _CURRENT.get() is None:
+            self._real.buffer.flush()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._real.buffer, name)
+
+
 _INSTALL_LOCK = threading.Lock()
-_ORIGINAL_SHOWWARNING = warnings.showwarning
-
-
-def _showwarning(message: Any, category: Any, filename: Any, lineno: Any, *rest: Any) -> None:
-    """Python's warning printer, except that an embedded call's warnings are not printed.
-
-    They would reach the stderr guard and fail a call that did its work; a
-    warning is not output the command chose to write.
-    """
-    if _CURRENT.get() is None:
-        _ORIGINAL_SHOWWARNING(message, category, filename, lineno, *rest)
 
 
 def install_stream_guards() -> None:
@@ -137,7 +158,3 @@ def install_stream_guards() -> None:
                 stream = getattr(sys, name)
                 if stream is not None and not isinstance(stream, _RoutedStream):
                     setattr(sys, name, _RoutedStream(stream, name))
-    if warnings.showwarning is _ORIGINAL_SHOWWARNING:
-        with _INSTALL_LOCK:
-            if warnings.showwarning is _ORIGINAL_SHOWWARNING:
-                warnings.showwarning = _showwarning  # type: ignore[assignment]

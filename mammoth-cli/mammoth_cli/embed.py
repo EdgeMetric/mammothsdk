@@ -93,29 +93,40 @@ def invoke(
 def _outcome(call: embedded.EmbeddedCall) -> dict[str, Any]:
     """The one envelope a finished call stands for; anything else is an error to fix.
 
-    Text a command wrote to stdout or stderr, or a second envelope, means a command
-    broke the one-envelope contract. Returning the one envelope and dropping the rest
-    would hide that, so the call fails and says what it saw.
+    Text on stdout, or a second envelope, means a command broke the one-envelope
+    contract. Returning the one envelope and dropping the rest would hide that, so
+    the call fails and says what it saw. Text on stderr (a library's log line, a
+    warning) is not a contract break: it never reaches the host's stderr, and rides
+    on the envelope as ``meta.stderr`` or ``error.details.stderr`` instead.
     """
-    stray = {name: "".join(parts).strip() for name, parts in call.stray.items()}
-    stray = {name: text[:_STRAY_CHARS] for name, text in stray.items() if text}
-    if stray:
+    out = "".join(call.stray["stdout"]).strip()[:_STRAY_CHARS]
+    err = "".join(call.stray["stderr"]).strip()[:_STRAY_CHARS]
+    if out:
+        details: dict[str, Any] = {"stdout": out, "envelopes": len(call.envelopes)}
+        if err:
+            details["stderr"] = err
         return _error(
-            "stray_output",
-            "The command wrote text outside its envelope.",
-            EXIT_API,
-            details={**stray, "envelopes": len(call.envelopes)},
+            "stray_output", "The command wrote text outside its envelope.", EXIT_API, details
         )
     if len(call.envelopes) > 1:
+        details = {"envelopes": [_describe(item) for item in call.envelopes]}
+        if err:
+            details["stderr"] = err
         return _error(
             "multiple_envelopes",
             f"The command produced {len(call.envelopes)} envelopes; it should produce one.",
             EXIT_API,
-            details={"envelopes": [_describe(item) for item in call.envelopes]},
+            details,
         )
-    if call.envelopes:
-        return call.envelopes[0]
-    return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    if not call.envelopes:
+        return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    envelope = call.envelopes[0]
+    if err:
+        if isinstance(envelope.get("error"), dict):
+            envelope["error"].setdefault("details", {})["stderr"] = err
+        elif isinstance(envelope.get("meta"), dict):
+            envelope["meta"]["stderr"] = err
+    return envelope
 
 
 #: Stray text kept in the error, as ``mammoth run`` keeps it.

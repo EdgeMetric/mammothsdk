@@ -98,13 +98,17 @@ def test_stray_stdout_is_returned_as_an_error_not_printed(
     assert capsys.readouterr() == ("", "")
 
 
-def test_python_warnings_in_a_call_are_not_stray_output(
+def test_stderr_text_rides_on_a_success_envelope_and_does_not_fail_it(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    import warnings
+    import logging
 
     def body(_argv: list[str]) -> None:
-        warnings.warn("library says hi", UserWarning, stacklevel=1)
+        # No handler (and no propagation to pytest's): logging's last resort writes to
+        # sys.stderr, looked up at call time.
+        sdk_logger = logging.getLogger("mammoth.client.embed_test")
+        sdk_logger.propagate = False
+        sdk_logger.warning("sdk warns")
         embedded.capture({"schema_version": 1, "data": {}, "meta": {"command": "x", "exit": 0}})
 
     _fake_run(monkeypatch, body)
@@ -112,7 +116,66 @@ def test_python_warnings_in_a_call_are_not_stray_output(
     envelope = invoke(["project", "list"], login=_LOGIN)
 
     assert "error" not in envelope
+    assert "sdk warns" in envelope["meta"]["stderr"]
     assert capsys.readouterr() == ("", "")
+
+
+def test_stderr_text_rides_on_an_error_envelope_in_details(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def body(_argv: list[str]) -> None:
+        sys.stderr.write("x" * 800)
+        embedded.capture(CliError(code="resource_not_found", message="gone").to_envelope())
+
+    _fake_run(monkeypatch, body)
+
+    envelope = invoke(["project", "list"], login=_LOGIN)
+
+    assert envelope["error"]["code"] == "resource_not_found"
+    assert envelope["error"]["details"]["stderr"] == "x" * 500
+    assert capsys.readouterr() == ("", "")
+
+
+def test_typer_echo_in_a_call_is_captured_as_text_and_never_raises(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def body(_argv: list[str]) -> None:
+        typer.echo("out-line")
+        typer.echo("err-line", err=True)
+        sys.stdout.buffer.write(b"raw-bytes\n")
+        embedded.capture({"schema_version": 1, "data": {}, "meta": {"command": "x", "exit": 0}})
+
+    _fake_run(monkeypatch, body)
+
+    envelope = invoke(["project", "list"], login=_LOGIN)
+
+    assert envelope["error"]["code"] == "stray_output"
+    assert envelope["error"]["details"]["stdout"] == "out-line\nraw-bytes"
+    assert envelope["error"]["details"]["stderr"] == "err-line"
+    assert capsys.readouterr() == ("", "")
+
+
+def test_typer_echo_outside_a_call_still_reaches_the_real_stream(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    embedded.install_stream_guards()
+
+    typer.echo("host-out")
+    typer.echo("host-err", err=True)
+    sys.stdout.buffer.write(b"host-bytes\n")
+    sys.stdout.flush()
+
+    out, err = capsys.readouterr()
+    assert "host-out" in out
+    assert "host-bytes" in out
+    assert "host-err" in err
+
+
+def test_the_guard_refuses_bytes_like_a_text_stream() -> None:
+    embedded.install_stream_guards()
+
+    with pytest.raises(TypeError):
+        sys.stdout.write(b"x")  # type: ignore[arg-type]
 
 
 def test_concurrent_calls_do_not_cross_capture_and_other_threads_still_print(

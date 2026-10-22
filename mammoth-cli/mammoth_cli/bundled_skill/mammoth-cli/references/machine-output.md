@@ -8,7 +8,8 @@
 Compact single-line JSON when stdout is not a terminal (pretty when it is;
 `MAMMOTH_JSON_PRETTY=1` forces pretty). `meta` carries only the keys that have a
 value: `exit` is the exit status (0, or 1 or 3 for a write whose read-back failed
-or was partial); `pagination` appears on paged reads, `update_available`
+or was partial); `stderr` (embedded calls only) holds up to 500 characters a library
+wrote to stderr during the call; `pagination` appears on paged reads, `update_available`
 (`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
 a day, after a command, never blocking). Run its `command` before starting a
 task, not in the middle of one. `next_commands` appears after a main-flow
