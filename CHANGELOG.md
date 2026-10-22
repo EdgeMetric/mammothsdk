@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## mammoth-cli 2.2.97 (2026-10-22)
+
+### Fixed (mammoth-cli 2.2.97)
+
+- CLI: `view transform first-name` and `view transform update-column` no longer submit the draft of a view in draft mode. The step stays staged (`status: staged`, no run to wait for) like every other transform, and draft mode stays on until `view draft submit`. Before, the first such step on a draft with no other staged steps ran at once, ended draft mode and reported `draft_applied`. Outside draft mode nothing changes.
+
 ## mammoth-io 0.8.49, mammoth-cli 2.2.96, mammoth-mcp-server 0.2.8 (2026-10-22)
 
 ### Added (mammoth-io 0.8.49, mammoth-cli 2.2.96)
