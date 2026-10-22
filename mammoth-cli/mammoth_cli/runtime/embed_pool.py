@@ -12,6 +12,11 @@ The shared client holds no credentials and no cookies. Each call's own
 to that call's requests by its own ``MammothClient`` (``default_headers``), so two
 users on one runtime never see each other's. An SDK too old to do that is not
 shared with: the call falls back to its own client, as without a runtime.
+
+Everything runs on the one loop thread, so work on it must not block: a synchronous
+``token_provider`` or a synchronous workspace lookup would stall every user. With an
+``api_token`` login the workspace is already known by then (the resolver learns it before
+the call, and a ``workspace_id`` hint skips even that), so neither happens.
 """
 
 from __future__ import annotations
@@ -20,7 +25,7 @@ import asyncio
 import atexit
 import inspect
 import threading
-from concurrent.futures import Future
+from concurrent.futures import CancelledError, Future
 from typing import Any
 
 
@@ -75,6 +80,7 @@ class EmbedRuntime:
         """
         self._lock = threading.Lock()
         self._closed = False
+        self._pending: set[Future[Any]] = set()
         #: The shared pool, or None when the installed SDK cannot build one safely.
         self.http_client: Any = None
         if sdk_can_share_a_client():
@@ -110,38 +116,70 @@ class EmbedRuntime:
         """Run one awaitable on the runtime's loop and return its result.
 
         Blocks the calling thread (never the loop) until it is done. Interrupting the
-        wait cancels the work.
+        wait cancels the work. Work on the shared loop must not block (see the module
+        docstring).
 
         Raises:
-            RuntimeError: The runtime is closed.
+            RuntimeError: The runtime is closed, was closed while this ran, or this was
+                called from the runtime's own loop thread (which would deadlock it).
         """
-        if self._closed:
+        if threading.current_thread() is self._thread:
             if inspect.iscoroutine(work):
                 work.close()
-            raise RuntimeError("the embed runtime is closed")
+            raise RuntimeError("EmbedRuntime.run() called from its own loop thread")
         if not inspect.iscoroutine(work):
             work = _await(work)
-        future: Future[Any] = asyncio.run_coroutine_threadsafe(work, self._loop)
+        with self._lock:
+            # The check and the scheduling are one step, so close() never stops the loop
+            # between them.
+            if self._closed:
+                work.close()
+                raise RuntimeError("the embed runtime is closed")
+            future: Future[Any] = asyncio.run_coroutine_threadsafe(work, self._loop)
+            self._pending.add(future)
+        future.add_done_callback(self._pending.discard)
         try:
             return future.result()
+        except CancelledError:
+            if self._closed:
+                raise RuntimeError("the embed runtime was closed while this call ran") from None
+            raise
         except BaseException:
             future.cancel()
             raise
 
+    async def _shutdown(self) -> None:
+        """On the loop: cancel every task in flight, wait for them, then close the pool."""
+        current = asyncio.current_task()
+        tasks = [task for task in asyncio.all_tasks() if task is not current]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        if self.http_client is not None:
+            await self.http_client.aclose()
+
     def close(self) -> None:
-        """Close the shared client and stop the loop thread. Safe to call twice."""
+        """Cancel work in flight, close the shared client and stop the loop thread.
+
+        Callers still waiting in :meth:`run` get ``RuntimeError`` at once. Safe to call
+        twice; not from the runtime's own loop thread.
+        """
+        if threading.current_thread() is self._thread:
+            raise RuntimeError("EmbedRuntime.close() called from its own loop thread")
         with self._lock:
             if self._closed:
                 return
             self._closed = True
         try:
-            if self.http_client is not None:
-                asyncio.run_coroutine_threadsafe(self.http_client.aclose(), self._loop).result(10)
+            asyncio.run_coroutine_threadsafe(self._shutdown(), self._loop).result(15)
         finally:
             self._loop.call_soon_threadsafe(self._loop.stop)
             self._thread.join(10)
             if not self._thread.is_alive():
                 self._loop.close()
+            for future in list(self._pending):
+                if not future.done():
+                    future.set_exception(RuntimeError("the embed runtime is closed"))
 
     def __enter__(self) -> EmbedRuntime:
         """Use the runtime as a context manager that closes it on exit."""

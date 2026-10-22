@@ -15,6 +15,7 @@ synchronous code.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import os
 import re
@@ -1218,8 +1219,7 @@ class SdkMammothService:
             if self._closed:
                 return
             self._closed = True
-            if self._runtime is not None and self._runtime.is_open:
-                self._run(self._client.close())
+            self._close_own_sessions()
             return
         if self._loop.is_closed():
             return
@@ -1227,6 +1227,24 @@ class SdkMammothService:
             self._run(self._client.close())
         finally:
             self._loop.close()
+
+    def _close_own_sessions(self) -> None:
+        """Close what this client owns on a shared runtime: its download session.
+
+        The runtime may have closed first; then a throwaway loop closes it, and nothing
+        raised here may hide the command's own outcome.
+        """
+        try:
+            self._run(self._client.close())
+            return
+        except Exception:  # noqa: BLE001, S110 -- the runtime is gone or going
+            pass
+        throwaway = asyncio.new_event_loop()
+        try:
+            with contextlib.suppress(Exception):  # closing must never mask the real error
+                throwaway.run_until_complete(self._client.close())
+        finally:
+            throwaway.close()
 
     def __enter__(self) -> SdkMammothService:
         """Enter the service as a context manager."""

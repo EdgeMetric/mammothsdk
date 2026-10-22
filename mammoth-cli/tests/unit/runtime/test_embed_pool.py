@@ -222,3 +222,68 @@ def test_default_calls_are_unchanged_without_a_runtime(server: _Server) -> None:
         )
         assert "data" in invoke(["project", "list"], login=_login(9, "fay"))
     assert own.requests
+
+
+def test_closing_fails_a_call_in_flight_promptly(server: _Server) -> None:
+    pool = _runtime_on(server)
+    started = threading.Event()
+    outcome: list[BaseException | None] = []
+
+    async def _long() -> None:
+        started.set()
+        await asyncio.sleep(30)
+
+    def _worker() -> None:
+        try:
+            pool.run(_long())
+            outcome.append(None)
+        except BaseException as exc:  # noqa: BLE001
+            outcome.append(exc)
+
+    worker = threading.Thread(target=_worker)
+    worker.start()
+    assert started.wait(10)
+    pool.close()
+    worker.join(5)
+    assert not worker.is_alive()
+    assert isinstance(outcome[0], RuntimeError) and "closed" in str(outcome[0])
+
+
+def test_run_from_the_runtimes_own_loop_thread_raises_instead_of_deadlocking(
+    runtime: EmbedRuntime,
+) -> None:
+    async def _inner() -> None:
+        return None
+
+    async def _host_callback() -> str:
+        try:
+            runtime.run(_inner())
+        except RuntimeError as exc:
+            return str(exc)
+        return "no error"
+
+    assert "own loop thread" in runtime.run(_host_callback())
+
+
+def test_service_close_survives_a_runtime_closed_first(
+    server: _Server, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The download session still closes and no error escapes ``close()``."""
+    pool = _runtime_on(server)
+    seen: list[sdk_service.SdkMammothService] = []
+    real_init = sdk_service.SdkMammothService.__init__
+
+    def _spy(self: Any, *args: Any, **kwargs: Any) -> None:
+        real_init(self, *args, **kwargs)
+        seen.append(self)
+
+    monkeypatch.setattr(sdk_service.SdkMammothService, "__init__", _spy)
+    assert "data" in invoke(["project", "list"], login=_login(2, "gus"), runtime=pool)
+    service = seen[0]
+    # The call closed it; reopen the case: the runtime goes away first, then close().
+    service._closed = False
+    service._client.download_session = httpx.AsyncClient()
+    pool.close()
+    service.close()
+    service.close()
+    assert service._client.download_session.is_closed
