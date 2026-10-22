@@ -1529,6 +1529,7 @@ commands:
     metavar: PATH
     falls_back_to_field: null
     help: Path to a local CSV, TSV or Excel file shaped like the table wanted.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
   sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.sample with validated request fields.

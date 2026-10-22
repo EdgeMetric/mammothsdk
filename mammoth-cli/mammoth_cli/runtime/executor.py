@@ -18,6 +18,7 @@ from typing import Any
 import typer
 
 from mammoth_cli.errors.envelope import (
+    CODE_WORKSPACE_MISMATCH,
     EXIT_API,
     EXIT_AUTH,
     EXIT_PARTIAL,
@@ -36,7 +37,9 @@ from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
 from mammoth_cli.runtime import embedded, linecapture, updates
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
+from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.local_paths import local_path_commands
 from mammoth_cli.runtime.runlog import RunLog
 from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
@@ -72,17 +75,9 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "log.tail",
         "skill.list",
         "skill.path",
-        # Read or write a path on the host's filesystem.
-        "file.upload",
-        "file.upload-folder",
-        "user.avatar.upload",
-        "dashboard.assess-pbix",
+        # Write a path on the host's filesystem. The commands that read one are not
+        # listed: ``local_path_commands`` derives them from the manifest.
         "view.explore-panel.export-image",
-        "dashboard.assess-twb",
-        "dashboard.template.thumbnail.set",
-        "support.template.inspect",
-        "support.template.import",
-        "support.template.thumbnail.set",
         "support.template.export",
         "support.template.export-dashboard",
     }
@@ -95,7 +90,12 @@ def _refuse_if_removed(command_id: str) -> None:
 
 
 def _refuse_if_embedded(command_id: str) -> None:
-    if embedded.active() and command_id in EMBEDDED_UNAVAILABLE:
+    # A hand-crafting dashboard write that also reads a local file keeps its own, more
+    # useful refusal (it names the intent commands to use instead).
+    refuse_hand_crafted_write(command_id)
+    if embedded.active() and (
+        command_id in EMBEDDED_UNAVAILABLE or command_id in local_path_commands()
+    ):
         raise not_available_embedded_error(command_id.replace(".", " "))
 
 
@@ -169,10 +169,49 @@ def _attach_input_contract(error: CliError, command_id: str) -> None:
         error.details["input_contract"] = contract
 
 
+def _with_workspace_checked(error: CliError) -> CliError:
+    """Check an embedded token login's workspace hint against the server after a refusal.
+
+    A hint saves the workspace lookup on every call, but a wrong one sends each request
+    to another workspace's urls, which the server refuses (a 401 "Invalid token" or a
+    403). Only then is the token's own workspace asked for (once per process, the SDK
+    keeps the answer), and a different one turns the refusal into ``workspace_mismatch``.
+    """
+    call = embedded.current()
+    if call is None or error.exit_status != EXIT_AUTH:
+        return error
+    login = call.login
+    if login.api_token is None or login.workspace_id is None:
+        return error
+    from mammoth_cli.context.endpoint import resolve_base_url
+    from mammoth_cli.context.resolver import resolve_token_workspace
+
+    try:
+        actual = resolve_token_workspace(
+            resolve_base_url(login.server_prefix), login.api_token, None
+        )
+    except CliError:
+        return error
+    if actual == login.workspace_id:
+        return error
+    return CliError(
+        code=CODE_WORKSPACE_MISMATCH,
+        message=(
+            f"The login names workspace {login.workspace_id}, but its token belongs to "
+            f"workspace {actual}."
+        ),
+        exit_status=EXIT_AUTH,
+        hint="Pass the token's own workspace id, or leave workspace_id out of the login.",
+        details={"workspace_id": login.workspace_id, "token_workspace_id": actual},
+        request_id=error.request_id,
+    )
+
+
 def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
     """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
-    if invocation is None:
-        return error
+    checked = _with_workspace_checked(error)
+    if checked is not error or invocation is None:
+        return checked
 
     names: dict[int, str | None] = {}
 
@@ -225,6 +264,7 @@ def emit_success(
     view: dict[str, Any] | None = None,
     opens: list[dict[str, Any]] | None = None,
     next_commands: list[str] | None = None,
+    exit_status: int = 0,
 ) -> None:
     """Render one success envelope to stdout.
 
@@ -245,6 +285,7 @@ def emit_success(
         next_commands: Ready-to-run commands that usually come next, if any.
             Human output (table, plain, csv) also prints them as one ``Next:``
             line on stderr.
+        exit_status: The exit status the command ends with, carried as ``meta.exit``.
     """
     meta = Meta(
         command=command_id.replace(".", " "),
@@ -257,6 +298,7 @@ def emit_success(
         view=view,
         opens=opens,
         next_commands=next_commands or None,
+        exit=exit_status,
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)) or linecapture.capture(normalize(envelope)):
@@ -373,14 +415,21 @@ def run(
         # A streaming command (``run``) printed its own envelopes and names its exit status.
         streamed = bool(meta_extra.pop(STREAMED_META, False))
         stream_exit = int(meta_extra.pop(EXIT_STATUS_META, 0) or 0)
-        if not streamed:
-            emit_success(command_id, data, output, update_available=update, **meta_extra)
-        updates.emit_hint(update, output=output)
         # doctor prints its report either way; a failed report must not exit 0.
         report_failed = (
             command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
         )
         write_exit = stream_exit or _verify_exit_status(data)
+        if not streamed:
+            emit_success(
+                command_id,
+                data,
+                output,
+                update_available=update,
+                exit_status=EXIT_AUTH if report_failed else write_exit,
+                **meta_extra,
+            )
+        updates.emit_hint(update, output=output)
     except CliError as error:
         running = (
             running_handle(error, command_id)

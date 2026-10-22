@@ -3560,7 +3560,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_preview`
-- Agent example: `mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1}}}'`
 
 ### `mammoth dashboard template rename`
 
@@ -3578,7 +3578,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping`
-- Agent example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1}}}'`
 
 ### `mammoth dashboard template thumbnail clear`
 
