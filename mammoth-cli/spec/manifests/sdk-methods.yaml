@@ -3356,7 +3356,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.columns
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.columns
-  signature: 'columns(self: ''Any'', dashboard_id: ''int'') -> ''ColumnRoster'''
+  signature: 'columns(self: ''Any'', dashboard_id: ''int'', page_id: ''str | None'' = None) -> ''ColumnRoster'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null

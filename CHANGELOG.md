@@ -8,8 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-cli)
 
-- Every command now has a `server_status`: `served` (the production server serves its routes), `pending` (a route is on server master but not in production yet) or `removed_on_server`. It is derived at build time from the pinned prod spec (`spec/openapi/openapi.json`) and the pinned master spec, through the same command -> SDK method -> route mapping as the release capability matrix (`scripts/build_server_status.py`, run by `scripts/build_manifests.py`; stored in `spec/manifests/server-status.json` and the compiled manifests), and shown in `schema get` (brief and `--full`), the `schema list FAMILY` and `schema find` rows, and `capability` entries. Today 28 commands are `pending` (dashboard figure data, chart types, watched folders and file routing, connector drafts). Running one from a terminal is unchanged.
+- Every command now has a `server_status`: `served` (the production server serves its routes), `pending` (a route is on server master but not in production yet) or `removed_on_server`. It is derived at build time from the pinned prod spec (`spec/openapi/openapi.json`) and the pinned master spec, through the same command -> SDK method -> route mapping as the release capability matrix (`scripts/build_server_status.py`, run by `scripts/build_manifests.py`; stored in `spec/manifests/server-status.json` and the compiled manifests), and shown in `schema get` (brief and `--full`), the `schema list FAMILY` and `schema find` rows, and `capability` entries. The prod pin was re-pinned on 2026-10-22 and now serves every operation on the master pin, so no command is pending at this release; a command becomes pending whenever the master pin is ahead of the prod pin. Running one from a terminal is unchanged.
 - `mammoth_cli.embed.invoke(..., hide_pending=True)` refuses a `pending` command with the usage-class error `pending_server_release` before any request, and leaves such commands out of `schema list`, `schema find` and `capability` for that call.
+
+### Changed (next mammoth-io)
+
+- The generated dashboard models (`mammoth.models.dashboard_generated`) and wrappers are regenerated from the 2026-10-22 production spec: chart-type models are added, and `SwapFitParams` gains `page_id` and `target_dataset_ids` (`target_dataview_ids` is now optional).
 
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
