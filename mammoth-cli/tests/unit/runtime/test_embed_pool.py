@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import threading
 from collections.abc import Iterator
 from typing import Any
@@ -111,9 +112,13 @@ def test_concurrent_users_on_one_runtime_never_cross_headers(
 def test_the_agent_run_header_is_per_call_not_on_the_shared_pool(
     runtime: EmbedRuntime, server: _Server, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv(sdk_service.AGENT_RUN_ENV, "run-7")
-    assert "data" in invoke(["project", "list"], login=_login(5, "ann"), runtime=runtime)
-    monkeypatch.delenv(sdk_service.AGENT_RUN_ENV)
+    # An embedded call takes its run from the login's headers, never the environment.
+    monkeypatch.setenv(sdk_service.AGENT_RUN_ENV, "run-env")
+    ann = _login(5, "ann")
+    ann = dataclasses.replace(
+        ann, headers={**(ann.headers or {}), sdk_service.AGENT_RUN_HEADER: "run-7"}
+    )
+    assert "data" in invoke(["project", "list"], login=ann, runtime=runtime)
     assert "data" in invoke(["project", "list"], login=_login(6, "ben"), runtime=runtime)
     calls = [r for r in server.requests if "/projects" in r.url.path]
     assert calls[0].headers[sdk_service.AGENT_RUN_HEADER] == "run-7"
