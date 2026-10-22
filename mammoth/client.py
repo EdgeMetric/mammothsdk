@@ -461,6 +461,7 @@ if TYPE_CHECKING:
     from mammoth.api.clientapps import ClientAppsAPI
     from mammoth.api.collections import CollectionsAPI
     from mammoth.api.connector_ai import ConnectorAIAPI
+    from mammoth.api.connector_drafts import ConnectorDraftsAPI
     from mammoth.api.connectors import ConnectorsAPI
     from mammoth.api.dashboards import DashboardsAPI
     from mammoth.api.data_checks import DataChecksAPI
@@ -525,6 +526,7 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "checkpoints": ("mammoth.api.checkpoints", "CheckpointsAPI"),
     "collections": ("mammoth.api.collections", "CollectionsAPI"),
     "connector_ai": ("mammoth.api.connector_ai", "ConnectorAIAPI"),
+    "connector_drafts": ("mammoth.api.connector_drafts", "ConnectorDraftsAPI"),
     "data_checks": ("mammoth.api.data_checks", "DataChecksAPI"),
     "derivatives": ("mammoth.api.derivatives", "DerivativesAPI"),
     "notifications": ("mammoth.api.notifications", "NotificationsAPI"),
@@ -594,6 +596,7 @@ class MammothClient:
         billing: BillingAPI
         checkpoints: CheckpointsAPI
         connector_ai: ConnectorAIAPI
+        connector_drafts: ConnectorDraftsAPI
         data_checks: DataChecksAPI
         derivatives: DerivativesAPI
         notifications: NotificationsAPI

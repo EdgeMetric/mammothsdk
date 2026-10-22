@@ -375,6 +375,9 @@
     - [`canvas_get(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None, rls_preview_value: 'str | None' = None) -> 'CanvasResponse'`](#canvas_getself-any-dashboard_id-int-sequence-int-none-none-rls_preview_value-str-none-none---canvasresponse)
     - [`canvas_restore(self: 'Any', dashboard_id: 'int', body: 'RestoreCanvasSpec') -> 'ObjectJobSchema | JobResponse'`](#canvas_restoreself-any-dashboard_id-int-body-restorecanvasspec---objectjobschema-jobresponse)
     - [`canvas_save(self: 'Any', dashboard_id: 'int', body: 'SaveCanvasSpec') -> 'SaveCanvasResponse'`](#canvas_saveself-any-dashboard_id-int-body-savecanvasspec---savecanvasresponse)
+    - [`chart_type_create(self, body: 'dict[str, Any]') -> 'dict[str, Any]'`](#chart_type_createself-body-dictstr-any---dictstr-any)
+    - [`chart_type_delete(self, chart_type_id: 'str') -> 'dict[str, Any]'`](#chart_type_deleteself-chart_type_id-str---dictstr-any)
+    - [`chart_type_list(self) -> 'dict[str, Any]'`](#chart_type_listself---dictstr-any)
     - [`chat_attachment_upload(self, dashboard_id: 'int', file: 'str | Path') -> 'dict[str, Any]'`](#chat_attachment_uploadself-dashboard_id-int-file-str-path---dictstr-any)
     - [`chat_edit(self: 'Any', dashboard_id: 'int', body: 'ChatEditSpec') -> 'ObjectJobSchema | JobResponse'`](#chat_editself-any-dashboard_id-int-body-chateditspec---objectjobschema-jobresponse)
     - [`chat_history(self: 'Any', dashboard_id: 'int', sequence: 'int | None' = None) -> 'mmai_dashboards_v3_schema_ChatHistoryResponse'`](#chat_historyself-any-dashboard_id-int-sequence-int-none-none---mmai_dashboards_v3_schema_chathistoryresponse)
@@ -419,7 +422,10 @@
     - [`extract_context(self, body: 'ContextExtractSpec') -> 'dict[str, Any]'`](#extract_contextself-body-contextextractspec---dictstr-any)
     - [`extract_exemplar(self, body: 'ExemplarExtractSpec') -> 'dict[str, Any]'`](#extract_exemplarself-body-exemplarextractspec---dictstr-any)
     - [`figure_add(self: 'Any', dashboard_id: 'int', body: 'AppendFigureSpec') -> 'AppendFigureResponse'`](#figure_addself-any-dashboard_id-int-body-appendfigurespec---appendfigureresponse)
+    - [`figure_drill(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#figure_drillself-dashboard_id-int-body-dictstr-any---dictstr-any)
     - [`figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`](#figure_intentself-any-dashboard_id-int-body-figureintentspec---figureintentresponse)
+    - [`figure_recipe(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#figure_recipeself-dashboard_id-int-body-dictstr-any---dictstr-any)
+    - [`figure_rows(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#figure_rowsself-dashboard_id-int-body-dictstr-any---dictstr-any)
     - [`format_preview(self, dashboard_id: 'int', style: 'str') -> 'dict[str, Any]'`](#format_previewself-dashboard_id-int-style-str---dictstr-any)
     - [`gallery_get(self, slug: 'str') -> 'dict[str, Any]'`](#gallery_getself-slug-str---dictstr-any)
     - [`gallery_list(self, function: 'str | None' = None, industry: 'str | None' = None) -> 'dict[str, Any]'`](#gallery_listself-function-str-none-none-industry-str-none-none---dictstr-any)
@@ -459,9 +465,11 @@
     - [`published_canvas(self: 'Any', url: 'str') -> 'CanvasResponse'`](#published_canvasself-any-url-str---canvasresponse)
     - [`published_data(self: 'Any', url: 'str', body: 'DescriptorDataSpec') -> 'ObjectJobSchema | JobResponse'`](#published_dataself-any-url-str-body-descriptordataspec---objectjobschema-jobresponse)
     - [`published_data_by_url(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#published_data_by_urlself-url-str-body-dictstr-any---dictstr-any)
+    - [`published_drill(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#published_drillself-url-str-body-dictstr-any---dictstr-any)
     - [`published_og_card(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_og_cardself-any-url-str---dictstr-any)
     - [`published_pdf_artifact(self: 'Any', url: 'str', job_id: 'int') -> 'dict[str, Any]'`](#published_pdf_artifactself-any-url-str-job_id-int---dictstr-any)
     - [`published_pdf_export(self: 'Any', url: 'str', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`](#published_pdf_exportself-any-url-str-body-pdfexportspec---objectjobschema-jobresponse)
+    - [`published_rows(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`](#published_rowsself-url-str-body-dictstr-any---dictstr-any)
     - [`published_share_page(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_share_pageself-any-url-str---dictstr-any)
     - [`published_video_artifact(self: 'Any', url: 'str') -> 'dict[str, Any]'`](#published_video_artifactself-any-url-str---dictstr-any)
     - [`published_video_export(self: 'Any', url: 'str', aspect: "Literal['landscape', 'square', 'portrait', None] | None" = None) -> 'ObjectJobSchema | JobResponse'`](#published_video_exportself-any-url-str-aspect-literallandscape-square-portrait-none-none-none---objectjobschema-jobresponse)
@@ -9004,6 +9012,36 @@ Undo, redo or revert the draft canvas to a target version.
 
 Save the draft canvas as a new version.
 
+### `chart_type_create(self, body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Save a custom chart as a workspace chart type (owners, admins and members).
+
+The server keeps its validator's canonical recipe and refuses (400, with the
+reason) a name, needs, recipe or binding template that breaks a rule, or a
+workspace that already keeps 200 chart types.
+
+Args:
+    body: ``{"params": {"name": ..., "recipe": {...}, "needs": [...]}}``, with
+        an optional ``binding_template``; take the recipe from a custom
+        figure that :meth:`figure_recipe` drew.
+
+Returns:
+    The saved chart type.
+
+### `chart_type_delete(self, chart_type_id: 'str') -> 'dict[str, Any]'`
+
+Delete a workspace chart type (workspace owners, admins and members).
+
+Args:
+    chart_type_id: ID of the chart type.
+
+### `chart_type_list(self) -> 'dict[str, Any]'`
+
+List the workspace's saved chart types, newest first.
+
+Returns:
+    Dict with ``chart_types``.
+
 ### `chat_attachment_upload(self, dashboard_id: 'int', file: 'str | Path') -> 'dict[str, Any]'`
 
 Keep a file the user attaches in a dashboard's editor chat, to read in a turn.
@@ -9448,9 +9486,65 @@ Extract an example report into an editable dashboard spec.
 
 Append one authored figure (no LLM turn, no canvas round trip).
 
+### `figure_drill(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Drill one mark of a draft board's figure one level down (editors).
+
+Args:
+    dashboard_id: ID of the dashboard.
+    body: ``{"params": {"figure": FIGURE_KEY, "path": [{"key": MARK}, ...]}}``.
+        ``FIGURE_KEY`` is the figure's key on the board, ``PAGE:SLOT:ID`` (the
+        keys of ``meta.figures`` in the canvas, e.g. ``p1:add:t-Eh6h-ImH``);
+        ``path`` holds 1-4 marks from the top level (e.g. a region); ``series``,
+        ``filter_state`` and ``rls_preview_value`` are optional. A figure with
+        no level below answers 400 ``drill_no_level``.
+
+Returns:
+    Dict with ``job_id`` (the groups land under ``descriptor_id`` when it is
+    done), ``level_field``, ``level_label`` and, for a date trend, ``grain``.
+
 ### `figure_intent(self: 'Any', dashboard_id: 'int', body: 'FigureIntentSpec') -> 'FigureIntentResponse'`
 
 Resolve an AI-add figure from an intent.
+
+### `figure_recipe(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Turn a described chart into a figure spec: a library chart, or a custom drawing.
+
+A library chart that draws the description wins; otherwise the server writes
+a query binding and a drawing recipe over its output columns, and falls back
+to the closest library chart when that cannot be drawn. Nothing is saved:
+add the returned ``added`` spec with :meth:`figure_add`.
+
+Args:
+    dashboard_id: ID of the dashboard (its draft's table is read).
+    body: ``{"params": {"describe": TEXT}}`` (up to 500 characters), with
+        optional ``page_id`` (that page's table) and ``force_custom`` (draw
+        it even when a library chart fits).
+
+Returns:
+    Dict with ``outcome`` (``library``, ``custom``, ``fallback`` or
+    ``refused``), ``kind``, ``added`` (the figure spec), ``message``,
+    ``actions`` and ``problems``.
+
+### `figure_rows(self, dashboard_id: 'int', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Read the records behind one chart mark or KPI card of a draft board (editors).
+
+Up to 500 rows, their count and, for plain sums, their total, as one job.
+Needs edit rights and access to the dataview the figure reads; it works
+before the figure's reader setting is on.
+
+Args:
+    dashboard_id: ID of the dashboard.
+    body: ``{"params": {"figure": FIGURE_KEY, "key": MARK}}``: the figure's
+        ``PAGE:SLOT:ID`` key (see :meth:`figure_drill`) and, for a chart, the
+        mark's value (a KPI card needs none); ``path`` (drill steps),
+        ``series``, ``filter_state`` and ``rls_preview_value`` are optional.
+
+Returns:
+    Dict with ``job_id``, ``descriptor_ids`` (where the rows, count and
+    total land), ``columns`` and ``applied_filters``.
 
 ### `format_preview(self, dashboard_id: 'int', style: 'str') -> 'dict[str, Any]'`
 
@@ -9791,6 +9885,14 @@ Args:
 Returns:
     Dict with query results (may include a job ID for async execution).
 
+### `published_drill(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Drill one mark of a published board's figure one level down (any viewer).
+
+Same body and answer as :meth:`figure_drill`; follow the job with
+:meth:`wait_for_job_by_url`. Refused (403 ``drill_disabled``) until the
+figure's reader setting lets readers drill.
+
 ### `published_og_card(self: 'Any', url: 'str') -> 'dict[str, Any]'`
 
 Published dashboard's link-unfurl OG card (baked PNG).
@@ -9802,6 +9904,14 @@ Download a completed published PDF export.
 ### `published_pdf_export(self: 'Any', url: 'str', body: 'PdfExportSpec') -> 'ObjectJobSchema | JobResponse'`
 
 Kick a published-dashboard PDF export.
+
+### `published_rows(self, url: 'str', body: 'dict[str, Any]') -> 'dict[str, Any]'`
+
+Read the records behind a mark of a published board (signed-in readers).
+
+Same body and answer as :meth:`figure_rows`, under the reader's row-level
+scope and only for a figure whose reader setting is on (403 ``rows_disabled``
+otherwise). Refused on public links and signed embeds.
 
 ### `published_share_page(self: 'Any', url: 'str') -> 'dict[str, Any]'`
 
@@ -10419,6 +10529,16 @@ Access via ``client.automations``::
 
 Initialize self.  See help(type(self)) for accurate signature.
 
+#### `add_run_file_anyway(self, run_file_id: 'int') -> 'dict[str, Any]'`
+
+Append a file a run skipped as a duplicate to its destination after all.
+
+Args:
+    run_file_id: ID of the run file (from :meth:`runs`).
+
+Returns:
+    Dict with ``run_file_id`` and ``rows`` (rows added, when known).
+
 #### `capabilities(self) -> 'dict[str, Any]'`
 
 List everything an automation can be created with.
@@ -10513,6 +10633,20 @@ List all schedules.
 Returns:
     List of schedule dicts.
 
+#### `preview_routes(self, folder_resource_id: 'int', names: '_list[str] | None' = None, draft: 'dict[str, Any] | None' = None) -> 'dict[str, Any]'`
+
+Show where files dropped in a watched folder would go.
+
+Args:
+    folder_resource_id: Resource id of the watched folder.
+    names: File names to route; each answer says which rule takes it.
+    draft: An unsaved rule to try (``automation_id``, ``conditions``,
+        ``position``); the answer says how many recent files it would take.
+
+Returns:
+    Dict with the folder's rules (its own, then inherited) and where each
+    named file would go.
+
 #### `restore(self, automation_id: 'int') -> 'dict[str, Any]'`
 
 Restore a trashed automation.
@@ -10522,6 +10656,28 @@ Args:
 
 Returns:
     Dict with the restored automation info.
+
+#### `runs(self, automation_id: 'int', limit: 'int | None' = None) -> 'dict[str, Any]'`
+
+List an automation's latest runs, newest first, each with its files.
+
+Args:
+    automation_id: ID of the automation.
+    limit: Most runs to return (0-100; the server caps it at 50).
+
+Returns:
+    Dict with ``runs``.
+
+#### `set_route_order(self, folder_resource_id: 'int', automation_ids: '_list[int]') -> 'dict[str, Any]'`
+
+Set the order a file meets a watched folder's own rules in.
+
+Args:
+    folder_resource_id: Resource id of the watched folder.
+    automation_ids: The folder's rule automations, first rule first.
+
+Returns:
+    Dict with ``rules`` in their new order.
 
 #### `trash(self, automation_id: 'int') -> 'dict[str, Any]'`
 
@@ -10580,6 +10736,15 @@ Returns:
 Raises:
     MammothValidationError: If *schedule_id* ≤ 0, *patch* is empty,
         or an op+path+value combination is invalid.
+
+#### `watched_folders(self) -> 'dict[str, Any]'`
+
+List every folder a consolidation automation watches.
+
+Returns:
+    Dict with ``folders``: each folder's own rules in the order a file
+    meets them, when it last sent a file in, the files on their way or
+    waiting on a person, and what feeds each destination.
 
 ---
 

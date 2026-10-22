@@ -106,6 +106,51 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # the SDK method's own docstring/validator), so each example is a call that works.
     "agent.message.set-request-kind": {"request_kind": "ask"},
     "support.plan.update-entitlements": {"values": {"dashboardBranding": "no_branding"}},
+    # Server-master routes: drill, rows behind a mark, describe-a-chart, chart types,
+    # file routing and connector drafts.
+    "dashboard.figure.drill": {
+        "body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}
+    },
+    "dashboard.published.drill": {
+        "body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}
+    },
+    "dashboard.figure.rows": {"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}},
+    "dashboard.published.rows": {
+        "body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}
+    },
+    "dashboard.figure.recipe": {"body": {"params": {"describe": "Revenue by region as bars"}}},
+    "dashboard.chart-type.create": {
+        "body": {
+            "params": {
+                "name": "Lollipop",
+                "recipe": {
+                    "version": 1,
+                    "layout": "rows",
+                    "names": {"field": "region", "position": "before"},
+                    "order": {"field": "sales", "dir": "desc"},
+                    "marks": [
+                        {"mark": "segment", "colour": "muted", "size": {"field": "sales"}},
+                        {"mark": "circle", "colour": "primary", "size": {"field": "sales"}},
+                    ],
+                },
+                "needs": [
+                    {"field": "region", "type": "text", "role": "dim", "label": "Category"},
+                    {"field": "sales", "type": "number", "role": "measure", "label": "Value"},
+                ],
+                "binding_template": {"agg": "sum"},
+            }
+        }
+    },
+    "automation.route.order": {"automation_ids": [12, 11]},
+    "automation.route.preview": {"names": ["sales_2026-10.csv"]},
+    "automation.runs": {"limit": 10},
+    "connector.draft.create": {"origin": "connections", "connector_key": "hubspot"},
+    "connector.draft.list": {"status": "all"},
+    "connector.draft.update": {"title": "HubSpot deals"},
+    "connector.draft.fill": {"column": "region", "file_object_id": 77},
+    "connector.draft.open": {"ref": "sheet-ref", "name": "Sales 2026"},
+    "connector.draft.save": {"refresh": "daily", "dataset_name": "HubSpot deals"},
+    "connector.draft.source.preview": {"limit": 20},
     "agent.access.settings.update": {"enabled": True},
     "agent.plan.edit-proposal": {"plan_id": "resource-123", "action": "rename", "key": "Status"},
     "agent.run.units.set": {

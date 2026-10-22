@@ -537,6 +537,104 @@ class AutomationsAPI:
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/trash",
         )
 
+    # ── Watched folders and file routing ─────────────────────────
+
+    async def watched_folders(self) -> dict[str, Any]:
+        """List every folder a consolidation automation watches.
+
+        Returns:
+            Dict with ``folders``: each folder's own rules in the order a file
+            meets them, when it last sent a file in, the files on their way or
+            waiting on a person, and what feeds each destination.
+        """
+        return await self._client._request_json(
+            "GET", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/folders"
+        )
+
+    async def runs(self, automation_id: int, limit: int | None = None) -> dict[str, Any]:
+        """List an automation's latest runs, newest first, each with its files.
+
+        Args:
+            automation_id: ID of the automation.
+            limit: Most runs to return (0-100; the server caps it at 50).
+
+        Returns:
+            Dict with ``runs``.
+        """
+        if automation_id <= 0:
+            raise MammothValidationError(ERR_AUTOMATION_ID_POSITIVE.format(automation_id))
+        if limit is not None and not 0 <= limit <= 100:
+            raise MammothValidationError(f"`limit` must be between 0 and 100, got {limit}.")
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}/runs",
+            params={"limit": limit} if limit is not None else None,
+        )
+
+    async def preview_routes(
+        self,
+        folder_resource_id: int,
+        names: _list[str] | None = None,
+        draft: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Show where files dropped in a watched folder would go.
+
+        Args:
+            folder_resource_id: Resource id of the watched folder.
+            names: File names to route; each answer says which rule takes it.
+            draft: An unsaved rule to try (``automation_id``, ``conditions``,
+                ``position``); the answer says how many recent files it would take.
+
+        Returns:
+            Dict with the folder's rules (its own, then inherited) and where each
+            named file would go.
+        """
+        body: dict[str, Any] = {"folder_resource_id": folder_resource_id}
+        if names is not None:
+            body["names"] = names
+        if draft is not None:
+            body["draft"] = draft
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/route-preview",
+            json=body,
+        )
+
+    async def set_route_order(
+        self, folder_resource_id: int, automation_ids: _list[int]
+    ) -> dict[str, Any]:
+        """Set the order a file meets a watched folder's own rules in.
+
+        Args:
+            folder_resource_id: Resource id of the watched folder.
+            automation_ids: The folder's rule automations, first rule first.
+
+        Returns:
+            Dict with ``rules`` in their new order.
+        """
+        if not automation_ids:
+            raise MammothValidationError("`automation_ids` must name at least one automation.")
+        return await self._client._request_json(
+            "PUT",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/route-order",
+            json={"folder_resource_id": folder_resource_id, "automation_ids": automation_ids},
+        )
+
+    async def add_run_file_anyway(self, run_file_id: int) -> dict[str, Any]:
+        """Append a file a run skipped as a duplicate to its destination after all.
+
+        Args:
+            run_file_id: ID of the run file (from :meth:`runs`).
+
+        Returns:
+            Dict with ``run_file_id`` and ``rows`` (rows added, when known).
+        """
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{self._ws()}/projects/{self._proj()}"
+            f"/automations/run-files/{run_file_id}/add-anyway",
+        )
+
     # ── Schedules ────────────────────────────────────────────────
 
     async def list_schedules(self) -> _list[dict[str, Any]]:

@@ -366,6 +366,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="Sales.pbix",
         ),
     ),
+    "connector.draft.sample": (
+        PositionalSpec(name="draft_id", type=int, required=True, help="ID of the connector draft."),
+        PositionalSpec(
+            name="path",
+            type=str,
+            required=True,
+            help="Path to a local CSV, TSV or Excel file shaped like the table wanted.",
+            example_value="sample.csv",
+        ),
+    ),
     "dashboard.chat.attachment.upload": (
         PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
         PositionalSpec(
