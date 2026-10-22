@@ -1,10 +1,10 @@
 {
   "api_version": "0.1.0",
-  "fetched_at": "2026-10-21T09:09:08.218857+00:00",
+  "fetched_at": "2026-10-22T09:57:22.682338+00:00",
   "openapi_version": "3.1.0",
-  "operation_count": 728,
-  "path_count": 530,
-  "schema_count": 1354,
-  "sha256": "c228e9d59c4263fc746ab8873ae6a3d87c25171b6bc4e6e313f685dd0083da29",
+  "operation_count": 756,
+  "path_count": 554,
+  "schema_count": 1432,
+  "sha256": "5155a9bc7c6c13e4fa8c2f1dcf2fac0f3a5af656e99401e71113a16720036456",
   "source_url": "https://app.mammoth.io/api/v2/docs/openapi.json"
 }

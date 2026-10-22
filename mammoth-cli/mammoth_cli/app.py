@@ -19,6 +19,7 @@ import inspect
 import json
 import re
 import sys
+import threading
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from difflib import get_close_matches
@@ -1624,6 +1625,10 @@ def _lazy_help_command(command_id: str) -> type[TyperCommand]:
     return LazyHelpCommand
 
 
+#: Guards the lazy builds below. Re-entrant: building a command can build another.
+_BUILD_LOCK = threading.RLock()
+
+
 def _unbuilt_leaf() -> None:
     """Registration placeholder: a lazy leaf takes its real callback from the built command."""
 
@@ -1640,24 +1645,33 @@ def _lazy_leaf_command(command_id: str) -> type[TyperCommand]:
         _built: _ClickCommand | None = None
 
         def _real(self) -> _ClickCommand:
-            if self._built is None:
-                from typer.models import CommandInfo
+            built = self._built
+            if built is not None:
+                return built
+            # Double-checked: a host's worker threads may reach a first use together.
+            with _BUILD_LOCK:
+                built = self._built
+                if built is None:
+                    built = self._built = self._build()
+            return built
 
-                info = CommandInfo(
-                    name=self.name,
-                    callback=_build_leaf(command_id),
-                    # The help text is read from this class's lazy ``help`` property; building
-                    # it here would import the contract and schema layers on every run.
-                    help="",
-                    rich_help_panel=self.rich_help_panel,
-                    context_settings=_leaf_context_settings(command_id),
-                )
-                self._built = typer.main.get_command_from_info(
-                    info,
-                    pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
-                    rich_markup_mode=self.rich_markup_mode,
-                )
-            return self._built
+        def _build(self) -> _ClickCommand:
+            from typer.models import CommandInfo
+
+            info = CommandInfo(
+                name=self.name,
+                callback=_build_leaf(command_id),
+                # The help text is read from this class's lazy ``help`` property; building
+                # it here would import the contract and schema layers on every run.
+                help="",
+                rich_help_panel=self.rich_help_panel,
+                context_settings=_leaf_context_settings(command_id),
+            )
+            return typer.main.get_command_from_info(
+                info,
+                pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
+                rich_markup_mode=self.rich_markup_mode,
+            )
 
         @property
         def params(self) -> list[_ClickParameter]:
@@ -1919,7 +1933,9 @@ def registered_command_paths() -> set[str]:
     return paths
 
 
-@cache
+_ROOT_COMMAND: Any = None
+
+
 def _root_click_command() -> Any:
     """Build (once) and cache the fully resolved Click command tree.
 
@@ -1928,11 +1944,19 @@ def _root_click_command() -> Any:
     that is expensive enough that recomputing it per lookup made a full sweep
     over every command (see the contract test) take minutes. Cached because
     the tree is fixed for the process lifetime (:data:`app` is built once at
-    import time).
+    import time). Built under a lock, so a host's threads making their first call
+    together share one tree instead of each building their own.
     """
-    root: Any = typer.main.get_command(app)
-    root.commands  # noqa: B018 -- materialise every lazy top-level group
-    return root
+    global _ROOT_COMMAND
+    root = _ROOT_COMMAND
+    if root is not None:
+        return root
+    with _BUILD_LOCK:
+        if _ROOT_COMMAND is None:
+            built: Any = typer.main.get_command(app)
+            built.commands  # noqa: B018 -- materialise every lazy top-level group
+            _ROOT_COMMAND = built
+        return _ROOT_COMMAND
 
 
 def command_option_names(command_path: str) -> set[str]:

@@ -773,11 +773,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard template list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_list
   example: mammoth dashboard template list
 - `mammoth dashboard template preview` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_preview
-  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
+  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1}}}'
 - `mammoth dashboard template rename` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_rename
   example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard template resolve-mapping` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
-  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
+  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1}}}'
 - `mammoth dashboard template thumbnail clear` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
   example: mammoth dashboard template thumbnail clear resource-123 --yes
 - `mammoth dashboard template thumbnail get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get

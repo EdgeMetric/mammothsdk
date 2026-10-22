@@ -52,6 +52,7 @@ commands:
     metavar: FILE
     falls_back_to_field: file
     help: Path to a local image to upload; or pass it via the 'file' input field.
+    kind: local_path
   options: []
   sdk_symbol: mammoth.api.users.UsersAPI.avatar_upload
   sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_upload with validated request fields.

@@ -24,6 +24,8 @@ from typing import Any, cast
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
+from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.local_paths import local_path_fields
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.field_enums import field_enum, with_enum
@@ -33,7 +35,7 @@ from mammoth_cli.services.input_fields import (
     handler_owned_fields,
 )
 from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positionals import LOCAL_PATH, PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
 # Agent examples carry no ``--output json --no-input``: a piped run already
@@ -1225,6 +1227,7 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     body_schema = openapi_body_schema_for(
         tuple(str(item) for item in record.get("operation_ids", []))
     )
+    path_fields = local_path_fields(record["command_id"], record.get("positionals", []))
     return [
         {
             "name": field.name,
@@ -1239,6 +1242,8 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
                 and body_schema is not None
                 else json_schema(field.annotation, field.name)
             ),
+            # Only where it applies: a host that cannot read the path refuses the command.
+            **({"kind": LOCAL_PATH} if field.name in path_fields else {}),
         }
         for field in contract.accepted_fields
         if field.name not in excluded
@@ -1263,7 +1268,9 @@ def _compact_accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | N
         return None
     compact: list[dict[str, Any]] = []
     for field in fields:
-        item = {key: field[key] for key in ("name", "type", "required", "enum")}
+        item: dict[str, Any] = {
+            key: field[key] for key in ("name", "type", "required", "enum", "kind") if key in field
+        }
         schema = field.get("schema")
         if (
             schema is not None
@@ -2197,6 +2204,7 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
         else "partially_typed" if opaque_fields else "typed"
     )
     return {
+        "server_status": record.get("server_status", "served"),
         "positionals": _positionals(record["command_id"]),
         "accepted_fields": accepted,
         "input_schema": input_schema,
@@ -2217,10 +2225,15 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _hidden_pending(record: dict[str, Any]) -> bool:
+    """Whether an embedded call that opted out of pending commands must not see ``record``."""
+    return embedded.hides_pending() and record.get("server_status") == "pending"
+
+
 def schema_entries() -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for record in load_commands():
-        if record.get("disposition") == "alias":
+        if record.get("disposition") == "alias" or _hidden_pending(record):
             continue
         entries.append(
             {
@@ -2247,6 +2260,7 @@ def schema_entries() -> list[dict[str, Any]]:
 _BRIEF_SCHEMA_KEYS = (
     "command_id",
     "command_path",
+    "server_status",
     "positionals",
     "accepted_fields",
     "agent_example",
@@ -2278,6 +2292,7 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
                 "command_path": entry["command_path"],
                 "mutation_class": entry["mutation_class"],
                 "confirmation": entry["confirmation"],
+                "server_status": entry["server_status"],
             }
             for entry in entries
             if entry["command_path"].split()[0] == wanted
@@ -2428,7 +2443,7 @@ def find_schemas(
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
-        if is_feature_unavailable(str(record["command_id"])):
+        if is_feature_unavailable(str(record["command_id"])) or _hidden_pending(record):
             continue
         command_id = str(record["command_id"])
         command_path = str(record["command_path"])
@@ -2490,6 +2505,7 @@ def find_schemas(
             "command_path": command_path,
             "mutation_class": record["mutation_class"],
             "confirmation": record["confirmation"],
+            "server_status": record.get("server_status", "served"),
             "full_schema_command": f"mammoth schema get {command_id}",
         }
         # A match on hidden curated purpose text (T1-I-07) is otherwise

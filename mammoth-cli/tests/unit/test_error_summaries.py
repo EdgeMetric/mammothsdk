@@ -17,7 +17,13 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.runtime.strict import validate_input_fields
 
 #: Codes raised through helpers whose ``code`` argument is positional.
-_POSITIONAL_CODES = {"no_output", "aborted", "internal_error"}
+_POSITIONAL_CODES = {
+    "no_output",
+    "aborted",
+    "internal_error",
+    "stray_output",
+    "multiple_envelopes",
+}
 
 
 def _strings(node: ast.AST) -> set[str]:

@@ -54,7 +54,7 @@ from mammoth_cli.runtime import linecapture
 from mammoth_cli.runtime.executor import EXIT_STATUS_META, STREAMED_META
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.shared import remembering_auth
+from mammoth_cli.runtime.shared import forget_reads, remembering_auth
 from mammoth_cli.runtime.strict import NEGATIVE_NUMBER
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -373,7 +373,7 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
     if exit_status == 0:
         # Help or version text: the command succeeded and printed no envelope.
         text = {"text": stray[:500]} if stray else None
-        return 0, Result(data=text, meta=Meta(command=command)).to_envelope()
+        return 0, Result(data=text, meta=Meta(command=command, exit=0)).to_envelope()
     silent = CliError(
         code="no_output",
         message="This command printed text only (help or version) and no envelope.",
@@ -490,6 +490,7 @@ def run(invocation: Invocation) -> HandlerResult:
                 spec = parse_line(number, text, defaults, _command_flags)
                 cmd, line_id = spec.cmd, spec.line_id
                 exit_status, envelope = execute_line(spec.argv, spec.cmd)
+                forget_reads()
             except CliError as error:
                 cmd = cmd or _best_effort_cmd(text)
                 exit_status, envelope = error.exit_status, error.to_envelope()
@@ -528,7 +529,7 @@ def run(invocation: Invocation) -> HandlerResult:
         "dry_run": invocation.dry_run,
         "exit": run_exit,
     }
-    meta = Meta(command="run", profile=invocation.profile)
+    meta = Meta(command="run", profile=invocation.profile, exit=run_exit)
     _write(Result(data=summary, meta=meta).to_envelope())
     return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
 

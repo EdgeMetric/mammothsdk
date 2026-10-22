@@ -43,8 +43,10 @@ class ExplicitLogin:
     Attributes:
         api_key: The deprecated Mammoth API key (with ``api_secret``).
         api_secret: The deprecated Mammoth API secret.
-        workspace_id: The workspace id, only with the deprecated key + secret;
-            an ``api_token`` names its own workspace and rejects this field.
+        workspace_id: The workspace id. Required with the deprecated key +
+            secret. With an ``api_token`` it is a hint that saves asking the
+            server which workspace the token names; a wrong hint is caught on
+            the first 401 or 403 (``workspace_mismatch``).
         server_prefix: A one-label server prefix, or None.
         api_token: The ``mm_...`` Bearer token, instead of a key + secret.
         headers: Extra request headers sent on every API call, after the
@@ -148,15 +150,9 @@ def resolve_token_workspace(base_url: str, api_token: str, timeout: float | None
 
 
 def _explicit_workspace(login: ExplicitLogin, base_url: str, timeout: float | None) -> int:
-    """The workspace of an explicit login: the token's own, or the key pair's given id."""
-    if login.api_token is None:
+    """The workspace of an explicit login: the key pair's given id, or the token's hint or own."""
+    if login.api_token is None or login.workspace_id is not None:
         return _require_positive_workspace(login.workspace_id or 0, source="login")
-    if login.workspace_id is not None:
-        raise CliError(
-            code=CODE_INVALID_WORKSPACE_ID,
-            message="A token login takes no workspace id; the token names its own.",
-            exit_status=EXIT_USAGE,
-        )
     return resolve_token_workspace(base_url, login.api_token, timeout)
 
 

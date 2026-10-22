@@ -223,7 +223,9 @@ class SdkMammothService:
         call = embedded.current()
         self._runtime = call.runtime if call is not None and _shares(call.runtime) else None
         extra_headers: dict[str, str] = dict(auth.headers or {})
-        run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
+        # An embedded call takes the run from ``ExplicitLogin.headers``: this
+        # process's environment is shared by every user the host serves.
+        run_id = "" if embedded.active() else os.environ.get(AGENT_RUN_ENV, "").strip()
         if run_id:
             # A leg of a durable agent run names its run, so the server can
             # refuse the run's own resume and extend.
