@@ -50,6 +50,7 @@ Important operation states include:
 |---|---|---|
 | 4 | `not_authenticated`, `authentication_failed` | Run protected `mammoth auth login`, then `mammoth doctor`. |
 | 4 | `authorization_required` | Check exact scope and request the required permission. A token limited to one project gets this in every other project: pass that project's `--project ID`, or use a token created without a project. |
+| 4 | `plan_limit` | The workspace's plan or monthly AI quota does not cover this (`4SUBS101`–`4SUBS106`). Do not retry; upgrade the plan or ask Mammoth support to extend the quota. |
 | 2 | `keyring_unavailable`, `keyring_unresponsive` | Unlock the OS keychain (on macOS, choose **Always Allow** for `mammoth-cli`), or run `mammoth auth login --storage file`. |
 | 2 | `login_input_required`, `project_required` | Supply the protected login document or explicit `--project PROJECT_ID`. |
 | 2 | `confirmation_required`, `confirmation_target_mismatch` | Inspect the schema, then add `--yes` and the exact target confirmation. |

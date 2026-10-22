@@ -182,7 +182,11 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
             '{"body": {"params": {"view_id": 12, "title": "Revenue", "figure": {}}}}',
         ],
         f"{_DASHBOARDS}.live_chart_create",
-        {"body": {"params": {"view_id": 12, "title": "Revenue", "figure": {}}}},
+        # #280: --project reaches the request (it was dropped).
+        {
+            "body": {"params": {"view_id": 12, "title": "Revenue", "figure": {}}},
+            "project_id": 25654,
+        },
     ),
     (
         ["dashboard", "live-chart", "get", "5"],
@@ -421,3 +425,21 @@ def test_save_undo_waits_for_the_undo_run(fake_service: FakeMammothService) -> N
         f"{_WORKFLOWS}.undo_save",
         {"workflow_id": 7, "run_id": "run-1", "project_id": 180},
     )
+
+
+def test_live_chart_create_waits_for_its_bake_and_keeps_the_dashboard_id(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # #281: a 202 with a bake job was returned raw: no wait, no readback.
+    from mammoth.models.dashboard_generated import CreateLiveChartResponse
+
+    from mammoth_cli.commands import dashboard as dashboard_cmd
+
+    fake_service.responses[f"{_DASHBOARDS}.live_chart_create"] = CreateLiveChartResponse(
+        dashboard_id=99, job_id=12
+    )
+    fake_service.job_result = {"status": "success"}
+    doc = _doc(tmp_path, {"body": {"params": {"view_id": 12, "title": "Revenue", "figure": {}}}})
+    data, _ = dashboard_cmd.generated_dashboard(_inv("dashboard.live-chart.create", input_file=doc))
+    assert fake_service.wait_log == [{"dashboard_id": 99, "job_id": 12}]
+    assert data == {"dashboard_id": 99, "job_id": 12, "status": "success"}

@@ -1209,6 +1209,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.new_data import with_new_data_path
     from mammoth_cli.runtime.next_commands import with_next_commands
     from mammoth_cli.runtime.opens import with_opens
+    from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
@@ -1218,6 +1219,12 @@ def _execute(invocation: Invocation) -> None:
             invocation,
             extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],
             full_output=True,
+        )
+    if invocation.command_id in REVEAL_COMMANDS and REVEAL_FLAG in invocation.extra_args:
+        invocation = replace(
+            invocation,
+            extra_args=[arg for arg in invocation.extra_args if arg != REVEAL_FLAG],
+            reveal_secrets=True,
         )
 
     def producer() -> tuple[Any, dict[str, Any]]:
@@ -1508,6 +1515,13 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
             "The result is compact: ids, checks, verify and a canvas summary. "
             f"Pass {FULL_FLAG} for the complete response."
         )
+    from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
+
+    if command_id in REVEAL_COMMANDS:
+        parts.append(
+            "The credential in the result is masked. Pass "
+            f"{REVEAL_FLAG} to print it; it is shown only once."
+        )
     return "\n\n".join(parts) or None
 
 
@@ -1546,7 +1560,14 @@ def _short_type(type_name: str) -> str:
     if "condition." in text:
         return "condition"
     # Drop each dotted module path but keep the brackets around it (``list[a.b.C]``).
-    return re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))[:60]
+    text = re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))
+    if len(text) <= _SHORT_TYPE_MAX:
+        return text
+    # Cut at a word, never inside one: a clipped value ('par) reads as a real one.
+    return text[: _SHORT_TYPE_MAX - 4].rsplit(" ", 1)[0] + " ..."
+
+
+_SHORT_TYPE_MAX = 60
 
 
 def _command_records() -> list[dict[str, Any]]:

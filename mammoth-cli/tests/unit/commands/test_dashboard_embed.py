@@ -21,7 +21,7 @@ from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
-from mammoth_cli.testing import login_default_profile
+from mammoth_cli.testing import login_default_profile, make_runner
 
 _CONFIG_GET = "mammoth.api.dashboards.DashboardsAPI.embed_config_get"
 _CONFIG_SET = "mammoth.api.dashboards.DashboardsAPI.embed_config_set"
@@ -231,3 +231,74 @@ def test_lifetime_set_forwards_token_ttl_no_confirmation_needed(
         _inv("dashboard.embed.lifetime.set", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log == [(_LIFETIME_SET, {"workspace_id": 42, "token_ttl": 900})]
+
+
+_ROTATED = {"secret": "whsec-new-signing-secret", "token_ttl": 300}
+
+
+def test_secret_rotate_masks_the_new_secret_by_default(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_SECRET_ROTATE] = dict(_ROTATED)
+    result = make_runner().invoke(
+        ["dashboard", "embed", "secret", "rotate", "42", "--yes", "--confirm", "42"]
+        + ["--output", "json"],
+    )
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["secret"] == "***REDACTED***"
+    assert _ROTATED["secret"] not in result.stdout
+
+
+def test_secret_rotate_reveal_prints_the_new_secret(fake_service: FakeMammothService) -> None:
+    # #278: the API shows the signing secret once; masked, the rotation was unusable.
+    fake_service.responses[_SECRET_ROTATE] = dict(_ROTATED)
+    result = make_runner().invoke(
+        ["dashboard", "embed", "secret", "rotate", "42", "--yes", "--confirm", "42"]
+        + ["--reveal", "--output", "json"],
+    )
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["secret"] == _ROTATED["secret"]
+
+
+def test_preview_token_create_reveal_prints_the_token(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_PREVIEW_TOKEN_CREATE] = {"token": "preview-token-value"}
+    result = make_runner().invoke(
+        ["dashboard", "embed", "preview-token", "create", "7", "--reveal", "--output", "json"],
+    )
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["token"] == "preview-token-value"
+
+
+def test_reveal_is_refused_on_a_command_without_a_credential(
+    fake_service: FakeMammothService,
+) -> None:
+    result = make_runner().invoke(
+        ["dashboard", "embed", "config", "get", "7", "--reveal", "--output", "json"],
+    )
+    assert result.exit_code != 0
+    assert fake_service.call_log == []
+
+
+def test_config_get_shows_has_signing_secret_as_a_boolean(
+    fake_service: FakeMammothService,
+) -> None:
+    # #278: the boolean was rendered as "***REDACTED***" (its key ends in "secret").
+    fake_service.responses[_CONFIG_GET] = {"has_signing_secret": True, "access_key": "ak-1"}
+    result = make_runner().invoke(["dashboard", "embed", "config", "get", "7", "--output", "json"])
+    assert result.exit_code == 0, result.stderr
+    data = json.loads(result.stdout)["data"]
+    assert data["has_signing_secret"] is True
+    assert data["access_key"] == "***REDACTED***"
+
+
+def test_lifetime_set_dry_run_refuses_a_ttl_out_of_range(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # #283: the documented example (token_ttl 1) passed --dry-run, then the real call failed.
+    doc = _write_doc(tmp_path, {"token_ttl": 1})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.generated_dashboard(
+            _inv("dashboard.embed.lifetime.set", extra_args=["42"], input_file=doc, dry_run=True)
+        )
+    assert "between 60 and 3600" in excinfo.value.message
+    assert fake_service.call_log == []

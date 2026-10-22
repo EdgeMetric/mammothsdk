@@ -1015,3 +1015,23 @@ def test_the_customer_postgres_export_points_to_publish_db() -> None:
     from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
 
     assert "publish-db" in _COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
+
+
+def test_view_summary_dataset_id_is_optional_like_its_positional() -> None:
+    # #284: accepted_fields said required while the positional said optional.
+    schema = get_schema("view.summary")
+    fields = {field["name"]: field for field in schema["accepted_fields"]}
+    assert fields["dataset_id"]["required"] is False
+
+
+def test_column_statistics_find_the_profile_not_the_view_summary() -> None:
+    # #284: view.summary's wording ("stats at a glance") drew statistics searches.
+    found = [item["command_id"] for item in find_schemas("column statistics for a view")["matches"]]
+    assert found[0] == "view.data.profile"
+    assert "view.summary" not in found[:3]
+
+
+def test_project_members_find_workspace_user_list() -> None:
+    # #256: no search reached the command that lists a project's members.
+    found = [item["command_id"] for item in find_schemas("project members role")["matches"]]
+    assert found[0] == "workspace.user.list"

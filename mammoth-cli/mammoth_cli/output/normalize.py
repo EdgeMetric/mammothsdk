@@ -223,7 +223,9 @@ def normalize(value: Any, *, redact_secrets: bool = True) -> Any:
         result: dict[str, Any] = {}
         for key in sorted(value, key=str):
             str_key = str(key)
-            if redact_secrets and _is_secret_key(str_key):
+            # A boolean (``has_signing_secret``) only says whether a credential
+            # exists; it never is one.
+            if redact_secrets and _is_secret_key(str_key) and not isinstance(value[key], bool):
                 result[str_key] = REDACTED
             else:
                 result[str_key] = normalize(value[key], redact_secrets=redact_secrets)
