@@ -253,7 +253,8 @@ class TestPickingUpAnEditThatOutlastedTheCall:
         assert answer["id"] == DASHBOARD_ID
 
     @pytest.mark.parametrize(
-        "more", [{"change": "Add a card"}, {"title": "Sales"}, {"any_site": True}]
+        "more",
+        [{"change": "Add a card"}, {"title": "Sales"}, {"any_site": True}, {"tags": ["sales"]}],
     )
     def test_a_job_id_with_anything_new_is_refused(self, more: dict[str, Any]) -> None:
         with a_fake_api() as api, as_caller():
@@ -262,3 +263,39 @@ class TestPickingUpAnEditThatOutlastedTheCall:
                 edit(job_id=41, **more)
 
         assert not api.requests
+
+
+class TestTags:
+    def test_a_dashboards_tags_are_replaced_at_once(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api, board={**BOARD, "was_published": True})
+            api.answer("PUT", f"{DASHBOARD}/tags", {"tags": ["sales", "weekly"]})
+            answer = edit(tags=["sales", "weekly"])
+
+        [sent] = api.sent("PUT", f"{DASHBOARD}/tags")
+        assert api.body(sent)["tags"] == ["sales", "weekly"]
+        assert answer["tags"] == ["sales", "weekly"]
+        # Tags are not part of the draft: there is nothing to publish again.
+        assert "next_step" not in answer
+        assert not api.sent("POST", CHAT)
+
+    def test_an_empty_list_clears_them(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api)
+            api.answer("PUT", f"{DASHBOARD}/tags", {"tags": []})
+            edit(tags=[])
+
+        [sent] = api.sent("PUT", f"{DASHBOARD}/tags")
+        assert api.body(sent)["tags"] == []
+
+    def test_the_workspaces_tags_come_with_the_dashboards_when_asked_for(self) -> None:
+        listed = {"tags": [{"id": 1, "name": "sales", "count": 2}]}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", "/dashboards", {"dashboards": [BOARD]})
+            api.answer("GET", "/dashboards/tags", listed)
+            answer = call_tool("list_dashboards", workspace_id=WORKSPACE, include_tags=True)
+            plain = call_tool("list_dashboards", workspace_id=WORKSPACE)
+
+        assert answer["tags"] == listed["tags"]
+        assert "tags" not in plain
+        assert len(api.sent("GET", "/dashboards/tags")) == 1

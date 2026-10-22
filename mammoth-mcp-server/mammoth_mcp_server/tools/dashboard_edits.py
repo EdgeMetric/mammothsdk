@@ -1,10 +1,10 @@
-"""Change a dashboard: Mammoth's AI edits it, it gets a new title, or its embed changes.
+"""Change a dashboard: Mammoth's AI edits it, or its title, tags or embed change.
 
 An AI edit is one turn of the editor's chat. Mammoth's AI reads the board and
 the change asked for, and changes the board's draft. The share link opens the
 published version, so it shows the board as it was until the board is
 published again — which is `publish_dashboard`'s job, and the user's to ask
-for. Embed settings are not part of the draft: they apply at once.
+for. Tags and embed settings are not part of the draft: they apply at once.
 
 Mammoth reports `changed` when the turn saved a new board, not when the board
 does what was asked: an AI that swaps a chart for one that still misses the ask
@@ -30,7 +30,7 @@ from ..tool_kinds import DESTRUCTIVE
 from .dashboard_embed import EmbedMode, change_embed, check_embed_change
 from .dashboards import read_dashboard
 
-NOTHING_TO_CHANGE = "Say what to change: a change, a new title, or the embed settings."
+NOTHING_TO_CHANGE = "Say what to change: a change, a new title, tags, or the embed settings."
 JOB_ALONE = (
     "job_id picks up an edit already sent: call it with nothing else to change, then"
     " send any new change on its own."
@@ -70,9 +70,10 @@ async def edit_dashboard(
     embed_mode: EmbedMode | None = None,
     any_site: bool | None = None,
     allowed_sites: list[str] | None = None,
+    tags: list[str] | None = None,
     job_id: int | None = None,
 ) -> dict[str, JsonValue]:
-    """Have Mammoth's AI change a dashboard, rename it, or choose how it embeds.
+    """Have Mammoth's AI change a dashboard, rename it, tag it, or choose how it embeds.
 
     The AI changes what the user asks for: add, remove or restyle a card or
     chart, filter it, add a page. Send the whole change in one call. A board
@@ -81,7 +82,8 @@ async def edit_dashboard(
 
     The change and the title go to the board's draft. A published board's
     share link shows the board as it was until `publish_dashboard` runs again:
-    never publish without asking the user. The embed settings apply at once.
+    never publish without asking the user. Tags and the embed settings apply
+    at once.
     Ask the user before changing them: they decide who outside Mammoth sees
     the data. `get_dashboard` with `include_embed` gives the code to paste.
 
@@ -97,6 +99,9 @@ async def edit_dashboard(
         any_site: true lets any site show the board.
         allowed_sites: Only these sites may show the board, as origins
             ("https://acme.com", "https://*.acme.com"). At most 20.
+        tags: Every tag the dashboard should carry, replacing the ones it has;
+            an empty list clears them. A new tag joins the workspace's list,
+            which `list_dashboards` with `include_tags` shows.
         job_id: Pick up an edit an earlier call left "editing", from its
             `job_id`, and report what it did. Sends nothing new.
 
@@ -105,17 +110,18 @@ async def edit_dashboard(
         numbers. After an AI edit, `changed` says whether anything changed,
         and `message` is the AI's reply. When `changed` is false, nothing was
         applied, whatever `message` says. When `partial` is true, part of it
-        did not land: `not_done` lists what. After an embed change, `embed` is
-        the embed afterwards. `next_step`, when present, says what to tell the
+        did not land: `not_done` lists what. After tags are set, `tags` is what
+        the dashboard carries. After an embed change, `embed` is the embed
+        afterwards. `next_step`, when present, says what to tell the
         user. A big change can still be going when this returns: then `status`
         is "editing", with the `job_id` to pick it up by.
     """
     embeds = not (embed_mode is None and any_site is None and allowed_sites is None)
     if job_id is not None:
-        if change or title or embeds:
+        if change or title or embeds or tags is not None:
             raise ToolError(JOB_ALONE)
         return await finish_edit(workspace_id, dashboard_id, {JobFields.JOB_ID: job_id})
-    if not (change or title or embeds):
+    if not (change or title or embeds or tags is not None):
         raise ToolError(NOTHING_TO_CHANGE)
     check_embed_change(any_site, allowed_sites)
     async with build_client(workspace_id) as client:
@@ -128,9 +134,15 @@ async def edit_dashboard(
             if embeds
             else None
         )
+        tagged = (
+            await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
+            if tags is not None
+            else {}
+        )
         started = await start_edit(client.dashboards, dashboard_id, change) if change else None
     finished = await finish_edit(workspace_id, dashboard_id, started, drafted=bool(change or title))
-    return {**finished, **({} if embed is None else {DashboardFields.EMBED: embed})}
+    carried = {DashboardFields.TAGS: tagged[DashboardFields.TAGS]} if tagged else {}
+    return {**finished, **carried, **({} if embed is None else {DashboardFields.EMBED: embed})}
 
 
 async def finish_edit(

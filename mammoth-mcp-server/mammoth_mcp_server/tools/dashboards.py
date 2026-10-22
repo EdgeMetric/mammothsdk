@@ -47,35 +47,29 @@ AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
 
 
 @mcp_server.tool(title="List dashboards", annotations=READS)
-async def list_dashboards(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
+async def list_dashboards(
+    workspace_id: int, project_id: int | None = None, include_tags: bool = False
+) -> dict[str, JsonValue]:
     """List the dashboards the signed-in user can open.
 
     Args:
         workspace_id: Which workspace to act in.
         project_id: Only dashboards built on views in this project. Omit for all
             of them.
+        include_tags: Also list the tags the workspace files dashboards under.
+            `edit_dashboard` with `tags` sets a dashboard's.
 
     Returns:
-        `dashboards`: each one's `id`, `name` and who owns it.
+        `dashboards`: each one's `id`, `name`, who owns it, and its `tags`.
+        With `include_tags`, `tags`: each workspace tag's `id`, `name` and how
+        many dashboards carry it.
     """
     async with build_client(workspace_id) as client:
         listed = await read_sdk_errors(client.dashboards.list(project_id=project_id))
+        tags = await read_sdk_errors(client.dashboards.list_tags()) if include_tags else {}
     # The SDK unwraps the route's one-key object; the tool's callers read it.
-    return {DashboardFields.DASHBOARDS: list[JsonValue](listed)}
-
-
-@mcp_server.tool(title="List dashboard tags", annotations=READS)
-async def list_dashboard_tags(workspace_id: int) -> dict[str, JsonValue]:
-    """List the tags dashboards in a workspace are filed under.
-
-    Args:
-        workspace_id: Which workspace to act in.
-
-    Returns:
-        `tags`: each tag's `id`, `name` and how many dashboards carry it.
-    """
-    async with build_client(workspace_id) as client:
-        return await read_sdk_errors(client.dashboards.list_tags())
+    dashboards: dict[str, JsonValue] = {DashboardFields.DASHBOARDS: list[JsonValue](listed)}
+    return {**dashboards, **({DashboardFields.TAGS: tags[DashboardFields.TAGS]} if tags else {})}
 
 
 @mcp_server.tool(title="Create dashboard", annotations=CHANGES)
@@ -217,26 +211,6 @@ async def get_dashboard(
         if dashboard.get(DashboardFields.ENGINE) != ENGINE_V3:
             return {**dashboard, DashboardFields.VALUES_UNAVAILABLE: OLDER_ENGINE}
         return {**dashboard, **await board_values(client.dashboards, workspace_id, dashboard)}
-
-
-@mcp_server.tool(title="Set dashboard tags", annotations=CHANGES)
-async def set_dashboard_tags(
-    workspace_id: int, dashboard_id: int, tags: list[str]
-) -> dict[str, JsonValue]:
-    """File a dashboard under a set of tags, replacing the tags it had.
-
-    A tag the workspace has not seen before joins its tag list.
-
-    Args:
-        workspace_id: Which workspace to act in.
-        dashboard_id: Which dashboard.
-        tags: Every tag the dashboard should carry. An empty list clears them.
-
-    Returns:
-        `tags`: what the dashboard carries now.
-    """
-    async with build_client(workspace_id) as client:
-        return await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
 
 
 @mcp_server.tool(title="Delete dashboard", annotations=DESTRUCTIVE)

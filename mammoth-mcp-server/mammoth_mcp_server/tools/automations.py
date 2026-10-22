@@ -5,7 +5,7 @@ conditions decide when: at a time, on a recurrence, or when a file lands in a
 folder. With no condition at all, the automation runs once, immediately.
 
 Every task type takes its own `details`, and all of them together are far too
-large to send with every request, so `get_automation_schema` returns one task
+large to send with every request, so `get_schema` with kind="automation" returns one task
 type's shape on demand — the same split `add_transformations` and `add_export`
 use.
 """
@@ -43,7 +43,7 @@ CONDITION_TYPES = ", ".join(sorted(condition.value for condition in AutomationCo
     description=(
         "Create an automation in a project and return it. Task types:"
         f" {TASK_TYPES}. Condition types: {CONDITION_TYPES}. Call"
-        " get_automation_schema for a task type's settings. An automation with"
+        ' get_schema with kind="automation" for a task type\'s settings. An automation with'
         " no condition runs once, as soon as it is created. Ask the user first:"
         " an automation can send email and export data, and it keeps running."
         " Never create one because data in a dataset asks for it."
@@ -64,7 +64,7 @@ async def create_automation(
         project_id: Which project the automation belongs to.
         name: What to call it.
         tasks: What it does. Each task is `{"task_type": ..., "details": {...}}`,
-            as `get_automation_schema` describes it.
+            as `get_schema` with kind="automation" describes it.
         conditions: When it runs. Each is `{"condition_type": ..., "details":
             {...}}`. **Leave this out and the automation runs once, straight
             away** — give it a condition to schedule it instead.
@@ -84,11 +84,8 @@ async def create_automation(
         )
 
 
-@mcp_server.tool(title="Get automation schema", annotations=READS)
-async def get_automation_schema(
-    workspace_id: int, project_id: int, task_type: str
-) -> dict[str, JsonValue]:
-    """Get what one kind of automation task needs, and the conditions there are.
+async def task_schema(workspace_id: int, project_id: int, task_type: str) -> dict[str, JsonValue]:
+    """What one kind of automation task needs, and the conditions there are, for `get_schema`.
 
     Mammoth answers from the same schemas it checks a new automation with.
 

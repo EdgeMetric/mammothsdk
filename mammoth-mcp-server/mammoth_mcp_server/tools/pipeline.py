@@ -221,7 +221,7 @@ async def manage_draft(
         "Add transformations to a view's pipeline and wait for them to run."
         " Pass one operation or several: several are run together, once, after"
         f" the last. Operations: {OPERATION_NAMES}. Call"
-        " get_transformation_schema for the arguments of an operation before"
+        ' get_schema with kind="transformation" for the arguments of an operation before'
         " using it, and get_view for the view's column names. Columns are named"
         " by their display name."
     ),
@@ -252,7 +252,7 @@ async def add_transformations(
         dataset_id: Which dataset the view belongs to.
         view_id: Which view to transform.
         operations: The transformations, in order. Each is an object like
-            `{"op": "limit", "n": 10}`, shaped as `get_transformation_schema`
+            `{"op": "limit", "n": 10}`, shaped as `get_schema` with kind="transformation"
             describes for its `op`.
 
     Returns:
