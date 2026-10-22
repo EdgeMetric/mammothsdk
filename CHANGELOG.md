@@ -66,6 +66,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - SDK: Pydantic models build on first use (`defer_build`); importing the dashboard models takes about 0.26s instead of 0.40s.
 - MCP server: tool calls share one connection pool instead of a new TLS handshake per call, and the pool closes when the server stops. Its User-Agent is now `mammoth-mcp-server/<version> mammoth-io/<version>`.
 - OpenAPI spec re-pinned to production (728 operations); dashboard SDK and manifests regenerated.
+- SDK: a transform (every `View` method that adds a step) reads the pipeline once after the submit, for both the draft state and the first poll of the wait, instead of reading the draft state before the submit and polling after it. A step that settles at once costs the submit, one pipeline read and the metadata refresh. A pipeline in `ref_error` with auto-run on is still a failed step, never a staged draft.
+- CLI: a view transform builds its View from the view metadata its checks already read, instead of fetching it again. With the SDK change, `view transform math` on koyal went from 18 to 16 requests (one view read and one pipeline read fewer, about 1.5s); a step in draft mode is still reported `staged`.
 
 ### Deprecated (next mammoth-io)
 
