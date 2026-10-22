@@ -95,6 +95,9 @@ class TestAnAIEdit:
 
         assert answer["changed"] is False
         assert "Nothing on the dashboard changed" in answer["next_step"]
+        # The AI's message may be an honest "I couldn't": the note blames nobody.
+        assert "not what it did" not in answer["next_step"]
+        assert "Do not tell the user the change was made" in answer["next_step"]
 
     def test_a_published_board_is_not_published_again(self) -> None:
         with a_fake_api() as api, as_caller():

@@ -62,6 +62,15 @@ class TestTheCodeToPaste:
         assert f'src="{EMBED_URL}?token=TOKEN"' in embed["embed_code"]
         assert embed["key"] is None
         assert "Replace TOKEN" in embed["next_step"]
+        assert "no signing secret" not in embed["next_step"]
+
+    def test_a_signed_board_in_a_workspace_with_no_secret_shows_nowhere(self) -> None:
+        # Mammoth saves "signed" without a secret, and then no host can sign a token.
+        with a_fake_api() as api, as_caller():
+            a_board(api, {**SIGNED, "has_signing_secret": False})
+            embed = get_embed()
+
+        assert "no signing secret" in embed["next_step"]
 
     def test_a_public_board_needs_nothing_in_its_link(self) -> None:
         with a_fake_api() as api, as_caller():
@@ -100,6 +109,9 @@ class TestTheCodeToPaste:
 
         assert embed["any_site"] is False
         assert embed["allowed_sites"] == ["https://acme.com"]
+        # Telling a model to limit the sites again would read as if they were open.
+        assert "set allowed sites" not in embed["next_step"]
+        assert "Only the allowed sites" in embed["next_step"]
 
     def test_nothing_about_the_signing_secret_but_whether_there_is_one(self) -> None:
         with a_fake_api() as api, as_caller():

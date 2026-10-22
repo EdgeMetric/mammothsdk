@@ -26,8 +26,8 @@ OLDER_ENGINE_EDIT = (
     " The user can change it in the editor, at {editor_url}."
 )
 NOT_APPLIED = (
-    "Nothing on the dashboard changed. `message` is what Mammoth's AI meant to do,"
-    " not what it did. Tell the user, and ask them to put the change in other words"
+    "Nothing on the dashboard changed. Do not tell the user the change was made:"
+    " tell them why from `message`, and ask them to put the change in other words"
     " or make it in the editor, at `editor_url`."
 )
 STILL_PUBLISHED = (

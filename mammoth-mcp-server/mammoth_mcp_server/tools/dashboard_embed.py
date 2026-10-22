@@ -29,15 +29,18 @@ NOT_PUBLISHED = (
     " then call publish_dashboard."
 )
 PUBLIC_NOTE = "The dashboard's link is public: anyone on a page with this code sees its data."
-KEY_NOTE = (
-    "The code carries the dashboard's embed key, and anyone who reads the page has it."
-    " To limit where it shows, set allowed sites with set_embed."
-)
+KEY_NOTE = "The code carries the dashboard's embed key, and anyone who reads the page has it."
+ANY_SITE_NOTE = "Any site may show it: to limit where it shows, set allowed sites with set_embed."
+LISTED_SITES_NOTE = "Only the allowed sites may show it."
 SIGNED_NOTE = (
     "Replace TOKEN with a token the user's own server signs for each viewer. Setting"
     " that up is in the web app."
 )
-MODE_NOTES = {EmbedFields.KEY_MODE: KEY_NOTE, EmbedFields.SIGNED_MODE: SIGNED_NOTE}
+NO_SECRET_NOTE = (
+    "The workspace has no signing secret yet, so no token can be signed and the"
+    " embed shows nothing. The user sets one up in the web app."
+)
+MODE_NOTES = {EmbedFields.KEY_MODE: KEY_NOTE}
 IFRAME = """<iframe
   src="{src}"
   width="100%" height="{height}"
@@ -129,9 +132,6 @@ def check_embed_change(
 
 def describe_embed(config: EmbedConfigResponse) -> dict[str, JsonValue]:
     """What a model needs of a board's embed settings, and the code to paste."""
-    notes = [MODE_NOTES.get(config.mode, PUBLIC_NOTE)]
-    if not config.published:
-        notes.insert(0, NOT_PUBLISHED)
     return {
         EmbedFields.MODE: config.mode,
         EmbedFields.EMBED_CODE: embed_code(config),
@@ -142,8 +142,17 @@ def describe_embed(config: EmbedConfigResponse) -> dict[str, JsonValue]:
         EmbedFields.PUBLIC: config.public,
         EmbedFields.HAS_SIGNING_SECRET: config.has_signing_secret,
         EmbedFields.ROW_LEVEL_SECURITY: config.rls_enabled,
-        EmbedFields.NEXT_STEP: " ".join(notes),
+        EmbedFields.NEXT_STEP: " ".join(embed_notes(config)),
     }
+
+
+def embed_notes(config: EmbedConfigResponse) -> list[str]:
+    """What to tell the user: what stops the embed showing, then who can see it."""
+    notes = [] if config.published else [NOT_PUBLISHED]
+    if config.mode == EmbedFields.SIGNED_MODE:
+        return [*notes, SIGNED_NOTE, *([] if config.has_signing_secret else [NO_SECRET_NOTE])]
+    sites = ANY_SITE_NOTE if config.allow_any_origin else LISTED_SITES_NOTE
+    return [*notes, MODE_NOTES.get(config.mode, PUBLIC_NOTE), sites]
 
 
 def embed_code(config: EmbedConfigResponse) -> str:
