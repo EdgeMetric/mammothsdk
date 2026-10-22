@@ -46,11 +46,11 @@ from .dashboard_embed import read_embed
 AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
 
 
-@mcp_server.tool(title="List dashboards", annotations=READS)
+@mcp_server.tool(title="List dashboards and tags", annotations=READS)
 async def list_dashboards(
     workspace_id: int, project_id: int | None = None, include_tags: bool = False
 ) -> dict[str, JsonValue]:
-    """List the dashboards the signed-in user can open.
+    """List the dashboards the signed-in user can open, and the workspace's tags if asked.
 
     Args:
         workspace_id: Which workspace to act in.
@@ -169,11 +169,11 @@ def describe_unfinished_build(job: dict[str, JsonValue]) -> dict[str, JsonValue]
     }
 
 
-@mcp_server.tool(title="Get dashboard", annotations=READS)
+@mcp_server.tool(title="Get dashboard: numbers and embed code", annotations=READS)
 async def get_dashboard(
     workspace_id: int, dashboard_id: int, include_values: bool = True, include_embed: bool = False
 ) -> dict[str, JsonValue]:
-    """Get one dashboard: its title, its views, who it is shared with, and its numbers.
+    """Get one dashboard: its title, views, sharing and numbers, and its embed code if asked.
 
     Answer a question about a dashboard from `values`: they are the numbers
     Mammoth worked out for it. Do not work them out again from the view's rows.

@@ -1,5 +1,7 @@
 """Which tools a client is offered."""
 
+import pytest
+
 from mammoth_mcp_server.server import mcp_server, register_tools
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
@@ -183,3 +185,25 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
         assert tool.title[0].isupper(), tool.name
         assert not tool.title.endswith("."), tool.name
         assert len(tool.title) <= 40, tool.name
+
+
+# A tool that does several jobs hides all but one behind a short name. A client
+# that loads tools by searching their words, and a model picking from a list,
+# find the rest only in the title and the description's first line.
+FOLDED_JOBS = {
+    "get_schema": ("transformation", "export", "automation"),
+    "edit_dashboard": ("rename", "tags", "embed"),
+    "get_dashboard": ("numbers", "embed"),
+    "list_dashboards": ("tags",),
+}
+
+
+@pytest.mark.parametrize("name", sorted(FOLDED_JOBS))
+def test_a_tool_with_several_jobs_names_each_up_front(name: str) -> None:
+    tool = offered()[name]
+    title = (tool.title or "").lower()  # type: ignore[attr-defined]
+    first_line = (tool.description or "").splitlines()[0].lower()  # type: ignore[attr-defined]
+    # The title is a label in a list, capped at 40 characters: it names one job.
+    assert any(job in title for job in FOLDED_JOBS[name]), name
+    for job in FOLDED_JOBS[name]:
+        assert job in first_line, (name, job)

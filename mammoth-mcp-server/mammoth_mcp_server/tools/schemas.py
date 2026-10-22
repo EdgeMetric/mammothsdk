@@ -23,14 +23,14 @@ NAME_THE_PROJECT = (
 )
 
 
-@mcp_server.tool(title="Get schema", annotations=READS)
+@mcp_server.tool(title="Get schema: step, export or automation", annotations=READS)
 async def get_schema(
     kind: SchemaKind,
     of: str,
     workspace_id: int | None = None,
     project_id: int | None = None,
 ) -> dict[str, JsonValue]:
-    """Get what one operation, export destination or automation task takes.
+    """Get what a transformation, an export destination or an automation task takes.
 
     Call it before writing one: `add_transformations` and
     `edit_transformation_step` take a transformation, `add_export` and
