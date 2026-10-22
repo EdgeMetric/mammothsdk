@@ -156,6 +156,156 @@ Result: `ConnectorConnectionUpdateResult`; mutation `external_effect`, confirmat
 
 Status on release: untried; no live run recorded.
 
+### `connector.draft.browse`
+
+Run: `mammoth connector draft browse`. Exact input fields: `mammoth schema get connector.draft.browse`.
+
+Example: `mammoth connector draft browse 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftBrowseResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.create`
+
+Run: `mammoth connector draft create`. Exact input fields: `mammoth schema get connector.draft.create`.
+
+Example: `mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.discard`
+
+Run: `mammoth connector draft discard`. Exact input fields: `mammoth schema get connector.draft.discard`.
+
+Example: `mammoth connector draft discard 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ConnectorDraftDiscardResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.fill`
+
+Run: `mammoth connector draft fill`. Exact input fields: `mammoth schema get connector.draft.fill`.
+
+Example: `mammoth connector draft fill 123 --input '{"column": "region", "file_object_id": 77}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftFillResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.get`
+
+Run: `mammoth connector draft get`. Exact input fields: `mammoth schema get connector.draft.get`.
+
+Example: `mammoth connector draft get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.known-sources`
+
+Run: `mammoth connector draft known-sources`. Exact input fields: `mammoth schema get connector.draft.known-sources`.
+
+Example: `mammoth connector draft known-sources`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftKnownSourcesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.list`
+
+Run: `mammoth connector draft list`. Exact input fields: `mammoth schema get connector.draft.list`.
+
+Example: `mammoth connector draft list --input '{"status": "all"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.open`
+
+Run: `mammoth connector draft open`. Exact input fields: `mammoth schema get connector.draft.open`.
+
+Example: `mammoth connector draft open 123 --input '{"ref": "sheet-ref", "name": "Sales 2026"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftOpenResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.read-tables`
+
+Run: `mammoth connector draft read-tables`. Exact input fields: `mammoth schema get connector.draft.read-tables`.
+
+Example: `mammoth connector draft read-tables 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftReadTablesResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.sample`
+
+Run: `mammoth connector draft sample`. Exact input fields: `mammoth schema get connector.draft.sample`.
+
+Example: `mammoth connector draft sample 123 deals_2026-10.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSampleResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.save`
+
+Run: `mammoth connector draft save`. Exact input fields: `mammoth schema get connector.draft.save`.
+
+Example: `mammoth connector draft save 123 --input '{"refresh": "daily", "dataset_name": "HubSpot deals"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSaveResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.source.join-candidates`
+
+Run: `mammoth connector draft source join-candidates`. Exact input fields: `mammoth schema get connector.draft.source.join-candidates`.
+
+Example: `mammoth connector draft source join-candidates 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSourceJoinCandidatesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.source.list`
+
+Run: `mammoth connector draft source list`. Exact input fields: `mammoth schema get connector.draft.source.list`.
+
+Example: `mammoth connector draft source list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSourceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.source.preview`
+
+Run: `mammoth connector draft source preview`. Exact input fields: `mammoth schema get connector.draft.source.preview`.
+
+Example: `mammoth connector draft source preview 123 resource-123 --input '{"limit": 20}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSourcePreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.update`
+
+Run: `mammoth connector draft update`. Exact input fields: `mammoth schema get connector.draft.update`.
+
+Example: `mammoth connector draft update 123 --input '{"title": "HubSpot deals"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `connector.ds-config.create`
 
 Run: `mammoth connector ds-config create`. Exact input fields: `mammoth schema get connector.ds-config.create`.

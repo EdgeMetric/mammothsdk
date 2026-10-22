@@ -128,6 +128,14 @@ _GONE_AFTER_DELETE: dict[str, frozenset[str]] = {
 }
 
 
+#: Writes that remove what they name without being called ``delete``.
+_REMOVES_BY_OTHER_NAME: frozenset[str] = frozenset({"connector.draft.discard"})
+
+
+def _removes(command_id: str) -> bool:
+    return command_id.endswith(".delete") or command_id in _REMOVES_BY_OTHER_NAME
+
+
 def _proves_gone(invocation: Invocation, exc: Exception) -> bool:
     if not isinstance(exc, CliError):
         return False
@@ -171,7 +179,7 @@ def _build_state(
     except Exception as exc:  # noqa: BLE001 -- a read failure must surface, never crash the write
         read_by = _read_by_label(read_command_id, resolved_ids)
         if (
-            invocation.command_id.endswith(".delete")
+            _removes(invocation.command_id)
             and _proves_gone(invocation, exc)
             and kind == "object"
             and resolved_ids

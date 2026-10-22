@@ -32,6 +32,16 @@ Result: `AutomationDeleteResult`; mutation `destructive`, confirmation `prompt_o
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Delete returned 200/data:{} despite get/list never having shown the resource; cannot independently confirm deletion given get/list breakage for this id. Single invocation only.
 
+### `automation.folders`
+
+Run: `mammoth automation folders`. Exact input fields: `mammoth schema get automation.folders`.
+
+Example: `mammoth automation folders`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AutomationFoldersResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `automation.get`
 
 Run: `mammoth automation get`. Exact input fields: `mammoth schema get automation.get`.
@@ -59,6 +69,46 @@ Run: `mammoth automation restore`. Exact input fields: `mammoth schema get autom
 Example: `mammoth automation restore 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AutomationRestoreResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `automation.route.order`
+
+Run: `mammoth automation route order`. Exact input fields: `mammoth schema get automation.route.order`.
+
+Example: `mammoth automation route order 123 --input '{"automation_ids": [12, 11]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AutomationRouteOrderResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `automation.route.preview`
+
+Run: `mammoth automation route preview`. Exact input fields: `mammoth schema get automation.route.preview`.
+
+Example: `mammoth automation route preview 123 --input '{"names": ["sales_2026-10.csv"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AutomationRoutePreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `automation.run-file.add-anyway`
+
+Run: `mammoth automation run-file add-anyway`. Exact input fields: `mammoth schema get automation.run-file.add-anyway`.
+
+Example: `mammoth automation run-file add-anyway 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AutomationRunFileAddAnywayResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `automation.runs`
+
+Run: `mammoth automation runs`. Exact input fields: `mammoth schema get automation.runs`.
+
+Example: `mammoth automation runs 123 --input '{"limit": 10}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AutomationRunsResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

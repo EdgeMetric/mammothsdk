@@ -995,6 +995,130 @@ class DashboardsAPI:
             fetch=lambda jid, _remaining: self.job_by_url(url, jid),
         )
 
+    # ── Figure drill, rows and recipe; workspace chart types ─────
+
+    def _dashboard_path(self, dashboard_id: int, tail: str) -> str:
+        if isinstance(dashboard_id, bool) or not isinstance(dashboard_id, int) or dashboard_id <= 0:
+            raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
+        return f"/dashboards/{dashboard_id}/{tail}"
+
+    async def figure_drill(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
+        """Drill one mark of a draft board's figure one level down (editors).
+
+        Args:
+            dashboard_id: ID of the dashboard.
+            body: ``{"params": {"figure": FIGURE_KEY, "path": [{"key": MARK}, ...]}}``.
+                ``FIGURE_KEY`` is the figure's key on the board, ``PAGE:SLOT:ID`` (the
+                keys of ``meta.figures`` in the canvas, e.g. ``p1:add:t-Eh6h-ImH``);
+                ``path`` holds 1-4 marks from the top level (e.g. a region); ``series``,
+                ``filter_state`` and ``rls_preview_value`` are optional. A figure with
+                no level below answers 400 ``drill_no_level``.
+
+        Returns:
+            Dict with ``job_id`` (the groups land under ``descriptor_id`` when it is
+            done), ``level_field``, ``level_label`` and, for a date trend, ``grain``.
+        """
+        return await self._client._request_json(
+            "POST", self._dashboard_path(dashboard_id, "drill"), json=body
+        )
+
+    async def published_drill(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Drill one mark of a published board's figure one level down (any viewer).
+
+        Same body and answer as :meth:`figure_drill`; follow the job with
+        :meth:`wait_for_job_by_url`. Refused (403 ``drill_disabled``) until the
+        figure's reader setting lets readers drill.
+        """
+        return await self._client._request_json("POST", f"/dashboards/url/{url}/drill", json=body)
+
+    async def figure_rows(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
+        """Read the records behind one chart mark or KPI card of a draft board (editors).
+
+        Up to 500 rows, their count and, for plain sums, their total, as one job.
+        Needs edit rights and access to the dataview the figure reads; it works
+        before the figure's reader setting is on.
+
+        Args:
+            dashboard_id: ID of the dashboard.
+            body: ``{"params": {"figure": FIGURE_KEY, "key": MARK}}``: the figure's
+                ``PAGE:SLOT:ID`` key (see :meth:`figure_drill`) and, for a chart, the
+                mark's value (a KPI card needs none); ``path`` (drill steps),
+                ``series``, ``filter_state`` and ``rls_preview_value`` are optional.
+
+        Returns:
+            Dict with ``job_id``, ``descriptor_ids`` (where the rows, count and
+            total land), ``columns`` and ``applied_filters``.
+        """
+        return await self._client._request_json(
+            "POST", self._dashboard_path(dashboard_id, "rows"), json=body
+        )
+
+    async def published_rows(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
+        """Read the records behind a mark of a published board (signed-in readers).
+
+        Same body and answer as :meth:`figure_rows`, under the reader's row-level
+        scope and only for a figure whose reader setting is on (403 ``rows_disabled``
+        otherwise). Refused on public links and signed embeds.
+        """
+        return await self._client._request_json("POST", f"/dashboards/url/{url}/rows", json=body)
+
+    async def figure_recipe(self, dashboard_id: int, body: dict[str, Any]) -> dict[str, Any]:
+        """Turn a described chart into a figure spec: a library chart, or a custom drawing.
+
+        A library chart that draws the description wins; otherwise the server writes
+        a query binding and a drawing recipe over its output columns, and falls back
+        to the closest library chart when that cannot be drawn. Nothing is saved:
+        add the returned ``added`` spec with :meth:`figure_add`.
+
+        Args:
+            dashboard_id: ID of the dashboard (its draft's table is read).
+            body: ``{"params": {"describe": TEXT}}`` (up to 500 characters), with
+                optional ``page_id`` (that page's table) and ``force_custom`` (draw
+                it even when a library chart fits).
+
+        Returns:
+            Dict with ``outcome`` (``library``, ``custom``, ``fallback`` or
+            ``refused``), ``kind``, ``added`` (the figure spec), ``message``,
+            ``actions`` and ``problems``.
+        """
+        return await self._client._request_json(
+            "POST", self._dashboard_path(dashboard_id, "figure-recipe"), json=body
+        )
+
+    async def chart_type_list(self) -> dict[str, Any]:
+        """List the workspace's saved chart types, newest first.
+
+        Returns:
+            Dict with ``chart_types``.
+        """
+        return await self._client._request_json("GET", "/dashboards/v3/chart-types")
+
+    async def chart_type_create(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Save a custom chart as a workspace chart type (owners, admins and members).
+
+        The server keeps its validator's canonical recipe and refuses (400, with the
+        reason) a name, needs, recipe or binding template that breaks a rule, or a
+        workspace that already keeps 200 chart types.
+
+        Args:
+            body: ``{"params": {"name": ..., "recipe": {...}, "needs": [...]}}``, with
+                an optional ``binding_template``; take the recipe from a custom
+                figure that :meth:`figure_recipe` drew.
+
+        Returns:
+            The saved chart type.
+        """
+        return await self._client._request_json("POST", "/dashboards/v3/chart-types", json=body)
+
+    async def chart_type_delete(self, chart_type_id: str) -> dict[str, Any]:
+        """Delete a workspace chart type (workspace owners, admins and members).
+
+        Args:
+            chart_type_id: ID of the chart type.
+        """
+        await self._client._request_json("DELETE", f"/dashboards/v3/chart-types/{chart_type_id}")
+        return {"chart_type_id": chart_type_id, "deleted": True}
+
     async def published_data_by_url(self, url: str, body: dict[str, Any]) -> dict[str, Any]:
         """Get published dashboard widget data via SQL, addressed by URL slug.
 

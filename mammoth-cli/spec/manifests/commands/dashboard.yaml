@@ -7055,3 +7055,348 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dashboard.chart-type.create
+  command_path: dashboard chart-type create
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateWorkspaceChartType
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_create
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.chart_type_create with validated request fields.
+  request_model: DashboardChartTypeCreateRequest
+  result_model: DashboardChartTypeCreateResult
+  mutation_class: benign_mutation
+  edits_target: false
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  readback:
+    command: dashboard.chart-type.list
+  readback:
+    command: dashboard.chart-type.list
+    ids: {}
+    kind: object
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard chart-type create --help
+  agent_example: 'mammoth dashboard chart-type create --input ''{"body": {"params": {"name": "Lollipop",
+    "recipe": {"version": 1, "layout": "rows", "names": {"field": "region", "position": "before"}, "order":
+    {"field": "sales", "dir": "desc"}, "marks": [{"mark": "segment", "colour": "muted", "size": {"field":
+    "sales"}}, {"mark": "circle", "colour": "primary", "size": {"field": "sales"}}]}, "needs": [{"field":
+    "region", "type": "text", "role": "dim", "label": "Category"}, {"field": "sales", "type": "number",
+    "role": "measure", "label": "Value"}], "binding_template": {"agg": "sum"}}}}'''
+  unit_tests:
+  - UT-DASHBOARD-CHART-TYPE-CREATE
+  contract_tests:
+  - CT-DASHBOARD-CHART-TYPE-CREATE-HUMAN
+  - CT-DASHBOARD-CHART-TYPE-CREATE-JSON
+  - CT-DASHBOARD-CHART-TYPE-CREATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Workspace owners, admins and members. 400 with the reason when the name, needs,
+    recipe or binding template break a rule, or the workspace already keeps 200 chart types.
+  reviewed_by: primary
+- command_id: dashboard.chart-type.delete
+  command_path: dashboard chart-type delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteWorkspaceChartType
+  positionals:
+  - name: chart_type_id
+    type: str
+    required: true
+    metavar: CHART_TYPE_ID
+    falls_back_to_field: null
+    help: ID of the chart type.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_delete
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.chart_type_delete with validated request fields.
+  request_model: DashboardChartTypeDeleteRequest
+  result_model: DashboardChartTypeDeleteResult
+  mutation_class: destructive
+  edits_target: false
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  readback:
+    command: dashboard.chart-type.list
+  readback:
+    command: dashboard.chart-type.list
+    ids: {}
+    kind: object
+  acceptance_evidence: contract_only_no_disposable_fixture
+  live_test: null
+  live_exemption_reason: Dashboard mutation has contract coverage but no automated disposable-dashboard
+    fixture in tests/live.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard chart-type delete CHART_TYPE_ID --help
+  agent_example: mammoth dashboard chart-type delete resource-123 --yes
+  unit_tests:
+  - UT-DASHBOARD-CHART-TYPE-DELETE
+  contract_tests:
+  - CT-DASHBOARD-CHART-TYPE-DELETE-HUMAN
+  - CT-DASHBOARD-CHART-TYPE-DELETE-JSON
+  - CT-DASHBOARD-CHART-TYPE-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Workspace owners, admins and members; 404 for a chart type of another workspace.
+  reviewed_by: primary
+- command_id: dashboard.chart-type.list
+  command_path: dashboard chart-type list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListWorkspaceChartTypes
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_list
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.chart_type_list with validated request fields.
+  request_model: DashboardChartTypeListRequest
+  result_model: DashboardChartTypeListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-CHART-TYPE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard chart-type list --help
+  agent_example: mammoth dashboard chart-type list
+  unit_tests:
+  - UT-DASHBOARD-CHART-TYPE-LIST
+  contract_tests:
+  - CT-DASHBOARD-CHART-TYPE-LIST-HUMAN
+  - CT-DASHBOARD-CHART-TYPE-LIST-JSON
+  - CT-DASHBOARD-CHART-TYPE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Anyone in the workspace.
+  reviewed_by: primary
+- command_id: dashboard.figure.drill
+  command_path: dashboard figure drill
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FigureDrill
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_drill
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.figure_drill with validated request fields.
+  request_model: DashboardFigureDrillRequest
+  result_model: DashboardFigureDrillResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-FIGURE-DRILL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard figure drill DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard figure drill 123 --input ''{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH",
+    "path": [{"key": "West"}]}}}'''
+  unit_tests:
+  - UT-DASHBOARD-FIGURE-DRILL
+  contract_tests:
+  - CT-DASHBOARD-FIGURE-DRILL-HUMAN
+  - CT-DASHBOARD-FIGURE-DRILL-JSON
+  - CT-DASHBOARD-FIGURE-DRILL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Editors of the draft board. `figure` is the figure''s PAGE:SLOT:ID key (the keys
+    of `meta.figures` in `dashboard canvas get`); `path` holds 1-4 marks from the top level, each `{"key":
+    VALUE}`. Waits for the job and returns the handle with its results; a figure with no level below answers
+    400 drill_no_level.'
+  reviewed_by: primary
+- command_id: dashboard.figure.recipe
+  command_path: dashboard figure recipe
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FigureRecipe
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_recipe
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.figure_recipe with validated request fields.
+  request_model: DashboardFigureRecipeRequest
+  result_model: DashboardFigureRecipeResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-FIGURE-RECIPE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard figure recipe DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard figure recipe 123 --input ''{"body": {"params": {"describe": "Revenue
+    by region as bars"}}}'''
+  unit_tests:
+  - UT-DASHBOARD-FIGURE-RECIPE
+  contract_tests:
+  - CT-DASHBOARD-FIGURE-RECIPE-HUMAN
+  - CT-DASHBOARD-FIGURE-RECIPE-JSON
+  - CT-DASHBOARD-FIGURE-RECIPE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: nothing is saved. Add the returned `added` spec with `dashboard figure
+    add`. A projection is refused: a drawing cannot show a number that is not in the data.'
+  reviewed_by: primary
+- command_id: dashboard.figure.rows
+  command_path: dashboard figure rows
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FigureRows
+  positionals:
+  - name: dashboard_id
+    type: int
+    required: true
+    metavar: DASHBOARD_ID
+    falls_back_to_field: null
+    help: ID of the dashboard.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_rows
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.figure_rows with validated request fields.
+  request_model: DashboardFigureRowsRequest
+  result_model: DashboardFigureRowsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-FIGURE-ROWS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard figure rows DASHBOARD_ID --help
+  agent_example: 'mammoth dashboard figure rows 123 --input ''{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH",
+    "key": "West"}}}'''
+  unit_tests:
+  - UT-DASHBOARD-FIGURE-ROWS
+  contract_tests:
+  - CT-DASHBOARD-FIGURE-ROWS-HUMAN
+  - CT-DASHBOARD-FIGURE-ROWS-JSON
+  - CT-DASHBOARD-FIGURE-ROWS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Editors with access to the figure''s dataview; works before the figure''s reader
+    setting is on. `figure` is the PAGE:SLOT:ID key and `key` the mark''s value. Waits for the job and
+    returns the handle (which descriptor is the rows, the count and the total) with the results: up to
+    500 rows.'
+  reviewed_by: primary
+- command_id: dashboard.published.drill
+  command_path: dashboard published drill
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FigureDrillByUrl
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: URL slug identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_drill
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.published_drill with validated request fields.
+  request_model: DashboardPublishedDrillRequest
+  result_model: DashboardPublishedDrillResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-PUBLISHED-DRILL
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard published drill URL --help
+  agent_example: 'mammoth dashboard published drill https://example.com/data.csv --input ''{"body": {"params":
+    {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'''
+  unit_tests:
+  - UT-DASHBOARD-PUBLISHED-DRILL
+  contract_tests:
+  - CT-DASHBOARD-PUBLISHED-DRILL-HUMAN
+  - CT-DASHBOARD-PUBLISHED-DRILL-JSON
+  - CT-DASHBOARD-PUBLISHED-DRILL-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Any viewer of the published board, under the viewer's row-level scope; 403 drill_disabled
+    until the figure's reader setting lets readers drill. Same body as `dashboard figure drill`.
+  reviewed_by: primary
+- command_id: dashboard.published.rows
+  command_path: dashboard published rows
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FigureRowsByUrl
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: URL slug identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_rows
+  sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.published_rows with validated request fields.
+  request_model: DashboardPublishedRowsRequest
+  result_model: DashboardPublishedRowsResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DASHBOARD-PUBLISHED-ROWS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dashboard published rows URL --help
+  agent_example: 'mammoth dashboard published rows https://example.com/data.csv --input ''{"body": {"params":
+    {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'''
+  unit_tests:
+  - UT-DASHBOARD-PUBLISHED-ROWS
+  contract_tests:
+  - CT-DASHBOARD-PUBLISHED-ROWS-HUMAN
+  - CT-DASHBOARD-PUBLISHED-ROWS-JSON
+  - CT-DASHBOARD-PUBLISHED-ROWS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Signed-in readers only, under their row-level scope; 403 rows_disabled until the
+    figure's reader setting is on, and refused on public links and signed embeds. Same body as `dashboard
+    figure rows`.
+  reviewed_by: primary
