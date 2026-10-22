@@ -6,11 +6,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed (next mammoth-mcp-server)
-
-- MCP server: the `mammoth-io` floor is raised from `>=0.8.39` to `>=0.8.47`. The server builds every client with `MammothClient(http_client=...)`, which is new in mammoth-io 0.8.47, so 0.2.7 installed next to an older SDK failed on its first request with `TypeError: unexpected keyword argument 'http_client'`.
-
-## mammoth-io 0.8.49, mammoth-cli 2.2.96 (2026-10-22)
+## mammoth-io 0.8.49, mammoth-cli 2.2.96, mammoth-mcp-server 0.2.8 (2026-10-22)
 
 ### Added (mammoth-io 0.8.49, mammoth-cli 2.2.96)
 
@@ -36,10 +32,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed (mammoth-io 0.8.49)
 
 - The generated dashboard models (`mammoth.models.dashboard_generated`) and wrappers are regenerated from the 2026-10-22 production spec: chart-type models are added, and `SwapFitParams` gains `page_id` and `target_dataset_ids` (`target_dataview_ids` is now optional).
+- The SDK and the CLI require `certifi>=2026.10.19`, which drops the distrusted eMudhra CA (PRD-3142).
 
 ### Fixed (mammoth-cli 2.2.96)
 
 - CLI: the lazily built command tree (`LazyLeafCommand`, the cached Click root) is built under a lock, so threads making their first call together build it once.
+
+### Fixed (mammoth-mcp-server 0.2.8)
+
+- MCP server: the `mammoth-io` floor is raised from `>=0.8.39` to `>=0.8.47`. The server builds every client with `MammothClient(http_client=...)`, which is new in mammoth-io 0.8.47, so 0.2.7 installed next to an older SDK failed on its first request with `TypeError: unexpected keyword argument 'http_client'`.
+- MCP server image: `deploy/Dockerfile` refreshes the system CA certificates on every build, so the distrusted eMudhra CA is dropped (PRD-3142).
 
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
