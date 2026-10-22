@@ -61,7 +61,7 @@ ASK_LINE = re.compile(r"^- (?P<ask>.+?) — (?P<status>.+?)\s*$", re.MULTILINE)
 COULD_NOT = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*(?:\n\s*\n|$)", re.DOTALL)
 
 
-@mcp_server.tool(title="Edit dashboard", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Edit dashboard, tags or embed", annotations=DESTRUCTIVE)
 async def edit_dashboard(
     workspace_id: int,
     dashboard_id: int,
@@ -73,7 +73,7 @@ async def edit_dashboard(
     tags: list[str] | None = None,
     job_id: int | None = None,
 ) -> dict[str, JsonValue]:
-    """Have Mammoth's AI change a dashboard, rename it, tag it, or choose how it embeds.
+    """Have Mammoth's AI change a dashboard, rename it, set its tags, or choose how it embeds.
 
     The AI changes what the user asks for: add, remove or restyle a card or
     chart, filter it, add a page. Send the whole change in one call. A board

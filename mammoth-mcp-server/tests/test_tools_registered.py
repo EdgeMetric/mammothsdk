@@ -197,6 +197,10 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
 FOLDED_JOBS = {
     "undo": ("trash", "roll back"),
     "get_pipeline": ("steps", "versions"),
+    "get_schema": ("transformation", "export", "automation"),
+    "edit_dashboard": ("rename", "tags", "embed"),
+    "get_dashboard": ("numbers", "embed"),
+    "list_dashboards": ("tags",),
 }
 
 
