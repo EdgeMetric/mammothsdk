@@ -43,7 +43,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
-from mammoth_cli.runtime.shared import shared_services
+from mammoth_cli.runtime.shared import forget_reads, shared_services
 
 
 def invoke(
@@ -148,6 +148,7 @@ def invoke_many(
                 return_running=return_running,
             )
             envelope = _invoke_one(argv, login)
+            forget_reads()
             envelopes.append(envelope)
             if stop_on_error and _failed(envelope):
                 failed = index

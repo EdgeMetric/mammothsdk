@@ -219,3 +219,41 @@ def test_a_batch_reads_the_project_pin_once(
 
     asked = [symbol for symbol, _kwargs in built[0].call_log if symbol == CURRENT_WORKSPACE]
     assert len(asked) == 1
+
+
+def test_a_closed_service_does_not_lend_its_pin_to_a_new_one() -> None:
+    """The answer is kept with its service, so a reused ``id`` never matches."""
+    from mammoth_cli.runtime.shared import FIXED_ANSWERS, shared_services
+    from mammoth_cli.runtime.token_scope import pinned_projects
+
+    first, second = FakeMammothService(), FakeMammothService()
+    first.responses[CURRENT_WORKSPACE] = {"projects": [7]}
+    second.responses[CURRENT_WORKSPACE] = {"projects": [8]}
+    with shared_services():
+        assert pinned_projects(first) == (7,)
+        fixed = FIXED_ANSWERS.get()
+        assert fixed is not None
+        fixed[id(second)] = fixed.pop(id(first))  # as if ``second`` took the freed id
+        assert pinned_projects(second) == (8,)
+
+
+def test_reads_kept_ahead_of_a_write_do_not_reach_the_next_command(
+    lookups: list[str], built: list[FakeMammothService], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import mammoth_cli.embed as embed
+
+    real = embed._invoke_one
+    seen: list[bool] = []
+
+    def _one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
+        envelope = real(argv, login)
+        if built:
+            seen.append(built[0].memo.lookup("some.Symbol", {})[0])
+            built[0].memo.store("some.Symbol", {}, "stale")
+        return envelope
+
+    monkeypatch.setattr(embed, "_invoke_one", _one)
+
+    invoke_many([["project", "list"]] * 2, login=_login(workspace_id=5))
+
+    assert seen == [False, False]

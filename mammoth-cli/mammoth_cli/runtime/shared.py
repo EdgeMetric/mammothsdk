@@ -17,8 +17,11 @@ SHARED: ContextVar[dict[tuple[Any, ...], Any] | None] = ContextVar("SHARED", def
 
 
 #: Answers that cannot change while a service is open (the projects its credential is
-#: pinned to), by ``id`` of the service; ``None`` outside :func:`shared_services`.
-FIXED_ANSWERS: ContextVar[dict[int, Any] | None] = ContextVar("FIXED_ANSWERS", default=None)
+#: pinned to), as ``(service, answer)`` by ``id`` of the service; ``None`` outside
+#: :func:`shared_services`.
+FIXED_ANSWERS: ContextVar[dict[int, tuple[Any, Any]] | None] = ContextVar(
+    "FIXED_ANSWERS", default=None
+)
 
 
 #: The credentials one ``mammoth run`` has resolved so far, by profile; ``None`` outside
@@ -41,6 +44,19 @@ def remembering_auth() -> Iterator[dict[tuple[Any, ...], Any]]:
         yield memo
     finally:
         AUTH_MEMO.reset(token)
+
+
+def forget_reads() -> None:
+    """Drop the reads each shared service keeps ahead of a write, between two commands.
+
+    A command that read ahead and then stopped before its write (a dry run, a refused
+    check) would otherwise hand those reads to the next command on the same service.
+    """
+    for service in (SHARED.get() or {}).values():
+        memo = getattr(service, "memo", None)
+        clear = getattr(memo, "clear", None)
+        if clear is not None:
+            clear()
 
 
 @contextmanager

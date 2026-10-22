@@ -164,9 +164,12 @@ def pinned_projects(
     is the only one it has.
     """
     fixed = FIXED_ANSWERS.get()
-    if fixed is not None and not refresh and id(service) in fixed:
-        kept: Pins | None = fixed[id(service)]
-        return kept
+    if fixed is not None and not refresh:
+        # The service is kept with its answer: a closed one's id can be handed to the next.
+        held = fixed.get(id(service))
+        if held is not None and held[0] is service:
+            kept: Pins | None = held[1]
+            return kept
     path: Path | None = None
     if auth is not None and not embedded.active() and _cache_enabled():
         try:
@@ -183,7 +186,7 @@ def pinned_projects(
     if path is not None:
         _write_pin_cache(path, pins)
     if fixed is not None:
-        fixed[id(service)] = pins
+        fixed[id(service)] = (service, pins)
     return pins
 
 
