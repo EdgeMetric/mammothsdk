@@ -68,8 +68,13 @@ S7_ROUTE_INVENTORY = frozenset(
         "automation.capabilities",
         "automation.create",
         "automation.delete",
+        "automation.folders",
         "automation.get",
         "automation.list",
+        "automation.route.order",
+        "automation.route.preview",
+        "automation.run-file.add-anyway",
+        "automation.runs",
         "automation.restore",
         "automation.trash",
         "automation.update",
@@ -297,12 +302,12 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 217
+    assert ledger["route_count"] == 222
     assert ledger["families"] == {
         "activity": 2,
         "agent": 44,
         "ai": 4,
-        "automation": 8,
+        "automation": 13,
         "billing": 27,
         "client-app": 5,
         "schedule": 5,

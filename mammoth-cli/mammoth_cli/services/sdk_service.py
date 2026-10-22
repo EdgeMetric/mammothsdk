@@ -52,6 +52,9 @@ from mammoth_cli.services.read_memo import ReadMemo
 _PROJECT_MISS = re.compile(r"^Project (ID \d+|'.*') not found\.")
 _PROJECT_PAGE_SIZE = 100
 
+#: The view metadata read whose answer, when made ahead of a write, builds the write's View.
+_DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
+
 #: Verbatim message every project-scoped SDK sub-client's ``_proj()`` raises
 #: when ``project_id`` is unset (identical across every ``mammoth/api/*.py``
 #: call site). Matched by exact text, not by ``sdk_symbol``, so ``call()``
@@ -600,6 +603,13 @@ class SdkMammothService:
         """
         if self._client.project_id is None:
             raise missing_project_error()
+        # The checks ahead of a write read the view's metadata already; build the View from
+        # that read rather than fetching the same record again.
+        metadata = (
+            self.memo.lookup(_DATAVIEW_GET, {"dataset_id": dataset_id, "dataview_id": view_id})[1]
+            if dataset_id is not None
+            else None
+        )
         # A write is about to change what the reads made ahead of it saw.
         self.memo.clear()
         try:
@@ -608,11 +618,14 @@ class SdkMammothService:
                 # get_view would discard it and re-enter the legacy resolver,
                 # potentially probing an unrelated parent and returning a
                 # misleading 403.
-                view = (
-                    self._run(self._client.get_view(view_id))
-                    if dataset_id is None
-                    else self._run(self._client.views.get(view_id, dataset_id=dataset_id))
-                )
+                if dataset_id is not None and isinstance(metadata, dict):
+                    from mammoth.view import View
+
+                    view = View(self._client, metadata, dataset_id)
+                elif dataset_id is None:
+                    view = self._run(self._client.get_view(view_id))
+                else:
+                    view = self._run(self._client.views.get(view_id, dataset_id=dataset_id))
         except ValueError as exc:
             # The SDK's project-wide parent discovery reports a miss as a bare
             # ValueError. Name it, and hand back the reads that settle it,

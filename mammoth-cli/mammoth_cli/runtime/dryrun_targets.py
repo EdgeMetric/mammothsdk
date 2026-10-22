@@ -193,6 +193,19 @@ SUBS: dict[str, tuple[Sub, ...]] = {
     "view.draft.discard": (
         Sub("draft", "view_id", "view", "view_id", name_fmt="{parent} › unsaved draft changes"),
     ),
+    # Connector drafts and chart types, shapes verified live on koyal: a draft
+    # read is flat with ``title``; chart types list under ``chart_types``.
+    "connector.draft.discard": (
+        Sub("connector draft", "draft_id", source="connector.draft.get", label_paths=("title",)),
+    ),
+    "dashboard.chart-type.delete": (
+        Sub(
+            "chart type",
+            "chart_type_id",
+            source="dashboard.chart-type.list",
+            container="chart_types",
+        ),
+    ),
     "agent.action.delete": (
         Sub(
             "agent action",
@@ -588,7 +601,10 @@ def _parent_name(
     return str(_read_name(service, kind, parent_id, args)["name"])
 
 
-def _unresolved_name(kind: str, target_id: object, symbol: str, key: str) -> CliError:
+def _unresolved_name(
+    kind: str, target_id: object, symbol: str, key: str, lister: str | None = None
+) -> CliError:
+    listing = lister.replace(".", " ") if lister else f"{kind.split()[0]} list"
     return CliError(
         code=CODE_RESOURCE_NOT_FOUND,
         message=(
@@ -596,7 +612,7 @@ def _unresolved_name(kind: str, target_id: object, symbol: str, key: str) -> Cli
             f"'{symbol}' found no '{key}'."
         ),
         exit_status=EXIT_NOT_FOUND,
-        hint=f"Check the id with `mammoth {kind.split()[0]} list`; nothing was changed.",
+        hint=f"Check the id with `mammoth {listing}`; nothing was changed.",
         details={"type": kind, "id": target_id},
     )
 
@@ -634,7 +650,7 @@ def _sub_record(
     items = _container_items(listed, sub.container)
     found = next((i for i in items if str(_path(i, sub.id_field)) == str(target)), None)
     if found is None:
-        raise _unresolved_name(sub.kind, target, symbol, sub.id_field)
+        raise _unresolved_name(sub.kind, target, symbol, sub.id_field, sub.source)
     return found
 
 

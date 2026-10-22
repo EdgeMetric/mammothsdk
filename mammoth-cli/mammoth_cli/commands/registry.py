@@ -1104,6 +1104,27 @@ _TARGETS: dict[str, str] = {
         "mammoth_cli.commands.dashboard:dashboard_chat_attachment_upload"
     ),
     "dashboard.unpublished": "mammoth_cli.commands.dashboard:generated_dashboard",
+    # Server-master routes: watched folders and file routing, connector drafts.
+    "automation.folders": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "automation.runs": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "automation.route.preview": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "automation.route.order": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "automation.run-file.add-anyway": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.list": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.create": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.known-sources": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.get": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.update": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.discard": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.browse": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.fill": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.open": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.read-tables": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.sample": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.save": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.source.list": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.source.join-candidates": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.draft.source.preview": "mammoth_cli.commands.dashboard:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

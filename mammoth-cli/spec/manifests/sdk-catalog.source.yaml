@@ -6090,6 +6090,259 @@ sdk_methods:
   pagination_policy: null
   openapi_operation_ids: []
   notes: Alias `view export tableau-server`. Prohibit secret in CA bundle file.
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_drill
+  canonical_command: dashboard.figure.drill
+  alias_of: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - FigureDrill
+  notes: "Editors of the draft board. `figure` is the figure's PAGE:SLOT:ID key (the keys of `meta.figures` in `dashboard canvas get`); `path` holds 1-4 marks from the top level, each `{\"key\": VALUE}`. Waits for the job and returns the handle with its results; a figure with no level below answers 400 drill_no_level."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_drill
+  canonical_command: dashboard.published.drill
+  alias_of: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - FigureDrillByUrl
+  notes: "Any viewer of the published board, under the viewer's row-level scope; 403 drill_disabled until the figure's reader setting lets readers drill. Same body as `dashboard figure drill`."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_rows
+  canonical_command: dashboard.figure.rows
+  alias_of: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - FigureRows
+  notes: "Editors with access to the figure's dataview; works before the figure's reader setting is on. `figure` is the PAGE:SLOT:ID key and `key` the mark's value. Waits for the job and returns the handle (which descriptor is the rows, the count and the total) with the results: up to 500 rows."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_rows
+  canonical_command: dashboard.published.rows
+  alias_of: null
+  mutation_class: read
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - FigureRowsByUrl
+  notes: "Signed-in readers only, under their row-level scope; 403 rows_disabled until the figure's reader setting is on, and refused on public links and signed embeds. Same body as `dashboard figure rows`."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_recipe
+  canonical_command: dashboard.figure.recipe
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - FigureRecipe
+  notes: "Read-only: nothing is saved. Add the returned `added` spec with `dashboard figure add`. A projection is refused: a drawing cannot show a number that is not in the data."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_list
+  canonical_command: dashboard.chart-type.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListWorkspaceChartTypes
+  notes: "Anyone in the workspace."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_create
+  canonical_command: dashboard.chart-type.create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CreateWorkspaceChartType
+  notes: "Workspace owners, admins and members. 400 with the reason when the name, needs, recipe or binding template break a rule, or the workspace already keeps 200 chart types."
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_delete
+  canonical_command: dashboard.chart-type.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkspaceChartType
+  notes: "Workspace owners, admins and members; 404 for a chart type of another workspace."
+- sdk_symbol: mammoth.api.automations.AutomationsAPI.watched_folders
+  canonical_command: automation.folders
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWatchedFolders
+  notes: "Read-only. Every folder a consolidation automation watches, its rules in order, and the files on their way or waiting on a person."
+- sdk_symbol: mammoth.api.automations.AutomationsAPI.runs
+  canonical_command: automation.runs
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetAutomationRuns
+  notes: "Read-only. Newest first, each run with its files; `limit` is capped at 50 by the server."
+- sdk_symbol: mammoth.api.automations.AutomationsAPI.preview_routes
+  canonical_command: automation.route.preview
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PreviewRoutes
+  notes: "Read-only. Lists the folder's rules (its own, then inherited) and where files of the given `names` would go; a `draft` rule also says how many recent files it would take."
+- sdk_symbol: mammoth.api.automations.AutomationsAPI.set_route_order
+  canonical_command: automation.route.order
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - SetRouteOrder
+  notes: "`automation_ids` names the folder's own rules, first rule first; files dropped after the change meet them in that order."
+- sdk_symbol: mammoth.api.automations.AutomationsAPI.add_run_file_anyway
+  canonical_command: automation.run-file.add-anyway
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - AddRunFileAnyway
+  confirmation: prompt_or_yes
+  notes: "Appends a file a run skipped as a duplicate to its destination dataset; find the run file id with `automation runs`."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.list
+  canonical_command: connector.draft.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectorDrafts
+  notes: "Read-only. `status`: live (not saved yet, the default), saved or all."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.create
+  canonical_command: connector.draft.create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CreateConnectorDraft
+  notes: "Without `session_id` the server starts an agent chat for the draft. A draft with no `connection_key` needs the project admin role. Another live draft for the same connector or connection comes back as `resume_candidate`."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources
+  canonical_command: connector.draft.known-sources
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectorKnownSources
+  notes: "Read-only. Sources with no built-in connector that a draft can still start on, deep ones first."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.get
+  canonical_command: connector.draft.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetConnectorDraft
+  notes: "Read-only."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.update
+  canonical_command: connector.draft.update
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PatchConnectorDraft
+  notes: "`target_columns` replaces the list whole. `echo` adds a quiet note to the draft's thread for the agent's next turn."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
+  canonical_command: connector.draft.discard
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DiscardConnectorDraft
+  notes: "Hides the draft from every list; its chat thread stays."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.browse
+  canonical_command: connector.draft.browse
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - BrowseConnectorDraftFolderConnectorDrafts
+  notes: "Read-only. A files-shaped source only; for Google Sheets it lists the account's recent spreadsheets."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.fill
+  canonical_command: connector.draft.fill
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - FillConnectorDraftGap
+  notes: "Pass exactly one of `file_object_id` or `dataset_id`. 409 while the file is still being read; retry once it is."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.open
+  canonical_command: connector.draft.open
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - OpenConnectorDraftEntry
+  notes: "Take `ref` and `name` from a `connector draft browse` entry; each tab becomes a table of the draft."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables
+  canonical_command: connector.draft.read-tables
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ReadConnectorDraftTables
+  notes: "Queues the reads and returns how many; each table shows as not read yet until its answer lands on the draft."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
+  canonical_command: connector.draft.sample
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ShapeConnectorDraftFromSample
+  notes: "A CSV, TSV or Excel file of about 5 MB at most; the server reads its header and first rows and does not keep it. Sets the draft's target columns."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.save
+  canonical_command: connector.draft.save
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - StartConnectorDraftSave
+  notes: "Makes one dataset per source and joins the others onto the main one; `refresh: daily` refreshes each API or table source daily. The draft's `result` is set when the job is done."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sources
+  canonical_command: connector.draft.source.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectorDraftSources
+  notes: "Read-only, but it asks the connection for its tables."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates
+  canonical_command: connector.draft.source.join-candidates
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectorDraftJoinCandidates
+  notes: "Read-only. Match counts are an estimate over the rows read so far."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source
+  canonical_command: connector.draft.source.preview
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PreviewConnectorDraftSource
+  notes: "Reads up to `limit` (1-100) rows through the connection and records what came back on the source."
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states

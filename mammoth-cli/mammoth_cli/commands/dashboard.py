@@ -916,6 +916,17 @@ _CONFIRM_ACTIONS: dict[str, str] = {
 #: Commands whose ``--confirm`` target is the workspace, not a positional.
 _WORKSPACE_TARGETED = frozenset({"agent.access.settings.update"})
 
+#: Commands whose job handle names what the job's results are (descriptor ids,
+#: columns, the drilled level); the answer carries the handle and the results.
+_HANDLE_KEPT = frozenset(
+    {
+        "dashboard.figure.drill",
+        "dashboard.figure.rows",
+        "dashboard.published.drill",
+        "dashboard.published.rows",
+    }
+)
+
 
 def _check_sdk_rules(command_id: str, kwargs: dict[str, Any]) -> None:
     rule = _SDK_RULES.get(command_id)
@@ -994,7 +1005,12 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
                 invocation, policy=policy, action=action, target=str(auth.workspace_id)
             )
         data = service.call(_symbol(invocation), **kwargs)
+        handle = data
         data = _resolve_job(service, invocation, data)
+        if invocation.command_id in _HANDLE_KEPT and isinstance(handle, dict):
+            # The job's results are keyed by descriptor id; the handle says which
+            # descriptor is the rows, the count or the drilled level, so keep both.
+            data = {**handle, **data} if isinstance(data, dict) else data
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)

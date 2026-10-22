@@ -382,16 +382,16 @@ class View(
             — the server's own ``"processing"`` would otherwise read as if the
             step were already running.
         """
-        # Read draft state *before* submitting: the server flips a view's
-        # draft flag to "dirty" when the new task carries a reference error
-        # (missing column, wrong column type), so reading it afterwards would
-        # mistake that failure for a queued draft and skip the pipeline wait.
-        # The server owns draft state.  The local flag is retained only as a
-        # compatibility fallback for older injected clients that do not return
-        # a status mapping; it is never authoritative for a real transport.
+        # The server owns draft state, and one pipeline read after the submit
+        # answers both questions: is the view in draft, and has the pipeline
+        # settled. That read is also the first poll of the wait. A task with a
+        # reference error comes back with ``has_error`` (raised below) and
+        # leaves the pipeline in ``ref_error`` with auto-run still on, so it is
+        # never mistaken for a staged draft. The local flag is retained only as
+        # a compatibility fallback for older injected clients that do not
+        # return a status mapping; it is never authoritative for a real transport.
         if self._build_only:
             return {"status": "validated", "task_spec": task_spec}
-        in_draft = await self.is_draft_mode
         result = await self._client.pipeline.add_task(self.id, task_spec, self.dataset_id)
         if isinstance(result, dict) and result.get("has_error") is True:
             # The task was stored but cannot bind to the view (the pipeline is
@@ -411,40 +411,30 @@ class View(
                     "response": result,
                 },
             )
+        try:
+            status = await self._pipeline_status()
+        except Exception as exc:
+            raise self._readback_error(result, exc) from exc
+        if status is None:
+            in_draft, settled = self._draft_mode, None
+        else:
+            state = status.get("pipeline_state")
+            raw = status.get("pipeline") or {}
+            nested = raw.get("pipeline")
+            auto_run = (nested if isinstance(nested, dict) else raw).get(
+                "auto_run", raw.get("auto_run")
+            )
+            errored = state in ("runtime_error", "ref_error") and auto_run is not False
+            in_draft = status.get("is_draft") is True and not errored
+            settled = status["pipeline"] if state == "ready" else None
         if not in_draft:
             try:
-                pipeline = await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+                pipeline = settled or await self._client.pipeline.wait_for_pipeline(
+                    self.id, self.dataset_id
+                )
                 await self.refresh()
             except Exception as exc:
-                # The POST has already returned successfully.  A timeout or
-                # failed readback must not be reported as a clean retryable
-                # read: replaying the transform could duplicate the task.
-                task_id = result.get("task_id") if isinstance(result, dict) else None
-                job_handle = next(
-                    (
-                        result.get(key)
-                        for key in ("job_id", "future_id")
-                        if isinstance(result, dict) and result.get(key) is not None
-                    ),
-                    None,
-                )
-                readback = getattr(exc, "details", {})
-                raise MammothAPIError(
-                    "Task was submitted, but pipeline readback did not complete.",
-                    details={
-                        "post_submitted": True,
-                        "task_handle": task_id,
-                        "job_handle": job_handle,
-                        "dataview_id": self.id,
-                        "dataset_id": self.dataset_id,
-                        "project_id": getattr(self._client, "project_id", None),
-                        "readback_error": dict(readback or {}),
-                    },
-                    method="POST",
-                    operation_state="outcome_unknown",
-                    job_handle=job_handle,
-                    phase="post_submit_readback",
-                ) from exc
+                raise self._readback_error(result, exc) from exc
             if isinstance(result, dict):
                 state = pipeline.get("state") if isinstance(pipeline, dict) else None
                 result = {**result, "status": "done", "pipeline_state": state or "ready"}
@@ -464,6 +454,49 @@ class View(
                 ),
             }
         return result
+
+    async def _pipeline_status(self) -> dict[str, Any] | None:
+        """The server's draft and pipeline state, or ``None`` from a client double without it."""
+        getter = getattr(self._client.pipeline, "get_draft_status", None)
+        if callable(getter):
+            status = await getter(self.id, self.dataset_id)
+            if isinstance(status, dict) and "is_draft" in status:
+                return status
+        return None
+
+    def _readback_error(self, result: Any, exc: Exception) -> MammothAPIError:
+        """The error for a submitted task whose pipeline readback did not complete.
+
+        The POST has already returned successfully.  A timeout or failed
+        readback must not be reported as a clean retryable read: replaying the
+        transform could duplicate the task.
+        """
+        task_id = result.get("task_id") if isinstance(result, dict) else None
+        job_handle = next(
+            (
+                result.get(key)
+                for key in ("job_id", "future_id")
+                if isinstance(result, dict) and result.get(key) is not None
+            ),
+            None,
+        )
+        readback = getattr(exc, "details", {})
+        return MammothAPIError(
+            "Task was submitted, but pipeline readback did not complete.",
+            details={
+                "post_submitted": True,
+                "task_handle": task_id,
+                "job_handle": job_handle,
+                "dataview_id": self.id,
+                "dataset_id": self.dataset_id,
+                "project_id": getattr(self._client, "project_id", None),
+                "readback_error": dict(readback or {}),
+            },
+            method="POST",
+            operation_state="outcome_unknown",
+            job_handle=job_handle,
+            phase="post_submit_readback",
+        )
 
     async def _run_internal_dataset_export(
         self,
@@ -854,12 +887,8 @@ class View(
         state.  ``_draft_mode`` is only a compatibility fallback for test or
         legacy client doubles that do not implement the status seam.
         """
-        getter = getattr(self._client.pipeline, "get_draft_status", None)
-        if callable(getter):
-            status = await getter(self.id, self.dataset_id)
-            if isinstance(status, dict) and "is_draft" in status:
-                return bool(status["is_draft"])
-        return self._draft_mode
+        status = await self._pipeline_status()
+        return bool(status["is_draft"]) if status is not None else self._draft_mode
 
     async def enter_draft_mode(self) -> dict[str, Any]:
         """Enter draft mode — tasks are queued without pipeline execution.

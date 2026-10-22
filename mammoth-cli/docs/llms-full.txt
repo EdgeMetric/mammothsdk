@@ -163,12 +163,22 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes
 - `mammoth automation delete` [destructive/prompt_or_yes] -> mammoth.api.automations.AutomationsAPI.delete
   example: mammoth automation delete 123 --yes
+- `mammoth automation folders` [read/none] -> mammoth.api.automations.AutomationsAPI.watched_folders
+  example: mammoth automation folders
 - `mammoth automation get` [read/none] -> mammoth.api.automations.AutomationsAPI.get
   example: mammoth automation get 123
 - `mammoth automation list` [read/none] -> mammoth.api.automations.AutomationsAPI.list
   example: mammoth automation list
 - `mammoth automation restore` [benign_mutation/none] -> mammoth.api.automations.AutomationsAPI.restore
   example: mammoth automation restore 123
+- `mammoth automation route order` [benign_mutation/none] -> mammoth.api.automations.AutomationsAPI.set_route_order
+  example: mammoth automation route order 123 --input '{"automation_ids": [12, 11]}'
+- `mammoth automation route preview` [read/none] -> mammoth.api.automations.AutomationsAPI.preview_routes
+  example: mammoth automation route preview 123 --input '{"names": ["sales_2026-10.csv"]}'
+- `mammoth automation run-file add-anyway` [benign_mutation/prompt_or_yes] -> mammoth.api.automations.AutomationsAPI.add_run_file_anyway
+  example: mammoth automation run-file add-anyway 123 --yes
+- `mammoth automation runs` [read/none] -> mammoth.api.automations.AutomationsAPI.runs
+  example: mammoth automation runs 123 --input '{"limit": 10}'
 - `mammoth automation trash` [benign_mutation/none] -> mammoth.api.automations.AutomationsAPI.trash
   example: mammoth automation trash 123
 - `mammoth automation update` [external_effect/yes_always] -> mammoth.api.automations.AutomationsAPI.update
@@ -396,6 +406,36 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector connection test prod-warehouse
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
   example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes
+- `mammoth connector draft browse` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.browse
+  example: mammoth connector draft browse 123
+- `mammoth connector draft create` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.create
+  example: mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'
+- `mammoth connector draft discard` [destructive/prompt_or_yes] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
+  example: mammoth connector draft discard 123 --yes
+- `mammoth connector draft fill` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.fill
+  example: mammoth connector draft fill 123 --input '{"column": "region", "file_object_id": 77}'
+- `mammoth connector draft get` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.get
+  example: mammoth connector draft get 123
+- `mammoth connector draft known-sources` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources
+  example: mammoth connector draft known-sources
+- `mammoth connector draft list` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.list
+  example: mammoth connector draft list --input '{"status": "all"}'
+- `mammoth connector draft open` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.open
+  example: mammoth connector draft open 123 --input '{"ref": "sheet-ref", "name": "Sales 2026"}'
+- `mammoth connector draft read-tables` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables
+  example: mammoth connector draft read-tables 123
+- `mammoth connector draft sample` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
+  example: mammoth connector draft sample 123 deals_2026-10.csv
+- `mammoth connector draft save` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.save
+  example: mammoth connector draft save 123 --input '{"refresh": "daily", "dataset_name": "HubSpot deals"}'
+- `mammoth connector draft source join-candidates` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates
+  example: mammoth connector draft source join-candidates 123 resource-123
+- `mammoth connector draft source list` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.sources
+  example: mammoth connector draft source list 123
+- `mammoth connector draft source preview` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source
+  example: mammoth connector draft source preview 123 resource-123 --input '{"limit": 20}'
+- `mammoth connector draft update` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.update
+  example: mammoth connector draft update 123 --input '{"title": "HubSpot deals"}'
 - `mammoth connector ds-config create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_ds_config
   example: mammoth connector ds-config create postgres prod-warehouse --yes
 - `mammoth connector ds-config delete` [destructive/prompt_or_yes] -> mammoth.api.connectors.ConnectorsAPI.delete_ds_config
@@ -462,6 +502,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard canvas restore 123 --input '{"body": {"params": {"target_sequence": 1}}}'
 - `mammoth dashboard canvas save` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
   example: mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}'
+- `mammoth dashboard chart-type create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.chart_type_create
+  example: mammoth dashboard chart-type create --input '{"body": {"params": {"name": "Lollipop", "recipe": {"version": 1, "layout": "rows", "names": {"field": "region", "position": "before"}, "order": {"field": "sales", "dir": "desc"}, "marks": [{"mark": "segment", "colour": "muted", "size": {"field": "sales"}}, {"mark": "circle", "colour": "primary", "size": {"field": "sales"}}]}, "needs": [{"field": "region", "type": "text", "role": "dim", "label": "Category"}, {"field": "sales", "type": "number", "role": "measure", "label": "Value"}], "binding_template": {"agg": "sum"}}}}'
+- `mammoth dashboard chart-type delete` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.chart_type_delete
+  example: mammoth dashboard chart-type delete resource-123 --yes
+- `mammoth dashboard chart-type list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.chart_type_list
+  example: mammoth dashboard chart-type list
 - `mammoth dashboard chat attachment upload` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.chat_attachment_upload
   example: mammoth dashboard chat attachment upload 123 notes.pdf
 - `mammoth dashboard chat edit` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.chat_edit
@@ -536,6 +582,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard exemplar extract --input '{"body": {"params": {"name": "Revenue report"}}}'
 - `mammoth dashboard figure add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.append_figure
   example: mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'
+- `mammoth dashboard figure drill` [read/none] -> mammoth.api.dashboards.DashboardsAPI.figure_drill
+  example: mammoth dashboard figure drill 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'
+- `mammoth dashboard figure recipe` [read/none] -> mammoth.api.dashboards.DashboardsAPI.figure_recipe
+  example: mammoth dashboard figure recipe 123 --input '{"body": {"params": {"describe": "Revenue by region as bars"}}}'
+- `mammoth dashboard figure rows` [read/none] -> mammoth.api.dashboards.DashboardsAPI.figure_rows
+  example: mammoth dashboard figure rows 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'
 - `mammoth dashboard figure-intent` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.figure_intent
   example: mammoth dashboard figure-intent 123 --input '{"body": {"params": {"intent": "Summarize revenue by region"}}}'
 - `mammoth dashboard filter add` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.canvas_save
@@ -602,12 +654,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dashboard published canvas https://example.com/data.csv
 - `mammoth dashboard published data` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_data
   example: mammoth dashboard published data https://example.com/data.csv --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'
+- `mammoth dashboard published drill` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_drill
+  example: mammoth dashboard published drill https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'
 - `mammoth dashboard published og-card` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_og_card
   example: mammoth dashboard published og-card https://example.com/data.csv
 - `mammoth dashboard published pdf export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_pdf_export
   example: mammoth dashboard published pdf export https://example.com/data.csv --input '{"body": {"params": {"data": {}}}}'
 - `mammoth dashboard published pdf-artifact` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
   example: mammoth dashboard published pdf-artifact https://example.com/data.csv 123
+- `mammoth dashboard published rows` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_rows
+  example: mammoth dashboard published rows https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'
 - `mammoth dashboard published share-page` [read/none] -> mammoth.api.dashboards.DashboardsAPI.published_share_page
   example: mammoth dashboard published share-page https://example.com/data.csv
 - `mammoth dashboard published video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.published_video_export

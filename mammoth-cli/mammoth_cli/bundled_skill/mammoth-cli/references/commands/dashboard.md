@@ -162,6 +162,36 @@ Result: `DashboardCanvasSaveResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: ran once on CLI 2.0.28 — ILG simulation 2026-09-19: exit 0 on release with CLI 2.0.28. Authored a canvas from a blank one: page-level focus.kpis (sum with unit.prefix GBP, and a countDistinct card), added bar (measure+measure2), hbar, line on a derived ratio measure (canvas.derived),…
 
+### `dashboard.chart-type.create`
+
+Run: `mammoth dashboard chart-type create`. Exact input fields: `mammoth schema get dashboard.chart-type.create`.
+
+Example: `mammoth dashboard chart-type create --input '{"body": {"params": {"name": "Lollipop", "recipe": {"version": 1, "layout": "rows", "names": {"field": "region", "position": "before"}, "order": {"field": "sales", "dir": "desc"}, "marks": [{"mark": "segment", "colour": "muted", "size": {"field": "sales"}}, {"mark": "circle", "colour": "primary", "size": {"field": "sales"}}]}, "needs": [{"field": "region", "type": "text", "role": "dim", "label": "Category"}, {"field": "sales", "type": "number", "role": "measure", "label": "Value"}], "binding_template": {"agg": "sum"}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardChartTypeCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.chart-type.delete`
+
+Run: `mammoth dashboard chart-type delete`. Exact input fields: `mammoth schema get dashboard.chart-type.delete`.
+
+Example: `mammoth dashboard chart-type delete resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `DashboardChartTypeDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.chart-type.list`
+
+Run: `mammoth dashboard chart-type list`. Exact input fields: `mammoth schema get dashboard.chart-type.list`.
+
+Example: `mammoth dashboard chart-type list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardChartTypeListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.chat.attachment.upload`
 
 Run: `mammoth dashboard chat attachment upload`. Exact input fields: `mammoth schema get dashboard.chat.attachment.upload`.
@@ -449,6 +479,36 @@ Run: `mammoth dashboard figure add`. Exact input fields: `mammoth schema get das
 Example: `mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardFigureAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.figure.drill`
+
+Run: `mammoth dashboard figure drill`. Exact input fields: `mammoth schema get dashboard.figure.drill`.
+
+Example: `mammoth dashboard figure drill 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardFigureDrillResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.figure.recipe`
+
+Run: `mammoth dashboard figure recipe`. Exact input fields: `mammoth schema get dashboard.figure.recipe`.
+
+Example: `mammoth dashboard figure recipe 123 --input '{"body": {"params": {"describe": "Revenue by region as bars"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardFigureRecipeResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dashboard.figure.rows`
+
+Run: `mammoth dashboard figure rows`. Exact input fields: `mammoth schema get dashboard.figure.rows`.
+
+Example: `mammoth dashboard figure rows 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardFigureRowsResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: untried; no live run recorded.
 

@@ -33,6 +33,62 @@ CATALOG_COMMAND_REMAP = {
 # Underlying OpenAPI operation(s) and HTTP method for SDK-convenience commands
 # that do not map 1:1 to a single operation (they share an operation).
 EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
+    # Server master only (master-20261021): not in the production snapshot yet.
+    "dashboard.figure.drill": {"operation_ids": ["FigureDrill"], "method": "POST"},
+    "dashboard.published.drill": {"operation_ids": ["FigureDrillByUrl"], "method": "POST"},
+    "dashboard.figure.rows": {"operation_ids": ["FigureRows"], "method": "POST"},
+    "dashboard.published.rows": {"operation_ids": ["FigureRowsByUrl"], "method": "POST"},
+    "dashboard.figure.recipe": {"operation_ids": ["FigureRecipe"], "method": "POST"},
+    "dashboard.chart-type.list": {"operation_ids": ["ListWorkspaceChartTypes"], "method": "GET"},
+    "dashboard.chart-type.create": {
+        "operation_ids": ["CreateWorkspaceChartType"],
+        "method": "POST",
+    },
+    "dashboard.chart-type.delete": {
+        "operation_ids": ["DeleteWorkspaceChartType"],
+        "method": "DELETE",
+    },
+    "automation.folders": {"operation_ids": ["GetWatchedFolders"], "method": "GET"},
+    "automation.runs": {"operation_ids": ["GetAutomationRuns"], "method": "GET"},
+    "automation.route.preview": {"operation_ids": ["PreviewRoutes"], "method": "POST"},
+    "automation.route.order": {"operation_ids": ["SetRouteOrder"], "method": "PUT"},
+    "automation.run-file.add-anyway": {"operation_ids": ["AddRunFileAnyway"], "method": "POST"},
+    "connector.draft.list": {"operation_ids": ["ListConnectorDrafts"], "method": "GET"},
+    "connector.draft.create": {"operation_ids": ["CreateConnectorDraft"], "method": "POST"},
+    "connector.draft.known-sources": {
+        "operation_ids": ["ListConnectorKnownSources"],
+        "method": "GET",
+    },
+    "connector.draft.get": {"operation_ids": ["GetConnectorDraft"], "method": "GET"},
+    "connector.draft.update": {"operation_ids": ["PatchConnectorDraft"], "method": "PATCH"},
+    "connector.draft.discard": {"operation_ids": ["DiscardConnectorDraft"], "method": "DELETE"},
+    "connector.draft.browse": {
+        "operation_ids": ["BrowseConnectorDraftFolderConnectorDrafts"],
+        "method": "GET",
+    },
+    "connector.draft.fill": {"operation_ids": ["FillConnectorDraftGap"], "method": "POST"},
+    "connector.draft.open": {"operation_ids": ["OpenConnectorDraftEntry"], "method": "POST"},
+    "connector.draft.read-tables": {
+        "operation_ids": ["ReadConnectorDraftTables"],
+        "method": "POST",
+    },
+    "connector.draft.sample": {
+        "operation_ids": ["ShapeConnectorDraftFromSample"],
+        "method": "POST",
+    },
+    "connector.draft.save": {"operation_ids": ["StartConnectorDraftSave"], "method": "POST"},
+    "connector.draft.source.list": {
+        "operation_ids": ["ListConnectorDraftSources"],
+        "method": "GET",
+    },
+    "connector.draft.source.join-candidates": {
+        "operation_ids": ["ListConnectorDraftJoinCandidates"],
+        "method": "GET",
+    },
+    "connector.draft.source.preview": {
+        "operation_ids": ["PreviewConnectorDraftSource"],
+        "method": "POST",
+    },
     "dashboard.context.extract": {"operation_ids": ["ExtractContext"], "method": "POST"},
     "dashboard.exemplar.extract": {"operation_ids": ["ExtractExemplar"], "method": "POST"},
     "dashboard.swap-data": {"operation_ids": ["SwapDashboardData"], "method": "POST"},

@@ -22,6 +22,16 @@ Result: `DashboardPublishedDataResult`; mutation `benign_mutation`, confirmation
 
 Status on release: observed blocker — blocked_missing_fixture: Could not publish dashboard 59 to reach a live published state: `dashboard action 59 {action:publish-presentation}` failed twice with HTTP 500 outcome_unkn. Re-check before relying on it.
 
+### `dashboard.published.drill`
+
+Run: `mammoth dashboard published drill`. Exact input fields: `mammoth schema get dashboard.published.drill`.
+
+Example: `mammoth dashboard published drill https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardPublishedDrillResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
 ### `dashboard.published.og-card`
 
 Run: `mammoth dashboard published og-card`. Exact input fields: `mammoth schema get dashboard.published.og-card`.
@@ -51,6 +61,16 @@ Example: `mammoth dashboard published pdf export https://example.com/data.csv --
 Result: `DashboardPublishedPdfExportResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: observed blocker — backend_error: Got backend_code 4PERM002 PERMISSION_ERROR, "User lacks permission to perform given action" on POST /dashboards/url/IuZl5tk5KcEHJWTy4tnhrA/pdf (403), envelope: {"err. Re-check before relying on it.
+
+### `dashboard.published.rows`
+
+Run: `mammoth dashboard published rows`. Exact input fields: `mammoth schema get dashboard.published.rows`.
+
+Example: `mammoth dashboard published rows https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DashboardPublishedRowsResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
 
 ### `dashboard.published.share-page`
 

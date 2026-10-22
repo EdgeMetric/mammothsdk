@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 817 commands. 672 of them bind one of the 769 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 261 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
+The CLI publishes 845 commands. 700 of them bind one of the 769 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 261 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -17,20 +17,20 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 
 | Family | Commands | Ran once | Not supported | Untried |
 |---|---|---|---|---|
-| `dashboard` | 158 | 81 | 1 | 76 |
+| `dashboard` | 166 | 81 | 1 | 84 |
 | `support` | 112 | 9 | 0 | 103 |
 | `view` | 71 | 58 | 0 | 13 |
 | `agent` | 41 | 1 | 0 | 40 |
+| `connector` | 39 | 3 | 0 | 36 |
 | `workspace` | 27 | 7 | 0 | 20 |
 | `billing` | 26 | 4 | 0 | 22 |
 | `dataset` | 26 | 12 | 0 | 14 |
-| `connector` | 24 | 3 | 0 | 21 |
 | `workflow` | 23 | 9 | 0 | 14 |
 | `collection` | 21 | 0 | 0 | 21 |
 | `project` | 18 | 15 | 0 | 3 |
 | `parameter` | 14 | 7 | 0 | 7 |
+| `automation` | 13 | 3 | 0 | 10 |
 | `browse` | 9 | 1 | 0 | 8 |
-| `automation` | 8 | 3 | 0 | 5 |
 | `file` | 8 | 5 | 0 | 3 |
 | `folder` | 8 | 8 | 0 | 0 |
 | `snippet` | 8 | 6 | 0 | 2 |

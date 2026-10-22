@@ -27,6 +27,9 @@ _BILLING_INTERVALS = ("monthly", "yearly", "annual")
 _COLLECTION_METHODS = ("send_invoice", "charge_automatically")
 _PAYMENT_TERMS = ("due_on_receipt", "net15", "net30", "net45", "net60")
 
+#: Where a connector draft was started (``mammoth.api.connector_drafts.DRAFT_ORIGINS``).
+_DRAFT_ORIGINS = ("agent", "connections", "modal")
+
 #: command id -> field -> accepted spellings (canonical casing).
 FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     "agent.message.set-request-kind": {
@@ -37,6 +40,12 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     "agent.run.units.list": {"state": ("queued", "running", "done", "failed", "skipped")},
     "agent.access.request.list": {"status": ("open", "done", "declined", "dismissed")},
     "agent.access.request.resolve": {"status": ("done", "declined", "dismissed")},
+    "connector.draft.create": {
+        "origin": _DRAFT_ORIGINS,
+        "kind": ("native", "rest", "custom_code", "url", "webhook"),
+    },
+    "connector.draft.list": {"status": ("live", "saved", "all")},
+    "connector.draft.save": {"refresh": ("daily", "manual")},
     "annotation.create": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.list": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.update": {"status": ("open", "resolved")},

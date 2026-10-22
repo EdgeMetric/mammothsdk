@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.94.
+Generated from the reviewed command manifests for mammoth-cli 2.2.95.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 817.
+Total commands: 845.
 
 ## activity
 
@@ -667,6 +667,13 @@ Total commands: 817.
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.delete`
 - Agent example: `mammoth automation delete 123 --yes`
 
+### `mammoth automation folders`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.watched_folders`
+- Agent example: `mammoth automation folders`
+
 ### `mammoth automation get`
 
 **Arguments**
@@ -695,6 +702,50 @@ Total commands: 817.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.restore`
 - Agent example: `mammoth automation restore 123`
+
+### `mammoth automation route order`
+
+**Arguments**
+
+- `FOLDER_RESOURCE_ID` (int, required) — ID of the folder resource.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.set_route_order`
+- Agent example: `mammoth automation route order 123 --input '{"automation_ids": [12, 11]}'`
+
+### `mammoth automation route preview`
+
+**Arguments**
+
+- `FOLDER_RESOURCE_ID` (int, required) — ID of the folder resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.preview_routes`
+- Agent example: `mammoth automation route preview 123 --input '{"names": ["sales_2026-10.csv"]}'`
+
+### `mammoth automation run-file add-anyway`
+
+**Arguments**
+
+- `RUN_FILE_ID` (int, required) — ID of the run file.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.add_run_file_anyway`
+- Agent example: `mammoth automation run-file add-anyway 123 --yes`
+
+### `mammoth automation runs`
+
+**Arguments**
+
+- `AUTOMATION_ID` (int, required) — ID of the automation.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.automations.AutomationsAPI.runs`
+- Agent example: `mammoth automation runs 123 --input '{"limit": 10}'`
 
 ### `mammoth automation trash`
 
@@ -1628,6 +1679,162 @@ Total commands: 817.
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_connection`
 - Agent example: `mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes`
 
+### `mammoth connector draft browse`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.browse`
+- Agent example: `mammoth connector draft browse 123`
+
+### `mammoth connector draft create`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.create`
+- Agent example: `mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'`
+
+### `mammoth connector draft discard`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.discard`
+- Agent example: `mammoth connector draft discard 123 --yes`
+
+### `mammoth connector draft fill`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.fill`
+- Agent example: `mammoth connector draft fill 123 --input '{"column": "region", "file_object_id": 77}'`
+
+### `mammoth connector draft get`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.get`
+- Agent example: `mammoth connector draft get 123`
+
+### `mammoth connector draft known-sources`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources`
+- Agent example: `mammoth connector draft known-sources`
+
+### `mammoth connector draft list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.list`
+- Agent example: `mammoth connector draft list --input '{"status": "all"}'`
+
+### `mammoth connector draft open`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.open`
+- Agent example: `mammoth connector draft open 123 --input '{"ref": "sheet-ref", "name": "Sales 2026"}'`
+
+### `mammoth connector draft read-tables`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables`
+- Agent example: `mammoth connector draft read-tables 123`
+
+### `mammoth connector draft sample`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the connector draft.
+- `PATH` (str, required) — Path to a local CSV, TSV or Excel file shaped like the table wanted.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.sample`
+- Agent example: `mammoth connector draft sample 123 deals_2026-10.csv`
+
+### `mammoth connector draft save`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.save`
+- Agent example: `mammoth connector draft save 123 --input '{"refresh": "daily", "dataset_name": "HubSpot deals"}'`
+
+### `mammoth connector draft source join-candidates`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+- `SOURCE_ID` (str, required) — ID of the source.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates`
+- Agent example: `mammoth connector draft source join-candidates 123 resource-123`
+
+### `mammoth connector draft source list`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.sources`
+- Agent example: `mammoth connector draft source list 123`
+
+### `mammoth connector draft source preview`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+- `SOURCE_ID` (str, required) — ID of the source.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source`
+- Agent example: `mammoth connector draft source preview 123 resource-123 --input '{"limit": 20}'`
+
+### `mammoth connector draft update`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.update`
+- Agent example: `mammoth connector draft update 123 --input '{"title": "HubSpot deals"}'`
+
 ### `mammoth connector ds-config create`
 
 **Arguments**
@@ -1952,6 +2159,31 @@ Total commands: 817.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.canvas_save`
 - Agent example: `mammoth dashboard canvas save 123 --input '{"body": {"params": {"canvas": {}}}}'`
+
+### `mammoth dashboard chart-type create`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chart_type_create`
+- Agent example: `mammoth dashboard chart-type create --input '{"body": {"params": {"name": "Lollipop", "recipe": {"version": 1, "layout": "rows", "names": {"field": "region", "position": "before"}, "order": {"field": "sales", "dir": "desc"}, "marks": [{"mark": "segment", "colour": "muted", "size": {"field": "sales"}}, {"mark": "circle", "colour": "primary", "size": {"field": "sales"}}]}, "needs": [{"field": "region", "type": "text", "role": "dim", "label": "Category"}, {"field": "sales", "type": "number", "role": "measure", "label": "Value"}], "binding_template": {"agg": "sum"}}}}'`
+
+### `mammoth dashboard chart-type delete`
+
+**Arguments**
+
+- `CHART_TYPE_ID` (str, required) — ID of the chart type.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chart_type_delete`
+- Agent example: `mammoth dashboard chart-type delete resource-123 --yes`
+
+### `mammoth dashboard chart-type list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.chart_type_list`
+- Agent example: `mammoth dashboard chart-type list`
 
 ### `mammoth dashboard chat attachment upload`
 
@@ -2335,6 +2567,39 @@ Total commands: 817.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.append_figure`
 - Agent example: `mammoth dashboard figure add 123 --input '{"dataview_id": 1, "figure": {"kind": "hbar", "title": "Revenue by region", "dim": "Region", "measure": "Revenue", "agg": "sum"}}'`
 
+### `mammoth dashboard figure drill`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.figure_drill`
+- Agent example: `mammoth dashboard figure drill 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'`
+
+### `mammoth dashboard figure recipe`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.figure_recipe`
+- Agent example: `mammoth dashboard figure recipe 123 --input '{"body": {"params": {"describe": "Revenue by region as bars"}}}'`
+
+### `mammoth dashboard figure rows`
+
+**Arguments**
+
+- `DASHBOARD_ID` (int, required) — ID of the dashboard.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.figure_rows`
+- Agent example: `mammoth dashboard figure rows 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'`
+
 ### `mammoth dashboard figure-intent`
 
 **Arguments**
@@ -2685,6 +2950,17 @@ Total commands: 817.
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.published_data`
 - Agent example: `mammoth dashboard published data https://example.com/data.csv --input '{"body": {"params": {"descriptor_ids": ["resource-123"]}}}'`
 
+### `mammoth dashboard published drill`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.published_drill`
+- Agent example: `mammoth dashboard published drill https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}}'`
+
 ### `mammoth dashboard published og-card`
 
 **Arguments**
@@ -2718,6 +2994,17 @@ Total commands: 817.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact`
 - Agent example: `mammoth dashboard published pdf-artifact https://example.com/data.csv 123`
+
+### `mammoth dashboard published rows`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.published_rows`
+- Agent example: `mammoth dashboard published rows https://example.com/data.csv --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'`
 
 ### `mammoth dashboard published share-page`
 
