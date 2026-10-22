@@ -172,21 +172,14 @@ def test_unknown_command_returns_none() -> None:
 
 def test_schema_get_exposes_dispatch_policy_and_exact_sensitive_scope() -> None:
     project_admin = get_schema("project.user.update")
-    share = get_schema("data-app.share")
     apply = get_schema("view.exportable-config.apply")
-    assert project_admin is not None and share is not None and apply is not None
+    assert project_admin is not None and apply is not None
 
     assert (project_admin["mutation_class"], project_admin["confirmation"]) == (
         "high_impact",
         "yes_always",
     )
     assert project_admin["scope_requirements"]["required_context"] == ["project_id"]
-    assert share["scope_requirements"] == {
-        "kind": "workspace",
-        "required_context": ["workspace_id"],
-        "target_fields": ["data_app_id"],
-        "target_rule": "data_app_id is a required positional",
-    }
     assert (apply["mutation_class"], apply["confirmation"], apply["wait_policy"]) == (
         "reversible_pipeline",
         "confirm_target",
@@ -194,9 +187,7 @@ def test_schema_get_exposes_dispatch_policy_and_exact_sensitive_scope() -> None:
     )
     assert apply["scope_requirements"]["target_fields"] == ["view_id", "dataset_id"]
     assert "--yes" in shlex.split(project_admin["agent_example"])
-    assert "--yes" in shlex.split(share["agent_example"])
     assert "--yes" in shlex.split(project_admin["runnable_example"])
-    assert "--yes" in shlex.split(share["runnable_example"])
 
 
 def test_agent_transform_language_finds_typed_routes() -> None:

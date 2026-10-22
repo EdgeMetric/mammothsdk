@@ -7,15 +7,8 @@ from mammoth_cli.testing import make_runner
 _GROUPS = (
     "access",
     "action",
-    "charter",
-    "feedback",
-    "goldens",
-    "memory",
-    "projects",
     "run",
-    "scratch",
     "session",
-    "team",
     "turn",
 )
 

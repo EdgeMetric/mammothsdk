@@ -82,7 +82,6 @@ _GROUP_DESCRIPTIONS = {
     "log": "Locate and read the local run log.",
     "context": "Inspect and select the active project context.",
     "dashboard": "Build, query, and publish dashboards.",
-    "data-app": "Create and manage data applications.",
     "dataset": "Create, inspect, and manage datasets.",
     "external-key": "Manage LLM provider keys (OpenAI, Anthropic, etc.) used by AI features.",
     "file": (
@@ -115,19 +114,12 @@ _GROUP_DESCRIPTIONS = {
 
 # One line per ``agent`` subgroup, so ``mammoth agent --help`` tells them apart.
 _AGENT_SUBGROUP_DESCRIPTIONS = {
-    "access": "Set who may use an agent definition.",
+    "access": "Grant, request and review access to the Mammoth agent, and its settings.",
     "action": "List and delete the changes an agent chat made.",
-    "charter": "Read, change and restore an agent definition's charter.",
-    "feedback": "Read the feedback an agent definition has received.",
-    "goldens": "Manage and run the golden cases an agent definition is proven against.",
-    "memory": "Manage the facts an agent definition has learned, per project.",
     "message": "Correct the request kind of a reply in an agent chat.",
     "plan": "Approve, skip or discard the plan of an agent chat, or edit its workflow proposal.",
-    "projects": "Set or clear the projects an agent definition works in.",
     "run": "Inspect and control an agent's runs.",
-    "scratch": "Read, write and clear an agent definition's scratchpad notes per project.",
     "session": "List, read, delete and share agent chat sessions.",
-    "team": "Set the agents this agent may consult while answering.",
     "turn": "Control one turn of an agent chat session.",
 }
 
@@ -216,7 +208,6 @@ _SUBGROUP_DESCRIPTIONS = {
     "dashboard templates": "Use or list pending dashboard templates.",
     "dashboard v3": "Generate v3 dashboards.",
     "dashboard video": "Export a dashboard as a video.",
-    "data-app user": "List and remove the users of a data app.",
     "dataset broken-rows": "List and resolve rows that failed to load.",
     "dataset definition": "List, save and remove what terms mean for a dataset.",
     "dataset file-settings": "Read, update and undo a dataset's file settings.",
@@ -308,7 +299,6 @@ _ROOT_HELP_PANELS = {
     "batch": "Work with data",
     "dashboard": "Build and share",
     "collection": "Build and share",
-    "data-app": "Build and share",
     "report": "Build and share",
     "template": "Build and share",
     "snippet": "Build and share",

@@ -531,16 +531,6 @@ CASES = [
         "response": {"folder": {"id": 905, "name": "C2_FOLDER_RENAMED"}},
     },
     {
-        "route": "addon.list",
-        "argv": ["addon", "list"],
-        "input": None,
-        "api": AddonsAPI,
-        "method": "list",
-        "kwargs": {},
-        "wire": ["GET", "/workspaces/4/addons", {}],
-        "response": {},
-    },
-    {
         "route": "addon.storage.add",
         "argv": ["addon", "storage", "add"],
         "input": {"additional_storage_gb": 12},
@@ -1063,11 +1053,6 @@ def _argv(case: dict[str, Any]) -> list[str]:
     return out
 
 
-# `addon list` is fail-loud by design (7363d74): the backend has no GET
-# /workspaces/{id}/addons route.  The SDK wire stays pinned below; the CLI must
-# refuse before any request leaves the process.
-CLI_UNSUPPORTED_ROUTES = frozenset({"addon.list"})
-
 #: The project's folders as the backend lists them: each folder is shown by 1000 + its own id.
 _FOLDER_SCAN = {"folders": [{"id": n, "resource_id": 1000 + n} for n in (811, 902, 903, 904, 905)]}
 
@@ -1091,12 +1076,6 @@ def test_cli_to_recording_transport_uses_independent_wire(
 ) -> None:
     service, api = real_service(project_id=case.get("project"))
     monkeypatch.setattr(factory, "build_service", lambda *args, **kwargs: service)
-    if case["route"] in CLI_UNSUPPORTED_ROUTES:
-        result = make_runner().invoke(_argv(case))
-        assert result.exit_code == 2, result.output
-        assert json.loads(result.output)["error"]["code"] == "not_available"
-        assert api.requests == []
-        return
     method, path, kwargs = case["wire"]
     _on_folder_routes(api, case)
     if case["route"] == "project.create":

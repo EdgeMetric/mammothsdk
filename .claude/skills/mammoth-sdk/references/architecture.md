@@ -41,7 +41,6 @@ mammoth/
 │   ├── connectors.py        # ConnectorsAPI
 │   ├── dashboard_generated.py
 │   ├── dashboards.py        # DashboardsAPI
-│   ├── data_apps.py         # DataAppsAPI
 │   ├── data_checks.py       # DataChecksAPI
 │   ├── datasets.py          # DatasetsAPI
 │   ├── dataviews.py         # DataviewsAPI

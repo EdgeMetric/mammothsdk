@@ -7,7 +7,7 @@ needs no server; ``link`` is the one place that knows the app's route shapes, so
 an agent does not guess which number is which.
 
 The route shapes mirror the web app's router (mm-frontend ``data-library``,
-``data-editor``, ``workflows``, ``dashboard`` and ``data-apps`` route files).
+``data-editor``, ``workflows`` and ``dashboard`` route files).
 """
 
 from __future__ import annotations
@@ -29,7 +29,6 @@ _PATH_IDS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"/datasets/(\d+)(?:/|$)"), "dataset_id"),
     (re.compile(r"/(?:views|dataviews)/(\d+)(?:/|$)"), "view_id"),
     (re.compile(r"/dashboard/(\d+)(?:/|$)"), "dashboard_id"),
-    (re.compile(r"/data-apps/(\d+)(?:/|$)"), "data_app_id"),
     (re.compile(r"/workflows/(\d+)(?:/|$)"), "workflow_id"),
 )
 

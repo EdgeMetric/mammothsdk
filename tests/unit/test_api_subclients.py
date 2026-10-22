@@ -3230,10 +3230,6 @@ class TestUserProfileAPI:
             await client.user_profile.update()
         client._request_json.assert_not_called()
 
-    async def test_change_password(self, client: MammothClient):
-        await client.user_profile.change_password(current_password="old", new_password="new")
-        assert_called_with_method_and_endpoint(client._request_json, "POST", "/change_password")
-
     async def test_get_preferences(self, client: MammothClient):
         await client.user_profile.get_preferences()
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/preferences")

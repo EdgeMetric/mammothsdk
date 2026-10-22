@@ -223,7 +223,7 @@ def test_the_checker_flags_the_old_broken_examples() -> None:
         "agent_example": "mammoth batch get 123 123",
     }
     assert any("repeat" in problem for problem in example_problems(twice))
-    pointer = {**base, "command_id": "data-app.create", "agent_example": "mammoth schema get x"}
+    pointer = {**base, "command_id": "dashboard.create", "agent_example": "mammoth schema get x"}
     assert any("pointer" in problem for problem in example_problems(pointer))
 
 

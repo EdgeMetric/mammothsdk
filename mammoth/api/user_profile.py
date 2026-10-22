@@ -62,28 +62,6 @@ class UserProfileAPI:
             raise MammothValidationError("Provide first_name and/or last_name to update.")
         return await self._client._request_json("PATCH", "/self", json={"patch": operations})
 
-    async def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
-        """Change user password.
-
-        Retired: the server no longer serves ``POST /user/change_password``, so this
-        call answers 404. The web app changes it under Profile settings > Reset Password.
-
-        Args:
-            current_password: Current password.
-            new_password: New password.
-
-        Returns:
-            Dict with result.
-        """
-        return await self._client._request_json(
-            "POST",
-            "/user/change_password",
-            json={
-                "current_password": current_password,
-                "new_password": new_password,
-            },
-        )
-
     async def get_preferences(self) -> dict[str, Any]:
         """Get user preferences.
 

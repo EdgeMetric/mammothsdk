@@ -334,7 +334,6 @@ Every public method of the sub-clients not described above, by name. All are cor
 - `client.billing` (BillingAPI): `chargebee_plan`, `hosted_page`, `stripe_checkout_url`, `stripe_portal_url`, `stripe_get`, `stripe_create`, `stripe_cancel`, `stripe_end_trial`, `stripe_retry_payment`, `stripe_sync`, `stripe_status`, `stripe_history`, `stripe_usage`, `stripe_preview_invoice`, `stripe_upcoming_invoice`, `stripe_resume`, `stripe_recheck_limits`, `stripe_storage_update`, `stripe_payment_method_list`, `stripe_payment_method_set_default`, `stripe_payment_method_delete`, `invoice_list`, `invoice_charge`, `subscription_get`, `subscription_update`
 - `client.checkpoints` (CheckpointsAPI): `list`, `get`, `create`, `update`, `delete`
 - `client.connector_ai` (ConnectorAIAPI): `chat`, `history`, `session_list`, `session_messages`, `submit_column_selection`, `submit_credentials`
-- `client.data_apps` (DataAppsAPI): `list`, `get`, `create`, `update`, `delete`, `active_job`, `job`, `pipeline_changes`, `share`, `upload`, `user_list`, `user_remove`
 - `client.data_checks` (DataChecksAPI): `list`, `get`, `create`, `update`, `delete`
 - `client.derivatives` (DerivativesAPI): `list`, `create`, `data`, `update`, `delete`
 - `client.notifications` (NotificationsAPI): `list`, `delete`, `delete_batch`, `update`, `update_batch`
@@ -381,5 +380,5 @@ Methods added since the sections above were written (same convention):
 - `client.ai`: `get_data_gen_info`, `generate_sql`, `query_gen`, `condition_generate`, `expression_generate`, `retention_condition`
 - `client.batches`: `create_spec`
 - `client.browse`: `root`, `workspace_resources`, `folder_resources`, `resources_list`, `resource_get`, `resource_ancestors`, `resources_search`, `resources_bulk`
-- `client.user_profile`: `change_password`, `get_preferences`, `update_preferences`
+- `client.user_profile`: `get_preferences`, `update_preferences`
 - `client.addons`: `add_connector`, `remove_connector`, `add_storage`, `remove_storage`, `add_users`, `remove_users`

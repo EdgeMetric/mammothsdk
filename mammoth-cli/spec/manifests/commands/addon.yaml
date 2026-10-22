@@ -35,10 +35,7 @@ commands:
   undo_test: null
   known_restrictions: Adds paid connector add-ons to the workspace and changes its bill. Pass connector_id or connector_ids. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan
 - command_id: addon.connector.remove
   command_path: addon connector remove
   disposition: command
@@ -74,43 +71,7 @@ commands:
   undo_test: null
   known_restrictions: Removes paid connector add-ons from the workspace; connections that use them stop working. Pass connector_id or connector_ids. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
-- command_id: addon.list
-  command_path: addon list
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.addons.AddonsAPI.list
-  sdk_conversion: Call mammoth.api.addons.AddonsAPI.list with validated request fields.
-  request_model: AddonListRequest
-  result_model: AddonListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-ADDON-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth addon list --help
-  agent_example: mammoth addon list
-  unit_tests:
-  - UT-ADDON-LIST
-  contract_tests:
-  - CT-ADDON-LIST-HUMAN
-  - CT-ADDON-LIST-JSON
-  - CT-ADDON-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Retired: the server no longer has a route that lists add-ons, so the command answers not_available and names the web app (Settings > Plan). Nothing replaces it; billing stripe status shows the storage allowance and plan.'
-  reviewed_by: primary
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan
 - command_id: addon.storage.add
   command_path: addon storage add
   disposition: command
@@ -146,10 +107,7 @@ commands:
   undo_test: null
   known_restrictions: Adds paid storage to the workspace and changes its bill. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan
 - command_id: addon.storage.remove
   command_path: addon storage remove
   disposition: command
@@ -185,10 +143,7 @@ commands:
   undo_test: null
   known_restrictions: Removes paid storage from the workspace; it fails or data becomes read-only if usage exceeds what is left. Check `workspace storage-breakdown` first. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan
 - command_id: addon.user.add
   command_path: addon user add
   disposition: command
@@ -224,10 +179,7 @@ commands:
   undo_test: null
   known_restrictions: Adds paid user seats to the workspace and changes its bill. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan
 - command_id: addon.user.remove
   command_path: addon user remove
   disposition: command
@@ -263,7 +215,4 @@ commands:
   undo_test: null
   known_restrictions: Removes paid user seats; fails if more users than seats would remain. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   reviewed_by: primary
-  readback:
-    command: addon.list
-    ids: {}
-    kind: object
+  no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill under Settings > Plan

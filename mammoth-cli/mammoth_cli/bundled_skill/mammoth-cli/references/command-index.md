@@ -1,12 +1,12 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 860; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 817; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
 - [activity](commands/activity.md) — 2 published commands
-- [addon](commands/addon.md) — 7 published commands
-- [agent](commands/agent.md) — 73 published commands
+- [addon](commands/addon.md) — 6 published commands
+- [agent](commands/agent.md) — 44 published commands
 - [ai](commands/ai.md) — 5 published commands
 - [annotation](commands/annotation.md) — 5 published commands
 - [auth](commands/auth.md) — 5 published commands
@@ -29,7 +29,6 @@ Load only the applicable domain file:
 - [dashboard-embed](commands/dashboard-embed.md) — 9 published commands
 - [dashboard-published](commands/dashboard-published.md) — 8 published commands
 - [dashboard](commands/dashboard.md) — 106 published commands
-- [data-app](commands/data-app.md) — 12 published commands
 - [dataset](commands/dataset.md) — 30 published commands
 - [doctor](commands/doctor.md) — 1 published commands
 - [external-key](commands/external-key.md) — 4 published commands
@@ -54,7 +53,7 @@ Load only the applicable domain file:
 - [token](commands/token.md) — 3 published commands
 - [trash](commands/trash.md) — 3 published commands
 - [upgrade](commands/upgrade.md) — 1 published commands
-- [user](commands/user.md) — 8 published commands
+- [user](commands/user.md) — 7 published commands
 - [version](commands/version.md) — 1 published commands
 - [view-transform](commands/view-transform.md) — 35 published commands
 - [view](commands/view.md) — 110 published commands

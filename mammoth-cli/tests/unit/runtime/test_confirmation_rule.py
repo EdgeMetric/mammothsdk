@@ -44,9 +44,7 @@ def test_every_promptless_exception_is_real_and_has_a_reason() -> None:
         assert by_id[command_id]["confirmation"] == "none", f"{command_id} now asks; drop it here"
 
 
-@pytest.mark.parametrize(
-    "command_id", ["project.memory.remove", "agent.projects.clear", "agent.plan.discard"]
-)
+@pytest.mark.parametrize("command_id", ["project.memory.remove", "agent.plan.discard"])
 def test_the_three_reported_commands_prompt_or_yes(command_id: str) -> None:
     by_id = {r["command_id"]: r for r in _records()}
     assert by_id[command_id]["confirmation"] == "prompt_or_yes"

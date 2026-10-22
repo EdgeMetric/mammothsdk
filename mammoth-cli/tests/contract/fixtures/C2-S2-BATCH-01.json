@@ -1,11 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S2 independent route oracles batch 01",
-  "route_inventory": {"s2": 94, "batch_size": 30, "batch_start": 1},
+  "route_inventory": {"s2": 93, "batch_size": 29, "batch_start": 1},
   "pinned_spec": "mammoth-cli/spec/openapi/openapi.json",
   "cases": [
     {"route": "addon.connector.remove", "command": ["addon", "connector", "remove"], "input": {"connector_ids": [601, 602]}, "confirm": true, "sdk_api": "addons", "sdk_method": "remove_connector", "sdk_kwargs": {"connector_ids": [601, 602]}, "expected": {"method": "DELETE", "path": "/workspaces/4/addons/connectors", "query": null, "json": {"connector_ids": [601, 602]}}, "response": {}},
-    {"route": "addon.list", "command": ["addon", "list"], "input": null, "sdk_api": "addons", "sdk_method": "list", "sdk_kwargs": {}, "expected": {"method": "GET", "path": "/workspaces/4/addons", "query": null, "json": null}, "response": {}},
     {"route": "addon.storage.add", "command": ["addon", "storage", "add"], "input": {"additional_storage_gb": 37}, "confirm": true, "sdk_api": "addons", "sdk_method": "add_storage", "sdk_kwargs": {"additional_storage_gb": 37}, "expected": {"method": "POST", "path": "/workspaces/4/addons/storage", "query": null, "json": {"additional_storage_gb": 37}}, "response": {}},
     {"route": "addon.storage.remove", "command": ["addon", "storage", "remove"], "input": {"removal_storage_gb": 19}, "confirm": true, "sdk_api": "addons", "sdk_method": "remove_storage", "sdk_kwargs": {"removal_storage_gb": 19}, "expected": {"method": "DELETE", "path": "/workspaces/4/addons/storage", "query": null, "json": {"removal_storage_gb": 19}}, "response": {}},
     {"route": "addon.user.add", "command": ["addon", "user", "add"], "input": {"user_count": 23}, "confirm": true, "sdk_api": "addons", "sdk_method": "add_users", "sdk_kwargs": {"user_count": 23}, "expected": {"method": "POST", "path": "/workspaces/4/addons/users", "query": null, "json": {"user_count": 23}}, "response": {}},

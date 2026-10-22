@@ -339,37 +339,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         )
         for verb in ("messages", "transcript")
     },
-    "agent.charter.restore": (
-        PositionalSpec(
-            name="agent_key",
-            type=str,
-            required=True,
-            help="Key identifying the agent.",
-        ),
-        PositionalSpec(
-            name="version",
-            type=int,
-            required=True,
-            help="Charter version to restore (from agent charter versions).",
-        ),
-    ),
-    **{
-        f"agent.scratch.{verb}": (
-            PositionalSpec(
-                name="agent_key",
-                type=str,
-                required=True,
-                help="Key identifying the agent.",
-            ),
-            PositionalSpec(
-                name="name",
-                type=str,
-                required=True,
-                help="Name of the working note (from agent scratch list).",
-            ),
-        )
-        for verb in ("set", "get", "clear")
-    },
     "dashboard.assess-twb": (
         PositionalSpec(
             name="file",
@@ -694,24 +663,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Path to a local file to upload; or pass one or more via the 'files' field.",
             falls_back_to_field="files",
             example_value="./sales.csv",
-        ),
-    ),
-    # ``data-app user remove`` takes the shared user's email as a required second
-    # positional. ``email`` is not an identity-named signature parameter, so the
-    # derivation stops after ``data_app_id``; the handler reads it positionally
-    # (never from ``--input``), so it is authored here as a required locator.
-    "data-app.user.remove": (
-        PositionalSpec(
-            name="data_app_id",
-            type=int,
-            required=True,
-            help="ID of the data app.",
-        ),
-        PositionalSpec(
-            name="email",
-            type=str,
-            required=True,
-            help="Email address of the shared user to remove.",
         ),
     ),
     # ``ai condition generate`` / ``ai expression generate`` take the dataset id
@@ -1320,25 +1271,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=False,
             help="Generation intent for the SQL query; or pass it via the 'intent' input field.",
             falls_back_to_field="intent",
-        ),
-    ),
-    # ``data-app upload`` takes the local file path as an OPTIONAL second
-    # positional (after the data-app id) OR a ``file`` --input field; the handler
-    # reads the positional first, falling back to the field. Mirror the
-    # ``file.upload`` locator, keeping ``data_app_id`` as the leading required id.
-    "data-app.upload": (
-        PositionalSpec(
-            name="data_app_id",
-            type=int,
-            required=True,
-            help="ID of the data app to upload into.",
-        ),
-        PositionalSpec(
-            name="file",
-            type=str,
-            required=False,
-            help="Path to a local file to upload; or pass it via the 'file' input field.",
-            falls_back_to_field="file",
         ),
     ),
     # ``completion show`` / ``completion install`` take the shell name as a

@@ -75,7 +75,6 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
         "role": ("workspace_member", "workspace_admin", "workspace_owner", "workspace_guest")
     },
     "batch.create": {"expected_destination_c_type": ("TEXT", "NUMERIC", "DATE")},
-    "agent.list": {"status": ("draft", "published", "disabled")},
     "ai.retention.condition": {"mode": ("generate", "test")},
     "dataset.interpretation.confirm": {"mode": ("interpreted", "original")},
     "project.user.add": {"role": ("project_admin", "project_analyst")},
@@ -207,10 +206,6 @@ ENUM_LIKE_FIELD_NAMES = frozenset(
 
 #: ``(command id, field)`` pairs whose value is free text or an open server vocabulary.
 OPEN_VOCABULARY_ALLOWLIST: dict[tuple[str, str], str] = {
-    **{
-        (cid, "role"): "agent roles are served by 'agent roles' (server-defined, can grow)"
-        for cid in ("agent.access.set", "agent.create", "agent.update")
-    },
     ("support.workspace.user.transfer", "role"): "SDK documents no closed list for this role",
     ("notification.list", "status"): "notification statuses are not documented by the SDK",
     **{

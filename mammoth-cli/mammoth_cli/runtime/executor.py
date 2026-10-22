@@ -71,7 +71,6 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "skill.list",
         "skill.path",
         # Read or write a path on the host's filesystem.
-        "data-app.upload",
         "file.upload",
         "file.upload-folder",
         "user.avatar.upload",

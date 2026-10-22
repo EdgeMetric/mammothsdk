@@ -61,7 +61,6 @@ S2_ROUTE_INVENTORY = frozenset(
     {
         "addon.connector.add",
         "addon.connector.remove",
-        "addon.list",
         "addon.storage.add",
         "addon.storage.remove",
         "addon.user.add",
@@ -208,7 +207,7 @@ def _write(tmp_path: Path, value: object) -> str:
 
 def test_inventory_is_exactly_the_closed_s2_surface() -> None:
     assert S2_COMMANDS == S2_ROUTE_INVENTORY
-    assert len(S2_ROUTE_INVENTORY) == 104
+    assert len(S2_ROUTE_INVENTORY) == 103
     for command_id in sorted(S2_ROUTE_INVENTORY):
         record = command_by_id(command_id)
         assert record is not None

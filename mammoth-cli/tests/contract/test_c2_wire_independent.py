@@ -24,7 +24,6 @@ from mammoth.api.addons import AddonsAPI
 from mammoth.api.annotations import AnnotationsAPI
 from mammoth.api.browse import BrowseAPI
 from mammoth.api.dashboards import DashboardActionType, DashboardsAPI
-from mammoth.api.data_apps import DataAppsAPI
 from mammoth.api.datasets import DatasetsAPI
 from mammoth.api.files import FilesAPI
 from mammoth.api.notifications import NotificationsAPI
@@ -142,11 +141,6 @@ def _invoke(client: RecordingClient, route: str) -> None:
         "dashboard.context.delete": lambda: dashboards.context_delete("C2_CONTEXT"),
         "dashboard.style.token.list": lambda: dashboards.style_token_list("C2_STYLE"),
         "dashboard.template.list": lambda: dashboards.template_list(),
-        "data-app.list": lambda: DataAppsAPI(client).list(17),  # type: ignore[arg-type]
-        "data-app.create": lambda: DataAppsAPI(client).create(
-            {"name": "C2_APP", "source_dataview_id": 1002}
-        ),  # type: ignore[arg-type]
-        "data-app.update": lambda: DataAppsAPI(client).update(1101, {"C2_SETTING": "C2_VALUE"}),  # type: ignore[arg-type]
         "report.list": lambda: ReportsAPI(client).list(31, 5),  # type: ignore[arg-type]
         "template.update": lambda: TemplatesAPI(client).update(1201, {"C2_TEMPLATE": "C2_VALUE"}),  # type: ignore[arg-type]
     }
@@ -187,6 +181,6 @@ def test_coverage_scope_is_explicit_without_workbook_dependencies() -> None:
     covered = set(fixture["covered_route_ids"])
     case_routes = {case["route"] for case in fixture["cases"]}
     assert covered == case_routes
-    assert fixture["route_inventory"] == {"s2": 94, "s6": 106, "total": 200}
-    assert len(covered) == 31
-    assert fixture["route_inventory"]["total"] - len(covered) == 169
+    assert fixture["route_inventory"] == {"s2": 93, "s6": 94, "total": 187}
+    assert len(covered) == 28
+    assert fixture["route_inventory"]["total"] - len(covered) == 159
