@@ -32,7 +32,6 @@ TOOLS = {
     "get_dashboard",
     "get_data",
     "get_dataset",
-    "get_embed",
     "get_export",
     "get_export_schema",
     "get_file",
@@ -62,7 +61,6 @@ TOOLS = {
     "run_pipeline",
     "set_dashboard_tags",
     "set_date_format",
-    "set_embed",
     "unlock_file",
     "update_automation",
     "upload_file",
@@ -100,7 +98,6 @@ READ_ONLY = {
     "get_dashboard",
     "get_data",
     "get_dataset",
-    "get_embed",
     "get_export",
     "get_export_schema",
     "get_file",
@@ -141,7 +138,6 @@ DESTRUCTIVE = {
     "publish_dashboard",
     "review_unreadable_rows",
     "run_pipeline",
-    "set_embed",
     "update_automation",
 }
 

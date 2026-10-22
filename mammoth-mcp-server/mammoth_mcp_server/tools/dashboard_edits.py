@@ -1,10 +1,10 @@
-"""Change a dashboard: Mammoth's AI edits it, or it gets a new title.
+"""Change a dashboard: Mammoth's AI edits it, it gets a new title, or its embed changes.
 
 An AI edit is one turn of the editor's chat. Mammoth's AI reads the board and
 the change asked for, and changes the board's draft. The share link opens the
 published version, so it shows the board as it was until the board is
 published again — which is `publish_dashboard`'s job, and the user's to ask
-for.
+for. Embed settings are not part of the draft: they apply at once.
 """
 
 from mammoth.api.dashboard_generated import chat_edit
@@ -18,9 +18,10 @@ from ..jobs import JobStillRunning, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import DESTRUCTIVE
+from .dashboard_embed import EmbedMode, change_embed, check_embed_change
 from .dashboards import read_dashboard
 
-NOTHING_TO_CHANGE = "Say what to change, or give a new title."
+NOTHING_TO_CHANGE = "Say what to change: a change, a new title, or the embed settings."
 OLDER_ENGINE_EDIT = (
     "Dashboard {id} is on Mammoth's older engine, which Mammoth's AI cannot edit."
     " The user can change it in the editor, at {editor_url}."
@@ -42,45 +43,63 @@ STILL_EDITING = (
 
 @mcp_server.tool(title="Edit dashboard", annotations=DESTRUCTIVE)
 async def edit_dashboard(
-    workspace_id: int, dashboard_id: int, change: str = "", title: str = ""
+    workspace_id: int,
+    dashboard_id: int,
+    change: str = "",
+    title: str = "",
+    embed_mode: EmbedMode | None = None,
+    any_site: bool | None = None,
+    allowed_sites: list[str] | None = None,
 ) -> dict[str, JsonValue]:
-    """Have Mammoth's AI change a dashboard, or give it a new title.
+    """Have Mammoth's AI change a dashboard, rename it, or choose how it embeds.
 
     The AI changes what the user asks for: add, remove or restyle a card or
     chart, filter it, add a page. Send the whole change in one call. A board
     that has nothing on it yet is built from the change, and that build counts
     against the workspace's AI dashboard allowance.
 
-    The change is made to the board's draft. A published board's share link
-    shows the board as it was until `publish_dashboard` runs again: never
-    publish without asking the user.
+    The change and the title go to the board's draft. A published board's
+    share link shows the board as it was until `publish_dashboard` runs again:
+    never publish without asking the user. The embed settings apply at once.
+    Ask the user before changing them: they decide who outside Mammoth sees
+    the data. `get_dashboard` with `include_embed` gives the code to paste.
 
     Args:
         workspace_id: Which workspace to act in.
         dashboard_id: Which dashboard, as `list_dashboards` lists it.
-        change: What to change, in plain words. Leave it out to only rename.
-        title: The dashboard's new title. Leave it out to keep the title.
+        change: What to change, in plain words.
+        title: The dashboard's new title.
+        embed_mode: "key" (the embed code carries the board's embed key) or
+            "signed" (the user's server signs a token per viewer; the
+            workspace needs a signing secret, set in the web app). A board
+            whose link is public embeds as "public" whatever this is.
+        any_site: true lets any site show the board.
+        allowed_sites: Only these sites may show the board, as origins
+            ("https://acme.com", "https://*.acme.com"). At most 20.
 
     Returns:
         The dashboard afterwards, as `get_dashboard` reports it without
         numbers. After an AI edit, `changed` says whether anything changed,
         and `message` is the AI's reply. When `changed` is false, nothing was
-        applied, whatever `message` says. `next_step`, when present, says what
-        to tell the user. A big change can still be going when this returns:
-        then `status` is "editing".
+        applied, whatever `message` says. After an embed change, `embed` is
+        the embed afterwards. `next_step`, when present, says what to tell the
+        user. A big change can still be going when this returns: then `status`
+        is "editing".
     """
-    if not change and not title:
+    embeds = not (embed_mode is None and any_site is None and allowed_sites is None)
+    if not (change or title or embeds):
         raise ToolError(NOTHING_TO_CHANGE)
+    check_embed_change(any_site, allowed_sites)
     async with build_client(workspace_id) as client:
         before = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
-        if change and before.get(DashboardFields.ENGINE) != ENGINE_V3:
-            raise ToolError(
-                OLDER_ENGINE_EDIT.format(
-                    id=dashboard_id, editor_url=before[DashboardFields.EDITOR_URL]
-                )
-            )
+        refuse_older_engine(before, change)
         if title:
             await read_sdk_errors(client.dashboards.update(dashboard_id, [new_title(title)]))
+        embed = (
+            await change_embed(client.dashboards, dashboard_id, embed_mode, any_site, allowed_sites)
+            if embeds
+            else None
+        )
         started = await start_edit(client.dashboards, dashboard_id, change) if change else None
     try:
         edit = {} if started is None else await wait_for_edit(workspace_id, started)
@@ -92,7 +111,22 @@ async def edit_dashboard(
         }
     async with build_client(workspace_id) as client:
         after = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
-    return {**after, **edit, **what_to_tell(edit, after)}
+    told = what_to_tell(edit, after) if change or title else {}
+    return {**after, **edit, **told, **({} if embed is None else {DashboardFields.EMBED: embed})}
+
+
+def refuse_older_engine(dashboard: dict[str, JsonValue], change: str) -> None:
+    """Refuse an AI edit of a board on the older engine, which the AI cannot edit.
+
+    Raises:
+        ToolError: If it is one, naming the editor that can change it.
+    """
+    if change and dashboard.get(DashboardFields.ENGINE) != ENGINE_V3:
+        raise ToolError(
+            OLDER_ENGINE_EDIT.format(
+                id=dashboard[DashboardFields.ID], editor_url=dashboard[DashboardFields.EDITOR_URL]
+            )
+        )
 
 
 async def start_edit(

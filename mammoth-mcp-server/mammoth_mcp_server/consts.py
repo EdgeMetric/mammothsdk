@@ -501,6 +501,8 @@ class DashboardFields:
     EDITED = (MESSAGE, CHANGED)
     EDITING = "editing"
     NEXT_STEP = "next_step"
+    # A board's embed, as `get_dashboard` and `edit_dashboard` report it.
+    EMBED = "embed"
 
 
 class EmbedFields:

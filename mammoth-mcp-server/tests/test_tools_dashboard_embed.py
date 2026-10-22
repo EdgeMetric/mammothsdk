@@ -1,4 +1,7 @@
-"""Putting a dashboard on another site: the code to paste, and who may frame it."""
+"""Putting a dashboard on another site: the code to paste, and who may frame it.
+
+`get_dashboard` reads the embed and `edit_dashboard` changes it: no tool of its own.
+"""
 
 from typing import Any
 
@@ -8,7 +11,15 @@ from mcp.server.mcpserver.exceptions import ToolError
 from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool
 
 DASHBOARD_ID = 42
-CONFIG = f"/dashboards/{DASHBOARD_ID}/embed/config"
+DASHBOARD = f"/dashboards/{DASHBOARD_ID}"
+CONFIG = f"{DASHBOARD}/embed/config"
+BOARD = {
+    "id": DASHBOARD_ID,
+    "title": "Sales",
+    "url": "abc123",
+    "engine": "v3",
+    "was_published": True,
+}
 EMBED_URL = "https://app.example.com/api/v2/dashboards/embed/abc123"
 
 ON_KEY: dict[str, Any] = {
@@ -32,16 +43,27 @@ PUBLIC = {**ON_KEY, "mode": "public", "public": True, "access_key": None}
 
 
 def a_board(api: FakeApi, config: dict[str, Any] = ON_KEY) -> None:
+    api.answer("GET", DASHBOARD, BOARD)
     api.answer("GET", CONFIG, config)
     api.answer("PUT", CONFIG, config)
 
 
 def get_embed() -> Any:
-    return call_tool("get_embed", workspace_id=WORKSPACE, dashboard_id=DASHBOARD_ID)
+    board = call_tool(
+        "get_dashboard",
+        workspace_id=WORKSPACE,
+        dashboard_id=DASHBOARD_ID,
+        include_values=False,
+        include_embed=True,
+    )
+    return board["embed"]
 
 
 def set_embed(**arguments: object) -> Any:
-    return call_tool("set_embed", workspace_id=WORKSPACE, dashboard_id=DASHBOARD_ID, **arguments)
+    board = call_tool(
+        "edit_dashboard", workspace_id=WORKSPACE, dashboard_id=DASHBOARD_ID, **arguments
+    )
+    return board["embed"]
 
 
 class TestTheCodeToPaste:
@@ -52,7 +74,7 @@ class TestTheCodeToPaste:
 
         assert f'src="{EMBED_URL}?key=ek_live_123"' in embed["embed_code"]
         assert embed["key"] == "ek_live_123"
-        assert "allowed sites" in embed["next_step"]
+        assert "allowed_sites" in embed["next_step"]
 
     def test_a_signed_board_leaves_the_token_to_the_host(self) -> None:
         with a_fake_api() as api, as_caller():
@@ -110,7 +132,7 @@ class TestTheCodeToPaste:
         assert embed["any_site"] is False
         assert embed["allowed_sites"] == ["https://acme.com"]
         # Telling a model to limit the sites again would read as if they were open.
-        assert "set allowed sites" not in embed["next_step"]
+        assert "edit_dashboard" not in embed["next_step"]
         assert "Only the allowed sites" in embed["next_step"]
 
     def test_nothing_about_the_signing_secret_but_whether_there_is_one(self) -> None:
@@ -144,7 +166,7 @@ class TestWhoMayFrameIt:
     def test_the_mode_alone_changes(self) -> None:
         with a_fake_api() as api, as_caller():
             a_board(api)
-            embed = set_embed(mode="signed")
+            embed = set_embed(embed_mode="signed")
 
         [sent] = api.sent("PUT", CONFIG)
         assert api.body(sent) == {"params": {"mode": "signed"}}
@@ -162,7 +184,7 @@ class TestWhoMayFrameIt:
         with a_fake_api() as api, as_caller():
             a_board(api)
             with pytest.raises(ToolError, match="signed"):
-                set_embed(mode="open")
+                set_embed(embed_mode="open")
 
         assert not api.sent("PUT", CONFIG)
 
@@ -173,3 +195,31 @@ class TestWhoMayFrameIt:
                 set_embed()
 
         assert not api.requests
+
+
+def test_the_embed_is_read_only_when_asked_for() -> None:
+    # The config read makes a board its first key, so a plain read leaves it alone.
+    with a_fake_api() as api, as_caller():
+        a_board(api)
+        board = call_tool(
+            "get_dashboard", workspace_id=WORKSPACE, dashboard_id=DASHBOARD_ID, include_values=False
+        )
+
+    assert "embed" not in board
+    assert not api.sent("GET", CONFIG)
+
+
+def test_an_embed_change_alone_takes_effect_at_once() -> None:
+    # Embed settings are not part of the draft, so publishing again is not needed.
+    listed = {**ON_KEY, "allow_any_origin": False, "allowed_origins": ["https://acme.com"]}
+    with a_fake_api() as api, as_caller():
+        a_board(api, listed)
+        board = call_tool(
+            "edit_dashboard",
+            workspace_id=WORKSPACE,
+            dashboard_id=DASHBOARD_ID,
+            allowed_sites=["https://acme.com"],
+        )
+
+    assert "next_step" not in board
+    assert "Only the allowed sites" in board["embed"]["next_step"]
