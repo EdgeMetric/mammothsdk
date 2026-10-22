@@ -54,6 +54,11 @@ from mammoth.models.dashboard_generated import (
     CanvasResponse,
     ChangeAudienceParams,
     ChangeAudienceSpec,
+    ChartTypeItem,
+    ChartTypeListResponse,
+    ChartTypeNeed,
+    ChartTypeParams,
+    ChartTypeSpec,
     ChatAttachmentResponse,
     ChatEditParams,
     ChatEditSpec,
@@ -77,6 +82,7 @@ from mammoth.models.dashboard_generated import (
     CreateSessionParams,
     CreateSessionSpec,
     CreatorDashboardHtmlType,
+    CustomChartAction,
     CustomStyleParams,
     CustomStyleSpec,
     DashboardAction,
@@ -109,6 +115,7 @@ from mammoth.models.dashboard_generated import (
     DigestPrefSpec,
     DraftHeadResponse,
     DraftMove,
+    DrillStep,
     DuplicateDashboardResponse,
     EmailUpdateOut,
     EmailUpdateSettingsBody,
@@ -148,11 +155,21 @@ from mammoth.models.dashboard_generated import (
     ExtractBrandSpec,
     FeedbackParams,
     FeedbackSpec,
+    FigureDrillParams,
+    FigureDrillResponse,
+    FigureDrillSpec,
     FigureIntentParams,
     FigureIntentResponse,
     FigureIntentSpec,
     FigureOut,
     FigurePageTarget,
+    FigureRecipeParams,
+    FigureRecipeResponse,
+    FigureRecipeSpec,
+    FigureRowsDescriptorIds,
+    FigureRowsParams,
+    FigureRowsResponse,
+    FigureRowsSpec,
     FormatFloorApplied,
     FormatPreviewNotShown,
     FormatPreviewResponse,
@@ -176,6 +193,7 @@ from mammoth.models.dashboard_generated import (
     OwnDataAcceptSpec,
     OwnDataStartParams,
     OwnDataStartSpec,
+    PageTableParams,
     PdfExportParams,
     PdfExportSpec,
     PendingTemplateResponse,
@@ -739,11 +757,11 @@ async def published_canvas(self: Any, url: str) -> CanvasResponse:
     return _typed_response(response, (CanvasResponse,), allow_untyped=False)
 
 
-async def columns(self: Any, dashboard_id: int) -> ColumnRoster:
+async def columns(self: Any, dashboard_id: int, page_id: str | None = None) -> ColumnRoster:
     """Source columns (Data panel)."""
     path = "/dashboards/{dashboard_id}/columns"
     path = path.replace("{dashboard_id}", str(dashboard_id))
-    params = None
+    params = {key: value for key, value in {"page_id": page_id}.items() if value is not None}
     response = await self._client._request_json("GET", path, params=params)
     return _typed_response(response, (ColumnRoster,), allow_untyped=False)
 

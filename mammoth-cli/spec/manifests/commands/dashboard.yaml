@@ -4696,7 +4696,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard template preview --help
   agent_example: 'mammoth dashboard template preview --input ''{"body": {"params": {"source_dashboard_id":
-    1, "target_dataview_id": 1}}}'''
+    1}}}'''
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-PREVIEW
   contract_tests:
@@ -4783,7 +4783,7 @@ commands:
   secret_fields: []
   human_example: mammoth dashboard template resolve-mapping --help
   agent_example: 'mammoth dashboard template resolve-mapping --input ''{"body": {"params": {"source_dashboard_id":
-    1, "target_dataview_id": 1}}}'''
+    1}}}'''
   unit_tests:
   - UT-DASHBOARD-TEMPLATE-RESOLVE-MAPPING
   contract_tests:

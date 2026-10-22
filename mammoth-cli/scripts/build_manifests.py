@@ -662,8 +662,13 @@ if __name__ == "__main__":
     result = build()
     import json
 
+    from build_server_status import OUTPUT as SERVER_STATUS
+    from build_server_status import derive, render
+
     from mammoth_cli.manifest.loader import compile_manifests
 
+    # Before compiling: the compiled command records carry the derived server_status.
+    SERVER_STATUS.write_text(render(derive()), encoding="utf-8")
     compile_manifests()
 
     print(json.dumps(result, indent=2))

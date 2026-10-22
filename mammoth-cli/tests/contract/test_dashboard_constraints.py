@@ -129,7 +129,9 @@ def _valid_value(schema: dict[str, Any], comps: dict[str, Any]) -> Any:
     if kind == "boolean":
         return True
     if kind == "array":
-        count = int(schema.get("minItems", 0) or 0)
+        # The server also writes string keywords (``minLength``) on array fields, and
+        # pydantic reads them as the list length.
+        count = int(schema.get("minItems", 0) or schema.get("minLength", 0) or 0)
         items = schema.get("items") if isinstance(schema.get("items"), dict) else {}
         return [_valid_value(items, comps) for _ in range(count)]
     if kind == "object" or "properties" in schema:

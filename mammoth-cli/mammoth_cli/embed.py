@@ -57,6 +57,7 @@ def invoke(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    hide_pending: bool = False,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -77,6 +78,10 @@ def invoke(
             unless ``args`` already sets one.
         return_running: Send ``--return-running`` so a wait that runs out
             returns a ``status: running`` handle instead of a timeout error.
+        hide_pending: Refuse the commands the production server does not serve
+            yet (``server_status: pending`` in ``schema``) with
+            ``pending_server_release``, and leave them out of ``schema list`` and
+            ``schema find``. Off by default: a terminal user may target a newer server.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -91,7 +96,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    return _invoke_one(argv, login)
+    return _invoke_one(argv, login, hide_pending=hide_pending)
 
 
 def invoke_many(
@@ -104,6 +109,7 @@ def invoke_many(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    hide_pending: bool = False,
     stop_on_error: bool = True,
 ) -> list[dict[str, Any]]:
     """Run several commands as ``login``, in order, and return one envelope each.
@@ -123,6 +129,7 @@ def invoke_many(
         pipeline_timeout: See :func:`invoke`; applied to each command.
         job_timeout: See :func:`invoke`; applied to each command.
         return_running: See :func:`invoke`; applied to each command.
+        hide_pending: See :func:`invoke`; applied to each command.
         stop_on_error: Stop at the first command that fails (an ``error``
             envelope, or a non-zero ``meta.exit``); each command after it gets
             a ``skipped`` error envelope naming its index and the failed one.
@@ -148,7 +155,7 @@ def invoke_many(
                 job_timeout=job_timeout,
                 return_running=return_running,
             )
-            envelope = _invoke_one(argv, login)
+            envelope = _invoke_one(argv, login, hide_pending=hide_pending)
             forget_reads()
             envelopes.append(envelope)
             if stop_on_error and _failed(envelope):
@@ -156,10 +163,12 @@ def invoke_many(
     return envelopes
 
 
-def _invoke_one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
+def _invoke_one(
+    argv: list[str], login: ExplicitLogin, *, hide_pending: bool = False
+) -> dict[str, Any]:
     """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
     started = time.perf_counter()
-    call = embedded.EmbeddedCall(login=login)
+    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending)
     embedded.install_stream_guards()
     token = embedded.enter(call)
     try:

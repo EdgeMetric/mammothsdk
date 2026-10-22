@@ -193,9 +193,9 @@ def test_a_success_with_a_failing_exit_stops_the_batch(
     real = embed._invoke_one
     answers = iter([{"meta": {"exit": 4}}, None])
 
-    def _one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
+    def _one(argv: list[str], login: ExplicitLogin, **kwargs: Any) -> dict[str, Any]:
         answer = next(answers)
-        return answer if answer is not None else real(argv, login)
+        return answer if answer is not None else real(argv, login, **kwargs)
 
     monkeypatch.setattr(embed, "_invoke_one", _one)
 
@@ -245,8 +245,8 @@ def test_reads_kept_ahead_of_a_write_do_not_reach_the_next_command(
     real = embed._invoke_one
     seen: list[bool] = []
 
-    def _one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
-        envelope = real(argv, login)
+    def _one(argv: list[str], login: ExplicitLogin, **kwargs: Any) -> dict[str, Any]:
+        envelope = real(argv, login, **kwargs)
         if built:
             seen.append(built[0].memo.lookup("some.Symbol", {})[0])
             built[0].memo.store("some.Symbol", {}, "stale")

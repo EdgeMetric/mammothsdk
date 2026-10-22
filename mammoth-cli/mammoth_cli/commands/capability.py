@@ -13,6 +13,7 @@ from typing import Any
 from mammoth_cli.commands.schema import command_scope
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_operations
+from mammoth_cli.runtime import embedded
 from mammoth_cli.services.command_contract import resolve_command_contract
 
 _MAX_FIND_RESULTS = 20
@@ -51,6 +52,7 @@ def capability_entries() -> list[dict[str, Any]]:
                 "canonical_command": command_id,
                 "command_path": command["command_path"] if command else None,
                 "unavailable": is_feature_unavailable(command_id),
+                "server_status": command.get("server_status", "served") if command else None,
                 "sdk_symbol": op.get("sdk_symbol"),
                 "mutation_class": (
                     resolved.effects
@@ -70,6 +72,11 @@ def capability_entries() -> list[dict[str, Any]]:
             }
         )
     return sorted(entries, key=lambda entry: entry["operation_id"])
+
+
+def hidden_pending(entry: dict[str, Any]) -> bool:
+    """Whether an embedded call that opted out of pending commands must not see ``entry``."""
+    return embedded.hides_pending() and entry.get("server_status") == "pending"
 
 
 def get_capability(operation_id: str) -> dict[str, Any] | None:
@@ -156,7 +163,7 @@ def find_capabilities(
                 "sdk_symbol",
             )
         )
-        if entry.get("unavailable"):
+        if entry.get("unavailable") or hidden_pending(entry):
             continue
         candidates = _tokens(text)
         command_id = entry.get("canonical_command")

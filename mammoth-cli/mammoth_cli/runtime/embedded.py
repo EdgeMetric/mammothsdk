@@ -26,6 +26,8 @@ class EmbeddedCall:
 
     login: ExplicitLogin
     envelopes: list[dict[str, Any]] = field(default_factory=list)
+    #: Refuse commands the production server does not serve yet, and hide them from discovery.
+    hide_pending: bool = False
     #: Text written to ``sys.stdout`` / ``sys.stderr`` while the call ran, by stream name.
     stray: dict[str, list[str]] = field(default_factory=lambda: {"stdout": [], "stderr": []})
 
@@ -41,6 +43,12 @@ def current() -> EmbeddedCall | None:
 def active() -> bool:
     """Whether this context runs an embedded call."""
     return _CURRENT.get() is not None
+
+
+def hides_pending() -> bool:
+    """Whether this embedded call refuses and hides commands pending a server release."""
+    call = _CURRENT.get()
+    return call is not None and call.hide_pending
 
 
 def capture(envelope: dict[str, Any]) -> bool:
