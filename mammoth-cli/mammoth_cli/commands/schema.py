@@ -1206,6 +1206,18 @@ def _operation_hints_by_command() -> dict[str, str]:
     return {command_id: " ".join(parts) for command_id, parts in hints.items()}
 
 
+def _optional_positional_fields(command_id: str) -> frozenset[str]:
+    """Fields that an optional trailing positional can supply (``[DATASET_ID]``).
+
+    The SDK method needs them, but the CLI looks them up when the caller leaves them out.
+    """
+    return frozenset(
+        item.falls_back_to_field
+        for item in resolve_positionals(command_id)
+        if item.falls_back_to_field is not None and not item.required
+    )
+
+
 def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     """Return the backing method's accepted fields for a command record.
 
@@ -1228,11 +1240,12 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
         tuple(str(item) for item in record.get("operation_ids", []))
     )
     path_fields = local_path_fields(record["command_id"], record.get("positionals", []))
+    optional_positional_fields = _optional_positional_fields(record["command_id"])
     return [
         {
             "name": field.name,
             "type": field.type_name,
-            "required": field.required,
+            "required": field.required and field.name not in optional_positional_fields,
             "enum": field.enum_values,
             "default": field.default_value if field.has_default else None,
             "schema": (
@@ -2359,6 +2372,10 @@ def _inline_call_detail(entries: list[dict[str, Any]]) -> None:
         record = command_by_id(entry["command_id"])
         if record is None:
             continue
+        entry["positionals"] = [
+            {key: item[key] for key in ("name", "metavar", "type", "required")}
+            for item in _positionals(entry["command_id"])
+        ]
         fields = _compact_accepted_fields(record)
         if fields is not None:
             entry["accepted_fields"] = fields

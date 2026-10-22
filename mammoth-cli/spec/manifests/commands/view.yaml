@@ -7065,7 +7065,7 @@ commands:
   - CT-VIEW-EXPLORE-PANEL-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'This is the command that opens Explore cards in the UI. Open a card per column
+  known_restrictions: 'Saves the Explore cards of the calling user for a view; it shows nothing by itself. Open a card per column
     with {"panel": {"columns": "all"}} or {"panel": {"columns": ["Region", "Amount"]}}: each named column
     that has no card gets one and the saved cards stay. To replace the whole panel, run view explore-panel
     get first and write back {"panel": {"cards": [...]}}. A panel with no cards list is refused, because

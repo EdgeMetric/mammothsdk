@@ -6,10 +6,10 @@ from typing import Any
 
 from mammoth_cli.commands.view._common import (
     _COLUMNS_KEY,
-    _FIND_DATASET_SYMBOL,
     _QUERY_DATA_SYMBOL,
     _ROWS_KEY,
     HandlerResult,
+    _explain_swapped_ids,
     _forward_optional,
     _int_field,
     _page_offset,
@@ -27,8 +27,6 @@ from mammoth_cli.commands.view.columns import (
     _compile_query_filters,
 )
 from mammoth_cli.errors.envelope import (
-    CODE_INVALID_ARGUMENT,
-    CODE_RESOURCE_NOT_FOUND,
     EXIT_USAGE,
     CliError,
 )
@@ -66,7 +64,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
                 service, invocation, auth.workspace_id, dataset_id, view_id, project_id
             )
         except CliError as exc:
-            _explain_swapped_ids(service, exc, view_id, dataset_id)
+            _explain_swapped_ids(service, exc, invocation, view_id, dataset_id)
             raise
         mapping, types, _currencies = _profile_of_info(info)
         kwargs: dict[str, Any] = {
@@ -197,33 +195,6 @@ def _close_last_page(data: Any, offset: Any) -> Any:
     closed = {**data, "truncated": False}
     closed.pop("more_rows_may_exist", None)
     return closed
-
-
-def _explain_swapped_ids(service: Any, error: CliError, view_id: int, dataset_id: int) -> None:
-    """Raise a clear refusal when a not-found read was given DATASET_ID then VIEW_ID.
-
-    The arguments are ``VIEW_ID [DATASET_ID]``; passing them the other way round
-    only produces a bare 404. If the first number is really a view of the second,
-    say so. Any other outcome leaves the original error to be re-raised.
-    """
-    if error.code != CODE_RESOURCE_NOT_FOUND:
-        return
-    try:
-        parent = int(service.call(_FIND_DATASET_SYMBOL, dataview_id=dataset_id))
-    except CliError:
-        return
-    if parent != view_id:
-        return
-    raise CliError(
-        code=CODE_INVALID_ARGUMENT,
-        message=(
-            f"{view_id} is a dataset id and {dataset_id} is its view; "
-            "the order is VIEW_ID DATASET_ID"
-        ),
-        exit_status=EXIT_USAGE,
-        hint=f"Run it again as: mammoth view data get {dataset_id} {view_id}",
-        details={"view_id": dataset_id, "dataset_id": view_id},
-    ) from error
 
 
 #: Rows a plain ``view data get`` returns unless ``limit`` says otherwise.

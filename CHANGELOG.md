@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-cli)
+
+- CLI: `schema find` now lists each inlined command's `positionals` in order with `required` (`view explore-panel set` is `VIEW_ID` then optional `DATASET_ID`). Before, only `accepted_fields` showed, with `dataset_id` as the one required id, so an agent passed the dataset id first. A field that an optional trailing positional can supply is no longer `required: true` in `accepted_fields` (`schema find` and `schema get`).
+- CLI: the swapped-ids refusal ("N is a dataset id and M is its view; the order is VIEW_ID DATASET_ID", with the corrected command) now also covers every `VIEW_ID [DATASET_ID]` write that checks the parent (`view explore-panel set`, `edit`, `add-to-dashboard`, `export-image`, and `view optimize`), not only `view data get`.
+- CLI: the `view explore-panel set` notes no longer say it "opens Explore cards in the UI"; it saves the calling user's panel and shows nothing by itself.
+
 ## mammoth-cli 2.2.97 (2026-10-22)
 
 ### Fixed (mammoth-cli 2.2.97)

@@ -2968,6 +2968,25 @@ def test_data_get_with_swapped_ids_says_which_is_which(fake_service: FakeMammoth
     assert "mammoth view data get 9 7" in (excinfo.value.hint or "")
 
 
+def test_explore_panel_set_with_swapped_ids_says_which_is_which(
+    tmp_path: Path, fake_service: FakeMammothService
+) -> None:
+    # `view explore-panel set DATASET VIEW`: 9 is a dataset, 7 is its view.
+    def parent_lookup(call_log: list[tuple[str, dict[str, object]]]) -> int:
+        if call_log[-1][1]["dataview_id"] == 7:
+            return 9
+        raise CliError(code="resource_not_found", message="missing", exit_status=5)
+
+    fake_service.responses[_FIND_DATASET] = parent_lookup
+    doc = _doc(tmp_path, {"panel": {"columns": "all"}})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_explore_panel_set(
+            _inv("view.explore-panel.set", project=180, extra_args=["9", "7"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "mammoth view explore-panel set 7 9" in (excinfo.value.hint or "")
+
+
 def test_data_get_offset_page_reports_the_views_row_count_as_paging_total(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
