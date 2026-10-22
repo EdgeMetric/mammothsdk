@@ -66,7 +66,7 @@ DRAFT_ACTIONS: dict[str, str] = {
 }
 
 
-@mcp_server.tool(title="Get pipeline", annotations=READS)
+@mcp_server.tool(title="Get pipeline: steps and versions", annotations=READS)
 async def get_pipeline(
     workspace_id: int,
     project_id: int,
@@ -74,7 +74,7 @@ async def get_pipeline(
     view_id: int,
     include_versions: bool = False,
 ) -> dict[str, JsonValue]:
-    """Get a view's pipeline: its state and its steps, in order.
+    """Get a view's pipeline: its state and its steps, in order, and its versions if asked.
 
     Args:
         workspace_id: Which workspace the view is in.

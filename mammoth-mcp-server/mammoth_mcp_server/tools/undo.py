@@ -95,7 +95,7 @@ async def list_trash(
     }
 
 
-@mcp_server.tool(title="Undo", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Undo: restore trash, roll back pipeline", annotations=DESTRUCTIVE)
 async def undo(
     workspace_id: int,
     project_id: int,
@@ -105,7 +105,7 @@ async def undo(
     view_id: int | None = None,
     version_id: int | None = None,
 ) -> dict[str, JsonValue]:
-    """Take a change back: restore items from the trash, or put a pipeline back.
+    """Take a change back: restore items from the trash, or roll back a view's pipeline.
 
     Ask the user first. Putting a pipeline back replaces its steps with the
     version's, and the view runs again.
