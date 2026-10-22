@@ -81,6 +81,8 @@ name, active profile, workspace and project; keys without a value are omitted.
 `meta.exit` is the process exit status: 0, or 1 or 3 when a write's read-back
 failed or was partial. In an embedded call (`mammoth_cli.embed.invoke`), `meta.stderr`
 holds up to 500 characters a library wrote to stderr during the call, when there were any.
+An embedded call also carries `meta.elapsed_ms` (or `error.elapsed_ms` on a failure): the
+call's wall time in milliseconds; in `invoke_many` a `skipped` command has 0.
 `meta.pagination` appears on paged reads. `meta.update_available` appears as
 `{"current", "latest", "command"}` when the daily PyPI check has seen a newer
 CLI; run its `command` when it suits you (see [upgrade](../upgrade.md)).

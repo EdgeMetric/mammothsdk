@@ -18,6 +18,7 @@ from typing import Any
 import typer
 
 from mammoth_cli.errors.envelope import (
+    CODE_WORKSPACE_MISMATCH,
     EXIT_API,
     EXIT_AUTH,
     EXIT_PARTIAL,
@@ -161,10 +162,49 @@ def _attach_input_contract(error: CliError, command_id: str) -> None:
         error.details["input_contract"] = contract
 
 
+def _with_workspace_checked(error: CliError) -> CliError:
+    """Check an embedded token login's workspace hint against the server after a refusal.
+
+    A hint saves the workspace lookup on every call, but a wrong one sends each request
+    to another workspace's urls, which the server refuses (a 401 "Invalid token" or a
+    403). Only then is the token's own workspace asked for (once per process, the SDK
+    keeps the answer), and a different one turns the refusal into ``workspace_mismatch``.
+    """
+    call = embedded.current()
+    if call is None or error.exit_status != EXIT_AUTH:
+        return error
+    login = call.login
+    if login.api_token is None or login.workspace_id is None:
+        return error
+    from mammoth_cli.context.endpoint import resolve_base_url
+    from mammoth_cli.context.resolver import resolve_token_workspace
+
+    try:
+        actual = resolve_token_workspace(
+            resolve_base_url(login.server_prefix), login.api_token, None
+        )
+    except CliError:
+        return error
+    if actual == login.workspace_id:
+        return error
+    return CliError(
+        code=CODE_WORKSPACE_MISMATCH,
+        message=(
+            f"The login names workspace {login.workspace_id}, but its token belongs to "
+            f"workspace {actual}."
+        ),
+        exit_status=EXIT_AUTH,
+        hint="Pass the token's own workspace id, or leave workspace_id out of the login.",
+        details={"workspace_id": login.workspace_id, "token_workspace_id": actual},
+        request_id=error.request_id,
+    )
+
+
 def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
     """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
-    if invocation is None:
-        return error
+    checked = _with_workspace_checked(error)
+    if checked is not error or invocation is None:
+        return checked
 
     names: dict[int, str | None] = {}
 

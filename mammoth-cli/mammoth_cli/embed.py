@@ -18,11 +18,15 @@ Example::
         server_prefix="app", headers={"Cookie": "..."},
     )
     envelope = invoke(["project", "list"], login=login)
+
+    # Several commands as one user, over one connection, stopping at the first failure:
+    envelopes = invoke_many([["project", "list"], ["view", "list"]], login=login)
 """
 
 from __future__ import annotations
 
 import copy
+import time
 from collections.abc import Sequence
 from typing import Any
 
@@ -31,9 +35,16 @@ from typer._click.core import Command, Context
 from mammoth_cli import __version__
 from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS, _root_click_command
 from mammoth_cli.context.resolver import ExplicitLogin
-from mammoth_cli.errors.envelope import EXIT_API, EXIT_INTERRUPT, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_SKIPPED,
+    EXIT_API,
+    EXIT_INTERRUPT,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.shared import forget_reads, shared_services
 
 
 def invoke(
@@ -80,6 +91,74 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
+    return _invoke_one(argv, login)
+
+
+def invoke_many(
+    commands: Sequence[Sequence[str]],
+    *,
+    login: ExplicitLogin,
+    project_id: int | None = None,
+    session_id: str | None = None,
+    timeout: float | None = None,
+    pipeline_timeout: float | None = None,
+    job_timeout: float | None = None,
+    return_running: bool = False,
+    stop_on_error: bool = True,
+) -> list[dict[str, Any]]:
+    """Run several commands as ``login``, in order, and return one envelope each.
+
+    Each command runs exactly as :func:`invoke` would run it, with the same
+    options added, but all of them share one scope: a command opens the
+    service (client and connection) the earlier ones already opened for the
+    same login and project, the way the lines of a ``mammoth run`` do, instead
+    of starting a new connection each. The services close when the batch ends.
+
+    Args:
+        commands: The command lines after ``mammoth``, run in this order.
+        login: The credentials, endpoint and extra headers for every command.
+        project_id: See :func:`invoke`; applied to each command.
+        session_id: See :func:`invoke`; applied to each command.
+        timeout: See :func:`invoke`; applied to each command.
+        pipeline_timeout: See :func:`invoke`; applied to each command.
+        job_timeout: See :func:`invoke`; applied to each command.
+        return_running: See :func:`invoke`; applied to each command.
+        stop_on_error: Stop at the first command that fails (an ``error``
+            envelope, or a non-zero ``meta.exit``); each command after it gets
+            a ``skipped`` error envelope naming its index and the failed one.
+            False runs every command whatever the others return.
+
+    Returns:
+        One envelope per command, in the order of ``commands``. A CLI error is
+        returned in its command's slot, never raised.
+    """
+    envelopes: list[dict[str, Any]] = []
+    failed: int | None = None
+    with shared_services():
+        for index, args in enumerate(commands):
+            if failed is not None:
+                envelopes.append(_timed(_skipped(index, failed), 0))
+                continue
+            argv = _argv(
+                args,
+                project_id=project_id,
+                session_id=session_id,
+                timeout=timeout,
+                pipeline_timeout=pipeline_timeout,
+                job_timeout=job_timeout,
+                return_running=return_running,
+            )
+            envelope = _invoke_one(argv, login)
+            forget_reads()
+            envelopes.append(envelope)
+            if stop_on_error and _failed(envelope):
+                failed = index
+    return envelopes
+
+
+def _invoke_one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
+    """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
+    started = time.perf_counter()
     call = embedded.EmbeddedCall(login=login)
     embedded.install_stream_guards()
     token = embedded.enter(call)
@@ -87,7 +166,15 @@ def invoke(
         _run(argv)
     finally:
         embedded.leave(token)
-    return _outcome(call)
+    return _timed(_outcome(call), round((time.perf_counter() - started) * 1000))
+
+
+def _timed(envelope: dict[str, Any], elapsed_ms: int) -> dict[str, Any]:
+    """``envelope`` with ``elapsed_ms`` on its ``meta`` (success) or its ``error``."""
+    body = envelope.get("error", envelope.get("meta"))
+    if isinstance(body, dict):
+        body["elapsed_ms"] = elapsed_ms
+    return envelope
 
 
 def _outcome(call: embedded.EmbeddedCall) -> dict[str, Any]:
@@ -137,6 +224,23 @@ def _describe(envelope: dict[str, Any]) -> str:
     """One short label for an envelope: its error code, or ``data``."""
     error = envelope.get("error")
     return str(error.get("code")) if isinstance(error, dict) else "data"
+
+
+def _failed(envelope: dict[str, Any]) -> bool:
+    """An error envelope, or a success whose ``meta.exit`` says it did not take effect."""
+    if "error" in envelope:
+        return True
+    meta = envelope.get("meta")
+    return isinstance(meta, dict) and bool(meta.get("exit"))
+
+
+def _skipped(index: int, failed: int) -> dict[str, Any]:
+    return CliError(
+        code=CODE_SKIPPED,
+        message=f"Command {index} was not run because command {failed} failed.",
+        exit_status=EXIT_USAGE,
+        details={"index": index, "reason": "earlier_command_failed", "failed_index": failed},
+    ).to_envelope()
 
 
 def _argv(

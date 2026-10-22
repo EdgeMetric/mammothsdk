@@ -41,6 +41,8 @@ CODE_INVALID_INPUT = "invalid_input"
 CODE_INVALID_INPUT_DOCUMENT = "invalid_input_document"
 CODE_INVALID_INPUT_FORMAT = "invalid_input_format"
 CODE_INVALID_WORKSPACE_ID = "invalid_workspace_id"
+CODE_WORKSPACE_MISMATCH = "workspace_mismatch"
+CODE_SKIPPED = "skipped"
 CODE_INCOMPLETE_ENVIRONMENT_AUTH = "incomplete_environment_auth"
 CODE_INPUT_FORMAT_REQUIRED = "input_format_required"
 CODE_API_ERROR = "api_error"
@@ -169,6 +171,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     "invalid_server_prefix": _S_SETUP,
     "invalid_storage_mode": _S_SETUP,
     "invalid_workspace_id": "The workspace couldn't be identified.",
+    "workspace_mismatch": "The sign-in names a different workspace from its token.",
+    "skipped": "This step wasn't run because an earlier step failed.",
     "job_failed": "A background task didn't finish successfully.",
     "keyring_unavailable": _S_SETUP,
     "keyring_unresponsive": _S_SETUP,
