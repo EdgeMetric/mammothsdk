@@ -1411,7 +1411,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dashboard embed lifetime set WORKSPACE_ID --help
-  agent_example: 'mammoth dashboard embed lifetime set 123 --input ''{"token_ttl": 1}'''
+  agent_example: 'mammoth dashboard embed lifetime set 123 --input ''{"token_ttl": 900}'''
   unit_tests:
   - UT-DASHBOARD-EMBED-LIFETIME-SET
   contract_tests:
@@ -6744,7 +6744,7 @@ commands:
   mutation_class: benign_mutation
   edits_target: false
   confirmation: none
-  wait_policy: not_async
+  wait_policy: start_or_wait
   pagination_policy: none
   acceptance_evidence: "contract_only_no_disposable_fixture"
   readback:
@@ -6767,7 +6767,7 @@ commands:
   - CT-DASHBOARD-LIVE-CHART-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: "Turns a chart made in an agent chat into a live chart on a dashboard of its own. Creates a dashboard."
+  known_restrictions: "Turns a chart made in an agent chat into a live chart on a dashboard of its own. Creates a dashboard, then waits for its bake job (bounded by --job-timeout) and reads the chart back; making the same chat chart live twice returns the first chart with no job. --project names the project the chart belongs to; without it the server uses the source view's project."
   reviewed_by: primary
 - command_id: dashboard.live-chart.get
   command_path: dashboard live-chart get

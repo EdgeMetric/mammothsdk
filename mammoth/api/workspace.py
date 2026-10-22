@@ -40,16 +40,18 @@ class WorkspaceAPI:
     def _ws(self) -> int:
         return self._client.workspace_id
 
-    async def list(self, limit: int = 100) -> dict[str, Any]:
+    async def list(self, limit: int = 100, fields: str = "id,name") -> dict[str, Any]:
         """List all accessible workspaces.
 
         Args:
             limit: Maximum number of results (default 100).
+            fields: Comma-separated fields to return (default ``"id,name"``), for
+                example ``"id,name,download_file_types"``.
 
         Returns:
-            Dict containing workspaces list with id and name.
+            Dict containing workspaces list with the requested fields.
         """
-        params = {"fields": "id,name", "limit": limit}
+        params = {"fields": fields, "limit": limit}
         return await self._client._request_json("GET", "/workspaces", params=params)
 
     async def current(self) -> CurrentWorkspace:

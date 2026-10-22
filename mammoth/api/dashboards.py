@@ -2201,14 +2201,19 @@ class DashboardsAPI:
         """
         if isinstance(workspace_id, bool) or not isinstance(workspace_id, int) or workspace_id <= 0:
             raise MammothValidationError(ERR_WORKSPACE_ID_POSITIVE.format(workspace_id))
-        if not (60 <= token_ttl <= 3600):
-            raise MammothValidationError(ERR_EMBED_TOKEN_TTL_RANGE.format(token_ttl))
+        check_token_ttl(token_ttl)
         response = await self._client._request_json(
             "PUT",
             f"/workspaces/{workspace_id}/embed/lifetime",
             json={"params": {"token_ttl": token_ttl}},
         )
         return EmbedLifetimeResponse.model_validate(response)
+
+
+def check_token_ttl(token_ttl: object) -> None:
+    """Refuse an embed session lifetime outside 60..3600 seconds."""
+    if isinstance(token_ttl, bool) or not isinstance(token_ttl, int) or not 60 <= token_ttl <= 3600:
+        raise MammothValidationError(ERR_EMBED_TOKEN_TTL_RANGE.format(token_ttl))
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────

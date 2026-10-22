@@ -561,7 +561,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard embed key rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
   example: mammoth dashboard embed key rotate 123 --yes --confirm 123
 - `mammoth dashboard embed lifetime set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
-  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'
+  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 900}'
 - `mammoth dashboard embed origin revoke` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
   example: mammoth dashboard embed origin revoke 123 --input '{"origin": "https://example.com"}' --yes --confirm 123
 - `mammoth dashboard embed preview-token create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
@@ -1531,7 +1531,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 456 --yes
 - `mammoth view export download` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_file
-  example: mammoth view export download 123
+  example: mammoth view export download 123 --input '{"file_type": "xml"}'
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
   example: mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email

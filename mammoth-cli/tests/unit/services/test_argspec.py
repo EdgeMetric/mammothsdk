@@ -29,6 +29,12 @@ def test_enum_field_exposes_its_member_values() -> None:
     assert field.enum_values == ["UPPER", "LOWER", "TITLE"]
 
 
+def test_literal_field_exposes_its_values() -> None:
+    """#282: ``Literal['csv', ...]`` reported ``enum: null``."""
+    field = _field("mammoth.api.exports.ExportsAPI.to_file", "file_type")
+    assert field.enum_values == ["csv", "xlsx", "json", "ndjson", "xml", "yaml", "parquet"]
+
+
 def test_non_enum_field_has_no_enum_values() -> None:
     field = _field(_TEXT_TRANSFORM, "trim")
     assert field.enum_values is None

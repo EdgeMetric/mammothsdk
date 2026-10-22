@@ -70,10 +70,14 @@ class FieldSpec:
 
     @property
     def enum_values(self) -> list[str] | None:
-        """The member values, if this field's type is a string enum."""
+        """The member values, if this field's type is a string enum or a ``Literal`` of them."""
         target = self.resolved_type
         if isinstance(target, type) and issubclass(target, enum.Enum):
             return [member.value for member in target]
+        if get_origin(target) is typing.Literal:
+            values = get_args(target)
+            if values and all(isinstance(value, str) for value in values):
+                return list(values)
         return None
 
     @property

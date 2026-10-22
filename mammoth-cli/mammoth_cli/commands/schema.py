@@ -723,7 +723,16 @@ _COMMAND_DISCOVERY_PURPOSES = {
     "workflow.save-cancel-step": "cancel one step of a running workflow save stop a save step",
     "view.export.runs": "export run history past runs of an export rows sent errors when it ran",
     "view.export.rest-fill": "propose REST API export settings from an API docs page url",
-    "view.summary": "summary of a dataview rows columns overview stats at a glance",
+    "workspace.user.list": (
+        "list users members of the workspace or of one project with --project, their roles "
+        "and status, who has access, my role in a project"
+    ),
+    # What was done to the view and what depends on it; column statistics are
+    # ``view data profile``.
+    "view.summary": (
+        "summary of what a dataview has had done to it and where it goes: pipeline steps "
+        "actions exports dashboards dependencies downstream, row and column counts"
+    ),
     "workspace.export-hosts.get": "hosts exports may send data to allowed export hosts policy",
     "workspace.export-hosts.set": "restrict or allow the hosts exports may send data to",
     "dashboard.email-updates.list": "email updates on dashboards I subscribe to in the workspace",
@@ -1206,18 +1215,6 @@ def _operation_hints_by_command() -> dict[str, str]:
     return {command_id: " ".join(parts) for command_id, parts in hints.items()}
 
 
-def _optional_positional_fields(command_id: str) -> frozenset[str]:
-    """Fields that an optional trailing positional can supply (``[DATASET_ID]``).
-
-    The SDK method needs them, but the CLI looks them up when the caller leaves them out.
-    """
-    return frozenset(
-        item.falls_back_to_field
-        for item in resolve_positionals(command_id)
-        if item.falls_back_to_field is not None and not item.required
-    )
-
-
 def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
     """Return the backing method's accepted fields for a command record.
 
@@ -1240,12 +1237,16 @@ def _accepted_fields(record: dict[str, Any]) -> list[dict[str, Any]] | None:
         tuple(str(item) for item in record.get("operation_ids", []))
     )
     path_fields = local_path_fields(record["command_id"], record.get("positionals", []))
-    optional_positional_fields = _optional_positional_fields(record["command_id"])
+    # A field an optional positional fills (``view summary VIEW_ID [DATASET_ID]``) is
+    # resolved by the command when both are omitted, as the input schema says.
+    fallbacks = {
+        item.falls_back_to_field for item in contract.positionals if item.falls_back_to_field
+    }
     return [
         {
             "name": field.name,
             "type": field.type_name,
-            "required": field.required and field.name not in optional_positional_fields,
+            "required": field.required and field.name not in fallbacks,
             "enum": field.enum_values,
             "default": field.default_value if field.has_default else None,
             "schema": (

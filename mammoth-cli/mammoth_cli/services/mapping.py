@@ -30,6 +30,7 @@ from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
     CODE_JOB_FAILED,
     CODE_OUTCOME_UNKNOWN,
+    CODE_PLAN_LIMIT,
     CODE_RESOURCE_NOT_FOUND,
     CODE_RETRYABLE,
     EMBEDDED_AUTH_HINT,
@@ -263,6 +264,21 @@ def _retry_hint(retry_after: str | None) -> str:
 #: A backend error ``name`` that refuses an action for lack of permission
 #: (``DASHBOARD_CREATE_NOT_ALLOWED``) arrives as a 400, not a 403.
 _NOT_ALLOWED_SUFFIX = "_NOT_ALLOWED"
+#: The generic permission refusal (4PERM002), which some routes send as a 400.
+_PERMISSION_ERROR_NAME = "PERMISSION_ERROR"
+
+#: Backend codes that refuse an action because of the workspace's plan or AI
+#: quota, not the user's permissions: no id or role change fixes them.
+_PLAN_LIMIT_CODES = frozenset(
+    {
+        "4SUBS101",  # FEATURE_NOT_AVAILABLE_ON_PLAN
+        "4SUBS102",  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
+        "4SUBS103",  # PLAN_PAYMENT_REQUIRED
+        "4SUBS104",  # AI_QUOTA_EXHAUSTED
+        "4SUBS105",  # WORKSPACE_OVER_PLAN_LIMITS
+        "4SUBS106",  # PLAN_LIMIT_REACHED
+    }
+)
 
 
 def _not_allowed_reason(body: Any, status: int | None) -> str | None:
@@ -271,9 +287,22 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
         return None
     name = body.get("name")
     message = body.get("message")
-    if not isinstance(name, str) or not name.endswith(_NOT_ALLOWED_SUFFIX):
+    if not isinstance(name, str) or not (
+        name.endswith(_NOT_ALLOWED_SUFFIX) or name == _PERMISSION_ERROR_NAME
+    ):
         return None
     return message if isinstance(message, str) and message else name
+
+
+def _plan_limit_reason(body: Any, status: int | None) -> str | None:
+    """The backend's own words when a 4xx refuses for the plan or AI quota."""
+    if status is None or not 400 <= status < 500 or not isinstance(body, dict):
+        return None
+    backend_code = body.get("error_code") or body.get("code")
+    if backend_code not in _PLAN_LIMIT_CODES:
+        return None
+    message = body.get("message")
+    return message if isinstance(message, str) and message else str(backend_code)
 
 
 def _backend_message(body: Any, status: int | None) -> str | None:
@@ -631,6 +660,20 @@ def map_sdk_exception(
                 details=details,
                 request_id=request_id,
                 recovery_commands=[token_login],
+            )
+        plan_limit = _plan_limit_reason(exc.response_body, status)
+        if plan_limit is not None:
+            return CliError(
+                code=CODE_PLAN_LIMIT,
+                message=plan_limit,
+                exit_status=EXIT_AUTH,
+                hint=(
+                    "The workspace's plan or monthly AI quota does not cover this; the ids "
+                    "and permissions are not the problem. Do not retry: tell the user, who "
+                    "can upgrade the plan or ask Mammoth support to extend the quota."
+                ),
+                details=details,
+                request_id=request_id,
             )
         if status == 403:
             return CliError(

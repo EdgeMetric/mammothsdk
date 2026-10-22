@@ -2711,7 +2711,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export download DATAVIEW_ID --help
-  agent_example: mammoth view export download 123
+  agent_example: 'mammoth view export download 123 --input ''{"file_type": "xml"}'''
   unit_tests:
   - UT-VIEW-EXPORT-DOWNLOAD
   contract_tests:
@@ -2720,7 +2720,7 @@ commands:
   - CT-VIEW-EXPORT-DOWNLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g. mammoth view export download 123 --input ''{"format": "xlsx"}'' (csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is given.'
+  known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g. mammoth view export download 123 --input ''{"file_type": "xlsx"}'' (csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is given.'
   reviewed_by: primary
 - command_id: view.export.elasticsearch
   command_path: view export elasticsearch

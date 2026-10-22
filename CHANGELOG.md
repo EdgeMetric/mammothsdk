@@ -6,11 +6,41 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed (next mammoth-cli)
+## mammoth-cli 2.2.99 (2026-10-22)
+
+### Fixed (mammoth-cli 2.2.99)
 
 - CLI: `schema find` now lists each inlined command's `positionals` in order with `required` (`view explore-panel set` is `VIEW_ID` then optional `DATASET_ID`). Before, only `accepted_fields` showed, with `dataset_id` as the one required id, so an agent passed the dataset id first. A field that an optional trailing positional can supply is no longer `required: true` in `accepted_fields` (`schema find` and `schema get`).
 - CLI: the swapped-ids refusal ("N is a dataset id and M is its view; the order is VIEW_ID DATASET_ID", with the corrected command) now also covers every `VIEW_ID [DATASET_ID]` write that checks the parent (`view explore-panel set`, `edit`, `add-to-dashboard`, `export-image`, and `view optimize`), not only `view data get`.
 - CLI: the `view explore-panel set` notes no longer say it "opens Explore cards in the UI"; it saves the calling user's panel and shows nothing by itself.
+- CLI: `schema get view.transform.first-name` and `view.transform.update-column` no longer say a draft-mode step submits the draft; since 2.2.97 it stays staged (#298).
+
+## mammoth-io 0.8.50, mammoth-cli 2.2.98 (2026-10-22)
+
+### Added (mammoth-io 0.8.50, mammoth-cli 2.2.98)
+
+- SDK `WorkspaceAPI.list(fields=...)` asks `GET /workspaces` for the given fields (default `"id,name"`, as before), e.g. `"id,name,download_file_types"`; `mammoth workspace list --input '{"fields": "..."}'` passes it (#272).
+- CLI `workspace user list --project ID` lists that project's members with their roles; `schema find` reaches it for "project members" and "my role". The project was dropped before (#256).
+- CLI `--reveal` on `dashboard embed secret rotate` and `dashboard embed preview-token create` prints the new signing secret or preview token, which the API shows only once. Without it they stay masked as before (#278).
+
+### Changed (mammoth-cli 2.2.98)
+
+- CLI: a plan or AI-quota refusal (`4SUBS101`–`4SUBS106`, e.g. `AI_QUOTA_EXHAUSTED`, `FEATURE_NOT_AVAILABLE_ON_PLAN`) is the new error code `plan_limit` (exit 4), with the backend's message and a hint about the plan and quota, instead of `authorization_required` with "check the ids" (#254).
+- CLI: `dashboard live-chart create` waits for the chart's bake job (bounded by `--job-timeout`) and reads the chart back; the result keeps `dashboard_id` and `job_id`. Before, it returned the queued job with no wait or readback (#281).
+- CLI: `dashboard live-chart create`, `dashboard template apply` and `dashboard v3 generate` send an explicit `--project` as the new board's `project_id`; without it the server still uses the source view's project (#280).
+- CLI: `view export rest-fill` refuses `wait` and `timeout` in `--input` instead of ignoring them; it always waits, for at most `--job-timeout` seconds (#279).
+
+### Fixed (mammoth-io 0.8.50, mammoth-cli 2.2.98)
+
+- SDK `DashboardsAPI.embed_lifetime_set` refuses a `token_ttl` that is not an integer (a bool, a string) as well as one outside 60–3600. CLI `dashboard embed lifetime set --dry-run` applies the same check, and its example now uses `900` instead of the invalid `1` (#283).
+
+### Fixed (mammoth-cli 2.2.98)
+
+- CLI: a backend `PERMISSION_ERROR` (`4PERM002`) sent as an HTTP 400 is `authorization_required` (exit 4) with the backend's message, not a generic `api_error` telling the caller to correct the request (#277).
+- CLI: `dashboard embed config get` shows `has_signing_secret` as `true`/`false`; key redaction never masks a boolean (#278).
+- CLI: `--help` and `schema get` list the values of a `Literal` field: `view export download` shows `file_type (csv | xlsx | json | ndjson | xml | yaml | parquet)` and `schema get` reports its `enum`. A long type in `--help` is cut at a word with `...`, never inside a value (it showed `'par`). The command's docstring and example name `file_type` (#282).
+- CLI: `schema get view.summary` reports `dataset_id` as optional, as its positional is, and `schema find` sends column-statistics searches to `view data profile` rather than `view summary` (#284).
+- CLI: `file upload` of a file that made no dataset (a PDF waiting for table extraction) reports `status: no_dataset` with a message and `verify.needs_user`, not `ready` (#255).
 
 ## mammoth-cli 2.2.97 (2026-10-22)
 

@@ -93,6 +93,8 @@ _UNSETTLED_REASON = (
 
 #: A write the CLI skipped because it would change nothing (see ``view transform``).
 _NO_CHANGE_STATUS = "no_change"
+#: ``file upload``'s status when its job made no dataset (``commands.file.NO_DATASET_STATUS``).
+_NO_DATASET_STATUS = "no_dataset"
 
 
 def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
@@ -351,7 +353,7 @@ def _verify_and_reason(
     ``reason`` is set whenever ``verified`` is ``False`` (a failure or a
     no-op) and for a staged draft; it is ``None`` for an ordinary success.
     A failure never sets ``needs_user`` -- see :func:`_needs_user`, which
-    covers only the two outcomes serious enough to interrupt the caller.
+    covers only the outcomes serious enough to interrupt the caller.
     """
     if data.get("changed") is False:
         message = data.get("message")
@@ -431,7 +433,7 @@ def _needs_user(
     rows_before: int | None,
     rows_after: int | None,
 ) -> str | None:
-    """The only two outcomes worth interrupting the caller for.
+    """The few outcomes worth interrupting the caller for.
 
     ``needs_user`` means "a serious outcome the user must hear about before
     anything is built on it" -- never "something went wrong that you can
@@ -443,6 +445,10 @@ def _needs_user(
     """
     if not verified:
         return None
+    if data.get("status") == _NO_DATASET_STATUS:
+        # An upload that made no dataset (a PDF awaiting table extraction).
+        message = data.get("message")
+        return message if isinstance(message, str) else "The upload made no dataset."
     if rows_after == 0 and isinstance(rows_before, int) and rows_before > 0:
         return f"The change left the view with no rows (was {rows_before})."
     join_check = data.get("join_check")

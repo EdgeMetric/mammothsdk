@@ -175,6 +175,15 @@ def test_list_forwards_limit(fake_service: FakeMammothService, tmp_path: Path) -
     assert fake_service.call_log == [(_LIST, {"limit": 10})]
 
 
+def test_list_forwards_fields(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    # #272: `fields` was refused as an unknown input field.
+    doc = _write(tmp_path, {"fields": "id,name,download_file_types"})
+    workspace_cmd.workspace_list(_inv("workspace.list", input_file=doc))
+    assert fake_service.call_log == [
+        (_LIST, {"limit": 100, "fields": "id,name,download_file_types"})
+    ]
+
+
 # --- llm-task -----------------------------------------------------------------
 
 
@@ -355,6 +364,12 @@ def test_user_list_forwards_fields(fake_service: FakeMammothService, tmp_path: P
     doc = _write(tmp_path, {"fields": "__standard"})
     workspace_cmd.workspace_user_list(_inv("workspace.user.list", input_file=doc))
     assert fake_service.call_log == [(_USER_LIST, {"fields": "__standard"})]
+
+
+def test_user_list_project_keeps_that_projects_members(fake_service: FakeMammothService) -> None:
+    # #256: no way to list a project's members; --project was dropped.
+    workspace_cmd.workspace_user_list(_inv("workspace.user.list", project=27))
+    assert fake_service.call_log == [(_USER_LIST, {"fields": "__full", "project_id": 27})]
 
 
 # --- user remove / remove-batch --------------------------------------------------

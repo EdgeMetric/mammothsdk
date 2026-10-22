@@ -498,6 +498,51 @@ def test_a_not_allowed_400_is_an_authorization_error_with_the_backends_reason() 
     assert "Do not retry" in (mapped.hint or "")
 
 
+def test_a_permission_error_400_is_an_authorization_error() -> None:
+    # #277: 4PERM002 in a 400 fell through to api_error, "correct the request".
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="GET",
+        operation_state="not_started",
+        response_body={
+            "error_code": "4PERM002",
+            "name": "PERMISSION_ERROR",
+            "message": "User lacks permission to perform given action",
+            "status_code": 400,
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "authorization_required"
+    assert mapped.exit_status == EXIT_AUTH
+    assert mapped.authorization_required is True
+    assert mapped.message == "User lacks permission to perform given action"
+
+
+@pytest.mark.parametrize("status", [400, 403])
+def test_a_plan_or_quota_refusal_names_the_plan_not_the_ids(status: int) -> None:
+    # #254: 4SUBS104 said "You don't have permission" and "Check the ids".
+    message = "Monthly AI usage limit reached. Contact support to extend."
+    error = MammothAPIError(
+        "Forbidden",
+        status_code=status,
+        method="POST",
+        operation_state="failed",
+        response_body={"error_code": "4SUBS104", "name": "AI_QUOTA_EXHAUSTED", "message": message},
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "plan_limit"
+    assert mapped.exit_status == EXIT_AUTH
+    assert mapped.authorization_required is False
+    assert mapped.message == message
+    assert "ids" not in mapped.to_envelope()["error"]["summary"]
+    assert "Check the ids" not in (mapped.hint or "")
+
+
 def test_an_ordinary_400_stays_an_api_error() -> None:
     error = MammothAPIError(
         "Bad request",

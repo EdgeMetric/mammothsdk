@@ -464,6 +464,15 @@ def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] 
     )
 
 
+#: An upload whose job finished without making any dataset.
+NO_DATASET_STATUS = "no_dataset"
+_NO_DATASET_MESSAGE = (
+    "The file was uploaded but no dataset was made from it. A PDF waits in the file list "
+    "as action_needed until its tables are extracted, which the CLI cannot do yet; do that "
+    "in the Mammoth app. Do not upload the file again."
+)
+
+
 def _upload_result(
     value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None, str | None]]
 ) -> dict[str, Any]:
@@ -505,6 +514,12 @@ def _upload_result(
     result: dict[str, Any] = {"status": overall, "dataset_ids": ids, "datasets": datasets}
     if len(ids) == 1:
         result["dataset_id"] = ids[0]
+    if not ids:
+        # A PDF ends the upload job in ``action_needed`` with no dataset: its
+        # tables must be picked first (#255), so nothing here is ready.
+        result["status"] = NO_DATASET_STATUS
+        result["message"] = _NO_DATASET_MESSAGE
+        result["next_command"] = "mammoth file list"
     return result
 
 

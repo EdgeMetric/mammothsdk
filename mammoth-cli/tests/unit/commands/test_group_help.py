@@ -108,6 +108,24 @@ def test_help_input_types_keep_their_brackets() -> None:
     assert _short_type("int") == "int"
 
 
+def test_a_long_help_type_is_cut_at_a_word_never_inside_a_value() -> None:
+    from mammoth_cli.app import _short_type  # noqa: PLC2701
+
+    text = _short_type(
+        "list[mammoth.m.ColumnNameMapping] | list[mammoth.m.ColumnIdMapping] | bytes | None"
+    )
+    assert text.endswith(" ...")
+    assert len(text) <= 60
+
+
+def test_download_help_lists_every_file_type() -> None:
+    # #282: the Literal was cut at 60 characters, ending in the invalid value 'par.
+    from mammoth_cli.app import _help_input_fields  # noqa: PLC2701
+
+    line = _help_input_fields("view.export.download") or ""
+    assert "file_type (csv | xlsx | json | ndjson | xml | yaml | parquet)" in line
+
+
 def test_sdk_backed_leaf_help_reads_the_installed_sdk_not_the_index(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

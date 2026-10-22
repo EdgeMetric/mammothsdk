@@ -1,6 +1,6 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.97.
+Generated from the reviewed command manifests for mammoth-cli 2.2.99.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
@@ -2462,7 +2462,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set`
-- Agent example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'`
+- Agent example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 900}'`
 
 ### `mammoth dashboard embed origin revoke`
 
@@ -7096,7 +7096,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.to_file`
-- Agent example: `mammoth view export download 123`
+- Agent example: `mammoth view export download 123 --input '{"file_type": "xml"}'`
 
 ### `mammoth view export elasticsearch`
 
