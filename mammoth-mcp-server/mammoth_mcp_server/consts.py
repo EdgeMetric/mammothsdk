@@ -503,6 +503,13 @@ class DashboardFields:
     NEXT_STEP = "next_step"
     # A board's embed, as `get_dashboard` and `edit_dashboard` report it.
     EMBED = "embed"
+    # What of an AI edit did not land, read from Mammoth's own reply, and the
+    # job a later call picks an unfinished edit up by.
+    PARTIAL = "partial"
+    NOT_DONE = "not_done"
+    JOB_ID = "job_id"
+    # The status Mammoth's reply gives an ask that landed.
+    ASK_APPLIED = "applied"
 
 
 class EmbedFields:
