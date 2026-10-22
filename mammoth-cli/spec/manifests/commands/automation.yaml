@@ -410,6 +410,12 @@ commands:
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
+  readback:
+    command: automation.folders
+  readback:
+    command: automation.folders
+    ids: {}
+    kind: object
   acceptance_evidence: live_disposable_project
   live_test: LT-AUTOMATION-ROUTE-ORDER
   live_exemption_reason: null
@@ -494,6 +500,7 @@ commands:
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
+  no_readback: the held file is added to its destination dataset by the automation's next run; `automation runs AUTOMATION_ID` shows that run
   acceptance_evidence: live_disposable_project
   live_test: LT-AUTOMATION-RUN-FILE-ADD-ANYWAY
   live_exemption_reason: null

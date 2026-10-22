@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 67,
+  "route_count": 82,
   "families": {
     "view_export": 30,
-    "connector": 24,
+    "connector": 39,
     "external-key": 4,
     "webhook": 7
   },
@@ -3987,6 +3987,675 @@
         "method": "PATCH",
         "path": "/workspaces/{workspace}/projects/{project}/connections/{connection_key}/test",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.list",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.list",
+      "field_destinations": {
+        "status": {
+          "source": "input",
+          "destination": "status",
+          "wire": "query"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.create",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.create",
+      "field_destinations": {
+        "origin": {
+          "source": "input",
+          "destination": "origin",
+          "wire": "sdk_argument"
+        },
+        "connector_key": {
+          "source": "input",
+          "destination": "connector_key",
+          "wire": "sdk_argument"
+        },
+        "connection_key": {
+          "source": "input",
+          "destination": "connection_key",
+          "wire": "sdk_argument"
+        },
+        "kind": {
+          "source": "input",
+          "destination": "kind",
+          "wire": "sdk_argument"
+        },
+        "url": {
+          "source": "input",
+          "destination": "url",
+          "wire": "sdk_argument"
+        },
+        "request_text": {
+          "source": "input",
+          "destination": "request_text",
+          "wire": "sdk_argument"
+        },
+        "title": {
+          "source": "input",
+          "destination": "title",
+          "wire": "sdk_argument"
+        },
+        "session_id": {
+          "source": "input",
+          "destination": "session_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts",
+        "body": "json:origin+draft fields",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.known-sources",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources",
+      "field_destinations": {},
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/known-sources",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.get",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.get",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.update",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.update",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "title": {
+          "source": "input",
+          "destination": "title",
+          "wire": "sdk_argument"
+        },
+        "target_columns": {
+          "source": "input",
+          "destination": "target_columns",
+          "wire": "sdk_argument"
+        },
+        "sources": {
+          "source": "input",
+          "destination": "sources",
+          "wire": "sdk_argument"
+        },
+        "primary_source_id": {
+          "source": "input",
+          "destination": "primary_source_id",
+          "wire": "sdk_argument"
+        },
+        "joins": {
+          "source": "input",
+          "destination": "joins",
+          "wire": "sdk_argument"
+        },
+        "echo": {
+          "source": "input",
+          "destination": "echo",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "PATCH",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}",
+        "body": "json:patch",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.discard",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.discard",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "DELETE",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.browse",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.browse",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "folder": {
+          "source": "input",
+          "destination": "folder",
+          "wire": "query"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/browse",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.fill",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.fill",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "column": {
+          "source": "input",
+          "destination": "column",
+          "wire": "sdk_argument"
+        },
+        "file_object_id": {
+          "source": "input",
+          "destination": "file_object_id",
+          "wire": "sdk_argument"
+        },
+        "dataset_id": {
+          "source": "input",
+          "destination": "dataset_id",
+          "wire": "sdk_argument"
+        },
+        "key_columns": {
+          "source": "input",
+          "destination": "key_columns",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/fill",
+        "body": "json:column+one source",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.open",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.open",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "ref": {
+          "source": "input",
+          "destination": "ref",
+          "wire": "sdk_argument"
+        },
+        "name": {
+          "source": "input",
+          "destination": "name",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/open",
+        "body": "json:ref+name",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.read-tables",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/read-tables",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.sample",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.sample",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "path": {
+          "source": "positional",
+          "destination": "path",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/sample",
+        "body": "json:file_name+content_base64",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.save",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.save",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "refresh": {
+          "source": "input",
+          "destination": "refresh",
+          "wire": "sdk_argument"
+        },
+        "dataset_name": {
+          "source": "input",
+          "destination": "dataset_name",
+          "wire": "sdk_argument"
+        },
+        "folder_resource_id": {
+          "source": "input",
+          "destination": "folder_resource_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/save",
+        "body": "json:refresh+dataset_name+folder_resource_id",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.source.list",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.sources",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/sources",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.source.join-candidates",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "source_id": {
+          "source": "positional",
+          "destination": "source_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/sources/{source_id}/join-candidates",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.source.preview",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        },
+        "source_id": {
+          "source": "positional",
+          "destination": "source_id",
+          "wire": "path_or_context"
+        },
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/sources/{source_id}/preview",
+        "body": "json:limit",
         "checks": [
           "method",
           "path",

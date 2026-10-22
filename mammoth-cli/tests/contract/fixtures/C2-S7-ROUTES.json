@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 217,
+  "route_count": 222,
   "families": {
     "activity": 2,
     "agent": 44,
     "ai": 4,
-    "automation": 8,
+    "automation": 13,
     "billing": 27,
     "client-app": 5,
     "schedule": 5,
@@ -8672,6 +8672,186 @@
         "method": "PUT",
         "path": "/subscription/plans/{plan_id}/entitlements",
         "body": "json:UpdatePlanEntitlementsRequestSchema",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "automation.folders",
+      "operation_id": "GetWatchedFolders",
+      "sdk_symbol": "mammoth.api.automations.AutomationsAPI.watched_folders",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/projects/{project_id}/automations/folders",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "automation.runs",
+      "operation_id": "GetAutomationRuns",
+      "sdk_symbol": "mammoth.api.automations.AutomationsAPI.runs",
+      "field_destinations": {
+        "automation_id": {
+          "source": "positional",
+          "destination": "automation_id"
+        },
+        "limit": {
+          "source": "input",
+          "destination": "limit",
+          "wire": "query"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}/runs",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "automation.route.preview",
+      "operation_id": "PreviewRoutes",
+      "sdk_symbol": "mammoth.api.automations.AutomationsAPI.preview_routes",
+      "field_destinations": {
+        "folder_resource_id": {
+          "source": "positional",
+          "destination": "folder_resource_id"
+        },
+        "names": {
+          "source": "input",
+          "destination": "names",
+          "wire": "sdk_argument"
+        },
+        "draft": {
+          "source": "input",
+          "destination": "draft",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/projects/{project_id}/automations/route-preview",
+        "body": "json:folder_resource_id+names+draft",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "automation.route.order",
+      "operation_id": "SetRouteOrder",
+      "sdk_symbol": "mammoth.api.automations.AutomationsAPI.set_route_order",
+      "field_destinations": {
+        "folder_resource_id": {
+          "source": "positional",
+          "destination": "folder_resource_id"
+        },
+        "automation_ids": {
+          "source": "input",
+          "destination": "automation_ids",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "PUT",
+        "path": "/workspaces/{workspace_id}/projects/{project_id}/automations/route-order",
+        "body": "json:folder_resource_id+automation_ids",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "automation.run-file.add-anyway",
+      "operation_id": "AddRunFileAnyway",
+      "sdk_symbol": "mammoth.api.automations.AutomationsAPI.add_run_file_anyway",
+      "field_destinations": {
+        "run_file_id": {
+          "source": "positional",
+          "destination": "run_file_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/workspaces/{workspace_id}/projects/{project_id}/automations/run-files/{run_file_id}/add-anyway",
+        "body": "none",
         "checks": [
           "method",
           "path",

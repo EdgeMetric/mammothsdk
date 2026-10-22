@@ -373,7 +373,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=str,
             required=True,
             help="Path to a local CSV, TSV or Excel file shaped like the table wanted.",
-            example_value="sample.csv",
+            example_value="deals_2026-10.csv",
         ),
     ),
     "dashboard.chat.attachment.upload": (

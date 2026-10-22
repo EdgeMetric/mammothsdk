@@ -250,7 +250,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector draft sample`. Exact input fields: `mammoth schema get connector.draft.sample`.
 
-Example: `mammoth connector draft sample 123 sample.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth connector draft sample 123 deals_2026-10.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorDraftSampleResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

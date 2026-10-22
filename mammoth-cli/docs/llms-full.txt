@@ -425,7 +425,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth connector draft read-tables` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables
   example: mammoth connector draft read-tables 123
 - `mammoth connector draft sample` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
-  example: mammoth connector draft sample 123 sample.csv
+  example: mammoth connector draft sample 123 deals_2026-10.csv
 - `mammoth connector draft save` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.save
   example: mammoth connector draft save 123 --input '{"refresh": "daily", "dataset_name": "HubSpot deals"}'
 - `mammoth connector draft source join-candidates` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates

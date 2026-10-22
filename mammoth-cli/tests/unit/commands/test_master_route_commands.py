@@ -12,12 +12,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from mammoth.api import connector_drafts as sdk
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.field_enums import FIELD_ENUMS
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
@@ -312,3 +314,12 @@ def test_save_waits_for_its_job(fake_service: FakeMammothService) -> None:
 
     assert fake_service.wait_log == [{"job_id": 8}]
     assert data == {"status": "success"}
+
+
+def test_the_draft_vocabularies_match_the_sdk() -> None:
+    assert FIELD_ENUMS["connector.draft.create"] == {
+        "origin": sdk.DRAFT_ORIGINS,
+        "kind": sdk.DRAFT_KINDS,
+    }
+    assert FIELD_ENUMS["connector.draft.list"] == {"status": sdk.LIST_STATUSES}
+    assert FIELD_ENUMS["connector.draft.save"] == {"refresh": sdk.SAVE_REFRESH}

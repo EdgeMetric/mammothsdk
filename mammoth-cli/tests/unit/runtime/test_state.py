@@ -454,6 +454,37 @@ def test_a_delete_read_back_that_is_not_found_proves_the_resource_is_gone(
     assert result["verify"]["verified"] is True
 
 
+@pytest.mark.parametrize(
+    ("command_id", "absent"), [("connector.draft.discard", True), ("connector.draft.update", False)]
+)
+def test_a_discarded_draft_that_is_not_found_is_gone_but_an_updated_one_is_not(
+    monkeypatch: pytest.MonkeyPatch, command_id: str, absent: bool
+) -> None:
+    from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND, CliError
+
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "connector.draft.get",
+                "ids": {"draft_id": "positional.0"},
+                "kind": "object",
+            }
+        },
+    )
+
+    def raising_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        raise CliError(code=CODE_RESOURCE_NOT_FOUND, message="gone", exit_status=EXIT_NOT_FOUND)
+
+    _patch_handlers(monkeypatch, {"connector.draft.get": raising_get})
+    invocation = _invocation(command_id, positionals={"draft_id": 9})
+    invocation = Invocation(**{**invocation.__dict__, "extra_args": ["9"]})
+    result = with_state(invocation, {"status": "done", "verify": {"verified": True}})
+
+    assert (result["state"].get("absent") is True) is absent
+    assert result["verify"]["verified"] is absent
+
+
 def test_a_delete_read_back_that_fails_otherwise_is_not_verified(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

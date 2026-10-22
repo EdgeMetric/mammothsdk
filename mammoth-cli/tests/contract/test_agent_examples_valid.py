@@ -237,7 +237,9 @@ def test_the_same_checks_flag_the_published_sweep_findings() -> None:
     """The counts the offline sweep found, as properties that must now be zero."""
     records = [r for r in load_commands() if r.get("disposition") != "alias"]
     examples = [(r["command_id"], r["agent_example"]) for r in records]
-    assert [c for c, e in examples if _PLACEHOLDER.search(e) and "sample-flow" not in e] == []
+    # The command's own words are not data (``connector draft sample`` is a real command).
+    data = [(r["command_id"], r["agent_example"].split(r["command_path"], 1)[-1]) for r in records]
+    assert [c for c, e in data if _PLACEHOLDER.search(e) and "sample-flow" not in e] == []
     assert [c for c, e in examples if "/private/path" in e and c not in _secret_commands()] == []
     assert [c for c, e in examples if e.startswith(_HANDOFF) and c != _SCHEMA_GET] == []
 

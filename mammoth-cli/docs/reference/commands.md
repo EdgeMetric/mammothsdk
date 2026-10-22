@@ -1776,7 +1776,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.sample`
-- Agent example: `mammoth connector draft sample 123 sample.csv`
+- Agent example: `mammoth connector draft sample 123 deals_2026-10.csv`
 
 ### `mammoth connector draft save`
 
