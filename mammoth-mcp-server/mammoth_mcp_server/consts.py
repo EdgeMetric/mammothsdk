@@ -478,7 +478,7 @@ class AutomationFields:
     DESCRIPTION = "description"
     TASKS = "tasks"
     TASK_TYPE = "task_type"
-    # What `get_automation_schema` answers: one task type, and every condition.
+    # What `get_schema` answers for an automation: one task type, and every condition.
     TASK = "task"
     CONDITIONS = "conditions"
     AUTOMATIONS = "automations"

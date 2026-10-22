@@ -22,6 +22,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `get_dashboard` with `include_embed` gives the HTML that puts a dashboard on another site: an iframe with the board's embed key ("key"), a `TOKEN` the host's server signs per viewer ("signed"), or nothing more for a public board. It reports which sites may show the board, whether it is published, and what to tell the user: publish first, limit the sites, or (on "signed") that the workspace has no signing secret yet, so the embed shows nothing. It never returns the signing secret.
 - `edit_dashboard` also sets the embed mode ("key" or "signed") and which sites may show the board (any site, or a list). Only what is named changes, and it applies at once: it is not part of the draft. Embedding has no tools of its own, to keep the tool list short.
 
+### Removed (mammoth-mcp-server 0.2.8)
+
+Five tools fold into others, so the tool list a client sends with every request is shorter:
+
+- `get_transformation_schema`, `get_export_schema` and `get_automation_schema`: one `get_schema(kind, of)` answers all three, `kind` being "transformation", "export" or "automation". Only "automation" names a workspace and project.
+- `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
+- `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
+
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
 ### Added (mammoth-io 0.8.48, mammoth-cli 2.2.95)
