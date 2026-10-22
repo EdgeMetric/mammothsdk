@@ -16,6 +16,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
 
+### Added (mammoth-mcp-server 0.2.8)
+
+- `edit_dashboard` has Mammoth's AI change a dashboard from a description (one turn of the editor's chat), gives it a new title, or both. It waits for the edit and reports `changed` and the AI's `message`. When `changed` is false, `next_step` says nothing was applied, whatever the message claims. The edit goes to the draft: on a published dashboard, `next_step` says the share link shows the old version until `publish_dashboard` runs again, and the tool never publishes. A board on the older engine can be renamed, and an AI edit of it is refused before anything is sent. An edit still going after the wait is reported as `editing`.
+- `get_dashboard` with `include_embed` gives the HTML that puts a dashboard on another site: an iframe with the board's embed key ("key"), a `TOKEN` the host's server signs per viewer ("signed"), or nothing more for a public board. It reports which sites may show the board, whether it is published, and what to tell the user: publish first, limit the sites, or (on "signed") that the workspace has no signing secret yet, so the embed shows nothing. It never returns the signing secret.
+- `edit_dashboard` also sets the embed mode ("key" or "signed") and which sites may show the board (any site, or a list). Only what is named changes, and it applies at once: it is not part of the draft. Embedding has no tools of its own, to keep the tool list short.
+
 ### Added (mammoth-mcp-server 0.2.7)
 
 - A connection the user limited to several projects on the consent screen may act in each of them. The token's projects are read from Mammoth's `projects` (and from `project` alone, on a Mammoth older than multi-project sign-in). `list_projects` lists every pinned project, a project outside them is refused naming them all, and `request_upload` takes no project only when the connection has exactly one.
