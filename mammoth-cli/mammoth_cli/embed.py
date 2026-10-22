@@ -44,6 +44,11 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.embed_pool import (  # noqa: F401 -- shared_pool, close_shared_pool: public
+    EmbedRuntime,
+    close_shared_pool,
+    shared_pool,
+)
 from mammoth_cli.runtime.shared import forget_reads, shared_services
 
 
@@ -58,6 +63,7 @@ def invoke(
     job_timeout: float | None = None,
     return_running: bool = False,
     hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -82,6 +88,10 @@ def invoke(
             yet (``server_status: pending`` in ``schema``) with
             ``pending_server_release``, and leave them out of ``schema list`` and
             ``schema find``. Off by default: a terminal user may target a newer server.
+        runtime: A host-owned :class:`EmbedRuntime` (or :func:`shared_pool`): the
+            call sends its requests through its one connection pool and loop, so
+            keep-alive connections are reused across calls and users. Omitted, the
+            call builds and closes a pool of its own.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -96,7 +106,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    return _invoke_one(argv, login, hide_pending=hide_pending)
+    return _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
 
 
 def invoke_many(
@@ -110,6 +120,7 @@ def invoke_many(
     job_timeout: float | None = None,
     return_running: bool = False,
     hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
     stop_on_error: bool = True,
 ) -> list[dict[str, Any]]:
     """Run several commands as ``login``, in order, and return one envelope each.
@@ -130,6 +141,7 @@ def invoke_many(
         job_timeout: See :func:`invoke`; applied to each command.
         return_running: See :func:`invoke`; applied to each command.
         hide_pending: See :func:`invoke`; applied to each command.
+        runtime: See :func:`invoke`; every command uses it.
         stop_on_error: Stop at the first command that fails (an ``error``
             envelope, or a non-zero ``meta.exit``); each command after it gets
             a ``skipped`` error envelope naming its index and the failed one.
@@ -155,7 +167,7 @@ def invoke_many(
                 job_timeout=job_timeout,
                 return_running=return_running,
             )
-            envelope = _invoke_one(argv, login, hide_pending=hide_pending)
+            envelope = _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
             forget_reads()
             envelopes.append(envelope)
             if stop_on_error and _failed(envelope):
@@ -164,11 +176,15 @@ def invoke_many(
 
 
 def _invoke_one(
-    argv: list[str], login: ExplicitLogin, *, hide_pending: bool = False
+    argv: list[str],
+    login: ExplicitLogin,
+    *,
+    hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
 ) -> dict[str, Any]:
     """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
     started = time.perf_counter()
-    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending)
+    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending, runtime=runtime)
     embedded.install_stream_guards()
     token = embedded.enter(call)
     try:

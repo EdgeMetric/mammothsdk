@@ -28,12 +28,13 @@ import asyncio
 import base64
 import functools
 import hashlib
+import http.cookiejar
 import importlib
 import inspect
 import logging
 import math
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from ipaddress import ip_address
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from urllib.parse import urljoin, urlsplit
@@ -380,6 +381,43 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
     return _TOKEN_WORKSPACES[key]
 
 
+def shared_http_client(
+    *,
+    timeout: float = 60.0,
+    max_connections: int = 100,
+    max_keepalive_connections: int = 32,
+    keepalive_expiry: float = 30.0,
+) -> httpx.AsyncClient:
+    """An ``httpx.AsyncClient`` fit to be shared by many users' clients as ``http_client``.
+
+    It holds no credentials and keeps no cookies, and it does not follow redirects.
+    An ``httpx.AsyncClient`` belongs to the event loop that first uses it, so use one
+    long-lived loop for every client that shares it. The caller closes it.
+
+    Args:
+        timeout: Fallback timeout in seconds for a request that names none (the SDK
+            sets its own per request).
+        max_connections: Most connections open at once; further requests wait.
+        max_keepalive_connections: Idle connections kept for reuse.
+        keepalive_expiry: Seconds an idle connection is kept; keep it below the
+            server's own idle timeout.
+
+    Returns:
+        The new client.
+    """
+    client = httpx.AsyncClient(
+        timeout=timeout,
+        follow_redirects=False,
+        limits=httpx.Limits(
+            max_connections=max_connections,
+            max_keepalive_connections=max_keepalive_connections,
+            keepalive_expiry=keepalive_expiry,
+        ),
+    )
+    client.cookies.jar.set_policy(http.cookiejar.DefaultCookiePolicy(allowed_domains=[]))
+    return client
+
+
 async def resolve_token_workspace_id_async(
     session: httpx.AsyncClient, base_url: str, api_token: str, timeout: float
 ) -> int:
@@ -629,6 +667,7 @@ class MammothClient:
         token_provider: Callable[[], str] | None = None,
         user_agent: str | None = None,
         http_client: httpx.AsyncClient | None = None,
+        default_headers: Mapping[str, str] | None = None,
     ) -> None:
         """Initialize the Mammoth client.
 
@@ -680,6 +719,11 @@ class MammothClient:
                 first one's. The caller owns its lifetime and its timeouts, and
                 its cookie jar: a pool shared between users should keep no
                 cookies (``http.cookiejar.DefaultCookiePolicy(allowed_domains=[])``).
+            default_headers: Extra headers sent on every request this client makes,
+                after the credential headers so they override them (a forwarded
+                ``Cookie``, a tracing id). They belong to this client alone: with a
+                shared ``http_client`` they go on each request, never into its
+                ``headers``. Add more later with :meth:`add_default_headers`.
         """
         if token_provider is not None and (
             api_token is not None or api_key is not None or api_secret is not None
@@ -777,7 +821,9 @@ class MammothClient:
                 part for part in (user_agent, f"mammoth-io/{_get_version()}") if part
             ),
         }
-        if self._owns_session:
+        if default_headers:
+            self.add_default_headers(default_headers)
+        elif self._owns_session:
             self.session.headers.update(self._default_headers)
         # Signed export URLs are commonly served from a storage origin rather
         # than the API origin.  Keep that traffic on a separate session so API
@@ -997,13 +1043,11 @@ class MammothClient:
         if params:
             request_kwargs["params"] = params
 
-        headers = dict(self.session.headers)
-        if not self._owns_session:
-            # A shared pool carries no credentials of its own: ours go on each request.
-            # httpx lowercases header names, so merge through its own mapping.
-            merged = httpx.Headers(headers)
-            merged.update(self._default_headers)
-            headers = dict(merged)
+        # Ours go on each request, so a pool shared with other clients never carries them.
+        # httpx lowercases header names, so merge through its own mapping.
+        merged = httpx.Headers(dict(self.session.headers))
+        merged.update(self._default_headers)
+        headers = dict(merged)
         if self._token_provider is not None:
             headers["Authorization"] = f"Bearer {self._token_provider().strip()}"
         if "headers" in kwargs:
@@ -1424,6 +1468,24 @@ class MammothClient:
         return await self._wait_if_job(
             response, timeout=timeout, poll_interval=poll_interval, fetch=fetch
         )
+
+    def add_default_headers(self, headers: Mapping[str, str]) -> None:
+        """Send ``headers`` on every request this client makes, over the credential headers.
+
+        The headers are kept on this client and added to each request, never
+        written to the ``http_client`` it may share with other clients, so one
+        caller's ``Cookie`` or run id cannot reach another caller's requests.
+        A header named like an earlier one (any letter case) replaces it.
+
+        Args:
+            headers: Header name -> value.
+        """
+        for name, value in headers.items():
+            for existing in [key for key in self._default_headers if key.lower() == name.lower()]:
+                del self._default_headers[existing]
+            self._default_headers[name] = value
+        if self._owns_session:
+            self.session.headers.update(self._default_headers)
 
     def set_workspace_id(self, workspace_id: int) -> None:
         """Name the workspace this client acts in.

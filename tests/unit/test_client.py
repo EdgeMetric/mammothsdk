@@ -416,6 +416,57 @@ class TestSharedHttpClient:
         assert not shared.is_closed
         await shared.aclose()
 
+    async def test_default_headers_stay_with_their_own_client_on_a_shared_pool(self):
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json={})
+
+        shared = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        alice = MammothClient(
+            api_token="mm_alice",
+            workspace_id=1,
+            http_client=shared,
+            default_headers={"Cookie": "sid=alice", "X-Run": "r1"},
+        )
+        bob = MammothClient(api_token="mm_bob", workspace_id=2, http_client=shared)
+        bob.add_default_headers({"cookie": "sid=bob"})
+        alice.add_default_headers({"COOKIE": "sid=alice2"})
+        await alice.request_json("GET", "/a")
+        await bob.request_json("GET", "/b")
+        await alice.request_json("GET", "/c")
+        assert seen[0].headers["Cookie"] == "sid=alice2"
+        assert seen[0].headers["X-Run"] == "r1"
+        assert seen[1].headers["Cookie"] == "sid=bob"
+        assert "X-Run" not in seen[1].headers
+        assert seen[1].headers["Authorization"] == "Bearer mm_bob"
+        assert seen[2].headers["Authorization"] == "Bearer mm_alice"
+        for header in ("Cookie", "X-Run", "Authorization"):
+            assert header not in shared.headers
+        await shared.aclose()
+
+    async def test_default_headers_override_the_credential_headers_on_an_owned_pool(self):
+        client = MammothClient(
+            api_token="mm_own", workspace_id=1, default_headers={"Authorization": "Bearer other"}
+        )
+        assert client.session.headers["Authorization"] == "Bearer other"
+        assert len([k for k in client._default_headers if k.lower() == "authorization"]) == 1
+        await client.close()
+
+    async def test_shared_http_client_keeps_no_cookies_and_no_redirects(self):
+        from mammoth.client import shared_http_client
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, headers={"Set-Cookie": "sid=1"}, json={})
+
+        pool = shared_http_client()
+        pool._transport = httpx.MockTransport(handler)
+        await pool.get("https://box.example/api/v2/x")
+        assert len(pool.cookies) == 0
+        assert pool.follow_redirects is False
+        await pool.aclose()
+
     async def test_an_owned_pool_is_closed(self):
         client = MammothClient(api_token="mm_own", workspace_id=1)
         await client.close()

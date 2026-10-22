@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from mammoth_cli.context.resolver import ExplicitLogin
+    from mammoth_cli.runtime.embed_pool import EmbedRuntime
 
 
 @dataclass
@@ -26,6 +27,8 @@ class EmbeddedCall:
 
     login: ExplicitLogin
     envelopes: list[dict[str, Any]] = field(default_factory=list)
+    #: The host's shared loop and HTTP pool, or None for a client of the call's own.
+    runtime: EmbedRuntime | None = None
     #: Refuse commands the production server does not serve yet, and hide them from discovery.
     hide_pending: bool = False
     #: Text written to ``sys.stdout`` / ``sys.stderr`` while the call ran, by stream name.
