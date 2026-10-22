@@ -222,38 +222,40 @@ def build_report(
         "operation_id_changed_review": operation_id_changed,
         "semantic_contract_changed_review": semantic_contract_changed,
         "preserved": preserved,
-        "implementation_queue": [
-            {
-                "identity": identity(row["method"], row["path"]),
-                "capability_id": row["capability_id"],
-                "action": IMPLEMENTATION_ACTION,
-            }
-            for row in added
-        ]
-        + [
-            {
-                "identity": item["identity"],
-                "capability_id": item["capability_id"],
-                "action": item["review_action"],
-            }
-            for item in semantic_contract_changed
-        ]
-        + [
-            {
-                "identity": item["identity"],
-                "capability_id": item["capability_id"],
-                "action": item["review_action"],
-            }
-            for item in operation_id_changed
-        ]
-        + [
-            {
-                "identity": item["identity"],
-                "capability_id": item["capability_id"],
-                "action": "Review removal before deleting or deprecating the canonical row.",
-            }
-            for item in removed
-        ],
+        "implementation_queue": (
+            [
+                {
+                    "identity": identity(row["method"], row["path"]),
+                    "capability_id": row["capability_id"],
+                    "action": IMPLEMENTATION_ACTION,
+                }
+                for row in added
+            ]
+            + [
+                {
+                    "identity": item["identity"],
+                    "capability_id": item["capability_id"],
+                    "action": item["review_action"],
+                }
+                for item in semantic_contract_changed
+            ]
+            + [
+                {
+                    "identity": item["identity"],
+                    "capability_id": item["capability_id"],
+                    "action": item["review_action"],
+                }
+                for item in operation_id_changed
+            ]
+            + [
+                {
+                    "identity": item["identity"],
+                    "capability_id": item["capability_id"],
+                    "action": "Review removal before deleting or deprecating the canonical row.",
+                }
+                for item in removed
+            ]
+        ),
         "note": REPORT_NOTE,
         "semantic_baseline": (
             "Compared against supplied baseline OpenAPI by normalized per-operation signature."

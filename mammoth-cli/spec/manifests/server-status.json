@@ -1,0 +1,183 @@
+{
+  "artifact": "mammoth-cli-command-server-status",
+  "note": "Derived by scripts/build_server_status.py; do not edit. Commands not listed are served.",
+  "prod_spec": {
+    "file": "spec/openapi/openapi.json",
+    "sha256": "c228e9d59c4263fc746ab8873ae6a3d87c25171b6bc4e6e313f685dd0083da29"
+  },
+  "master_spec": {
+    "file": "spec/openapi/master-20261021.json",
+    "source_sha": "29fe5d1ab8a718231716386535ae1343628b5885",
+    "sha256": "9e9a2164d4c5df31575c905f47af0006b811ecf93e903fb0ac9d2bce3fd181d6"
+  },
+  "commands": {
+    "automation.folders": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/automations/folders"
+      ]
+    },
+    "automation.route.order": {
+      "server_status": "pending",
+      "routes": [
+        "PUT /workspaces/{}/projects/{}/automations/route-order"
+      ]
+    },
+    "automation.route.preview": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/automations/route-preview"
+      ]
+    },
+    "automation.run-file.add-anyway": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/automations/run-files/{}/add-anyway"
+      ]
+    },
+    "automation.runs": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/automations/{}/runs"
+      ]
+    },
+    "connector.draft.browse": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/{}/browse"
+      ]
+    },
+    "connector.draft.create": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts"
+      ]
+    },
+    "connector.draft.discard": {
+      "server_status": "pending",
+      "routes": [
+        "DELETE /workspaces/{}/projects/{}/connector-drafts/{}"
+      ]
+    },
+    "connector.draft.fill": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/fill"
+      ]
+    },
+    "connector.draft.get": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/{}"
+      ]
+    },
+    "connector.draft.known-sources": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/known-sources"
+      ]
+    },
+    "connector.draft.list": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts"
+      ]
+    },
+    "connector.draft.open": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/open"
+      ]
+    },
+    "connector.draft.read-tables": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/read-tables"
+      ]
+    },
+    "connector.draft.sample": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/sample"
+      ]
+    },
+    "connector.draft.save": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/save"
+      ]
+    },
+    "connector.draft.source.join-candidates": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/{}/sources/{}/join-candidates"
+      ]
+    },
+    "connector.draft.source.list": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/{}/sources"
+      ]
+    },
+    "connector.draft.source.preview": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/connector-drafts/{}/sources/{}/preview"
+      ]
+    },
+    "connector.draft.update": {
+      "server_status": "pending",
+      "routes": [
+        "PATCH /workspaces/{}/projects/{}/connector-drafts/{}"
+      ]
+    },
+    "dashboard.chart-type.create": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/v3/chart-types"
+      ]
+    },
+    "dashboard.chart-type.delete": {
+      "server_status": "pending",
+      "routes": [
+        "DELETE /dashboards/v3/chart-types/{}"
+      ]
+    },
+    "dashboard.chart-type.list": {
+      "server_status": "pending",
+      "routes": [
+        "GET /dashboards/v3/chart-types"
+      ]
+    },
+    "dashboard.figure.drill": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/{}/drill"
+      ]
+    },
+    "dashboard.figure.recipe": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/{}/figure-recipe"
+      ]
+    },
+    "dashboard.figure.rows": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/{}/rows"
+      ]
+    },
+    "dashboard.published.drill": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/url/{}/drill"
+      ]
+    },
+    "dashboard.published.rows": {
+      "server_status": "pending",
+      "routes": [
+        "POST /dashboards/url/{}/rows"
+      ]
+    }
+  }
+}

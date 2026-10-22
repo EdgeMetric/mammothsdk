@@ -46,6 +46,7 @@ def invoke(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    hide_pending: bool = False,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -66,6 +67,10 @@ def invoke(
             unless ``args`` already sets one.
         return_running: Send ``--return-running`` so a wait that runs out
             returns a ``status: running`` handle instead of a timeout error.
+        hide_pending: Refuse the commands the production server does not serve
+            yet (``server_status: pending`` in ``schema``) with
+            ``pending_server_release``, and leave them out of ``schema list`` and
+            ``schema find``. Off by default: a terminal user may target a newer server.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -80,7 +85,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    call = embedded.EmbeddedCall(login=login)
+    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending)
     token = embedded.enter(call)
     try:
         _run(argv)

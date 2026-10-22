@@ -50,6 +50,7 @@ CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_NOT_AVAILABLE = "not_available"
+CODE_PENDING_SERVER_RELEASE = "pending_server_release"
 CODE_FEATURE_UNAVAILABLE = "feature_unavailable"
 CODE_USER_CONTROL = "user_control"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
@@ -193,6 +194,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
     "not_available": _S_UNAVAILABLE,
+    "pending_server_release": "The server doesn't offer this step yet.",
     "user_control": "Stopping, pausing or extending a run is left to you, not done automatically.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
@@ -345,6 +347,16 @@ def not_available_embedded_error(command: str) -> CliError:
         message=f"'{command}' is not available inside the Mammoth app.",
         exit_status=EXIT_USAGE,
         hint="The app supplies the login, project and tools; use the other commands.",
+    )
+
+
+def pending_server_release_error(command: str) -> CliError:
+    """A command whose server route is on master but not in production yet (embedded opt-in)."""
+    return CliError(
+        code=CODE_PENDING_SERVER_RELEASE,
+        message=f"'{command}' is not available yet: the production server has not released it.",
+        exit_status=EXIT_USAGE,
+        hint="Use another command, or the web app, until the server release that adds it.",
     )
 
 

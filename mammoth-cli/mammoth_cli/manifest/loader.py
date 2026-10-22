@@ -20,6 +20,8 @@ SCHEMA_PATH = MANIFEST_DIR / "schema-v1.json"
 OPENAPI_OPERATIONS_PATH = MANIFEST_DIR / "openapi-operations.yaml"
 SDK_METHODS_PATH = MANIFEST_DIR / "sdk-methods.yaml"
 
+SERVER_STATUS_PATH = MANIFEST_DIR / "server-status.json"
+
 COMPILED_DIR = MANIFEST_DIR / "compiled"
 COMPILED_COMMANDS = "commands"
 COMPILED_OPERATIONS = "openapi-operations"
@@ -83,6 +85,18 @@ def _read_compiled(name: str) -> list[dict[str, Any]] | None:
     return data
 
 
+def _server_statuses() -> dict[str, str]:
+    """Command id -> ``pending`` / ``removed_on_server``, derived by ``build_server_status.py``.
+
+    A command not listed is ``served``.
+    """
+    try:
+        data = json.loads(SERVER_STATUS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {cid: str(item["server_status"]) for cid, item in data.get("commands", {}).items()}
+
+
 def _parse_yaml_commands() -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for path in sorted(COMMANDS_DIR.glob("*.yaml")):
@@ -90,6 +104,12 @@ def _parse_yaml_commands() -> list[dict[str, Any]]:
         if data:
             records.extend(data.get("commands", []))
     records.sort(key=lambda record: record["command_id"])
+    statuses = _server_statuses()
+    for record in records:
+        # ``served`` is the default and is not stored, so a regenerated manifest only
+        # differs on the commands whose status is not the usual one.
+        if record["command_id"] in statuses:
+            record["server_status"] = statuses[record["command_id"]]
     return records
 
 
@@ -181,6 +201,21 @@ def command_by_id(command_id: str) -> dict[str, Any] | None:
         if record["command_id"] == command_id:
             return record
     return None
+
+
+def server_status(command_id: str) -> str:
+    """``served``, ``pending`` or ``removed_on_server`` for a command (``served`` when unknown).
+
+    Derived at build time from the pinned prod and master OpenAPI specs
+    (``scripts/build_server_status.py``) and stored in the compiled manifests.
+    """
+    record = command_by_id(command_id)
+    return str(record.get("server_status", "served")) if record else "served"
+
+
+def is_pending_server_release(command_id: str) -> bool:
+    """True when the production server does not serve the command's routes yet."""
+    return server_status(command_id) == "pending"
 
 
 def clear_cache() -> None:

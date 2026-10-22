@@ -27,7 +27,9 @@ from mammoth_cli.errors.envelope import (
     feature_unavailable_error,
     is_feature_unavailable,
     not_available_embedded_error,
+    pending_server_release_error,
 )
+from mammoth_cli.manifest.loader import is_pending_server_release
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
@@ -95,6 +97,11 @@ def _refuse_if_removed(command_id: str) -> None:
 def _refuse_if_embedded(command_id: str) -> None:
     if embedded.active() and command_id in EMBEDDED_UNAVAILABLE:
         raise not_available_embedded_error(command_id.replace(".", " "))
+
+
+def _refuse_if_pending(command_id: str) -> None:
+    if embedded.hides_pending() and is_pending_server_release(command_id):
+        raise pending_server_release_error(command_id.replace(".", " "))
 
 
 def _profile_scope_recovery(error: CliError, profile: str | None) -> CliError:
@@ -355,6 +362,7 @@ def run(
         _validate_output(output)
         _refuse_if_removed(command_id)
         _refuse_if_embedded(command_id)
+        _refuse_if_pending(command_id)
         if invocation is not None and invocation.dry_run:
             refuse_unsupported_dry_run(command_id)
         with shared_services():
