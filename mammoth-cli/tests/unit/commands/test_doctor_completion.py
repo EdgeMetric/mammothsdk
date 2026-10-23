@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import json
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
 from mammoth.exceptions import MammothAPIError
 
+from mammoth_cli import __version__
 from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import doctor as doctor_cmd
 from mammoth_cli.context import credentials, oauth, profiles
@@ -282,6 +287,64 @@ def test_doctor_reports_installed_vs_latest_version(
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     assert "not reachable" in check["detail"]
+
+
+def _serve_pypi(version: str) -> Iterator[str]:
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            payload = json.dumps({"info": {"version": version}}).encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args: object) -> None:
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/pypi/mammoth-cli/json"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def _cli_version_detail(pypi_latest: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
+    from mammoth_cli.commands import upgrade
+
+    monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
+    monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
+    for url in _serve_pypi(pypi_latest):
+        monkeypatch.setattr(upgrade, "PYPI_JSON_URL", url)
+        data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    check = next(c for c in data["checks"] if c["name"] == "cli_version")
+    assert check["ok"] is True
+    return str(check["detail"])
+
+
+def test_doctor_cli_version_equal_to_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail(__version__, tmp_path, monkeypatch)
+    assert detail == f"{__version__} installed; latest on PyPI"
+
+
+def test_doctor_cli_version_ahead_of_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail("0.0.1", tmp_path, monkeypatch)
+    assert detail == f"{__version__} installed; ahead of PyPI 0.0.1 (unreleased build)"
+
+
+def test_doctor_cli_version_behind_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail("999.0.0", tmp_path, monkeypatch)
+    assert "999.0.0 available" in detail
+    assert "ahead" not in detail
 
 
 def test_doctor_names_a_disabled_update_check(

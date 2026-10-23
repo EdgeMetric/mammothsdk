@@ -231,7 +231,7 @@ def _wait_seconds(invocation: Invocation) -> float:
     document = invocation.load_input() or {}
     try:
         value = float(document.get("wait") or 0)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         raise CliError(
             code="invalid_argument",
             message="wait must be a number of seconds.",
@@ -291,6 +291,8 @@ def doctor(invocation: Invocation) -> HandlerResult:
         version_detail = f"{__version__} installed; PyPI not reachable to compare"
     elif updates.is_newer(latest):
         version_detail = f"{__version__} installed; {latest} available: {updates.UPGRADE_COMMAND}"
+    elif updates.is_newer(__version__, latest):
+        version_detail = f"{__version__} installed; ahead of PyPI {latest} (unreleased build)"
     else:
         version_detail = f"{__version__} installed; latest on PyPI"
     # Informational: an older CLI still works, so the check never fails.
