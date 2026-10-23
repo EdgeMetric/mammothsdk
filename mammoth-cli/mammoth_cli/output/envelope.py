@@ -32,6 +32,9 @@ class Meta:
     #: The process exit status the command ends with (0, or 1/3 for a write whose
     #: read-back failed or was partial), as a ``mammoth run`` line carries it.
     exit: int | None = None
+    #: The invocation id: the run log's ``run_id``, the journal's ``inv`` and the
+    #: ``inv`` in the request's User-Agent, so one id finds all three.
+    run_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         # Null fields are omitted: every call pays for meta, and a missing key
@@ -48,6 +51,7 @@ class Meta:
             "update_available": self.update_available,
             "next_commands": self.next_commands,
             "exit": self.exit,
+            "run_id": self.run_id,
         }
         return {key: value for key, value in document.items() if value is not None}
 

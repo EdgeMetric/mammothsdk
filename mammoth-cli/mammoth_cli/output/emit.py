@@ -16,7 +16,7 @@ from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.render import render
-from mammoth_cli.runtime import embedded, linecapture
+from mammoth_cli.runtime import embedded, linecapture, trace
 
 #: Output modes a person reads; they get the ``Next:`` line on stderr.
 _HUMAN_OUTPUTS = frozenset({"table", "plain", "csv"})
@@ -71,6 +71,7 @@ def emit_success(
         opens=opens,
         next_commands=next_commands or None,
         exit=exit_status,
+        run_id=_run_id(),
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)) or linecapture.capture(normalize(envelope)):
@@ -78,6 +79,12 @@ def emit_success(
     render(envelope, output=output)
     if next_commands and output in _HUMAN_OUTPUTS:
         sys.stderr.write(f"Next: {'; '.join(next_commands)}\n")
+
+
+def _run_id() -> str | None:
+    """The id of the command running now, if a trace is open."""
+    current = trace.current()
+    return current.invocation_id if current is not None else None
 
 
 def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
