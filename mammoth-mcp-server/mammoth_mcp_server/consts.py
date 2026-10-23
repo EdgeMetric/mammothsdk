@@ -535,15 +535,18 @@ class DashboardFields:
     NEXT_STEP = "next_step"
     # A board's embed, as `get_dashboard` and `edit_dashboard` report it.
     EMBED = "embed"
-    # What of an AI edit did not land, read from Mammoth's own reply, and the
+    # What of an AI edit did not land, from Mammoth's own check, and the
     # job a later call picks an unfinished edit up by.
     PARTIAL = "partial"
     NOT_DONE = "not_done"
     JOB_ID = "job_id"
-    # How Mammoth's reply starts the status of an ask that did not land
-    # (mvc-service `controls.py`: held back, not attempted, still to do, and a
-    # chart or page short on the board).
-    ASK_MISSED = ("held back", "not attempted", "still to do", "not on the board", "only ")
+    # What the edit's job reports of Mammoth's own check: each ask with its
+    # status, "applied" for one that landed, and what it could not do.
+    ASKS = "asks"
+    ASK = "ask"
+    ASK_STATUS = "status"
+    APPLIED = "applied"
+    COULD_NOT_DO = "could_not_do"
 
 
 class EmbedFields:

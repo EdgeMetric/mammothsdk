@@ -8,13 +8,10 @@ for. Tags and embed settings are not part of the draft: they apply at once.
 
 Mammoth reports `changed` when the turn saved a new board, not when the board
 does what was asked: an AI that swaps a chart for one that still misses the ask
-has changed the board. What did not land is in the reply itself, written by
-Mammoth's own check rather than by the AI, in two forms (mvc-service
-`dashboards_v3/llm/controls.py`): a line per ask, `- <ask> — <status>`, when the
-user asked for two things or more, and a `Couldn’t do: <note>; <note>` block.
+has changed the board. What did not land the job reports from Mammoth's own
+check rather than the AI's prose: `asks`, each ask of a turn that asked two
+things or more with its status, and `could_not_do`.
 """
-
-import re
 
 from mammoth.api.dashboard_generated import chat_edit
 from mammoth.api.dashboards import DashboardsAPI
@@ -57,9 +54,6 @@ STILL_EDITING = (
     "Mammoth's AI is still making the change. Call edit_dashboard with job_id={job_id}"
     " and nothing else to get what it did: do not send the change again."
 )
-# One line per ask, as Mammoth lists them when the user asked for several things.
-ASK_LINE = re.compile(r"^- (?P<ask>.+?) — (?P<status>.+?)\s*$", re.MULTILINE)
-COULD_NOT = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*(?:\n\s*\n|$)", re.DOTALL)
 
 
 @mcp_server.tool(title="Edit dashboard, tags or embed", annotations=DESTRUCTIVE)
@@ -216,29 +210,23 @@ async def wait_for_edit(workspace_id: int, started: dict[str, JsonValue]) -> dic
     """
     edited = await wait_for_job(workspace_id, started)
     edit = {field: edited[field] for field in DashboardFields.EDITED if field in edited}
-    missed: list[JsonValue] = list(not_done(edited.get(DashboardFields.MESSAGE)))
+    missed: list[JsonValue] = list(not_done(edited))
     if missed and edit.get(DashboardFields.CHANGED) is True:
         edit[DashboardFields.PARTIAL] = True
     return {**edit, **({DashboardFields.NOT_DONE: missed} if missed else {})}
 
 
-def not_done(message: object) -> list[str]:
-    """What Mammoth's own check says did not land, from the reply to an edit.
-
-    An ask listed with a status Mammoth gives one that missed, and each note
-    under "Couldn’t do:". The AI's own list lines take the same "- a — b"
-    shape, so only those statuses mark a line as Mammoth's check.
-    """
-    if not isinstance(message, str):
-        return []
-    asks = [
-        f"{line['ask']}: {line['status']}"
-        for line in ASK_LINE.finditer(message)
-        if line["status"].startswith(DashboardFields.ASK_MISSED)
+def not_done(edited: dict[str, JsonValue]) -> list[str]:
+    """What Mammoth's own check says did not land: each ask that missed, with its
+    status, then what it could not do."""
+    asks = edited.get(DashboardFields.ASKS)
+    notes = edited.get(DashboardFields.COULD_NOT_DO)
+    missed = [
+        f"{ask[DashboardFields.ASK]}: {ask[DashboardFields.ASK_STATUS]}"
+        for ask in (asks if isinstance(asks, list) else [])
+        if isinstance(ask, dict) and ask.get(DashboardFields.ASK_STATUS) != DashboardFields.APPLIED
     ]
-    refused = COULD_NOT.search(message)
-    notes = refused["notes"].split(";") if refused else []
-    return [*asks, *(note.strip() for note in notes if note.strip())]
+    return [*missed, *(str(note) for note in (notes if isinstance(notes, list) else []))]
 
 
 def new_title(title: str) -> DashboardPatchItem:
