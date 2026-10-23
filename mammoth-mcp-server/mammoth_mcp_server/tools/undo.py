@@ -5,8 +5,8 @@ What can be taken back:
   (`delete_automation`) and datasets go to their project's trash. `undo` with
   what="trash" restores them until Mammoth empties the trash.
 - Every change to a view's pipeline saves a version of it. `undo` with
-  what="pipeline" puts an older version back. Mammoth saves the pipeline as it
-  was first, so that is taken back the same way.
+  what="pipeline" puts an older version back. The version from just before
+  stays in the list, so that is taken back the same way.
 
 A deleted file or export, and rows already sent out, are not in the trash.
 
@@ -49,10 +49,24 @@ STILL_RUNNING = (
     "The view is running again with these steps: get_pipeline shows their results"
     " once the run is done."
 )
+RUN_FAILED = (
+    "The pipeline is back, but the view's run after it failed: tell the user, and"
+    " see `problems` for the step to blame."
+)
+STILL_RESTORING = (
+    "Mammoth is still restoring. list_trash shows what is left once it is done:"
+    " do not call undo again."
+)
 STILL_PUTTING_BACK = (
     "Mammoth is still putting the pipeline back. get_pipeline shows it once it is"
     " done: do not call undo again."
 )
+
+# What to tell the user of the view's run after a version is put back.
+RUN_NOTES = {
+    **dict.fromkeys(VersionFields.RUNNING_STATES, STILL_RUNNING),
+    VersionFields.RUNTIME_ERROR: RUN_FAILED,
+}
 
 
 @mcp_server.tool(title="List trash", annotations=READS)
@@ -145,7 +159,10 @@ async def restore_from_trash(
         started = await read_sdk_errors(
             client.trash.restore([dict(item) for item in items], project_id=project_id)
         )
-    restored = await wait_for_job(workspace_id, started)
+    try:
+        restored = await wait_for_job(workspace_id, started)
+    except JobStillRunning as running:
+        return still_running(running, STILL_RESTORING)
     return {
         TrashFields.SUCCEEDED: restored.get(TrashFields.SUCCEEDED, []),
         TrashFields.FAILED: restored.get(TrashFields.FAILED, []),
@@ -166,9 +183,7 @@ async def put_pipeline_back(
         return still_running(running, STILL_PUTTING_BACK)
     pipeline = await get_pipeline(workspace_id, project_id, dataset_id, view_id)
     state = pipeline[PipelineFields.PIPELINE]
-    still_going = (
-        isinstance(state, dict) and state.get(VersionFields.EXECUTION_STATE) != VersionFields.IDLE
-    )
-    told = (pipeline.get(VersionFields.NEXT_STEP), PUT_BACK, STILL_RUNNING if still_going else None)
+    run = state.get(VersionFields.EXECUTION_STATE) if isinstance(state, dict) else None
+    told = (pipeline.get(VersionFields.NEXT_STEP), PUT_BACK, RUN_NOTES.get(str(run)))
     notes = [str(note) for note in told if note]
     return {**pipeline, VersionFields.NEXT_STEP: " ".join(notes)}

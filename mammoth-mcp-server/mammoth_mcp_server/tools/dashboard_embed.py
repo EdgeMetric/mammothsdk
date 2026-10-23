@@ -25,6 +25,7 @@ from ..sdk import JsonValue, read_sdk_errors
 type EmbedMode = Literal["key", "signed"]
 
 BOTH_SITE_CHOICES = "Name either any_site=true or a list of allowed_sites, not both."
+TOO_MANY_SITES = "A dashboard allows at most {most} sites: name {most} or fewer."
 NOT_PUBLISHED = (
     "The dashboard is not published, so the embed shows nothing. Ask the user,"
     " then call publish_dashboard."
@@ -80,13 +81,15 @@ async def change_embed(
 
 
 def check_embed_change(any_site: bool | None, allowed_sites: list[str] | None) -> None:
-    """Refuse both any site and a list of sites.
+    """Refuse both any site and a list of sites, or more sites than Mammoth keeps.
 
     Raises:
-        ToolError: If both are named.
+        ToolError: If both are named, or too many sites.
     """
     if any_site and allowed_sites is not None:
         raise ToolError(BOTH_SITE_CHOICES)
+    if allowed_sites is not None and len(allowed_sites) > EmbedFields.MOST_SITES:
+        raise ToolError(TOO_MANY_SITES.format(most=EmbedFields.MOST_SITES))
 
 
 def describe_embed(config: EmbedConfigResponse) -> dict[str, JsonValue]:

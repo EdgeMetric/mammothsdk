@@ -186,6 +186,18 @@ class TestRestoringFromTheTrash:
         assert answer["succeeded"] == [{"type": "dataview", "id": VIEW}]
         assert answer["failed"] == []
 
+    def test_a_restore_still_going_says_so(self) -> None:
+        # A dataset's views are restored with it, which can outlast the call.
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_view(api, job=RUNNING)
+            answer = call_tool(
+                "undo", what="trash", items=[{"type": "dataset", "id": DATASET}], **IDS
+            )
+
+        assert answer["status"] == "processing"
+        assert answer["job_id"] == 41
+        assert "do not call undo again" in answer["note"]
+
     @pytest.mark.parametrize("items", [None, []])
     def test_restoring_names_what_to_restore(self, items: list[Any] | None) -> None:
         with a_fake_api() as api, as_caller():
@@ -222,6 +234,21 @@ class TestPuttingAPipelineBack:
             )
 
         assert "running again" in answer["next_step"]
+
+    def test_a_view_whose_run_failed_after_the_undo_says_so(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer(
+                "GET",
+                f"{VIEW_PATH}/pipeline",
+                {**PIPELINE_STATE, "execution_state": "runtime_error"},
+            )
+            a_view(api)
+            answer = call_tool(
+                "undo", what="pipeline", dataset_id=DATASET, view_id=VIEW, version_id=201, **IDS
+            )
+
+        assert "running again" not in answer["next_step"]
+        assert "failed" in answer["next_step"]
 
     def test_a_pipeline_still_going_back_says_so(self) -> None:
         with a_fake_api() as api, as_caller(), SHORT_CALL:

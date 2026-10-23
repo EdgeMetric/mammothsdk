@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager, suppress
 from typing import Literal
 
 from mammoth.api.pipeline import PipelineAPI
+from mammoth.api.pipeline_versions import PipelineVersionsAPI
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..consts import (
@@ -95,16 +96,20 @@ async def get_pipeline(
         `modification_type` that made it, `created_at` and `change_summary`.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
-    # Both reads go through one client rather than one each.
-    async with _pipeline(ids) as pipeline:
+    # Every read goes through one client rather than one each.
+    async with build_client(workspace_id, project_id) as client:
         tasks = await read_sdk_errors(
-            pipeline.list_tasks(ids["dataview_id"], dataset_id=ids["dataset_id"])
+            client.pipeline.list_tasks(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
         state = await read_sdk_errors(
-            pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
+            client.pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
+        )
+        versions = (
+            {VersionFields.VERSIONS: await read_versions(client.pipeline_versions, ids)}
+            if include_versions
+            else {}
         )
     steps = tasks[PipelineFields.TASKS]
-    versions = {VersionFields.VERSIONS: await read_versions(ids)} if include_versions else {}
     return {
         PipelineFields.PIPELINE: state,
         PipelineFields.STEPS: steps,
@@ -114,17 +119,16 @@ async def get_pipeline(
     }
 
 
-async def read_versions(ids: dict[str, int]) -> list[JsonValue]:
+async def read_versions(versions: PipelineVersionsAPI, ids: dict[str, int]) -> list[JsonValue]:
     """A view's latest pipeline versions, newest first, with what a model needs of each."""
-    async with build_client(ids["workspace_id"], ids["project_id"]) as client:
-        listed = await read_sdk_errors(
-            client.pipeline_versions.list(
-                ids["dataset_id"],
-                ids["dataview_id"],
-                sort=VersionFields.NEWEST_FIRST,
-                limit=VersionFields.LISTED,
-            )
+    listed = await read_sdk_errors(
+        versions.list(
+            ids["dataset_id"],
+            ids["dataview_id"],
+            sort=VersionFields.NEWEST_FIRST,
+            limit=VersionFields.LISTED,
         )
+    )
     return [
         {field: version[field] for field in VersionFields.ITEM_FIELDS if field in version}
         for version in listed[VersionFields.VERSIONS]

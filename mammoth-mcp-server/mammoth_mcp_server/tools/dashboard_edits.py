@@ -52,6 +52,7 @@ PARTLY_DONE = (
     "Part of the change did not land: `not_done` lists it, from Mammoth's own check."
     " Tell the user what was done and what was not; do not say the whole change was made."
 )
+ALREADY_CHANGED = "These changes were made before that, and stay: {done}. Tell the user."
 STILL_EDITING = (
     "Mammoth's AI is still making the change. Call edit_dashboard with job_id={job_id}"
     " and nothing else to get what it did: do not send the change again."
@@ -124,23 +125,34 @@ async def edit_dashboard(
     if not (change or title or embeds or tags is not None):
         raise ToolError(NOTHING_TO_CHANGE)
     check_embed_change(any_site, allowed_sites)
+    # What landed so far, for the error when a later change is refused.
+    done: list[str] = []
     async with build_client(workspace_id) as client:
         before = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
         refuse_older_engine(before, change)
-        if title:
-            await read_sdk_errors(client.dashboards.update(dashboard_id, [new_title(title)]))
-        embed = (
-            await change_embed(client.dashboards, dashboard_id, embed_mode, any_site, allowed_sites)
-            if embeds
-            else None
-        )
-        tagged = (
-            await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
-            if tags is not None
-            else {}
-        )
-        started = await start_edit(client.dashboards, dashboard_id, change) if change else None
-    finished = await finish_edit(workspace_id, dashboard_id, started, drafted=bool(change or title))
+        try:
+            if title:
+                await read_sdk_errors(client.dashboards.update(dashboard_id, [new_title(title)]))
+                done.append("the title")
+            embed = (
+                await change_embed(
+                    client.dashboards, dashboard_id, embed_mode, any_site, allowed_sites
+                )
+                if embeds
+                else None
+            )
+            done += ["the embed settings"] if embeds else []
+            tagged = (
+                await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
+                if tags is not None
+                else {}
+            )
+            done += ["the tags"] if tags is not None else []
+            started = await start_edit(client.dashboards, dashboard_id, change) if change else None
+        except ToolError as refused:
+            raise said_what_changed(refused, done) from refused
+    # Tags and embed settings are off the draft: the board read before is still the board.
+    finished = await finish_edit(workspace_id, dashboard_id, started) if change or title else before
     carried = {DashboardFields.TAGS: tagged[DashboardFields.TAGS]} if tagged else {}
     return {**finished, **carried, **({} if embed is None else {DashboardFields.EMBED: embed})}
 
@@ -149,7 +161,6 @@ async def finish_edit(
     workspace_id: int,
     dashboard_id: int,
     started: dict[str, JsonValue] | None,
-    drafted: bool = True,
 ) -> dict[str, JsonValue]:
     """Wait for the AI edit, if one was sent, and report the dashboard after it."""
     try:
@@ -164,7 +175,14 @@ async def finish_edit(
         }
     async with build_client(workspace_id) as client:
         after = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
-    return {**after, **edit, **(what_to_tell(edit, after) if drafted else {})}
+    return {**after, **edit, **what_to_tell(edit, after)}
+
+
+def said_what_changed(refused: ToolError, done: list[str]) -> ToolError:
+    """The refusal, naming what changed before it, which a model would otherwise say did not."""
+    if not done:
+        return refused
+    return ToolError(f"{refused} {ALREADY_CHANGED.format(done=', '.join(done))}")
 
 
 def refuse_older_engine(dashboard: dict[str, JsonValue], change: str) -> None:
@@ -207,16 +225,16 @@ async def wait_for_edit(workspace_id: int, started: dict[str, JsonValue]) -> dic
 def not_done(message: object) -> list[str]:
     """What Mammoth's own check says did not land, from the reply to an edit.
 
-    An ask listed with any status but "applied", and each note under
-    "Couldn’t do:". A dash in the AI's prose is not a list line, so it is not
-    read as an ask.
+    An ask listed with a status Mammoth gives one that missed, and each note
+    under "Couldn’t do:". The AI's own list lines take the same "- a — b"
+    shape, so only those statuses mark a line as Mammoth's check.
     """
     if not isinstance(message, str):
         return []
     asks = [
         f"{line['ask']}: {line['status']}"
         for line in ASK_LINE.finditer(message)
-        if line["status"] != DashboardFields.ASK_APPLIED
+        if line["status"].startswith(DashboardFields.ASK_MISSED)
     ]
     refused = COULD_NOT.search(message)
     notes = refused["notes"].split(";") if refused else []

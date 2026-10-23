@@ -238,6 +238,33 @@ class TestAnEditThatOnlyPartlyLanded:
 
         assert "partial" not in answer
 
+    def test_a_bullet_list_in_the_prose_is_not_read_as_asks(self) -> None:
+        # The AI can list what it built in the same "- a — b" shape as Mammoth's check.
+        message = "Done:\n- Revenue by region — bar chart\n- Orders trend — line"
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(message))
+            answer = edit(change="Add revenue by region and an orders trend")
+
+        assert "partial" not in answer
+        assert "not_done" not in answer
+
+    @pytest.mark.parametrize(
+        "status",
+        [
+            "held back",
+            "not attempted",
+            "still to do",
+            "only 1 of 2 charts were added to the board",
+        ],
+    )
+    def test_every_status_mammoth_gives_an_ask_that_missed_is_named(self, status: str) -> None:
+        message = f"Done.\n\n- add a card — applied\n- add two charts — {status}"
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(message))
+            answer = edit(change="Add a card and two charts")
+
+        assert answer["not_done"] == [f"add two charts: {status}"]
+
 
 class TestPickingUpAnEditThatOutlastedTheCall:
     def test_the_job_is_waited_for_again_and_reported(self) -> None:
@@ -299,3 +326,46 @@ class TestTags:
         assert answer["tags"] == listed["tags"]
         assert "tags" not in plain
         assert len(api.sent("GET", "/dashboards/tags")) == 1
+
+
+class TestAChangeThatFailsPartWay:
+    def test_too_many_sites_are_refused_before_anything_is_sent(self) -> None:
+        sites = [f"https://site{n}.example.com" for n in range(21)]
+        with a_fake_api() as api, as_caller():
+            a_board(api)
+            with pytest.raises(ToolError, match="20"):
+                edit(title="Q3", allowed_sites=sites)
+
+        assert not api.requests
+
+    def test_what_changed_before_a_refusal_is_named(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", CHAT, {"message": "The AI dashboard allowance is used up"}, 403)
+            api.answer("PUT", f"{DASHBOARD}/tags", {"tags": ["sales"]})
+            a_board(api)
+            with pytest.raises(ToolError, match="allowance") as refused:
+                edit(title="Q3", tags=["sales"], change="Add a card")
+
+        assert api.sent("PATCH", DASHBOARD)
+        assert "title" in str(refused.value)
+        assert "tags" in str(refused.value)
+
+    def test_a_refusal_before_any_change_names_none(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("PATCH", DASHBOARD, {"message": "Title is too long"}, 400)
+            a_board(api)
+            with pytest.raises(ToolError) as refused:
+                edit(title="Q3")
+
+        assert "already" not in str(refused.value)
+
+
+def test_a_change_off_the_draft_reads_the_board_once() -> None:
+    with a_fake_api() as api, as_caller():
+        api.answer("PUT", f"{DASHBOARD}/tags", {"tags": ["sales"]})
+        a_board(api)
+        answer = edit(tags=["sales"])
+
+    assert len(api.sent("GET", DASHBOARD)) == 1
+    assert answer["tags"] == ["sales"]
+    assert answer["id"] == DASHBOARD_ID

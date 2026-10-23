@@ -425,9 +425,10 @@ class VersionFields:
     LISTED = 10
     ITEM_FIELDS = ("id", "name", "modification_type", "created_at", "change_summary")
     NEXT_STEP = "next_step"
-    # A view whose run is over. Putting a version back runs the view again.
+    # A view's run after a version is put back: still going, or failed.
     EXECUTION_STATE = "execution_state"
-    IDLE = "idle"
+    RUNNING_STATES = ("waiting_for_lock", "submitted", "running", "exports_running")
+    RUNTIME_ERROR = "runtime_error"
 
 
 class TaskFields:
@@ -539,8 +540,10 @@ class DashboardFields:
     PARTIAL = "partial"
     NOT_DONE = "not_done"
     JOB_ID = "job_id"
-    # The status Mammoth's reply gives an ask that landed.
-    ASK_APPLIED = "applied"
+    # How Mammoth's reply starts the status of an ask that did not land
+    # (mvc-service `controls.py`: held back, not attempted, still to do, and a
+    # chart or page short on the board).
+    ASK_MISSED = ("held back", "not attempted", "still to do", "not on the board", "only ")
 
 
 class EmbedFields:
@@ -555,6 +558,7 @@ class EmbedFields:
     # The route's origins are the sites a user names.
     ANY_SITE = "any_site"
     ALLOWED_SITES = "allowed_sites"
+    MOST_SITES = 20
     KEY = "key"
     EMBED_CODE = "embed_code"
     ROW_LEVEL_SECURITY = "row_level_security"

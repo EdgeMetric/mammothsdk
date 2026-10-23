@@ -180,6 +180,15 @@ class TestWhoMayFrameIt:
 
         assert not api.sent("PUT", CONFIG)
 
+    def test_as_many_sites_as_mammoth_keeps_are_sent(self) -> None:
+        sites = [f"https://site{n}.example.com" for n in range(20)]
+        with a_fake_api() as api, as_caller():
+            a_board(api)
+            set_embed(allowed_sites=sites)
+
+        [sent] = api.sent("PUT", CONFIG)
+        assert api.body(sent)["params"]["allowed_origins"] == sites
+
     def test_an_unknown_mode_names_the_modes(self) -> None:
         with a_fake_api() as api, as_caller():
             a_board(api)
