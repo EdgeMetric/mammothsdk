@@ -64,14 +64,14 @@ class TestPipelineChangeOutcome:
 class TestTransformationSchema:
     def test_the_schema_of_an_operation_lists_its_arguments(self) -> None:
         with as_caller():
-            schema = call_tool("get_transformation_schema", operation="limit")
+            schema = call_tool("get_schema", kind="transformation", of="limit")
 
         assert {"op", "n", "bottom"} <= set(schema["properties"])
         assert "n" in schema["required"]
 
     def test_an_unknown_operation_names_the_operations_that_exist(self) -> None:
         with as_caller(), pytest.raises(ToolError, match="limit") as refused:
-            call_tool("get_transformation_schema", operation="pivot2")
+            call_tool("get_schema", kind="transformation", of="pivot2")
 
         assert "unnest" in str(refused.value)
 

@@ -13,6 +13,11 @@ from ..server import mcp_server
 from ..shape import view_url
 from ..tool_kinds import CHANGES, DESTRUCTIVE
 
+IN_THE_TRASH = (
+    'The views are in the trash. To bring one back, call undo with what="trash";'
+    " list_trash shows them, with how long the trash keeps them."
+)
+
 
 @mcp_server.tool(title="Create view", annotations=CHANGES)
 async def create_view(
@@ -59,11 +64,11 @@ async def create_view(
 async def delete_views(
     workspace_id: int, project_id: int, dataset_id: int, view_ids: list[int]
 ) -> dict[str, JsonValue]:
-    """Delete views of a dataset.
+    """Move views of a dataset to the trash.
 
-    The views and their transformations are gone for good. Ask the user before
-    calling this. A dataset keeps at least one view, so its last view cannot be
-    deleted.
+    Ask the user before calling this. `undo` with what="trash" brings a view
+    back, with its transformations, until Mammoth empties the trash. A dataset
+    keeps at least one view, so its last view cannot be deleted.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -72,8 +77,9 @@ async def delete_views(
         view_ids: The views to delete.
 
     Returns:
-        `deleted`: the ids that were deleted. `failed`: each id that was not,
-        with the reason. One failure does not stop the others.
+        `deleted`: the ids moved to the trash. `failed`: each id that was not,
+        with the reason. One failure does not stop the others. `next_step`:
+        how to bring them back.
     """
     deleted: list[JsonValue] = []
     failed: list[JsonValue] = []
@@ -84,11 +90,15 @@ async def delete_views(
                 await wait_for_job(
                     workspace_id,
                     await read_sdk_errors(
-                        client.dataviews.delete(dataset_id, view_id, project_id=project_id)
+                        client.dataviews.trash(dataset_id, view_id, project_id=project_id)
                     ),
                 )
             except ToolError as error:
                 failed.append({ViewFields.VIEW_ID: view_id, ViewFields.ERROR: str(error)})
             else:
                 deleted.append(view_id)
-    return {ViewFields.DELETED: deleted, ViewFields.FAILED: failed}
+    return {
+        ViewFields.DELETED: deleted,
+        ViewFields.FAILED: failed,
+        **({ViewFields.NEXT_STEP: IN_THE_TRASH} if deleted else {}),
+    }

@@ -1,5 +1,7 @@
 """Which tools a client is offered."""
 
+import pytest
+
 from mammoth_mcp_server.server import mcp_server, register_tools
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool, run
@@ -20,6 +22,7 @@ TOOLS = {
     "delete_file",
     "delete_transformation_step",
     "delete_views",
+    "edit_dashboard",
     "edit_export",
     "edit_transformation_step",
     "extract_sheets",
@@ -27,28 +30,26 @@ TOOLS = {
     "find_new_datasets",
     "generate_dashboard",
     "get_automation",
-    "get_automation_schema",
     "get_dashboard",
     "get_data",
     "get_dataset",
     "get_export",
-    "get_export_schema",
     "get_file",
     "get_help",
     "get_pipeline",
-    "get_transformation_schema",
+    "get_schema",
     "get_view",
     "interpret_file",
     "list_automations",
     "list_connections",
     "list_connectors",
-    "list_dashboard_tags",
     "list_dashboards",
     "list_datasets",
     "list_exports",
     "list_files",
     "list_projects",
     "list_tables",
+    "list_trash",
     "list_views",
     "list_workspaces",
     "manage_draft",
@@ -58,8 +59,8 @@ TOOLS = {
     "request_upload",
     "review_unreadable_rows",
     "run_pipeline",
-    "set_dashboard_tags",
     "set_date_format",
+    "undo",
     "unlock_file",
     "update_automation",
     "upload_file",
@@ -93,27 +94,25 @@ READ_ONLY = {
     "find_new_connection",
     "find_new_datasets",
     "get_automation",
-    "get_automation_schema",
     "get_dashboard",
     "get_data",
     "get_dataset",
     "get_export",
-    "get_export_schema",
     "get_file",
     "get_help",
     "get_pipeline",
-    "get_transformation_schema",
+    "get_schema",
     "get_view",
     "list_automations",
     "list_connections",
     "list_connectors",
-    "list_dashboard_tags",
     "list_dashboards",
     "list_datasets",
     "list_exports",
     "list_files",
     "list_projects",
     "list_tables",
+    "list_trash",
     "list_views",
     "list_workspaces",
     "preview_transformation",
@@ -129,6 +128,7 @@ DESTRUCTIVE = {
     "delete_file",
     "delete_transformation_step",
     "delete_views",
+    "edit_dashboard",
     "edit_export",
     "edit_transformation_step",
     "manage_draft",
@@ -136,6 +136,7 @@ DESTRUCTIVE = {
     "publish_dashboard",
     "review_unreadable_rows",
     "run_pipeline",
+    "undo",
     "update_automation",
 }
 
@@ -188,3 +189,27 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
         assert tool.title[0].isupper(), tool.name
         assert not tool.title.endswith("."), tool.name
         assert len(tool.title) <= 40, tool.name
+
+
+# A tool that does several jobs hides all but one behind a short name. A client
+# that loads tools by searching their words, and a model picking from a list,
+# find the rest only in the title and the description's first line.
+FOLDED_JOBS = {
+    "undo": ("trash", "roll back"),
+    "get_pipeline": ("steps", "versions"),
+    "get_schema": ("transformation", "export", "automation"),
+    "edit_dashboard": ("rename", "tags", "embed"),
+    "get_dashboard": ("numbers", "embed"),
+    "list_dashboards": ("tags",),
+}
+
+
+@pytest.mark.parametrize("name", sorted(FOLDED_JOBS))
+def test_a_tool_with_several_jobs_names_each_up_front(name: str) -> None:
+    tool = offered()[name]
+    title = (tool.title or "").lower()  # type: ignore[attr-defined]
+    first_line = (tool.description or "").splitlines()[0].lower()  # type: ignore[attr-defined]
+    # The title is a label in a list, capped at 40 characters: it names one job.
+    assert any(job in title for job in FOLDED_JOBS[name]), name
+    for job in FOLDED_JOBS[name]:
+        assert job in first_line, (name, job)
