@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-cli)
+
+- CLI `mammoth doctor` no longer reports "latest on PyPI" when the installed CLI is newer than PyPI. A source build now reads "<version> installed; ahead of PyPI <latest> (unreleased build)" (#304).
+
 ## mammoth-io 0.8.51, mammoth-cli 2.2.100 (2026-10-23)
 
 ### Added (mammoth-io 0.8.51)
