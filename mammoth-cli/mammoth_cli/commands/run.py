@@ -66,7 +66,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.runtime import bindings, linecapture
+from mammoth_cli.runtime import bindings, journal, linecapture
 from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
@@ -572,6 +572,7 @@ def run_lines(
     dry_run: bool,
     scope: dict[str, Any] | None = None,
     past_partial: bool = False,
+    steps: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run numbered JSON Lines in order, writing each line's envelopes as it finishes.
 
@@ -584,19 +585,32 @@ def run_lines(
             recipe's ``inputs``.
         past_partial: Go on after a line that exits partial (it made what it reports,
             with a warning), counting it in ``partial_lines`` instead of ``failed``.
+        steps: The named results of lines that already ran (``history resume``).
 
     Returns:
         The summary: line counts, where the run stopped, and its exit status.
     """
     totals = Totals(total=len(numbered))
     run_exit = 0
-    steps: dict[str, Any] = {}
+    steps = dict(steps or {})
     partial: list[int] = []
+    if not dry_run:
+        # The plan and each finished line are journaled, so 'history resume' can go on
+        # from the first line that did not finish.
+        journal.record_plan(
+            numbered, defaults, scope=scope, keep_going=keep_going, past_partial=past_partial
+        )
+        if steps:
+            journal.record_step(0, 0, steps)
     with remembering_auth() as credentials:
         for position, (number, text) in enumerate(numbered):
+            named_before = set(steps)
             exit_status, ran_argv = _run_line(
                 number, text, defaults, steps, dry_run=dry_run, scope=scope
             )
+            if not dry_run:
+                added = {name: steps[name] for name in steps.keys() - named_before}
+                journal.record_step(number, exit_status, added)
             if ran_argv and ran_argv[0] in _CREDENTIAL_GROUPS:
                 credentials.clear()
             if exit_status == 0:

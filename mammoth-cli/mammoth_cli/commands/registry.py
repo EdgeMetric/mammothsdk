@@ -275,6 +275,7 @@ _TARGETS: dict[str, str] = {
     "history.list": "mammoth_cli.commands.history:history_list",
     "history.show": "mammoth_cli.commands.history:history_show",
     "history.undo": "mammoth_cli.commands.history:history_undo",
+    "history.resume": "mammoth_cli.commands.history:history_resume",
     "recipe.list": "mammoth_cli.commands.recipe:recipe_list",
     "recipe.run": "mammoth_cli.commands.recipe:recipe_run",
     "doctor": "mammoth_cli.commands.doctor:doctor",

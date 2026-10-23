@@ -161,3 +161,101 @@ def test_history_is_refused_when_the_journal_is_off(monkeypatch: pytest.MonkeyPa
     code, envelope = _cli("history", "list")
     assert code == 2
     assert envelope["error"]["code"] == history.CODE_JOURNAL_OFF
+
+
+def _plan(group: str, *lines: dict[str, Any]) -> journal.FileJournal:
+    store = journal.FileJournal(journal.journal_dir())
+    store.append(
+        {
+            "event": "plan",
+            "group": group,
+            "command": "run",
+            "lines": [[number, json.dumps(line)] for number, line in enumerate(lines, start=1)],
+            "defaults": {"--project": "--project=9"},
+            "scope": {},
+        }
+    )
+    return store
+
+
+def _step(
+    store: journal.FileJournal, group: str, line: int, exit_status: int, **steps: Any
+) -> None:
+    store.append(
+        {"event": "step", "group": group, "line": line, "exit": exit_status, "steps": steps}
+    )
+
+
+_LINES = (
+    {"name": "up", "cmd": "dataset get", "args": [7]},
+    {"cmd": "dataset get", "args": ["fail"]},
+    {"cmd": "dataset get", "args": ["{{steps.up.data.id}}"]},
+)
+
+
+def test_resume_goes_on_from_the_first_unfinished_line(ran: list[list[str]]) -> None:
+    store = _plan("g9", *_LINES)
+    _step(store, "g9", 1, 0, up={"data": {"id": 41}, "exit": 0})
+    _step(store, "g9", 2, 5)
+    code, summary = _cli("history", "resume", "g9", "--yes")
+    assert code == 1
+    assert [argv[:3] for argv in ran] == [["dataset", "get", "fail"]]
+    assert summary["data"]["resumed"] == "g9" and summary["data"]["from_line"] == 2
+    assert "--project=9" in ran[0]
+
+
+def test_resume_from_a_line_reads_the_journaled_results(ran: list[list[str]]) -> None:
+    store = _plan("g9", *_LINES)
+    _step(store, "g9", 1, 0, up={"data": {"id": 41}, "exit": 0})
+    code, summary = _cli("history", "resume", "g9", "--input", '{"from_line": 3}', "--yes")
+    assert code == 0, summary
+    assert [argv[:3] for argv in ran] == [["dataset", "get", "41"]]
+
+
+def test_resume_refuses_a_write_whose_outcome_is_unknown(ran: list[list[str]]) -> None:
+    store = _plan("g9", *_LINES)
+    _step(store, "g9", 1, 0, up={"data": {"id": 41}, "exit": 0})
+    store.append({"event": "begin", "inv": "w2", "group": "g9", "command": "dataset.trash"})
+    code, envelope = _cli("history", "resume", "g9", "--yes")
+    assert code == 2
+    assert envelope["error"]["code"] == "resume_outcome_unknown"
+    assert envelope["error"]["details"] == {"unknown": ["w2"], "line": 2}
+    assert ran == []
+
+
+def test_resume_of_a_finished_run_says_so(ran: list[list[str]]) -> None:
+    store = _plan("g9", _LINES[0])
+    _step(store, "g9", 1, 0)
+    code, envelope = _cli("history", "resume", "g9", "--yes")
+    assert code == 2
+    assert envelope["error"]["code"] == "nothing_to_resume"
+
+
+def test_resume_of_an_unknown_group_is_not_found(ran: list[list[str]]) -> None:
+    code, envelope = _cli("history", "resume", "nope", "--yes")
+    assert code == 2
+    assert envelope["error"]["code"] == "history_not_found"
+
+
+def test_a_run_journals_its_plan_and_steps(ran: list[list[str]], tmp_path: Path) -> None:
+    path = tmp_path / "lines.jsonl"
+    path.write_text("\n".join(json.dumps(line) for line in _LINES) + "\n", encoding="utf-8")
+    code, summary = _cli("run", str(path), "--project", "9")
+    assert code == 1
+    plan = journal.plan_for(journal.FileJournal(journal.journal_dir()), summary["meta"]["run_id"])
+    assert plan is not None
+    assert [number for number, _ in plan.lines] == [1, 2, 3]
+    assert plan.finished == {1}
+    assert plan.steps == {"up": {"data": {}, "exit": 0}}
+    assert plan.defaults["--project"] == "--project=9"
+
+
+def test_a_step_result_too_large_to_keep_is_named(monkeypatch: pytest.MonkeyPatch) -> None:
+    store = journal.FileJournal(journal.journal_dir())
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g7"))
+    monkeypatch.setattr(journal, "MAX_STEP_BYTES", 10)
+    journal.record_plan([(1, "{}")], {}, scope=None, keep_going=False, past_partial=False)
+    journal.record_step(1, 0, {"big": {"data": "x" * 20}, "small": 1})
+    plan = journal.plan_for(store, "g7")
+    assert plan is not None
+    assert plan.steps == {"small": 1} and plan.omitted == ["big"]

@@ -424,6 +424,7 @@
   "folder.trash": "Move one folder to the project trash (reversible).",
   "folder.update": "Rename a folder. Folder id is positional; new name comes from '--input'.",
   "history.list": "List the journaled writes, newest first; filter with 'limit', 'undoable_only'.",
+  "history.resume": "Go on with a stopped run (by its group) from its first unfinished line. Prompt or '--yes'.",
   "history.show": "Show one write (by inv) or every write of one run (by group), with their undo lines.",
   "history.undo": "Undo one write (by inv) or a whole run (by group), newest first. Prompt or '--yes'.",
   "how": "Turn a plain-language goal into an ordered recipe of commands.",

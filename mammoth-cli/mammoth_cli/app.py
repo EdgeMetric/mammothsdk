@@ -81,7 +81,7 @@ _GROUP_DESCRIPTIONS = {
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
     "log": "Locate and read the local run log.",
-    "history": "List the writes made from this machine and undo them.",
+    "history": "List the writes made from this machine, undo them, and resume a stopped run.",
     "recipe": "Run a common multi-step task as one command.",
     "context": "Inspect and select the active project context.",
     "dashboard": "Build, query, and publish dashboards.",

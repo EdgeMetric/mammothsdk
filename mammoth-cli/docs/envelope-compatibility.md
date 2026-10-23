@@ -56,3 +56,5 @@ one more major release:
 - `recipe list` and `recipe run`, the `recipe_not_found` and `recipe_input_invalid` error
   codes, and `recipes` in `schema find` and `run_command` in `how`.
 - `meta.run_id` on the `mammoth run` summary envelope.
+- `history resume` and the `nothing_to_resume` and `resume_outcome_unknown` error codes;
+  `partial_lines` in the `recipe run` and `history resume` summaries.

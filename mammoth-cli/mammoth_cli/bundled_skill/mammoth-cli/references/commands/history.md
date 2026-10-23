@@ -12,6 +12,16 @@ Result: `HistoryListResult`; mutation `read`, confirmation `none`, wait policy `
 
 Status on release: untried; no live run recorded.
 
+### `history.resume`
+
+Run: `mammoth history resume`. Exact input fields: `mammoth schema get history.resume`.
+
+Example: `mammoth history resume 97b9ee41d15d --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `HistoryResumeResult`; mutation `high_impact`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `history.show`
 
 Run: `mammoth history show`. Exact input fields: `mammoth schema get history.show`.

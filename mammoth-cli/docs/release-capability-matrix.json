@@ -53,6 +53,7 @@
     "dataset.schema-diff",
     "folder.find",
     "history.list",
+    "history.resume",
     "history.show",
     "history.undo",
     "how",

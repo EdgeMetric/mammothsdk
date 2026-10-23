@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.100.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 850.
+Total commands: 851.
 
 ## activity
 
@@ -4290,6 +4290,17 @@ Total commands: 850.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.history.history_list`
 - Agent example: `mammoth history list --input '{"undoable_only": true}'`
+
+### `mammoth history resume`
+
+**Arguments**
+
+- `ID` (str, required) — The group of the mammoth run or recipe run that stopped (from 'history list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.history.history_resume`
+- Agent example: `mammoth history resume 97b9ee41d15d --yes`
 
 ### `mammoth history show`
 

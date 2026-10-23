@@ -226,8 +226,14 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
 4. **Journal** (#310, port done): `runtime/journal.py` adds the `JournalStore` port and its file
    adapter, written by the `journal_writes` interceptor: a `begin` record before the handler (the
    outbox: a crash leaves a `begin` with no `end`, shown as status `unknown`), an `end` record with
-   the exit, `meta.opens` and the undo lines. Still to do: the run log becomes a projection of the
-   journal, and resume of a running invocation by `inv`.
+   the exit, `meta.opens` and the undo lines. Resume (done): `mammoth run` and `recipe run` add a
+   `plan` record (lines, shared flags, recipe inputs) and a `step` record per line (exit, and a
+   named result up to 256 KB). `history resume GROUP` restores the finished steps and runs the rest
+   through `run_lines`. A write with a `begin` but no `end` stops it (`resume_outcome_unknown`)
+   until the caller checks the write and names `from_line`, because resending a write whose
+   outcome is unknown could repeat it. Checked live on a dev server. Not done: the run log as a
+   projection of the journal. The two stay separate files with the same ids (`run_id` = `inv`),
+   so nothing reads one to rebuild the other.
 5. **Task layer** (#309, done): a recipe in `discovery/recipes.json` with `inputs` and `run` is
    executable, with no second file: its `run` lines are `mammoth run` lines that read
    `{{inputs.NAME}}` and `{{steps.NAME.data...}}`, and `mammoth recipe run ID` runs them through

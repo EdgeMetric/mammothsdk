@@ -8,6 +8,10 @@ journal says what changed and how to change it back, for ``mammoth history``:
 * ``end`` is written after it, with the exit status, the objects the write made or
   changed (``meta.opens``) and its compensation: the ``mammoth run`` lines that undo it.
 * ``undone`` is written when ``history undo`` has run the compensation.
+* ``plan`` is written when a ``mammoth run`` or ``recipe run`` starts (its lines, the
+  flags they share and the recipe's inputs), and ``step`` after each of its lines (its
+  exit, and a named line's result up to :data:`MAX_STEP_BYTES`), so ``history resume``
+  can go on from the first line that did not finish.
 
 What can be undone (a saga's compensations, run in reverse order):
 
@@ -44,6 +48,9 @@ from mammoth_cli.runtime.switches import switched_on
 JOURNAL_ENV = "MAMMOTH_CLI_JOURNAL"
 #: The journal file is rotated to ``journal.1.jsonl`` past this size.
 MAX_BYTES = 10 * 1024 * 1024
+
+#: The largest named-line result a ``step`` record keeps for ``history resume``.
+MAX_STEP_BYTES = 256 * 1024
 
 #: The manifest mutation class of a read; reads are not journaled.
 _READ = "read"
@@ -491,3 +498,141 @@ def mark_undone(store: JournalStore, inv: str, by: str) -> None:
         by: The ``history undo`` invocation that undid it.
     """
     store.append({"event": "undone", "inv": inv, "by": by, "ts": _now()})
+
+
+@dataclass
+class Plan:
+    """A journaled ``mammoth run`` or ``recipe run``, folded from its records.
+
+    Attributes:
+        group: The run's invocation id (the ``group`` of every write it made).
+        command: ``run`` or ``recipe.run``.
+        lines: Each line's physical number and text.
+        defaults: The flags every line started from (flag -> token).
+        scope: The values the lines read besides ``steps`` (a recipe's ``inputs``).
+        keep_going: Whether the run went on past a failed line.
+        past_partial: Whether the run went on past a partial line.
+        finished: The lines that ran and exited 0 (or were skipped), by number.
+        steps: The named lines' results, as later lines read them.
+        omitted: The named lines whose result was too large to keep.
+    """
+
+    group: str
+    command: str
+    lines: list[tuple[int, str]]
+    defaults: dict[str, str] = field(default_factory=dict)
+    scope: dict[str, Any] = field(default_factory=dict)
+    keep_going: bool = False
+    past_partial: bool = False
+    finished: set[int] = field(default_factory=set)
+    steps: dict[str, Any] = field(default_factory=dict)
+    omitted: list[str] = field(default_factory=list)
+
+
+def record_plan(
+    lines: Iterable[tuple[int, str]],
+    defaults: Mapping[str, str],
+    *,
+    scope: Mapping[str, Any] | None,
+    keep_going: bool,
+    past_partial: bool,
+) -> None:
+    """Journal the lines a run is about to run, under the current group.
+
+    Args:
+        lines: Each line's physical number and text.
+        defaults: The flags every line starts from.
+        scope: The values the lines read besides ``steps``.
+        keep_going: Whether the run goes on past a failed line.
+        past_partial: Whether the run goes on past a partial line.
+    """
+    store, group = _run_store()
+    if store is None:
+        return
+    current = trace.current()
+    store.append(
+        {
+            "event": "plan",
+            "group": group,
+            "ts": _now(),
+            "command": current.command_id if current is not None else "run",
+            "lines": [[number, text] for number, text in lines],
+            "defaults": dict(defaults),
+            "scope": dict(scope or {}),
+            "keep_going": keep_going,
+            "past_partial": past_partial,
+        }
+    )
+
+
+def record_step(number: int, exit_status: int, named: Mapping[str, Any]) -> None:
+    """Journal one finished line of the current run.
+
+    Args:
+        number: The line's physical number.
+        exit_status: Its exit status.
+        named: The results the line added to ``steps`` (none for an unnamed line).
+    """
+    store, group = _run_store()
+    if store is None:
+        return
+    kept: dict[str, Any] = {}
+    omitted: list[str] = []
+    for name, value in named.items():
+        size = len(json.dumps(value, default=str))
+        if size <= MAX_STEP_BYTES:
+            kept[name] = value
+        else:
+            omitted.append(name)
+    record: dict[str, Any] = {
+        "event": "step",
+        "group": group,
+        "ts": _now(),
+        "line": number,
+        "exit": exit_status,
+        "steps": kept,
+    }
+    if omitted:
+        record["omitted"] = omitted
+    store.append(record)
+
+
+def plan_for(store: JournalStore, group: str) -> Plan | None:
+    """The journaled run with this group, with what it finished.
+
+    Args:
+        store: The journal.
+        group: The run's invocation id.
+
+    Returns:
+        The run, or None when the journal has no plan for it.
+    """
+    plan: Plan | None = None
+    for record in store.records():
+        if record.get("group") != group:
+            continue
+        event = record.get("event")
+        if event == "plan":
+            plan = Plan(
+                group=group,
+                command=str(record.get("command") or "run"),
+                lines=[(int(number), str(text)) for number, text in record.get("lines") or []],
+                defaults=dict(record.get("defaults") or {}),
+                scope=dict(record.get("scope") or {}),
+                keep_going=bool(record.get("keep_going")),
+                past_partial=bool(record.get("past_partial")),
+            )
+        elif event == "step" and plan is not None:
+            if record.get("exit") == 0:
+                plan.finished.add(int(record.get("line") or 0))
+            plan.steps.update(record.get("steps") or {})
+            plan.omitted.extend(record.get("omitted") or [])
+    return plan
+
+
+def _run_store() -> tuple[JournalStore | None, str]:
+    """The journal and the current group, or None outside a journaled run."""
+    current = trace.current()
+    if current is None:
+        return None, ""
+    return default_store(), current.group

@@ -54,6 +54,7 @@ S1_ROUTES = (
     "history.list",
     "history.show",
     "history.undo",
+    "history.resume",
     "how",
     "link",
     "log.path",
@@ -102,6 +103,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "view.data.forecast": ("measure", "date_column", "unit", "periods", "conditions"),
     "history.list": ("limit", "undoable_only"),
     "recipe.run": ("inputs",),
+    "history.resume": ("from_line",),
 }
 
 

@@ -845,6 +845,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="97b9ee41d15d",
         ),
     ),
+    "history.resume": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The group of the mammoth run or recipe run that stopped (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
     "recipe.run": (
         PositionalSpec(
             name="id",

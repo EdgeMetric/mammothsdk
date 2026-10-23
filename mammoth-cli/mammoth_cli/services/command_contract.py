@@ -288,6 +288,9 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
     "history.show": (),
     "history.undo": (),
+    "history.resume": (
+        FieldSpec("from_line", required=False, annotation=int | None, default=None),
+    ),
     "recipe.list": (),
     "recipe.run": (
         FieldSpec("inputs", required=False, annotation=dict[str, Any] | None, default=None),
@@ -490,6 +493,7 @@ _LOCAL_COMMANDS = frozenset(
         "history.list",
         "history.show",
         "history.undo",
+        "history.resume",
         "recipe.list",
         "recipe.run",
         "log.path",
