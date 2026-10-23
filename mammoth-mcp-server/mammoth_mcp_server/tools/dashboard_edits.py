@@ -20,7 +20,7 @@ from mammoth.models.dashboards import DashboardPatchItem, DashboardPatchOp, Dash
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..consts import ENGINE_V3, DashboardFields, JobFields
-from ..jobs import JobStillRunning, wait_for_job
+from ..jobs import JobStillRunning, read_job, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import DESTRUCTIVE
@@ -49,7 +49,11 @@ PARTLY_DONE = (
     "Part of the change did not land: `not_done` lists it, from Mammoth's own check."
     " Tell the user what was done and what was not; do not say the whole change was made."
 )
-ALREADY_CHANGED = "These changes were made before that, and stay: {done}. Tell the user."
+ALREADY_CHANGED = "These were already made, and stay: {done}. Tell the user."
+NOT_AN_EDIT = (
+    "Job {job_id} is not an AI edit of dashboard {dashboard_id}: pass the job_id an"
+    " edit_dashboard call on this dashboard answered with."
+)
 STILL_EDITING = (
     "Mammoth's AI is still making the change. Call edit_dashboard with job_id={job_id}"
     " and nothing else to get what it did: do not send the change again."
@@ -115,6 +119,7 @@ async def edit_dashboard(
     if job_id is not None:
         if change or title or embeds or tags is not None:
             raise ToolError(JOB_ALONE)
+        await check_edit_job(workspace_id, dashboard_id, job_id)
         return await finish_edit(workspace_id, dashboard_id, {JobFields.JOB_ID: job_id})
     if not (change or title or embeds or tags is not None):
         raise ToolError(NOTHING_TO_CHANGE)
@@ -145,8 +150,19 @@ async def edit_dashboard(
             started = await start_edit(client.dashboards, dashboard_id, change) if change else None
         except ToolError as refused:
             raise said_what_changed(refused, done) from refused
-    # Tags and embed settings are off the draft: the board read before is still the board.
-    finished = await finish_edit(workspace_id, dashboard_id, started) if change or title else before
+        # A rename alone is read on this client. Tags and embed settings are off the
+        # draft: the board read before is still the board.
+        if not change:
+            finished = (
+                await report_after(client.dashboards, workspace_id, dashboard_id, {})
+                if title
+                else before
+            )
+    if change:
+        try:
+            finished = with_done(await finish_edit(workspace_id, dashboard_id, started), done)
+        except ToolError as failed:
+            raise said_what_changed(failed, done) from failed
     carried = {DashboardFields.TAGS: tagged[DashboardFields.TAGS]} if tagged else {}
     return {**finished, **carried, **({} if embed is None else {DashboardFields.EMBED: embed})}
 
@@ -168,8 +184,35 @@ async def finish_edit(
             DashboardFields.NEXT_STEP: STILL_EDITING.format(job_id=job_id),
         }
     async with build_client(workspace_id) as client:
-        after = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
+        return await report_after(client.dashboards, workspace_id, dashboard_id, edit)
+
+
+async def report_after(
+    dashboards: DashboardsAPI, workspace_id: int, dashboard_id: int, edit: dict[str, JsonValue]
+) -> dict[str, JsonValue]:
+    """The dashboard after a change, with what the edit reported and what to tell the user."""
+    after = await read_dashboard(dashboards, workspace_id, dashboard_id)
     return {**after, **edit, **what_to_tell(edit, after)}
+
+
+async def check_edit_job(workspace_id: int, dashboard_id: int, job_id: int) -> None:
+    """Refuse a job that is not an AI edit of this dashboard, which would read as one.
+
+    Raises:
+        ToolError: If the job was started by another route, or for another dashboard.
+    """
+    async with build_client(workspace_id) as client:
+        job = read_job(await read_sdk_errors(client.jobs.get_job(job_id)))
+    if not str(job.get(JobFields.PATH, "")).endswith(f"/dashboards/{dashboard_id}/chat"):
+        raise ToolError(NOT_AN_EDIT.format(job_id=job_id, dashboard_id=dashboard_id))
+
+
+def with_done(finished: dict[str, JsonValue], done: list[str]) -> dict[str, JsonValue]:
+    """An edit still going, naming what the call already changed, which it would not say."""
+    if finished.get(DashboardFields.STATUS) != DashboardFields.EDITING or not done:
+        return finished
+    note = ALREADY_CHANGED.format(done=", ".join(done))
+    return {**finished, DashboardFields.NEXT_STEP: f"{finished[DashboardFields.NEXT_STEP]} {note}"}
 
 
 def said_what_changed(refused: ToolError, done: list[str]) -> ToolError:
@@ -218,7 +261,10 @@ async def wait_for_edit(workspace_id: int, started: dict[str, JsonValue]) -> dic
 
 def not_done(edited: dict[str, JsonValue]) -> list[str]:
     """What Mammoth's own check says did not land: each ask that missed, with its
-    status, then what it could not do."""
+    status, or else what it could not do.
+
+    A missed ask's note says the same miss again, and `message` already says why.
+    """
     asks = edited.get(DashboardFields.ASKS)
     notes = edited.get(DashboardFields.COULD_NOT_DO)
     missed = [
@@ -226,7 +272,7 @@ def not_done(edited: dict[str, JsonValue]) -> list[str]:
         for ask in (asks if isinstance(asks, list) else [])
         if isinstance(ask, dict) and ask.get(DashboardFields.ASK_STATUS) != DashboardFields.APPLIED
     ]
-    return [*missed, *(str(note) for note in (notes if isinstance(notes, list) else []))]
+    return missed or [str(note) for note in (notes if isinstance(notes, list) else [])]
 
 
 def new_title(title: str) -> DashboardPatchItem:

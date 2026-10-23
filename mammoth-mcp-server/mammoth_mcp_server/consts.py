@@ -384,6 +384,8 @@ class JobFields:
     ID = "id"
     STATUS = "status"
     RESPONSE = "response"
+    # The API route that started the job, which says what it is a job of.
+    PATH = "path"
     PROCESSING = "processing"
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.

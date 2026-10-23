@@ -6,6 +6,8 @@ from unittest.mock import patch
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
+from mammoth_mcp_server.sdk import build_client
+
 from .helpers import WORKSPACE, FakeApi, a_fake_api, as_caller, call_tool
 
 DASHBOARD_ID = 42
@@ -185,6 +187,7 @@ def edited(changed: bool = True, **response: Any) -> dict[str, Any]:
         "job": {
             "id": 41,
             "status": "success",
+            "path": f"/api/v2{CHAT}",
             "response": {"message": "Rebuilt the chart.", "changed": changed, **response},
         }
     }
@@ -208,6 +211,14 @@ class TestAnEditThatOnlyPartlyLanded:
 
         assert answer["not_done"] == ["a revenue chart", "a map by planet"]
         assert answer["partial"] is True
+
+    def test_a_missed_ask_is_not_listed_again_as_its_note(self) -> None:
+        # Mammoth notes the same miss under could_not_do; `message` says why.
+        with a_fake_api() as api, as_caller():
+            a_board(api, job=edited(could_not_do=["a count of customers"], **PARTLY))
+            answer = edit(change="Count customers per month, in calendar order")
+
+        assert answer["not_done"] == [f"{COUNT_ASK}: not on the board — no chart was added"]
 
     def test_an_edit_whose_asks_all_landed_is_not_partial(self) -> None:
         asks = [
@@ -254,6 +265,17 @@ class TestPickingUpAnEditThatOutlastedTheCall:
         assert answer["changed"] is True
         assert answer["partial"] is True
         assert answer["id"] == DASHBOARD_ID
+
+    @pytest.mark.parametrize(
+        "path", ["/api/v2/dashboards/7/chat", "/api/v2/workspaces/1/projects/3/trash/restore"]
+    )
+    def test_a_job_that_is_not_an_edit_of_this_board_is_refused(self, path: str) -> None:
+        with a_fake_api() as api, as_caller():
+            a_board(api, job={"job": {**edited()["job"], "path": path}})
+            with pytest.raises(ToolError, match="not an AI edit of dashboard 42"):
+                edit(job_id=41)
+
+        assert not api.sent("GET", DASHBOARD)
 
     @pytest.mark.parametrize(
         "more",
@@ -326,6 +348,28 @@ class TestAChangeThatFailsPartWay:
         assert "title" in str(refused.value)
         assert "tags" in str(refused.value)
 
+    def test_what_changed_before_the_edit_job_failed_is_named(self) -> None:
+        failed = {"job": {"id": 41, "status": "failure", "response": {"error": "no model"}}}
+        with a_fake_api() as api, as_caller():
+            api.answer("PUT", f"{DASHBOARD}/tags", {"tags": ["sales"]})
+            a_board(api, job=failed)
+            with pytest.raises(ToolError) as refused:
+                edit(title="Q3", tags=["sales"], change="Add a card")
+
+        assert "already made" in str(refused.value)
+        assert "the title" in str(refused.value)
+        assert "the tags" in str(refused.value)
+
+    def test_an_edit_still_going_names_the_title_already_changed(self) -> None:
+        running = {"job": {"id": 41, "status": "processing", "response": None}}
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_board(api, job=running)
+            answer = edit(title="Q3", change="Add a card")
+
+        assert answer["status"] == "editing"
+        assert "job_id=41" in answer["next_step"]
+        assert "already made, and stay: the title" in answer["next_step"]
+
     def test_a_refusal_before_any_change_names_none(self) -> None:
         with a_fake_api() as api, as_caller():
             api.answer("PATCH", DASHBOARD, {"message": "Title is too long"}, 400)
@@ -345,3 +389,19 @@ def test_a_change_off_the_draft_reads_the_board_once() -> None:
     assert len(api.sent("GET", DASHBOARD)) == 1
     assert answer["tags"] == ["sales"]
     assert answer["id"] == DASHBOARD_ID
+
+
+def test_a_rename_alone_uses_one_client() -> None:
+    with (
+        a_fake_api() as api,
+        as_caller(),
+        patch(
+            "mammoth_mcp_server.tools.dashboard_edits.build_client", wraps=build_client
+        ) as opened,
+    ):
+        a_board(api, board={**BOARD, "was_published": True})
+        answer = edit(title="Q3")
+
+    assert opened.call_count == 1
+    assert len(api.sent("GET", DASHBOARD)) == 2
+    assert "publish_dashboard" in answer["next_step"]
