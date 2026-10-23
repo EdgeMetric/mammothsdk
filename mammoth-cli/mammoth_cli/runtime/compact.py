@@ -32,6 +32,12 @@ COMPACT_COMMANDS = frozenset(
     }
 )
 
+#: Reads trimmed by default; ``--full`` returns the old shape. ``schema find`` cuts
+#: each match to what picks and calls it; ``canvas get`` leaves out null and empty fields.
+TRIMMED_READ_COMMANDS = frozenset({"schema.find", "dashboard.canvas.get"})
+#: Every command that takes ``--full``.
+FULL_FLAG_COMMANDS = COMPACT_COMMANDS | TRIMMED_READ_COMMANDS
+
 #: Keys left out in compact mode: the planner's working state, not a result.
 _OMITTED_KEYS = ("plan", "specs")
 #: Keys kept exactly as they are, nulls included.
@@ -87,6 +93,27 @@ def _null_only(original: Any, compacted: Any) -> bool:
     return isinstance(original, dict) and bool(original) and compacted == {}
 
 
+def _drop_nulls(value: Any) -> Any:
+    """*value* without null fields at any depth, and without dicts that held only nulls.
+
+    An explicit ``[]``, ``{}`` or ``""`` stays: ``canvas save`` treats an absent or
+    null overlay as "keep the head's" and an explicit empty one as "clear it".
+    List items keep their place.
+    """
+    if isinstance(value, list):
+        return [_drop_nulls(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    result: dict[str, Any] = {}
+    for key, item in value.items():
+        if item is None:
+            continue
+        pruned = _drop_nulls(item)
+        if not _null_only(item, pruned):
+            result[key] = pruned
+    return result
+
+
 def _dashboard_id(invocation: Invocation, data: dict[str, Any]) -> Any:
     for value in (invocation.positionals.get("dashboard_id"), data.get("dashboard_id")):
         if isinstance(value, (int, str)) and str(value):
@@ -96,6 +123,8 @@ def _dashboard_id(invocation: Invocation, data: dict[str, Any]) -> Any:
 
 def with_compact(invocation: Invocation, data: Any) -> Any:
     """``data`` compacted for a command in :data:`COMPACT_COMMANDS`, unless ``--full``."""
+    if invocation.command_id == "dashboard.canvas.get":
+        return data if invocation.full_output else _drop_nulls(data)
     if (
         invocation.command_id not in COMPACT_COMMANDS
         or invocation.full_output

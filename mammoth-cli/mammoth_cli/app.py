@@ -1201,7 +1201,7 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, validate
-    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
+    from mammoth_cli.runtime.compact import FULL_FLAG, FULL_FLAG_COMMANDS, with_compact
     from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
     from mammoth_cli.runtime.dataset_health import with_dataset_health
     from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
@@ -1214,7 +1214,7 @@ def _execute(invocation: Invocation) -> None:
 
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
-    if invocation.command_id in COMPACT_COMMANDS and FULL_FLAG in invocation.extra_args:
+    if invocation.command_id in FULL_FLAG_COMMANDS and FULL_FLAG in invocation.extra_args:
         invocation = replace(
             invocation,
             extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],
@@ -1508,8 +1508,12 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     nested = nested_choices_help(command_id)
     if nested:
         parts.append(nested)
-    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, TRIMMED_READ_COMMANDS
 
+    if command_id in TRIMMED_READ_COMMANDS:
+        parts.append(
+            f"The result leaves out detail you rarely need. Pass {FULL_FLAG} for all of it."
+        )
     if command_id in COMPACT_COMMANDS:
         parts.append(
             "The result is compact: ids, checks, verify and a canvas summary. "
@@ -1794,12 +1798,10 @@ def _load_top_level_group(name: str) -> Any:
 # table to :func:`_command_help` so it cannot drift.
 _ROOT_LEAF_HELP: dict[str, str] = {
     "capabilities": (
-        "List what the CLI cannot do yet, and what to do instead."
-        "\n\nExample: mammoth capabilities"
+        "List what the CLI cannot do yet, and what to do instead.\n\nExample: mammoth capabilities"
     ),
     "calc": (
-        "Evaluate one arithmetic expression exactly."
-        "\n\nExample: mammoth calc '2063664 - 1917815'"
+        "Evaluate one arithmetic expression exactly.\n\nExample: mammoth calc '2063664 - 1917815'"
     ),
     "doctor": (
         "Run environment and connectivity diagnostics."

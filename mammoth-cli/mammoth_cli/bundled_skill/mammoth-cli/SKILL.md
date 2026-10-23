@@ -92,8 +92,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 | Deliver the rows | `view export csv`, `view export postgres`, `view export dataset` |
 | Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. An upload can't refresh; a URL dataset: `dataset refresh` on demand, never on a schedule; say so. Recipe: [recurring work](references/recipes/scheduling.md) |
 
-Call a find result (or `suggestions` entry) from its `accepted_fields` and
-`agent_example`. Before concluding the CLI cannot do something the web app
+Call a find result from its `agent_example` and `accepted_fields`. Before concluding the CLI cannot do something the web app
 does, run `mammoth capabilities` (known gaps) and check
 `view transform --help` and "View settings, and what has no
 command" in [about Mammoth](references/about-mammoth.md). Do not switch to
@@ -142,7 +141,7 @@ your report. If no column links the files, ask before you combine them.
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
 - `COMMAND --help` lists input fields and allowed values; `schema find WORDS` inlines
-  `accepted_fields`/`agent_example` for top matches, else `schema get
+  `accepted_fields`/`agent_example` for top matches (`--full`: all), else `schema get
   ID,ID` (one call; `--input '{"full": true}'` for all
   fields); `schema list`/`schema list view` list families.
 - Uploads return a **dataset** id; transforms, joins, exports and previews
