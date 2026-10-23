@@ -1012,9 +1012,9 @@ def test_managed_postgres_finds_the_mammoth_hosted_export_first() -> None:
 
 
 def test_the_customer_postgres_export_points_to_publish_db() -> None:
-    from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
+    from mammoth_cli.discovery.purposes import COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
 
-    assert "publish-db" in _COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
+    assert "publish-db" in COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
 
 
 def test_find_inlines_the_positionals_in_order() -> None:

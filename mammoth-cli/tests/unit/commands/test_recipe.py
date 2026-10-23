@@ -8,9 +8,9 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli import discovery
 from mammoth_cli.app import app
 from mammoth_cli.commands import how as how_cmd
-from mammoth_cli.commands import recipe as recipe_cmd
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.schema import find_schemas
 from mammoth_cli.context import resolver
@@ -58,7 +58,7 @@ def service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
     fake.responses[_DATASET_GET] = {"dataset": {"id": 7, "name": "sales"}}
     monkeypatch.setattr(service_factory, "build_service", lambda *_a, **_k: fake)
     monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_a, **_k: 4)
-    monkeypatch.setattr(recipe_cmd, "load_recipes", lambda: (_READS, _WRITES))
+    monkeypatch.setattr(discovery, "load_recipes", lambda: (_READS, _WRITES))
     return fake
 
 

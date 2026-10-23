@@ -1028,55 +1028,87 @@ _TARGETS: dict[str, str] = {
         "mammoth_cli.commands.view.export_specialized:view_export_specialized"
     ),
     "view.export.tableau": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.create": "mammoth_cli.commands.view_ops:view_create",
-    "view.variants.create": "mammoth_cli.commands.view_ops:view_variants_create",
-    "view.get": "mammoth_cli.commands.view_ops:view_get",
-    "view.delete": "mammoth_cli.commands.view_ops:view_delete",
-    "view.draft.enter": "mammoth_cli.commands.view_ops:view_draft_enter",
-    "view.draft.status": "mammoth_cli.commands.view_ops:view_draft_status",
-    "view.draft.submit": "mammoth_cli.commands.view_ops:view_draft_submit",
-    "view.draft.discard": "mammoth_cli.commands.view_ops:view_draft_discard",
-    "view.draft.auto-run": "mammoth_cli.commands.view_ops:view_draft_auto_run",
-    "view.transform.add-column": "mammoth_cli.commands.view_ops:view_transform_add_column",
-    "view.transform.add-sql": "mammoth_cli.commands.view_ops:view_transform_add_sql",
-    "view.transform.ai": "mammoth_cli.commands.view_ops:view_transform_ai",
-    "view.transform.batch": "mammoth_cli.commands.view_ops:view_transform_batch",
-    "view.transform.bulk-replace": "mammoth_cli.commands.view_ops:view_transform_bulk_replace",
+    "view.create": "mammoth_cli.commands.view_ops.crud:view_create",
+    "view.variants.create": "mammoth_cli.commands.view_ops.crud:view_variants_create",
+    "view.get": "mammoth_cli.commands.view_ops.crud:view_get",
+    "view.delete": "mammoth_cli.commands.view_ops.crud:view_delete",
+    "view.draft.enter": "mammoth_cli.commands.view_ops.draft:view_draft_enter",
+    "view.draft.status": "mammoth_cli.commands.view_ops.draft:view_draft_status",
+    "view.draft.submit": "mammoth_cli.commands.view_ops.draft:view_draft_submit",
+    "view.draft.discard": "mammoth_cli.commands.view_ops.draft:view_draft_discard",
+    "view.draft.auto-run": "mammoth_cli.commands.view_ops.draft:view_draft_auto_run",
+    "view.transform.add-column": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_add_column"
+    ),
+    "view.transform.add-sql": "mammoth_cli.commands.view_ops.transforms:view_transform_add_sql",
+    "view.transform.ai": "mammoth_cli.commands.view_ops.transforms:view_transform_ai",
+    "view.transform.batch": "mammoth_cli.commands.view_ops.batch:view_transform_batch",
+    "view.transform.bulk-replace": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_bulk_replace"
+    ),
     "view.transform.combine-columns": (
-        "mammoth_cli.commands.view_ops:view_transform_combine_columns"
+        "mammoth_cli.commands.view_ops.transforms:view_transform_combine_columns"
     ),
-    "view.transform.convert-type": "mammoth_cli.commands.view_ops:view_transform_convert_type",
-    "view.transform.copy-columns": "mammoth_cli.commands.view_ops:view_transform_copy_columns",
-    "view.transform.crosstab": "mammoth_cli.commands.view_ops:view_transform_crosstab",
-    "view.transform.date-diff": "mammoth_cli.commands.view_ops:view_transform_date_diff",
-    "view.transform.delete-columns": "mammoth_cli.commands.view_ops:view_transform_delete_columns",
+    "view.transform.convert-type": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_convert_type"
+    ),
+    "view.transform.copy-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_copy_columns"
+    ),
+    "view.transform.crosstab": "mammoth_cli.commands.view_ops.transforms:view_transform_crosstab",
+    "view.transform.date-diff": "mammoth_cli.commands.view_ops.transforms:view_transform_date_diff",
+    "view.transform.delete-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_delete_columns"
+    ),
     "view.transform.discard-duplicates": (
-        "mammoth_cli.commands.view_ops:view_transform_discard_duplicates"
+        "mammoth_cli.commands.view_ops.transforms:view_transform_discard_duplicates"
     ),
-    "view.transform.extract-date": "mammoth_cli.commands.view_ops:view_transform_extract_date",
-    "view.transform.fill-missing": "mammoth_cli.commands.view_ops:view_transform_fill_missing",
-    "view.transform.filter": "mammoth_cli.commands.view_ops:view_transform_filter",
-    "view.transform.generate-sql": "mammoth_cli.commands.view_ops:view_transform_generate_sql",
-    "view.transform.increment-date": "mammoth_cli.commands.view_ops:view_transform_increment_date",
-    "view.transform.join": "mammoth_cli.commands.view_ops:view_transform_join",
-    "view.column.format.set": "mammoth_cli.commands.view_ops:view_column_format_set",
-    "view.transform.json-extract": "mammoth_cli.commands.view_ops:view_transform_json_extract",
-    "view.transform.limit-rows": "mammoth_cli.commands.view_ops:view_transform_limit_rows",
-    "view.transform.lookup": "mammoth_cli.commands.view_ops:view_transform_lookup",
-    "view.transform.math": "mammoth_cli.commands.view_ops:view_transform_math",
-    "view.transform.pivot": "mammoth_cli.commands.view_ops:view_transform_pivot",
-    "view.transform.rename-columns": "mammoth_cli.commands.view_ops:view_transform_rename_columns",
-    "view.transform.replace": "mammoth_cli.commands.view_ops:view_transform_replace",
-    "view.transform.set-values": "mammoth_cli.commands.view_ops:view_transform_set_values",
-    "view.transform.small-large": "mammoth_cli.commands.view_ops:view_transform_small_large",
-    "view.transform.sort": "mammoth_cli.commands.view_ops:view_transform_sort",
-    "view.transform.split": "mammoth_cli.commands.view_ops:view_transform_split",
-    "view.transform.substring": "mammoth_cli.commands.view_ops:view_transform_substring",
-    "view.transform.first-name": "mammoth_cli.commands.view_ops:view_transform_first_name",
-    "view.transform.update-column": "mammoth_cli.commands.view_ops:view_transform_update_column",
-    "view.transform.text": "mammoth_cli.commands.view_ops:view_transform_text",
-    "view.transform.unnest": "mammoth_cli.commands.view_ops:view_transform_unnest",
-    "view.transform.window": "mammoth_cli.commands.view_ops:view_transform_window",
+    "view.transform.extract-date": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_extract_date"
+    ),
+    "view.transform.fill-missing": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_fill_missing"
+    ),
+    "view.transform.filter": "mammoth_cli.commands.view_ops.transforms:view_transform_filter",
+    "view.transform.generate-sql": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_generate_sql"
+    ),
+    "view.transform.increment-date": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_increment_date"
+    ),
+    "view.transform.join": "mammoth_cli.commands.view_ops.transforms:view_transform_join",
+    "view.column.format.set": "mammoth_cli.commands.view_ops.transforms:view_column_format_set",
+    "view.transform.json-extract": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_json_extract"
+    ),
+    "view.transform.limit-rows": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_limit_rows"
+    ),
+    "view.transform.lookup": "mammoth_cli.commands.view_ops.transforms:view_transform_lookup",
+    "view.transform.math": "mammoth_cli.commands.view_ops.transforms:view_transform_math",
+    "view.transform.pivot": "mammoth_cli.commands.view_ops.transforms:view_transform_pivot",
+    "view.transform.rename-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_rename_columns"
+    ),
+    "view.transform.replace": "mammoth_cli.commands.view_ops.transforms:view_transform_replace",
+    "view.transform.set-values": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_set_values"
+    ),
+    "view.transform.small-large": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_small_large"
+    ),
+    "view.transform.sort": "mammoth_cli.commands.view_ops.transforms:view_transform_sort",
+    "view.transform.split": "mammoth_cli.commands.view_ops.transforms:view_transform_split",
+    "view.transform.substring": "mammoth_cli.commands.view_ops.transforms:view_transform_substring",
+    "view.transform.first-name": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_first_name"
+    ),
+    "view.transform.update-column": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_update_column"
+    ),
+    "view.transform.text": "mammoth_cli.commands.view_ops.transforms:view_transform_text",
+    "view.transform.unnest": "mammoth_cli.commands.view_ops.transforms:view_transform_unnest",
+    "view.transform.window": "mammoth_cli.commands.view_ops.transforms:view_transform_window",
     # Operation-bound commands served by the manifest-driven generic handler.
     "agent.access.me": "mammoth_cli.commands.dashboard:generated_dashboard",
     "agent.access.settings.get": "mammoth_cli.commands.dashboard:generated_dashboard",

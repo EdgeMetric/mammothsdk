@@ -16,8 +16,7 @@ import re
 from functools import cache
 from typing import Any
 
-from mammoth_cli.commands import recipe as recipe_cmd
-from mammoth_cli.discovery import load_recipes
+from mammoth_cli.discovery import load_recipes, run_command
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -182,7 +181,7 @@ def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
         {
             "id": recipe["id"],
             "title": recipe["title"],
-            "run_command": recipe_cmd.run_command(recipe),
+            "run_command": run_command(recipe),
             "full_detail_command": f"mammoth how \"{recipe['goals'][0]}\"",
         }
         for _, recipe in _rank(goal)
@@ -317,7 +316,7 @@ def how(invocation: Invocation) -> HandlerResult:
     }
     if best.get("run"):
         # The steps as one command: an agent runs it instead of chaining them by hand.
-        result["run_command"] = recipe_cmd.run_command(best)
+        result["run_command"] = run_command(best)
         result["inputs"] = best.get("inputs", {})
     return result, {}
 

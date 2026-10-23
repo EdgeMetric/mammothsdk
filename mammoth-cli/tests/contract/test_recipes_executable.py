@@ -15,11 +15,11 @@ import pytest
 
 from mammoth_cli.commands import recipe as recipe_cmd
 from mammoth_cli.commands import run as run_cmd
-from mammoth_cli.discovery import load_recipes
+from mammoth_cli.discovery import line_record, load_recipes, runnable_recipes
 from mammoth_cli.runtime import bindings
 
 _REFERENCE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
-_RUNNABLE = recipe_cmd.runnable_recipes()
+_RUNNABLE = runnable_recipes()
 
 
 def _references(value: Any) -> list[str]:
@@ -52,6 +52,8 @@ def test_run_lines_follow_the_steps(recipe: dict[str, Any]) -> None:
     for line in recipe["run"]:
         command_id = run_cmd.resolve_command_id(line["cmd"].split())
         assert command_id in named_in_steps, (recipe["id"], command_id)
+        # 'cmd' is the whole command path: discovery reads its record without the tree.
+        assert line_record(line)["command_id"] == command_id, (recipe["id"], line["cmd"])
 
 
 @pytest.mark.parametrize("recipe", _RUNNABLE, ids=lambda recipe: recipe["id"])

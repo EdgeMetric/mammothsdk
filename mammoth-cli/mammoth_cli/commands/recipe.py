@@ -20,9 +20,8 @@ import json
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
-from mammoth_cli.discovery import load_recipes
+from mammoth_cli.discovery import line_record, run_command, runnable_recipes, writes
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
@@ -36,42 +35,6 @@ CODE_RECIPE_INPUT_INVALID = "recipe_input_invalid"
 
 #: The JSON types a recipe input may declare, and the Python types that satisfy each.
 _INPUT_TYPES: dict[str, tuple[type, ...]] = {"string": (str,), "integer": (int,)}
-
-
-def runnable_recipes() -> tuple[dict[str, Any], ...]:
-    """The recipes ``recipe run`` can run: those with ``inputs`` and ``run`` lines.
-
-    Returns:
-        The executable recipes, in file order.
-    """
-    return tuple(recipe for recipe in load_recipes() if recipe.get("run"))
-
-
-def run_command(recipe: dict[str, Any]) -> str:
-    """The ``recipe run`` command for a recipe, with each input's example value.
-
-    Args:
-        recipe: An executable recipe.
-
-    Returns:
-        A command line an agent can adapt.
-    """
-    example = {name: spec.get("example") for name, spec in recipe.get("inputs", {}).items()}
-    document = json.dumps({"inputs": example}, separators=(", ", ": "))
-    confirm = " --yes" if writes(recipe) else ""
-    return f"mammoth recipe run {recipe['id']} --input '{document}'{confirm}"
-
-
-def writes(recipe: dict[str, Any]) -> bool:
-    """Whether any of the recipe's lines runs a command that is not a read.
-
-    Args:
-        recipe: An executable recipe.
-
-    Returns:
-        True when running the recipe changes something.
-    """
-    return any(_record(line).get("mutation_class", "read") != "read" for line in recipe["run"])
 
 
 def recipe_list(invocation: Invocation) -> HandlerResult:
@@ -122,16 +85,12 @@ def recipe_run(invocation: Invocation) -> HandlerResult:
     return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
 
 
-def _record(line: dict[str, Any]) -> dict[str, Any]:
-    return command_by_id(run_cmd.resolve_command_id(line["cmd"].split())) or {}
-
-
 def _confirmed(line: dict[str, Any]) -> dict[str, Any]:
     """The line with ``yes`` set when its command asks for confirmation.
 
     ``recipe run`` has already asked once for the whole recipe.
     """
-    if _record(line).get("confirmation", "none") == "none":
+    if line_record(line).get("confirmation", "none") == "none":
         return line
     return {**line, "flags": {**line.get("flags", {}), "yes": True}}
 

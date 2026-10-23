@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view_ops
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.services.testing import FakeMammothService
@@ -59,35 +60,35 @@ def service(fake_service: FakeMammothService) -> FakeMammothService:
     ("handler", "command_id", "payload", "column", "actual"),
     [
         (
-            view_ops.view_transform_extract_date,
+            view_transforms.view_transform_extract_date,
             "view.transform.extract-date",
             {"column": "Ship Date", "component": "year"},
             "Ship Date",
             "TEXT",
         ),
         (
-            view_ops.view_transform_extract_date,
+            view_transforms.view_transform_extract_date,
             "view.transform.extract-date",
             {"column": "Qty", "component": "year"},
             "Qty",
             "NUMERIC",
         ),
         (
-            view_ops.view_transform_increment_date,
+            view_transforms.view_transform_increment_date,
             "view.transform.increment-date",
             {"column": "Ship Date", "delta": {"days": 1}},
             "Ship Date",
             "TEXT",
         ),
         (
-            view_ops.view_transform_date_diff,
+            view_transforms.view_transform_date_diff,
             "view.transform.date-diff",
             {"component": "DAY", "start": "Order Date", "end": "Ship Date"},
             "Ship Date",
             "TEXT",
         ),
         (
-            view_ops.view_transform_math,
+            view_transforms.view_transform_math,
             "view.transform.math",
             {"expression": "Qty * Price", "new_column": "Total"},
             "Price",
@@ -118,7 +119,7 @@ def test_a_text_column_gets_the_convert_type_command(
 ) -> None:
     with pytest.raises(CliError) as caught:
         _run(
-            view_ops.view_transform_extract_date,
+            view_transforms.view_transform_extract_date,
             "view.transform.extract-date",
             {"column": "Ship Date", "component": "year"},
             tmp_path,
@@ -132,13 +133,13 @@ def test_a_text_column_gets_the_convert_type_command(
 
 def test_matching_types_go_through(service: FakeMammothService, tmp_path: Path) -> None:
     _run(
-        view_ops.view_transform_extract_date,
+        view_transforms.view_transform_extract_date,
         "view.transform.extract-date",
         {"column": "Order Date", "component": "year"},
         tmp_path,
     )
     _run(
-        view_ops.view_transform_math,
+        view_transforms.view_transform_math,
         "view.transform.math",
         {"expression": "Qty * 2", "new_column": "Double"},
         tmp_path,
@@ -151,7 +152,7 @@ def test_an_unreadable_view_does_not_block_the_write(
 ) -> None:
     fake_service.responses[_GET] = CliError(code="api_error", message="no")
     _run(
-        view_ops.view_transform_extract_date,
+        view_transforms.view_transform_extract_date,
         "view.transform.extract-date",
         {"column": "Ship Date", "component": "year"},
         tmp_path,

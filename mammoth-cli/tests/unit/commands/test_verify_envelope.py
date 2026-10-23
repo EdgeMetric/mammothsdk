@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import view as view_cmd
-from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.runtime.verify import with_verify
@@ -76,7 +76,7 @@ def test_a_plain_view_transform_gets_a_row_check(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -107,7 +107,7 @@ def test_a_plain_view_transform_waits_for_the_pipeline_before_reading_rows_after
             fake_service.responses[_DATAVIEW_GET] = {"row_count": 17}
 
     fake_service.gate = gate
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -137,7 +137,7 @@ def test_a_plain_view_transform_is_unverified_when_rows_after_never_arrives(
             fake_service.responses[_DATAVIEW_GET] = {}
 
     fake_service.gate = gate
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -164,7 +164,7 @@ def test_a_staged_draft_transform_skips_the_row_check_and_the_settle_wait(
     count to wait for or read -- ``row_check`` must not appear at all.
     """
     fake_service.view_responses[(3, "limit_rows")] = {"status": "staged"}
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -201,7 +201,7 @@ def test_a_plain_view_transform_catches_a_runtime_error_execution_state(
     fake_service.responses[_TASK_LIST] = {
         "tasks": [{"id": 42, "transform_status": "ERROR", "reference_errors": {"error_code": 7000}}]
     }
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -227,7 +227,7 @@ def test_a_failed_pipeline_read_after_settle_is_unverified_not_silently_ok(
     """
     fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
     fake_service.responses[_PIPELINE_GET] = CliError(code="api_error", message="boom")
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -251,7 +251,7 @@ def test_a_non_dict_pipeline_read_is_unverified_not_silently_ok(
 ) -> None:
     fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
     fake_service.responses[_PIPELINE_GET] = "not a dict"
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -278,7 +278,7 @@ def test_a_failed_task_detail_read_is_recorded_not_swallowed(
         "execution_state": "runtime_error",
     }
     fake_service.responses[_TASK_LIST] = CliError(code="api_error", message="task list boom")
-    data, _meta = view_ops_cmd.view_transform_limit_rows(
+    data, _meta = view_transforms.view_transform_limit_rows(
         _inv(
             "view.transform.limit-rows",
             extra_args=["3"],
@@ -303,7 +303,7 @@ def test_a_join_transform_keeps_its_own_join_check_not_row_check(
         "on": [{"left": "a", "right": "a"}],
         "select": [{"column": "b"}],
     }
-    data, _meta = view_ops_cmd.view_transform_join(
+    data, _meta = view_transforms.view_transform_join(
         _inv(
             "view.transform.join",
             extra_args=["3"],
