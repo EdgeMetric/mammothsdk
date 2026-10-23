@@ -1326,7 +1326,7 @@ Example::
     await view.filter_rows(Condition("Sales", Operator.GTE, 1000))
     await view.export.to_csv("output.csv")
 
-#### `__init__(self, api_key: 'str | None' = None, api_secret: 'str | None' = None, workspace_id: 'int | None' = None, base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'float' = 30, job_timeout: 'float' = 60, job_poll_seconds: 'float' = 2, pipeline_timeout: 'float' = 3600, allow_insecure_loopback_http: 'bool' = False, *, api_token: 'str | None' = None, api_root: 'str | None' = '/api/v2', retry_gateway_errors: 'bool' = True, token_provider: 'Callable[[], str] | None' = None, user_agent: 'str | None' = None, http_client: 'httpx.AsyncClient | None' = None) -> 'None'`
+#### `__init__(self, api_key: 'str | None' = None, api_secret: 'str | None' = None, workspace_id: 'int | None' = None, base_url: 'str' = 'https://app.mammoth.io/api/v2', timeout: 'float' = 30, job_timeout: 'float' = 60, job_poll_seconds: 'float' = 0.5, pipeline_timeout: 'float' = 3600, allow_insecure_loopback_http: 'bool' = False, *, api_token: 'str | None' = None, api_root: 'str | None' = '/api/v2', retry_gateway_errors: 'bool' = True, token_provider: 'Callable[[], str] | None' = None, user_agent: 'str | None' = None, http_client: 'httpx.AsyncClient | None' = None) -> 'None'`
 
 Initialize the Mammoth client.
 
