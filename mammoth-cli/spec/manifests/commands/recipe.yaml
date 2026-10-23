@@ -50,13 +50,15 @@ commands:
   result_model: RecipeRunResult
   mutation_class: high_impact
   edits_target: false
-  no_readback: each step verifies itself through its own command, and the recipes end with a read-back step
+  no_readback: each step verifies itself through its own command, and the recipes end with a read-back
+    step
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: null
-  live_exemption_reason: Each step is a typed command with its own live evidence; the recipes were run end to end on a dev server.
+  live_exemption_reason: Each step is a typed command with its own live evidence; the recipes were run
+    end to end on a dev server.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -68,5 +70,6 @@ commands:
   - CT-RECIPE-RUN-JSON
   draft_test: null
   undo_test: null
-  known_restrictions: Runs only the recipes 'recipe list' shows. Stops at the first failed step; 'mammoth history undo' with the run's group reverses the writes. Not available embedded.
+  known_restrictions: Runs only the recipes 'recipe list' shows. Stops at the first failed step; 'mammoth
+    history undo' with the run's group reverses the writes. Not available embedded.
   reviewed_by: primary

@@ -87,13 +87,15 @@ commands:
   result_model: HistoryUndoResult
   mutation_class: high_impact
   edits_target: false
-  no_readback: each undo line verifies itself through its own command, and 'history show' reports the write as undone
+  no_readback: each undo line verifies itself through its own command, and 'history show' reports the
+    write as undone
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: null
-  live_exemption_reason: Each undo step is a typed command with its own live evidence; the journal is local.
+  live_exemption_reason: Each undo step is a typed command with its own live evidence; the journal is
+    local.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -105,7 +107,9 @@ commands:
   - CT-HISTORY-UNDO-JSON
   draft_test: null
   undo_test: null
-  known_restrictions: Undoes pipeline edits (back to the version before), objects a write created (to the trash) and moves to the trash (restored). Permanent deletes and external effects (exports, sends) cannot be undone and are reported. Not available embedded.
+  known_restrictions: Undoes pipeline edits (back to the version before), objects a write created (to
+    the trash) and moves to the trash (restored). Permanent deletes and external effects (exports, sends)
+    cannot be undone and are reported. Not available embedded.
   reviewed_by: primary
 - command_id: history.resume
   command_path: history resume
@@ -132,7 +136,8 @@ commands:
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: null
-  live_exemption_reason: Each resumed line is a typed command with its own live evidence; the journal is local.
+  live_exemption_reason: Each resumed line is a typed command with its own live evidence; the journal
+    is local.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -144,5 +149,7 @@ commands:
   - CT-HISTORY-RESUME-JSON
   draft_test: null
   undo_test: null
-  known_restrictions: Resumes a mammoth run or recipe run started on this machine with the journal on. A named result larger than 256 KB is not kept, so a later line that reads it fails. Refuses when a write's outcome is unknown until from_line names where to start. Not available embedded.
+  known_restrictions: Resumes a mammoth run or recipe run started on this machine with the journal on.
+    A named result larger than 256 KB is not kept, so a later line that reads it fails. Refuses when a
+    write's outcome is unknown until from_line names where to start. Not available embedded.
   reviewed_by: primary

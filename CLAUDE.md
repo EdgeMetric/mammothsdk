@@ -85,7 +85,9 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 
 ## CLI: adding a command or covering a new API operation
 
-- A command is a `command_id` (e.g. `support.workspace.get`) mapped in `mammoth-cli/mammoth_cli/commands/registry.py` to `"module:function"`, plus a hand-written manifest in `mammoth-cli/spec/manifests/commands/<group>.yaml`.
+- A command is a `command_id` (e.g. `support.workspace.get`) mapped in `mammoth-cli/mammoth_cli/commands/registry.py` to `"module:function"`, plus a manifest record.
+  - `scripts/build_manifests.py` generates a record for every operation-backed or SDK-catalog command into `spec/manifests/commands.generated.yaml`. Never edit that file.
+  - `spec/manifests/commands/<group>.yaml` holds only the fields that differ from the generated record (plus `unset`, a list of generated fields to drop), or the full record of a command the generator doesn't make. The loader merges the two.
 - Every operation in the pinned prod OpenAPI spec has a row in `spec/manifests/openapi-operations.yaml` with a `disposition`. `unmapped` means a real gap.
   - Cover a gap with an SDK method plus a CLI command.
   - If no terminal user should drive the operation, add it with a reason to `INTERNAL_ONLY` or `PROTOCOL_ONLY` in `scripts/_command_map.py`.

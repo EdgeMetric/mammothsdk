@@ -10,10 +10,13 @@ Inputs (all offline):
 Outputs:
 - ``spec/manifests/openapi-operations.yaml``  376 operation records.
 - ``spec/manifests/sdk-methods.yaml``         242 SDK method records.
-- ``spec/manifests/commands/<group>.yaml``    a record for each command id not yet on disk.
+- ``spec/manifests/commands.generated.yaml``  the generated record of each command.
 
-The command files are hand-maintained, so existing records are never rewritten.
-Regeneration is deterministic: re-running must produce no diff.
+``spec/manifests/commands/<group>.yaml`` is hand-written and never touched here. For a
+command generated here it holds only the fields that differ (and ``unset``, the fields it
+drops); the loader lays it over the generated record. A command with real logic and no
+generated record is written there in full. Regeneration is deterministic: re-running must
+produce no diff.
 """
 
 from __future__ import annotations
@@ -42,10 +45,12 @@ import _command_map as cmap  # noqa: E402
 from _openapi_extract import iter_operations, load_snapshot  # noqa: E402
 from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # noqa: E402
 
+from mammoth_cli.manifest.loader import merge_command_record  # noqa: E402
 from mammoth_cli.services.positionals import positionals_for  # noqa: E402
 
 REVIEWER = "primary"
 EDITS_TARGET_SOURCE = MANIFESTS / "edits-target.source.yaml"
+GENERATED_COMMANDS = "commands.generated.yaml"
 
 
 def _load_edits_target_commands() -> set[str]:
@@ -68,7 +73,7 @@ def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any
 
 
 def _existing_commands() -> dict[str, dict[str, Any]]:
-    """Every command record already on disk, by command id."""
+    """Every hand-written command record (full, or the fields it overrides), by command id."""
     import yaml
 
     records: dict[str, dict[str, Any]] = {}
@@ -76,22 +81,6 @@ def _existing_commands() -> dict[str, dict[str, Any]]:
         for record in yaml.safe_load(path.read_text(encoding="utf-8"))["commands"]:
             records[record["command_id"]] = record
     return records
-
-
-def _append_command_records(group: str, records: list[dict[str, Any]]) -> None:
-    """Append ``records`` to ``commands/<group>.yaml``, keeping the existing text."""
-    path = COMMANDS_DIR / f"{group}.yaml"
-    added = sorted(records, key=lambda record: record["command_id"])
-    if not path.exists():
-        path.write_text(
-            _yaml_dump({"manifest_schema_version": 1, "commands": added}), encoding="utf-8"
-        )
-        return
-    tail = _yaml_dump({"commands": added}).split("commands:\n", 1)[1]
-    text = path.read_text(encoding="utf-8")
-    path.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(tail)
 
 
 def _yaml_dump(data: Any) -> str:
@@ -438,7 +427,7 @@ def build() -> dict[str, int]:
         encoding="utf-8",
     )
 
-    # 3. commands/<group>.yaml
+    # 3. commands.generated.yaml
     commands: dict[str, dict[str, Any]] = {}
     # op-backed commands
     for command, oids in command_ops.items():
@@ -631,11 +620,16 @@ def build() -> dict[str, int]:
                 contract_tests=[f"mammoth-cli/tests/contract/{test}.py::{test}"],
             )
 
-    # The edits-target guard checks against every command that exists: the ones
-    # generated here and the hand-maintained records already on disk.
+    # The edits-target guard checks against every command that exists: the generated
+    # records with the hand-written fields laid over them, and the hand-written-only ones.
     on_disk = _existing_commands()
-    known_mutation = {cid: rec["mutation_class"] for cid, rec in commands.items()}
-    known_mutation.update({cid: rec["mutation_class"] for cid, rec in on_disk.items()})
+    known_mutation = {
+        command_id: merge_command_record(commands.get(command_id), record)["mutation_class"]
+        for command_id, record in on_disk.items()
+    }
+    known_mutation.update(
+        {cid: rec["mutation_class"] for cid, rec in commands.items() if cid not in on_disk}
+    )
     edits = _load_edits_target_commands()
     unknown = sorted(c for c in edits if c not in known_mutation or known_mutation[c] == "read")
     if unknown:
@@ -643,21 +637,16 @@ def build() -> dict[str, int]:
             f"edits-target.source.yaml lists non-mutating or unknown commands: {unknown}"
         )
 
-    # Only command ids absent from disk are written; their groups get the new
-    # records appended and every existing record is left as it is.
-    added: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for command_id, record in commands.items():
-        if command_id not in on_disk:
-            added[command_id.split(".", 1)[0]].append(_with_edits_target(record, edits))
-    COMMANDS_DIR.mkdir(parents=True, exist_ok=True)
-    for group in sorted(added):
-        _append_command_records(group, added[group])
+    generated = [_with_edits_target(commands[command_id], edits) for command_id in sorted(commands)]
+    (MANIFESTS / GENERATED_COMMANDS).write_text(
+        _yaml_dump({"manifest_schema_version": 1, "commands": generated}), encoding="utf-8"
+    )
 
     return {
         "operations": len(op_records),
         "sdk_methods": len(sdk_records),
         "commands": len(commands),
-        "commands_added": sum(len(records) for records in added.values()),
+        "commands_hand_written_only": len(set(on_disk) - set(commands)),
     }
 
 

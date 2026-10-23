@@ -1,1045 +1,286 @@
 manifest_schema_version: 1
 commands:
 - command_id: agent.action.delete
-  command_path: agent action delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteAgentSessionAction
-  positionals:
-  - name: action_id
-    type: str
-    required: true
-    metavar: ACTION_ID
-    falls_back_to_field: null
-    help: ID of the recorded action (from agent action list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.action_delete
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_delete with the session id from --session and
     the positional id.
-  request_model: AgentActionDeleteRequest
-  result_model: AgentActionDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent action delete ACTION_ID --help
-  agent_example: mammoth agent action delete resource-123 --yes
   unit_tests:
   - UT-AGENTACTIONDELETE
   contract_tests:
   - CT-AGENTACTIONDELETE
-  draft_test: null
-  undo_test: null
   known_restrictions: Writes. Deletes the object one recorded action made. The server deletes only an
     object the chat created (created=true in agent action list), refuses an object the chat only edited
     or that another object now uses, and re-checks your permission on it. The object goes to the trash,
     so it can be restored. Prompt or --yes. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
   readback:
     command: agent.action.list
     ids: {}
     kind: object
 - command_id: agent.action.list
-  command_path: agent action list
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.action_list
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_list with the session id from --session and
     the positional id.
-  request_model: AgentActionListRequest
-  result_model: AgentActionListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent action list --help
-  agent_example: mammoth agent action list
   unit_tests:
   - UT-AGENTACTIONLIST
   contract_tests:
   - CT-AGENTACTIONLIST
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Read-only. Lists every change the chat session made through the CLI (one row per
     write: action id, run and step, command, target object, whether the chat created the object, and its
     state after the write). Read it before agent action delete. Needs --session SESSION_ID; an embedded
     chat supplies it.'
-  reviewed_by: primary
 - command_id: agent.chat
-  command_path: agent chat
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AgentChat
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.chat
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.chat with validated request fields.
-  request_model: AgentChatRequest
-  result_model: AgentChatResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-CHAT
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent chat --help
-  agent_example: 'mammoth agent chat --input ''{"message": "Summarize revenue by region", "scope": {"type":
-    "workspace", "workspace_id": 123}, "client_context": {"project_id": 456}}'''
-  unit_tests:
-  - UT-AGENT-CHAT
-  contract_tests:
-  - CT-AGENT-CHAT-HUMAN
-  - CT-AGENT-CHAT-JSON
-  - CT-AGENT-CHAT-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Scope is {"type": "workspace", "workspace_id": N}, {"type": "user", "user_id":
     N} or {"type": "account"}. Put the project the question is about in client_context as {"project_id":
-    N}. The command starts the turn and waits for the reply, up to 120 seconds: pass "wait": 0 to
-    return at once with the turn id, or a larger "wait" for a long turn. If the wait ends first the
-    result has working: true; read the finished reply with agent session messages SESSION_ID. The
-    CLI sends one idempotency key per message and repeats it on a gateway error, so a retry never
-    starts a second turn.'
-  reviewed_by: primary
+    N}. The command starts the turn and waits for the reply, up to 120 seconds: pass "wait": 0 to return
+    at once with the turn id, or a larger "wait" for a long turn. If the wait ends first the result has
+    working: true; read the finished reply with agent session messages SESSION_ID. The CLI sends one idempotency
+    key per message and repeats it on a gateway error, so a retry never starts a second turn.'
   readback:
     command: agent.session.list
     ids: {}
     kind: object
 - command_id: agent.message.set-request-kind
-  command_path: agent message set-request-kind
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CorrectAgentRequestKind
-  positionals:
-  - name: message_id
-    type: str
-    required: true
-    metavar: MESSAGE_ID
-    falls_back_to_field: null
-    help: ID of the reply message (from agent session messages).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.message_set_request_kind
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.message_set_request_kind with the session id from --session, the positional message id and request_kind from --input.
-  request_model: AgentMessageSetRequestKindRequest
-  result_model: AgentMessageSetRequestKindResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.message_set_request_kind with the session id from
+    --session, the positional message id and request_kind from --input.
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write with contract coverage only; no disposable chat fixture on koyal.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent message set-request-kind MESSAGE_ID --help
-  agent_example: 'mammoth agent message set-request-kind ''Summarize revenue by region'' --input ''{"request_kind": "ask"}'''
-  unit_tests:
-  - UT-AGENT-MESSAGE-SET-REQUEST-KIND
-  contract_tests:
-  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-HUMAN
-  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-JSON
-  - CT-AGENT-MESSAGE-SET-REQUEST-KIND-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Writes. Corrects the request kind a reply answered (ask, insight, build, automate or fix). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
+  known_restrictions: Writes. Corrects the request kind a reply answered (ask, insight, build, automate
+    or fix). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
   readback:
     command: agent.session.messages
     ids: {}
     kind: object
 - command_id: agent.plan.edit-proposal
-  command_path: agent plan edit-proposal
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - EditAgentPlanProposal
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_edit_proposal
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_edit_proposal with the session id from --session and plan_id, action, key and the optional name from --input.
-  request_model: AgentPlanEditProposalRequest
-  result_model: AgentPlanEditProposalResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_edit_proposal with the session id from --session
+    and plan_id, action, key and the optional name from --input.
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write with contract coverage only; no disposable plan fixture on koyal.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent plan edit-proposal --help
-  agent_example: 'mammoth agent plan edit-proposal --input ''{"plan_id": "resource-123", "action": "rename", "key": "Status"}'''
-  unit_tests:
-  - UT-AGENT-PLAN-EDIT-PROPOSAL
-  contract_tests:
-  - CT-AGENT-PLAN-EDIT-PROPOSAL-HUMAN
-  - CT-AGENT-PLAN-EDIT-PROPOSAL-JSON
-  - CT-AGENT-PLAN-EDIT-PROPOSAL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Writes. Renames or removes one item of the plan's waiting workflow proposal (action rename or remove, the item key, and name for a rename). Creator only. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
+  known_restrictions: Writes. Renames or removes one item of the plan's waiting workflow proposal (action
+    rename or remove, the item key, and name for a rename). Creator only. Needs --session SESSION_ID;
+    an embedded chat supplies it.
   no_readback: returns the updated proposal
 - command_id: agent.plan.approve
-  command_path: agent plan approve
-  disposition: command
-  alias_of: null
   operation_ids:
   - AgentChat
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the chat session (from agent session list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_approve
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_approve with the session id; the plan reference is built from the session's current plan.
-  request_model: AgentPlanApproveRequest
-  result_model: AgentPlanApproveResult
-  mutation_class: benign_mutation
-  edits_target: true
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_approve with the session id; the plan reference
+    is built from the session's current plan.
   confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent plan approve SESSION_ID --help
   agent_example: mammoth agent plan approve resource-123 --yes
-  unit_tests:
-  - UT-AGENT-PLAN-APPROVE
-  contract_tests:
-  - CT-AGENT-PLAN-APPROVE-HUMAN
-  - CT-AGENT-PLAN-APPROVE-JSON
-  - CT-AGENT-PLAN-APPROVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Writes. This is the web app's Run it: it approves every proposed step of the chat's current plan and starts the work (paid model work). Typing 'Run it' as a chat message does not approve. The plan_id is read from the session; the request key is made by the CLI. Prompt or --yes. Waits up to wait seconds (default 120; wait 0 returns at once) for the turn. A user control: an embedded chat is refused. agent session messages shows when a chat waits for approval."
-  reviewed_by: primary
+  known_restrictions: 'Writes. This is the web app''s Run it: it approves every proposed step of the chat''s
+    current plan and starts the work (paid model work). Typing ''Run it'' as a chat message does not approve.
+    The plan_id is read from the session; the request key is made by the CLI. Prompt or --yes. Waits up
+    to wait seconds (default 120; wait 0 returns at once) for the turn. A user control: an embedded chat
+    is refused. agent session messages shows when a chat waits for approval.'
   no_readback: returns the started turn
 - command_id: agent.plan.skip
-  command_path: agent plan skip
-  disposition: command
-  alias_of: null
   operation_ids:
   - AgentChat
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the chat session (from agent session list).
-  - name: n
-    type: int
-    required: true
-    metavar: N
-    falls_back_to_field: null
-    help: Number of the proposed plan step to skip (from agent session messages).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_skip
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_skip with the session id; the plan reference is built from the session's current plan.
-  request_model: AgentPlanSkipRequest
-  result_model: AgentPlanSkipResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_skip with the session id; the plan reference
+    is built from the session's current plan.
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent plan skip SESSION_ID N --help
-  agent_example: mammoth agent plan skip resource-123 123
-  unit_tests:
-  - UT-AGENT-PLAN-SKIP
-  contract_tests:
-  - CT-AGENT-PLAN-SKIP-HUMAN
-  - CT-AGENT-PLAN-SKIP-JSON
-  - CT-AGENT-PLAN-SKIP-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Writes. Marks the proposed plan step N skipped; it needs no model turn. Only a proposed step can be skipped. The plan_id is read from the session. A user control: an embedded chat is refused."
-  reviewed_by: primary
+  known_restrictions: 'Writes. Marks the proposed plan step N skipped; it needs no model turn. Only a
+    proposed step can be skipped. The plan_id is read from the session. A user control: an embedded chat
+    is refused.'
   no_readback: returns the started turn
 - command_id: agent.plan.discard
-  command_path: agent plan discard
-  disposition: command
-  alias_of: null
   operation_ids:
   - AgentChat
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the chat session (from agent session list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.plan_discard
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_discard with the session id; the plan reference is built from the session's current plan.
-  request_model: AgentPlanDiscardRequest
-  result_model: AgentPlanDiscardResult
-  mutation_class: benign_mutation
-  edits_target: true
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_discard with the session id; the plan reference
+    is built from the session's current plan.
   confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write that needs a chat with a proposed plan; contract coverage only.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent plan discard SESSION_ID --help
   agent_example: mammoth agent plan discard resource-123 --yes
-  unit_tests:
-  - UT-AGENT-PLAN-DISCARD
-  contract_tests:
-  - CT-AGENT-PLAN-DISCARD-HUMAN
-  - CT-AGENT-PLAN-DISCARD-JSON
-  - CT-AGENT-PLAN-DISCARD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Writes. Marks every proposed step of the chat's current plan skipped; it needs no model turn. The plan_id is read from the session. A user control: an embedded chat is refused."
-  reviewed_by: primary
+  known_restrictions: 'Writes. Marks every proposed step of the chat''s current plan skipped; it needs
+    no model turn. The plan_id is read from the session. A user control: an embedded chat is refused.'
   no_readback: returns the started turn
 - command_id: agent.run.extend
-  command_path: agent run extend
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ExtendAgentRun
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_extend
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_extend with the session id from --session and
     the positional id.
-  request_model: AgentRunExtendRequest
-  result_model: AgentRunExtendResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run extend RUN_ID --help
-  agent_example: mammoth agent run extend resource-123
   unit_tests:
   - UT-AGENTRUNEXTEND
   contract_tests:
   - CT-AGENTRUNEXTEND
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Writes. Gives a capped run a fresh time budget (the 8 hour active-time cap). The
     server refuses extend when this command runs from inside the run itself: a run cannot extend itself,
     ask the user to extend it. Returns the run after the request. Needs --session SESSION_ID; an embedded
     chat supplies it.'
-  reviewed_by: primary
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.list
-  command_path: agent run list
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_list
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_list with the session id from --session and the
     positional id.
-  request_model: AgentRunListRequest
-  result_model: AgentRunListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run list --help
-  agent_example: mammoth agent run list
   unit_tests:
   - UT-AGENTRUNLIST
   contract_tests:
   - CT-AGENTRUNLIST
-  draft_test: null
-  undo_test: null
   known_restrictions: Read-only. Lists the runs of the chat session, newest first, with the same fields
     as agent run status. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
 - command_id: agent.run.pause
-  command_path: agent run pause
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PauseAgentRun
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_pause
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_pause with the session id from --session and the
     positional id.
-  request_model: AgentRunPauseRequest
-  result_model: AgentRunPauseResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run pause RUN_ID --help
-  agent_example: mammoth agent run pause resource-123
   unit_tests:
   - UT-AGENTRUNPAUSE
   contract_tests:
   - CT-AGENTRUNPAUSE
-  draft_test: null
-  undo_test: null
   known_restrictions: Writes. Pauses the run after its current call finishes; a waiting run pauses at
     once. Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.resume
-  command_path: agent run resume
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ResumeAgentRun
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_resume
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_resume with the session id from --session and
     the positional id.
-  request_model: AgentRunResumeRequest
-  result_model: AgentRunResumeResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run resume RUN_ID --help
-  agent_example: mammoth agent run resume resource-123
   unit_tests:
   - UT-AGENTRUNRESUME
   contract_tests:
   - CT-AGENTRUNRESUME
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Writes. Resumes a paused run from where it stopped. The server refuses resume when
     this command runs from inside the run itself: a run cannot resume itself, ask the user to resume it.
     Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.'
-  reviewed_by: primary
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.status
-  command_path: agent run status
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_status
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_status with the session id from --session and
     the positional id.
-  request_model: AgentRunStatusRequest
-  result_model: AgentRunStatusResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run status --help
-  agent_example: mammoth agent run status
   unit_tests:
   - UT-AGENTRUNSTATUS
   contract_tests:
   - CT-AGENTRUNSTATUS
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Read-only. Shows the chat session''s current durable run: run id, state (running,
     waiting, paused, capped, done, failed or stopped), the step it is on, what it waits for, and the active
     time used and left of its 8 hour budget (time spent waiting on you does not count). Needs --session
     SESSION_ID; an embedded chat supplies it.'
-  reviewed_by: primary
 - command_id: agent.run.stop
-  command_path: agent run stop
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - StopAgentRun
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_stop
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_stop with the session id from --session and the
     positional id.
-  request_model: AgentRunStopRequest
-  result_model: AgentRunStopResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that made a change.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run stop RUN_ID --help
-  agent_example: mammoth agent run stop resource-123
   unit_tests:
   - UT-AGENTRUNSTOP
   contract_tests:
   - CT-AGENTRUNSTOP
-  draft_test: null
-  undo_test: null
   known_restrictions: Writes. Stops the run and cancels its live step. A stopped run cannot be resumed.
     Returns the run after the request. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.units.set
-  command_path: agent run units set
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RegisterAgentRunUnits
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_set
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_set with the session id from --session, the
-    positional run id and validated request fields.
-  request_model: AgentRunUnitsSetRequest
-  result_model: AgentRunUnitsSetResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_set with the session id from --session,
+    the positional run id and validated request fields.
   live_test: null
   live_exemption_reason: Live coverage runs on the test server with a chat session that has a run.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run units set RUN_ID --help
-  agent_example: 'mammoth agent run units set resource-123 --input ''{"step": 1, "kind": "dataset", "units": [{"id": 12, "name": "Sales", "project_id": 3}]}'''
   unit_tests:
   - UT-AGENTRUNUNITSSET
   contract_tests:
   - CT-AGENTRUNUNITSSET
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Writes. Reports once the objects a plan step will work on (kind is dataset, view and so on;
-    1 to 1000 units, each id with an optional name and project_id) so the run panel can list them and
-    measure progress and the time left. A unit already listed is left as it is. Needs --session SESSION_ID;
-    an embedded chat supplies it. The server, not the model, counts the units done and the time left.'
-  reviewed_by: primary
+  known_restrictions: Writes. Reports once the objects a plan step will work on (kind is dataset, view
+    and so on; 1 to 1000 units, each id with an optional name and project_id) so the run panel can list
+    them and measure progress and the time left. A unit already listed is left as it is. Needs --session
+    SESSION_ID; an embedded chat supplies it. The server, not the model, counts the units done and the
+    time left.
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.instance.list
-  command_path: agent run instance list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentRunInstances
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instances_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instances_list with the session id from --session and the positional run id.
-  request_model: AgentRunInstanceListRequest
-  result_model: AgentRunInstanceListResult
-  mutation_class: read
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instances_list with the session id from --session
+    and the positional run id.
   edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run instance list RUN_ID --help
-  agent_example: 'mammoth agent run instance list resource-123'
-  unit_tests:
-  - UT-AGENT-RUN-INSTANCE-LIST
   contract_tests:
   - CT-AGENT-RUN-INSTANCE-LIST
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Read-only. Lists the agents of the run: the main agent, its workers and recon helpers, with the ids the instance commands take. Needs --session SESSION_ID; an embedded chat supplies it.'
-  reviewed_by: primary
+  known_restrictions: 'Read-only. Lists the agents of the run: the main agent, its workers and recon helpers,
+    with the ids the instance commands take. Needs --session SESSION_ID; an embedded chat supplies it.'
 - command_id: agent.run.instance.messages
-  command_path: agent run instance messages
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentInstanceMessages
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  - name: instance_id
-    type: str
-    required: true
-    metavar: INSTANCE_ID
-    falls_back_to_field: null
-    help: ID of the agent (from agent run instance list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_messages
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_messages with the session id from --session and the positional run and instance ids.
-  request_model: AgentRunInstanceMessagesRequest
-  result_model: AgentRunInstanceMessagesResult
-  mutation_class: read
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_messages with the session id from --session
+    and the positional run and instance ids.
   edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run instance messages RUN_ID INSTANCE_ID --help
-  agent_example: 'mammoth agent run instance messages resource-123 resource-123'
-  unit_tests:
-  - UT-AGENT-RUN-INSTANCE-MESSAGES
   contract_tests:
   - CT-AGENT-RUN-INSTANCE-MESSAGES
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. The messages one agent of the run sent or received. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
+  known_restrictions: Read-only. The messages one agent of the run sent or received. Needs --session SESSION_ID;
+    an embedded chat supplies it.
 - command_id: agent.run.instance.transcript
-  command_path: agent run instance transcript
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentInstanceTranscript
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  - name: instance_id
-    type: str
-    required: true
-    metavar: INSTANCE_ID
-    falls_back_to_field: null
-    help: ID of the agent (from agent run instance list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_instance_transcript
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_transcript with the session id from --session and the positional run and instance ids.
-  request_model: AgentRunInstanceTranscriptRequest
-  result_model: AgentRunInstanceTranscriptResult
-  mutation_class: read
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_transcript with the session id from --session
+    and the positional run and instance ids.
   edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on koyal with a chat session that has a run.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run instance transcript RUN_ID INSTANCE_ID --help
-  agent_example: 'mammoth agent run instance transcript resource-123 resource-123'
-  unit_tests:
-  - UT-AGENT-RUN-INSTANCE-TRANSCRIPT
   contract_tests:
   - CT-AGENT-RUN-INSTANCE-TRANSCRIPT
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. The model messages of one agent of the run, credentials redacted. Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
+  known_restrictions: Read-only. The model messages of one agent of the run, credentials redacted. Needs
+    --session SESSION_ID; an embedded chat supplies it.
 - command_id: agent.run.retry
-  command_path: agent run retry
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RetryAgentRun
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_retry
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_retry with the session id from --session and the positional run id.
-  request_model: AgentRunRetryRequest
-  result_model: AgentRunRetryResult
-  mutation_class: benign_mutation
-  edits_target: true
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_retry with the session id from --session and the
+    positional run id.
   confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write that starts paid model work; contract coverage only, no live run on koyal.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run retry RUN_ID --help
   agent_example: mammoth agent run retry resource-123 --yes
-  unit_tests:
-  - UT-AGENT-RUN-RETRY
-  contract_tests:
-  - CT-AGENT-RUN-RETRY-HUMAN
-  - CT-AGENT-RUN-RETRY-JSON
-  - CT-AGENT-RUN-RETRY-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Writes. Retries a failed or stopped run as a new run, which starts paid model work. Session owner only. Prompt or --yes. Needs --session SESSION_ID; an embedded chat is refused.
-  reviewed_by: primary
+  known_restrictions: Writes. Retries a failed or stopped run as a new run, which starts paid model work.
+    Session owner only. Prompt or --yes. Needs --session SESSION_ID; an embedded chat is refused.
   readback:
     command: agent.run.status
     ids: {}
     kind: object
 - command_id: agent.run.units.list
-  command_path: agent run units list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentRunUnits
-  positionals:
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run (from agent run status or agent run list).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.run_units_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_list with the session id from --session, the positional run id and the optional step, state and cursor from --input.
-  request_model: AgentRunUnitsListRequest
-  result_model: AgentRunUnitsListResult
-  mutation_class: read
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_list with the session id from --session,
+    the positional run id and the optional step, state and cursor from --input.
   edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Live coverage runs on koyal with a chat session that has a run with units.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent run units list RUN_ID --help
-  agent_example: 'mammoth agent run units list resource-123'
-  unit_tests:
-  - UT-AGENT-RUN-UNITS-LIST
   contract_tests:
   - CT-AGENT-RUN-UNITS-LIST
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. One page of the units the run's steps do, optionally only one step (step), one state (queued, running, done, failed or skipped) or from an offset (cursor). Needs --session SESSION_ID; an embedded chat supplies it.
-  reviewed_by: primary
+  known_restrictions: Read-only. One page of the units the run's steps do, optionally only one step (step),
+    one state (queued, running, done, failed or skipped) or from an offset (cursor). Needs --session SESSION_ID;
+    an embedded chat supplies it.
 - command_id: agent.session.delete
-  command_path: agent session delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteAgentSession
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_delete with validated request fields.
-  request_model: AgentSessionDeleteRequest
-  result_model: AgentSessionDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-SESSION-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent session delete SESSION_ID --help
-  agent_example: mammoth agent session delete resource-123 --yes
-  unit_tests:
-  - UT-AGENT-SESSION-DELETE
-  contract_tests:
-  - CT-AGENT-SESSION-DELETE-HUMAN
-  - CT-AGENT-SESSION-DELETE-JSON
-  - CT-AGENT-SESSION-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: agent.session.list
     ids: {}
     kind: object
 - command_id: agent.session.list
-  command_path: agent session list
   output_schema: openapi
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentSessions
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.session_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_list with validated request fields.
-  request_model: AgentSessionListRequest
-  result_model: AgentSessionListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-SESSION-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent session list --help
-  agent_example: mammoth agent session list
-  unit_tests:
-  - UT-AGENT-SESSION-LIST
-  contract_tests:
-  - CT-AGENT-SESSION-LIST-HUMAN
-  - CT-AGENT-SESSION-LIST-JSON
-  - CT-AGENT-SESSION-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: agent.session.messages
-  command_path: agent session messages
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentSessionMessages
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.session_messages
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_messages with validated request fields.
-  request_model: AgentSessionMessagesRequest
-  result_model: AgentSessionMessagesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-SESSION-MESSAGES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent session messages SESSION_ID --help
-  agent_example: mammoth agent session messages resource-123
-  unit_tests:
-  - UT-AGENT-SESSION-MESSAGES
-  contract_tests:
-  - CT-AGENT-SESSION-MESSAGES-HUMAN
-  - CT-AGENT-SESSION-MESSAGES-JSON
-  - CT-AGENT-SESSION-MESSAGES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: agent.session.set-visibility
-  command_path: agent session set-visibility
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SetAgentSessionVisibility
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.session_set_visibility
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_set_visibility with validated request fields.
-  request_model: AgentSessionSetVisibilityRequest
-  result_model: AgentSessionSetVisibilityResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-SESSION-SET-VISIBILITY
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent session set-visibility SESSION_ID --help
-  agent_example: 'mammoth agent session set-visibility resource-123 --input ''{"visibility": "shared"}'''
-  unit_tests:
-  - UT-AGENT-SESSION-SET-VISIBILITY
-  contract_tests:
-  - CT-AGENT-SESSION-SET-VISIBILITY-HUMAN
-  - CT-AGENT-SESSION-SET-VISIBILITY-JSON
-  - CT-AGENT-SESSION-SET-VISIBILITY-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: agent.session.list
     ids: {}
     kind: object
 - command_id: agent.turn.cancel
-  command_path: agent turn cancel
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CancelAgentTurn
-  positionals:
-  - name: turn_id
-    type: str
-    required: true
-    metavar: TURN_ID
-    falls_back_to_field: null
-    help: ID of the turn to stop (from the chat's events or agent session messages).
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_cancel
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.turn_cancel with validated request fields.
-  request_model: AgentTurnCancelRequest
-  result_model: AgentTurnCancelResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: agent.session.messages
@@ -1047,777 +288,91 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent turn cancel TURN_ID --help
-  agent_example: 'mammoth agent turn cancel resource-123'
-  unit_tests:
-  - UT-AGENT-TURN-CANCEL
-  contract_tests:
-  - CT-AGENT-TURN-CANCEL-HUMAN
-  - CT-AGENT-TURN-CANCEL-JSON
-  - CT-AGENT-TURN-CANCEL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Writes. Stops one turn of the chat session: no further model or tool call starts, the call running is cut, and the turn ends with a stopped event that lists the writes already made. Only the session''s owner may; a repeat, or a call after the turn ended, answers the turn''s state (stopping, stopped or ended). Needs --session SESSION_ID; an embedded chat supplies it.'
-  reviewed_by: primary
+  known_restrictions: 'Writes. Stops one turn of the chat session: no further model or tool call starts,
+    the call running is cut, and the turn ends with a stopped event that lists the writes already made.
+    Only the session''s owner may; a repeat, or a call after the turn ended, answers the turn''s state
+    (stopping, stopped or ended). Needs --session SESSION_ID; an embedded chat supplies it.'
 - command_id: agent.access.askers
-  command_path: agent access askers
   output_schema: openapi
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentProjectAskers
-  positionals:
-  - name: project_id
-    type: int
-    required: true
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project whose askers to list.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_project_askers
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_project_askers with validated request fields.
-  request_model: AgentAccessAskersRequest
-  result_model: AgentAccessAskersResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-ASKERS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access askers PROJECT_ID --help
-  agent_example: mammoth agent access askers 123
-  unit_tests:
-  - UT-AGENT-ACCESS-ASKERS
-  contract_tests:
-  - CT-AGENT-ACCESS-ASKERS-HUMAN
-  - CT-AGENT-ACCESS-ASKERS-JSON
-  - CT-AGENT-ACCESS-ASKERS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Needs a manager of the workspace's AI Agent settings, or someone who manages the project's people. Returns a count.
-  reviewed_by: primary
+  known_restrictions: Needs a manager of the workspace's AI Agent settings, or someone who manages the
+    project's people. Returns a count.
 - command_id: agent.access.chart.save
-  command_path: agent access chart save
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SaveAgentChart
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  - name: turn_id
-    type: str
-    required: true
-    metavar: TURN_ID
-    falls_back_to_field: null
-    help: ID of the turn.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_chart_save
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_chart_save with validated request fields.
-  request_model: AgentAccessChartSaveRequest
-  result_model: AgentAccessChartSaveResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-CHART-SAVE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access chart save SESSION_ID TURN_ID --help
-  agent_example: mammoth agent access chart save resource-123 resource-123
-  unit_tests:
-  - UT-AGENT-ACCESS-CHART-SAVE
-  contract_tests:
-  - CT-AGENT-ACCESS-CHART-SAVE-HUMAN
-  - CT-AGENT-ACCESS-CHART-SAVE-JSON
-  - CT-AGENT-ACCESS-CHART-SAVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   no_readback: returns the dashboard id the chart was saved to; that dashboard is the new state
 - command_id: agent.access.grant.give
-  command_path: agent access grant give
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GiveAgentAccess
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_give
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_give with validated request fields.
-  request_model: AgentAccessGrantGiveRequest
-  result_model: AgentAccessGrantGiveResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access grant give --help
-  agent_example: 'mammoth agent access grant give --input ''{"emails": ["analyst@example.com"], "level":
-    "ask", "items": [{"project_id": 1}]}'' --yes'
-  unit_tests:
-  - UT-AGENT-ACCESS-GRANT-GIVE
-  contract_tests:
-  - CT-AGENT-ACCESS-GRANT-GIVE-HUMAN
-  - CT-AGENT-ACCESS-GRANT-GIVE-JSON
-  - CT-AGENT-ACCESS-GRANT-GIVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Only a manager of the workspace's AI Agent settings can give access. People outside the workspace are invited as free guests. Needs --yes. Read `agent access grant list` afterwards.
-  reviewed_by: primary
+  known_restrictions: Only a manager of the workspace's AI Agent settings can give access. People outside
+    the workspace are invited as free guests. Needs --yes. Read `agent access grant list` afterwards.
   readback:
     command: agent.access.grant.list
     ids: {}
     kind: object
 - command_id: agent.access.grant.list
-  command_path: agent access grant list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentGrants
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grants_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grants_list with validated request fields.
-  request_model: AgentAccessGrantListRequest
-  result_model: AgentAccessGrantListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-GRANT-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access grant list --help
-  agent_example: mammoth agent access grant list
-  unit_tests:
-  - UT-AGENT-ACCESS-GRANT-LIST
-  contract_tests:
-  - CT-AGENT-ACCESS-GRANT-LIST-HUMAN
-  - CT-AGENT-ACCESS-GRANT-LIST-JSON
-  - CT-AGENT-ACCESS-GRANT-LIST-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Only a manager of the workspace's AI Agent settings can list grants.
-  reviewed_by: primary
 - command_id: agent.access.grant.revoke
-  command_path: agent access grant revoke
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RevokeAgentAccess
-  positionals:
-  - name: grant_id
-    type: int
-    required: true
-    metavar: GRANT_ID
-    falls_back_to_field: null
-    help: ID of the grant.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_revoke
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_revoke with validated request fields.
-  request_model: AgentAccessGrantRevokeRequest
-  result_model: AgentAccessGrantRevokeResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-GRANT-REVOKE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access grant revoke GRANT_ID --help
-  agent_example: mammoth agent access grant revoke 123 --yes
-  unit_tests:
-  - UT-AGENT-ACCESS-GRANT-REVOKE
-  contract_tests:
-  - CT-AGENT-ACCESS-GRANT-REVOKE-HUMAN
-  - CT-AGENT-ACCESS-GRANT-REVOKE-JSON
-  - CT-AGENT-ACCESS-GRANT-REVOKE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Only a manager of the workspace's AI Agent settings can revoke. Removes the grant at once; the person loses the access. Prompts, or pass --yes.
-  reviewed_by: primary
+  known_restrictions: Only a manager of the workspace's AI Agent settings can revoke. Removes the grant
+    at once; the person loses the access. Prompts, or pass --yes.
   readback:
     command: agent.access.grant.list
     ids: {}
     kind: object
 - command_id: agent.access.grant.update
-  command_path: agent access grant update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ChangeAgentAccess
-  positionals:
-  - name: grant_id
-    type: int
-    required: true
-    metavar: GRANT_ID
-    falls_back_to_field: null
-    help: ID of the grant.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_update
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_grant_update with validated request fields.
-  request_model: AgentAccessGrantUpdateRequest
-  result_model: AgentAccessGrantUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-GRANT-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access grant update GRANT_ID --help
-  agent_example: mammoth agent access grant update 123
-  unit_tests:
-  - UT-AGENT-ACCESS-GRANT-UPDATE
-  contract_tests:
-  - CT-AGENT-ACCESS-GRANT-UPDATE-HUMAN
-  - CT-AGENT-ACCESS-GRANT-UPDATE-JSON
-  - CT-AGENT-ACCESS-GRANT-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Only a manager of the workspace's AI Agent settings can change a grant.
-  reviewed_by: primary
   readback:
     command: agent.access.grant.list
     ids: {}
     kind: object
 - command_id: agent.access.me
-  command_path: agent access me
   output_schema: openapi
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentAccessMe
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_me
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_me with validated request fields.
-  request_model: AgentAccessMeRequest
-  result_model: AgentAccessMeResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-ME
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access me --help
-  agent_example: mammoth agent access me
-  unit_tests:
-  - UT-AGENT-ACCESS-ME
-  contract_tests:
-  - CT-AGENT-ACCESS-ME-HUMAN
-  - CT-AGENT-ACCESS-ME-JSON
-  - CT-AGENT-ACCESS-ME-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: agent.access.people
-  command_path: agent access people
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentPeople
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_people
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_people with validated request fields.
-  request_model: AgentAccessPeopleRequest
-  result_model: AgentAccessPeopleResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-PEOPLE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access people --help
-  agent_example: mammoth agent access people
-  unit_tests:
-  - UT-AGENT-ACCESS-PEOPLE
-  contract_tests:
-  - CT-AGENT-ACCESS-PEOPLE-HUMAN
-  - CT-AGENT-ACCESS-PEOPLE-JSON
-  - CT-AGENT-ACCESS-PEOPLE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Only a manager of the workspace's AI Agent settings can list the people.
-  reviewed_by: primary
 - command_id: agent.access.reach
-  command_path: agent access reach
   output_schema: openapi
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentAccessReach
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_reach
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_reach with validated request fields.
-  request_model: AgentAccessReachRequest
-  result_model: AgentAccessReachResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-REACH
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access reach --help
-  agent_example: mammoth agent access reach
-  unit_tests:
-  - UT-AGENT-ACCESS-REACH
-  contract_tests:
-  - CT-AGENT-ACCESS-REACH-HUMAN
-  - CT-AGENT-ACCESS-REACH-JSON
-  - CT-AGENT-ACCESS-REACH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Anyone reads their own; another person's (user_id) is for managers of the AI Agent settings only.
-  reviewed_by: primary
+  known_restrictions: Anyone reads their own; another person's (user_id) is for managers of the AI Agent
+    settings only.
 - command_id: agent.access.request.add-to-context
-  command_path: agent access request add-to-context
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AddAgentRequestToProjectContext
-  positionals:
-  - name: request_id
-    type: int
-    required: true
-    metavar: REQUEST_ID
-    falls_back_to_field: null
-    help: ID of the request.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_add_to_context
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_add_to_context with validated request
-    fields.
-  request_model: AgentAccessRequestAddToContextRequest
-  result_model: AgentAccessRequestAddToContextResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access request add-to-context REQUEST_ID --help
-  agent_example: mammoth agent access request add-to-context 123
-  unit_tests:
-  - UT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT
-  contract_tests:
-  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-HUMAN
-  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-JSON
-  - CT-AGENT-ACCESS-REQUEST-ADD-TO-CONTEXT-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: agent.access.request.list
     ids: {}
     kind: object
 - command_id: agent.access.request.create
-  command_path: agent access request create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateAgentAccessRequest
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_create
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_create with validated request fields.
-  request_model: AgentAccessRequestCreateRequest
-  result_model: AgentAccessRequestCreateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-REQUEST-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access request create --help
-  agent_example: 'mammoth agent access request create --input ''{"kind": "access", "text": "Please share
-    the Sales project"}'''
-  unit_tests:
-  - UT-AGENT-ACCESS-REQUEST-CREATE
-  contract_tests:
-  - CT-AGENT-ACCESS-REQUEST-CREATE-HUMAN
-  - CT-AGENT-ACCESS-REQUEST-CREATE-JSON
-  - CT-AGENT-ACCESS-REQUEST-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: agent.access.request.list
     ids: {}
     kind: object
 - command_id: agent.access.request.list
-  command_path: agent access request list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentAccessRequests
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_requests_list with validated request fields.
-  request_model: AgentAccessRequestListRequest
-  result_model: AgentAccessRequestListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-REQUEST-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access request list --help
-  agent_example: mammoth agent access request list
-  unit_tests:
-  - UT-AGENT-ACCESS-REQUEST-LIST
-  contract_tests:
-  - CT-AGENT-ACCESS-REQUEST-LIST-HUMAN
-  - CT-AGENT-ACCESS-REQUEST-LIST-JSON
-  - CT-AGENT-ACCESS-REQUEST-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Only a manager of the workspace's AI Agent settings can list everyone's requests; `agent access request mine` lists your own.
-  reviewed_by: primary
+  known_restrictions: Only a manager of the workspace's AI Agent settings can list everyone's requests;
+    `agent access request mine` lists your own.
 - command_id: agent.access.request.mine
-  command_path: agent access request mine
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListMyAgentAccessRequests
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_requests_mine
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_requests_mine with validated request fields.
-  request_model: AgentAccessRequestMineRequest
-  result_model: AgentAccessRequestMineResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-REQUEST-MINE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access request mine SESSION_ID --help
-  agent_example: mammoth agent access request mine resource-123
-  unit_tests:
-  - UT-AGENT-ACCESS-REQUEST-MINE
-  contract_tests:
-  - CT-AGENT-ACCESS-REQUEST-MINE-HUMAN
-  - CT-AGENT-ACCESS-REQUEST-MINE-JSON
-  - CT-AGENT-ACCESS-REQUEST-MINE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: agent.access.request.resolve
-  command_path: agent access request resolve
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ResolveAgentAccessRequest
-  positionals:
-  - name: request_id
-    type: int
-    required: true
-    metavar: REQUEST_ID
-    falls_back_to_field: null
-    help: ID of the request.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_request_resolve
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_request_resolve with validated request fields.
-  request_model: AgentAccessRequestResolveRequest
-  result_model: AgentAccessRequestResolveResult
   mutation_class: destructive
-  edits_target: true
   confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-ACCESS-REQUEST-RESOLVE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access request resolve REQUEST_ID --help
   agent_example: 'mammoth agent access request resolve 123 --input ''{"status": "done"}'' --yes'
-  unit_tests:
-  - UT-AGENT-ACCESS-REQUEST-RESOLVE
-  contract_tests:
-  - CT-AGENT-ACCESS-REQUEST-RESOLVE-HUMAN
-  - CT-AGENT-ACCESS-REQUEST-RESOLVE-JSON
-  - CT-AGENT-ACCESS-REQUEST-RESOLVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Irreversible: a resolved request cannot be reopened, and the requester is told. status is done, declined or dismissed (''open'' is refused). Prompts, or pass --yes.'
-  reviewed_by: primary
+  known_restrictions: 'Irreversible: a resolved request cannot be reopened, and the requester is told.
+    status is done, declined or dismissed (''open'' is refused). Prompts, or pass --yes.'
   readback:
     command: agent.access.request.list
     ids: {}
     kind: object
 - command_id: agent.access.settings.get
-  command_path: agent access settings get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentSettings
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_get
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_settings_get with validated request fields.
-  request_model: AgentAccessSettingsGetRequest
-  result_model: AgentAccessSettingsGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-SETTINGS-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access settings get --help
-  agent_example: mammoth agent access settings get
-  unit_tests:
-  - UT-AGENT-ACCESS-SETTINGS-GET
-  contract_tests:
-  - CT-AGENT-ACCESS-SETTINGS-GET-HUMAN
-  - CT-AGENT-ACCESS-SETTINGS-GET-JSON
-  - CT-AGENT-ACCESS-SETTINGS-GET-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Only a manager of the workspace's AI Agent settings can read them.
-  reviewed_by: primary
 - command_id: agent.access.settings.update
-  command_path: agent access settings update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateAgentSettings
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_settings_update
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_settings_update with validated request fields.
-  request_model: AgentAccessSettingsUpdateRequest
-  result_model: AgentAccessSettingsUpdateResult
   mutation_class: high_impact
-  edits_target: true
   confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
   live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access settings update --help
   agent_example: 'mammoth agent access settings update --input ''{"enabled": true}'' --yes --confirm 123'
-  unit_tests:
-  - UT-AGENT-ACCESS-SETTINGS-UPDATE
-  contract_tests:
-  - CT-AGENT-ACCESS-SETTINGS-UPDATE-HUMAN
-  - CT-AGENT-ACCESS-SETTINGS-UPDATE-JSON
-  - CT-AGENT-ACCESS-SETTINGS-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Only a manager of the workspace's AI Agent settings can change them. Changes the AI agent for the whole workspace, not one project; only the fields given change. Needs --yes and --confirm WORKSPACE_ID (the refusal prints the exact target). --dry-run reads the current settings and shows each field going from its current to its new value.
-  reviewed_by: primary
+  known_restrictions: Only a manager of the workspace's AI Agent settings can change them. Changes the
+    AI agent for the whole workspace, not one project; only the fields given change. Needs --yes and --confirm
+    WORKSPACE_ID (the refusal prints the exact target). --dry-run reads the current settings and shows
+    each field going from its current to its new value.
   readback:
     command: agent.access.settings.get
     ids: {}
     kind: object
 - command_id: agent.access.tree
-  command_path: agent access tree
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAgentAccessTree
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.access_tree
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.access_tree with validated request fields.
-  request_model: AgentAccessTreeRequest
-  result_model: AgentAccessTreeResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-ACCESS-TREE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent access tree --help
-  agent_example: mammoth agent access tree
-  unit_tests:
-  - UT-AGENT-ACCESS-TREE
-  contract_tests:
-  - CT-AGENT-ACCESS-TREE-HUMAN
-  - CT-AGENT-ACCESS-TREE-JSON
-  - CT-AGENT-ACCESS-TREE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Only a manager of the workspace's AI Agent settings can read the tree.
-  reviewed_by: primary
 - command_id: agent.session.feedback.list
-  command_path: agent session feedback list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAgentTurnFeedback
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_feedback_list
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.turn_feedback_list with validated request fields.
-  request_model: AgentSessionFeedbackListRequest
-  result_model: AgentSessionFeedbackListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AGENT-SESSION-FEEDBACK-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent session feedback list SESSION_ID --help
-  agent_example: mammoth agent session feedback list resource-123
-  unit_tests:
-  - UT-AGENT-SESSION-FEEDBACK-LIST
-  contract_tests:
-  - CT-AGENT-SESSION-FEEDBACK-LIST-HUMAN
-  - CT-AGENT-SESSION-FEEDBACK-LIST-JSON
-  - CT-AGENT-SESSION-FEEDBACK-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: agent.turn.rate
-  command_path: agent turn rate
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RateAgentTurn
-  positionals:
-  - name: session_id
-    type: str
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  - name: turn_id
-    type: str
-    required: true
-    metavar: TURN_ID
-    falls_back_to_field: null
-    help: ID of the turn.
-  options: []
-  sdk_symbol: mammoth.api.agents.AgentsAPI.turn_rate
-  sdk_conversion: Call mammoth.api.agents.AgentsAPI.turn_rate with validated request fields.
-  request_model: AgentTurnRateRequest
-  result_model: AgentTurnRateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AGENT-TURN-RATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth agent turn rate SESSION_ID TURN_ID --help
-  agent_example: 'mammoth agent turn rate resource-123 resource-123 --input ''{"rating": "up"}'''
-  unit_tests:
-  - UT-AGENT-TURN-RATE
-  contract_tests:
-  - CT-AGENT-TURN-RATE-HUMAN
-  - CT-AGENT-TURN-RATE-JSON
-  - CT-AGENT-TURN-RATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: agent.session.feedback.list
     ids:

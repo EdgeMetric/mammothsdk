@@ -255,10 +255,21 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    dev server: a pipeline edit, an upload and a trash, each undone, and the undo of an undo.
    `view version apply` now waits for its job: without that, an undo returned before the view
    showed the restored steps.
-7. **Idempotency:** send `Idempotency-Key: <inv>` on writes once the backend honours it (backend
-   issue to open).
+7. **Idempotency** (done in the CLI): writes send `Idempotency-Key: <inv>`, and a retry resends
+   the same key only where the server honours it; elsewhere the CLI reconciles before it retries.
+   The backend middleware is mvc-service PR #7156, checked on a dev server.
 8. **Delete the old path:** `executor.run`'s inline steps and the `STREAMED_META` and
    `EXIT_STATUS_META` meta keys.
+9. **Module size** (#312, started): `commands/view_ops.py` (2,775 lines) is now a package: the
+   shared write path in `__init__`, and `crud`, `draft`, `transforms` and `batch` for the
+   handlers. The `schema find` purpose tables moved to `discovery/purposes.py`. Still over 1,500
+   lines: `app.py`, `dataset.py`, `dashboard.py`, `services/positionals.py` and `schema.py`.
+10. **Generated manifests** (#313, done for records): `scripts/build_manifests.py` writes a
+    record for every operation-backed or SDK-catalog command to
+    `spec/manifests/commands.generated.yaml`. `commands/<group>.yaml` keeps only the fields that
+    differ (and `unset`), or the full record of a command the generator doesn't make (38 of
+    851). The loader merges the two, so the compiled records are unchanged; the hand-written YAML
+    went from 37,720 lines to 6,711. Not done: generated thin handlers.
 
 ## Consequences
 
