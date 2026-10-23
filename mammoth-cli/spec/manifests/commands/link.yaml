@@ -35,6 +35,6 @@ commands:
   - CT-LINK-S1-LOCAL
   draft_test: null
   undo_test: null
-  known_restrictions: Folder and selected ids in a link are web app resource ids, not
-    dataset or view ids; only /datasets/ID and /views/ID links carry those directly.
+  known_restrictions: Folder and selected ids in a link are web app resource ids, not dataset or view
+    ids; only /datasets/ID and /views/ID links carry those directly.
   reviewed_by: primary

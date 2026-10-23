@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from mammoth import CopySpec, DateComponent, SplitColumnSpec, View
 
-from mammoth_cli.commands.view_ops import _batch_steps, _build_batch, _created_columns
+from mammoth_cli.commands.view_ops.batch import _batch_steps, _build_batch, _created_columns
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.sdk_service import add_columns_to_view
 

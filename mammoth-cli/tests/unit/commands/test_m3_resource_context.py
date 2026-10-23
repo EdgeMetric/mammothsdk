@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from mammoth_cli.commands import view_ops
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -32,7 +32,7 @@ def test_transform_input_dataset_id_reaches_view_service(
         {"dataset_id": 55, "expression": "Price * Qty", "new_column": "Total"},
     )
 
-    view_ops.view_transform_math(
+    view_transforms.view_transform_math(
         Invocation(
             command_id="view.transform.math",
             extra_args=["1039"],
@@ -55,7 +55,7 @@ def test_typed_resource_reference_reaches_view_service(
     input_file = _write(
         tmp_path / "request.json", {"expression": "Price * Qty", "new_column": "Total"}
     )
-    view_ops.view_transform_math(
+    view_transforms.view_transform_math(
         Invocation(
             command_id="view.transform.math",
             extra_args=["1039"],

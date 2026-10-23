@@ -16,6 +16,9 @@ from typing import Any
 SPEC_ROOT = Path(__file__).resolve().parent.parent.parent / "spec"
 MANIFEST_DIR = SPEC_ROOT / "manifests"
 COMMANDS_DIR = MANIFEST_DIR / "commands"
+GENERATED_COMMANDS_PATH = MANIFEST_DIR / "commands.generated.yaml"
+#: The override key that drops generated fields from a command record.
+UNSET_KEY = "unset"
 SCHEMA_PATH = MANIFEST_DIR / "schema-v1.json"
 OPENAPI_OPERATIONS_PATH = MANIFEST_DIR / "openapi-operations.yaml"
 SDK_METHODS_PATH = MANIFEST_DIR / "sdk-methods.yaml"
@@ -97,13 +100,55 @@ def _server_statuses() -> dict[str, str]:
     return {cid: str(item["server_status"]) for cid, item in data.get("commands", {}).items()}
 
 
-def _parse_yaml_commands() -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
+def merge_command_record(
+    generated: dict[str, Any] | None, written: dict[str, Any]
+) -> dict[str, Any]:
+    """One command record: the generated record with a hand-written one laid over it.
+
+    A hand-written record for a command the generator also makes holds only the fields
+    that differ, plus ``unset``: the generated fields it drops. A command the generator
+    does not make is hand-written in full.
+
+    Args:
+        generated: The record ``scripts/build_manifests.py`` made, or None.
+        written: The record in ``commands/<group>.yaml``.
+
+    Returns:
+        The full command record.
+    """
+    if generated is None:
+        return dict(written)
+    unset = set(written.get(UNSET_KEY, ()))
+    merged = {key: value for key, value in generated.items() if key not in unset}
+    merged.update((key, value) for key, value in written.items() if key != UNSET_KEY)
+    return merged
+
+
+def command_records() -> list[dict[str, Any]]:
+    """Every command record parsed from the YAML: generated and hand-written, merged.
+
+    Build scripts and manifest tests read this; the CLI reads the compiled JSON.
+
+    Returns:
+        The full records without the derived ``server_status``: the hand-written ones in
+        file order, then the generated ones no file overrides, by command id.
+    """
+    data = _read_yaml(GENERATED_COMMANDS_PATH)
+    generated = {record["command_id"]: record for record in (data or {}).get("commands", [])}
+    written: dict[str, dict[str, Any]] = {}
     for path in sorted(COMMANDS_DIR.glob("*.yaml")):
         data = _read_yaml(path)
         if data:
-            records.extend(data.get("commands", []))
-    records.sort(key=lambda record: record["command_id"])
+            written.update((record["command_id"], record) for record in data.get("commands", []))
+    order = [*written, *sorted(set(generated) - set(written))]
+    return [
+        merge_command_record(generated.get(command_id), written.get(command_id, {}))
+        for command_id in order
+    ]
+
+
+def _parse_yaml_commands() -> list[dict[str, Any]]:
+    records = sorted(command_records(), key=lambda record: record["command_id"])
     statuses = _server_statuses()
     for record in records:
         # ``served`` is the default and is not stored, so a regenerated manifest only

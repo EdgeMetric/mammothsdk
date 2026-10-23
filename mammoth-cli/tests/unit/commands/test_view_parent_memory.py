@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import view as view_cmd
-from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.invocation import Invocation
@@ -32,7 +32,7 @@ def test_transform_without_a_known_parent_still_fails_closed(
     doc = tmp_path / "in.json"
     doc.write_text('{"name": "Col"}', encoding="utf-8")
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_add_column(
+        view_transforms.view_transform_add_column(
             _inv("view.transform.add-column", extra_args=["45"], input_file=str(doc))
         )
     assert excinfo.value.code == "missing_argument"
@@ -51,7 +51,7 @@ def test_view_list_teaches_the_parent_to_later_transforms(
 
     doc = tmp_path / "in.json"
     doc.write_text('{"name": "Col"}', encoding="utf-8")
-    view_ops_cmd.view_transform_add_column(
+    view_transforms.view_transform_add_column(
         _inv("view.transform.add-column", extra_args=["45"], input_file=str(doc))
     )
     assert fake_service.view_call_log == [(45, "add_column", {"dataset_id": 122, "name": "Col"})]
@@ -61,7 +61,7 @@ def test_explicit_parent_wins_over_memory(fake_service: FakeMammothService, tmp_
     parents.remember("default", 4, {45: 122})
     doc = tmp_path / "in.json"
     doc.write_text('{"name": "Col", "dataset_id": 130}', encoding="utf-8")
-    view_ops_cmd.view_transform_add_column(
+    view_transforms.view_transform_add_column(
         _inv("view.transform.add-column", extra_args=["45"], input_file=str(doc))
     )
     assert fake_service.view_call_log[-1][2]["dataset_id"] == 130

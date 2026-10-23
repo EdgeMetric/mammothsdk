@@ -1,563 +1,72 @@
 manifest_schema_version: 1
 commands:
 - command_id: automation.capabilities
-  command_path: automation capabilities
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAutomationCapabilities
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.capabilities
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.capabilities with validated request fields.
-  request_model: AutomationCapabilitiesRequest
-  result_model: AutomationCapabilitiesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
+  output_schema: openapi
   live_test: null
-  live_exemption_reason: Live coverage is tests/live/test_automation_capabilities.py (runs on the test server).
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation capabilities --help
-  agent_example: mammoth automation capabilities
-  unit_tests:
-  - UT-AUTOMATION-CAPABILITIES
-  contract_tests:
-  - CT-AUTOMATION-CAPABILITIES-HUMAN
-  - CT-AUTOMATION-CAPABILITIES-JSON
-  - CT-AUTOMATION-CAPABILITIES-ERROR
-  draft_test: null
-  undo_test: null
+  live_exemption_reason: Live coverage is tests/live/test_automation_capabilities.py (runs on the test
+    server).
   known_restrictions: 'Read-only. Lists everything an automation supports, straight from the server: tasks
     (each with task_type, summary, required_fields, optional_fields, options = accepted values per field,
     formats_in and formats_out = file formats it reads or writes) and conditions (the triggers: condition_type,
     summary, fields, options). Answer "can an automation do X?" (a PDF, an email attachment, a schedule)
     from this, never from memory. Then create with `automation create`.'
-  reviewed_by: primary
 - command_id: automation.create
-  command_path: automation create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateAutomation
-  positionals:
-  - name: name
-    type: str
-    required: false
-    metavar: NAME
-    falls_back_to_field: name
-    help: Name of the new automation; or pass it via the 'name' input field.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.create
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.create with validated request fields.
-  request_model: AutomationCreateRequest
-  result_model: AutomationCreateResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}'' --yes'
-  unit_tests:
-  - UT-AUTOMATION-CREATE
-  contract_tests:
-  - CT-AUTOMATION-CREATE-HUMAN
-  - CT-AUTOMATION-CREATE-JSON
-  - CT-AUTOMATION-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: run `automation capabilities` first: it lists every
-    task, trigger, option and file format in and out (PDF included). Task models can pull cloud files and send email;
-    requires connector/email allowlists and dedicated fixtures. Delete old rows on a schedule with
-    task apply_retention_policy (datasource_id, rule_type time_based, count_based or
+  known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: run `automation capabilities` first: it lists
+    every task, trigger, option and file format in and out (PDF included). Task models can pull cloud
+    files and send email; requires connector/email allowlists and dedicated fixtures. Delete old rows
+    on a schedule with task apply_retention_policy (datasource_id, rule_type time_based, count_based or
     condition_based). The CLI sets require_approval=true on a retention task that omits it (the route
     defaults to false, an unattended hard delete); require_approval=false with the delete action needs
-    --yes --confirm unattended-delete. An emailed file is task send_an_alert with attachments.dataview_ids: each
-    selected view is emailed as a CSV file. The combined row count of all attached views must stay
+    --yes --confirm unattended-delete. An emailed file is task send_an_alert with attachments.dataview_ids:
+    each selected view is emailed as a CSV file. The combined row count of all attached views must stay
     within 100,000 -- over that, the automation is refused (and a run that grows past it fails).'
-  reviewed_by: primary
   readback:
     command: automation.get
     ids:
       automation_id: result.id
     kind: object
 - command_id: automation.delete
-  command_path: automation delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteAutomation
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.delete
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.delete with validated request fields.
-  request_model: AutomationDeleteRequest
-  result_model: AutomationDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AUTOMATION-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation delete AUTOMATION_ID --help
-  agent_example: mammoth automation delete 123 --yes
-  unit_tests:
-  - UT-AUTOMATION-DELETE
-  contract_tests:
-  - CT-AUTOMATION-DELETE-HUMAN
-  - CT-AUTOMATION-DELETE-JSON
-  - CT-AUTOMATION-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Immutable ID confirmation.
-  reviewed_by: primary
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.get
-  command_path: automation get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAutomation
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.get
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.get with validated request fields.
-  request_model: AutomationGetRequest
-  result_model: AutomationGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AUTOMATION-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation get AUTOMATION_ID --help
-  agent_example: mammoth automation get 123
-  unit_tests:
-  - UT-AUTOMATION-GET
-  contract_tests:
-  - CT-AUTOMATION-GET-HUMAN
-  - CT-AUTOMATION-GET-JSON
-  - CT-AUTOMATION-GET-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Some servers answer this with HTTP 500 and an empty body for an automation that
-    automation create just returned. The automation exists; this is a server error, so do not retry
-    more than once.
-  reviewed_by: primary
+    automation create just returned. The automation exists; this is a server error, so do not retry more
+    than once.
 - command_id: automation.list
-  command_path: automation list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetList
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.list
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.list with validated request fields.
-  request_model: AutomationListRequest
-  result_model: AutomationListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-AUTOMATION-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation list --help
-  agent_example: mammoth automation list
-  unit_tests:
-  - UT-AUTOMATION-LIST
-  contract_tests:
-  - CT-AUTOMATION-LIST-HUMAN
-  - CT-AUTOMATION-LIST-JSON
-  - CT-AUTOMATION-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: automation.restore
-  command_path: automation restore
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RestoreAutomation
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.restore
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.restore with validated request fields.
-  request_model: AutomationRestoreRequest
-  result_model: AutomationRestoreResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AUTOMATION-RESTORE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation restore AUTOMATION_ID --help
-  agent_example: mammoth automation restore 123
-  unit_tests:
-  - UT-AUTOMATION-RESTORE
-  contract_tests:
-  - CT-AUTOMATION-RESTORE-HUMAN
-  - CT-AUTOMATION-RESTORE-JSON
-  - CT-AUTOMATION-RESTORE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.trash
-  command_path: automation trash
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - TrashAutomation
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.trash
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.trash with validated request fields.
-  request_model: AutomationTrashRequest
-  result_model: AutomationTrashResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AUTOMATION-TRASH
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation trash AUTOMATION_ID --help
-  agent_example: mammoth automation trash 123
-  unit_tests:
-  - UT-AUTOMATION-TRASH
-  contract_tests:
-  - CT-AUTOMATION-TRASH-HUMAN
-  - CT-AUTOMATION-TRASH-JSON
-  - CT-AUTOMATION-TRASH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.update
-  command_path: automation update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateAutomation
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.update
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.update with validated request fields.
-  request_model: AutomationUpdateRequest
-  result_model: AutomationUpdateResult
-  mutation_class: external_effect
-  edits_target: true
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation update AUTOMATION_ID --help
-  agent_example: 'mammoth automation update 123 --input ''{"patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]}'' --yes'
-  unit_tests:
-  - UT-AUTOMATION-UPDATE
-  contract_tests:
-  - CT-AUTOMATION-UPDATE-HUMAN
-  - CT-AUTOMATION-UPDATE-JSON
-  - CT-AUTOMATION-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` + `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description, tasks, conditions). Paths are details, run, status, approve_retention, reject_retention.'
-  reviewed_by: primary
+  known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation
+    get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` +
+    `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description,
+    tasks, conditions). Paths are details, run, status, approve_retention, reject_retention.'
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.folders
-  command_path: automation folders
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetWatchedFolders
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.watched_folders
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.watched_folders with validated request fields.
-  request_model: AutomationFoldersRequest
-  result_model: AutomationFoldersResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AUTOMATION-FOLDERS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation folders --help
-  agent_example: mammoth automation folders
-  unit_tests:
-  - UT-AUTOMATION-FOLDERS
-  contract_tests:
-  - CT-AUTOMATION-FOLDERS-HUMAN
-  - CT-AUTOMATION-FOLDERS-JSON
-  - CT-AUTOMATION-FOLDERS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. Every folder a consolidation automation watches, its rules in order,
-    and the files on their way or waiting on a person.
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: automation.route.order
-  command_path: automation route order
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SetRouteOrder
-  positionals:
-  - name: folder_resource_id
-    type: int
-    required: true
-    metavar: FOLDER_RESOURCE_ID
-    falls_back_to_field: null
-    help: ID of the folder resource.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.set_route_order
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.set_route_order with validated request fields.
-  request_model: AutomationRouteOrderRequest
-  result_model: AutomationRouteOrderResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  readback:
-    command: automation.folders
   readback:
     command: automation.folders
     ids: {}
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AUTOMATION-ROUTE-ORDER
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation route order FOLDER_RESOURCE_ID --help
-  agent_example: 'mammoth automation route order 123 --input ''{"automation_ids": [12, 11]}'''
-  unit_tests:
-  - UT-AUTOMATION-ROUTE-ORDER
-  contract_tests:
-  - CT-AUTOMATION-ROUTE-ORDER-HUMAN
-  - CT-AUTOMATION-ROUTE-ORDER-JSON
-  - CT-AUTOMATION-ROUTE-ORDER-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: '`automation_ids` names the folder''s own rules, first rule first; files dropped
-    after the change meet them in that order.'
-  reviewed_by: primary
 - command_id: automation.route.preview
-  command_path: automation route preview
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PreviewRoutes
-  positionals:
-  - name: folder_resource_id
-    type: int
-    required: true
-    metavar: FOLDER_RESOURCE_ID
-    falls_back_to_field: null
-    help: ID of the folder resource.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.preview_routes
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.preview_routes with validated request fields.
-  request_model: AutomationRoutePreviewRequest
-  result_model: AutomationRoutePreviewResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AUTOMATION-ROUTE-PREVIEW
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation route preview FOLDER_RESOURCE_ID --help
-  agent_example: 'mammoth automation route preview 123 --input ''{"names": ["sales_2026-10.csv"]}'''
-  unit_tests:
-  - UT-AUTOMATION-ROUTE-PREVIEW
-  contract_tests:
-  - CT-AUTOMATION-ROUTE-PREVIEW-HUMAN
-  - CT-AUTOMATION-ROUTE-PREVIEW-JSON
-  - CT-AUTOMATION-ROUTE-PREVIEW-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. Lists the folder's rules (its own, then inherited) and where files of
-    the given `names` would go; a `draft` rule also says how many recent files it would take.
-  reviewed_by: primary
 - command_id: automation.run-file.add-anyway
-  command_path: automation run-file add-anyway
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AddRunFileAnyway
-  positionals:
-  - name: run_file_id
-    type: int
-    required: true
-    metavar: RUN_FILE_ID
-    falls_back_to_field: null
-    help: ID of the run file.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.add_run_file_anyway
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.add_run_file_anyway with validated request
-    fields.
-  request_model: AutomationRunFileAddAnywayRequest
-  result_model: AutomationRunFileAddAnywayResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  no_readback: the held file is added to its destination dataset by the automation's next run; `automation runs AUTOMATION_ID` shows that run
-  acceptance_evidence: live_disposable_project
-  live_test: LT-AUTOMATION-RUN-FILE-ADD-ANYWAY
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation run-file add-anyway RUN_FILE_ID --help
-  agent_example: mammoth automation run-file add-anyway 123 --yes
-  unit_tests:
-  - UT-AUTOMATION-RUN-FILE-ADD-ANYWAY
-  contract_tests:
-  - CT-AUTOMATION-RUN-FILE-ADD-ANYWAY-HUMAN
-  - CT-AUTOMATION-RUN-FILE-ADD-ANYWAY-JSON
-  - CT-AUTOMATION-RUN-FILE-ADD-ANYWAY-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Appends a file a run skipped as a duplicate to its destination dataset; find the
-    run file id with `automation runs`.
-  reviewed_by: primary
+  no_readback: the held file is added to its destination dataset by the automation's next run; `automation
+    runs AUTOMATION_ID` shows that run
 - command_id: automation.runs
-  command_path: automation runs
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetAutomationRuns
-  positionals:
-  - name: automation_id
-    type: int
-    required: true
-    metavar: AUTOMATION_ID
-    falls_back_to_field: null
-    help: ID of the automation.
-  options: []
-  sdk_symbol: mammoth.api.automations.AutomationsAPI.runs
-  sdk_conversion: Call mammoth.api.automations.AutomationsAPI.runs with validated request fields.
-  request_model: AutomationRunsRequest
-  result_model: AutomationRunsResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-AUTOMATION-RUNS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth automation runs AUTOMATION_ID --help
-  agent_example: 'mammoth automation runs 123 --input ''{"limit": 10}'''
-  unit_tests:
-  - UT-AUTOMATION-RUNS
-  contract_tests:
-  - CT-AUTOMATION-RUNS-HUMAN
-  - CT-AUTOMATION-RUNS-JSON
-  - CT-AUTOMATION-RUNS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. Newest first, each run with its files; `limit` is capped at 50 by the
-    server.
-  reviewed_by: primary

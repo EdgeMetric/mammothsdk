@@ -12,9 +12,9 @@ import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.commands import file as file_cmd
-from mammoth_cli.commands import view_ops as view_ops_cmd
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.commands.schema import schema_entries
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_input_fields
@@ -135,7 +135,7 @@ def test_math_forwards_condition_and_distinct_optional_values(fake_service, tmp_
     oracle = MATH_CONDITION_ORACLE
     document = {**oracle["kwargs"], "dataset_id": 122}
     file = _write(tmp_path, document)
-    view_ops_cmd.view_transform_math(
+    view_transforms.view_transform_math(
         _inv("view.transform.math", extra_args=["41"], input_file=file)
     )
     assert fake_service.view_call_log == [(oracle["view_id"], oracle["method"], document)]
@@ -145,7 +145,7 @@ def test_foreign_lookup_forwards_new_column_type(fake_service, tmp_path: Path) -
     oracle = FOREIGN_LOOKUP_ORACLE
     document = {**oracle["kwargs"], "dataset_id": 122}
     file = _write(tmp_path, document)
-    view_ops_cmd.view_transform_lookup(
+    view_transforms.view_transform_lookup(
         _inv("view.transform.lookup", extra_args=["42"], input_file=file)
     )
     assert fake_service.view_call_log == [(oracle["view_id"], oracle["method"], document)]

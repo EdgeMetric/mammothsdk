@@ -11,7 +11,8 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.commands import view, view_ops
+from mammoth_cli.commands import view
+from mammoth_cli.commands.view_ops import draft as view_draft
 
 _OLD = {"row_count": 20, "data_updated_at": "2026-01-01T10:00:00"}
 _NEW = {"row_count": 18, "data_updated_at": "2026-01-01T10:00:03"}
@@ -40,9 +41,9 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_the_read_back_waits_for_the_refreshed_row_count() -> None:
     service = _Service([_OLD, _OLD, _OLD, _NEW])
-    before = view_ops._draft_before_submit(service, 4, 7, 1)
+    before = view_draft._draft_before_submit(service, 4, 7, 1)
 
-    data = view_ops._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
+    data = view_draft._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
 
     assert data["row_check"] == {"rows_before": 20, "rows_after": 18}
     assert "pipeline_error" not in data
@@ -50,9 +51,9 @@ def test_the_read_back_waits_for_the_refreshed_row_count() -> None:
 
 def test_data_that_never_refreshes_is_reported_as_unfinished() -> None:
     service = _Service([_OLD])
-    before = view_ops._draft_before_submit(service, 4, 7, 1)
+    before = view_draft._draft_before_submit(service, 4, 7, 1)
 
-    data = view_ops._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
+    data = view_draft._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
 
     assert data["row_check"] == {"rows_before": 20, "rows_after": None}
     assert data["pipeline_error"]["execution_state"] == view.UNFINISHED_STATE
@@ -60,9 +61,9 @@ def test_data_that_never_refreshes_is_reported_as_unfinished() -> None:
 
 def test_a_draft_with_nothing_pending_is_read_at_once() -> None:
     service = _Service([_OLD], draft={"has_pending_changes": False})
-    before = view_ops._draft_before_submit(service, 4, 7, 1)
+    before = view_draft._draft_before_submit(service, 4, 7, 1)
 
-    data = view_ops._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
+    data = view_draft._draft_submit_row_check(service, 4, 7, 1, before, {"draft_mode": "clean"})
 
     assert data["row_check"] == {"rows_before": 20, "rows_after": 20}
     assert service.view_reads == 2

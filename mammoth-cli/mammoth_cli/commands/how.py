@@ -12,12 +12,11 @@ recipe covers falls back to the ``schema find`` matches and says so.
 
 from __future__ import annotations
 
-import json
 import re
 from functools import cache
-from importlib import resources
 from typing import Any
 
+from mammoth_cli.discovery import load_recipes, run_command
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -61,13 +60,6 @@ _NOTHING_HINT = (
     "No recipe and no command matched this goal. Try other words, or run "
     "'mammoth schema list' for every command."
 )
-
-
-@cache
-def load_recipes() -> tuple[dict[str, Any], ...]:
-    """The recipes shipped in the package, in file order."""
-    text = resources.files("mammoth_cli.discovery").joinpath("recipes.json").read_text("utf-8")
-    return tuple(json.loads(text)["recipes"])
 
 
 @cache
@@ -173,6 +165,28 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
         ranked.append((matched / len(terms), phrase, literal, -order, recipe))
     ranked.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
     return [(literal, recipe) for _, _, literal, _, recipe in ranked]
+
+
+def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
+    """The executable recipes that fit ``goal``, best first, each with its run command.
+
+    Args:
+        goal: The caller's goal, in their words.
+        limit: The most recipes to return.
+
+    Returns:
+        Each recipe's id, title and ``run_command``.
+    """
+    return [
+        {
+            "id": recipe["id"],
+            "title": recipe["title"],
+            "run_command": run_command(recipe),
+            "full_detail_command": f"mammoth how \"{recipe['goals'][0]}\"",
+        }
+        for _, recipe in _rank(goal)
+        if recipe.get("run")
+    ][:limit]
 
 
 def _context(invocation: Invocation) -> dict[str, Any]:
@@ -284,7 +298,7 @@ def how(invocation: Invocation) -> HandlerResult:
             "hint": _NO_RECIPE_HINT if steps else _NOTHING_HINT,
         }, {}
     _, best = ranked[0]
-    return {
+    result = {
         "goal": goal,
         "matched": True,
         "recipe": {"id": best["id"], "title": best["title"], "doc": best["doc"]},
@@ -299,7 +313,12 @@ def how(invocation: Invocation) -> HandlerResult:
             }
             for _, recipe in ranked[1 : 1 + _MAX_ALTERNATIVES]
         ],
-    }, {}
+    }
+    if best.get("run"):
+        # The steps as one command: an agent runs it instead of chaining them by hand.
+        result["run_command"] = run_command(best)
+        result["inputs"] = best.get("inputs", {})
+    return result, {}
 
 
 #: Steps that set up the data a recipe works on; a composed recipe keeps the first of each.

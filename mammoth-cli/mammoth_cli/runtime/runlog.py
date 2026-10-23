@@ -152,8 +152,10 @@ class RunLog:
         profile: str | None = None,
         project_id: int | None = None,
         debug: bool = False,
+        run_id: str | None = None,
     ) -> RunLog:
-        run_id = uuid.uuid4().hex[:12]
+        # The invocation id the command's requests carry (runtime.trace), when it has one.
+        run_id = run_id or uuid.uuid4().hex[:12]
         path: Path | None = log_file_for(_dt.date.today())
         run = cls(run_id=run_id, command_id=command_id, path=path)
         run.open()

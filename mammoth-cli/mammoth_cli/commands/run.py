@@ -20,6 +20,20 @@ Line schema (an object; every key but ``cmd`` is optional)::
   that needs them: ``run`` has no global ``--yes``. ``output``, ``input``, ``input-format``,
   ``no-input``, ``no-progress`` and ``color`` are owned by ``run``.
 * ``id``: an optional string or number echoed back on that line's envelope.
+* ``name``: names the line, so a later line can use its result as
+  ``{{steps.<name>.data...}}`` in ``args``, ``input`` or ``flags`` (see
+  :mod:`mammoth_cli.runtime.bindings`). A whole-value reference keeps its type.
+* ``when``: a condition (``{"eq": [A, B]}``, ``{"in": ...}``, ``{"not": ...}``,
+  ``{"all": [...]}``, ``{"any": [...]}``, ``{"present": REF}`` or a bare reference); a line
+  whose condition is false is skipped with ``skipped: true``.
+* ``for_each``: a reference to a list; the line runs once per item, with ``{{item}}`` and
+  ``{{index}}`` in scope, and prints one envelope per item (with ``item``). Its step result
+  is ``{"data": [each item's data], "exit": ...}``.
+
+References read only from lines that ran before. A reference that does not resolve fails
+the line with ``unresolved_reference``; under ``--dry-run`` the line is planned instead
+(``data.planned``), since a preview makes no ids for later lines to use. No code runs: the
+expressions are JSON, so a line can do no more than its command does.
 
 Output is JSON Lines on stdout: one envelope per line, the envelope the single command
 prints plus ``line`` (the physical line number), ``cmd`` and ``exit``, then a final summary
@@ -45,13 +59,15 @@ from typing import Any
 from mammoth_cli.errors.envelope import (
     EXIT_API,
     EXIT_INTERRUPT,
+    EXIT_PARTIAL,
     EXIT_USAGE,
     CliError,
     cancelled_error,
 )
+from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.runtime import linecapture
-from mammoth_cli.runtime.executor import EXIT_STATUS_META, STREAMED_META
+from mammoth_cli.runtime import bindings, journal, linecapture
+from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.shared import forget_reads, remembering_auth
@@ -64,13 +80,17 @@ CODE_RUN_COMMAND_REFUSED = "run_command_refused"
 CODE_RUN_INPUT_EMPTY = "run_input_empty"
 CODE_RUN_TOO_LARGE = "run_input_too_large"
 CODE_RUN_FLAG_REFUSED = "run_global_flag_refused"
+CODE_UNRESOLVED_REFERENCE = "unresolved_reference"
 
 #: Largest JSON Lines file ``run`` reads, and the largest single line.
 MAX_RUN_BYTES = 16 * 1024 * 1024
 MAX_LINE_BYTES = MAX_INPUT_BYTES
 
-LINE_KEYS = ("cmd", "args", "input", "flags", "id")
+LINE_KEYS = ("cmd", "args", "input", "flags", "id", "name", "when", "for_each")
+#: The keys whose values may hold ``{{...}}`` references.
+BOUND_KEYS = ("args", "input", "flags")
 _WORD = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_STEP_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]{0,63}$")
 
 #: Commands a line may not run: ``run`` itself (no nesting), and the two that read secrets
 #: from stdin, which carries the lines.
@@ -175,7 +195,7 @@ def _flag_token(name: str, value: Any) -> str | None:
     return f"{flag}={value}"
 
 
-def _global_defaults(invocation: Invocation) -> dict[str, str]:
+def global_defaults(invocation: Invocation) -> dict[str, str]:
     """The flags given to ``run`` itself, which every line starts from (flag -> token)."""
     defaults: dict[str, str] = {}
     for flag, attribute in INHERITED_FLAGS:
@@ -240,6 +260,22 @@ def parse_line(
         CliError: ``invalid_run_line`` (usage) for anything wrong with the line itself;
             ``run_command_refused`` for a command ``run`` does not run.
     """
+    return build_spec(number, load_line(text), defaults, command_flags, resolve)
+
+
+def load_line(text: str) -> dict[str, Any]:
+    """Read one JSON line as an object with known keys only.
+
+    Args:
+        text: The line, without its newline.
+
+    Returns:
+        The line's object.
+
+    Raises:
+        CliError: ``invalid_run_line`` when the line is too large, not JSON, not an
+            object, or has a key ``run`` does not know.
+    """
     if len(text.encode("utf-8")) > MAX_LINE_BYTES:
         raise _line_error("the line is larger than 1 MiB.")
     try:
@@ -255,6 +291,31 @@ def parse_line(
             hint="Allowed keys: " + ", ".join(LINE_KEYS) + ".",
             unknown=unknown,
         )
+    return line
+
+
+def build_spec(
+    number: int,
+    line: dict[str, Any],
+    defaults: dict[str, str],
+    command_flags: Any,
+    resolve: Callable[[Sequence[str]], str] = resolve_command_id,
+) -> LineSpec:
+    """Build the argv one loaded line runs as, its references already filled in.
+
+    Args:
+        number: The line's physical number.
+        line: The loaded line (:func:`load_line`).
+        defaults: The flags given to ``run`` itself (flag -> token).
+        command_flags: Returns the flags a command id declares.
+        resolve: Walks command tokens to the command id they run.
+
+    Returns:
+        The line's argv and echoed fields.
+
+    Raises:
+        CliError: ``invalid_run_line`` or ``run_command_refused``.
+    """
     cmd = line.get("cmd")
     words = cmd.split() if isinstance(cmd, str) else []
     if not words or not all(_WORD.match(word) for word in words):
@@ -383,8 +444,12 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
     return exit_status, silent.to_envelope()
 
 
-def _write(envelope: dict[str, Any]) -> None:
-    """Write one envelope as one compact line on stdout and flush it."""
+def write_envelope(envelope: dict[str, Any]) -> None:
+    """Write one envelope as one compact line on stdout and flush it.
+
+    Args:
+        envelope: The envelope to write.
+    """
     sys.stdout.write(
         json.dumps(
             envelope,
@@ -451,7 +516,15 @@ def _refuse_global_confirmation(invocation: Invocation) -> None:
         )
 
 
-def _command_flags(command_id: str) -> frozenset[str]:
+def command_flags(command_id: str) -> frozenset[str]:
+    """The flags a command declares itself, which a line may list in ``args``.
+
+    Args:
+        command_id: The command id.
+
+    Returns:
+        The command's own flag spellings.
+    """
     from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
     return COMMAND_FLAGS.get(command_id, frozenset())
@@ -479,30 +552,73 @@ def run(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Write one JSON object per line, for example " + _SCHEMA_HINT,
         )
-    defaults = _global_defaults(invocation)
+    summary = run_lines(
+        numbered,
+        global_defaults(invocation),
+        keep_going=keep_going,
+        dry_run=invocation.dry_run,
+    )
+    run_exit = summary["exit"]
+    meta = Meta(command="run", profile=invocation.profile, exit=run_exit, run_id=run_id())
+    write_envelope(Result(data=summary, meta=meta).to_envelope())
+    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+
+
+def run_lines(
+    numbered: Sequence[tuple[int, str]],
+    defaults: dict[str, str],
+    *,
+    keep_going: bool,
+    dry_run: bool,
+    scope: dict[str, Any] | None = None,
+    past_partial: bool = False,
+    steps: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run numbered JSON Lines in order, writing each line's envelopes as it finishes.
+
+    Args:
+        numbered: Each line's physical number and text.
+        defaults: The flags every line starts from (see :func:`global_defaults`).
+        keep_going: Run every line even after one fails.
+        dry_run: Whether the run previews only.
+        scope: Values every line's references may read besides ``steps``, such as a
+            recipe's ``inputs``.
+        past_partial: Go on after a line that exits partial (it made what it reports,
+            with a warning), counting it in ``partial_lines`` instead of ``failed``.
+        steps: The named results of lines that already ran (``history resume``).
+
+    Returns:
+        The summary: line counts, where the run stopped, and its exit status.
+    """
     totals = Totals(total=len(numbered))
     run_exit = 0
+    steps = dict(steps or {})
+    partial: list[int] = []
+    if not dry_run:
+        # The plan and each finished line are journaled, so 'history resume' can go on
+        # from the first line that did not finish.
+        journal.record_plan(
+            numbered, defaults, scope=scope, keep_going=keep_going, past_partial=past_partial
+        )
+        if steps:
+            journal.record_step(0, 0, steps)
     with remembering_auth() as credentials:
         for position, (number, text) in enumerate(numbered):
-            line_id: str | int | float | None = None
-            cmd = ""
-            try:
-                spec = parse_line(number, text, defaults, _command_flags)
-                cmd, line_id = spec.cmd, spec.line_id
-                exit_status, envelope = execute_line(spec.argv, spec.cmd)
-                forget_reads()
-            except CliError as error:
-                cmd = cmd or _best_effort_cmd(text)
-                exit_status, envelope = error.exit_status, error.to_envelope()
-            else:
-                if spec.argv[0] in _CREDENTIAL_GROUPS:
-                    credentials.clear()
-            shown: dict[str, Any] = {"line": number, "cmd": cmd, "exit": exit_status}
-            if line_id is not None:
-                shown["id"] = line_id
-            _write({**shown, **envelope})
+            named_before = set(steps)
+            exit_status, ran_argv = _run_line(
+                number, text, defaults, steps, dry_run=dry_run, scope=scope
+            )
+            if not dry_run:
+                added = {name: steps[name] for name in steps.keys() - named_before}
+                journal.record_step(number, exit_status, added)
+            if ran_argv and ran_argv[0] in _CREDENTIAL_GROUPS:
+                credentials.clear()
             if exit_status == 0:
                 totals.ok += 1
+                continue
+            if past_partial and exit_status == EXIT_PARTIAL:
+                partial.append(number)
+                run_exit = run_exit or exit_status
                 continue
             totals.failed += 1
             totals.failures.append(number)
@@ -518,7 +634,7 @@ def run(invocation: Invocation) -> HandlerResult:
                 totals.stopped_at = number
                 totals.skipped = len(numbered) - position - 1
                 break
-    summary = {
+    summary: dict[str, Any] = {
         "lines": totals.total,
         "ok": totals.ok,
         "failed": totals.failed,
@@ -526,12 +642,174 @@ def run(invocation: Invocation) -> HandlerResult:
         "stopped_at": totals.stopped_at,
         "failed_lines": totals.failures,
         "continue": keep_going,
-        "dry_run": invocation.dry_run,
+        "dry_run": dry_run,
         "exit": run_exit,
     }
-    meta = Meta(command="run", profile=invocation.profile, exit=run_exit)
-    _write(Result(data=summary, meta=meta).to_envelope())
-    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+    if past_partial:
+        summary["partial_lines"] = partial
+    return summary
+
+
+def _run_line(
+    number: int,
+    text: str,
+    defaults: dict[str, str],
+    steps: dict[str, Any],
+    *,
+    dry_run: bool,
+    scope: dict[str, Any] | None = None,
+) -> tuple[int, list[str]]:
+    """Run one line (once, or once per ``for_each`` item) and write its envelopes.
+
+    Args:
+        number: The line's physical number.
+        text: The line.
+        defaults: The flags every line starts from.
+        steps: The results of the named lines run so far; a named line adds its own.
+        dry_run: Whether the run previews only: an unresolved reference plans the line.
+        scope: Values the line's references may read besides ``steps``.
+
+    Returns:
+        The line's exit status (the first failed item's, for ``for_each``) and the
+        argv of the last command it ran (empty when it ran none).
+    """
+    shown: dict[str, Any] = {"line": number, "cmd": _best_effort_cmd(text)}
+    try:
+        line = load_line(text)
+        name = _step_name(line, steps)
+        if "id" in line:
+            shown["id"] = _line_id(line["id"])
+        line_scope: dict[str, Any] = {**(scope or {}), "steps": steps}
+        if "when" in line and not bindings.evaluate(line["when"], line_scope):
+            write_envelope({**shown, "exit": 0, "skipped": True, **_result(shown["cmd"], None)})
+            if name is not None:
+                steps[name] = {"skipped": True, "data": None, "exit": 0}
+            return 0, []
+        items = _for_each_items(line["for_each"], line_scope) if "for_each" in line else None
+    except bindings.BindingError as error:
+        return _unresolved(shown, error, steps, line, dry_run=dry_run), []
+    except CliError as error:
+        write_envelope({**shown, "exit": error.exit_status, **error.to_envelope()})
+        return error.exit_status, []
+    if items is None:
+        exit_status, envelope, argv = _run_once(number, line, defaults, line_scope, shown, dry_run)
+        if name is not None:
+            steps[name] = envelope
+        return exit_status, argv
+    datas: list[Any] = []
+    first_exit = 0
+    last_argv: list[str] = []
+    for index, item in enumerate(items):
+        item_scope = {**line_scope, "item": item, "index": index}
+        exit_status, envelope, argv = _run_once(
+            number, line, defaults, item_scope, {**shown, "item": index}, dry_run
+        )
+        datas.append(envelope.get("data"))
+        last_argv = argv or last_argv
+        if exit_status != 0:
+            first_exit = exit_status
+            break
+    if name is not None:
+        steps[name] = {"data": datas, "exit": first_exit}
+    return first_exit, last_argv
+
+
+def _run_once(
+    number: int,
+    line: dict[str, Any],
+    defaults: dict[str, str],
+    scope: dict[str, Any],
+    shown: dict[str, Any],
+    dry_run: bool,
+) -> tuple[int, dict[str, Any], list[str]]:
+    """Fill one line's references from ``scope``, run it, and write its envelope."""
+    try:
+        bound = {key: bindings.resolve(line[key], scope) for key in BOUND_KEYS if key in line}
+        spec = build_spec(number, {**line, **bound}, defaults, command_flags)
+        shown = {**shown, "cmd": spec.cmd}
+        exit_status, envelope = execute_line(spec.argv, spec.cmd)
+        forget_reads()
+        argv = spec.argv
+    except bindings.BindingError as error:
+        exit_status = _unresolved(shown, error, {}, line, dry_run=dry_run)
+        return exit_status, {"planned": dry_run, "data": None, "exit": exit_status}, []
+    except CliError as error:
+        exit_status, envelope, argv = error.exit_status, error.to_envelope(), []
+    write_envelope({**shown, "exit": exit_status, **envelope})
+    return exit_status, {**envelope, "exit": exit_status}, argv
+
+
+def _result(cmd: str, data: Any) -> dict[str, Any]:
+    """A success envelope for a line ``run`` answered itself (skipped or planned)."""
+    return Result(data=data, meta=Meta(command=cmd, exit=0)).to_envelope()
+
+
+def _step_name(line: dict[str, Any], steps: dict[str, Any]) -> str | None:
+    """The line's ``name``, checked: a word, not used by an earlier line."""
+    name = line.get("name")
+    if name is None:
+        return None
+    if not isinstance(name, str) or not _STEP_NAME.match(name):
+        raise _line_error(
+            "'name' must be a word of letters, digits, '_' or '-', starting with a letter.",
+            name=name if isinstance(name, str) else None,
+        )
+    if name in steps:
+        raise _line_error(f"an earlier line is already named '{name}'.", name=name)
+    return name
+
+
+def _line_id(line_id: Any) -> str | int | float:
+    if isinstance(line_id, bool) or not isinstance(line_id, str | int | float):
+        raise _line_error("'id' must be a string or a number.")
+    return line_id
+
+
+def _for_each_items(reference: Any, scope: dict[str, Any]) -> list[Any]:
+    """The list a ``for_each`` line runs over."""
+    items = bindings.resolve(reference, scope)
+    if not isinstance(items, list):
+        raise _line_error(
+            "'for_each' must be a reference to a list, such as '{{steps.list.data}}'.",
+            for_each=reference if isinstance(reference, str) else None,
+        )
+    return items
+
+
+def _unresolved(
+    shown: dict[str, Any],
+    error: bindings.BindingError,
+    steps: dict[str, Any],
+    line: dict[str, Any] | None,
+    *,
+    dry_run: bool,
+) -> int:
+    """Write the envelope of a line whose reference does not resolve; return its exit.
+
+    Under ``--dry-run`` the line is planned, not failed: the earlier lines only previewed,
+    so the values it reads do not exist yet.
+    """
+    name = line.get("name") if isinstance(line, dict) else None
+    if dry_run:
+        data = {"planned": True, "waits_on": error.path, "reason": str(error)}
+        write_envelope({**shown, "exit": 0, **_result(shown["cmd"], data)})
+        if isinstance(name, str) and name not in steps and _STEP_NAME.match(name):
+            steps[name] = {"planned": True, "data": None, "exit": 0}
+        return 0
+    failure = CliError(
+        code=CODE_UNRESOLVED_REFERENCE,
+        message=f"Line {shown['line']}: {error}.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "A reference reads the result of an earlier named line, such as "
+            "'{{steps.upload.data.dataset_id}}'. Earlier names: "
+            + (", ".join(steps) or "none")
+            + "."
+        ),
+        details={"reference": error.path, "steps": list(steps)},
+    )
+    write_envelope({**shown, "exit": failure.exit_status, **failure.to_envelope()})
+    return failure.exit_status
 
 
 def _best_effort_cmd(text: str) -> str:

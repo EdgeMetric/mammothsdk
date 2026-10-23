@@ -1,0 +1,155 @@
+manifest_schema_version: 1
+commands:
+- command_id: history.list
+  command_path: history list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.history.history_list
+  sdk_conversion: Call mammoth_cli.commands.history.history_list with validated request fields.
+  request_model: HistoryListRequest
+  result_model: HistoryListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local journal read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth history list --help
+  agent_example: 'mammoth history list --input ''{"undoable_only": true}'''
+  unit_tests:
+  - UT-HISTORY-LIST
+  contract_tests:
+  - CT-HISTORY-LIST-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: Lists writes made from this machine only. Not available embedded.
+  reviewed_by: primary
+- command_id: history.show
+  command_path: history show
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: id
+    type: str
+    required: true
+    metavar: ID
+    falls_back_to_field: null
+    help: The write's inv, or the group of a whole mammoth run (from 'history list').
+  options: []
+  sdk_symbol: mammoth_cli.commands.history.history_show
+  sdk_conversion: Call mammoth_cli.commands.history.history_show with validated request fields.
+  request_model: HistoryShowRequest
+  result_model: HistoryShowResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local journal read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth history show ID --help
+  agent_example: mammoth history show 97b9ee41d15d
+  unit_tests:
+  - UT-HISTORY-SHOW
+  contract_tests:
+  - CT-HISTORY-SHOW-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: Not available embedded.
+  reviewed_by: primary
+- command_id: history.undo
+  command_path: history undo
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: id
+    type: str
+    required: true
+    metavar: ID
+    falls_back_to_field: null
+    help: The write's inv, or the group of a whole mammoth run (from 'history list').
+  options: []
+  sdk_symbol: mammoth_cli.commands.history.history_undo
+  sdk_conversion: Call mammoth_cli.commands.history.history_undo with validated request fields.
+  request_model: HistoryUndoRequest
+  result_model: HistoryUndoResult
+  mutation_class: high_impact
+  edits_target: false
+  no_readback: each undo line verifies itself through its own command, and 'history show' reports the
+    write as undone
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Each undo step is a typed command with its own live evidence; the journal is
+    local.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth history undo ID --help
+  agent_example: mammoth history undo 97b9ee41d15d --yes
+  unit_tests:
+  - UT-HISTORY-UNDO
+  contract_tests:
+  - CT-HISTORY-UNDO-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: Undoes pipeline edits (back to the version before), objects a write created (to
+    the trash) and moves to the trash (restored). Permanent deletes and external effects (exports, sends)
+    cannot be undone and are reported. Not available embedded.
+  reviewed_by: primary
+- command_id: history.resume
+  command_path: history resume
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: id
+    type: str
+    required: true
+    metavar: ID
+    falls_back_to_field: null
+    help: The group of the mammoth run or recipe run that stopped (from 'history list').
+  options: []
+  sdk_symbol: mammoth_cli.commands.history.history_resume
+  sdk_conversion: Call mammoth_cli.commands.history.history_resume with validated request fields.
+  request_model: HistoryResumeRequest
+  result_model: HistoryResumeResult
+  mutation_class: high_impact
+  edits_target: false
+  no_readback: each resumed line verifies itself through its own command
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Each resumed line is a typed command with its own live evidence; the journal
+    is local.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth history resume ID --help
+  agent_example: mammoth history resume 97b9ee41d15d --yes
+  unit_tests:
+  - UT-HISTORY-RESUME
+  contract_tests:
+  - CT-HISTORY-RESUME-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: Resumes a mammoth run or recipe run started on this machine with the journal on.
+    A named result larger than 256 KB is not kept, so a later line that reads it fails. Refuses when a
+    write's outcome is unknown until from_line names where to start. Not available embedded.
+  reviewed_by: primary

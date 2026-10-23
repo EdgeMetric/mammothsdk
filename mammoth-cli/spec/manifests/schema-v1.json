@@ -194,6 +194,7 @@
         "result_model": {"$ref": "#/$defs/no_placeholder"},
         "mutation_class": {"$ref": "#/$defs/mutation_class"},
         "edits_target": {"type": "boolean"},
+        "output_schema": {"enum": ["openapi"]},
         "confirmation": {"$ref": "#/$defs/confirmation"},
         "wait_policy": {"$ref": "#/$defs/wait_policy"},
         "pagination_policy": {"$ref": "#/$defs/pagination_policy"},

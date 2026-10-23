@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import glob
 import json
 import shutil
 from pathlib import Path
 
 import yaml
 from jsonschema import Draft202012Validator
+
+from mammoth_cli.manifest.loader import command_records, merge_command_record
 
 CLI_ROOT = Path(__file__).resolve().parent.parent.parent
 MANIFESTS = CLI_ROOT / "spec" / "manifests"
@@ -46,19 +47,13 @@ def test_sdk_records_validate() -> None:
 def test_command_records_validate() -> None:
     validator = _validator("command_record")
     errors = []
-    for path in sorted(glob.glob(str(MANIFESTS / "commands" / "*.yaml"))):
-        for record in yaml.safe_load(Path(path).read_text())["commands"]:
-            errors += [
-                f"{record['command_id']}: {e.message}" for e in validator.iter_errors(record)
-            ]
+    for record in command_records():
+        errors += [f"{record['command_id']}: {e.message}" for e in validator.iter_errors(record)]
     assert not errors, errors[:10]
 
 
 def _command_records() -> list[dict]:
-    records: list[dict] = []
-    for path in sorted(glob.glob(str(MANIFESTS / "commands" / "*.yaml"))):
-        records += yaml.safe_load(Path(path).read_text())["commands"]
-    return records
+    return command_records()
 
 
 def test_every_non_read_command_declares_edits_target() -> None:
@@ -108,16 +103,29 @@ def test_generator_source_matches_committed_edits_target() -> None:
 
 
 def test_build_leaves_hand_maintained_command_records_untouched(tmp_path, monkeypatch) -> None:
-    """A regeneration over the committed manifests succeeds and rewrites no command file."""
+    """A regeneration rewrites no hand-written file and reproduces the generated records."""
     generator = _generator()
     manifests = tmp_path / "manifests"
     shutil.copytree(MANIFESTS, manifests)
     monkeypatch.setattr(generator, "MANIFESTS", manifests)
     monkeypatch.setattr(generator, "COMMANDS_DIR", manifests / "commands")
     monkeypatch.setattr(generator, "EDITS_TARGET_SOURCE", manifests / "edits-target.source.yaml")
+    generated = manifests / generator.GENERATED_COMMANDS
     before = {p.name: p.read_bytes() for p in (manifests / "commands").glob("*.yaml")}
+    generated_before = generated.read_bytes()
 
     generator.build()
 
     after = {p.name: p.read_bytes() for p in (manifests / "commands").glob("*.yaml")}
     assert after == before
+    assert generated.read_bytes() == generated_before
+
+
+def test_a_hand_written_record_overrides_the_generated_one_field_by_field() -> None:
+    generated = {"command_id": "a.b", "mutation_class": "benign_mutation", "edits_target": False}
+    written = {"command_id": "a.b", "mutation_class": "read", "unset": ["edits_target"]}
+    assert merge_command_record(generated, written) == {
+        "command_id": "a.b",
+        "mutation_class": "read",
+    }
+    assert merge_command_record(None, written) == written

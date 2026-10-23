@@ -300,3 +300,11 @@ def test_canvas_get_is_still_allowed_when_embedded(monkeypatch: pytest.MonkeyPat
     envelope = invoke(["dashboard", "canvas", "get", "42"], login=_login(4))
 
     assert "error" not in envelope
+
+
+def test_a_pinned_envelope_version_is_returned_or_refused() -> None:
+    envelope = invoke(["calc", "1 + 1"], login=_login(4), schema_version=1)
+    assert envelope["schema_version"] == 1
+    assert envelope["meta"]["run_id"]
+    with pytest.raises(ValueError, match="envelope version"):
+        invoke(["calc", "1 + 1"], login=_login(4), schema_version=2)

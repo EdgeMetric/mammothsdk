@@ -232,6 +232,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "workspace.update": {"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]},
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
+    "history.list": {"undoable_only": True},
+    "recipe.run": {"inputs": {"view_id": 1}},
     # first_name/last_name are each individually optional (either one alone is
     # a valid update), so neither is `required`; show one so the example is a
     # real call rather than the bare command, which the handler rejects.
@@ -401,6 +403,11 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Blank dashboard creation requires a typed params envelope. Keep the
     # generated destructive example runnable with the explicit approval flag.
     "dashboard.create-blank": {"params": {"dataview_id": 1}},
+    # The generator builds the dashboard from the intent: an example without one makes
+    # a dashboard about nothing in particular.
+    "dashboard.v3.generate": {
+        "body": {"params": {"intent": "Weekly sales by region", "dataview_id": 1}}
+    },
     # The draft/published data routes take a WidgetDataSpec keyed by the
     # widget UUID (read it from ``dashboard canvas get``), not a SQL string.
     "dashboard.data.draft": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"},

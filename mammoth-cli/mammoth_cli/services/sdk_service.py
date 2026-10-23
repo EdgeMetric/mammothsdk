@@ -25,9 +25,9 @@ from concurrent.futures import ThreadPoolExecutor
 from types import TracebackType
 from typing import Any, NoReturn
 
+from mammoth import __version__ as sdk_version
 from mammoth.exceptions import MammothAPIError, MammothColumnError
 
-from mammoth_cli import __version__
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
@@ -41,7 +41,15 @@ from mammoth_cli.errors.envelope import (
     missing_project_error,
 )
 from mammoth_cli.output.progress import spinner
-from mammoth_cli.runtime import dryrun, embedded, parents, view_dataset_cache
+from mammoth_cli.runtime import (
+    dryrun,
+    embedded,
+    etag_store,
+    idempotency_servers,
+    parents,
+    trace,
+    view_dataset_cache,
+)
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.embed_pool import sdk_takes_default_headers
 from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
@@ -218,6 +226,8 @@ class SdkMammothService:
         )
         from mammoth.client import MammothClient
 
+        # Names the command running now; re-read before each call (see _tag_invocation).
+        self._user_agent = trace.user_agent()
         # A host-owned loop and pool (``embed.invoke(runtime=...)``), used only when the
         # SDK keeps per-client headers off a shared client; else this call has its own.
         call = embedded.current()
@@ -240,12 +250,19 @@ class SdkMammothService:
         self._client = MammothClient(
             **credential,
             base_url=auth.base_url,
-            user_agent=f"mammoth-cli/{__version__}",
+            user_agent=self._user_agent,
             **shared,
             **kwargs,
         )
         # Which dataset holds a view survives the process (see view_dataset_cache).
         self._client.dataview_dataset_store = view_dataset_cache.store_for(auth, profile)
+        # Bodies of ETag'd reads outlive this client: on disk for a command, in the host's
+        # runtime for an embedded call. Otherwise the SDK keeps them for this client only.
+        etags = etag_store.cache_for(auth, profile, self._runtime)
+        if etags is not None:
+            self._client.etag_cache = etags
+        # Whether this server replays keyed writes, as an earlier command learned it.
+        idempotency_servers.recall(self._client.base_url)
         self._default_job_timeout = self._client.job_timeout
         self._default_pipeline_timeout = self._client.pipeline_timeout
         # One loop for the process, not one per call: the client's connection
@@ -285,6 +302,7 @@ class SdkMammothService:
         """
         if not inspect.isawaitable(work):
             return work
+        self._tag_invocation()
         if self._runtime is not None:
             # The host's loop runs it; this thread only waits, so no helper thread is needed.
             return self._runtime.run(work)
@@ -294,6 +312,25 @@ class SdkMammothService:
             with ThreadPoolExecutor(max_workers=1) as helper:
                 return helper.submit(self._run_on_own_loop, work).result()
         return self._run_on_own_loop(work)
+
+    def _tag_invocation(self) -> None:
+        """Name the command running now in the ``User-Agent`` of the requests that follow.
+
+        One service serves every line of a ``mammoth run`` (runtime.shared), so the
+        command it was built for is not always the one calling it. The header is
+        replaced only when the invocation changed since the last call.
+        """
+        agent = trace.user_agent()
+        if agent == self._user_agent:
+            return
+        self._user_agent = agent
+        header = {"User-Agent": f"{agent} mammoth-io/{sdk_version}"}
+        add = getattr(self._client, "add_default_headers", None)
+        if add is not None:
+            add(header)
+        else:
+            # An SDK before ``add_default_headers`` never shares its session.
+            self._client.session.headers.update(header)
 
     def _run_on_own_loop(self, work: Any) -> Any:
         """Run ``work`` on the service's loop; threads take turns."""
@@ -1217,6 +1254,7 @@ class SdkMammothService:
         On a host's shared runtime only this client's own download session closes: the
         pool and the loop belong to the host.
         """
+        idempotency_servers.remember(self._client.base_url)
         if self._loop is None:
             if self._closed:
                 return

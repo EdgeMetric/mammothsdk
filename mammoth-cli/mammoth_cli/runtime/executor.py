@@ -1,342 +1,40 @@
-"""Shared success/error envelope emission for every command path.
+"""The terminal's adapter: render a command's outcome and exit with its status.
 
-Both the generic manifest leaf (``app.py``) and every bespoke command
-callback call :func:`run` so there is exactly one code path from a handler's
-``(data, meta_extra)`` result (or a raised :class:`CliError`) to rendered
-stdout/stderr and the process exit status. Keeping this in one module means a
-bespoke command and a not-yet-implemented generic command always behave
-identically for machine output, error shape, and exit code.
+Both the generic manifest leaf (``app.py``) and every bespoke command callback call
+:func:`run`. It hands the call to :func:`mammoth_cli.runtime.dispatch.dispatch`, which
+runs it and returns an :class:`~mammoth_cli.runtime.dispatch.Outcome`, then renders
+that outcome to stdout/stderr and raises ``typer.Exit`` with its status. The run log,
+update notices and skill refresh live here too: they belong to the terminal, not to
+the command. One path from handler to exit status means a bespoke command and a
+generic one behave identically for machine output, error shape, and exit code.
 """
 
 from __future__ import annotations
 
 import sys
 import traceback
-from collections.abc import Callable
-from typing import Any
 
 import typer
 
-from mammoth_cli.errors.envelope import (
-    CODE_WORKSPACE_MISMATCH,
-    EXIT_API,
-    EXIT_AUTH,
-    EXIT_PARTIAL,
-    EXIT_USAGE,
-    CliError,
-    cancelled_error,
-    feature_unavailable_error,
-    is_feature_unavailable,
-    not_available_embedded_error,
-    pending_server_release_error,
-)
-from mammoth_cli.manifest.loader import is_pending_server_release
-from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.output.normalize import normalize
+from mammoth_cli.output.emit import emit_error, emit_success
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
-from mammoth_cli.output.render import render
-from mammoth_cli.runtime import embedded, linecapture, updates
-from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
-from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
+from mammoth_cli.runtime import embedded, linecapture, trace, updates
+from mammoth_cli.runtime.dispatch import (
+    INTERCEPTORS,
+    Interceptor,
+    Outcome,
+    Producer,
+    Request,
+    dispatch,
+    failure,
+)
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.local_paths import local_path_commands
+from mammoth_cli.runtime.journal import journal_writes
 from mammoth_cli.runtime.runlog import RunLog
-from mammoth_cli.runtime.shared import shared_services
-from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
-Producer = Callable[[], tuple[Any, dict[str, Any]]]
-
-#: ``meta_extra`` keys a streaming command (``run``) sets: it printed its own envelopes, so
-#: the executor prints none, and the process exits with the given status.
-STREAMED_META = "streamed"
-EXIT_STATUS_META = "exit_status"
-
-# Commands that act on the host machine (login, config, installs, upgrade); an
-# embedded call has no profile, keyring or shell to act on.
-EMBEDDED_UNAVAILABLE = frozenset(
-    {
-        "auth.login",
-        "auth.logout",
-        "config.set",
-        "upgrade",
-        "skill.install",
-        "skill.uninstall",
-        "skill.update",
-        "skill.agents-md.install",
-        "completion.install",
-        # Reads a JSON Lines file or the host's stdin.
-        "run",
-        # Read or write the host's profile, run log or install state.
-        "auth.status",
-        "config.get",
-        "config.list",
-        "config.path",
-        "log.path",
-        "log.tail",
-        "skill.list",
-        "skill.path",
-        # Write a path on the host's filesystem. The commands that read one are not
-        # listed: ``local_path_commands`` derives them from the manifest.
-        "view.explore-panel.export-image",
-        "support.template.export",
-        "support.template.export-dashboard",
-    }
-)
-
-
-def _refuse_if_removed(command_id: str) -> None:
-    if is_feature_unavailable(command_id):
-        raise feature_unavailable_error(command_id)
-
-
-def _refuse_if_embedded(command_id: str) -> None:
-    # A hand-crafting dashboard write that also reads a local file keeps its own, more
-    # useful refusal (it names the intent commands to use instead).
-    refuse_hand_crafted_write(command_id)
-    if embedded.active() and (
-        command_id in EMBEDDED_UNAVAILABLE or command_id in local_path_commands()
-    ):
-        raise not_available_embedded_error(command_id.replace(".", " "))
-
-
-def _refuse_if_pending(command_id: str) -> None:
-    if embedded.hides_pending() and is_pending_server_release(command_id):
-        raise pending_server_release_error(command_id.replace(".", " "))
-
-
-def _profile_scope_recovery(error: CliError, profile: str | None) -> CliError:
-    """Add the selected profile to concrete recovery commands exactly once."""
-    if not profile:
-        return error
-    # Profile names are admitted as ``[A-Za-z0-9][A-Za-z0-9._-]{0,63}``, so
-    # this argv fragment is portable across POSIX shells and PowerShell.
-    profile_option = f" --profile {profile}"
-    error.recovery_commands = [
-        f"{command}{profile_option}" if " --profile " not in command else command
-        for command in error.recovery_commands
-    ]
-    return error
-
-
-def _validate_output(output: str) -> None:
-    """Reject an unsupported ``--output`` mode before any work is done.
-
-    Validating up front means an invalid mode fails with a clean usage error
-    instead of running the producer (and its network calls) and then crashing
-    in the renderer.
-
-    Args:
-        output: The requested output mode.
-
-    Raises:
-        CliError: ``invalid_output_mode`` with :data:`EXIT_USAGE` when the mode
-            is not one the renderer supports.
-    """
-    if output not in VALID_OUTPUTS:
-        raise CliError(
-            code="invalid_output_mode",
-            message=f"Unsupported output mode '{output}'.",
-            exit_status=EXIT_USAGE,
-            hint=f"Use one of: {', '.join(VALID_OUTPUTS)}.",
-        )
-
-
-#: Error codes that mean "the --input document was wrong": the envelope then
-#: carries the command's input contract so the next call needs no ``schema get``.
-_INPUT_REJECTION_CODES = frozenset(
-    {
-        "unknown_input_field",
-        "invalid_input_field_type",
-        "missing_field",
-        "invalid_input",
-        "invalid_input_document",
-        "invalid_arguments",
-        "invalid_condition",
-        "invalid_condition_value",
-        "invalid_rule",
-    }
-)
-
-
-def _attach_input_contract(error: CliError, command_id: str) -> None:
-    """Add ``details["input_contract"]`` to an input-validation error, once."""
-    if error.code not in _INPUT_REJECTION_CODES or "input_contract" in error.details:
-        return
-    from mammoth_cli.commands.schema import input_contract
-
-    contract = input_contract(command_id)
-    if contract is not None:
-        error.details["input_contract"] = contract
-
-
-def _with_workspace_checked(error: CliError) -> CliError:
-    """Check an embedded token login's workspace hint against the server after a refusal.
-
-    A hint saves the workspace lookup on every call, but a wrong one sends each request
-    to another workspace's urls, which the server refuses (a 401 "Invalid token" or a
-    403). Only then is the token's own workspace asked for (once per process, the SDK
-    keeps the answer), and a different one turns the refusal into ``workspace_mismatch``.
-    """
-    call = embedded.current()
-    if call is None or error.exit_status != EXIT_AUTH:
-        return error
-    login = call.login
-    if login.api_token is None or login.workspace_id is None:
-        return error
-    from mammoth_cli.context.endpoint import resolve_base_url
-    from mammoth_cli.context.resolver import resolve_token_workspace
-
-    try:
-        actual = resolve_token_workspace(
-            resolve_base_url(login.server_prefix), login.api_token, None
-        )
-    except CliError:
-        return error
-    if actual == login.workspace_id:
-        return error
-    return CliError(
-        code=CODE_WORKSPACE_MISMATCH,
-        message=(
-            f"The login names workspace {login.workspace_id}, but its token belongs to "
-            f"workspace {actual}."
-        ),
-        exit_status=EXIT_AUTH,
-        hint="Pass the token's own workspace id, or leave workspace_id out of the login.",
-        details={"workspace_id": login.workspace_id, "token_workspace_id": actual},
-        request_id=error.request_id,
-    )
-
-
-def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliError:
-    """Make a 403's "project-limited token" hint true for this token (one lookup, 403 only)."""
-    checked = _with_workspace_checked(error)
-    if checked is not error or invocation is None:
-        return checked
-
-    names: dict[int, str | None] = {}
-
-    def lookup() -> tuple[int, ...] | None:
-        from mammoth_cli.runtime.session import open_service
-        from mammoth_cli.runtime.token_scope import pin_names, pinned_projects
-
-        with open_service(invocation) as (service, auth):
-            # A refusal is the moment to check the real pin, not a cached answer.
-            pins = pinned_projects(service, auth, profile=invocation.profile, refresh=True)
-            # Same session: the names cost one more read each, never a second login.
-            names.update(pin_names(service, pins))
-            return pins
-
-    from mammoth_cli.runtime.token_scope import qualify_pin_hint
-
-    return qualify_pin_hint(error, lookup, names.get)
-
-
-def _verify_exit_status(data: Any) -> int:
-    """Exit code for a write whose read-back says it did not take effect.
-
-    ``verify.outcome`` ``failed`` exits 1 and ``partial`` exits 3; the envelope
-    is still printed so the caller can read what happened.
-    """
-    verify = data.get("verify") if isinstance(data, dict) else None
-    outcome = verify.get("outcome") if isinstance(verify, dict) else None
-    if outcome == "failed":
-        return EXIT_API
-    if outcome == "partial":
-        return EXIT_PARTIAL
-    return 0
-
-
-#: Output modes a person reads; they get the ``Next:`` line on stderr.
-_HUMAN_OUTPUTS = frozenset({"table", "plain", "csv"})
-
-
-def emit_success(
-    command_id: str,
-    data: Any,
-    output: str,
-    *,
-    profile: str | None = None,
-    workspace_id: int | None = None,
-    project_id: int | None = None,
-    pagination: dict[str, Any] | None = None,
-    update_available: dict[str, Any] | None = None,
-    dataset: dict[str, Any] | None = None,
-    view: dict[str, Any] | None = None,
-    opens: list[dict[str, Any]] | None = None,
-    next_commands: list[str] | None = None,
-    exit_status: int = 0,
-) -> None:
-    """Render one success envelope to stdout.
-
-    Args:
-        command_id: The manifest command id (dotted form); rendered as the
-            space-separated command path in the envelope metadata.
-        data: The result payload. Normalized recursively before rendering.
-        output: The resolved ``--output`` mode.
-        profile: The active profile name, if any.
-        workspace_id: The resolved workspace id, if any.
-        project_id: The resolved project id, if any.
-        pagination: Pagination metadata, if any.
-        update_available: The cached newer-release notice, if any.
-        dataset: ``{"id", "name"}`` of the dataset a data read came from, if any.
-        view: ``{"id", "name"}`` of the view a data read came from, if any.
-        opens: ``{"kind", "id", "url", "created"}`` of each object a write made or
-            changed, if any.
-        next_commands: Ready-to-run commands that usually come next, if any.
-            Human output (table, plain, csv) also prints them as one ``Next:``
-            line on stderr.
-        exit_status: The exit status the command ends with, carried as ``meta.exit``.
-    """
-    meta = Meta(
-        command=command_id.replace(".", " "),
-        profile=None if embedded.active() else profile,
-        workspace_id=workspace_id,
-        project_id=project_id,
-        pagination=pagination,
-        update_available=update_available,
-        dataset=dataset,
-        view=view,
-        opens=opens,
-        next_commands=next_commands or None,
-        exit=exit_status,
-    )
-    envelope = Result(data=data, meta=meta).to_envelope()
-    if embedded.capture(normalize(envelope)) or linecapture.capture(normalize(envelope)):
-        return
-    render(envelope, output=output)
-    if next_commands and output in _HUMAN_OUTPUTS:
-        sys.stderr.write(f"Next: {'; '.join(next_commands)}\n")
-
-
-def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
-    """Render one error envelope to stderr.
-
-    Args:
-        error: The classified error to render.
-        machine: Whether the current output mode is machine-readable (``json``
-            or ``ndjson``). Machine mode renders the versioned JSON error
-            envelope; human mode renders a short readable message with any
-            recovery commands.
-        output: The selected machine mode. Only ``ndjson`` selects lifecycle
-            framing; all other machine errors retain the JSON envelope.
-    """
-    if embedded.capture(normalize(error.to_envelope())) or linecapture.capture(
-        normalize(error.to_envelope())
-    ):
-        return
-    if machine:
-        render(
-            error.to_envelope(),
-            output=output if output in ("ndjson", "yaml") else "json",
-            stream=sys.stderr,
-        )
-        return
-    message = error.message
-    if error.hint:
-        message = f"{message}\n{error.hint}"
-    typer.echo(f"error [{error.code}]: {message}", err=True)
-    for command in error.recovery_commands:
-        typer.echo(f"  try: {command}", err=True)
+#: The steps around every terminal command: the use case's own, then the journal, inside
+#: the shared services so its read before a pipeline edit reuses the command's login.
+TERMINAL_INTERCEPTORS: tuple[Interceptor, ...] = (*INTERCEPTORS, journal_writes())
 
 
 def run(
@@ -350,7 +48,9 @@ def run(
 ) -> None:
     """Run one command's producer and emit its envelope.
 
-    When ``invocation`` is given a run log is opened for the command
+    Every API request the command makes names it and carries one invocation id
+    (:mod:`mammoth_cli.runtime.trace`), so the server's request log can tell
+    commands apart. When ``invocation`` is given a run log is opened for the command
     (:mod:`mammoth_cli.runtime.runlog`): SDK request and job records are
     captured while ``producer`` runs, the outcome is recorded, and an error
     envelope carries ``log_ref`` so the failure can be traced.
@@ -371,6 +71,27 @@ def run(
             the error's mapped exit status. On success the function returns
             normally after rendering the success envelope.
     """
+    with trace.begin(command_id):
+        _run(
+            command_id,
+            output,
+            producer,
+            agent_mode=agent_mode,
+            profile=profile,
+            invocation=invocation,
+        )
+
+
+def _run(
+    command_id: str,
+    output: str,
+    producer: Producer,
+    *,
+    agent_mode: bool = False,
+    profile: str | None = None,
+    invocation: Invocation | None = None,
+) -> None:
+    """:func:`run` inside the invocation's trace."""
     # An invalid mode cannot itself identify a renderer. In redirected/non-TTY
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
@@ -381,103 +102,54 @@ def run(
         or (output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty()))
     )
     run_log = _open_run_log(command_id, invocation)
-
-    def fail(error: CliError, cause: BaseException | None = None) -> None:
-        _attach_input_contract(error, command_id)
+    request = Request(command_id, output, producer, invocation=invocation, profile=profile)
+    outcome = dispatch(request, TERMINAL_INTERCEPTORS)
+    # A ``mammoth run`` line leaves the update notice and the skill refresh to the run itself.
+    in_line = linecapture.active()
+    if outcome.error is None:
+        try:
+            _emit_outcome(command_id, output, outcome, in_line=in_line)
+        except (Exception, KeyboardInterrupt) as exc:
+            outcome = failure(request, exc)
+    if outcome.error is not None:
+        error = outcome.error
         if run_log is not None:
             error.log_ref = run_log.ref
-            run_log.finish(error.exit_status, error_code=error.code, exception=cause)
+            run_log.finish(error.exit_status, error_code=error.code, exception=outcome.cause)
+        cause = outcome.cause
         if cause is not None and invocation is not None and invocation.debug:
             sys.stderr.write(
                 "".join(traceback.format_exception(type(cause), cause, cause.__traceback__))
             )
         emit_error(error, machine=machine_error, output=output)
-
-    # The update notice is read from the daily cache (no network); the cache
-    # itself is refreshed only after the command has produced its output.
-    # A ``mammoth run`` line leaves the update notice and the skill refresh to the run itself.
-    in_line = linecapture.active()
-    update = None if in_line else updates.available_update(command_id)
-    report_failed = False
-    write_exit = 0
-    try:
-        _validate_output(output)
-        _refuse_if_removed(command_id)
-        _refuse_if_embedded(command_id)
-        _refuse_if_pending(command_id)
-        if invocation is not None and invocation.dry_run:
-            refuse_unsupported_dry_run(command_id)
-        with shared_services():
-            data, meta_extra = producer()
-        # Re-read: a command that asked PyPI itself (doctor) refreshed the
-        # cache, and its envelope must not carry the older answer.
-        update = None if in_line else updates.available_update(command_id)
-        # A streaming command (``run``) printed its own envelopes and names its exit status.
-        streamed = bool(meta_extra.pop(STREAMED_META, False))
-        stream_exit = int(meta_extra.pop(EXIT_STATUS_META, 0) or 0)
-        # doctor prints its report either way; a failed report must not exit 0.
-        report_failed = (
-            command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False
-        )
-        write_exit = stream_exit or _verify_exit_status(data)
-        if not streamed:
-            emit_success(
-                command_id,
-                data,
-                output,
-                update_available=update,
-                exit_status=EXIT_AUTH if report_failed else write_exit,
-                **meta_extra,
-            )
-        updates.emit_hint(update, output=output)
-    except CliError as error:
-        running = (
-            running_handle(error, command_id)
-            if invocation is not None and invocation.return_running
-            else None
-        )
-        if running is None:
-            fail(_with_pin_checked(error, invocation))
-            raise typer.Exit(error.exit_status) from None
-        # --return-running: a wait that ran out is not a failure; hand back the
-        # handle to resume with.
-        emit_success(
-            command_id,
-            running,
-            output,
-            **{"profile": profile, **((invocation.read_meta if invocation else None) or {})},
-        )
-    except KeyboardInterrupt as exc:
-        # Polling can be interrupted after a job handle was observed.  Keep
-        # that handle when an SDK exception exposes one; never turn Ctrl-C
-        # into a successful/empty result or a Python traceback.
-        mapped_error = _profile_scope_recovery(map_sdk_exception(exc), profile)
-        fail(mapped_error)
-        raise typer.Exit(mapped_error.exit_status) from None
-    except typer.Abort:
-        # Ctrl-C, EOF or an unusable answer at any prompt: a clean cancel, not
-        # an unexpected failure.
-        cancelled = cancelled_error()
-        fail(cancelled)
-        raise typer.Exit(cancelled.exit_status) from None
-    except Exception as exc:
-        # Bespoke handlers should normally cross the SDK service seam, but a
-        # malformed response or filesystem fault must still obey the same
-        # machine envelope rather than leaking an implementation traceback.
-        mapped_error = _with_pin_checked(
-            _profile_scope_recovery(map_sdk_exception(exc), profile), invocation
-        )
-        fail(mapped_error, exc)
-        raise typer.Exit(mapped_error.exit_status) from None
+        raise typer.Exit(error.exit_status)
     if run_log is not None:
-        run_log.finish(EXIT_AUTH if report_failed else write_exit)
+        run_log.finish(outcome.exit_status)
     if not in_line:
         updates.refresh_in_background(command_id)
         _sync_skill_installs(command_id, output)
-    if report_failed:
-        raise typer.Exit(EXIT_AUTH)
-    if write_exit:
-        raise typer.Exit(write_exit)
+    if outcome.exit_status:
+        raise typer.Exit(outcome.exit_status)
+
+
+def _emit_outcome(command_id: str, output: str, outcome: Outcome, *, in_line: bool) -> None:
+    """Render a successful outcome, with the cached newer-release notice when there is one."""
+    if outcome.running:
+        emit_success(command_id, outcome.data, output, **outcome.meta)
+        return
+    # Read after the command: one that asked PyPI itself (doctor) refreshed the cache,
+    # and its envelope must not carry the older answer. No network either way.
+    update = None if in_line else updates.available_update(command_id)
+    if not outcome.streamed:
+        emit_success(
+            command_id,
+            outcome.data,
+            output,
+            update_available=update,
+            exit_status=outcome.exit_status,
+            **outcome.meta,
+        )
+    updates.emit_hint(update, output=output)
 
 
 def _sync_skill_installs(command_id: str, output: str) -> None:
@@ -510,11 +182,13 @@ def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | No
     if invocation is None or embedded.active():
         return None
     try:
+        traced = trace.current()
         return RunLog.start(
             command_id,
             profile=invocation.profile,
             project_id=invocation.project,
             debug=invocation.debug,
+            run_id=traced.invocation_id if traced is not None else None,
         )
     except Exception:
         return None

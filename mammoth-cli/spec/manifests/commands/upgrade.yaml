@@ -1,39 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: upgrade
-  command_path: upgrade
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth_cli.commands.upgrade.run
-  sdk_conversion: Call mammoth_cli.commands.upgrade.run with validated request fields.
-  request_model: UpgradeRequest
-  result_model: UpgradeResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: null
-  live_exemption_reason: Local package upgrade; no Mammoth server call.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth upgrade --help
-  agent_example: mammoth upgrade --yes
-  unit_tests:
-  - UT-UPGRADE
-  contract_tests:
-  - CT-UPGRADE-HUMAN
-  - CT-UPGRADE-JSON
-  - CT-UPGRADE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Installs a different mammoth CLI version from PyPI over the current one. Run `mammoth version` first. Needs a prompt or --yes; the install is skipped when the version is already current.
-  reviewed_by: primary
+  known_restrictions: Installs a different mammoth CLI version from PyPI over the current one. Run `mammoth
+    version` first. Needs a prompt or --yes; the install is skipped when the version is already current.
   readback:
     command: version
     ids: {}

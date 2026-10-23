@@ -34,6 +34,7 @@ import inspect
 import logging
 import math
 import time
+import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from ipaddress import ip_address
 from typing import TYPE_CHECKING, Any, TypeVar, cast
@@ -41,6 +42,8 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx
 
+from mammoth.etag import MAX_BODY_BYTES as MAX_ETAG_BODY_BYTES
+from mammoth.etag import CachedResponse, ETagCache, MemoryETagCache
 from mammoth.exceptions import MammothAPIError, MammothAuthError, safe_response_body
 
 
@@ -166,6 +169,49 @@ _RETRY_METHODS = frozenset({"GET", "HEAD"})
 _MAX_READ_RETRIES = 2
 _RETRY_BACKOFF_S = 0.25
 _RETRY_AFTER_CAP_S = 5.0
+#: Header that makes a write safe to send again: the server runs it once per key.
+IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
+#: Backend error code of a keyed write whose first attempt is still running.
+_KEY_IN_PROGRESS_CODE = "4GENR038"
+#: API base URLs that echoed an ``Idempotency-Key``, so honour it (learned per process).
+_HONOURS_IDEMPOTENCY: set[str] = set()
+
+
+def honours_idempotency_keys(base_url: str) -> bool:
+    """Whether the server at ``base_url`` is known to run a keyed write only once.
+
+    Args:
+        base_url: The client's API base URL.
+
+    Returns:
+        True once a response from it echoed an ``Idempotency-Key``, or after
+        :func:`mark_idempotency_keys_honoured`.
+    """
+    return base_url.rstrip("/") in _HONOURS_IDEMPOTENCY
+
+
+def mark_idempotency_keys_honoured(base_url: str) -> None:
+    """Record that the server at ``base_url`` honours ``Idempotency-Key``.
+
+    A caller that keeps state between processes (the CLI) calls this with what
+    an earlier process learned, so the first write of a new process can be
+    retried too.
+
+    Args:
+        base_url: The client's API base URL.
+    """
+    _HONOURS_IDEMPOTENCY.add(base_url.rstrip("/"))
+
+
+def _key_in_progress(response: httpx.Response) -> bool:
+    """Whether a keyed write was refused because its first attempt still runs."""
+    if response.status_code != 409:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    return isinstance(body, dict) and body.get("error_code") == _KEY_IN_PROGRESS_CODE
 
 
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
@@ -834,6 +880,11 @@ class MammothClient:
         #: Optional store that keeps dataview -> dataset answers between processes
         #: (:class:`mammoth.api.pipeline.DataviewDatasetStore`). None: kept in memory only.
         self.dataview_dataset_store: DataviewDatasetStore | None = None
+        #: Where reads that came with an ``ETag`` are kept, so the next read of the same
+        #: URL sends ``If-None-Match`` and a 304 reuses the body (:mod:`mammoth.etag`).
+        #: In memory by default; a store that outlives the process may replace it, and
+        #: None turns conditional reads off.
+        self.etag_cache: ETagCache | None = MemoryETagCache()
 
         self._owns_session = http_client is None
         self.session = (
@@ -938,6 +989,82 @@ class MammothClient:
             return await self.pipeline.find_dataset_for_dataview(dataview_id)
         return await self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
 
+    def _conditional(
+        self,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None,
+        headers: dict[str, str],
+        is_mutation: bool,
+    ) -> tuple[str | None, CachedResponse | None]:
+        """Prepare a read to be conditional, or forget what was kept before a write.
+
+        A write may change anything kept, and the server may answer the next read
+        before it has changed the tag, so every write empties :attr:`etag_cache`.
+
+        Args:
+            method: The upper-case HTTP method.
+            url: The request URL, without its query string.
+            params: The query parameters.
+            headers: The request headers; ``If-None-Match`` is added to them when a body
+                is kept for this URL and the caller did not set one.
+            is_mutation: Whether the request may change server state.
+
+        Returns:
+            The cache key and the kept response, or ``(None, None)`` when the request
+            does not go through the cache.
+        """
+        cache = self.etag_cache
+        if cache is None:
+            return None, None
+        if is_mutation:
+            cache.clear()
+            return None, None
+        if method != "GET" or any(name.lower() == "if-none-match" for name in headers):
+            return None, None
+        key = str(httpx.URL(url, params=params)) if params else url
+        cached = cache.get(key)
+        if cached is not None:
+            headers["If-None-Match"] = cached.etag
+        return key, cached
+
+    def _through_etag_cache(
+        self, key: str, cached: CachedResponse | None, response: httpx.Response
+    ) -> httpx.Response:
+        """Answer a 304 from the kept body, and keep a new body that came with an ``ETag``.
+
+        Args:
+            key: The cache key of the read.
+            cached: The response kept for it, if any.
+            response: What the server answered.
+
+        Returns:
+            ``response``, or for a 304 a 200 rebuilt from the kept body.
+        """
+        cache = self.etag_cache
+        if cache is None:
+            return response
+        if response.status_code == 304 and cached is not None:
+            return httpx.Response(
+                200,
+                content=cached.content,
+                headers={**cached.headers, "etag": cached.etag},
+                request=response.request,
+            )
+        etag = response.headers.get("etag") if response.status_code == 200 else None
+        content = getattr(response, "content", None)
+        if etag and isinstance(content, bytes) and len(content) <= MAX_ETAG_BODY_BYTES:
+            content_type = response.headers.get("content-type")
+            cache.put(
+                key,
+                CachedResponse(
+                    etag=etag,
+                    content=content,
+                    headers={"content-type": content_type} if content_type else {},
+                ),
+            )
+        return response
+
     async def _send_with_read_retry(
         self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
     ) -> httpx.Response:
@@ -946,18 +1073,26 @@ class MammothClient:
 
         A draining worker answers a read with one transient gateway error; a 429
         waits for its Retry-After (capped at 5 seconds).
-        Writes are never replayed. When retries run out the last response (or
-        connect error) is returned/raised for the normal error mapping.
+        A write is replayed only when it carries an ``Idempotency-Key`` and the
+        server is known to honour one: then a dropped connection, a gateway error
+        or "first attempt still running" is retried with the same key, and the
+        server runs the write once. When retries run out the last response (or
+        transport error) is returned/raised for the normal error mapping.
         """
+        keyed = any(
+            name.lower() == IDEMPOTENCY_KEY_HEADER.lower()
+            for name in request_kwargs.get("headers") or {}
+        )
         retryable = method in _RETRY_METHODS
         for attempt in range(_MAX_READ_RETRIES + 1):
             started = time.perf_counter()
-            last = attempt == _MAX_READ_RETRIES or not retryable
+            replayable = keyed and honours_idempotency_keys(self.base_url)
+            last = attempt == _MAX_READ_RETRIES or not (retryable or replayable)
             _log_attempt_start(method, endpoint, attempt + 1, request_kwargs.get("timeout"))
             try:
                 response = await self.session.request(method, url, **request_kwargs)
-            except httpx.ConnectError as e:
-                if last:
+            except httpx.TransportError as e:
+                if last or not (replayable or isinstance(e, httpx.ConnectError)):
                     raise
                 _log_http(
                     method,
@@ -970,7 +1105,12 @@ class MammothClient:
                 )
                 await asyncio.sleep(_retry_delay(attempt, None))
                 continue
-            if last or response.status_code not in _RETRY_STATUSES or not self.retry_gateway_errors:
+            if keyed and getattr(response, "headers", {}).get(IDEMPOTENCY_KEY_HEADER):
+                mark_idempotency_keys_honoured(self.base_url)
+            again = (response.status_code in _RETRY_STATUSES and self.retry_gateway_errors) or (
+                replayable and _key_in_progress(response)
+            )
+            if last or not again:
                 return response
             _log_http(
                 method,
@@ -1090,6 +1230,20 @@ class MammothClient:
         if "headers" in kwargs:
             headers.update(kwargs.pop("headers"))
 
+        request_method = method.upper()
+        if operation_effect not in {None, "read", "mutation"}:
+            raise ValueError("operation_effect must be 'read', 'mutation', or None")
+        is_mutation = operation_effect == "mutation" or (
+            operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
+        )
+        # A file stream can't be sent twice, so an upload is never keyed.
+        if (
+            is_mutation
+            and not files
+            and not any(name.lower() == IDEMPOTENCY_KEY_HEADER.lower() for name in headers)
+        ):
+            headers[IDEMPOTENCY_KEY_HEADER] = uuid.uuid4().hex
+
         if files:
             request_kwargs["files"] = files
             request_kwargs["headers"] = headers
@@ -1100,19 +1254,17 @@ class MammothClient:
         else:
             request_kwargs["headers"] = headers
 
-        request_method = method.upper()
-        if operation_effect not in {None, "read", "mutation"}:
-            raise ValueError("operation_effect must be 'read', 'mutation', or None")
-        is_mutation = operation_effect == "mutation" or (
-            operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
-        )
         operation_state = "outcome_unknown" if is_mutation else "not_started"
+
+        cache_key, cached = self._conditional(request_method, url, params, headers, is_mutation)
 
         started = time.perf_counter()
         try:
             response = await self._send_with_read_retry(
                 request_method, endpoint, url, request_kwargs
             )
+            if cache_key is not None:
+                response = self._through_etag_cache(cache_key, cached, response)
         except httpx.TimeoutException as e:
             _log_http(
                 request_method,

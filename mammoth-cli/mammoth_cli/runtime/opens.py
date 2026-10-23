@@ -38,8 +38,9 @@ _KIND_ALIASES = {"dataview": "view"}
 _GONE_VERBS = frozenset({"trash", "delete"})
 #: Kinds a write names in its own result by ``<kind>_id`` without a readback id.
 _RESULT_KINDS = ("view", "dashboard")
-#: A view export makes a whole new dataset and says so as ``dataset_id`` in its result.
-_MAKES_DATASET = frozenset({"view.export.dataset"})
+#: Writes that make whole new datasets and name them as ``dataset_id`` (an upload of
+#: several sheets also as ``dataset_ids``) in their result.
+_MAKES_DATASET = frozenset({"view.export.dataset", "file.upload"})
 _SOURCE_FROM_CALL = ("positional.", "input.")
 _API_SUFFIX = "/api/v2"
 
@@ -112,8 +113,10 @@ def _result_made(
     kinds: tuple[str, ...] = _RESULT_KINDS
     if invocation.command_id in _MAKES_DATASET or _new_kind(record) == "dataset":
         kinds = ("dataset", *kinds)
-    keys = (_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds)
-    return [key for key in keys if key is not None]
+    keys = [_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds]
+    if "dataset" in kinds and isinstance(result.get("dataset_ids"), list):
+        keys += [_object_key("dataset_id", value) for value in result["dataset_ids"]]
+    return [key for key in dict.fromkeys(keys) if key is not None]
 
 
 def _new_kind(record: dict[str, Any]) -> str | None:

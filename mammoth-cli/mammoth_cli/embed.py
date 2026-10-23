@@ -32,7 +32,7 @@ from typing import Any
 
 from typer._click.core import Command, Context
 
-from mammoth_cli import __version__
+from mammoth_cli import SCHEMA_VERSION, __version__
 from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS, _root_click_command
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import (
@@ -64,6 +64,7 @@ def invoke(
     return_running: bool = False,
     hide_pending: bool = False,
     runtime: EmbedRuntime | None = None,
+    schema_version: int | None = None,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -90,13 +91,23 @@ def invoke(
             ``schema find``. Off by default: a terminal user may target a newer server.
         runtime: A host-owned :class:`EmbedRuntime` (or :func:`shared_pool`): the
             call sends its requests through its one connection pool and loop, so
-            keep-alive connections are reused across calls and users. Omitted, the
-            call builds and closes a pool of its own.
+            keep-alive connections are reused across calls and users, and each
+            caller's ETag'd reads are kept for their next call (in the caller's own
+            scope, named by their credential). Omitted, the call builds and closes a
+            pool of its own and keeps nothing.
+        schema_version: The envelope version the host was written against. A CLI
+            that emits a newer version still returns this one for at least one major
+            release (``docs/envelope-compatibility.md``); a version this CLI does not
+            know is a ``ValueError``. Omitted, the current version.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
         (``error``). A CLI error is returned, never raised.
+
+    Raises:
+        ValueError: ``schema_version`` is not one this CLI can return.
     """
+    _require_schema_version(schema_version)
     argv = _argv(
         args,
         project_id=project_id,
@@ -107,6 +118,19 @@ def invoke(
         return_running=return_running,
     )
     return _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
+
+
+#: Envelope versions this CLI can return, newest last.
+SUPPORTED_SCHEMA_VERSIONS = (SCHEMA_VERSION,)
+
+
+def _require_schema_version(schema_version: int | None) -> None:
+    """Refuse an envelope version this CLI cannot return."""
+    if schema_version is not None and schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(
+            f"This CLI returns envelope version {', '.join(map(str, SUPPORTED_SCHEMA_VERSIONS))}"
+            f", not {schema_version}."
+        )
 
 
 def invoke_many(

@@ -7,7 +7,8 @@ import json
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
-from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES, find_schemas, schema_entries
+from mammoth_cli.commands.schema import find_schemas, schema_entries
+from mammoth_cli.discovery.purposes import COMMAND_DISCOVERY_PURPOSES
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
@@ -229,7 +230,7 @@ def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
     }
 
     assert transforms
-    assert transforms <= set(_COMMAND_DISCOVERY_PURPOSES)
+    assert transforms <= set(COMMAND_DISCOVERY_PURPOSES)
 
 
 def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() -> None:

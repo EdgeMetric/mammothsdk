@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from mammoth_cli.commands import view_ops
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 
 _VIEW = {
@@ -43,14 +43,14 @@ class _FakeService:
 def test_blank_inputs_counts_only_the_columns_the_expression_names() -> None:
     service = _FakeService()
 
-    blanks = view_ops._blank_math_inputs(service, 4, 7, 1, "qty * unit_price")
+    blanks = view_transforms._blank_math_inputs(service, 4, 7, 1, "qty * unit_price")
 
     assert blanks == {"unit_price": 1}
     assert not any("column_11" in sent for sent in service.counted)
 
 
 def test_the_result_names_the_blank_inputs() -> None:
-    data = view_ops._with_blank_input_note({"status": "done"}, {"unit_price": 1})
+    data = view_transforms._with_blank_input_note({"status": "done"}, {"unit_price": 1})
 
     assert data["blank_inputs"] == {
         "columns": {"unit_price": 1},
@@ -63,7 +63,7 @@ def test_the_result_names_the_blank_inputs() -> None:
 
 
 def test_no_blank_inputs_leaves_the_result_unchanged() -> None:
-    assert view_ops._with_blank_input_note({"status": "done"}, {}) == {"status": "done"}
+    assert view_transforms._with_blank_input_note({"status": "done"}, {}) == {"status": "done"}
 
 
 class _UncountableService(_FakeService):
@@ -76,4 +76,6 @@ class _UncountableService(_FakeService):
 
 
 def test_a_count_that_cannot_run_does_not_block_the_math_step() -> None:
-    assert view_ops._blank_math_inputs(_UncountableService(), 4, 7, 1, "qty * unit_price") == {}
+    assert (
+        view_transforms._blank_math_inputs(_UncountableService(), 4, 7, 1, "qty * unit_price") == {}
+    )

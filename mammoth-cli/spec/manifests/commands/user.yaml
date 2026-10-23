@@ -1,272 +1,39 @@
 manifest_schema_version: 1
 commands:
 - command_id: user.avatar.delete
-  command_path: user avatar delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteAvatar
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.users.UsersAPI.avatar_delete
-  sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_delete with validated request fields.
-  request_model: UserAvatarDeleteRequest
-  result_model: UserAvatarDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: Account or workspace mutation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user avatar delete --help
-  agent_example: mammoth user avatar delete --yes
-  unit_tests:
-  - UT-USER-AVATAR-DELETE
-  contract_tests:
-  - CT-USER-AVATAR-DELETE-HUMAN
-  - CT-USER-AVATAR-DELETE-JSON
-  - CT-USER-AVATAR-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Removes the signed-in user's profile picture; upload it again to restore it. Needs a prompt or --yes.
-  reviewed_by: primary
+  known_restrictions: Removes the signed-in user's profile picture; upload it again to restore it. Needs
+    a prompt or --yes.
   readback:
     command: user.get
     ids: {}
     kind: object
 - command_id: user.avatar.upload
-  command_path: user avatar upload
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UploadProfilePic
-  positionals:
-  - name: file
-    type: str
-    required: false
-    metavar: FILE
-    falls_back_to_field: file
-    help: Path to a local image to upload; or pass it via the 'file' input field.
-    kind: local_path
-  options: []
-  sdk_symbol: mammoth.api.users.UsersAPI.avatar_upload
-  sdk_conversion: Call mammoth.api.users.UsersAPI.avatar_upload with validated request fields.
-  request_model: UserAvatarUploadRequest
-  result_model: UserAvatarUploadResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: Account or workspace mutation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user avatar upload --help
-  agent_example: mammoth user avatar upload ./sales.csv
-  unit_tests:
-  - UT-USER-AVATAR-UPLOAD
-  contract_tests:
-  - CT-USER-AVATAR-UPLOAD-HUMAN
-  - CT-USER-AVATAR-UPLOAD-JSON
-  - CT-USER-AVATAR-UPLOAD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: user.get
     ids: {}
     kind: object
 - command_id: user.delete-account
-  command_path: user delete-account
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteSelf
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.users.UsersAPI.delete_account
-  sdk_conversion: Call mammoth.api.users.UsersAPI.delete_account with validated request fields.
-  request_model: UserDeleteAccountRequest
-  result_model: UserDeleteAccountResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user delete-account --help
-  agent_example: mammoth user delete-account --yes
-  unit_tests:
-  - UT-USER-DELETE-ACCOUNT
-  contract_tests:
-  - CT-USER-DELETE-ACCOUNT-HUMAN
-  - CT-USER-DELETE-ACCOUNT-JSON
-  - CT-USER-DELETE-ACCOUNT-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Deletes the signed-in user's account for good. Pass validate_only to check what would be removed first. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
-  reviewed_by: primary
-  no_readback: "deletes the caller's own account; no parent listing exists and the account can no longer be read afterward"
+  known_restrictions: Deletes the signed-in user's account for good. Pass validate_only to check what
+    would be removed first. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
+  no_readback: deletes the caller's own account; no parent listing exists and the account can no longer
+    be read afterward
 - command_id: user.get
-  command_path: user get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetUserDetails
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.get
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.get with validated request fields.
-  request_model: UserGetRequest
-  result_model: UserGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-USER-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user get --help
-  agent_example: mammoth user get
-  unit_tests:
-  - UT-USER-GET
-  contract_tests:
-  - CT-USER-GET-HUMAN
-  - CT-USER-GET-JSON
-  - CT-USER-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: user.preference.get
-  command_path: user preference get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetUserPreferences
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.get_preferences
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.get_preferences with validated request
-    fields.
-  request_model: UserPreferenceGetRequest
-  result_model: UserPreferenceGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-USER-PREFERENCE-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user preference get --help
-  agent_example: mammoth user preference get
-  unit_tests:
-  - UT-USER-PREFERENCE-GET
-  contract_tests:
-  - CT-USER-PREFERENCE-GET-HUMAN
-  - CT-USER-PREFERENCE-GET-JSON
-  - CT-USER-PREFERENCE-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: user.preference.update
-  command_path: user preference update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateUserPreferences
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update_preferences
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update_preferences with validated request
-    fields.
-  request_model: UserPreferenceUpdateRequest
-  result_model: UserPreferenceUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: Account or workspace mutation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user preference update --help
-  agent_example: 'mammoth user preference update --input ''{"patch": [{"op": "replace", "path": "GLOBAL.PREFERENCES.TOP_TABS",
-    "value": []}]}'''
-  unit_tests:
-  - UT-USER-PREFERENCE-UPDATE
-  contract_tests:
-  - CT-USER-PREFERENCE-UPDATE-HUMAN
-  - CT-USER-PREFERENCE-UPDATE-JSON
-  - CT-USER-PREFERENCE-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Body is the release {"patch": [{"op", "path", "value"}]} list; the CLI does not
     validate preference paths (observed key GLOBAL.PREFERENCES.TOP_TABS). Not verified live.'
-  reviewed_by: primary
   readback:
     command: user.preference.get
     ids: {}
     kind: object
 - command_id: user.update
-  command_path: user update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateUser
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.update
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.update with validated request fields.
-  request_model: UserUpdateRequest
-  result_model: UserUpdateResult
   mutation_class: benign_mutation
-  edits_target: true
   confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
   live_exemption_reason: Account or workspace mutation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth user update --help
   agent_example: 'mammoth user update --input ''{"first_name": "Jane"}'''
-  unit_tests:
-  - UT-USER-UPDATE
-  contract_tests:
-  - CT-USER-UPDATE-HUMAN
-  - CT-USER-UPDATE-JSON
-  - CT-USER-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: null
-  reviewed_by: primary
   readback:
     command: user.get
     ids: {}

@@ -18,6 +18,9 @@ MANIFESTS = SPEC / "manifests"
 REPORT = SPEC / "reports" / "parity.md"
 
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SCRIPTS.parent))
+
+from mammoth_cli.manifest.loader import command_records  # noqa: E402
 
 
 def _yaml(path: Path):
@@ -30,11 +33,7 @@ def build() -> str:
     metadata = json.loads((SPEC / "openapi" / "metadata.json").read_text(encoding="utf-8"))
     ops = _yaml(MANIFESTS / "openapi-operations.yaml")["operations"]
     sdk = _yaml(MANIFESTS / "sdk-methods.yaml")["methods"]
-    import glob
-
-    commands = []
-    for path in sorted(glob.glob(str(MANIFESTS / "commands" / "*.yaml"))):
-        commands += _yaml(Path(path))["commands"]
+    commands = command_records()
 
     disp = Counter(r["disposition"] for r in ops)
     sdk_command = sum(1 for r in sdk if r.get("canonical_command"))

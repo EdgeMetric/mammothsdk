@@ -9,11 +9,21 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view_ops as view_ops_cmd
+from mammoth_cli.commands.view_ops import crud as view_crud
+from mammoth_cli.commands.view_ops import draft as view_draft
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation, ResourceRef
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
+
+
+def _handler(name: str) -> Any:
+    """The ``view`` handler called ``name``, in whichever view_ops module defines it."""
+    modules = (view_transforms, view_draft, view_crud)
+    return next(getattr(module, name) for module in modules if hasattr(module, name))
+
 
 _CREATE = "mammoth.client.ViewsResource.create"
 _GET = "mammoth.client.ViewsResource.get"
@@ -48,7 +58,7 @@ def _write(tmp_path: Path, payload: dict[str, Any]) -> str:
 
 def test_create_requires_dataset_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_create(_inv("view.create"))
+        view_crud.view_create(_inv("view.create"))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -57,7 +67,7 @@ def test_create_forwards_optional_fields(fake_service: FakeMammothService, tmp_p
     # target) so the same-dataset check passes and the create call proceeds.
     fake_service.responses[_FIND_DATASET] = 5
     doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
-    view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
+    view_crud.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
     assert fake_service.call_log == [
         (_FIND_DATASET, {"dataview_id": 9}),
         (_CREATE, {"dataset_id": 5, "name": "Copy", "clone_from": 9}),
@@ -70,7 +80,7 @@ def test_create_rejects_clone_from_view_of_a_different_dataset(
     fake_service.responses[_FIND_DATASET] = 8
     doc = _write(tmp_path, {"name": "Copy", "clone_from": 9})
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
+        view_crud.view_create(_inv("view.create", extra_args=["5"], input_file=doc))
     assert excinfo.value.code == "invalid_arguments"
     assert excinfo.value.hint is not None
     assert "plain view" in excinfo.value.hint
@@ -79,12 +89,12 @@ def test_create_rejects_clone_from_view_of_a_different_dataset(
 
 def test_get_requires_view_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_get(_inv("view.get"))
+        view_crud.view_get(_inv("view.get"))
     assert excinfo.value.code == "missing_argument"
 
 
 def test_get_uses_positional_view_id(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
 
 
@@ -106,7 +116,7 @@ def test_get_via_discovery_returns_the_dataview_record(
     # envelope must carry its dataview record (and the discovered parent),
     # not "<unserializable View>".
     fake_service.responses[_GET] = _RichView()
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert data == {
         "id": 7,
         "name": "View 1",
@@ -119,13 +129,13 @@ def test_create_returns_the_dataview_record(fake_service: FakeMammothService) ->
     # ``ViewsResource.create`` also hands back a rich View; the envelope must
     # carry the new view's ids at the top (``view get`` has the full record).
     fake_service.responses[_CREATE] = _RichView()
-    data, _ = view_ops_cmd.view_create(_inv("view.create", extra_args=["63"]))
+    data, _ = view_crud.view_create(_inv("view.create", extra_args=["63"]))
     assert data == {"view_id": 7, "dataset_id": 63, "id": 7, "name": "View 1"}
 
 
 def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], output="json"))
+        view_crud.view_delete(_inv("view.delete", extra_args=["7"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
 
@@ -134,13 +144,13 @@ def test_delete_refuses_parent_discovery(fake_service: FakeMammothService) -> No
     # A destructive call never falls back to the project-wide parent probe:
     # with no exact parent it fails closed before any SDK call.
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
+        view_crud.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
     assert excinfo.value.code == "resource_identity_required"
     assert fake_service.call_log == []
 
 
 def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
+    view_crud.view_delete(_inv("view.delete", extra_args=["7", "122"], yes=True))
     # The delete, then the read that confirms the view is gone.
     assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
     assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
@@ -150,7 +160,7 @@ def test_delete_forwards_exact_parent_input(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"dataset_id": 122})
-    view_ops_cmd.view_delete(_inv("view.delete", extra_args=["7"], input_file=doc, yes=True))
+    view_crud.view_delete(_inv("view.delete", extra_args=["7"], input_file=doc, yes=True))
     # The delete, then the read that confirms the view is gone.
     assert [symbol for symbol, _ in fake_service.call_log][0] == _DELETE
     assert fake_service.call_log[0][1] == {"view_id": 7, "dataset_id": 122}
@@ -159,7 +169,7 @@ def test_delete_forwards_exact_parent_input(
 def test_delete_uses_typed_resource_parent_without_probe(
     fake_service: FakeMammothService,
 ) -> None:
-    view_ops_cmd.view_delete(
+    view_crud.view_delete(
         _inv(
             "view.delete",
             extra_args=["7"],
@@ -177,7 +187,7 @@ def test_get_rejects_conflicting_explicit_parent_identities(
 ) -> None:
     doc = _write(tmp_path, {"dataset_id": 122})
     with pytest.raises(CliError) as raised:
-        view_ops_cmd.view_get(
+        view_crud.view_get(
             _inv(
                 "view.get",
                 extra_args=["7"],
@@ -193,7 +203,7 @@ def test_get_rejects_conflicting_explicit_parent_identities(
 def test_transform_uses_exact_resource_parent_in_parallel_project_scope(
     fake_service: FakeMammothService,
 ) -> None:
-    view_ops_cmd.view_transform_discard_duplicates(
+    view_transforms.view_transform_discard_duplicates(
         _inv(
             "view.transform.add-column",
             extra_args=["7"],
@@ -210,7 +220,7 @@ def test_resource_reference_rejects_selected_profile_project_mismatch(
 ) -> None:
     profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4, project_id=181))
     with pytest.raises(CliError) as raised:
-        view_ops_cmd.view_get(
+        view_crud.view_get(
             _inv(
                 "view.get",
                 extra_args=["7"],
@@ -227,9 +237,7 @@ def test_resource_reference_rejects_selected_profile_project_mismatch(
 
 
 def test_draft_enter_calls_view(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_enter(
-        _inv("view.draft.enter", extra_args=["3"], resource_ref=_parent(3))
-    )
+    view_draft.view_draft_enter(_inv("view.draft.enter", extra_args=["3"], resource_ref=_parent(3)))
     assert fake_service.view_call_log == [(3, "enter_draft_mode", {"dataset_id": 122})]
 
 
@@ -238,14 +246,14 @@ def test_draft_status_reads_server_backed_pipeline(fake_service: FakeMammothServ
     process-local View flag."""
     symbol = "mammoth.api.pipeline.PipelineAPI.get_draft_status"
     fake_service.responses[symbol] = {"dataview_id": 3, "is_draft": True}
-    data, _ = view_ops_cmd.view_draft_status(_inv("view.draft.status", extra_args=["3"]))
+    data, _ = view_draft.view_draft_status(_inv("view.draft.status", extra_args=["3"]))
     assert data == {"dataview_id": 3, "is_draft": True, "step_errors": []}
     assert fake_service.call_log[0] == (symbol, {"dataview_id": 3})
     assert fake_service.view_call_log == []
 
 
 def test_draft_submit_calls_view(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_submit(
+    view_draft.view_draft_submit(
         _inv("view.draft.submit", extra_args=["3"], resource_ref=_parent(3))
     )
     assert fake_service.view_call_log == [(3, "submit_draft", {"dataset_id": 122})]
@@ -253,13 +261,13 @@ def test_draft_submit_calls_view(fake_service: FakeMammothService) -> None:
 
 def test_draft_discard_blocked_without_confirmation(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_draft_discard(_inv("view.draft.discard", extra_args=["3"], output="json"))
+        view_draft.view_draft_discard(_inv("view.draft.discard", extra_args=["3"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.view_call_log == []
 
 
 def test_draft_discard_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_draft_discard(
+    view_draft.view_draft_discard(
         _inv("view.draft.discard", extra_args=["3"], resource_ref=_parent(3), yes=True)
     )
     assert fake_service.view_call_log == [(3, "discard_draft", {"dataset_id": 122})]
@@ -267,13 +275,13 @@ def test_draft_discard_proceeds_with_yes(fake_service: FakeMammothService) -> No
 
 def test_draft_auto_run_requires_enabled(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_draft_auto_run(_inv("view.draft.auto-run", extra_args=["3"]))
+        view_draft.view_draft_auto_run(_inv("view.draft.auto-run", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
 def test_draft_auto_run_forwards_enabled(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"enabled": True})
-    view_ops_cmd.view_draft_auto_run(
+    view_draft.view_draft_auto_run(
         _inv("view.draft.auto-run", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [(3, "set_auto_run", {"dataset_id": 122, "enabled": True})]
@@ -284,7 +292,9 @@ def test_draft_auto_run_forwards_enabled(fake_service: FakeMammothService, tmp_p
 
 def test_transform_add_column_requires_name(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_add_column(_inv("view.transform.add-column", extra_args=["3"]))
+        view_transforms.view_transform_add_column(
+            _inv("view.transform.add-column", extra_args=["3"])
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -292,7 +302,7 @@ def test_transform_add_column_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"name": "Col", "column_type": "NUMERIC"})
-    view_ops_cmd.view_transform_add_column(
+    view_transforms.view_transform_add_column(
         _inv("view.transform.add-column", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -302,13 +312,13 @@ def test_transform_add_column_forwards_optional(
 
 def test_transform_add_sql_requires_query(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_add_sql(_inv("view.transform.add-sql", extra_args=["3"]))
+        view_transforms.view_transform_add_sql(_inv("view.transform.add-sql", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
 def test_transform_add_sql_forwards_query(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"query": "SELECT 1"})
-    view_ops_cmd.view_transform_add_sql(
+    view_transforms.view_transform_add_sql(
         _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [(3, "add_sql", {"dataset_id": 122, "query": "SELECT 1"})]
@@ -328,7 +338,7 @@ def test_add_sql_whose_readback_fails_is_confirmed_by_the_task_list(
     monkeypatch.setattr(view_ops_cmd, "_tasks", lambda *_args, **_kwargs: next(listings))
     fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
     doc = _write(tmp_path, {"query": "SELECT 1"})
-    data, _ = view_ops_cmd.view_transform_add_sql(
+    data, _ = view_transforms.view_transform_add_sql(
         _inv("view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert data["status"] == "done"
@@ -343,7 +353,7 @@ def test_add_sql_unknown_outcome_with_no_new_task_stays_unknown(
     fake_service.view_responses[(3, "add_sql")] = _unknown_outcome()
     doc = _write(tmp_path, {"query": "SELECT 1"})
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_add_sql(
+        view_transforms.view_transform_add_sql(
             _inv(
                 "view.transform.add-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
             )
@@ -353,7 +363,9 @@ def test_add_sql_unknown_outcome_with_no_new_task_stays_unknown(
 
 def test_transform_ai_requires_prompt(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_ai(_inv("view.transform.ai", extra_args=["3"], input_file=None))
+        view_transforms.view_transform_ai(
+            _inv("view.transform.ai", extra_args=["3"], input_file=None)
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -363,13 +375,13 @@ def test_transform_ai_fails_when_the_step_errors_as_it_runs() -> None:
         "pipeline_error": {"error_code": 7000, "execution_state": "runtime_error", "task_id": 9}
     }
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd._reject_failed_ai_run(3, data)
+        view_transforms._reject_failed_ai_run(3, data)
     assert excinfo.value.code == "task_runtime_error"
     assert excinfo.value.recovery_commands == ["mammoth view task delete 3 9 --yes"]
 
 
 def test_transform_ai_passes_a_clean_run() -> None:
-    view_ops_cmd._reject_failed_ai_run(3, {"status": "done", "row_check": {"rows_after": 5}})
+    view_transforms._reject_failed_ai_run(3, {"status": "done", "row_check": {"rows_after": 5}})
 
 
 def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
@@ -383,7 +395,7 @@ def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_pa
             "context_columns_derivation": True,
         },
     )
-    view_ops_cmd.view_transform_ai(
+    view_transforms.view_transform_ai(
         _inv("view.transform.ai", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -404,7 +416,7 @@ def test_transform_ai_forwards_optional(fake_service: FakeMammothService, tmp_pa
 
 def test_transform_bulk_replace_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_bulk_replace(
+        view_transforms.view_transform_bulk_replace(
             _inv("view.transform.bulk-replace", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -422,7 +434,7 @@ def test_transform_bulk_replace_forwards_optional(
             "condition": {"column": "a", "operator": "EQ", "value": 1},
         },
     )
-    view_ops_cmd.view_transform_bulk_replace(
+    view_transforms.view_transform_bulk_replace(
         _inv(
             "view.transform.bulk-replace", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -444,7 +456,7 @@ def test_transform_bulk_replace_forwards_optional(
 
 def test_transform_combine_columns_requires_sources(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_combine_columns(
+        view_transforms.view_transform_combine_columns(
             _inv("view.transform.combine-columns", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -454,7 +466,7 @@ def test_transform_combine_columns_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"sources": ["a", "b"], "separator": "-", "new_column": "ab"})
-    view_ops_cmd.view_transform_combine_columns(
+    view_transforms.view_transform_combine_columns(
         _inv(
             "view.transform.combine-columns",
             extra_args=["3"],
@@ -473,7 +485,7 @@ def test_transform_combine_columns_forwards_optional(
 
 def test_transform_convert_type_requires_conversions(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_convert_type(
+        view_transforms.view_transform_convert_type(
             _inv("view.transform.convert-type", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -481,7 +493,7 @@ def test_transform_convert_type_requires_conversions(fake_service: FakeMammothSe
 
 def test_transform_convert_type_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
-    view_ops_cmd.view_transform_convert_type(
+    view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -509,7 +521,7 @@ def test_transform_convert_type_skips_a_column_that_already_has_the_type(
         tmp_path,
         {"conversions": [{"column": "a", "to": "NUMERIC"}, {"column": "b", "to": "NUMERIC"}]},
     )
-    data, _ = view_ops_cmd.view_transform_convert_type(
+    data, _ = view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -525,7 +537,7 @@ def test_transform_convert_type_text_to_number_warns_that_unparsable_values_beco
 ) -> None:
     fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
     doc = _write(tmp_path, {"conversions": [{"column": "b", "to": "NUMERIC"}]})
-    data, _ = view_ops_cmd.view_transform_convert_type(
+    data, _ = view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -541,7 +553,7 @@ def test_transform_convert_type_adds_no_task_when_every_column_has_the_type(
 ) -> None:
     fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
     doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
-    data, _ = view_ops_cmd.view_transform_convert_type(
+    data, _ = view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -553,7 +565,7 @@ def test_transform_convert_type_adds_no_task_when_every_column_has_the_type(
 
 def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_copy_columns(
+        view_transforms.view_transform_copy_columns(
             _inv("view.transform.copy-columns", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -561,7 +573,7 @@ def test_transform_copy_columns_requires_copies(fake_service: FakeMammothService
 
 def test_transform_copy_columns_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"copies": [{"source": "a", "as_name": "a2"}]})
-    view_ops_cmd.view_transform_copy_columns(
+    view_transforms.view_transform_copy_columns(
         _inv(
             "view.transform.copy-columns", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -573,7 +585,7 @@ def test_transform_copy_columns_forwards(fake_service: FakeMammothService, tmp_p
 
 def test_transform_crosstab_requires_dataset_name(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_crosstab(_inv("view.transform.crosstab", extra_args=["3"]))
+        view_transforms.view_transform_crosstab(_inv("view.transform.crosstab", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -590,7 +602,7 @@ def test_transform_crosstab_forwards_optional(
             "timeout": 30,
         },
     )
-    view_ops_cmd.view_transform_crosstab(
+    view_transforms.view_transform_crosstab(
         _inv("view.transform.crosstab", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -611,7 +623,7 @@ def test_transform_crosstab_forwards_optional(
 
 def test_transform_date_diff_requires_component(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_date_diff(_inv("view.transform.date-diff", extra_args=["3"]))
+        view_transforms.view_transform_date_diff(_inv("view.transform.date-diff", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -619,7 +631,7 @@ def test_transform_date_diff_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"component": "DAY", "start": "a", "end": "b", "new_column": "diff"})
-    view_ops_cmd.view_transform_date_diff(
+    view_transforms.view_transform_date_diff(
         _inv("view.transform.date-diff", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -633,7 +645,7 @@ def test_transform_date_diff_forwards_optional(
 
 def test_transform_delete_columns_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_delete_columns(
+        view_transforms.view_transform_delete_columns(
             _inv("view.transform.delete-columns", extra_args=["3"], yes=True)
         )
     assert excinfo.value.code == "missing_field"
@@ -643,7 +655,7 @@ def test_transform_delete_columns_forwards(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a", "b"]})
-    view_ops_cmd.view_transform_delete_columns(
+    view_transforms.view_transform_delete_columns(
         _inv(
             "view.transform.delete-columns",
             extra_args=["3"],
@@ -662,7 +674,7 @@ def test_transform_delete_columns_blocked_without_confirmation(
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a", "b"]})
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_delete_columns(
+        view_transforms.view_transform_delete_columns(
             _inv(
                 "view.transform.delete-columns",
                 extra_args=["3"],
@@ -676,7 +688,7 @@ def test_transform_delete_columns_blocked_without_confirmation(
 
 
 def test_transform_discard_duplicates_no_input(fake_service: FakeMammothService) -> None:
-    view_ops_cmd.view_transform_discard_duplicates(
+    view_transforms.view_transform_discard_duplicates(
         _inv("view.transform.discard-duplicates", extra_args=["3"], resource_ref=_parent(3))
     )
     assert fake_service.view_call_log == [(3, "discard_duplicates", {"dataset_id": 122})]
@@ -686,7 +698,7 @@ def test_transform_discard_duplicates_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"ignore_columns": ["a"]})
-    view_ops_cmd.view_transform_discard_duplicates(
+    view_transforms.view_transform_discard_duplicates(
         _inv(
             "view.transform.discard-duplicates",
             extra_args=["3"],
@@ -701,7 +713,7 @@ def test_transform_discard_duplicates_forwards_optional(
 
 def test_transform_extract_date_requires_component(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_extract_date(
+        view_transforms.view_transform_extract_date(
             _inv("view.transform.extract-date", extra_args=["3"], input_file=None)
         )
     assert excinfo.value.code == "missing_field"
@@ -711,7 +723,7 @@ def test_transform_extract_date_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "component": "year", "new_column": "yr"})
-    view_ops_cmd.view_transform_extract_date(
+    view_transforms.view_transform_extract_date(
         _inv(
             "view.transform.extract-date", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -727,7 +739,7 @@ def test_transform_extract_date_forwards_optional(
 
 def test_transform_fill_missing_requires_direction(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_fill_missing(
+        view_transforms.view_transform_fill_missing(
             _inv("view.transform.fill-missing", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -737,7 +749,7 @@ def test_transform_fill_missing_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "direction": "LAST_VALUE", "partition_by": "b"})
-    view_ops_cmd.view_transform_fill_missing(
+    view_transforms.view_transform_fill_missing(
         _inv(
             "view.transform.fill-missing", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -753,7 +765,7 @@ def test_transform_fill_missing_forwards_optional(
 
 def test_transform_filter_requires_condition(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_filter(_inv("view.transform.filter", extra_args=["3"]))
+        view_transforms.view_transform_filter(_inv("view.transform.filter", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -767,7 +779,7 @@ def test_transform_filter_forwards_optional(
             "filter_type": "REMOVE",
         },
     )
-    view_ops_cmd.view_transform_filter(
+    view_transforms.view_transform_filter(
         _inv("view.transform.filter", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -785,7 +797,7 @@ def test_transform_filter_forwards_optional(
 
 def test_transform_generate_sql_requires_intent(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_generate_sql(
+        view_transforms.view_transform_generate_sql(
             _inv("view.transform.generate-sql", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -799,7 +811,7 @@ def test_transform_generate_sql_says_the_view_is_unchanged(
     fake_service.view_responses[(3, "generate_sql")] = query
     fake_service.responses[view_ops_cmd._DATAVIEW_GET_SYMBOL] = {"id": 3, "name": "View 1"}
     doc = _write(tmp_path, {"intent": "Count rows per city"})
-    data, _ = view_ops_cmd.view_transform_generate_sql(
+    data, _ = view_transforms.view_transform_generate_sql(
         _inv(
             "view.transform.generate-sql",
             extra_args=["3"],
@@ -820,7 +832,7 @@ def test_transform_generate_sql_says_the_view_is_unchanged(
 
 def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"intent": "Top customers"})
-    view_ops_cmd.view_transform_generate_sql(
+    view_transforms.view_transform_generate_sql(
         _inv(
             "view.transform.generate-sql", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -832,7 +844,7 @@ def test_transform_generate_sql_forwards(fake_service: FakeMammothService, tmp_p
 
 def test_transform_increment_date_requires_delta(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_increment_date(
+        view_transforms.view_transform_increment_date(
             _inv("view.transform.increment-date", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -842,7 +854,7 @@ def test_transform_increment_date_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "delta": {"days": 1}, "new_column": "a2"})
-    view_ops_cmd.view_transform_increment_date(
+    view_transforms.view_transform_increment_date(
         _inv(
             "view.transform.increment-date",
             extra_args=["3"],
@@ -861,7 +873,7 @@ def test_transform_increment_date_forwards_optional(
 
 def test_transform_join_requires_on(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_join(_inv("view.transform.join", extra_args=["3"]))
+        view_transforms.view_transform_join(_inv("view.transform.join", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -876,7 +888,7 @@ def test_transform_join_forwards_optional(fake_service: FakeMammothService, tmp_
             "column_prefix": "f_",
         },
     )
-    view_ops_cmd.view_transform_join(
+    view_transforms.view_transform_join(
         _inv("view.transform.join", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -897,7 +909,7 @@ def test_transform_join_forwards_optional(fake_service: FakeMammothService, tmp_
 
 def test_transform_json_extract_requires_column(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_json_extract(
+        view_transforms.view_transform_json_extract(
             _inv("view.transform.json-extract", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -907,7 +919,7 @@ def test_transform_json_extract_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "keys": ["k1"], "keep_source": True})
-    view_ops_cmd.view_transform_json_extract(
+    view_transforms.view_transform_json_extract(
         _inv(
             "view.transform.json-extract", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -919,7 +931,9 @@ def test_transform_json_extract_forwards_optional(
 
 def test_transform_limit_rows_requires_n(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_limit_rows(_inv("view.transform.limit-rows", extra_args=["3"]))
+        view_transforms.view_transform_limit_rows(
+            _inv("view.transform.limit-rows", extra_args=["3"])
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -927,7 +941,7 @@ def test_transform_limit_rows_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"n": 10, "bottom": True})
-    view_ops_cmd.view_transform_limit_rows(
+    view_transforms.view_transform_limit_rows(
         _inv("view.transform.limit-rows", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -946,7 +960,7 @@ def test_display_setting_transforms_require_field(
     fake_service: FakeMammothService, command_id: str, handler: str, field: str
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        getattr(view_ops_cmd, handler)(_inv(command_id, extra_args=["3"]))
+        _handler(handler)(_inv(command_id, extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -954,7 +968,7 @@ def test_transform_rename_columns_forwards(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"renames": {"cust_id": "Customer ID"}})
-    view_ops_cmd.view_transform_rename_columns(
+    view_transforms.view_transform_rename_columns(
         _inv(
             "view.transform.rename-columns",
             extra_args=["3"],
@@ -969,7 +983,7 @@ def test_transform_rename_columns_forwards(
 
 def test_transform_sort_forwards(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"order_by": [["Revenue", "DESC"]]})
-    view_ops_cmd.view_transform_sort(
+    view_transforms.view_transform_sort(
         _inv("view.transform.sort", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -979,7 +993,7 @@ def test_transform_sort_forwards(fake_service: FakeMammothService, tmp_path: Pat
 
 def test_transform_lookup_requires_value(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_lookup(_inv("view.transform.lookup", extra_args=["3"]))
+        view_transforms.view_transform_lookup(_inv("view.transform.lookup", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -990,7 +1004,7 @@ def test_transform_lookup_forwards_optional(
         tmp_path,
         {"source": "a", "lookup_view_id": 9, "key": "k", "value": "v", "new_column": "nc"},
     )
-    view_ops_cmd.view_transform_lookup(
+    view_transforms.view_transform_lookup(
         _inv("view.transform.lookup", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1011,13 +1025,13 @@ def test_transform_lookup_forwards_optional(
 
 def test_transform_math_requires_expression(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_math(_inv("view.transform.math", extra_args=["3"]))
+        view_transforms.view_transform_math(_inv("view.transform.math", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
 def test_transform_math_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"expression": "a + b", "new_column": "sum"})
-    view_ops_cmd.view_transform_math(
+    view_transforms.view_transform_math(
         _inv("view.transform.math", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1027,7 +1041,7 @@ def test_transform_math_forwards_optional(fake_service: FakeMammothService, tmp_
 
 def test_transform_pivot_requires_aggregations(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_pivot(_inv("view.transform.pivot", extra_args=["3"]))
+        view_transforms.view_transform_pivot(_inv("view.transform.pivot", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1042,7 +1056,7 @@ def test_transform_pivot_forwards_optional(
             "condition": {"column": "a", "operator": "EQ", "value": 1},
         },
     )
-    view_ops_cmd.view_transform_pivot(
+    view_transforms.view_transform_pivot(
         _inv("view.transform.pivot", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1061,7 +1075,7 @@ def test_transform_pivot_forwards_optional(
 
 def test_transform_replace_requires_find(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_replace(_inv("view.transform.replace", extra_args=["3"]))
+        view_transforms.view_transform_replace(_inv("view.transform.replace", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1069,7 +1083,7 @@ def test_transform_replace_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "find": "x", "replace": "y", "match_words": True})
-    view_ops_cmd.view_transform_replace(
+    view_transforms.view_transform_replace(
         _inv("view.transform.replace", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1083,7 +1097,9 @@ def test_transform_replace_forwards_optional(
 
 def test_transform_set_values_requires_values(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_set_values(_inv("view.transform.set-values", extra_args=["3"]))
+        view_transforms.view_transform_set_values(
+            _inv("view.transform.set-values", extra_args=["3"])
+        )
     assert excinfo.value.code == "missing_field"
 
 
@@ -1091,7 +1107,7 @@ def test_transform_set_values_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"values": [{"value": "x"}], "new_column": "nc", "column_type": "TEXT"})
-    view_ops_cmd.view_transform_set_values(
+    view_transforms.view_transform_set_values(
         _inv("view.transform.set-values", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1110,7 +1126,7 @@ def test_transform_set_values_forwards_optional(
 
 def test_transform_small_large_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_small_large(
+        view_transforms.view_transform_small_large(
             _inv("view.transform.small-large", extra_args=["3"])
         )
     assert excinfo.value.code == "missing_field"
@@ -1120,7 +1136,7 @@ def test_transform_small_large_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"function": "SMALL", "columns": ["a"], "index": 2})
-    view_ops_cmd.view_transform_small_large(
+    view_transforms.view_transform_small_large(
         _inv(
             "view.transform.small-large", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -1132,7 +1148,7 @@ def test_transform_small_large_forwards_optional(
 
 def test_transform_split_requires_new_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_split(_inv("view.transform.split", extra_args=["3"]))
+        view_transforms.view_transform_split(_inv("view.transform.split", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1141,7 +1157,7 @@ def test_transform_split_forwards(fake_service: FakeMammothService, tmp_path: Pa
         tmp_path,
         {"column": "a", "delimiter": ",", "new_columns": [{"name": "a1"}, {"name": "a2"}]},
     )
-    view_ops_cmd.view_transform_split(
+    view_transforms.view_transform_split(
         _inv("view.transform.split", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1160,7 +1176,7 @@ def test_transform_split_forwards(fake_service: FakeMammothService, tmp_path: Pa
 
 def test_transform_substring_requires_column(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_substring(_inv("view.transform.substring", extra_args=["3"]))
+        view_transforms.view_transform_substring(_inv("view.transform.substring", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1168,7 +1184,7 @@ def test_transform_substring_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"column": "a", "num_char": 3, "direction": "START"})
-    view_ops_cmd.view_transform_substring(
+    view_transforms.view_transform_substring(
         _inv("view.transform.substring", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1188,20 +1204,20 @@ def test_transform_substring_rejects_left_with_numchar(
         "view_id": "3",
     }
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_substring(invocation)
+        view_transforms.view_transform_substring(invocation)
     assert excinfo.value.code == "invalid_argument"
     assert fake_service.view_call_log == []
 
 
 def test_transform_text_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_text(_inv("view.transform.text", extra_args=["3"]))
+        view_transforms.view_transform_text(_inv("view.transform.text", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
 def test_transform_text_forwards_optional(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "case": "UPPER", "trim": True})
-    view_ops_cmd.view_transform_text(
+    view_transforms.view_transform_text(
         _inv("view.transform.text", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1211,7 +1227,7 @@ def test_transform_text_forwards_optional(fake_service: FakeMammothService, tmp_
 
 def test_transform_unnest_requires_columns(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_unnest(_inv("view.transform.unnest", extra_args=["3"]))
+        view_transforms.view_transform_unnest(_inv("view.transform.unnest", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1219,7 +1235,7 @@ def test_transform_unnest_forwards_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"columns": ["a"], "label_column": "L"})
-    view_ops_cmd.view_transform_unnest(
+    view_transforms.view_transform_unnest(
         _inv("view.transform.unnest", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1229,7 +1245,7 @@ def test_transform_unnest_forwards_optional(
 
 def test_transform_window_requires_function(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_window(_inv("view.transform.window", extra_args=["3"]))
+        view_transforms.view_transform_window(_inv("view.transform.window", extra_args=["3"]))
     assert excinfo.value.code == "missing_field"
 
 
@@ -1239,7 +1255,7 @@ def test_transform_window_forwards_optional(
     doc = _write(
         tmp_path, {"function": "RANK", "partition_by": ["a"], "column": "b", "new_column": "r"}
     )
-    view_ops_cmd.view_transform_window(
+    view_transforms.view_transform_window(
         _inv("view.transform.window", extra_args=["3"], resource_ref=_parent(3), input_file=doc)
     )
     assert fake_service.view_call_log == [
@@ -1298,7 +1314,7 @@ def test_non_read_view_ops_refuse_parent_discovery(
     if payload is not None:
         overrides["input_file"] = _write(tmp_path, payload)
     with pytest.raises(CliError) as excinfo:
-        getattr(view_ops_cmd, handler)(_inv(command_id, **overrides))
+        _handler(handler)(_inv(command_id, **overrides))
     assert excinfo.value.code == "missing_argument"
     assert excinfo.value.recovery_commands == ["mammoth view get 308772 --project 4301"]
     assert fake_service.view_call_log == []
@@ -1317,7 +1333,7 @@ def test_get_with_exact_parent_asks_the_server_for_the_brief_projection(
 ) -> None:
     # The standard dataview record is ~5x the brief one (dependencies_info,
     # display trees); the GET route projects server-side.
-    view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
+    view_crud.view_get(_inv("view.get", extra_args=["7", "63"]))
     assert fake_service.call_log == [
         (_DV_GET, {"dataset_id": 63, "dataview_id": 7, "fields": _BRIEF}),
         (_DASHBOARDS_LIST, {}),
@@ -1329,7 +1345,7 @@ def test_get_fields_input_overrides_the_projection(
 ) -> None:
     doc = tmp_path / "in.json"
     doc.write_text('{"fields": "__full"}', encoding="utf-8")
-    view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"], input_file=str(doc)))
+    view_crud.view_get(_inv("view.get", extra_args=["7", "63"], input_file=str(doc)))
     assert fake_service.call_log[0][1]["fields"] == "__full"
 
 
@@ -1346,7 +1362,7 @@ def test_get_via_discovery_trims_to_the_brief_shape(fake_service: FakeMammothSer
         "display_properties": {"COLUMN_ORDER": {}},
     }
     fake_service.responses[_GET] = rich
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert "dependencies_info" not in data and "display_properties" not in data
     assert data["row_count"] == 3 and data["dataset_id"] == 63 and data["ds_id"] == 63
 
@@ -1359,7 +1375,7 @@ def test_get_via_discovery_reports_the_records_own_parent_not_the_probed_one(
     rich.dataset_id = 2759  # what the probe settled on
     rich.raw = {"id": 3062, "ds_id": 2473, "name": "V", "row_count": 50}
     fake_service.responses[_GET] = rich
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["3062"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["3062"]))
     assert data["dataset_id"] == 2473 and data["ds_id"] == 2473
 
 
@@ -1377,7 +1393,7 @@ def test_exact_get_shows_renamed_columns_and_drops_display_properties(
     fake_service: FakeMammothService,
 ) -> None:
     fake_service.responses[_DV_GET] = dict(_RENAMED)
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7", "63"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7", "63"]))
     assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
     assert "display_properties" not in data
 
@@ -1386,7 +1402,7 @@ def test_discovery_get_shows_renamed_columns(fake_service: FakeMammothService) -
     rich = _RichView()
     rich.raw = dict(_RENAMED)
     fake_service.responses[_GET] = rich
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert [c["display_name"] for c in data["metadata"]] == ["Customer Ref", "qty"]
 
 
@@ -1400,7 +1416,7 @@ def test_discovery_get_with_fields_keeps_the_full_record(
     rich.raw = dict(_RENAMED)
     fake_service.responses[_GET] = rich
     doc = _write(tmp_path, {"fields": "__full"})
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"], input_file=doc))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7"], input_file=doc))
     assert fake_service.call_log == [(_GET, {"view_id": 7}), (_DASHBOARDS_LIST, {})]
     assert data["display_properties"] == _RENAMED["display_properties"]
     assert data["metadata"][0]["display_name"] == "Customer Ref"
@@ -1448,7 +1464,7 @@ def test_transform_with_reference_errors_fails_with_the_repair_command(
 ) -> None:
     _programme_reference_error(fake_service, 132)
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_bulk_replace(
+        view_transforms.view_transform_bulk_replace(
             _inv(
                 "view.transform.bulk-replace",
                 extra_args=["132"],
@@ -1489,7 +1505,7 @@ def test_transform_without_has_error_is_untouched(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     fake_service.view_responses[(132, "bulk_replace")] = {"has_error": False, "status": "done"}
-    data, _meta = view_ops_cmd.view_transform_bulk_replace(
+    data, _meta = view_transforms.view_transform_bulk_replace(
         _inv(
             "view.transform.bulk-replace",
             extra_args=["132"],
@@ -1520,7 +1536,7 @@ def test_reference_error_survives_a_failed_follow_up_read(
         code="api_error", message="boom", exit_status=1
     )
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_bulk_replace(
+        view_transforms.view_transform_bulk_replace(
             _inv(
                 "view.transform.bulk-replace",
                 extra_args=["132"],
@@ -1551,7 +1567,7 @@ def test_sdk_raised_reference_error_is_enriched_the_same_way(
         details={"dataview_id": 132, "response": {"has_error": True, "status": "done"}},
     )
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_bulk_replace(
+        view_transforms.view_transform_bulk_replace(
             _inv(
                 "view.transform.bulk-replace",
                 extra_args=["132"],
@@ -1587,7 +1603,7 @@ def test_expected_task_count_mismatch_refuses_the_write(
 ) -> None:
     fake_service.responses[view_ops_cmd._TASK_LIST_SYMBOL] = {"tasks": [{"id": 1}, {"id": 2}]}
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_filter(
+        view_transforms.view_transform_filter(
             _inv(
                 "view.transform.filter",
                 extra_args=["132"],
@@ -1614,7 +1630,7 @@ def test_expected_task_count_match_lets_the_write_through_without_the_field(
 ) -> None:
     fake_service.responses[view_ops_cmd._TASK_LIST_SYMBOL] = {"tasks": [{"id": 1}, {"id": 2}]}
     fake_service.view_responses[(132, "filter_rows")] = {"has_error": False}
-    view_ops_cmd.view_transform_filter(
+    view_transforms.view_transform_filter(
         _inv(
             "view.transform.filter",
             extra_args=["132"],
@@ -1632,7 +1648,7 @@ def test_expected_task_count_must_be_a_non_negative_integer(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_transform_filter(
+        view_transforms.view_transform_filter(
             _inv(
                 "view.transform.filter",
                 extra_args=["132"],
@@ -1655,7 +1671,7 @@ def test_get_names_the_dashboards_built_on_the_view(fake_service: FakeMammothSer
         {"id": 133, "title": "Other board", "sources": [8]},
     ]
 
-    data, _ = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _ = view_crud.view_get(_inv("view.get", extra_args=["7"]))
 
     assert data["dashboards"] == [{"id": 132, "title": "Sales board"}]
 
@@ -1666,7 +1682,7 @@ def test_view_delete_that_leaves_the_view_is_not_a_success(
     monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {"id": 7}
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_delete(_inv("view.delete", yes=True, extra_args=["7", "9"], project=180))
+        view_crud.view_delete(_inv("view.delete", yes=True, extra_args=["7", "9"], project=180))
     assert excinfo.value.code == "delete_not_applied"
 
 
@@ -1683,7 +1699,7 @@ def test_get_reads_the_view_and_the_dashboards_in_one_concurrent_batch(
     monkeypatch.setattr(fake_service, "call_many", spy)
     fake_service.responses[_GET] = {"id": 7, "name": "V"}
     fake_service.responses[_DASHBOARDS_LIST] = [{"id": 1, "title": "B", "sources": [7]}]
-    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _meta = view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert batches == [[_GET, _DASHBOARDS_LIST]]
     assert data["dashboards"] == [{"id": 1, "title": "B"}]
 
@@ -1693,12 +1709,12 @@ def test_get_survives_a_failed_dashboards_read_and_raises_a_failed_view_read(
 ) -> None:
     fake_service.responses[_GET] = {"id": 7, "name": "V"}
     fake_service.responses[_DASHBOARDS_LIST] = CliError(code="api_error", message="boom")
-    data, _meta = view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+    data, _meta = view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert data["id"] == 7 and "dashboards" not in data
 
     fake_service.responses[_GET] = CliError(code="not_found", message="no view")
     with pytest.raises(CliError) as excinfo:
-        view_ops_cmd.view_get(_inv("view.get", extra_args=["7"]))
+        view_crud.view_get(_inv("view.get", extra_args=["7"]))
     assert excinfo.value.code == "not_found"
 
 
@@ -1710,7 +1726,7 @@ def test_transform_convert_type_names_a_lossy_column_once(
         tmp_path,
         {"conversions": [{"column": "b", "to": "NUMERIC"}, {"column": "b", "to": "NUMERIC"}]},
     )
-    data, _ = view_ops_cmd.view_transform_convert_type(
+    data, _ = view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -1743,7 +1759,7 @@ def test_a_no_op_convert_type_reads_the_view_and_its_exports_together_once(
     fake_service.responses[_DATAVIEW_GET] = _TYPED_METADATA
     batches = _spy_call_many(fake_service)
     doc = _write(tmp_path, {"conversions": [{"column": "a", "to": "NUMERIC"}]})
-    data, _ = view_ops_cmd.view_transform_convert_type(
+    data, _ = view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )
@@ -1768,7 +1784,7 @@ def test_a_transform_reads_the_view_once_before_it_writes(
 
     fake_service.call_view = at_write  # type: ignore[method-assign]
     doc = _write(tmp_path, {"conversions": [{"column": "b", "to": "NUMERIC"}]})
-    view_ops_cmd.view_transform_convert_type(
+    view_transforms.view_transform_convert_type(
         _inv(
             "view.transform.convert-type", extra_args=["3"], resource_ref=_parent(3), input_file=doc
         )

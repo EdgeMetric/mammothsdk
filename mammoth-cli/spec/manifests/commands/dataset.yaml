@@ -1,113 +1,13 @@
 manifest_schema_version: 1
 commands:
 - command_id: dataset.batch-data
-  command_path: dataset batch-data
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: batch_id
-    type: int
-    required: true
-    metavar: BATCH_ID
-    falls_back_to_field: null
-    help: ID of the batch.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_batch_data
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_batch_data with validated request fields.
-  request_model: DatasetBatchDataRequest
-  result_model: DatasetBatchDataResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: offset
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-BATCH-DATA
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset batch-data DATASET_ID BATCH_ID --help
-  agent_example: mammoth dataset batch-data 123 456
-  unit_tests:
-  - UT-DATASET-BATCH-DATA
-  contract_tests:
-  - CT-DATASET-BATCH-DATA-HUMAN
-  - CT-DATASET-BATCH-DATA-JSON
-  - CT-DATASET-BATCH-DATA-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Dataset and batch parent are explicit; limit is 0..100 and offset is non-negative.
-  reviewed_by: primary
 - command_id: dataset.broken-rows.list
-  command_path: dataset broken-rows list
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_unstructured_rows
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_unstructured_rows with validated request fields.
-  request_model: DatasetBrokenRowsListRequest
-  result_model: DatasetBrokenRowsListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-BROKEN-ROWS-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset broken-rows list DATASET_ID --help
-  agent_example: mammoth dataset broken-rows list 123
-  unit_tests:
-  - UT-DATASET-BROKEN-ROWS-LIST
-  contract_tests:
-  - CT-DATASET-BROKEN-ROWS-LIST-HUMAN
-  - CT-DATASET-BROKEN-ROWS-LIST-JSON
-  - CT-DATASET-BROKEN-ROWS-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number, upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made from a file upload has none.
-  reviewed_by: primary
+  known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number,
+    upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made
+    from a file upload has none.
 - command_id: dataset.broken-rows.resolve
-  command_path: dataset broken-rows resolve
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PatchUnstructuredRows
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows with validated request fields.
-  request_model: DatasetBrokenRowsResolveRequest
-  result_model: DatasetBrokenRowsResolveResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.broken-rows.list
     ids:
@@ -115,402 +15,93 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Needs a file upload with ragged rows on a test server; not yet run live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset broken-rows resolve DATASET_ID --help
-  agent_example: 'mammoth dataset broken-rows resolve 123 --input ''{"op": "add", "batch_id": 1, "rows": [{"line_num": 2, "line": "corrected,line,here"}]}'' --yes'
-  unit_tests:
-  - UT-DATASET-BROKEN-ROWS-RESOLVE
-  contract_tests:
-  - CT-DATASET-BROKEN-ROWS-RESOLVE-HUMAN
-  - CT-DATASET-BROKEN-ROWS-RESOLVE-JSON
-  - CT-DATASET-BROKEN-ROWS-RESOLVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'op "add" takes each corrected line (line_num, batch_id and the original line from dataset broken-rows list, edited so its column count matches) into the dataset; op "remove" discards the lines for good. Returns a job: run job wait on it, then read broken-rows list (row_count 0 and dataset status ready mean it is finished). Confirm with the user first, and say that discarded lines do not come back.'
-  reviewed_by: primary
+  known_restrictions: 'op "add" takes each corrected line (line_num, batch_id and the original line from
+    dataset broken-rows list, edited so its column count matches) into the dataset; op "remove" discards
+    the lines for good. Returns a job: run job wait on it, then read broken-rows list (row_count 0 and
+    dataset status ready mean it is finished). Confirm with the user first, and say that discarded lines
+    do not come back.'
 - command_id: dataset.bulk-delete
-  command_path: dataset bulk-delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteDatasets
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.bulk_delete
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.bulk_delete with validated request fields.
-  request_model: DatasetBulkDeleteRequest
-  result_model: DatasetBulkDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.list
     ids: {}
     kind: object
-  live_test: LT-DATASET-BULK-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset bulk-delete --help
-  agent_example: 'mammoth dataset bulk-delete --input ''{"dataset_ids": [456, 457]}'' --yes'
-  unit_tests:
-  - UT-DATASET-BULK-DELETE
-  contract_tests:
-  - CT-DATASET-BULK-DELETE-HUMAN
-  - CT-DATASET-BULK-DELETE-JSON
-  - CT-DATASET-BULK-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Deletes every listed dataset for good and cannot be undone. A dataset that another view uses as a lookup or join source is kept, and the result says so. List them first (`dataset list`). Needs a prompt or --yes.
-  reviewed_by: primary
+  known_restrictions: Deletes every listed dataset for good and cannot be undone. A dataset that another
+    view uses as a lookup or join source is kept, and the result says so. List them first (`dataset list`).
+    Needs a prompt or --yes.
 - command_id: dataset.bulk-update
-  command_path: dataset bulk-update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateDatasets
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.bulk_update
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.bulk_update with validated request fields.
-  request_model: DatasetBulkUpdateRequest
-  result_model: DatasetBulkUpdateResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
   readback:
     command: dataset.list
     ids: {}
     kind: object
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset bulk-update --help
-  agent_example: 'mammoth dataset bulk-update --input ''{"patch_data": {"name": "Status"}}'' --yes'
-  unit_tests:
-  - UT-DATASET-BULK-UPDATE
-  contract_tests:
-  - CT-DATASET-BULK-UPDATE-HUMAN
-  - CT-DATASET-BULK-UPDATE-JSON
-  - CT-DATASET-BULK-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: BLOCKED[B07 DATASET_PATCH_UNTYPED]; reserved, not registered.
-  reviewed_by: primary
 - command_id: dataset.create
-  command_path: dataset create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateDatasets
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.create
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.create with validated request fields.
-  request_model: DatasetCreateRequest
-  result_model: DatasetCreateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: view.data.get
     ids:
       dataset_id: result.dataset_id
     kind: data
-  live_test: LT-DATASET-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset create --help
-  agent_example: 'mammoth dataset create --input ''{"dataset_spec": {"url": "https://sampledata.mammoth.io/Multi-Store_Retail_Sales.csv"},
-    "ds_creation_type": "weburl"}'''
-  unit_tests:
-  - UT-DATASET-CREATE
-  contract_tests:
-  - CT-DATASET-CREATE-HUMAN
-  - CT-DATASET-CREATE-JSON
-  - CT-DATASET-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'ds_creation_type=weburl (dataset_spec.url), clone, or cloud (a file, REST API or database query from a connection); the command waits for the job and returns the new dataset_id. A weburl dataset keeps its link and can be refreshed on demand (dataset refresh DATASET_ID --yes, or Refresh from URL in the web app; a single CSV only), but never on a schedule: automation''s run_data_retrieval task cannot refresh it (only a cloud-connected dataset can be refreshed); for a scheduled pull from a URL use the REST API connector. Say so rather than scheduling a refresh for it. The result''s name is the dataset''s real name; when the requested name was taken the server adds a suffix, and requested_name and note say so. Use name, not the name you asked for. To copy a dataset as a new independent one: {"ds_creation_type": "clone", "dataset_spec": {"ds_name": NEW_NAME, "source_ds_id": ID, "clone_dataview_ids": [DEFAULT_VIEW_ID], "exclude_data": false}}, DEFAULT_VIEW_ID being the id in dataset''s `default_view` from view list (other views only when asked); an empty clone_dataview_ids is refused here because it makes a blank view. A clone waits and returns the new dataset_id; never use view export dataset for a plain copy, which leaves a live export on the source. A weburl import names the dataset after the downloaded file: follow it with dataset rename to the name the user picked. To import a file from an SFTP server (or another file connector) as a new dataset: connector connection create sftp, then {"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "sftp", "connection_key": KEY, "query_properties": {"ds_name": NAME, "file_path": PATH_ON_SERVER, "data_pull_file": "Pull same file"}}}. data_pull_file is a string and may be left out, which means "Pull same file" (what the web app does); its only other value is "Pull next file based on name pattern", which also needs folder_path and name_pattern. A pull that finds no file at the path fails the create with the server''s reason; the recipe is recipes/file-import.md. To import from a REST API or Elasticsearch: the connection must exist first (connector connection create generic_rest_api, in the same project); try the query with connector ds-config create (data_sample, creates no dataset; connector connection query takes SQL only and refuses a REST config); then {"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "generic_rest_api", "connection_key": KEY, "query_properties": {"ds_name": NAME, "table_name": TABLE, "query": "<JSON string of the endpoint config>"}, "schedule_properties": {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "recurrence_info": {"interval": 1, "start_at": "<future ISO time>"}}}. schedule_properties and recurrence_info are required (without them the job fails with Invalid parameters); on_refresh_action combine appends every refresh, so rows duplicate. The recipe is recipes/rest-api-import.md. To make a dataset from a database query (SQL Server, MySQL, Postgres, ...): connector connection create for the database, try the SELECT with connector connection query (read-only, saves nothing), then connector ds-config create CONNECTOR_KEY CONNECTION_KEY with {"query": SELECT, "table": NAME}; the recipe is recipes/database-import.md. Other ds_creation_type values and dataset_spec shapes: variants beyond the documented path are not qualified.'
-  reviewed_by: primary
+  known_restrictions: 'ds_creation_type=weburl (dataset_spec.url), clone, or cloud (a file, REST API or
+    database query from a connection); the command waits for the job and returns the new dataset_id. A
+    weburl dataset keeps its link and can be refreshed on demand (dataset refresh DATASET_ID --yes, or
+    Refresh from URL in the web app; a single CSV only), but never on a schedule: automation''s run_data_retrieval
+    task cannot refresh it (only a cloud-connected dataset can be refreshed); for a scheduled pull from
+    a URL use the REST API connector. Say so rather than scheduling a refresh for it. The result''s name
+    is the dataset''s real name; when the requested name was taken the server adds a suffix, and requested_name
+    and note say so. Use name, not the name you asked for. To copy a dataset as a new independent one:
+    {"ds_creation_type": "clone", "dataset_spec": {"ds_name": NEW_NAME, "source_ds_id": ID, "clone_dataview_ids":
+    [DEFAULT_VIEW_ID], "exclude_data": false}}, DEFAULT_VIEW_ID being the id in dataset''s `default_view`
+    from view list (other views only when asked); an empty clone_dataview_ids is refused here because
+    it makes a blank view. A clone waits and returns the new dataset_id; never use view export dataset
+    for a plain copy, which leaves a live export on the source. A weburl import names the dataset after
+    the downloaded file: follow it with dataset rename to the name the user picked. To import a file from
+    an SFTP server (or another file connector) as a new dataset: connector connection create sftp, then
+    {"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "sftp", "connection_key": KEY, "query_properties":
+    {"ds_name": NAME, "file_path": PATH_ON_SERVER, "data_pull_file": "Pull same file"}}}. data_pull_file
+    is a string and may be left out, which means "Pull same file" (what the web app does); its only other
+    value is "Pull next file based on name pattern", which also needs folder_path and name_pattern. A
+    pull that finds no file at the path fails the create with the server''s reason; the recipe is recipes/file-import.md.
+    To import from a REST API or Elasticsearch: the connection must exist first (connector connection
+    create generic_rest_api, in the same project); try the query with connector ds-config create (data_sample,
+    creates no dataset; connector connection query takes SQL only and refuses a REST config); then {"ds_creation_type":
+    "cloud", "dataset_spec": {"connector_key": "generic_rest_api", "connection_key": KEY, "query_properties":
+    {"ds_name": NAME, "table_name": TABLE, "query": "<JSON string of the endpoint config>"}, "schedule_properties":
+    {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}, "recurrence_info":
+    {"interval": 1, "start_at": "<future ISO time>"}}}. schedule_properties and recurrence_info are required
+    (without them the job fails with Invalid parameters); on_refresh_action combine appends every refresh,
+    so rows duplicate. The recipe is recipes/rest-api-import.md. To make a dataset from a database query
+    (SQL Server, MySQL, Postgres, ...): connector connection create for the database, try the SELECT with
+    connector connection query (read-only, saves nothing), then connector ds-config create CONNECTOR_KEY
+    CONNECTION_KEY with {"query": SELECT, "table": NAME}; the recipe is recipes/database-import.md. Other
+    ds_creation_type values and dataset_spec shapes: variants beyond the documented path are not qualified.'
 - command_id: dataset.create-from-pdf
-  command_path: dataset create-from-pdf
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateDatasetFromPdf
-  positionals:
-  - name: file_object_id
-    type: int
-    required: true
-    metavar: FILE_OBJECT_ID
-    falls_back_to_field: null
-    help: ID of the file object.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.create_from_pdf
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.create_from_pdf with validated request fields.
-  request_model: DatasetCreateFromPdfRequest
-  result_model: DatasetCreateFromPdfResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.list
     ids: {}
     kind: object
-  live_test: LT-DATASET-CREATE-FROM-PDF
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset create-from-pdf FILE_OBJECT_ID --help
-  agent_example: 'mammoth dataset create-from-pdf 123 --input ''{"file_name": "./sales.csv"}'''
-  unit_tests:
-  - UT-DATASET-CREATE-FROM-PDF
-  contract_tests:
-  - CT-DATASET-CREATE-FROM-PDF-HUMAN
-  - CT-DATASET-CREATE-FROM-PDF-JSON
-  - CT-DATASET-CREATE-FROM-PDF-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Add exactly one of table_list (table indices to extract) or is_preview_needed (true to preview the tables first) to the input: {"file_name": "report.pdf", "is_preview_needed": true}. The API refuses neither and refuses both. user_instruction cannot be combined with table_list.'
-  reviewed_by: primary
+  known_restrictions: 'Add exactly one of table_list (table indices to extract) or is_preview_needed (true
+    to preview the tables first) to the input: {"file_name": "report.pdf", "is_preview_needed": true}.
+    The API refuses neither and refuses both. user_instruction cannot be combined with table_list.'
 - command_id: dataset.data
-  command_path: dataset data
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetDatasetData
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_data
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_data with validated request fields.
-  request_model: DatasetDataRequest
-  result_model: DatasetDataResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-DATA
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset data DATASET_ID --help
-  agent_example: mammoth dataset data 123
-  unit_tests:
-  - UT-DATASET-DATA
-  contract_tests:
-  - CT-DATASET-DATA-HUMAN
-  - CT-DATASET-DATA-JSON
-  - CT-DATASET-DATA-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: dataset.delete
-  command_path: dataset delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.delete
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.delete with validated request fields.
-  request_model: DatasetDeleteRequest
-  result_model: DatasetDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.list
     ids: {}
     kind: object
-  live_test: LT-DATASET-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset delete DATASET_ID --help
-  agent_example: mammoth dataset delete 123 --yes
-  unit_tests:
-  - UT-DATASET-DELETE
-  contract_tests:
-  - CT-DATASET-DELETE-HUMAN
-  - CT-DATASET-DELETE-JSON
-  - CT-DATASET-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Immutable dataset-ID confirmation.
-  reviewed_by: primary
 - command_id: dataset.file-settings.get
-  command_path: dataset file-settings get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetFileSettings
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_file_settings
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_file_settings with validated request fields.
-  request_model: DatasetFileSettingsGetRequest
-  result_model: DatasetFileSettingsGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-FILE-SETTINGS-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset file-settings get DATASET_ID --help
-  agent_example: mammoth dataset file-settings get 123
-  unit_tests:
-  - UT-DATASET-FILE-SETTINGS-GET
-  contract_tests:
-  - CT-DATASET-FILE-SETTINGS-GET-HUMAN
-  - CT-DATASET-FILE-SETTINGS-GET-JSON
-  - CT-DATASET-FILE-SETTINGS-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: dataset.file-settings.undo
-  command_path: dataset file-settings undo
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UndoFileSettings
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_undo
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.file_settings_undo with validated request fields.
-  request_model: DatasetFileSettingsUndoRequest
-  result_model: DatasetFileSettingsUndoResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.file-settings.get
     ids:
       dataset_id: positional.0
     kind: object
-  live_test: LT-DATASET-FILE-SETTINGS-UNDO
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset file-settings undo DATASET_ID --help
-  agent_example: mammoth dataset file-settings undo 123 --yes
-  unit_tests:
-  - UT-DATASET-FILE-SETTINGS-UNDO
-  contract_tests:
-  - CT-DATASET-FILE-SETTINGS-UNDO-HUMAN
-  - CT-DATASET-FILE-SETTINGS-UNDO-JSON
-  - CT-DATASET-FILE-SETTINGS-UNDO-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.file-settings.update
-  command_path: dataset file-settings update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateFileSettings
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_update
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.file_settings_update with validated request fields.
-  request_model: DatasetFileSettingsUpdateRequest
-  result_model: DatasetFileSettingsUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
   wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.file-settings.get
     ids:
       dataset_id: positional.0
     kind: object
-  live_test: LT-DATASET-FILE-SETTINGS-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset file-settings update DATASET_ID --help
-  agent_example: 'mammoth dataset file-settings update 123 --input ''{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'''
-  unit_tests:
-  - UT-DATASET-FILE-SETTINGS-UPDATE
-  contract_tests:
-  - CT-DATASET-FILE-SETTINGS-UPDATE-HUMAN
-  - CT-DATASET-FILE-SETTINGS-UPDATE-JSON
-  - CT-DATASET-FILE-SETTINGS-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.find
   command_path: dataset find
   disposition: command
@@ -522,9 +113,8 @@ commands:
     required: false
     metavar: NAME_SUBSTRING
     falls_back_to_field: null
-    help: Case-insensitive substring to match against dataset names; optional when --input
-      gives 'columns'. Matches in other projects are listed too, marked in_project when
-      --project is given.
+    help: Case-insensitive substring to match against dataset names; optional when --input gives 'columns'.
+      Matches in other projects are listed too, marked in_project when --project is given.
   options: []
   sdk_symbol: mammoth_cli.commands.dataset.find
   sdk_conversion: Call mammoth_cli.commands.dataset.find with validated request fields.
@@ -598,197 +188,48 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: dataset.get
-  command_path: dataset get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get with validated request fields.
-  request_model: DatasetGetRequest
-  result_model: DatasetGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset get DATASET_ID --help
-  agent_example: mammoth dataset get 123
-  unit_tests:
-  - UT-DATASET-GET
-  contract_tests:
-  - CT-DATASET-GET-HUMAN
-  - CT-DATASET-GET-JSON
-  - CT-DATASET-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.interpretation.confirm
-  command_path: dataset interpretation confirm
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ConfirmDatasetInterpretation
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_confirm
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.interpretation_confirm with validated request fields.
-  request_model: DatasetInterpretationConfirmRequest
-  result_model: DatasetInterpretationConfirmResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
   live_test: null
-  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test server against a preamble CSV).
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset interpretation confirm DATASET_ID --help
-  agent_example: mammoth dataset interpretation confirm 123
-  unit_tests:
-  - UT-DATASET-INTERPRETATION-CONFIRM
-  contract_tests:
-  - CT-DATASET-INTERPRETATION-CONFIRM-HUMAN
-  - CT-DATASET-INTERPRETATION-CONFIRM-JSON
-  - CT-DATASET-INTERPRETATION-CONFIRM-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Finalizes a dataset whose file has more than one plausible reading (status has_unstructured_data): applies the interpretation to the whole file and creates the table. Run interpretation preview first and pass the same input here, or the structure_map it returned. The suggestions stored on the dataset are under additional_info.interpretation.instruction_suggestions in dataset get. Pass mode "original" (alone: it takes no reshape field) to keep the file in the layout it was uploaded in; later files for the dataset are then ingested the same way, without review. The result state shows the dataset afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
-  reviewed_by: primary
+  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test
+    server against a preamble CSV).
+  known_restrictions: 'Finalizes a dataset whose file has more than one plausible reading (status has_unstructured_data):
+    applies the interpretation to the whole file and creates the table. Run interpretation preview first
+    and pass the same input here, or the structure_map it returned. The suggestions stored on the dataset
+    are under additional_info.interpretation.instruction_suggestions in dataset get. Pass mode "original"
+    (alone: it takes no reshape field) to keep the file in the layout it was uploaded in; later files
+    for the dataset are then ingested the same way, without review. The result state shows the dataset
+    afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
 - command_id: dataset.interpretation.preview
-  command_path: dataset interpretation preview
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PreviewDatasetInterpretation
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.interpretation_preview
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.interpretation_preview with validated request fields.
-  request_model: DatasetInterpretationPreviewRequest
-  result_model: DatasetInterpretationPreviewResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   no_readback: preview only; nothing is applied to the dataset until interpretation confirm
   live_test: null
-  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test server against a preamble CSV).
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset interpretation preview DATASET_ID --help
-  agent_example: mammoth dataset interpretation preview 123
-  unit_tests:
-  - UT-DATASET-INTERPRETATION-PREVIEW
-  contract_tests:
-  - CT-DATASET-INTERPRETATION-PREVIEW-HUMAN
-  - CT-DATASET-INTERPRETATION-PREVIEW-JSON
-  - CT-DATASET-INTERPRETATION-PREVIEW-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Shows the rows the dataset would have under an interpretation, without finalizing it: preview_rows (header plus up to 50 rows), total_row_count, structure_map and header_types. --input needs user_instruction (plain English; the suggestions stored on the dataset are in dataset get under additional_info.interpretation.instruction_suggestions), a structure_map from an earlier preview, or destination_dataset_id. Nothing is applied to the file until interpretation confirm. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
-  reviewed_by: primary
+  live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test
+    server against a preamble CSV).
+  known_restrictions: 'Shows the rows the dataset would have under an interpretation, without finalizing
+    it: preview_rows (header plus up to 50 rows), total_row_count, structure_map and header_types. --input
+    needs user_instruction (plain English; the suggestions stored on the dataset are in dataset get under
+    additional_info.interpretation.instruction_suggestions), a structure_map from an earlier preview,
+    or destination_dataset_id. Nothing is applied to the file until interpretation confirm. Example: --input
+    ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
 - command_id: dataset.list
-  command_path: dataset list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetDatasets
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.list with validated request fields.
-  request_model: DatasetListRequest
-  result_model: DatasetListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset list --help
-  agent_example: mammoth dataset list
-  unit_tests:
-  - UT-DATASET-LIST
-  contract_tests:
-  - CT-DATASET-LIST-HUMAN
-  - CT-DATASET-LIST-JSON
-  - CT-DATASET-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'B01. Newest first. Each item carries rows and cols, created and updated
-    time (updated is left out when it equals created), the source kind (file, connector, created in Mammoth,
-    export of a view), and its column names with types, from the list route''s stored stats, sources and
-    data_schema, cut to fit the agent tool output cap: more is true with next_offset when the page was
-    cut. full true returns the raw id and name list. name (input field, a case-insensitive
-    substring) reads every page and returns only the matching datasets as short rows (id, name, rows,
-    cols; no column lists) with matched, and more with next_offset when cut; limit and offset then
-    page over the matches. limit must be at most 100. names true returns up to 500 bare id and name rows of the project in ONE call, newest first, with total and more: use it for a list of names (which files can I see), never page offsets. Without a project use dataset find NAME_SUBSTRING.'
-  reviewed_by: primary
+  known_restrictions: 'B01. Newest first. Each item carries rows and cols, created and updated time (updated
+    is left out when it equals created), the source kind (file, connector, created in Mammoth, export
+    of a view), and its column names with types, from the list route''s stored stats, sources and data_schema,
+    cut to fit the agent tool output cap: more is true with next_offset when the page was cut. full true
+    returns the raw id and name list. name (input field, a case-insensitive substring) reads every page
+    and returns only the matching datasets as short rows (id, name, rows, cols; no column lists) with
+    matched, and more with next_offset when cut; limit and offset then page over the matches. limit must
+    be at most 100. names true returns up to 500 bare id and name rows of the project in ONE call, newest
+    first, with total and more: use it for a list of names (which files can I see), never page offsets.
+    Without a project use dataset find NAME_SUBSTRING.'
 - command_id: dataset.refresh
-  command_path: dataset refresh
-  disposition: command
-  alias_of: null
   operation_ids:
   - UpdateDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_from_url
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.refresh_from_url with validated request fields.
-  request_model: DatasetRefreshRequest
-  result_model: DatasetRefreshResult
-  mutation_class: benign_mutation
-  edits_target: true
   confirmation: prompt_or_yes
-  wait_policy: always_wait
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: dataset.get
@@ -797,491 +238,91 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset refresh DATASET_ID --help
   agent_example: mammoth dataset refresh 123 --yes
-  unit_tests:
-  - UT-DATASET-REFRESH
-  contract_tests:
-  - CT-DATASET-REFRESH-HUMAN
-  - CT-DATASET-REFRESH-JSON
-  - CT-DATASET-REFRESH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Fetches the link of a dataset made from a URL (dataset create with ds_creation_type weburl; dataset list shows it as source url with the link host) again into the same dataset, and waits for the job. Whether the new data replaces or adds to the old follows the dataset's own data addition setting. A dataset not made from a URL is refused, and so is a URL that serves JSON; the server's reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval cannot refresh it; for a scheduled pull from a URL use the REST API connector.
-  reviewed_by: primary
+  known_restrictions: Fetches the link of a dataset made from a URL (dataset create with ds_creation_type
+    weburl; dataset list shows it as source url with the link host) again into the same dataset, and waits
+    for the job. Whether the new data replaces or adds to the old follows the dataset's own data addition
+    setting. A dataset not made from a URL is refused, and so is a URL that serves JSON; the server's
+    reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval
+    cannot refresh it; for a scheduled pull from a URL use the REST API connector.
 - command_id: dataset.rename
-  command_path: dataset rename
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.rename
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.rename with validated request fields.
-  request_model: DatasetRenameRequest
-  result_model: DatasetRenameResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
-  live_test: LT-DATASET-RENAME
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset rename DATASET_ID --help
-  agent_example: 'mammoth dataset rename 123 --input ''{"name": "Revenue report"}'''
-  unit_tests:
-  - UT-DATASET-RENAME
-  contract_tests:
-  - CT-DATASET-RENAME-HUMAN
-  - CT-DATASET-RENAME-JSON
-  - CT-DATASET-RENAME-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Convenience alias implemented through DatasetsAPI.update but registered as its own
-    canonical command.
-  reviewed_by: primary
 - command_id: dataset.restore
-  command_path: dataset restore
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RestoreDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.restore
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.restore with validated request fields.
-  request_model: DatasetRestoreRequest
-  result_model: DatasetRestoreResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
-  live_test: LT-DATASET-RESTORE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset restore DATASET_ID --help
-  agent_example: mammoth dataset restore 123
-  unit_tests:
-  - UT-DATASET-RESTORE
-  contract_tests:
-  - CT-DATASET-RESTORE-HUMAN
-  - CT-DATASET-RESTORE-JSON
-  - CT-DATASET-RESTORE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.column-stats
-  command_path: dataset column-stats
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals: []
-  options: []
   sdk_symbol: mammoth_cli.commands.dataset.column_stats
   sdk_conversion: Call mammoth_cli.commands.dataset.column_stats with validated request fields.
-  request_model: DatasetColumnStatsRequest
-  result_model: DatasetColumnStatsResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Read-only composite over the project's datasets column-stats route.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset column-stats --help
-  agent_example: mammoth dataset column-stats
-  unit_tests:
-  - UT-DATASET-COLUMN-STATS
-  contract_tests:
-  - CT-DATASET-COLUMN-STATS-HUMAN
-  - CT-DATASET-COLUMN-STATS-JSON
-  - CT-DATASET-COLUMN-STATS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Needs a project. Use this instead of profiling each view when the question
-    spans datasets ("missing values", "blanks", "data quality across the project"): one call
-    returns every dataset''s columns with their blank count and share, type and distinct count,
-    from stats stored at the last load or pipeline run. Rank columns by blank_pct (or blank_count)
-    and name the worst dataset and column.'
-  reviewed_by: primary
+  known_restrictions: 'Needs a project. Use this instead of profiling each view when the question spans
+    datasets ("missing values", "blanks", "data quality across the project"): one call returns every dataset''s
+    columns with their blank count and share, type and distinct count, from stats stored at the last load
+    or pipeline run. Rank columns by blank_pct (or blank_count) and name the worst dataset and column.'
 - command_id: dataset.definition.list
-  command_path: dataset definition list
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.list_definitions
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.list_definitions with validated request fields.
-  request_model: DatasetDefinitionListRequest
-  result_model: DatasetDefinitionListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
   pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Read-only route over the dataset's saved definitions.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset definition list DATASET_ID --help
-  agent_example: mammoth dataset definition list 123
-  unit_tests:
-  - UT-DATASET-DEFINITION-LIST
-  contract_tests:
-  - CT-DATASET-DEFINITION-LIST-HUMAN
-  - CT-DATASET-DEFINITION-LIST-JSON
-  - CT-DATASET-DEFINITION-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Lists what terms mean for this dataset (id, term, definition), shared by
-    everyone''s chats on it. The project''s definitions already appear in every turn''s context,
-    so there is no need to list them before answering; list them to find the id to remove.'
-  reviewed_by: primary
+  known_restrictions: Lists what terms mean for this dataset (id, term, definition), shared by everyone's
+    chats on it. The project's definitions already appear in every turn's context, so there is no need
+    to list them before answering; list them to find the id to remove.
 - command_id: dataset.definition.add
-  command_path: dataset definition add
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AddDatasetDefinition
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.add_definition
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.add_definition with validated request fields.
-  request_model: DatasetDefinitionAddRequest
-  result_model: DatasetDefinitionAddResult
-  mutation_class: benign_mutation
-  edits_target: true
   confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset definition add DATASET_ID --help
-  agent_example: 'mammoth dataset definition add 123 --input ''{"term": "late", "definition": "delivered more than 5 days after shipped_date"}'' --yes --confirm 123'
-  unit_tests:
-  - UT-DATASET-DEFINITION-ADD
-  contract_tests:
-  - CT-DATASET-DEFINITION-ADD-HUMAN
-  - CT-DATASET-DEFINITION-ADD-JSON
-  - CT-DATASET-DEFINITION-ADD-ERROR
-  draft_test: null
-  undo_test: null
+  agent_example: 'mammoth dataset definition add 123 --input ''{"term": "late", "definition": "delivered
+    more than 5 days after shipped_date"}'' --yes --confirm 123'
   known_restrictions: 'Saves what a term means for this dataset: term (1-60 characters) and definition
-    (1-300 characters) from --input. A definition is shared by everyone''s chats on this dataset,
-    so the user confirms each save. Save one only when the user states what a term means for this
-    data, not to answer a one-off question. Write the definition in terms of the dataset''s real
-    column names. A definition for an existing term (any case) replaces it; at most 20 per dataset.
-    The project''s definitions already appear in every turn''s context, so there is no need to
-    list them before answering.'
-  reviewed_by: primary
+    (1-300 characters) from --input. A definition is shared by everyone''s chats on this dataset, so the
+    user confirms each save. Save one only when the user states what a term means for this data, not to
+    answer a one-off question. Write the definition in terms of the dataset''s real column names. A definition
+    for an existing term (any case) replaces it; at most 20 per dataset. The project''s definitions already
+    appear in every turn''s context, so there is no need to list them before answering.'
   readback:
     command: dataset.definition.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.definition.remove
-  command_path: dataset definition remove
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RemoveDatasetDefinition
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: definition_id
-    type: str
-    required: true
-    metavar: DEFINITION_ID
-    falls_back_to_field: null
-    help: ID of the definition.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.remove_definition with validated request fields.
-  request_model: DatasetDefinitionRemoveRequest
-  result_model: DatasetDefinitionRemoveResult
   mutation_class: benign_mutation
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset definition remove DATASET_ID DEFINITION_ID --help
-  agent_example: mammoth dataset definition remove 123 a1b2c3d4 --yes
-  unit_tests:
-  - UT-DATASET-DEFINITION-REMOVE
-  contract_tests:
-  - CT-DATASET-DEFINITION-REMOVE-HUMAN
-  - CT-DATASET-DEFINITION-REMOVE-JSON
-  - CT-DATASET-DEFINITION-REMOVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Removes one definition by the id dataset definition list returns; use it
-    when the user asks to drop or forget what a term means for this dataset. Everyone''s chats on
-    the dataset stop using it.'
-  reviewed_by: primary
+  known_restrictions: Removes one definition by the id dataset definition list returns; use it when the
+    user asks to drop or forget what a term means for this dataset. Everyone's chats on the dataset stop
+    using it.
   readback:
     command: dataset.definition.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.search
-  command_path: dataset search
-  disposition: command
-  alias_of: null
   operation_ids: []
-  positionals:
-  - name: term
-    type: str
-    required: true
-    metavar: TERM
-    falls_back_to_field: null
-    help: Text to find in dataset names, column names or sampled column values (case-insensitive,
-      at least 2 characters).
-  options: []
   sdk_symbol: mammoth_cli.commands.dataset.search
   sdk_conversion: Call mammoth_cli.commands.dataset.search with validated request fields.
-  request_model: DatasetSearchRequest
-  result_model: DatasetSearchResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
   live_test: null
   live_exemption_reason: Read-only composite over the project's datasets search route.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset search TERM --help
-  agent_example: mammoth dataset search 'New Year Sale'
-  unit_tests:
-  - UT-DATASET-SEARCH
-  contract_tests:
-  - CT-DATASET-SEARCH-HUMAN
-  - CT-DATASET-SEARCH-JSON
-  - CT-DATASET-SEARCH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.trash
-  command_path: dataset trash
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - TrashDataset
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.trash
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.trash with validated request fields.
-  request_model: DatasetTrashRequest
-  result_model: DatasetTrashResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
-  live_test: LT-DATASET-TRASH
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset trash DATASET_ID --help
-  agent_example: mammoth dataset trash 123
-  unit_tests:
-  - UT-DATASET-TRASH
-  contract_tests:
-  - CT-DATASET-TRASH-HUMAN
-  - CT-DATASET-TRASH-JSON
-  - CT-DATASET-TRASH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.update
-  command_path: dataset update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateDataset
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.update
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.update with validated request fields.
-  request_model: DatasetUpdateRequest
-  result_model: DatasetUpdateResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
   no_readback: this command always rejects with a typed-command redirect before any write happens; there
     is no new state to read back
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset update --help
-  agent_example: 'mammoth dataset update --input ''{"patch_data": [{"name": "Status"}]}'' --yes'
-  unit_tests:
-  - UT-DATASET-UPDATE
-  contract_tests:
-  - CT-DATASET-UPDATE-HUMAN
-  - CT-DATASET-UPDATE-JSON
-  - CT-DATASET-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column
-    changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update
-    for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route,
-    so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.'
-  reviewed_by: primary
 - command_id: dataset.tool-claim.get
-  command_path: dataset tool-claim get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetToolClaim
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_get
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.tool_claim_get with validated request fields.
-  request_model: DatasetToolClaimGetRequest
-  result_model: DatasetToolClaimGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-DATASET-TOOL-CLAIM-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset tool-claim get --help
-  agent_example: 'mammoth dataset tool-claim get --input ''{"token": "replace-with-secret"}'''
-  unit_tests:
-  - UT-DATASET-TOOL-CLAIM-GET
-  contract_tests:
-  - CT-DATASET-TOOL-CLAIM-GET-HUMAN
-  - CT-DATASET-TOOL-CLAIM-GET-JSON
-  - CT-DATASET-TOOL-CLAIM-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
 - command_id: dataset.tool-claim.redeem
-  command_path: dataset tool-claim redeem
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RedeemToolClaim
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_redeem
-  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.tool_claim_redeem with validated request fields.
-  request_model: DatasetToolClaimRedeemRequest
-  result_model: DatasetToolClaimRedeemResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-DATASET-TOOL-CLAIM-REDEEM
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth dataset tool-claim redeem --help
-  agent_example: 'mammoth dataset tool-claim redeem --input ''{"token": "replace-with-secret"}'''
-  unit_tests:
-  - UT-DATASET-TOOL-CLAIM-REDEEM
-  contract_tests:
-  - CT-DATASET-TOOL-CLAIM-REDEEM-HUMAN
-  - CT-DATASET-TOOL-CLAIM-REDEEM-JSON
-  - CT-DATASET-TOOL-CLAIM-REDEEM-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing and returns where the tables already are.
-  reviewed_by: primary
+  known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing
+    and returns where the tables already are.
   no_readback: returns the workspace, project and new folder ids; the folder is the new state
