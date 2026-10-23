@@ -381,6 +381,43 @@ def resolve_token_workspace_id(base_url: str, api_token: str, timeout: float) ->
     return _TOKEN_WORKSPACES[key]
 
 
+def server_health(base_url: str, timeout: float = 10.0) -> dict[str, Any]:
+    """GET ``<base_url>/health``, the public API v2 liveness route, and time it.
+
+    It needs no token, so it answers even when authentication would fail.
+
+    Args:
+        base_url: The API base url, ending in ``/api/v2``.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        ``{"status_code": int, "latency_ms": int}``, plus ``version`` and ``commit`` when the
+        answer is a JSON object carrying them as strings. Any HTTP status is returned, not
+        raised: the caller decides whether it is healthy.
+
+    Raises:
+        MammothAPIError: The server timed out or could not be reached.
+    """
+    started = time.monotonic()
+    try:
+        response = httpx.get(f"{base_url}/health", timeout=timeout, follow_redirects=False)
+    except httpx.TimeoutException as exc:
+        raise MammothAPIError(f"No answer from {base_url}/health within {timeout:g}s") from exc
+    except httpx.HTTPError as exc:
+        raise MammothAPIError(f"{base_url} unreachable ({type(exc).__name__})") from exc
+    result: dict[str, Any] = {
+        "status_code": response.status_code,
+        "latency_ms": round((time.monotonic() - started) * 1000),
+    }
+    try:
+        body = response.json()
+    except ValueError:
+        return result
+    if isinstance(body, dict):
+        result.update({k: body[k] for k in ("version", "commit") if isinstance(body.get(k), str)})
+    return result
+
+
 def shared_http_client(
     *,
     timeout: float = 60.0,

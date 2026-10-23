@@ -18,9 +18,13 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlsplit
 
+from mammoth.client import server_health
+from mammoth.exceptions import MammothAPIError
+
 from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
-from mammoth_cli.context.resolver import ResolvedAuth, resolve_auth
+from mammoth_cli.context.endpoint import resolve_base_url
+from mammoth_cli.context.resolver import SERVER_PREFIX_ENV, ResolvedAuth, resolve_auth
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.invocation import Invocation
@@ -39,6 +43,34 @@ _NO_PROJECTS_DETAIL = {
 
 def _check(name: str, ok: bool, detail: str) -> dict[str, Any]:
     return {"name": name, "ok": ok, "detail": detail}
+
+
+_SERVER_TIMEOUT_SECONDS = 10.0
+
+
+def _server_base_url(profile_name: str, resolved: str | None) -> str:
+    """The API base url to probe: the resolved one, else from env or profile, no login needed."""
+    if resolved is not None:
+        return resolved
+    prefix = os.environ.get(SERVER_PREFIX_ENV, "").strip() or None
+    if prefix is None:
+        record = profiles.get_profile(profile_name)
+        prefix = record.server_prefix if record is not None else None
+    return resolve_base_url(prefix)
+
+
+def _check_server(base_url: str, timeout: float = _SERVER_TIMEOUT_SECONDS) -> dict[str, Any]:
+    """Probe the public ``/health`` route (no credentials) and report status and latency."""
+    try:
+        health = server_health(base_url, timeout)
+    except MammothAPIError as error:
+        return _check("server", False, str(error))
+    status = health["status_code"]
+    ok = 200 <= status < 300
+    detail = (
+        f"healthy in {health['latency_ms']} ms" if ok else f"HTTP {status} from {base_url}/health"
+    )
+    return {**_check("server", ok, detail), **health}
 
 
 def _check_not_applicable(name: str) -> dict[str, Any]:
@@ -326,6 +358,13 @@ def doctor(invocation: Invocation) -> HandlerResult:
         endpoint_detail = error.code
         auth_error_code = error.code
     checks.append(_check("endpoint", auth_ok, endpoint_detail))
+    try:
+        server_check = _check_server(
+            _server_base_url(profile_name, endpoint_detail if auth_ok else None)
+        )
+    except CliError as error:
+        server_check = _check("server", False, f"no server to probe: {error.code}")
+    checks.append(server_check)
 
     connection_ok = False
     connection_detail = "not attempted"
