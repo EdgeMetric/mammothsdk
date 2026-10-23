@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## mammoth-io 0.8.51, mammoth-cli 2.2.100 (2026-10-23)
+
+### Added (mammoth-io 0.8.51)
+
+- SDK `mammoth.client.server_health(base_url, timeout=10)` GETs the public API v2 `/health` route and returns `status_code` and `latency_ms` (plus `version`/`commit` when the backend sends them). A non-2xx status is returned; a timeout or unreachable server raises `MammothAPIError` (#304).
+
+### Added (mammoth-cli 2.2.100)
+
+- CLI `mammoth doctor` has a `server` check: a GET of `<api>/health` (public, so it needs no login or project) that reports `status_code` and `latency_ms` (`healthy in 84 ms`), and `version`/`commit` when the backend returns them. It fails (and doctor exits non-zero) on a non-2xx answer, a timeout or an unreachable server, and still runs when auth fails, so an expired login and a down server read differently (#304).
+
 ## mammoth-cli 2.2.99 (2026-10-22)
 
 ### Fixed (mammoth-cli 2.2.99)
