@@ -15,7 +15,12 @@ from typing import Any
 import pytest
 
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
+from mammoth_cli.runtime.compact import (
+    COMPACT_COMMANDS,
+    FULL_FLAG,
+    FULL_FLAG_COMMANDS,
+    with_compact,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
 
@@ -134,3 +139,52 @@ def test_help_says_the_result_is_compact_and_names_full() -> None:
 
     text = " ".join(make_runner().invoke_help("dashboard figure add").split())
     assert "The result is compact" in text and FULL_FLAG in text
+
+
+# --- dashboard canvas get: null fields are left out ------------------------
+
+
+def _canvas_get_result() -> dict[str, Any]:
+    return {
+        "dashboard_id": 7,
+        "sequence": 3,
+        "canvas": {
+            "title": "Sales",
+            "layout_key": None,
+            "filters": [],
+            "theme": {f"t{n}": None for n in range(40)},
+            "pages": [{"id": "p1", "added": [_null_figure(0), _null_figure(1)]}],
+        },
+        "plan": None,
+    }
+
+
+def test_canvas_get_leaves_out_null_fields_and_keeps_every_value() -> None:
+    full = _canvas_get_result()
+    data = with_compact(_inv("dashboard.canvas.get"), full)
+    assert len(json.dumps(data)) < len(json.dumps(full)) / 4
+    assert data["dashboard_id"] == 7 and data["sequence"] == 3
+    canvas = data["canvas"]
+    assert canvas["title"] == "Sales"
+    assert "layout_key" not in canvas and "theme" not in canvas and "plan" not in data
+    figures = canvas["pages"][0]["added"]
+    assert figures == [
+        {"id": "f0", "kind": "hbar", "title": "Chart 0"},
+        {"id": "f1", "kind": "hbar", "title": "Chart 1"},
+    ]
+
+
+def test_canvas_get_keeps_an_explicit_empty_list() -> None:
+    """canvas save reads an absent overlay as 'keep the head's' and [] as 'clear it'."""
+    data = with_compact(_inv("dashboard.canvas.get"), _canvas_get_result())
+    assert data["canvas"]["filters"] == []
+
+
+def test_canvas_get_full_returns_the_payload_unchanged() -> None:
+    full = _canvas_get_result()
+    assert with_compact(_inv("dashboard.canvas.get", full_output=True), full) is full
+
+
+def test_canvas_get_accepts_full() -> None:
+    assert "dashboard.canvas.get" in FULL_FLAG_COMMANDS
+    validate_extra_args("dashboard.canvas.get", [FULL_FLAG])
