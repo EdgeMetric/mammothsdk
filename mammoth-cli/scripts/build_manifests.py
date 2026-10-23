@@ -187,6 +187,9 @@ _ASYNC_JOB_COMMANDS = frozenset(
         "trash.restore",
         "user.avatar.upload",
         "view.pipeline.edit",
+        # Applying a pipeline version rebuilds the pipeline in a job; returning the
+        # handle left the view on the old steps (found by history undo, live).
+        "view.version.apply",
     }
 )
 

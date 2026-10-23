@@ -2,6 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: report.list
   command_path: report list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

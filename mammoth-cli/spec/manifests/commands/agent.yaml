@@ -899,6 +899,7 @@ commands:
     kind: object
 - command_id: agent.session.list
   command_path: agent session list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1063,6 +1064,7 @@ commands:
   reviewed_by: primary
 - command_id: agent.access.askers
   command_path: agent access askers
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1315,6 +1317,7 @@ commands:
     kind: object
 - command_id: agent.access.me
   command_path: agent access me
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1383,6 +1386,7 @@ commands:
   reviewed_by: primary
 - command_id: agent.access.reach
   command_path: agent access reach
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

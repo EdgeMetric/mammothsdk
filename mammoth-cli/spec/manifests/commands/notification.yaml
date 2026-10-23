@@ -87,6 +87,7 @@ commands:
     kind: object
 - command_id: notification.list
   command_path: notification list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

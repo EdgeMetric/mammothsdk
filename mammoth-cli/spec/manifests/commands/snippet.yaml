@@ -219,6 +219,7 @@ commands:
   reviewed_by: primary
 - command_id: snippet.list
   command_path: snippet list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

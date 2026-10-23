@@ -343,6 +343,7 @@ commands:
   reviewed_by: primary
 - command_id: billing.stripe.history
   command_path: billing stripe history
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -423,6 +424,7 @@ commands:
     kind: object
 - command_id: billing.stripe.payment-method.list
   command_path: billing stripe payment-method list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -613,6 +615,7 @@ commands:
     kind: object
 - command_id: billing.stripe.status
   command_path: billing stripe status
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -720,6 +723,7 @@ commands:
   reviewed_by: primary
 - command_id: billing.stripe.usage
   command_path: billing stripe usage
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -754,6 +758,7 @@ commands:
   reviewed_by: primary
 - command_id: billing.subscription.get
   command_path: billing subscription get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

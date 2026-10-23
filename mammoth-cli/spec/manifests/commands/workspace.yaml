@@ -42,6 +42,7 @@ commands:
     kind: object
 - command_id: workspace.app-usage
   command_path: workspace app-usage
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -270,6 +271,7 @@ commands:
   reviewed_by: primary
 - command_id: workspace.list
   command_path: workspace list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -639,6 +641,7 @@ commands:
     kind: object
 - command_id: workspace.oauth-client.list
   command_path: workspace oauth-client list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -774,6 +777,7 @@ commands:
     kind: object
 - command_id: workspace.segment.list
   command_path: workspace segment list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -847,6 +851,7 @@ commands:
     kind: object
 - command_id: workspace.storage-breakdown
   command_path: workspace storage-breakdown
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1254,6 +1259,7 @@ commands:
     kind: object
 - command_id: workspace.export-hosts.get
   command_path: workspace export-hosts get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

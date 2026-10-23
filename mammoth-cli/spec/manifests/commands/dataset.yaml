@@ -296,6 +296,7 @@ commands:
   reviewed_by: primary
 - command_id: dataset.data
   command_path: dataset data
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -381,6 +382,7 @@ commands:
   reviewed_by: primary
 - command_id: dataset.file-settings.get
   command_path: dataset file-settings get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

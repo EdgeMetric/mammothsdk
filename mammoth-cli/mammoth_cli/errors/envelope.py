@@ -137,7 +137,12 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_too_deep": _S_BAD_INPUT,
     "input_too_large": "The information provided was too large.",
     "invalid_run_line": "One line of the list of commands couldn't be used, so it wasn't run.",
+    "unresolved_reference": (
+        "A line used a result from an earlier line that wasn't there, so it wasn't run."
+    ),
     "run_command_refused": "That command can't be run from a list of commands.",
+    "history_not_found": "No recorded change has that id.",
+    "journal_off": "Change history is switched off, so there is nothing to show or undo.",
     "run_global_flag_refused": (
         "Confirmation has to be given on each command in the list, not for the whole list."
     ),

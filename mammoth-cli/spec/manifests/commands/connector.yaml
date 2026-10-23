@@ -2,6 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: connector.active
   command_path: connector active
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1052,6 +1053,7 @@ commands:
   reviewed_by: primary
 - command_id: connector.connection.list-all
   command_path: connector connection list-all
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1347,6 +1349,7 @@ commands:
   reviewed_by: primary
 - command_id: connector.draft.known-sources
   command_path: connector draft known-sources
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1383,6 +1386,7 @@ commands:
   reviewed_by: primary
 - command_id: connector.draft.list
   command_path: connector draft list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

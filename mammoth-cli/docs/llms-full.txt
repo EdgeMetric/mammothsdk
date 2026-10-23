@@ -933,6 +933,15 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth folder update` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.update
   example: mammoth folder update 123 --input '{"name": "Revenue report"}'
 
+## history
+
+- `mammoth history list` [read/none] -> mammoth_cli.commands.history.history_list
+  example: mammoth history list --input '{"undoable_only": true}'
+- `mammoth history show` [read/none] -> mammoth_cli.commands.history.history_show
+  example: mammoth history show 97b9ee41d15d
+- `mammoth history undo` [high_impact/prompt_or_yes] -> mammoth_cli.commands.history.history_undo
+  example: mammoth history undo 97b9ee41d15d --yes
+
 ## how
 
 - `mammoth how` [read/none] -> mammoth_cli.commands.how.how

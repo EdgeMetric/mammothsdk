@@ -68,7 +68,7 @@ check, not what to build. Every choice below is justified by a problem in this c
   - policies: confirm, dry-run and the expected-task guard;
   - plans and bindings (`runtime/bindings.py`);
   - lifecycle normalization.
-- **Application:** `dispatch(Request) -> Envelope`. This is the only use-case entry point, and it
+- **Application:** `dispatch(Request) -> Outcome` (the envelope's value before rendering). This is the only use-case entry point, and it
   returns a value. It never prints and never raises `typer.Exit`.
 - **Driving adapters:**
   - The terminal adapter is the only place that renders and exits.
@@ -184,26 +184,64 @@ per credential, so the cache also works across processes. For `embed`, the host'
 memory cache with one scope per caller credential. The scope is needed for correctness: a listing's
 tag names the resource, but its body is filtered per user. This was verified live: a second embedded call got 304.
 
+### Code mode (#310): steps in `mammoth run`, no Python sandbox
+
+An agent chains commands by reading one result and writing the next call. `mammoth run` lines
+can now do that in one process: a line has a `name`, later lines read its result as
+`{{steps.<name>.data...}}` in `args`, `input` or `flags`, `when` skips a line, and `for_each`
+runs a line once per item (`runtime/bindings.py`). Under `--dry-run` a line that reads a value
+the preview did not make is planned (`data.planned`, `waits_on`), not failed.
+
+We do not run agent-written Python (a sandboxed `exec` step), because:
+
+- **The guarantees stay per command.** Every line goes through the same validation, confirm,
+  dry-run and verify path as a single command, and its manifest policy applies. Arbitrary code
+  could call the SDK directly and skip all of them.
+- **A sandbox is a security product.** CPython has no in-process sandbox; a safe one needs a
+  separate process with seccomp/containers on every OS the CLI ships to (Linux, macOS, Windows)
+  and inside `embed` hosts that serve many users. That is a large attack surface for a CLI.
+- **Plans need data, not code.** Dry-run plans, undo (#311) and resume (#310) need to know
+  what a step will do before it runs. JSON references can be planned and journaled; code
+  cannot.
+- **Agents already have a shell and Python.** An agent that needs a loop the expressions
+  cannot express can write it in its own environment around `mammoth run` or `embed`.
+
+The expressions are deliberately small: dotted paths, `$keys`, `$first`, `$without`,
+`$default`, and the conditions `eq`, `in`, `not`, `all`, `any`, `present`.
+
 ## Migration plan (strangler fig)
 
 Each step ships alone, keeps the envelope contract, and passes the full CLI suite.
 
 0. **Trace** (done): `runtime/trace.py`; `executor.run` opens a trace; the run log takes its id.
    **Conditional reads** (done): `mammoth/etag.py`, `runtime/etag_store.py`.
-1. **Facade:** add `dispatch(Request) -> Envelope` and `LegacyHandler`. `executor.run` becomes the
-   terminal adapter: it calls `dispatch`, then renders and exits. Behaviour is identical.
+1. **Facade** (done): `runtime/dispatch.py` adds `dispatch(Request) -> Outcome` with the
+   interceptors for output, refusals, dry-run gate and shared services. `executor.run` is the
+   terminal adapter: it calls `dispatch`, then renders, logs and exits. The `producer` built by
+   `app._execute` is the legacy-handler adapter, so no handler changed. Behaviour is identical.
 2. **Interceptors:** move the steps out of `executor.run` in the order above, one PR per group:
    refusals, dry run, policy, verify, lifecycle.
 3. **run and embed adapters:** take the `Envelope` from `dispatch`. Delete `linecapture`'s stdout
    redirect and embed's stray-output guard where nothing still prints.
-4. **Journal** (#310): add the `JournalStore` port. The run log becomes a projection of the
-   journal. Add resume of a running invocation by `inv`.
+4. **Journal** (#310, port done): `runtime/journal.py` adds the `JournalStore` port and its file
+   adapter, written by the `journal_writes` interceptor: a `begin` record before the handler (the
+   outbox: a crash leaves a `begin` with no `end`, shown as status `unknown`), an `end` record with
+   the exit, `meta.opens` and the undo lines. Still to do: the run log becomes a projection of the
+   journal, and resume of a running invocation by `inv`.
 5. **Task layer** (#309): recipes in `discovery/recipes.json` become executable plans, with one
    definition per recipe and no second file. Plans are interpreted over `dispatch`, using
    `runtime/bindings.py`, with plan/apply.
-6. **Undo** (#311): add compensation per step, as a saga over the journal. It covers only what is
-   reversible (`reversible_pipeline`, draft mode). `destructive` and `external_effect` steps are
-   refused in an undoable task unless confirmed.
+6. **Undo** (#311, done): each journaled write records its compensation as `mammoth run` lines, so
+   undo needs no second interpreter. A trash is undone by a restore; an object listed in
+   `meta.opens` with `created: true` goes to the trash, newest first; a `reversible_pipeline` edit
+   applies the newest pipeline version read before the edit (versions are made on every change;
+   the read asks `(id:desc)` because the API lists oldest first), or, on a view with no version
+   yet, deletes the steps the edit added. `history undo` runs the lines as a saga through the
+   normal command path, newest first, stops at the first failure and reports `partial`.
+   `destructive` and `external_effect` writes record why they cannot be undone. Checked live on a
+   dev server: a pipeline edit, an upload and a trash, each undone, and the undo of an undo.
+   `view version apply` now waits for its job: without that, an undo returned before the view
+   showed the restored steps.
 7. **Idempotency:** send `Idempotency-Key: <inv>` on writes once the backend honours it (backend
    issue to open).
 8. **Delete the old path:** `executor.run`'s inline steps and the `STREAMED_META` and

@@ -2,6 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: view.active-user.list
   command_path: view active-user list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -445,6 +446,7 @@ commands:
   reviewed_by: primary
 - command_id: view.checkpoint.list
   command_path: view checkpoint list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -718,6 +720,7 @@ commands:
   reviewed_by: primary
 - command_id: view.conditional-format.list
   command_path: view conditional-format list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1158,6 +1161,7 @@ commands:
   reviewed_by: primary
 - command_id: view.data-check.list
   command_path: view data-check list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1980,6 +1984,7 @@ commands:
   reviewed_by: primary
 - command_id: view.derivative.list
   command_path: view derivative list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -2933,6 +2938,7 @@ commands:
   reviewed_by: primary
 - command_id: view.export.list
   command_path: view export list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3935,6 +3941,7 @@ commands:
   reviewed_by: primary
 - command_id: view.list
   command_path: view list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3981,6 +3988,7 @@ commands:
   reviewed_by: primary
 - command_id: view.parameter-context
   command_path: view parameter-context
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4075,6 +4083,7 @@ commands:
   reviewed_by: primary
 - command_id: view.pipeline.get
   command_path: view pipeline get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4291,6 +4300,7 @@ commands:
   reviewed_by: primary
 - command_id: view.preview
   command_path: view preview
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4537,6 +4547,7 @@ commands:
   reviewed_by: primary
 - command_id: view.task.list
   command_path: view task list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -6559,7 +6570,7 @@ commands:
   mutation_class: benign_mutation
   edits_target: true
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
   readback:
@@ -6698,6 +6709,7 @@ commands:
   reviewed_by: primary
 - command_id: view.version.list
   command_path: view version list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -7345,6 +7357,7 @@ commands:
   reviewed_by: primary
 - command_id: view.summary
   command_path: view summary
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

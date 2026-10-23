@@ -41,6 +41,7 @@ commands:
     kind: object
 - command_id: trash.list
   command_path: trash list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

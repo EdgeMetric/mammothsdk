@@ -827,6 +827,24 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="view transform",
         ),
     ),
+    "history.show": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The write's inv, or the group of a whole mammoth run (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
+    "history.undo": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The write's inv, or the group of a whole mammoth run (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
     "run": (
         PositionalSpec(
             name="file",

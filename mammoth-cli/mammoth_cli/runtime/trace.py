@@ -53,6 +53,9 @@ class Trace:
     surface: str
     #: The coding agent driving the CLI, when one says so in the environment.
     agent: str | None = None
+    #: The outermost invocation in this process: a ``mammoth run`` line's group is the
+    #: run's own id, so the journal can undo a whole run. Not sent to the server.
+    group: str = ""
 
     def comment(self) -> str:
         """Format this invocation as a ``User-Agent`` comment.
@@ -92,11 +95,14 @@ def begin(command_id: str) -> Iterator[Trace]:
     Yields:
         The new trace, current until the block ends.
     """
+    invocation_id = uuid.uuid4().hex[:12]
+    parent = _CURRENT.get()
     trace = Trace(
         command_id=command_id,
-        invocation_id=uuid.uuid4().hex[:12],
+        invocation_id=invocation_id,
         surface=_surface(),
         agent=None if embedded.active() else detect_agent(os.environ),
+        group=parent.group if parent is not None else invocation_id,
     )
     token = _CURRENT.set(trace)
     try:

@@ -34,7 +34,11 @@ from mammoth_cli.services.input_fields import (
     excluded_input_fields,
     handler_owned_fields,
 )
-from mammoth_cli.services.openapi_types import openapi_body_schema_for, sample_from_schema
+from mammoth_cli.services.openapi_types import (
+    openapi_body_schema_for,
+    openapi_response_schema_for,
+    sample_from_schema,
+)
 from mammoth_cli.services.positionals import LOCAL_PATH, PositionalSpec, resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema, sample_value
 
@@ -2619,6 +2623,26 @@ def _browse(entries: list[dict[str, Any]]) -> dict[str, Any]:
     return {"families": families, "next": _BROWSE_NEXT}
 
 
+#: ``output_schema`` value of a command whose ``data`` is the API's own ``200`` body,
+#: checked live against the API (``tests/live/test_output_schema.py``).
+OUTPUT_SCHEMA_OPENAPI = "openapi"
+
+
+def output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
+    """The JSON Schema (2020-12) of a command's envelope ``data``, when it declares one.
+
+    Args:
+        record: The command's manifest record.
+
+    Returns:
+        The schema with its ``$defs``, or None for a command that declares none (its
+        result is reshaped by the CLI, or not yet checked against the API).
+    """
+    if record.get("output_schema") != OUTPUT_SCHEMA_OPENAPI:
+        return None
+    return openapi_response_schema_for(tuple(record.get("operation_ids") or ()))
+
+
 def get_schema(command_id: str) -> dict[str, Any] | None:
     record = command_by_id(command_id)
     if record is None or record.get("disposition") == "alias":
@@ -2644,6 +2668,7 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
         "pagination_policy": record["pagination_policy"],
         "human_example": record["human_example"],
         "agent_example": record["agent_example"],
+        "output_schema": output_schema(record),
         "exit_codes": {
             "0": "success (a pending write exits 0 with status pending; see verify.next_command)",
             "1": "API or operation failure (including a write with verify.outcome failed)",

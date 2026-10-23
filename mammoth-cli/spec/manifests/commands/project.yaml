@@ -133,6 +133,7 @@ commands:
   reviewed_by: primary
 - command_id: project.checkpoint.list
   command_path: project checkpoint list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -268,6 +269,7 @@ commands:
     kind: object
 - command_id: project.data-check.list
   command_path: project data-check list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -392,6 +394,7 @@ commands:
   reviewed_by: primary
 - command_id: project.list
   command_path: project list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -600,6 +603,7 @@ commands:
     kind: object
 - command_id: project.pending-changes
   command_path: project pending-changes
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

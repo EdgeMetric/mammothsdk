@@ -48,6 +48,7 @@ commands:
     kind: object
 - command_id: token.list
   command_path: token list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

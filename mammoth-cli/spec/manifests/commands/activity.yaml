@@ -37,6 +37,7 @@ commands:
   reviewed_by: primary
 - command_id: activity.list
   command_path: activity list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

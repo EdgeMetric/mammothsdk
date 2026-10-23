@@ -132,6 +132,7 @@ commands:
   reviewed_by: primary
 - command_id: annotation.list
   command_path: annotation list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

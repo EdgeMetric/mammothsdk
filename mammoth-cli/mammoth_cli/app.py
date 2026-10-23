@@ -81,6 +81,7 @@ _GROUP_DESCRIPTIONS = {
     "config": "Read and update local CLI configuration.",
     "connector": "Manage data connectors and connector profiles.",
     "log": "Locate and read the local run log.",
+    "history": "List the writes made from this machine and undo them.",
     "context": "Inspect and select the active project context.",
     "dashboard": "Build, query, and publish dashboards.",
     "dataset": "Create, inspect, and manage datasets.",
@@ -333,6 +334,7 @@ _ROOT_HELP_PANELS = {
     "completion": "CLI and agent tools",
     "skill": "CLI and agent tools",
     "log": "CLI and agent tools",
+    "history": "CLI and agent tools",
     "upgrade": "CLI and agent tools",
     "version": "CLI and agent tools",
 }
@@ -806,9 +808,9 @@ class _EnvelopeGroup(TyperGroup):
                         exit_status=EXIT_USAGE,
                         hint="Check the command schema with 'mammoth schema get'.",
                     )
-            from mammoth_cli.runtime import executor
+            from mammoth_cli.output.emit import emit_error
 
-            executor.emit_error(report, machine=True)
+            emit_error(report, machine=True)
         elif report is None:
             error.show()
             if is_missing_parameter:
@@ -1453,7 +1455,10 @@ _RUN_HELP_NOTE = (
     "project). Prints each line's envelope plus line, cmd and exit, then a summary; stops at "
     "the first failed line (exit = its status) unless --continue. No global --yes: a "
     "mutating line carries its own. --dry-run, --profile and --project apply to every line. "
-    "FILE defaults to stdin; --continue may come before or after it."
+    "FILE defaults to stdin; --continue may come before or after it. Steps: name a line "
+    '("name": "up") and a later line reads its result as "{{steps.up.data.dataset.id}}" in '
+    'args, input or flags; "when": {"eq": [A, B]} skips a line; "for_each": "{{steps.ls.data}}" '
+    'runs it once per item ("{{item}}", "{{index}}"). JSON expressions only, no code.'
 )
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,

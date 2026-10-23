@@ -123,6 +123,7 @@ commands:
   no_readback: "deletes the caller's own account; no parent listing exists and the account can no longer be read afterward"
 - command_id: user.get
   command_path: user get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -157,6 +158,7 @@ commands:
   reviewed_by: primary
 - command_id: user.preference.get
   command_path: user preference get
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

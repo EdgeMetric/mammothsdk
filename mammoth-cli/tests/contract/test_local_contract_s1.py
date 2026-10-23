@@ -51,6 +51,9 @@ S1_ROUTES = (
     "dataset.search",
     "doctor",
     "folder.find",
+    "history.list",
+    "history.show",
+    "history.undo",
     "how",
     "link",
     "log.path",
@@ -95,6 +98,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "skill.update": ("agents", "scope", "force"),
     "view.data.drivers": ("measure", "date_column", "compare", "by", "conditions"),
     "view.data.forecast": ("measure", "date_column", "unit", "periods", "conditions"),
+    "history.list": ("limit", "undoable_only"),
 }
 
 

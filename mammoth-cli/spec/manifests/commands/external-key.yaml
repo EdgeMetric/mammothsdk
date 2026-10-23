@@ -130,6 +130,7 @@ commands:
   reviewed_by: primary
 - command_id: external-key.list
   command_path: external-key list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

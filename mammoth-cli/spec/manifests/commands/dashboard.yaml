@@ -716,6 +716,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.context.list
   command_path: dashboard context list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3610,6 +3611,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.signature.list
   command_path: dashboard signature list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3813,6 +3815,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.style.custom.list
   command_path: dashboard style custom list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4046,6 +4049,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.style.preset.list
   command_path: dashboard style preset list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4120,6 +4124,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.suggestion.list
   command_path: dashboard suggestion list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4252,6 +4257,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.tags.list
   command_path: dashboard tags list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4556,6 +4562,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.template.fit
   command_path: dashboard template fit
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4636,6 +4643,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.template.list
   command_path: dashboard template list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -7160,6 +7168,7 @@ commands:
   reviewed_by: primary
 - command_id: dashboard.chart-type.list
   command_path: dashboard chart-type list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

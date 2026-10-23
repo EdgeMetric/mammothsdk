@@ -105,6 +105,14 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
   `invalid_run_line` error for that line, exit 2. `run`, `auth login` and `auth logout` cannot be
   lines, however `cmd` and `args` spell them (`run_command_refused`).
 - stdout carries only the envelopes; progress and diagnostics stay on stderr.
+- Steps: a line with `"name": "up"` keeps its envelope, and a later line reads it in `args`,
+  `input` or `flags` as `"{{steps.up.data.dataset.id}}"` (a whole-string reference keeps its type;
+  paths take `[0]` indexes). `"when"` skips a line when false (`{"eq": [A, B]}`, `{"in": [A, LIST]}`,
+  `{"not": C}`, `{"all": [...]}`, `{"any": [...]}`, `{"present": REF}`), printing `skipped: true`.
+  `"for_each": "{{steps.ls.data.items}}"` runs a line once per item with `{{item}}` and `{{index}}`,
+  one envelope per item (`item` = its index). `$keys`, `$first`, `$without` and `$default` build
+  values. A reference that does not resolve fails the line with `unresolved_reference` (exit 2);
+  under `--dry-run` the line is planned instead (`data.planned`, `data.waits_on`). JSON only: no code runs.
 
 ## Exit codes
 | code | meaning |

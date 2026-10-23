@@ -133,6 +133,7 @@ commands:
   reviewed_by: primary
 - command_id: client-app.list
   command_path: client-app list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

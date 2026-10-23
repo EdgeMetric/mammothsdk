@@ -2,6 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: auth.connected-apps.list
   command_path: auth connected-apps list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

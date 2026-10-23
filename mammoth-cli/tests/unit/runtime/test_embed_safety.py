@@ -18,7 +18,7 @@ from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.embed import invoke
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.manifest.loader import load_commands
-from mammoth_cli.runtime import embedded, executor
+from mammoth_cli.runtime import dispatch, embedded, executor
 from mammoth_cli.runtime.local_paths import local_path_commands
 from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.positionals import LOCAL_PATH
@@ -459,7 +459,7 @@ def test_a_terminal_run_is_not_refused() -> None:
     call = embedded.current()
     assert call is None
     # Outside an embedded call the guard is inert.
-    executor._refuse_if_embedded("dashboard.chat.attachment.upload")
+    dispatch._refuse_if_embedded("dashboard.chat.attachment.upload")
 
 
 def _must_not_run() -> tuple[Any, dict[str, Any]]:

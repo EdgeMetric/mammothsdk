@@ -5,7 +5,7 @@ from __future__ import annotations
 from mammoth_cli.commands.schema import _compact_accepted_fields, input_contract
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
-from mammoth_cli.runtime.executor import _attach_input_contract
+from mammoth_cli.runtime.dispatch import _attach_input_contract
 
 
 def test_find_fields_inline_the_nested_shape_of_conversions() -> None:

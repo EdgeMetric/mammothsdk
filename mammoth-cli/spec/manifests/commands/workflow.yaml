@@ -600,6 +600,7 @@ commands:
   reviewed_by: primary
 - command_id: workflow.graph
   command_path: workflow graph
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -634,6 +635,7 @@ commands:
   reviewed_by: primary
 - command_id: workflow.list
   command_path: workflow list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -817,6 +819,7 @@ commands:
     kind: object
 - command_id: workflow.workspace-datasets
   command_path: workflow workspace-datasets
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -851,6 +854,7 @@ commands:
   reviewed_by: primary
 - command_id: workflow.workspace-exports
   command_path: workflow workspace-exports
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -885,6 +889,7 @@ commands:
   reviewed_by: primary
 - command_id: workflow.workspace-sources
   command_path: workflow workspace-sources
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

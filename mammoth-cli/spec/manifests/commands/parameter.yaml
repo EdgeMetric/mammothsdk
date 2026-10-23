@@ -309,6 +309,7 @@ commands:
     kind: object
 - command_id: parameter.group.list
   command_path: parameter group list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -427,6 +428,7 @@ commands:
     kind: object
 - command_id: parameter.list
   command_path: parameter list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

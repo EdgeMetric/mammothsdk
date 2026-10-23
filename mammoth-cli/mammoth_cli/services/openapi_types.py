@@ -57,31 +57,61 @@ def _referenced_names(value: Any) -> set[str]:
     return names
 
 
+def _standalone(raw_schema: dict[str, Any]) -> dict[str, Any]:
+    """*raw_schema* with every component it references copied in under ``$defs``."""
+    raw_schema = copy.deepcopy(raw_schema)
+    all_definitions = _document().get("components", {}).get("schemas", {})
+    pending = list(_referenced_names(raw_schema))
+    selected: dict[str, Any] = {}
+    while pending:
+        name = pending.pop()
+        if name in selected or name not in all_definitions:
+            continue
+        definition = copy.deepcopy(all_definitions[name])
+        selected[name] = definition
+        pending.extend(_referenced_names(definition) - set(selected))
+    schema = _rewrite_refs(raw_schema)
+    definitions = _rewrite_refs(selected)
+    if definitions:
+        schema["$defs"] = definitions
+    return cast(dict[str, Any], schema)
+
+
+def _json_schema(content: dict[str, Any]) -> dict[str, Any] | None:
+    """The JSON media type's schema in an OpenAPI ``content`` map, if it has one."""
+    media = content.get("application/json") or content.get("application/*+json")
+    if not isinstance(media, dict) or not isinstance(media.get("schema"), dict):
+        return None
+    return cast(dict[str, Any], media["schema"])
+
+
 @cache
 def openapi_body_schema_for(operation_ids: tuple[str, ...]) -> dict[str, Any] | None:
     """Return a standalone request-body schema for explicit operation ids."""
     for operation_id in operation_ids:
         operation = _operations().get(str(operation_id), {})
-        content = operation.get("requestBody", {}).get("content", {})
-        media = content.get("application/json") or content.get("application/*+json")
-        if not isinstance(media, dict) or not isinstance(media.get("schema"), dict):
-            continue
-        raw_schema = copy.deepcopy(media["schema"])
-        all_definitions = _document().get("components", {}).get("schemas", {})
-        pending = list(_referenced_names(raw_schema))
-        selected: dict[str, Any] = {}
-        while pending:
-            name = pending.pop()
-            if name in selected or name not in all_definitions:
-                continue
-            definition = copy.deepcopy(all_definitions[name])
-            selected[name] = definition
-            pending.extend(_referenced_names(definition) - set(selected))
-        schema = _rewrite_refs(raw_schema)
-        definitions = _rewrite_refs(selected)
-        if definitions:
-            schema["$defs"] = definitions
-        return cast(dict[str, Any], schema)
+        raw_schema = _json_schema(operation.get("requestBody", {}).get("content", {}))
+        if raw_schema is not None:
+            return _standalone(raw_schema)
+    return None
+
+
+@cache
+def openapi_response_schema_for(operation_ids: tuple[str, ...]) -> dict[str, Any] | None:
+    """Return a standalone schema of the first operation's ``200`` JSON response.
+
+    Args:
+        operation_ids: The OpenAPI operation ids a command calls, in manifest order.
+
+    Returns:
+        The JSON Schema (2020-12, as OpenAPI 3.1 writes it) with its ``$defs``, or None
+        when no operation documents a JSON ``200`` body.
+    """
+    for operation_id in operation_ids:
+        response = _operations().get(str(operation_id), {}).get("responses", {}).get("200", {})
+        raw_schema = _json_schema(response.get("content", {}))
+        if raw_schema is not None:
+            return _standalone(raw_schema)
     return None
 
 

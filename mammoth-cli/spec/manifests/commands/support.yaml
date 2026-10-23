@@ -146,6 +146,7 @@ commands:
     kind: object
 - command_id: support.connector-profile.list
   command_path: support connector-profile list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -316,6 +317,7 @@ commands:
     kind: object
 - command_id: support.connector.list
   command_path: support connector list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -537,6 +539,7 @@ commands:
     kind: object
 - command_id: support.feature-profile.list
   command_path: support feature-profile list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -706,6 +709,7 @@ commands:
     kind: object
 - command_id: support.feature.list
   command_path: support feature list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -883,6 +887,7 @@ commands:
     kind: object
 - command_id: support.plan.chargebee-list
   command_path: support plan chargebee-list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1048,6 +1053,7 @@ commands:
   reviewed_by: primary
 - command_id: support.plan.list
   command_path: support plan list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -1082,6 +1088,7 @@ commands:
   reviewed_by: primary
 - command_id: support.plan.self-serve-list
   command_path: support plan self-serve-list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3410,6 +3417,7 @@ commands:
   reviewed_by: primary
 - command_id: support.deal.list
   command_path: support deal list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -3639,6 +3647,7 @@ commands:
     kind: object
 - command_id: support.entitlement.registry
   command_path: support entitlement registry
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4208,6 +4217,7 @@ commands:
   reviewed_by: primary
 - command_id: support.partner.list
   command_path: support partner list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4335,6 +4345,7 @@ commands:
     kind: object
 - command_id: support.plan.catalog
   command_path: support plan catalog
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4369,6 +4380,7 @@ commands:
   reviewed_by: primary
 - command_id: support.search
   command_path: support search
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4409,6 +4421,7 @@ commands:
   reviewed_by: primary
 - command_id: support.triage
   command_path: support triage
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -4443,6 +4456,7 @@ commands:
   reviewed_by: primary
 - command_id: support.usage-tiles
   command_path: support usage-tiles
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:

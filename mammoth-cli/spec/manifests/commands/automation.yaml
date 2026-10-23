@@ -2,6 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: automation.capabilities
   command_path: automation capabilities
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -354,6 +355,7 @@ commands:
     kind: object
 - command_id: automation.folders
   command_path: automation folders
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
