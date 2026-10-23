@@ -23,6 +23,7 @@ class AddPagesResponse(MammothModel):
     bake_job_id: int
     added_page_ids: list[str] | None = None
     message: str | None = None
+    filter_notes: list[str] | None = None
 
 
 class AddPagesSpec(MammothModel):
@@ -33,6 +34,7 @@ class AddPagesSpec(MammothModel):
 class AdhocQueryParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     descriptor: dict[str, Any]
+    page_id: Annotated[str | None, Field(max_length=128)] = None
 
 
 class AdhocQueryResponse(MammothModel):
@@ -101,6 +103,7 @@ class AskParams(MammothModel):
     ask_id: Annotated[str | None, Field(max_length=64)] = None
     filter_state: dict[str, Any] | None = None
     conversation_history: list[dict[str, Any]] | None = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
 
 
 class AskSpec(MammothModel):
@@ -336,6 +339,8 @@ class CanvasMeta(MammothModel):
     unweighted_means: list[str] | None = None
     broken_bindings: list[dict[str, Any]] | None = None
     receipts: dict[str, Any] | None = None
+    drill: dict[str, Any] | None = None
+    rows: dict[str, Any] | None = None
     context_drift: list[dict[str, Any]] | None = None
     published_context_drift: list[dict[str, Any]] | None = None
     context_baseline: bool | None = None
@@ -343,6 +348,11 @@ class CanvasMeta(MammothModel):
     on_sample_data: bool | None = None
     sanctioned_demo_publish: bool | None = None
     rls_scoped: bool | None = None
+    filter_pages: dict[str, Any] | None = None
+    page_facts: dict[str, Any] | None = None
+    page_hints: dict[str, Any] | None = None
+    page_sources: dict[str, Any] | None = None
+    page_errors: dict[str, Any] | None = None
 
 
 class CanvasResponse(MammothModel):
@@ -364,6 +374,44 @@ class ChangeAudienceParams(MammothModel):
 class ChangeAudienceSpec(MammothModel):
     model_config = ConfigDict(extra="forbid")
     params: ChangeAudienceParams
+
+
+class ChartTypeItem(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    id: str
+    name: str
+    recipe: dict[str, Any]
+    needs: list[ChartTypeNeed]
+    binding_template: dict[str, Any]
+    created_by_name: str
+    created_at: str
+    updated_at: str
+
+
+class ChartTypeListResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    chart_types: list[ChartTypeItem] | None = None
+
+
+class ChartTypeNeed(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    field: str
+    type: str
+    role: str
+    label: str
+
+
+class ChartTypeParams(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str
+    recipe: dict[str, Any]
+    needs: list[dict[str, Any]]
+    binding_template: dict[str, Any] | None = None
+
+
+class ChartTypeSpec(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    params: ChartTypeParams
 
 
 class ChatAttachmentResponse(MammothModel):
@@ -391,6 +439,7 @@ class ChatEditParams(MammothModel):
     change: list[dict[str, Any]] | dict[str, Any] | None = None
     attachments: Annotated[list[str] | None, Field(max_length=5)] = None
     attachment_action: AttachmentAction | None = None
+    custom_chart_action: CustomChartAction | None = None
 
 
 class ChatEditSpec(MammothModel):
@@ -545,6 +594,14 @@ class CreatorDashboardHtmlType(MammothModel):
     is_publish_presentation_pending: bool
     project_id: int | None = None
     workspace_id: int | None = None
+
+
+class CustomChartAction(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    op: Literal["add_closest", "use_kind", "force_custom"]
+    tile_id: Annotated[str | None, Field(max_length=64)] = None
+    kind: Annotated[str | None, Field(max_length=40)] = None
+    describe: Annotated[str | None, Field(max_length=500)] = None
 
 
 class CustomStyleParams(MammothModel):
@@ -792,6 +849,11 @@ class DraftMove(MammothModel):
     at: str | None = None
     kind: Literal["edit", "assistant", "sync"]
     label: str | None = None
+
+
+class DrillStep(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    key: str | int | float | bool
 
 
 class DuplicateDashboardResponse(MammothModel):
@@ -1126,11 +1188,35 @@ class FeedbackSpec(MammothModel):
     params: FeedbackParams | None = None
 
 
+class FigureDrillParams(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    figure: Annotated[str, Field(min_length=1, max_length=120)]
+    series: Annotated[str | None, Field(max_length=120)] = None
+    path: Annotated[list[DrillStep], Field(min_length=1, max_length=4)]
+    filter_state: dict[str, Any] | None = None
+    rls_preview_value: str | None = None
+
+
+class FigureDrillResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    job_id: int
+    descriptor_id: str
+    level_field: str
+    level_label: str
+    grain: str | None = None
+
+
+class FigureDrillSpec(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    params: FigureDrillParams
+
+
 class FigureIntentParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     intent: str | None = None
     kind: str | None = None
     fields: dict[str, Any] | None = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
 
 
 class FigureIntentResponse(MammothModel):
@@ -1142,6 +1228,8 @@ class FigureIntentResponse(MammothModel):
     caption: str | None = None
     caveat: str | None = None
     text: TextBlockSpec | None = None
+    refused: str | None = None
+    recipe: FigureRecipeResponse | None = None
     intent_applied: bool
 
 
@@ -1161,6 +1249,60 @@ class FigurePageTarget(MammothModel):
     model_config = ConfigDict(extra="forbid")
     id: str | None = None
     new_title: Annotated[str | None, Field(max_length=80)] = None
+
+
+class FigureRecipeParams(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    describe: Annotated[str, Field(min_length=1, max_length=500)]
+    force_custom: bool | None = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
+
+
+class FigureRecipeResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    outcome: Literal["library", "custom", "fallback", "refused"]
+    kind: str
+    message: str
+    added: dict[str, Any] | None = None
+    actions: list[str] | None = None
+    problems: list[str] | None = None
+
+
+class FigureRecipeSpec(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    params: FigureRecipeParams
+
+
+class FigureRowsDescriptorIds(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    rows: str
+    count: str
+    total: str | None = None
+
+
+class FigureRowsParams(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    figure: Annotated[str, Field(min_length=1, max_length=120)]
+    series: Annotated[str | None, Field(max_length=120)] = None
+    key: str | int | float | bool | None = None
+    path: Annotated[list[DrillStep] | None, Field(max_length=4)] = None
+    filter_state: dict[str, Any] | None = None
+    rls_preview_value: str | None = None
+
+
+class FigureRowsResponse(MammothModel):
+    model_config = ConfigDict(extra="allow")
+    job_id: int
+    descriptor_ids: FigureRowsDescriptorIds
+    columns: list[str]
+    sort: str | None = None
+    scale: dict[str, Any]
+    applied_filters: list[str] | None = None
+
+
+class FigureRowsSpec(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    params: FigureRowsParams
 
 
 class FormatFloorApplied(MammothModel):
@@ -1339,6 +1481,12 @@ class OwnDataStartSpec(MammothModel):
     params: OwnDataStartParams
 
 
+class PageTableParams(MammothModel):
+    model_config = ConfigDict(extra="forbid")
+    dataview_id: Annotated[int | None, Field(ge=1)] = None
+    dataset_id: Annotated[int | None, Field(ge=1)] = None
+
+
 class PdfExportParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     data: dict[str, Any] | None = None
@@ -1364,6 +1512,7 @@ class PlanPageParams(MammothModel):
     kind: str | None = None
     fields: dict[str, Any] | None = None
     page_id: str | None = None
+    dataset: PageTableParams | None = None
 
 
 class PlanPageResponse(MammothModel):
@@ -1434,7 +1583,9 @@ class PresentEditor(MammothModel):
 class PreviewTemplateParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
-    target_dataview_id: Annotated[int, Field(ge=1.0)]
+    target_dataview_id: Annotated[int | None, Field(ge=1)] = None
+    target_dataset_id: Annotated[int | None, Field(ge=1)] = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
     table_item_id: Annotated[int | None, Field(ge=1)] = None
     mapping: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
@@ -1567,7 +1718,9 @@ class RenderFigureSvgSpec(MammothModel):
 class ResolveTemplateMappingParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
-    target_dataview_id: Annotated[int, Field(ge=1.0)]
+    target_dataview_id: Annotated[int | None, Field(ge=1)] = None
+    target_dataset_id: Annotated[int | None, Field(ge=1)] = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
 
 
 class ResolveTemplateMappingResponse(MammothModel):
@@ -1821,10 +1974,12 @@ class StyleTokensResponse(MammothModel):
 
 class SwapDataParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
-    dataview_id: Annotated[int, Field(ge=1.0)]
+    dataview_id: Annotated[int | None, Field(ge=1)] = None
+    dataset_id: Annotated[int | None, Field(ge=1)] = None
     mapping: dict[str, Any] | None = None
     overrides: dict[str, Any] | None = None
     currency: Annotated[str | None, Field(max_length=8)] = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
 
 
 class SwapDataSpec(MammothModel):
@@ -1835,7 +1990,9 @@ class SwapDataSpec(MammothModel):
 class SwapFitParams(MammothModel):
     model_config = ConfigDict(extra="forbid")
     source_dashboard_id: Annotated[int, Field(ge=1.0)]
-    target_dataview_ids: Annotated[list[int], Field(min_length=1, max_length=60)]
+    target_dataview_ids: Annotated[list[int] | None, Field(min_length=1, max_length=60)] = None
+    target_dataset_ids: Annotated[list[int] | None, Field(min_length=1, max_length=60)] = None
+    page_id: Annotated[str | None, Field(max_length=128)] = None
     include_over_budget: bool | None = None
     seconds_budget: Annotated[float | None, Field(le=30)] = None
 
@@ -1991,6 +2148,7 @@ class V3DashboardMetaType(MammothModel):
     unpublished_authors: list[UnpublishedAuthor] | None = None
     role: str | None = None
     project_id: int | None = None
+    tables_project_id: int | None = None
     unavailable_files: list[UnavailableFileType] | None = None
 
 
@@ -2103,6 +2261,11 @@ __all__ = [
     "CanvasResponse",
     "ChangeAudienceParams",
     "ChangeAudienceSpec",
+    "ChartTypeItem",
+    "ChartTypeListResponse",
+    "ChartTypeNeed",
+    "ChartTypeParams",
+    "ChartTypeSpec",
     "ChatAttachmentResponse",
     "ChatEditParams",
     "ChatEditSpec",
@@ -2126,6 +2289,7 @@ __all__ = [
     "CreateSessionParams",
     "CreateSessionSpec",
     "CreatorDashboardHtmlType",
+    "CustomChartAction",
     "CustomStyleParams",
     "CustomStyleSpec",
     "DashboardAction",
@@ -2159,6 +2323,7 @@ __all__ = [
     "DigestPrefSpec",
     "DraftHeadResponse",
     "DraftMove",
+    "DrillStep",
     "DuplicateDashboardResponse",
     "EmailUpdateOut",
     "EmailUpdateSettingsBody",
@@ -2198,11 +2363,21 @@ __all__ = [
     "ExtractBrandSpec",
     "FeedbackParams",
     "FeedbackSpec",
+    "FigureDrillParams",
+    "FigureDrillResponse",
+    "FigureDrillSpec",
     "FigureIntentParams",
     "FigureIntentResponse",
     "FigureIntentSpec",
     "FigureOut",
     "FigurePageTarget",
+    "FigureRecipeParams",
+    "FigureRecipeResponse",
+    "FigureRecipeSpec",
+    "FigureRowsDescriptorIds",
+    "FigureRowsParams",
+    "FigureRowsResponse",
+    "FigureRowsSpec",
     "FormatFloorApplied",
     "FormatPreviewNotShown",
     "FormatPreviewResponse",
@@ -2226,6 +2401,7 @@ __all__ = [
     "OwnDataAcceptSpec",
     "OwnDataStartParams",
     "OwnDataStartSpec",
+    "PageTableParams",
     "PdfExportParams",
     "PdfExportSpec",
     "PendingTemplateResponse",

@@ -6,23 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (mammoth-mcp-server 0.2.9)
+### Added (next mammoth-mcp-server)
 
 - `undo` takes a change back. With what="trash" it restores views, datasets, dashboards and automations from the project's trash and reports which came back. With what="pipeline" it puts a view's pipeline back as one of its versions had it, and says when the view is still running again. The version list keeps the pipeline as it was just before, so a rollback can be taken back too.
 - `list_trash` lists what a project's trash holds, 50 to a page with `next_offset`: each item's type and id (what `undo` takes), name, and days left before Mammoth deletes it for good.
 - `get_pipeline` with `include_versions` lists the view's latest 10 pipeline versions, newest first, with what made each one.
-
-### Changed (mammoth-mcp-server 0.2.9)
-
-- `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
-
-### Added (mammoth-mcp-server 0.2.8)
-
 - `edit_dashboard` has Mammoth's AI change a dashboard from a description (one turn of the editor's chat), gives it a new title, or both. It waits for the edit and reports `changed` and the AI's `message`. When `changed` is false, `next_step` says nothing was applied, whatever the message claims. The edit goes to the draft: on a published dashboard, `next_step` says the share link shows the old version until `publish_dashboard` runs again, and the tool never publishes. A board on the older engine can be renamed, and an AI edit of it is refused before anything is sent. An edit still going after the wait is reported as `editing` with its `job_id`; `edit_dashboard(job_id=...)` picks it up and reports what it did, sending nothing new. Mammoth's `changed` means the board was saved, not that it does what was asked: when Mammoth's own check in the reply lists an ask as not applied, or under "Couldn’t do:", the tool reports `partial` and `not_done`.
 - `get_dashboard` with `include_embed` gives the HTML that puts a dashboard on another site: an iframe with the board's embed key ("key"), a `TOKEN` the host's server signs per viewer ("signed"), or nothing more for a public board. It reports which sites may show the board, whether it is published, and what to tell the user: publish first, limit the sites, or (on "signed") that the workspace has no signing secret yet, so the embed shows nothing. It never returns the signing secret.
 - `edit_dashboard` also sets the embed mode ("key" or "signed") and which sites may show the board (any site, or a list). Only what is named changes, and it applies at once: it is not part of the draft. Embedding has no tools of its own, to keep the tool list short.
 
-### Removed (mammoth-mcp-server 0.2.8)
+### Changed (next mammoth-mcp-server)
+
+- `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
+
+### Removed (next mammoth-mcp-server)
 
 Five tools fold into others, so the tool list a client sends with every request is shorter:
 
@@ -30,13 +27,84 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
-### Added (next mammoth-cli)
+## mammoth-cli 2.2.99 (2026-10-22)
 
-- CLI `mammoth_cli.embed.invoke_many(commands, *, login, ..., stop_on_error=True)`: an embedding host runs several commands as one user and gets one envelope per command, in order. The commands share one scope, so each one reuses the client and connection the earlier ones opened for the same login and project (the way the lines of a `mammoth run` do); the services close when the batch ends. It stops at the first command that fails (an `error` envelope or a non-zero `meta.exit`) and gives each later command a `skipped` error envelope with its `index`, `reason: earlier_command_failed` and the `failed_index`; `stop_on_error=False` runs them all. Nothing is written to stdout. The project-pin read (`GET /workspaces/current`, which an embedded call cannot cache on disk) is made once per batch, not once per command, also inside a `mammoth run`. Five `project list` calls against koyal took 5.2s as one batch with a workspace hint, against 9.9s as five `invoke` calls (one run each).
+### Fixed (mammoth-cli 2.2.99)
 
-### Changed (next mammoth-cli)
+- CLI: `schema find` now lists each inlined command's `positionals` in order with `required` (`view explore-panel set` is `VIEW_ID` then optional `DATASET_ID`). Before, only `accepted_fields` showed, with `dataset_id` as the one required id, so an agent passed the dataset id first. A field that an optional trailing positional can supply is no longer `required: true` in `accepted_fields` (`schema find` and `schema get`).
+- CLI: the swapped-ids refusal ("N is a dataset id and M is its view; the order is VIEW_ID DATASET_ID", with the corrected command) now also covers every `VIEW_ID [DATASET_ID]` write that checks the parent (`view explore-panel set`, `edit`, `add-to-dashboard`, `export-image`, and `view optimize`), not only `view data get`.
+- CLI: the `view explore-panel set` notes no longer say it "opens Explore cards in the UI"; it saves the calling user's panel and shows nothing by itself.
+- CLI: `schema get view.transform.first-name` and `view.transform.update-column` no longer say a draft-mode step submits the draft; since 2.2.97 it stays staged (#298).
+
+## mammoth-io 0.8.50, mammoth-cli 2.2.98 (2026-10-22)
+
+### Added (mammoth-io 0.8.50, mammoth-cli 2.2.98)
+
+- SDK `WorkspaceAPI.list(fields=...)` asks `GET /workspaces` for the given fields (default `"id,name"`, as before), e.g. `"id,name,download_file_types"`; `mammoth workspace list --input '{"fields": "..."}'` passes it (#272).
+- CLI `workspace user list --project ID` lists that project's members with their roles; `schema find` reaches it for "project members" and "my role". The project was dropped before (#256).
+- CLI `--reveal` on `dashboard embed secret rotate` and `dashboard embed preview-token create` prints the new signing secret or preview token, which the API shows only once. Without it they stay masked as before (#278).
+
+### Changed (mammoth-cli 2.2.98)
+
+- CLI: a plan or AI-quota refusal (`4SUBS101`–`4SUBS106`, e.g. `AI_QUOTA_EXHAUSTED`, `FEATURE_NOT_AVAILABLE_ON_PLAN`) is the new error code `plan_limit` (exit 4), with the backend's message and a hint about the plan and quota, instead of `authorization_required` with "check the ids" (#254).
+- CLI: `dashboard live-chart create` waits for the chart's bake job (bounded by `--job-timeout`) and reads the chart back; the result keeps `dashboard_id` and `job_id`. Before, it returned the queued job with no wait or readback (#281).
+- CLI: `dashboard live-chart create`, `dashboard template apply` and `dashboard v3 generate` send an explicit `--project` as the new board's `project_id`; without it the server still uses the source view's project (#280).
+- CLI: `view export rest-fill` refuses `wait` and `timeout` in `--input` instead of ignoring them; it always waits, for at most `--job-timeout` seconds (#279).
+
+### Fixed (mammoth-io 0.8.50, mammoth-cli 2.2.98)
+
+- SDK `DashboardsAPI.embed_lifetime_set` refuses a `token_ttl` that is not an integer (a bool, a string) as well as one outside 60–3600. CLI `dashboard embed lifetime set --dry-run` applies the same check, and its example now uses `900` instead of the invalid `1` (#283).
+
+### Fixed (mammoth-cli 2.2.98)
+
+- CLI: a backend `PERMISSION_ERROR` (`4PERM002`) sent as an HTTP 400 is `authorization_required` (exit 4) with the backend's message, not a generic `api_error` telling the caller to correct the request (#277).
+- CLI: `dashboard embed config get` shows `has_signing_secret` as `true`/`false`; key redaction never masks a boolean (#278).
+- CLI: `--help` and `schema get` list the values of a `Literal` field: `view export download` shows `file_type (csv | xlsx | json | ndjson | xml | yaml | parquet)` and `schema get` reports its `enum`. A long type in `--help` is cut at a word with `...`, never inside a value (it showed `'par`). The command's docstring and example name `file_type` (#282).
+- CLI: `schema get view.summary` reports `dataset_id` as optional, as its positional is, and `schema find` sends column-statistics searches to `view data profile` rather than `view summary` (#284).
+- CLI: `file upload` of a file that made no dataset (a PDF waiting for table extraction) reports `status: no_dataset` with a message and `verify.needs_user`, not `ready` (#255).
+
+## mammoth-cli 2.2.97 (2026-10-22)
+
+### Fixed (mammoth-cli 2.2.97)
+
+- CLI: `view transform first-name` and `view transform update-column` no longer submit the draft of a view in draft mode. The step stays staged (`status: staged`, no run to wait for) like every other transform, and draft mode stays on until `view draft submit`. Before, the first such step on a draft with no other staged steps ran at once, ended draft mode and reported `draft_applied`. Outside draft mode nothing changes.
+
+## mammoth-io 0.8.49, mammoth-cli 2.2.96, mammoth-mcp-server 0.2.8 (2026-10-22)
+
+### Added (mammoth-io 0.8.49, mammoth-cli 2.2.96)
+
+- SDK `MammothClient(default_headers=...)` and `MammothClient.add_default_headers()`: extra headers (a forwarded `Cookie`, a run id) that go on every request this client makes, over the credential headers. They are kept on the client and added per request, never written to a shared `http_client`, so two clients on one pool cannot send each other's. `set_workspace_id` and the credential headers already worked this way; no SDK code writes per-user state to `session.headers` or `session.cookies` of a shared client any more (the owned client still mirrors its headers to its own session). `download_session` stays per client: it carries no credentials and opens connections only for signed export URLs.
+- CLI `mammoth_cli.embed.EmbedRuntime`, `shared_pool()` and `invoke(..., runtime=...)` (also `invoke_many`): an opt-in host-owned event-loop thread and one cookie-less `httpx.AsyncClient`. Embedded calls given a runtime send their requests through its pool and run their coroutines on its loop, so keep-alive connections are reused across calls and users (no new TCP + TLS handshake per call) and a call made from inside a running loop starts no helper thread. Each call's credentials, forwarded headers and agent-run header stay on its own requests. A runtime is used only with an SDK that has `default_headers` (mammoth-io 0.8.49); with an older one, or a closed runtime, each call keeps its own client as before. Closing a runtime cancels calls in flight (their callers get `RuntimeError`, not a hang), and `run()` from the runtime's own loop thread raises instead of deadlocking. Work on the shared loop must not block: a synchronous `token_provider` or a synchronous workspace lookup would stall every user; with an `api_token` login the workspace is known before the call (and a `workspace_id` hint skips even that), so neither happens. Without `runtime=` nothing changes. On a dev server 340 ms from the caller, `project list` took a median 2.6 s with a client per call and 1.7 s on a shared runtime (interleaved, 15 warm calls each).
+
+### Added (mammoth-cli 2.2.96)
+
+- CLI `mammoth_cli.embed.invoke_many(commands, *, login, ..., stop_on_error=True)`: an embedding host runs several commands as one user and gets one envelope per command, in order. The commands share one scope, so each one reuses the client and connection the earlier ones opened for the same login and project (the way the lines of a `mammoth run` do); the services close when the batch ends. It stops at the first command that fails (an `error` envelope or a non-zero `meta.exit`) and gives each later command a `skipped` error envelope with its `index`, `reason: earlier_command_failed` and the `failed_index`; `stop_on_error=False` runs them all. Nothing is written to stdout. Each envelope of `invoke` and `invoke_many` carries the command's wall time as `meta.elapsed_ms` (`error.elapsed_ms` on a failure; 0 for a `skipped` one). The project-pin read (`GET /workspaces/current`, which an embedded call cannot cache on disk) is made once per batch, not once per command, also inside a `mammoth run`. Five `project list` calls against koyal took 5.2s as one batch with a workspace hint, against 9.9s as five `invoke` calls (one run each).
+- CLI: every envelope carries its exit status: `meta.exit` on a success (0, or 1 or 3 when a write's read-back failed or was partial) and `error.exit` on a failure, the same number a `mammoth run` line shows. An embedding host no longer maps `error.code` to a status itself.
+- CLI: `schema get` marks a positional or input field that takes a path on the machine running the CLI with `kind: local_path` (manifest `positionals[].kind`, `accepted_fields[].kind`), so a host does not match the help text.
+- Every command now has a `server_status`: `served` (the production server serves its routes), `pending` (a route is on server master but not in production yet) or `removed_on_server`. It is derived at build time from the pinned prod spec (`spec/openapi/openapi.json`) and the pinned master spec, through the same command -> SDK method -> route mapping as the release capability matrix (`scripts/build_server_status.py`, run by `scripts/build_manifests.py`; stored in `spec/manifests/server-status.json` and the compiled manifests), and shown in `schema get` (brief and `--full`), the `schema list FAMILY` and `schema find` rows, and `capability` entries. The prod pin was re-pinned on 2026-10-22 and now serves every operation on the master pin, so no command is pending at this release; a command becomes pending whenever the master pin is ahead of the prod pin. Running one from a terminal is unchanged.
+- `mammoth_cli.embed.invoke(..., hide_pending=True)` refuses a `pending` command with the usage-class error `pending_server_release` before any request, and leaves such commands out of `schema list`, `schema find` and `capability` for that call.
+
+### Changed (mammoth-cli 2.2.96)
 
 - CLI: an embedded token login (`ExplicitLogin(api_token=..., workspace_id=...)`) now takes the workspace id as a hint instead of refusing it, so a call no longer asks the server `GET /workspaces/current` first. A wrong hint is caught on the first refusal (koyal answers a request to another workspace with a 401 "Invalid token"; a 403 is checked the same way): the CLI then asks the token's own workspace once and, when it differs, returns `workspace_mismatch` (exit 3, with both ids in `details`) instead of the refusal. A login without the hint is unchanged.
+- CLI embedding (`mammoth_cli.embed.invoke`): the commands that take a local path are refused as `not_available_embedded`, derived from the `kind: local_path` marker. New in the list: `dashboard chat attachment upload`, `connector draft sample`, `collection files upload`, `dashboard attachment-create` and `dashboard import-workbook` (the last keeps its `intent_only_dashboards` refusal); a command added later with a marked path is refused without another edit.
+- CLI embedding: text a command writes to stdout during an `invoke` call no longer reaches the host process; the call returns a `stray_output` error (the first 500 characters in `error.details.stdout`) so the command gets fixed. Text on stderr (an SDK log line, a Python warning) is kept out of the host's stderr too but does not fail the call: it comes back as `meta.stderr` on a success or `error.details.stderr` on a failure, up to 500 characters. A per-context stream guard does this, not `contextlib.redirect_stdout`, so concurrent calls and the host's other threads do not see each other's output; it refuses bytes like a real text stream and routes `.buffer` the same way.
+- CLI embedding: a call that produced more than one envelope returns a `multiple_envelopes` error (listing what it saw) instead of silently keeping the last.
+- CLI embedding: `MAMMOTH_AGENT_RUN` in the process environment is ignored; the run header comes from `ExplicitLogin.headers`.
+
+### Changed (mammoth-io 0.8.49)
+
+- The generated dashboard models (`mammoth.models.dashboard_generated`) and wrappers are regenerated from the 2026-10-22 production spec: chart-type models are added, and `SwapFitParams` gains `page_id` and `target_dataset_ids` (`target_dataview_ids` is now optional).
+- The SDK and the CLI require `certifi>=2026.10.19`, which drops the distrusted eMudhra CA (PRD-3142).
+
+### Fixed (mammoth-cli 2.2.96)
+
+- CLI: the lazily built command tree (`LazyLeafCommand`, the cached Click root) is built under a lock, so threads making their first call together build it once.
+
+### Fixed (mammoth-mcp-server 0.2.8)
+
+- MCP server: the `mammoth-io` floor is raised from `>=0.8.39` to `>=0.8.47`. The server builds every client with `MammothClient(http_client=...)`, which is new in mammoth-io 0.8.47, so 0.2.7 installed next to an older SDK failed on its first request with `TypeError: unexpected keyword argument 'http_client'`.
+- MCP server image: `deploy/Dockerfile` refreshes the system CA certificates on every build, so the distrusted eMudhra CA is dropped (PRD-3142).
 
 ## mammoth-io 0.8.48, mammoth-cli 2.2.95 (2026-10-22)
 
@@ -102,10 +170,9 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Release note (mammoth-io 0.8.48, mammoth-cli 2.2.95)
 
-- The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in the next mammoth-io. The release must raise the CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` (now `>=0.8.46`) to that version; until then the code runs without the cache on 0.8.46. Not bumped here.
-- The 28 routes the agent access, held-change, entitlement, connection, task-preview-cancel, tool-claim and unpublished commands call are listed in `PENDING_SERVER_RELEASE` (as `origin/master@cdbc7a6ed2`), so the release capability matrix no longer reports them `removed_on_server`; the server release that serves them is not out yet.
+- The cache uses `PipelineAPI.stored_dataview_resolutions()` and `DataviewDatasetStore`, which are new in mammoth-io 0.8.48. The CLI's `mammoth-io` floor in `mammoth-cli/pyproject.toml` is therefore `>=0.8.48`; on an older SDK (0.8.46 and earlier) the code runs without the cache.
+- The 28 routes the agent access, held-change, entitlement, connection, task-preview-cancel, tool-claim and unpublished commands call are served by the pinned server master (`origin/master@29fe5d1ab8`), so they are not in `PENDING_SERVER_RELEASE`: the list holds one entry, the agent-run verb helper's variable-suffix route (see the re-pin note above). The server release that puts master on production is not out yet, so on production these commands can still answer 404.
 - SDK: `connection_key`, `session_id` and `turn_id` are URL-encoded in their request paths.
-
 ## mammoth-io 0.8.47, mammoth-cli 2.2.94, mammoth-mcp-server 0.2.7 (2026-10-21)
 
 Covers mammoth-io 0.8.46 to 0.8.47, mammoth-cli 2.2.93 to 2.2.94 and mammoth-mcp-server 0.2.5 to

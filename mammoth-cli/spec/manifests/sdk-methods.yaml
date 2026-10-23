@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 880
+method_count: 881
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3356,7 +3356,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.columns
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.columns
-  signature: 'columns(self: ''Any'', dashboard_id: ''int'') -> ''ColumnRoster'''
+  signature: 'columns(self: ''Any'', dashboard_id: ''int'', page_id: ''str | None'' = None) -> ''ColumnRoster'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -10329,7 +10329,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workspace.WorkspaceAPI.list
   implementation_origin: mammoth.api.workspace.WorkspaceAPI.list
-  signature: 'list(self, limit: ''int'' = 100) -> ''dict[str, Any]'''
+  signature: 'list(self, limit: ''int'' = 100, fields: ''str'' = ''id,name'') -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workspace.list
   alias_of: null
@@ -10605,6 +10605,18 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: high_impact
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.client.MammothClient.add_default_headers
+  implementation_origin: mammoth.client.MammothClient.add_default_headers
+  signature: 'add_default_headers(self, headers: ''Mapping[str, str]'') -> ''None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
   wait_policy: null
   pagination_policy: null
   secret_fields: []

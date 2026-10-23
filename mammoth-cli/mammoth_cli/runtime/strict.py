@@ -39,6 +39,7 @@ from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import (
     resolve_command_contract,
@@ -61,6 +62,8 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
     "run": frozenset({"--continue"}),
     # The compacted dashboard writes: --full returns the whole response.
     **{command_id: frozenset({FULL_FLAG}) for command_id in COMPACT_COMMANDS},
+    # A once-shown credential is masked unless --reveal asks for it.
+    **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
 }
 
 CODE_UNKNOWN_OPTION = "unknown_option"

@@ -27,6 +27,7 @@ def test_schema_find_returns_compact_matches_with_a_full_schema_route() -> None:
         "command_path",
         "mutation_class",
         "confirmation",
+        "server_status",
         "full_schema_command",
     }
     assert sample["full_schema_command"].startswith(

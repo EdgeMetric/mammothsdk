@@ -73,11 +73,16 @@ Example successful list stream:
 A successful command prints this shape to stdout.
 
 ```json
-{"schema_version":1,"data":<result>,"meta":{"command":"...","profile":"...","workspace_id":4,"project_id":180}}
+{"schema_version":1,"data":<result>,"meta":{"command":"...","profile":"...","workspace_id":4,"project_id":180,"exit":0}}
 ```
 
 The `data` field holds the command result. The `meta` field records the command
 name, active profile, workspace and project; keys without a value are omitted.
+`meta.exit` is the process exit status: 0, or 1 or 3 when a write's read-back
+failed or was partial. In an embedded call (`mammoth_cli.embed.invoke`), `meta.stderr`
+holds up to 500 characters a library wrote to stderr during the call, when there were any.
+An embedded call also carries `meta.elapsed_ms` (or `error.elapsed_ms` on a failure): the
+call's wall time in milliseconds; in `invoke_many` a `skipped` command has 0.
 `meta.pagination` appears on paged reads. `meta.update_available` appears as
 `{"current", "latest", "command"}` when the daily PyPI check has seen a newer
 CLI; run its `command` when it suits you (see [upgrade](../upgrade.md)).
@@ -97,7 +102,8 @@ that choice. A project list on a terminal looks like this.
     "command": "project list",
     "profile": "default",
     "workspace_id": 4,
-    "project_id": 180
+    "project_id": 180,
+    "exit": 0
   }
 }
 ```
@@ -107,7 +113,7 @@ that choice. A project list on a terminal looks like this.
 A failed command prints this shape to stderr and sets a non-zero exit code.
 
 ```json
-{"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."]}}
+{"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "exit": 1}}
 ```
 
 Each field has a fixed meaning.
@@ -117,11 +123,12 @@ Each field has a fixed meaning.
 | `code` | Stable machine identifier for the failure. Branch on this. |
 | `message` | Human-readable summary. Do not parse it. |
 | `hint` | Optional suggestion for fixing the problem. |
-| `details` | Structured context about the failure. |
+| `details` | Structured context about the failure. In an embedded call it may hold `stderr`, up to 500 characters written to stderr during the call. |
 | `request_id` | Server request id, or `null`. Cite it in support tickets. |
 | `retryable` | `true` when a retry may succeed. |
 | `authorization_required` | `true` when the caller must authenticate. |
 | `recovery_commands` | Exact commands to run next. |
+| `exit` | The process exit status for this failure (see exit codes). |
 
 When present in `details`, `operation_state` is one of `not_started`, `running`,
 `succeeded`, `failed`, or `outcome_unknown`. A known job is safe to inspect or

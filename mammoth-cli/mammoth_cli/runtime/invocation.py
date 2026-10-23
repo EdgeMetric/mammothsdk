@@ -91,6 +91,9 @@ class Invocation:
     #: ``--full`` on a compacted dashboard write: return the whole response
     #: (:mod:`mammoth_cli.runtime.compact`).
     full_output: bool = False
+    #: ``--reveal`` on a command that returns a once-shown credential: print it
+    #: unmasked (:mod:`mammoth_cli.runtime.reveal`).
+    reveal_secrets: bool = False
     #: ``last_modified_time`` of each export on the view, read before a pipeline write;
     #: verify waits for one to move (the backend re-validates exports after the run).
     exports_before: dict[int, str] | None = field(default=None, repr=False, compare=False)

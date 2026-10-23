@@ -1,8 +1,9 @@
 """Handlers for the ``dashboard`` command family (workspace-scoped, no project).
 
 Dashboards are identified either by an integer ``dashboard_id`` (most commands)
-or by a share ``url`` slug (the ``*-by-url`` commands). None of the backing SDK
-signatures accept a ``project_id``, so handlers never resolve or forward one.
+or by a share ``url`` slug (the ``*-by-url`` commands). The few backing SDK
+methods that take a ``project_id`` (a new board's project) get an explicit
+``--project``; no other handler resolves or forwards one.
 Every handler dispatches through the generic
 :meth:`~mammoth_cli.services.protocol.MammothService.call` seam to the public
 SDK method named by the command's reviewed manifest ``sdk_symbol``.
@@ -15,6 +16,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 from mammoth.api import agents as agents_api
+from mammoth.api import dashboards as dashboards_api
 from mammoth.exceptions import MammothValidationError
 from pydantic import ValidationError
 
@@ -31,6 +33,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime import embedded, parents
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
@@ -40,6 +43,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.reveal import REVEAL_COMMANDS
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.argspec import arg_spec
 from mammoth_cli.services.board_values import board_values, dashboard_link
@@ -896,6 +900,7 @@ _SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
     "agent.turn.rate": lambda k: agents_api.check_rating(
         str(k.get("rating") or ""), k.get("comment")
     ),
+    "dashboard.embed.lifetime.set": lambda k: dashboards_api.check_token_ttl(k.get("token_ttl")),
 }
 
 #: What the confirmation (and its refusal) names, where the command id alone would hide
@@ -924,6 +929,8 @@ _HANDLE_KEPT = frozenset(
         "dashboard.figure.rows",
         "dashboard.published.drill",
         "dashboard.published.rows",
+        # The bake job's result does not name the chart; the handle's dashboard_id does.
+        "dashboard.live-chart.create",
     }
 )
 
@@ -990,6 +997,15 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             )
 
     _check_sdk_rules(invocation.command_id, kwargs)
+    if (
+        invocation.project is not None
+        and spec is not None
+        and "project_id" not in kwargs
+        and any(field.name == "project_id" for field in spec.fields)
+    ):
+        # ``--project`` names the project a new board belongs to (live-chart create,
+        # template apply, v3 generate); without it the server picks the source's.
+        kwargs["project_id"] = invocation.project
 
     policy = str(record.get("confirmation") or POLICY_NONE)
     target = next((str(value) for value in positionals.values()), None)
@@ -1005,7 +1021,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
                 invocation, policy=policy, action=action, target=str(auth.workspace_id)
             )
         data = service.call(_symbol(invocation), **kwargs)
-        handle = data
+        handle = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
         data = _resolve_job(service, invocation, data)
         if invocation.command_id in _HANDLE_KEPT and isinstance(handle, dict):
             # The job's results are keyed by descriptor id; the handle says which
@@ -1019,6 +1035,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
         if invocation.command_id in _VALUED_COMMANDS:
             data = _with_board_values(service, auth, positionals, data)
         forget(service)
+    if invocation.reveal_secrets and invocation.command_id in REVEAL_COMMANDS:
+        data = Revealed(normalize(data, redact_secrets=False))
     return data, _meta(invocation, auth.workspace_id)
 
 

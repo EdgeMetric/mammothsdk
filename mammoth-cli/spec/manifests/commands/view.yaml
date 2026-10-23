@@ -2711,7 +2711,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export download DATAVIEW_ID --help
-  agent_example: mammoth view export download 123
+  agent_example: 'mammoth view export download 123 --input ''{"file_type": "xml"}'''
   unit_tests:
   - UT-VIEW-EXPORT-DOWNLOAD
   contract_tests:
@@ -2720,7 +2720,7 @@ commands:
   - CT-VIEW-EXPORT-DOWNLOAD-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g. mammoth view export download 123 --input ''{"format": "xlsx"}'' (csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is given.'
+  known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g. mammoth view export download 123 --input ''{"file_type": "xlsx"}'' (csv, xlsx, json, ndjson, xml, yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is given.'
   reviewed_by: primary
 - command_id: view.export.elasticsearch
   command_path: view export elasticsearch
@@ -5449,8 +5449,7 @@ commands:
     help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._text_ops.TextOpsMixin.substring
-  sdk_conversion: 'CLI one-call op: View.substring with a first-word regex, then View.submit_draft when
-    the step was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  sdk_conversion: 'CLI one-call op: View.substring with a first-word regex; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
   request_model: ViewTransformFirstNameRequest
   result_model: ViewTransformFirstNameResult
   mutation_class: reversible_pipeline
@@ -5483,10 +5482,10 @@ commands:
   undo_test: null
   known_restrictions: 'Use for "extract the first name" or the first word of a text column. --input: "column"
     (a TEXT column, required) and exactly one of "new_column" or "existing_column". Takes the text up
-    to the first space. One call: if the view is in draft mode the step is staged, the draft is submitted
-    and the result waits on this step''s own run (run.transform_status DONE), not on the pipeline reading
-    ready. A draft that already held other staged steps is left staged (status staged) because submitting
-    would run them too; run view draft submit when that is intended.'
+    to the first space. One call: if the view is in draft mode the step is staged (status staged) and the
+    draft stays unsubmitted, whether or not it already held staged steps; run view draft submit when
+    that is intended. Outside draft mode the result waits on this step''s own run (run.transform_status
+    DONE), not on the pipeline reading ready.'
   reviewed_by: primary
 - command_id: view.transform.generate-sql
   command_path: view transform generate-sql
@@ -6330,8 +6329,7 @@ commands:
     help: ID of the view to act on.
   options: []
   sdk_symbol: mammoth._mixins._math_ops.MathOpsMixin.math
-  sdk_conversion: 'CLI one-call op: View.math with existing_column, then View.submit_draft when the step
-    was staged; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
+  sdk_conversion: 'CLI one-call op: View.math with existing_column; from mammoth_cli.commands.view_ops. The accepted document fields are in command_contract.py.'
   request_model: ViewTransformUpdateColumnRequest
   result_model: ViewTransformUpdateColumnResult
   mutation_class: reversible_pipeline
@@ -6365,9 +6363,9 @@ commands:
   known_restrictions: 'Use to overwrite a numeric column with an expression over its own values ("add
     5 to Cost"). --input: "column" (an existing column, required) and "expression" (required, as in view
     transform math). Same as view transform math with existing_column set. One call: if the view is in
-    draft mode the step is staged, the draft is submitted and the result waits on this step''s own run
-    (run.transform_status DONE), not on the pipeline reading ready. A draft that already held other staged
-    steps is left staged (status staged); run view draft submit when that is intended.'
+    draft mode the step is staged (status staged) and the draft stays unsubmitted, whether or not it already
+    held staged steps; run view draft submit when that is intended. Outside draft mode the result waits
+    on this step''s own run (run.transform_status DONE), not on the pipeline reading ready.'
   reviewed_by: primary
 - command_id: view.transform.window
   command_path: view transform window
@@ -7065,7 +7063,7 @@ commands:
   - CT-VIEW-EXPLORE-PANEL-SET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'This is the command that opens Explore cards in the UI. Open a card per column
+  known_restrictions: 'Saves the Explore cards of the calling user for a view; it shows nothing by itself. Open a card per column
     with {"panel": {"columns": "all"}} or {"panel": {"columns": ["Region", "Amount"]}}: each named column
     that has no card gets one and the saved cards stay. To replace the whole panel, run view explore-panel
     get first and write back {"panel": {"cards": [...]}}. A panel with no cards list is refused, because

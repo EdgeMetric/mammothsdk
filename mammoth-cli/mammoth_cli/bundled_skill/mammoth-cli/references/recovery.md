@@ -14,6 +14,7 @@ these commands are not blanket permission to replay a mutation.
 | 2 | project_required | `mammoth context project use ID` or `--project` (in the app: `--project` only) |
 | 2 | confirmation_required | re-run with `--yes` (and `--confirm TARGET`) |
 | 2 | not_available_embedded | the command is not offered in the Mammoth app; use another route |
+| 2 | pending_server_release | the command's route is not on the production server yet (`server_status: pending` in `schema get`); use another route |
 | 6 | conflict | inspect current remote state and resolve it |
 | 7 | `timeout` with a known job | inspect or wait that job; do not replay the mutation |
 | 7 | `outcome_unknown` | reconcile exact target/scope before any replay |

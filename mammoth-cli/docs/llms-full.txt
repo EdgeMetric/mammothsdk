@@ -561,7 +561,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard embed key rotate` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_key_rotate
   example: mammoth dashboard embed key rotate 123 --yes --confirm 123
 - `mammoth dashboard embed lifetime set` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_lifetime_set
-  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'
+  example: mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 900}'
 - `mammoth dashboard embed origin revoke` [high_impact/confirm_target] -> mammoth.api.dashboards.DashboardsAPI.embed_origin_revoke
   example: mammoth dashboard embed origin revoke 123 --input '{"origin": "https://example.com"}' --yes --confirm 123
 - `mammoth dashboard embed preview-token create` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.embed_preview_token_create
@@ -773,11 +773,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard template list` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_list
   example: mammoth dashboard template list
 - `mammoth dashboard template preview` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_preview
-  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
+  example: mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1}}}'
 - `mammoth dashboard template rename` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_rename
   example: mammoth dashboard template rename resource-123 --input '{"body": {"params": {"title": "Revenue report"}}}'
 - `mammoth dashboard template resolve-mapping` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.template_resolve_mapping
-  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'
+  example: mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1}}}'
 - `mammoth dashboard template thumbnail clear` [destructive/prompt_or_yes] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_clear
   example: mammoth dashboard template thumbnail clear resource-123 --yes
 - `mammoth dashboard template thumbnail get` [read/none] -> mammoth.api.dashboards.DashboardsAPI.template_thumbnail_get
@@ -1531,7 +1531,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export delete` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.delete
   example: mammoth view export delete 123 456 --yes
 - `mammoth view export download` [benign_mutation/none] -> mammoth.api.exports.ExportsAPI.to_file
-  example: mammoth view export download 123
+  example: mammoth view export download 123 --input '{"file_type": "xml"}'
 - `mammoth view export elasticsearch` [external_effect/yes_always] -> mammoth.view.ViewExport.to_elasticsearch
   example: mammoth view export elasticsearch 123 456 --input /private/path/request.json --yes
 - `mammoth view export email` [external_effect/yes_always] -> mammoth.view.ViewExport.to_email

@@ -87,7 +87,7 @@ def view_export_csv(invocation: Invocation) -> HandlerResult:
 def view_export_download(invocation: Invocation) -> HandlerResult:
     """Download a dataview to a local file as csv, xlsx, json, ndjson, xml, yaml or parquet.
 
-    Same as ``view export csv`` otherwise: ``--input '{"format": "xlsx", "output_path":
+    Same as ``view export csv`` otherwise: ``--input '{"file_type": "xlsx", "output_path":
     "out.xlsx"}'``; the default name carries the format's extension; an existing file is not
     replaced unless ``--overwrite``; embedded, the signed download URL is returned instead.
     """
@@ -251,6 +251,7 @@ def view_export_rest_fill(invocation: Invocation) -> HandlerResult:
 
     Mammoth's server fetches ``docs_url`` and reads it to propose the form values (never
     credentials). Nothing is configured or sent: the result is a suggestion to review.
+    It always waits for the job, for at most ``--job-timeout`` seconds.
     """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")

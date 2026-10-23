@@ -153,6 +153,7 @@
         "required": {"type": "boolean"},
         "metavar": {"$ref": "#/$defs/no_placeholder"},
         "falls_back_to_field": {"type": ["string", "null"]},
+        "kind": {"enum": ["local_path"]},
         "help": {"$ref": "#/$defs/no_placeholder"}
       }
     },
@@ -210,6 +211,7 @@
         "contract_tests": {"type": "array", "items": {"$ref": "#/$defs/no_placeholder"}, "minItems": 1},
         "draft_test": {"type": ["string", "null"]},
         "undo_test": {"type": ["string", "null"]},
+        "server_status": {"enum": ["served", "pending", "removed_on_server"]},
         "known_restrictions": {"type": ["string", "null"]}, "proposal_input": {"type": "string", "minLength": 1},
         "reviewed_by": {"$ref": "#/$defs/no_placeholder"}
       },

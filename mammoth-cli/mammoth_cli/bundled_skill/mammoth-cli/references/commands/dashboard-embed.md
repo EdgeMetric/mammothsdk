@@ -36,7 +36,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard embed lifetime set`. Exact input fields: `mammoth schema get dashboard.embed.lifetime.set`.
 
-Example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard embed lifetime set 123 --input '{"token_ttl": 900}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardEmbedLifetimeSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-operation_count: 728
+operation_count: 756
 operations:
 - identity: POST /accept-invite
   method: POST
@@ -2249,6 +2249,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_data
   reviewed_by: primary
+- identity: POST /dashboards/url/{url}/drill
+  method: POST
+  path: /dashboards/url/{url}/drill
+  operation_id: FigureDrillByUrl
+  tags:
+  - Dashboard v3
+  summary: Drill a figure mark one level down (published board)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FigureDrillSpec
+  response_schemas:
+  - FigureDrillResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.drill
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_drill
+  reviewed_by: primary
 - identity: POST /dashboards/url/{url}/getPublishData
   method: POST
   path: /dashboards/url/{url}/getPublishData
@@ -2360,6 +2382,28 @@ operations:
   canonical_command: dashboard.published.pdf-artifact
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_pdf_artifact
+  reviewed_by: primary
+- identity: POST /dashboards/url/{url}/rows
+  method: POST
+  path: /dashboards/url/{url}/rows
+  operation_id: FigureRowsByUrl
+  tags:
+  - Dashboard v3
+  summary: Rows behind a figure mark (published board)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FigureRowsSpec
+  response_schemas:
+  - FigureRowsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.published.rows
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.published_rows
   reviewed_by: primary
 - identity: GET /dashboards/url/{url}/share
   method: GET
@@ -2579,6 +2623,71 @@ operations:
   canonical_command: dashboard.create-blank
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.create_blank
+  reviewed_by: primary
+- identity: GET /dashboards/v3/chart-types
+  method: GET
+  path: /dashboards/v3/chart-types
+  operation_id: ListWorkspaceChartTypes
+  tags:
+  - Dashboard v3 Surfaces
+  summary: The workspace's saved chart types, newest first
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ChartTypeListResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chart-type.list
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_list
+  reviewed_by: primary
+- identity: POST /dashboards/v3/chart-types
+  method: POST
+  path: /dashboards/v3/chart-types
+  operation_id: CreateWorkspaceChartType
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Save a custom chart as a workspace chart type
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: ChartTypeSpec
+  response_schemas:
+  - ChartTypeItem
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chart-type.create
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_create
+  reviewed_by: primary
+- identity: DELETE /dashboards/v3/chart-types/{chart_type_id}
+  method: DELETE
+  path: /dashboards/v3/chart-types/{chart_type_id}
+  operation_id: DeleteWorkspaceChartType
+  tags:
+  - Dashboard v3 Surfaces
+  summary: Delete a workspace chart type
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.chart-type.delete
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.chart_type_delete
   reviewed_by: primary
 - identity: GET /dashboards/v3/contexts
   method: GET
@@ -4585,6 +4694,28 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.descriptor_data
   reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/drill
+  method: POST
+  path: /dashboards/{dashboard_id}/drill
+  operation_id: FigureDrill
+  tags:
+  - Dashboard v3
+  summary: Drill a figure mark one level down (editor, draft)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FigureDrillSpec
+  response_schemas:
+  - FigureDrillResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.figure.drill
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_drill
+  reviewed_by: primary
 - identity: GET /dashboards/{dashboard_id}/email-updates
   method: GET
   path: /dashboards/{dashboard_id}/email-updates
@@ -4914,6 +5045,28 @@ operations:
   canonical_command: dashboard.figure-intent
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_intent
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/figure-recipe
+  method: POST
+  path: /dashboards/{dashboard_id}/figure-recipe
+  operation_id: FigureRecipe
+  tags:
+  - Dashboard v3
+  summary: 'Describe any chart: a library chart, or a custom drawing'
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FigureRecipeSpec
+  response_schemas:
+  - FigureRecipeResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.figure.recipe
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_recipe
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/figures
   method: POST
@@ -5641,6 +5794,28 @@ operations:
   canonical_command: dashboard.rls.value.list
   alias_of: null
   sdk_symbol: mammoth.api.dashboards.DashboardsAPI.rls_value_list
+  reviewed_by: primary
+- identity: POST /dashboards/{dashboard_id}/rows
+  method: POST
+  path: /dashboards/{dashboard_id}/rows
+  operation_id: FigureRows
+  tags:
+  - Dashboard v3
+  summary: Rows behind a figure mark (editor, draft)
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FigureRowsSpec
+  response_schemas:
+  - FigureRowsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: dashboard.figure.rows
+  alias_of: null
+  sdk_symbol: mammoth.api.dashboards.DashboardsAPI.figure_rows
   reviewed_by: primary
 - identity: POST /dashboards/{dashboard_id}/share
   method: POST
@@ -10608,6 +10783,94 @@ operations:
   alias_of: null
   sdk_symbol: mammoth.api.automations.AutomationsAPI.capabilities
   reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/automations/folders
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/folders
+  operation_id: GetWatchedFolders
+  tags:
+  - Automations
+  summary: Watched folders
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - WatchedFoldersResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.folders
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.watched_folders
+  reviewed_by: primary
+- identity: PUT /workspaces/{workspace_id}/projects/{project_id}/automations/route-order
+  method: PUT
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/route-order
+  operation_id: SetRouteOrder
+  tags:
+  - Automations
+  summary: Order a folder's rules
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: RouteOrderRequest
+  response_schemas:
+  - RouteOrderResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.route.order
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.set_route_order
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/automations/route-preview
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/route-preview
+  operation_id: PreviewRoutes
+  tags:
+  - Automations
+  summary: Where files would go
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: RoutePreviewRequest
+  response_schemas:
+  - RoutePreviewResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.route.preview
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.preview_routes
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/automations/run-files/{run_file_id}/add-anyway
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/run-files/{run_file_id}/add-anyway
+  operation_id: AddRunFileAnyway
+  tags:
+  - Automations
+  summary: Add a skipped duplicate
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AddAnywayResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.run-file.add-anyway
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.add_run_file_anyway
+  reviewed_by: primary
 - identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}
   method: DELETE
   path: /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}
@@ -10694,6 +10957,28 @@ operations:
   canonical_command: automation.restore
   alias_of: null
   sdk_symbol: mammoth.api.automations.AutomationsAPI.restore
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}/runs
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}/runs
+  operation_id: GetAutomationRuns
+  tags:
+  - Automations
+  summary: Automation history
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - AutomationRunsResponse
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: automation.runs
+  alias_of: null
+  sdk_symbol: mammoth.api.automations.AutomationsAPI.runs
   reviewed_by: primary
 - identity: POST /workspaces/{workspace_id}/projects/{project_id}/automations/{automation_id}/trash
   method: POST
@@ -10803,6 +11088,335 @@ operations:
   canonical_command: connector.connection.test
   alias_of: null
   sdk_symbol: mammoth.api.connectors.ConnectorsAPI.test_connection
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts
+  operation_id: ListConnectorDrafts
+  tags:
+  - Connector drafts
+  summary: List connector drafts
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ConnectorDraftListSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.list
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.list
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts
+  operation_id: CreateConnectorDraft
+  tags:
+  - Connector drafts
+  summary: Create a connector draft
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: CreateConnectorDraftSpec
+  response_schemas:
+  - ConnectorDraftSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.create
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.create
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/known-sources
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/known-sources
+  operation_id: ListConnectorKnownSources
+  tags:
+  - Connector drafts
+  summary: List the sources the pre-registry knows
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - KnownSourcesSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.known-sources
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources
+  reviewed_by: primary
+- identity: DELETE /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  method: DELETE
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  operation_id: DiscardConnectorDraft
+  tags:
+  - Connector drafts
+  summary: Discard a connector draft
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas: []
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.discard
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  operation_id: GetConnectorDraft
+  tags:
+  - Connector drafts
+  summary: Get a connector draft
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ConnectorDraftSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.get
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.get
+  reviewed_by: primary
+- identity: PATCH /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  method: PATCH
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}
+  operation_id: PatchConnectorDraft
+  tags:
+  - Connector drafts
+  summary: Change a connector draft
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: PatchConnectorDraftSpec
+  response_schemas:
+  - ConnectorDraftSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.update
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.update
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/browse
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/browse
+  operation_id: BrowseConnectorDraftFolderConnectorDrafts
+  tags:
+  - Connector drafts
+  summary: List a folder of a connector draft's source
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - BrowseSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.browse
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.browse
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/fill
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/fill
+  operation_id: FillConnectorDraftGap
+  tags:
+  - Connector drafts
+  summary: Fill a connector draft column from a file
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: FillGapSpec
+  response_schemas:
+  - FillGapSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.fill
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.fill
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/open
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/open
+  operation_id: OpenConnectorDraftEntry
+  tags:
+  - Connector drafts
+  summary: Open a workbook into a connector draft's tables
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: OpenEntrySpec
+  response_schemas:
+  - ConnectorDraftSourcesSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.open
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.open
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/read-tables
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/read-tables
+  operation_id: ReadConnectorDraftTables
+  tags:
+  - Connector drafts
+  summary: Read a connector draft's other tables again
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ReadTablesSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.read-tables
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sample
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sample
+  operation_id: ShapeConnectorDraftFromSample
+  tags:
+  - Connector drafts
+  summary: Shape a connector draft's table from a sample file
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: SampleSpec
+  response_schemas:
+  - SampleSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.sample
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/save
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/save
+  operation_id: StartConnectorDraftSave
+  tags:
+  - Connector drafts
+  summary: Save a connector draft
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: SaveConnectorDraftSpec
+  response_schemas:
+  - SaveJobSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.save
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.save
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources
+  operation_id: ListConnectorDraftSources
+  tags:
+  - Connector drafts
+  summary: List a connector draft's sources
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - ConnectorDraftSourcesSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.source.list
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sources
+  reviewed_by: primary
+- identity: GET /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources/{source_id}/join-candidates
+  method: GET
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources/{source_id}/join-candidates
+  operation_id: ListConnectorDraftJoinCandidates
+  tags:
+  - Connector drafts
+  summary: List the keys a connector draft source could join on
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: null
+  response_schemas:
+  - JoinCandidatesSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.source.join-candidates
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates
+  reviewed_by: primary
+- identity: POST /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources/{source_id}/preview
+  method: POST
+  path: /workspaces/{workspace_id}/projects/{project_id}/connector-drafts/{draft_id}/sources/{source_id}/preview
+  operation_id: PreviewConnectorDraftSource
+  tags:
+  - Connector drafts
+  summary: Preview a connector draft source
+  security:
+  - bearerAuth
+  - apiKey
+  - apiSecret
+  - workspaceId
+  request_schema: PreviewSourceSpec
+  response_schemas:
+  - SourcePreviewSchema
+  deprecated: false
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.source.preview
+  alias_of: null
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source
   reviewed_by: primary
 - identity: GET /workspaces/{workspace_id}/projects/{project_id}/connectors/{connector_key}/connections
   method: GET

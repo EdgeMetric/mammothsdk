@@ -15,6 +15,7 @@ synchronous code.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import os
 import re
@@ -42,6 +43,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.output.progress import spinner
 from mammoth_cli.runtime import dryrun, embedded, parents, view_dataset_cache
 from mammoth_cli.runtime.dryrun import DryRunStop
+from mammoth_cli.runtime.embed_pool import sdk_takes_default_headers
 from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
@@ -87,6 +89,11 @@ def _loop_running_here() -> bool:
     except RuntimeError:
         return False
     return True
+
+
+def _shares(runtime: Any) -> bool:
+    """Whether this call may send through ``runtime``'s client: it exists, is open, SDK is safe."""
+    return runtime is not None and bool(runtime.shares_safely)
 
 
 AGENT_RUN_ENV = "MAMMOTH_AGENT_RUN"
@@ -211,10 +218,30 @@ class SdkMammothService:
         )
         from mammoth.client import MammothClient
 
+        # A host-owned loop and pool (``embed.invoke(runtime=...)``), used only when the
+        # SDK keeps per-client headers off a shared client; else this call has its own.
+        call = embedded.current()
+        self._runtime = call.runtime if call is not None and _shares(call.runtime) else None
+        extra_headers: dict[str, str] = dict(auth.headers or {})
+        # An embedded call takes the run from ``ExplicitLogin.headers``: this
+        # process's environment is shared by every user the host serves.
+        run_id = "" if embedded.active() else os.environ.get(AGENT_RUN_ENV, "").strip()
+        if run_id:
+            # A leg of a durable agent run names its run, so the server can
+            # refuse the run's own resume and extend.
+            extra_headers[AGENT_RUN_HEADER] = run_id
+        shared: dict[str, Any] = {}
+        if self._runtime is not None:
+            shared["http_client"] = self._runtime.http_client
+        if sdk_takes_default_headers():
+            # Forwarded headers (Cookie) replace the credential headers; they live on this
+            # client's own requests, never on a pool other clients may share.
+            shared["default_headers"] = extra_headers
         self._client = MammothClient(
             **credential,
             base_url=auth.base_url,
             user_agent=f"mammoth-cli/{__version__}",
+            **shared,
             **kwargs,
         )
         # Which dataset holds a view survives the process (see view_dataset_cache).
@@ -222,24 +249,21 @@ class SdkMammothService:
         self._default_job_timeout = self._client.job_timeout
         self._default_pipeline_timeout = self._client.pipeline_timeout
         # One loop for the process, not one per call: the client's connection
-        # pool lives on the loop that opened it.
-        self._loop = asyncio.new_event_loop()
+        # pool lives on the loop that opened it. A shared runtime owns its own.
+        self._loop = asyncio.new_event_loop() if self._runtime is None else None
         # One loop serves every call; threads (view data profile fans out) take turns.
         self._loop_lock = threading.RLock()
+        self._closed = False
         try:
-            if auth.headers:
-                # After construction: the client sets its credential headers in
-                # ``__init__``, and a forwarded session must replace them.
-                self._client.session.headers.update(auth.headers)
-            run_id = os.environ.get(AGENT_RUN_ENV, "").strip()
-            if run_id:
-                # A leg of a durable agent run names its run, so the server can
-                # refuse the run's own resume and extend.
-                self._client.session.headers[AGENT_RUN_HEADER] = run_id
+            if "default_headers" not in shared:
+                # An SDK without ``default_headers``: after construction, since the
+                # client sets its credential headers in ``__init__``. Never shared.
+                self._client.session.headers.update(extra_headers)
             if project_id is not None:
                 self._client.set_project_id(project_id)
         except BaseException:
-            self._loop.close()
+            if self._loop is not None:
+                self._loop.close()
             raise
 
     def bind_timeouts(self, *, job_timeout: float | None, pipeline_timeout: float | None) -> None:
@@ -261,6 +285,9 @@ class SdkMammothService:
         """
         if not inspect.isawaitable(work):
             return work
+        if self._runtime is not None:
+            # The host's loop runs it; this thread only waits, so no helper thread is needed.
+            return self._runtime.run(work)
         if _loop_running_here():
             # An async caller (the agent eval harness) already runs a loop on this
             # thread, and a thread runs one loop at a time: run ours on a helper.
@@ -270,6 +297,7 @@ class SdkMammothService:
 
     def _run_on_own_loop(self, work: Any) -> Any:
         """Run ``work`` on the service's loop; threads take turns."""
+        assert self._loop is not None  # noqa: S101 -- a service on a runtime never gets here
         with self._loop_lock:
             return self._loop.run_until_complete(work)
 
@@ -1184,13 +1212,41 @@ class SdkMammothService:
             raise map_sdk_exception(exc) from exc
 
     def close(self) -> None:
-        """Close the owned HTTP session and its loop. Safe to call twice."""
+        """Close the owned HTTP session and its loop. Safe to call twice.
+
+        On a host's shared runtime only this client's own download session closes: the
+        pool and the loop belong to the host.
+        """
+        if self._loop is None:
+            if self._closed:
+                return
+            self._closed = True
+            self._close_own_sessions()
+            return
         if self._loop.is_closed():
             return
         try:
             self._run(self._client.close())
         finally:
             self._loop.close()
+
+    def _close_own_sessions(self) -> None:
+        """Close what this client owns on a shared runtime: its download session.
+
+        The runtime may have closed first; then a throwaway loop closes it, and nothing
+        raised here may hide the command's own outcome.
+        """
+        try:
+            self._run(self._client.close())
+            return
+        except Exception:  # noqa: BLE001, S110 -- the runtime is gone or going
+            pass
+        throwaway = asyncio.new_event_loop()
+        try:
+            with contextlib.suppress(Exception):  # closing must never mask the real error
+                throwaway.run_until_complete(self._client.close())
+        finally:
+            throwaway.close()
 
     def __enter__(self) -> SdkMammothService:
         """Enter the service as a context manager."""

@@ -52,12 +52,14 @@ CODE_PROFILE_NOT_FOUND = "profile_not_found"
 CODE_NO_SAVED_PROJECT = "no_saved_project"
 CODE_NOT_AVAILABLE_EMBEDDED = "not_available_embedded"
 CODE_NOT_AVAILABLE = "not_available"
+CODE_PENDING_SERVER_RELEASE = "pending_server_release"
 CODE_FEATURE_UNAVAILABLE = "feature_unavailable"
 CODE_USER_CONTROL = "user_control"
 CODE_CONFIRMATION_REQUIRED = "confirmation_required"
 CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
 CODE_AUTHORIZATION_REQUIRED = "authorization_required"
+CODE_PLAN_LIMIT = "plan_limit"
 CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
@@ -110,6 +112,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "feature_unavailable": "Mammoth no longer offers this feature.",
     "export_failed": "The export ran but ended in an error.",
     "export_not_found": "No export run was found for that request.",
+    "plan_limit": "The workspace's plan or usage limit doesn't allow this.",
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
     "has_dependents": "Other items still depend on this, so it was not deleted.",
     "delete_not_applied": "The delete was accepted but the item is still there.",
@@ -185,6 +188,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_op": "There is nothing to change, so this step isn't needed.",
     "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",
+    "stray_output": "This step printed text it should not have, so its result was discarded.",
+    "multiple_envelopes": "This step returned more than one result, so none was used.",
     "nonfinite_input_number": _S_BAD_INPUT,
     "not_authenticated": _S_SIGN_IN,
     "not_implemented": _S_UNAVAILABLE,
@@ -197,6 +202,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "no_saved_project": "This step can't save a project here; each step names its own.",
     "not_available_embedded": "This step isn't available inside the Mammoth app.",
     "not_available": _S_UNAVAILABLE,
+    "pending_server_release": "The server doesn't offer this step yet.",
     "user_control": "Stopping, pausing or extending a run is left to you, not done automatically.",
     "profile_write_failed": _S_SETUP,
     "project_required": "No project has been chosen for this step.",
@@ -275,6 +281,9 @@ class CliError(Exception):
             "retryable": self.retryable,
             "authorization_required": self.authorization_required,
             "recovery_commands": list(self.recovery_commands),
+            # The process exit status this error ends a terminal run with, so an
+            # embedder reads it from the envelope instead of mapping the code.
+            "exit": self.exit_status,
         }
         if self.log_ref is not None:
             error["log_ref"] = dict(self.log_ref)
@@ -349,6 +358,16 @@ def not_available_embedded_error(command: str) -> CliError:
         message=f"'{command}' is not available inside the Mammoth app.",
         exit_status=EXIT_USAGE,
         hint="The app supplies the login, project and tools; use the other commands.",
+    )
+
+
+def pending_server_release_error(command: str) -> CliError:
+    """A command whose server route is on master but not in production yet (embedded opt-in)."""
+    return CliError(
+        code=CODE_PENDING_SERVER_RELEASE,
+        message=f"'{command}' is not available yet: the production server has not released it.",
+        exit_status=EXIT_USAGE,
+        hint="Use another command, or the web app, until the server release that adds it.",
     )
 
 

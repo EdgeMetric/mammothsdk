@@ -19,6 +19,7 @@ import inspect
 import json
 import re
 import sys
+import threading
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from difflib import get_close_matches
@@ -1208,6 +1209,7 @@ def _execute(invocation: Invocation) -> None:
     from mammoth_cli.runtime.new_data import with_new_data_path
     from mammoth_cli.runtime.next_commands import with_next_commands
     from mammoth_cli.runtime.opens import with_opens
+    from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
     from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
@@ -1217,6 +1219,12 @@ def _execute(invocation: Invocation) -> None:
             invocation,
             extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],
             full_output=True,
+        )
+    if invocation.command_id in REVEAL_COMMANDS and REVEAL_FLAG in invocation.extra_args:
+        invocation = replace(
+            invocation,
+            extra_args=[arg for arg in invocation.extra_args if arg != REVEAL_FLAG],
+            reveal_secrets=True,
         )
 
     def producer() -> tuple[Any, dict[str, Any]]:
@@ -1507,6 +1515,13 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
             "The result is compact: ids, checks, verify and a canvas summary. "
             f"Pass {FULL_FLAG} for the complete response."
         )
+    from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
+
+    if command_id in REVEAL_COMMANDS:
+        parts.append(
+            "The credential in the result is masked. Pass "
+            f"{REVEAL_FLAG} to print it; it is shown only once."
+        )
     return "\n\n".join(parts) or None
 
 
@@ -1545,7 +1560,14 @@ def _short_type(type_name: str) -> str:
     if "condition." in text:
         return "condition"
     # Drop each dotted module path but keep the brackets around it (``list[a.b.C]``).
-    return re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))[:60]
+    text = re.sub(r"(?:\w+\.)+(\w+)", r"\1", " | ".join(p.strip() for p in text.split("|")))
+    if len(text) <= _SHORT_TYPE_MAX:
+        return text
+    # Cut at a word, never inside one: a clipped value ('par) reads as a real one.
+    return text[: _SHORT_TYPE_MAX - 4].rsplit(" ", 1)[0] + " ..."
+
+
+_SHORT_TYPE_MAX = 60
 
 
 def _command_records() -> list[dict[str, Any]]:
@@ -1624,6 +1646,10 @@ def _lazy_help_command(command_id: str) -> type[TyperCommand]:
     return LazyHelpCommand
 
 
+#: Guards the lazy builds below. Re-entrant: building a command can build another.
+_BUILD_LOCK = threading.RLock()
+
+
 def _unbuilt_leaf() -> None:
     """Registration placeholder: a lazy leaf takes its real callback from the built command."""
 
@@ -1640,24 +1666,33 @@ def _lazy_leaf_command(command_id: str) -> type[TyperCommand]:
         _built: _ClickCommand | None = None
 
         def _real(self) -> _ClickCommand:
-            if self._built is None:
-                from typer.models import CommandInfo
+            built = self._built
+            if built is not None:
+                return built
+            # Double-checked: a host's worker threads may reach a first use together.
+            with _BUILD_LOCK:
+                built = self._built
+                if built is None:
+                    built = self._built = self._build()
+            return built
 
-                info = CommandInfo(
-                    name=self.name,
-                    callback=_build_leaf(command_id),
-                    # The help text is read from this class's lazy ``help`` property; building
-                    # it here would import the contract and schema layers on every run.
-                    help="",
-                    rich_help_panel=self.rich_help_panel,
-                    context_settings=_leaf_context_settings(command_id),
-                )
-                self._built = typer.main.get_command_from_info(
-                    info,
-                    pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
-                    rich_markup_mode=self.rich_markup_mode,
-                )
-            return self._built
+        def _build(self) -> _ClickCommand:
+            from typer.models import CommandInfo
+
+            info = CommandInfo(
+                name=self.name,
+                callback=_build_leaf(command_id),
+                # The help text is read from this class's lazy ``help`` property; building
+                # it here would import the contract and schema layers on every run.
+                help="",
+                rich_help_panel=self.rich_help_panel,
+                context_settings=_leaf_context_settings(command_id),
+            )
+            return typer.main.get_command_from_info(
+                info,
+                pretty_exceptions_short=_LAZY_SETTINGS["pretty_exceptions_short"],
+                rich_markup_mode=self.rich_markup_mode,
+            )
 
         @property
         def params(self) -> list[_ClickParameter]:
@@ -1919,7 +1954,9 @@ def registered_command_paths() -> set[str]:
     return paths
 
 
-@cache
+_ROOT_COMMAND: Any = None
+
+
 def _root_click_command() -> Any:
     """Build (once) and cache the fully resolved Click command tree.
 
@@ -1928,11 +1965,19 @@ def _root_click_command() -> Any:
     that is expensive enough that recomputing it per lookup made a full sweep
     over every command (see the contract test) take minutes. Cached because
     the tree is fixed for the process lifetime (:data:`app` is built once at
-    import time).
+    import time). Built under a lock, so a host's threads making their first call
+    together share one tree instead of each building their own.
     """
-    root: Any = typer.main.get_command(app)
-    root.commands  # noqa: B018 -- materialise every lazy top-level group
-    return root
+    global _ROOT_COMMAND
+    root = _ROOT_COMMAND
+    if root is not None:
+        return root
+    with _BUILD_LOCK:
+        if _ROOT_COMMAND is None:
+            built: Any = typer.main.get_command(app)
+            built.commands  # noqa: B018 -- materialise every lazy top-level group
+            _ROOT_COMMAND = built
+        return _ROOT_COMMAND
 
 
 def command_option_names(command_path: str) -> set[str]:

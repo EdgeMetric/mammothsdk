@@ -371,3 +371,13 @@ def test_a_single_string_sort_is_a_one_entry_list(key: str) -> None:
     validate_input_fields(_SORT, document)
 
     assert document == {"order_by": [["Revenue", "DESC"]]}
+
+
+@pytest.mark.parametrize("field", ["wait", "timeout"])
+def test_rest_fill_refuses_the_wait_switches_it_would_ignore(field: str) -> None:
+    # #279: wait/timeout were accepted, then replaced by wait=True and --job-timeout.
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(
+            "view.export.rest-fill", {"docs_url": "https://example.com", field: 1}
+        )
+    assert excinfo.value.code == "unknown_input_field"

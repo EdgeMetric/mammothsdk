@@ -188,15 +188,22 @@ _UPDATE_COST = {"column": "Cost", "expression": "Cost + 5"}
 # -- update-column and first-name ------------------------------------------
 
 
-def test_update_column_in_draft_mode_submits_and_waits_for_its_own_task(items: Table) -> None:
+def test_update_column_in_draft_mode_stays_staged_and_the_draft_is_not_submitted(
+    items: Table,
+) -> None:
     items.draft_enter()
 
     data = items.ok("update-column", **_UPDATE_COST)
 
-    assert data["status"] == "done" and data["draft_applied"] is True
-    assert data["run"]["transform_status"] == "DONE" and isinstance(data["run"]["task_id"], int)
-    assert "pipeline_error" not in data
-    assert items.total("Cost") == 120
+    assert data["status"] == "staged"
+    assert "run" not in data and "draft_applied" not in data
+    assert items.draft_status()["is_draft"] is True
+    items.cli.ok(
+        *("view", "draft", "discard", str(items.view), "--yes"),
+        *("--input", json.dumps({"dataset_id": items.dataset})),
+        project=items.project,
+    )
+    assert items.total("Cost") == 100
 
 
 def test_update_column_leaves_a_draft_that_held_other_steps_staged(items: Table) -> None:
@@ -225,9 +232,20 @@ def test_update_column_outside_draft_mode_waits_for_its_own_task(items: Table) -
     assert items.total("Cost") == 120
 
 
-def test_first_name_extracts_the_first_word_in_one_draft_call(items: Table) -> None:
+def test_first_name_in_draft_mode_stays_staged_and_the_draft_is_not_submitted(
+    items: Table,
+) -> None:
     items.draft_enter()
 
+    data = items.ok("first-name", column="Name", new_column="First name")
+
+    assert data["status"] == "staged"
+    assert "run" not in data and "draft_applied" not in data
+    assert items.draft_status()["is_draft"] is True
+    assert "First name" not in items.columns()
+
+
+def test_first_name_outside_draft_mode_extracts_the_first_word(items: Table) -> None:
     data = items.ok("first-name", column="Name", new_column="First name")
 
     assert data["run"]["transform_status"] == "DONE"

@@ -26,6 +26,7 @@ Example::
 from __future__ import annotations
 
 import copy
+import time
 from collections.abc import Sequence
 from typing import Any
 
@@ -43,6 +44,11 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.embed_pool import (  # noqa: F401 -- shared_pool, close_shared_pool: public
+    EmbedRuntime,
+    close_shared_pool,
+    shared_pool,
+)
 from mammoth_cli.runtime.shared import forget_reads, shared_services
 
 
@@ -56,6 +62,8 @@ def invoke(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -76,6 +84,14 @@ def invoke(
             unless ``args`` already sets one.
         return_running: Send ``--return-running`` so a wait that runs out
             returns a ``status: running`` handle instead of a timeout error.
+        hide_pending: Refuse the commands the production server does not serve
+            yet (``server_status: pending`` in ``schema``) with
+            ``pending_server_release``, and leave them out of ``schema list`` and
+            ``schema find``. Off by default: a terminal user may target a newer server.
+        runtime: A host-owned :class:`EmbedRuntime` (or :func:`shared_pool`): the
+            call sends its requests through its one connection pool and loop, so
+            keep-alive connections are reused across calls and users. Omitted, the
+            call builds and closes a pool of its own.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -90,7 +106,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    return _invoke_one(argv, login)
+    return _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
 
 
 def invoke_many(
@@ -103,6 +119,8 @@ def invoke_many(
     pipeline_timeout: float | None = None,
     job_timeout: float | None = None,
     return_running: bool = False,
+    hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
     stop_on_error: bool = True,
 ) -> list[dict[str, Any]]:
     """Run several commands as ``login``, in order, and return one envelope each.
@@ -122,6 +140,8 @@ def invoke_many(
         pipeline_timeout: See :func:`invoke`; applied to each command.
         job_timeout: See :func:`invoke`; applied to each command.
         return_running: See :func:`invoke`; applied to each command.
+        hide_pending: See :func:`invoke`; applied to each command.
+        runtime: See :func:`invoke`; every command uses it.
         stop_on_error: Stop at the first command that fails (an ``error``
             envelope, or a non-zero ``meta.exit``); each command after it gets
             a ``skipped`` error envelope naming its index and the failed one.
@@ -136,7 +156,7 @@ def invoke_many(
     with shared_services():
         for index, args in enumerate(commands):
             if failed is not None:
-                envelopes.append(_skipped(index, failed))
+                envelopes.append(_timed(_skipped(index, failed), 0))
                 continue
             argv = _argv(
                 args,
@@ -147,7 +167,7 @@ def invoke_many(
                 job_timeout=job_timeout,
                 return_running=return_running,
             )
-            envelope = _invoke_one(argv, login)
+            envelope = _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
             forget_reads()
             envelopes.append(envelope)
             if stop_on_error and _failed(envelope):
@@ -155,17 +175,80 @@ def invoke_many(
     return envelopes
 
 
-def _invoke_one(argv: list[str], login: ExplicitLogin) -> dict[str, Any]:
-    """Run ``argv`` as ``login`` in its own embedded call; its envelope."""
-    call = embedded.EmbeddedCall(login=login)
+def _invoke_one(
+    argv: list[str],
+    login: ExplicitLogin,
+    *,
+    hide_pending: bool = False,
+    runtime: EmbedRuntime | None = None,
+) -> dict[str, Any]:
+    """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
+    started = time.perf_counter()
+    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending, runtime=runtime)
+    embedded.install_stream_guards()
     token = embedded.enter(call)
     try:
         _run(argv)
     finally:
         embedded.leave(token)
-    if call.envelopes:
-        return call.envelopes[-1]
-    return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    return _timed(_outcome(call), round((time.perf_counter() - started) * 1000))
+
+
+def _timed(envelope: dict[str, Any], elapsed_ms: int) -> dict[str, Any]:
+    """``envelope`` with ``elapsed_ms`` on its ``meta`` (success) or its ``error``."""
+    body = envelope.get("error", envelope.get("meta"))
+    if isinstance(body, dict):
+        body["elapsed_ms"] = elapsed_ms
+    return envelope
+
+
+def _outcome(call: embedded.EmbeddedCall) -> dict[str, Any]:
+    """The one envelope a finished call stands for; anything else is an error to fix.
+
+    Text on stdout, or a second envelope, means a command broke the one-envelope
+    contract. Returning the one envelope and dropping the rest would hide that, so
+    the call fails and says what it saw. Text on stderr (a library's log line, a
+    warning) is not a contract break: it never reaches the host's stderr, and rides
+    on the envelope as ``meta.stderr`` or ``error.details.stderr`` instead.
+    """
+    out = "".join(call.stray["stdout"]).strip()[:_STRAY_CHARS]
+    err = "".join(call.stray["stderr"]).strip()[:_STRAY_CHARS]
+    if out:
+        details: dict[str, Any] = {"stdout": out, "envelopes": len(call.envelopes)}
+        if err:
+            details["stderr"] = err
+        return _error(
+            "stray_output", "The command wrote text outside its envelope.", EXIT_API, details
+        )
+    if len(call.envelopes) > 1:
+        details = {"envelopes": [_describe(item) for item in call.envelopes]}
+        if err:
+            details["stderr"] = err
+        return _error(
+            "multiple_envelopes",
+            f"The command produced {len(call.envelopes)} envelopes; it should produce one.",
+            EXIT_API,
+            details,
+        )
+    if not call.envelopes:
+        return _error("no_output", "This command printed text only (help or version).", EXIT_USAGE)
+    envelope = call.envelopes[0]
+    if err:
+        if isinstance(envelope.get("error"), dict):
+            envelope["error"].setdefault("details", {})["stderr"] = err
+        elif isinstance(envelope.get("meta"), dict):
+            envelope["meta"]["stderr"] = err
+    return envelope
+
+
+#: Stray text kept in the error, as ``mammoth run`` keeps it.
+_STRAY_CHARS = 500
+
+
+def _describe(envelope: dict[str, Any]) -> str:
+    """One short label for an envelope: its error code, or ``data``."""
+    error = envelope.get("error")
+    return str(error.get("code")) if isinstance(error, dict) else "data"
 
 
 def _failed(envelope: dict[str, Any]) -> bool:
@@ -248,7 +331,7 @@ def _capture_help(root: Command, argv: list[str]) -> bool:
         text = _help_text(root, command_tokens)
     else:
         return False
-    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth")
+    meta = Meta(command=" ".join(_resolve(root, command_tokens)[1]) or "mammoth", exit=0)
     embedded.capture(Result(data={"help": text}, meta=meta).to_envelope())
     return True
 
@@ -288,5 +371,9 @@ def _help_text(root: Command, tokens: list[str]) -> str:
     return plain.get_help(context)
 
 
-def _error(code: str, message: str, exit_status: int) -> dict[str, Any]:
-    return CliError(code=code, message=message, exit_status=exit_status).to_envelope()
+def _error(
+    code: str, message: str, exit_status: int, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    return CliError(
+        code=code, message=message, exit_status=exit_status, details=details or {}
+    ).to_envelope()

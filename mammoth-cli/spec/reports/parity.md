@@ -5,31 +5,31 @@ Generated from the reviewed manifests. Do not edit by hand.
 ## OpenAPI snapshot
 
 - Source: `https://app.mammoth.io/api/v2/docs/openapi.json`
-- SHA-256: `c228e9d59c4263fc746ab8873ae6a3d87c25171b6bc4e6e313f685dd0083da29`
+- SHA-256: `5155a9bc7c6c13e4fa8c2f1dcf2fac0f3a5af656e99401e71113a16720036456`
 - OpenAPI version: `3.1.0`
-- Paths: `530`
-- Operations: `728`
-- Schemas: `1354`
+- Paths: `554`
+- Operations: `756`
+- Schemas: `1432`
 
 ## Operation dispositions
 
 | Disposition | Count |
 |---|---:|
-| command | 672 |
+| command | 700 |
 | alias | 2 |
 | protocol_only | 11 |
 | internal_only | 43 |
 | deprecated | 0 |
 | server_unavailable | 0 |
 | unmapped | 0 |
-| **total** | **728** |
+| **total** | **756** |
 
 ## Public SDK method parity
 
-- Total public methods: `880`
+- Total public methods: `881`
 - With canonical command: `784`
 - Alias of another command: `38`
-- Reviewed SDK-only exemptions: `58`
+- Reviewed SDK-only exemptions: `59`
 
 ## Command surface
 

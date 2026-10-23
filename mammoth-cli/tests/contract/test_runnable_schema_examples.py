@@ -9,7 +9,7 @@ from jsonschema import validate
 
 from mammoth_cli.commands.schema import schema_entries
 from mammoth_cli.manifest.loader import load_commands
-from mammoth_cli.runtime.strict import validate_input_fields
+from mammoth_cli.runtime.strict import _relax_numeric_oneof, validate_input_fields
 
 
 def test_every_generated_example_parses_and_has_valid_structured_input() -> None:
@@ -34,7 +34,9 @@ def test_every_generated_example_parses_and_has_valid_structured_input() -> None
             else:
                 document = json.loads(raw_input)
                 validate_input_fields(schema["command_id"], document)
-                validate(document, schema["input_schema"])
+                # The CLI reads the backend's ``oneOf: [integer, number, ...]`` as
+                # ``anyOf`` (an integral value satisfies both), so check it that way.
+                validate(document, _relax_numeric_oneof(schema["input_schema"]))
         command = app_module._root_click_command()
         path = schema["command_path"].split()
         for part in path:

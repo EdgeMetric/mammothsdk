@@ -1,0 +1,14 @@
+{
+  "artifact": "mammoth-cli-command-server-status",
+  "note": "Derived by scripts/build_server_status.py; do not edit. Commands not listed are served.",
+  "prod_spec": {
+    "file": "spec/openapi/openapi.json",
+    "sha256": "5155a9bc7c6c13e4fa8c2f1dcf2fac0f3a5af656e99401e71113a16720036456"
+  },
+  "master_spec": {
+    "file": "spec/openapi/master-20261021.json",
+    "source_sha": "29fe5d1ab8a718231716386535ae1343628b5885",
+    "sha256": "9e9a2164d4c5df31575c905f47af0006b811ecf93e903fb0ac9d2bce3fd181d6"
+  },
+  "commands": {}
+}

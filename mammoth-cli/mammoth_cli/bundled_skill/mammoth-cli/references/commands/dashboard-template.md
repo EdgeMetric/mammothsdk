@@ -66,7 +66,7 @@ Status on release: ran once on CLI 2.0.21 — ergonomics sweep 2026-09-19: exit 
 
 Run: `mammoth dashboard template preview`. Exact input fields: `mammoth schema get dashboard.template.preview`.
 
-Example: `mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard template preview --input '{"body": {"params": {"source_dashboard_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardTemplatePreviewResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -86,7 +86,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dashboard template resolve-mapping`. Exact input fields: `mammoth schema get dashboard.template.resolve-mapping`.
 
-Example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1, "target_dataview_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dashboard template resolve-mapping --input '{"body": {"params": {"source_dashboard_id": 1}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DashboardTemplateResolveMappingResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
