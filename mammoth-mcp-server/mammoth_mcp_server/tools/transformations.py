@@ -8,7 +8,7 @@ code that turns one into a pipeline task is in `task_params.py`.
 
 All shapes together are far too large to send with every request, so
 `add_transformations` takes each operation as an object and
-`get_transformation_schema` returns one operation's shape on demand.
+`get_schema` with kind="transformation" returns one operation's shape on demand.
 """
 
 import typing
@@ -22,9 +22,7 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from ..consts import JobFields, StepFields, TaskFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
-from ..server import mcp_server
 from ..task_params import StepPlace, build_task_param
-from ..tool_kinds import READS
 from ..transform_operations import TransformOperation
 
 _OPERATION_ADAPTER: TypeAdapter[TransformOperation] = TypeAdapter(TransformOperation)
@@ -41,9 +39,8 @@ FIX_A_FAILED_STEP = (
 )
 
 
-@mcp_server.tool(title="Get transformation schema", annotations=READS)
-async def get_transformation_schema(operation: str) -> dict[str, JsonValue]:
-    """Get the arguments one transformation takes, as a JSON schema.
+def operation_schema(operation: str) -> dict[str, JsonValue]:
+    """The arguments one transformation takes, as a JSON schema, for `get_schema`.
 
     Args:
         operation: The operation's name, e.g. "limit" or "math".

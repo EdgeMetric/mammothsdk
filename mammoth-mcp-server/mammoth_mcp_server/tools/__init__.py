@@ -3,6 +3,8 @@
 from . import (
     automations,
     connections,
+    dashboard_edits,
+    dashboard_embed,
     dashboards,
     data,
     discovery,
@@ -11,15 +13,19 @@ from . import (
     files,
     help_topics,
     pipeline,
+    schemas,
     sources,
     steps,
     transformations,
+    undo,
     views,
 )
 
 __all__ = [
     "automations",
     "connections",
+    "dashboard_edits",
+    "dashboard_embed",
     "dashboards",
     "data",
     "discovery",
@@ -28,8 +34,10 @@ __all__ = [
     "files",
     "help_topics",
     "pipeline",
+    "schemas",
     "sources",
     "steps",
     "transformations",
+    "undo",
     "views",
 ]

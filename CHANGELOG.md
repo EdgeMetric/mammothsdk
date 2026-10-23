@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-mcp-server)
+
+- `undo` takes a change back. With what="trash" it restores views, datasets, dashboards and automations from the project's trash and reports which came back. With what="pipeline" it puts a view's pipeline back as one of its versions had it, and says when the view is still running again. The version list keeps the pipeline as it was just before, so a rollback can be taken back too.
+- `list_trash` lists what a project's trash holds, 50 to a page with `next_offset`: each item's type and id (what `undo` takes), name, and days left before Mammoth deletes it for good.
+- `get_pipeline` with `include_versions` lists the view's latest 10 pipeline versions, newest first, with what made each one.
+- `edit_dashboard` has Mammoth's AI change a dashboard from a description (one turn of the editor's chat), gives it a new title, or both. It waits for the edit and reports `changed` and the AI's `message`. When `changed` is false, `next_step` says nothing was applied, whatever the message claims. The edit goes to the draft: on a published dashboard, `next_step` says the share link shows the old version until `publish_dashboard` runs again, and the tool never publishes. A board on the older engine can be renamed, and an AI edit of it is refused before anything is sent. An edit still going after the wait is reported as `editing` with its `job_id`; `edit_dashboard(job_id=...)` picks it up and reports what it did, sending nothing new. Mammoth's `changed` means the board was saved, not that it does what was asked: when the edit's job reports an ask that did not land (`asks`) or something it could not do (`could_not_do`), the tool reports `partial` and `not_done`. These fields come from mvc-service's dashboard edit job; a Mammoth without them reports neither.
+- `get_dashboard` with `include_embed` gives the HTML that puts a dashboard on another site: an iframe with the board's embed key ("key"), a `TOKEN` the host's server signs per viewer ("signed"), or nothing more for a public board. It reports which sites may show the board, whether it is published, and what to tell the user: publish first, limit the sites, or (on "signed") that the workspace has no signing secret yet, so the embed shows nothing. It never returns the signing secret.
+- `edit_dashboard` also sets the embed mode ("key" or "signed") and which sites may show the board (any site, or a list). Only what is named changes, and it applies at once: it is not part of the draft. Embedding has no tools of its own, to keep the tool list short.
+
+### Changed (next mammoth-mcp-server)
+
+- `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
+
+### Removed (next mammoth-mcp-server)
+
+Five tools fold into others, so the tool list a client sends with every request is shorter:
+
+- `get_transformation_schema`, `get_export_schema` and `get_automation_schema`: one `get_schema(kind, of)` answers all three, `kind` being "transformation", "export" or "automation". Only "automation" names a workspace and project.
+- `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
+- `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
+
 ## mammoth-io 0.8.51, mammoth-cli 2.2.100 (2026-10-23)
 
 ### Added (mammoth-io 0.8.51)

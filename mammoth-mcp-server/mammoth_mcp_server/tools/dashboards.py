@@ -6,7 +6,9 @@ dashboard, and reading or setting its tags — and the rest ignore it.
 
 A dashboard is built on one view and holds its own canvas. `create_dashboard`
 makes an empty one; `generate_dashboard` has Mammoth's AI build one from a
-description.
+description, and `edit_dashboard` has it change one. `get_dashboard` with
+`include_embed` gives the code that puts a published dashboard on another site,
+and `edit_dashboard` sets which sites may show it.
 
 Every dashboard a tool here returns carries its two links: `share_url`, which
 opens the published board, and `editor_url`, which opens the builder. The one
@@ -39,40 +41,35 @@ from ..jobs import JobStillRunning, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
+from .dashboard_embed import read_embed
 
 AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
 
 
-@mcp_server.tool(title="List dashboards", annotations=READS)
-async def list_dashboards(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
-    """List the dashboards the signed-in user can open.
+@mcp_server.tool(title="List dashboards and tags", annotations=READS)
+async def list_dashboards(
+    workspace_id: int, project_id: int | None = None, include_tags: bool = False
+) -> dict[str, JsonValue]:
+    """List the dashboards the signed-in user can open, and the workspace's tags if asked.
 
     Args:
         workspace_id: Which workspace to act in.
         project_id: Only dashboards built on views in this project. Omit for all
             of them.
+        include_tags: Also list the tags the workspace files dashboards under.
+            `edit_dashboard` with `tags` sets a dashboard's.
 
     Returns:
-        `dashboards`: each one's `id`, `name` and who owns it.
+        `dashboards`: each one's `id`, `name`, who owns it, and its `tags`.
+        With `include_tags`, `tags`: each workspace tag's `id`, `name` and how
+        many dashboards carry it.
     """
     async with build_client(workspace_id) as client:
         listed = await read_sdk_errors(client.dashboards.list(project_id=project_id))
+        tags = await read_sdk_errors(client.dashboards.list_tags()) if include_tags else {}
     # The SDK unwraps the route's one-key object; the tool's callers read it.
-    return {DashboardFields.DASHBOARDS: list[JsonValue](listed)}
-
-
-@mcp_server.tool(title="List dashboard tags", annotations=READS)
-async def list_dashboard_tags(workspace_id: int) -> dict[str, JsonValue]:
-    """List the tags dashboards in a workspace are filed under.
-
-    Args:
-        workspace_id: Which workspace to act in.
-
-    Returns:
-        `tags`: each tag's `id`, `name` and how many dashboards carry it.
-    """
-    async with build_client(workspace_id) as client:
-        return await read_sdk_errors(client.dashboards.list_tags())
+    dashboards: dict[str, JsonValue] = {DashboardFields.DASHBOARDS: list[JsonValue](listed)}
+    return {**dashboards, **({DashboardFields.TAGS: tags[DashboardFields.TAGS]} if tags else {})}
 
 
 @mcp_server.tool(title="Create dashboard", annotations=CHANGES)
@@ -81,8 +78,8 @@ async def create_dashboard(
 ) -> dict[str, JsonValue]:
     """Create an empty dashboard on a view, and return it.
 
-    The dashboard starts with nothing on it. Building its tiles is the web
-    app's job — a tool cannot lay out a canvas.
+    The dashboard starts with nothing on it. `edit_dashboard` has Mammoth's
+    AI build on it from a description.
 
     Args:
         workspace_id: Which workspace to act in.
@@ -172,11 +169,11 @@ def describe_unfinished_build(job: dict[str, JsonValue]) -> dict[str, JsonValue]
     }
 
 
-@mcp_server.tool(title="Get dashboard", annotations=READS)
+@mcp_server.tool(title="Get dashboard: numbers and embed code", annotations=READS)
 async def get_dashboard(
-    workspace_id: int, dashboard_id: int, include_values: bool = True
+    workspace_id: int, dashboard_id: int, include_values: bool = True, include_embed: bool = False
 ) -> dict[str, JsonValue]:
-    """Get one dashboard: its title, its views, who it is shared with, and its numbers.
+    """Get one dashboard: its title, views, sharing and numbers, and its embed code if asked.
 
     Answer a question about a dashboard from `values`: they are the numbers
     Mammoth worked out for it. Do not work them out again from the view's rows.
@@ -186,6 +183,9 @@ async def get_dashboard(
         dashboard_id: Which dashboard, as `list_dashboards` lists it.
         include_values: Work out the numbers. Set it to false when only the
             title, views or sharing are needed: the read is then quicker.
+        include_embed: Also give the code that puts the dashboard on another
+            site, and which sites may show it. Ask for it only when the user
+            wants to embed the board.
 
     Returns:
         The dashboard and its links. `values`: each KPI card and chart, in
@@ -194,10 +194,18 @@ async def get_dashboard(
         its first `rows` and its `row_count`. `values_from` says which version
         they are from: `published`, the one the share link opens, or `draft`,
         the one the editor shows when the board is not published. When there
-        are no numbers to report, `values_unavailable` says why.
+        are no numbers to report, `values_unavailable` says why. With
+        `include_embed`, `embed`: `embed_code`, the HTML to paste, and the
+        `mode` it embeds by ("public", "key" or "signed"); `key`, the embed key
+        the code carries, on "key" only; `any_site`, or else `allowed_sites`;
+        `published`, `public`, `has_signing_secret`, `row_level_security`; and
+        `next_step`, what to tell the user. A board embeds only once it is
+        published.
     """
     async with build_client(workspace_id) as client:
         dashboard = await read_dashboard(client.dashboards, workspace_id, dashboard_id)
+        if include_embed:
+            dashboard[DashboardFields.EMBED] = await read_embed(client.dashboards, dashboard_id)
         if not include_values:
             return dashboard
         if dashboard.get(DashboardFields.ENGINE) != ENGINE_V3:
@@ -205,29 +213,9 @@ async def get_dashboard(
         return {**dashboard, **await board_values(client.dashboards, workspace_id, dashboard)}
 
 
-@mcp_server.tool(title="Set dashboard tags", annotations=CHANGES)
-async def set_dashboard_tags(
-    workspace_id: int, dashboard_id: int, tags: list[str]
-) -> dict[str, JsonValue]:
-    """File a dashboard under a set of tags, replacing the tags it had.
-
-    A tag the workspace has not seen before joins its tag list.
-
-    Args:
-        workspace_id: Which workspace to act in.
-        dashboard_id: Which dashboard.
-        tags: Every tag the dashboard should carry. An empty list clears them.
-
-    Returns:
-        `tags`: what the dashboard carries now.
-    """
-    async with build_client(workspace_id) as client:
-        return await read_sdk_errors(client.dashboards.set_tags(dashboard_id, tags))
-
-
 @mcp_server.tool(title="Delete dashboard", annotations=DESTRUCTIVE)
 async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, JsonValue]:
-    """Move a dashboard to the trash, where it can still be restored.
+    """Move a dashboard to the trash. `undo` with what="trash" restores it.
 
     Args:
         workspace_id: Which workspace to act in.

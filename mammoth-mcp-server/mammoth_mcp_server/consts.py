@@ -384,6 +384,8 @@ class JobFields:
     ID = "id"
     STATUS = "status"
     RESPONSE = "response"
+    # The API route that started the job, which says what it is a job of.
+    PATH = "path"
     PROCESSING = "processing"
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.
@@ -397,6 +399,38 @@ class ViewFields:
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
+    NEXT_STEP = "next_step"
+
+
+class TrashFields:
+    """The trash of a project, as its route lists it and this server reports it."""
+
+    ITEMS = "items"
+    TYPE = "type"
+    # A dataset that is not in the trash, sent only so the web app can group
+    # its trashed views under it. Nothing to restore.
+    IS_ACTIVE_PARENT = "is_active_parent"
+    # What a model needs of a trashed item to restore it and tell the user.
+    ITEM_FIELDS = ("id", "type", "name", "dataset_id", "trashed_at", "days_until_purge")
+    RETENTION_DAYS = "retention_days"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    LISTED = 50
+
+
+class VersionFields:
+    """A view's pipeline versions, as the versions route lists them."""
+
+    VERSIONS = "versions"
+    # Newest first, as the route writes a sort.
+    NEWEST_FIRST = "(id:desc)"
+    LISTED = 10
+    ITEM_FIELDS = ("id", "name", "modification_type", "created_at", "change_summary")
+    NEXT_STEP = "next_step"
+    # A view's run after a version is put back: still going, or failed.
+    EXECUTION_STATE = "execution_state"
+    RUNNING_STATES = ("waiting_for_lock", "submitted", "running", "exports_running")
+    RUNTIME_ERROR = "runtime_error"
 
 
 class TaskFields:
@@ -447,7 +481,7 @@ class AutomationFields:
     DESCRIPTION = "description"
     TASKS = "tasks"
     TASK_TYPE = "task_type"
-    # What `get_automation_schema` answers: one task type, and every condition.
+    # What `get_schema` answers for an automation: one task type, and every condition.
     TASK = "task"
     CONDITIONS = "conditions"
     AUTOMATIONS = "automations"
@@ -495,6 +529,50 @@ class DashboardFields:
     # Which version the numbers are from: "published" or "draft".
     VALUES_FROM = "values_from"
     DRAFT = "draft"
+    # What a finished AI edit reports that a model can use. The rest is the
+    # whole canvas and its layout.
+    CHANGED = "changed"
+    EDITED = (MESSAGE, CHANGED)
+    EDITING = "editing"
+    NEXT_STEP = "next_step"
+    # A board's embed, as `get_dashboard` and `edit_dashboard` report it.
+    EMBED = "embed"
+    # What of an AI edit did not land, from Mammoth's own check, and the
+    # job a later call picks an unfinished edit up by.
+    PARTIAL = "partial"
+    NOT_DONE = "not_done"
+    JOB_ID = "job_id"
+    # What the edit's job reports of Mammoth's own check: each ask with its
+    # status, "applied" for one that landed, and what it could not do.
+    ASKS = "asks"
+    ASK = "ask"
+    ASK_STATUS = "status"
+    APPLIED = "applied"
+    COULD_NOT_DO = "could_not_do"
+
+
+class EmbedFields:
+    """A dashboard's embed settings, as this server reports them."""
+
+    MODE = "mode"
+    KEY_MODE = "key"
+    SIGNED_MODE = "signed"
+    PUBLISHED = "published"
+    PUBLIC = "public"
+    HAS_SIGNING_SECRET = "has_signing_secret"
+    # The route's origins are the sites a user names.
+    ANY_SITE = "any_site"
+    ALLOWED_SITES = "allowed_sites"
+    MOST_SITES = 20
+    KEY = "key"
+    EMBED_CODE = "embed_code"
+    ROW_LEVEL_SECURITY = "row_level_security"
+    NEXT_STEP = "next_step"
+    # The web app's frame height when none is saved.
+    HEIGHT = "height"
+    DEFAULT_HEIGHT = 640
+    # What a signed embed's host page puts in place of a token it signs per viewer.
+    TOKEN_PLACEHOLDER = "TOKEN"
 
 
 class ConnectorFields:
