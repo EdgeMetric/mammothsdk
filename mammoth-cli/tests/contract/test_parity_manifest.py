@@ -96,6 +96,7 @@ _LOCAL_COMMAND_ALLOWLIST: dict[str, str] = {
     "context.project.clear": "no HTTP call: clears the saved active project locally",
     "context.project.use": "no HTTP call: saves the active project locally",
     "history.undo": "no HTTP call of its own: runs other typed commands, which name theirs",
+    "recipe.run": "no HTTP call of its own: runs other typed commands, which name theirs",
     "skill.agents-md.install": "no HTTP call: writes a local AGENTS.md",
     "skill.install": "no HTTP call: copies the bundled skill to disk",
     "skill.uninstall": "no HTTP call: removes the installed skill from disk",

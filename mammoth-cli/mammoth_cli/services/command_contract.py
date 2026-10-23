@@ -288,6 +288,10 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
     "history.show": (),
     "history.undo": (),
+    "recipe.list": (),
+    "recipe.run": (
+        FieldSpec("inputs", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     "skill.list": (),
     "skill.show": (FieldSpec("file", required=False, annotation=str | None, default=None),),
     "skill.agents-md.install": (
@@ -486,6 +490,8 @@ _LOCAL_COMMANDS = frozenset(
         "history.list",
         "history.show",
         "history.undo",
+        "recipe.list",
+        "recipe.run",
         "log.path",
         "log.tail",
         "schema.find",

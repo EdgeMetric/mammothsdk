@@ -21,6 +21,7 @@ from collections import defaultdict
 from functools import cache
 from typing import Any, cast
 
+from mammoth_cli.commands import how as how_cmd
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
@@ -2584,8 +2585,12 @@ def find_schemas(
         if has_more
         else None
     )
-    result: dict[str, Any] = {
-        "query": query,
+    result: dict[str, Any] = {"query": query}
+    recipes = how_cmd.runnable_for(query) if offset == 0 else []
+    if recipes:
+        # A whole task in one command outranks the single commands it is made of.
+        result["recipes"] = recipes
+    result |= {
         "matches": page,
         "total_matches": total_matches,
         "truncated": has_more,

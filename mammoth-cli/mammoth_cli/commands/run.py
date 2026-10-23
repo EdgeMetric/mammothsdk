@@ -59,10 +59,12 @@ from typing import Any
 from mammoth_cli.errors.envelope import (
     EXIT_API,
     EXIT_INTERRUPT,
+    EXIT_PARTIAL,
     EXIT_USAGE,
     CliError,
     cancelled_error,
 )
+from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import bindings, linecapture
 from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
@@ -193,7 +195,7 @@ def _flag_token(name: str, value: Any) -> str | None:
     return f"{flag}={value}"
 
 
-def _global_defaults(invocation: Invocation) -> dict[str, str]:
+def global_defaults(invocation: Invocation) -> dict[str, str]:
     """The flags given to ``run`` itself, which every line starts from (flag -> token)."""
     defaults: dict[str, str] = {}
     for flag, attribute in INHERITED_FLAGS:
@@ -442,8 +444,12 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
     return exit_status, silent.to_envelope()
 
 
-def _write(envelope: dict[str, Any]) -> None:
-    """Write one envelope as one compact line on stdout and flush it."""
+def write_envelope(envelope: dict[str, Any]) -> None:
+    """Write one envelope as one compact line on stdout and flush it.
+
+    Args:
+        envelope: The envelope to write.
+    """
     sys.stdout.write(
         json.dumps(
             envelope,
@@ -546,19 +552,59 @@ def run(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Write one JSON object per line, for example " + _SCHEMA_HINT,
         )
-    defaults = _global_defaults(invocation)
+    summary = run_lines(
+        numbered,
+        global_defaults(invocation),
+        keep_going=keep_going,
+        dry_run=invocation.dry_run,
+    )
+    run_exit = summary["exit"]
+    meta = Meta(command="run", profile=invocation.profile, exit=run_exit, run_id=run_id())
+    write_envelope(Result(data=summary, meta=meta).to_envelope())
+    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+
+
+def run_lines(
+    numbered: Sequence[tuple[int, str]],
+    defaults: dict[str, str],
+    *,
+    keep_going: bool,
+    dry_run: bool,
+    scope: dict[str, Any] | None = None,
+    past_partial: bool = False,
+) -> dict[str, Any]:
+    """Run numbered JSON Lines in order, writing each line's envelopes as it finishes.
+
+    Args:
+        numbered: Each line's physical number and text.
+        defaults: The flags every line starts from (see :func:`global_defaults`).
+        keep_going: Run every line even after one fails.
+        dry_run: Whether the run previews only.
+        scope: Values every line's references may read besides ``steps``, such as a
+            recipe's ``inputs``.
+        past_partial: Go on after a line that exits partial (it made what it reports,
+            with a warning), counting it in ``partial_lines`` instead of ``failed``.
+
+    Returns:
+        The summary: line counts, where the run stopped, and its exit status.
+    """
     totals = Totals(total=len(numbered))
     run_exit = 0
     steps: dict[str, Any] = {}
+    partial: list[int] = []
     with remembering_auth() as credentials:
         for position, (number, text) in enumerate(numbered):
             exit_status, ran_argv = _run_line(
-                number, text, defaults, steps, dry_run=invocation.dry_run
+                number, text, defaults, steps, dry_run=dry_run, scope=scope
             )
             if ran_argv and ran_argv[0] in _CREDENTIAL_GROUPS:
                 credentials.clear()
             if exit_status == 0:
                 totals.ok += 1
+                continue
+            if past_partial and exit_status == EXIT_PARTIAL:
+                partial.append(number)
+                run_exit = run_exit or exit_status
                 continue
             totals.failed += 1
             totals.failures.append(number)
@@ -574,7 +620,7 @@ def run(invocation: Invocation) -> HandlerResult:
                 totals.stopped_at = number
                 totals.skipped = len(numbered) - position - 1
                 break
-    summary = {
+    summary: dict[str, Any] = {
         "lines": totals.total,
         "ok": totals.ok,
         "failed": totals.failed,
@@ -582,16 +628,22 @@ def run(invocation: Invocation) -> HandlerResult:
         "stopped_at": totals.stopped_at,
         "failed_lines": totals.failures,
         "continue": keep_going,
-        "dry_run": invocation.dry_run,
+        "dry_run": dry_run,
         "exit": run_exit,
     }
-    meta = Meta(command="run", profile=invocation.profile, exit=run_exit)
-    _write(Result(data=summary, meta=meta).to_envelope())
-    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+    if past_partial:
+        summary["partial_lines"] = partial
+    return summary
 
 
 def _run_line(
-    number: int, text: str, defaults: dict[str, str], steps: dict[str, Any], *, dry_run: bool
+    number: int,
+    text: str,
+    defaults: dict[str, str],
+    steps: dict[str, Any],
+    *,
+    dry_run: bool,
+    scope: dict[str, Any] | None = None,
 ) -> tuple[int, list[str]]:
     """Run one line (once, or once per ``for_each`` item) and write its envelopes.
 
@@ -601,6 +653,7 @@ def _run_line(
         defaults: The flags every line starts from.
         steps: The results of the named lines run so far; a named line adds its own.
         dry_run: Whether the run previews only: an unresolved reference plans the line.
+        scope: Values the line's references may read besides ``steps``.
 
     Returns:
         The line's exit status (the first failed item's, for ``for_each``) and the
@@ -612,20 +665,20 @@ def _run_line(
         name = _step_name(line, steps)
         if "id" in line:
             shown["id"] = _line_id(line["id"])
-        scope: dict[str, Any] = {"steps": steps}
-        if "when" in line and not bindings.evaluate(line["when"], scope):
-            _write({**shown, "exit": 0, "skipped": True, **_result(shown["cmd"], None)})
+        line_scope: dict[str, Any] = {**(scope or {}), "steps": steps}
+        if "when" in line and not bindings.evaluate(line["when"], line_scope):
+            write_envelope({**shown, "exit": 0, "skipped": True, **_result(shown["cmd"], None)})
             if name is not None:
                 steps[name] = {"skipped": True, "data": None, "exit": 0}
             return 0, []
-        items = _for_each_items(line["for_each"], scope) if "for_each" in line else None
+        items = _for_each_items(line["for_each"], line_scope) if "for_each" in line else None
     except bindings.BindingError as error:
         return _unresolved(shown, error, steps, line, dry_run=dry_run), []
     except CliError as error:
-        _write({**shown, "exit": error.exit_status, **error.to_envelope()})
+        write_envelope({**shown, "exit": error.exit_status, **error.to_envelope()})
         return error.exit_status, []
     if items is None:
-        exit_status, envelope, argv = _run_once(number, line, defaults, scope, shown, dry_run)
+        exit_status, envelope, argv = _run_once(number, line, defaults, line_scope, shown, dry_run)
         if name is not None:
             steps[name] = envelope
         return exit_status, argv
@@ -633,7 +686,7 @@ def _run_line(
     first_exit = 0
     last_argv: list[str] = []
     for index, item in enumerate(items):
-        item_scope = {**scope, "item": item, "index": index}
+        item_scope = {**line_scope, "item": item, "index": index}
         exit_status, envelope, argv = _run_once(
             number, line, defaults, item_scope, {**shown, "item": index}, dry_run
         )
@@ -668,7 +721,7 @@ def _run_once(
         return exit_status, {"planned": dry_run, "data": None, "exit": exit_status}, []
     except CliError as error:
         exit_status, envelope, argv = error.exit_status, error.to_envelope(), []
-    _write({**shown, "exit": exit_status, **envelope})
+    write_envelope({**shown, "exit": exit_status, **envelope})
     return exit_status, {**envelope, "exit": exit_status}, argv
 
 
@@ -725,7 +778,7 @@ def _unresolved(
     name = line.get("name") if isinstance(line, dict) else None
     if dry_run:
         data = {"planned": True, "waits_on": error.path, "reason": str(error)}
-        _write({**shown, "exit": 0, **_result(shown["cmd"], data)})
+        write_envelope({**shown, "exit": 0, **_result(shown["cmd"], data)})
         if isinstance(name, str) and name not in steps and _STEP_NAME.match(name):
             steps[name] = {"planned": True, "data": None, "exit": 0}
         return 0
@@ -741,7 +794,7 @@ def _unresolved(
         ),
         details={"reference": error.path, "steps": list(steps)},
     )
-    _write({**shown, "exit": failure.exit_status, **failure.to_envelope()})
+    write_envelope({**shown, "exit": failure.exit_status, **failure.to_envelope()})
     return failure.exit_status
 
 

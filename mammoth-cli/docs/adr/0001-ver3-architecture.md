@@ -228,9 +228,16 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    outbox: a crash leaves a `begin` with no `end`, shown as status `unknown`), an `end` record with
    the exit, `meta.opens` and the undo lines. Still to do: the run log becomes a projection of the
    journal, and resume of a running invocation by `inv`.
-5. **Task layer** (#309): recipes in `discovery/recipes.json` become executable plans, with one
-   definition per recipe and no second file. Plans are interpreted over `dispatch`, using
-   `runtime/bindings.py`, with plan/apply.
+5. **Task layer** (#309, done): a recipe in `discovery/recipes.json` with `inputs` and `run` is
+   executable, with no second file: its `run` lines are `mammoth run` lines that read
+   `{{inputs.NAME}}` and `{{steps.NAME.data...}}`, and `mammoth recipe run ID` runs them through
+   `run_lines` (the same path as `mammoth run`), with `--dry-run` as the plan and one prompt or
+   `--yes` before a recipe that writes. A contract test keeps each run line on a command the
+   recipe's prose steps name. `how` returns the recipe's `run_command`, and `schema find` lists
+   matching recipes before single commands. Executable today: append-rows, upload-dashboard,
+   export-csv, share-dashboard, each run end to end on a dev server. A partial step (exit 3)
+   doesn't stop a recipe, so its read-back still runs. The live run found that an append read its
+   target before the rows landed; `file upload` now waits for the target to read `ready`.
 6. **Undo** (#311, done): each journaled write records its compensation as `mammoth run` lines, so
    undo needs no second interpreter. A trash is undone by a restore; an object listed in
    `meta.opens` with `created: true` goes to the trash, newest first; a `reversible_pipeline` edit

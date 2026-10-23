@@ -143,6 +143,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     "run_command_refused": "That command can't be run from a list of commands.",
     "history_not_found": "No recorded change has that id.",
     "journal_off": "Change history is switched off, so there is nothing to show or undo.",
+    "recipe_not_found": "No runnable recipe has that name.",
+    "recipe_input_invalid": "The recipe's inputs weren't valid.",
     "run_global_flag_refused": (
         "Confirmation has to be given on each command in the list, not for the whole list."
     ),

@@ -1,5 +1,5 @@
 {
-  "_comment": "Goal recipes for 'mammoth how'. Each step names a real command id (a unit test checks every one exists). Upper-case words in an example (VIEW_ID, DATASET_ID, ...) are ids to take from the previous step's output; {project_id} is filled from --project or the profile.",
+  "_comment": "Goal recipes for 'mammoth how'. Each step names a real command id (a unit test checks every one exists). Upper-case words in an example (VIEW_ID, DATASET_ID, ...) are ids to take from the previous step's output; {project_id} is filled from --project or the profile. A recipe with 'inputs' and 'run' is executable: 'mammoth recipe run ID' runs its 'run' lines (mammoth run lines, which read '{{inputs.NAME}}' and '{{steps.NAME.data...}}'), and a test checks each line runs a command its steps name.",
   "recipes": [
     {
       "id": "refresh-daily",
@@ -109,7 +109,33 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./new_rows.csv",
+          "help": "The file of new rows (same columns)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the rows go into."
+        }
+      },
+      "run": [
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ],
+          "input": {
+            "append_to_ds_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
     },
     {
       "id": "blend-by-key",
@@ -252,7 +278,57 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./sales.csv",
+          "help": "The file to upload."
+        },
+        "intent": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue by region over time",
+          "help": "What the dashboard should show."
+        }
+      },
+      "run": [
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ]
+        },
+        {
+          "name": "data",
+          "cmd": "view data get",
+          "args": [
+            "{{steps.upload.data.datasets[0].view.view_id}}",
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "dashboard",
+          "cmd": "dashboard v3 generate",
+          "input": {
+            "body": {
+              "params": {
+                "intent": "{{inputs.intent}}",
+                "dataview_id": "{{steps.upload.data.datasets[0].view.view_id}}"
+              }
+            }
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "dashboard get",
+          "args": [
+            "{{steps.dashboard.data.id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "stuck-upload",
@@ -412,7 +488,24 @@
           ]
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to export."
+        }
+      },
+      "run": [
+        {
+          "name": "export",
+          "cmd": "view export csv",
+          "args": [
+            "{{inputs.view_id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "clean-data",
@@ -518,7 +611,34 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "dashboard_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dashboard to share."
+        }
+      },
+      "run": [
+        {
+          "name": "share",
+          "cmd": "dashboard share",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ],
+          "input": {
+            "type_of_auth": "mammoth"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "dashboard get",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "cleanup-mine",

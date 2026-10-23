@@ -845,6 +845,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="97b9ee41d15d",
         ),
     ),
+    "recipe.run": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The recipe to run (from 'recipe list').",
+            example_value="export-csv",
+        ),
+    ),
     "run": (
         PositionalSpec(
             name="file",

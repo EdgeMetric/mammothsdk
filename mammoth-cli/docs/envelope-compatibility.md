@@ -53,3 +53,6 @@ one more major release:
 - `mammoth run` lines take `name`, `when` and `for_each`.
 - `history` commands and the `history_not_found`, `journal_off` and
   `unresolved_reference` error codes.
+- `recipe list` and `recipe run`, the `recipe_not_found` and `recipe_input_invalid` error
+  codes, and `recipes` in `schema find` and `run_command` in `how`.
+- `meta.run_id` on the `mammoth run` summary envelope.

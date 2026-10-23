@@ -71,7 +71,7 @@ def emit_success(
         opens=opens,
         next_commands=next_commands or None,
         exit=exit_status,
-        run_id=_run_id(),
+        run_id=run_id(),
     )
     envelope = Result(data=data, meta=meta).to_envelope()
     if embedded.capture(normalize(envelope)) or linecapture.capture(normalize(envelope)):
@@ -81,8 +81,12 @@ def emit_success(
         sys.stderr.write(f"Next: {'; '.join(next_commands)}\n")
 
 
-def _run_id() -> str | None:
-    """The id of the command running now, if a trace is open."""
+def run_id() -> str | None:
+    """The id of the command running now: ``meta.run_id`` and the journal group.
+
+    Returns:
+        The invocation id, or None when no trace is open.
+    """
     current = trace.current()
     return current.invocation_id if current is not None else None
 

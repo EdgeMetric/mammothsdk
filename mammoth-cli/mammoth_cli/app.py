@@ -82,6 +82,7 @@ _GROUP_DESCRIPTIONS = {
     "connector": "Manage data connectors and connector profiles.",
     "log": "Locate and read the local run log.",
     "history": "List the writes made from this machine and undo them.",
+    "recipe": "Run a common multi-step task as one command.",
     "context": "Inspect and select the active project context.",
     "dashboard": "Build, query, and publish dashboards.",
     "dataset": "Create, inspect, and manage datasets.",
@@ -335,6 +336,7 @@ _ROOT_HELP_PANELS = {
     "skill": "CLI and agent tools",
     "log": "CLI and agent tools",
     "history": "CLI and agent tools",
+    "recipe": "CLI and agent tools",
     "upgrade": "CLI and agent tools",
     "version": "CLI and agent tools",
 }

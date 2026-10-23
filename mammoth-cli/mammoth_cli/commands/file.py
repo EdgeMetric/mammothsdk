@@ -11,6 +11,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -37,6 +38,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.paging import listing_with_paging
+from mammoth_cli.services.poll import poll_delays
 
 HandlerResult = tuple[Any, dict[str, Any]]
 
@@ -279,6 +281,10 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         rows_before = _dataset_rows(service, target) if target is not None else None
         outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
         data = [target] if target is not None and outcome["dataset_ids"] else outcome["dataset_ids"]
+        if target is not None and data:
+            # The upload job ends when the staging dataset is made; the rows reach the
+            # target after that, while it reads 'processing' (found by recipe run, live).
+            _wait_until_ready(service, target)
         refused = _refused_files(outcome.get("errors"))
         if outcome.get("errors") and not data:
             raise _upload_refused_error(outcome["errors"], refused)
@@ -433,6 +439,10 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
+#: How long an append waits for its target dataset to finish taking the rows, and the
+#: longest gap between reads.
+_APPEND_WAIT_S = 120.0
+_APPEND_RETRY_S = 5.0
 
 
 def _dataset_rows(service: Any, dataset_id: int) -> int | None:
@@ -445,6 +455,20 @@ def _dataset_rows(service: Any, dataset_id: int) -> int | None:
     stats = dataset.get("stats") if isinstance(dataset, dict) else None
     rows = stats.get("row_count") if isinstance(stats, dict) else None
     return rows if isinstance(rows, int) else None
+
+
+def _wait_until_ready(service: Any, dataset_id: int) -> None:
+    """Wait (up to ``_APPEND_WAIT_S``) until the dataset reads ``ready`` or failed.
+
+    Args:
+        service: The SDK service.
+        dataset_id: The dataset an append writes into.
+    """
+    for delay in poll_delays(_APPEND_WAIT_S, _APPEND_RETRY_S):
+        status = _dataset_status(service, dataset_id)[0]
+        if status == "ready" or status in _UPLOAD_FAILED_STATUSES:
+            return
+        time.sleep(delay)
 
 
 def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:

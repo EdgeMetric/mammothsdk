@@ -478,6 +478,8 @@
   "project.user.add": "Add users to a project. High-impact: '--yes --confirm PROJECT_ID'.",
   "project.user.remove": "Remove users from a project. High-impact: '--yes --confirm PROJECT_ID'.",
   "project.user.update": "Update a project member's role ('role' required; 'user_id'/'invite_id').",
+  "recipe.list": "List the recipes 'recipe run' can run, with their inputs and a ready command.",
+  "recipe.run": "Run a recipe's steps in one process; 'inputs' fills them. Prompt or '--yes'.",
   "report.list": "List reports in the active workspace, with optional 'limit'/'offset'.",
   "resolve": "Say what NAME refers to: a dataset, a view or a project, with ids and projects.",
   "run": "Run many commands in one process: JSON Lines of cmd, args, input and flags.",

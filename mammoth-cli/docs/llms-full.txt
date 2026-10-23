@@ -1067,6 +1067,13 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth project user update` [high_impact/yes_always] -> mammoth.api.projects.ProjectsAPI.user_update
   example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes
 
+## recipe
+
+- `mammoth recipe list` [read/none] -> mammoth_cli.commands.recipe.recipe_list
+  example: mammoth recipe list
+- `mammoth recipe run` [high_impact/prompt_or_yes] -> mammoth_cli.commands.recipe.recipe_run
+  example: mammoth recipe run export-csv --input '{"inputs": {"view_id": 1}}' --yes
+
 ## report
 
 - `mammoth report list` [read/none] -> mammoth.api.reports.ReportsAPI.list

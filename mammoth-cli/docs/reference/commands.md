@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.2.100.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 848.
+Total commands: 850.
 
 ## activity
 
@@ -4845,6 +4845,26 @@ Total commands: 848.
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
 - Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes`
+
+## recipe
+
+### `mammoth recipe list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_list`
+- Agent example: `mammoth recipe list`
+
+### `mammoth recipe run`
+
+**Arguments**
+
+- `ID` (str, required) — The recipe to run (from 'recipe list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_run`
+- Agent example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1}}' --yes`
 
 ## report
 

@@ -12,6 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI: the `dashboard v3 generate` agent example now includes the required `intent`. Without it the backend refused the example with 4GENR007 ("intent must not be empty").
 - CLI: `view version apply` waits for the pipeline to be rebuilt before it returns, so the view shows the applied steps. Before, it returned the job handle and a read straight after it still showed the old steps.
 - CLI: a `file upload` lists the datasets it made in `meta.opens` (`created: true`), as other creating writes already did.
+- CLI: an append (`file upload --input '{"append_to_ds_id": N}'`) waits for the target dataset to take the rows before it reports. Before, it could read the target while it was still `processing`: `rows_added: 0` and a dataset health of `unknown`, though the rows did land.
 
 ### Added (next mammoth-io)
 
@@ -29,6 +30,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI: every success envelope carries `meta.run_id`, the invocation id: the same id as the run log's `run_id` (`log tail`), the journal's `inv` (`history show`) and the `inv` in the request's User-Agent. `embed.invoke(..., schema_version=1)` pins the envelope version a host was written against; `mammoth-cli/docs/envelope-compatibility.md` says what may change in a minor release and what needs a new `schema_version` (still 1: nothing in 3.0 breaks it).
 - CLI: the servers that honour `Idempotency-Key` are remembered between commands (one owner-only file of API base URLs in the user cache dir), so a command's first write can be replayed safely too. Embedded calls never write it.
 - CLI: `schema get COMMAND --full` returns `output_schema`, the JSON Schema (2020-12) of the command's `data`, for 86 read commands whose result is the API's own response, checked against a live server. It is taken from the API's OpenAPI document, so it changes when the API does. Commands that reshape their result have `output_schema: null` for now.
+- CLI: `mammoth recipe list` and `mammoth recipe run ID --input '{"inputs": {...}}'` run a common task as one command: append-rows, upload-dashboard, export-csv and share-dashboard. A recipe's steps run through the `mammoth run` path in one process, printing one envelope per step and a summary (`recipe`, `inputs`, `partial_lines`). A recipe that writes asks once (prompt or `--yes`), and `--dry-run` previews every step. `mammoth how` returns the recipe's `run_command`, and `schema find` lists matching recipes (`recipes`) before single commands. New error codes: `recipe_not_found`, `recipe_input_invalid`.
 
 ## mammoth-io 0.8.51, mammoth-cli 2.2.100 (2026-10-23)
 

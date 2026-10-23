@@ -60,6 +60,8 @@ S1_ROUTES = (
     "log.tail",
     "project.check",
     "project.ensure",
+    "recipe.list",
+    "recipe.run",
     "resolve",
     "run",
     "schema.find",
@@ -99,6 +101,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "view.data.drivers": ("measure", "date_column", "compare", "by", "conditions"),
     "view.data.forecast": ("measure", "date_column", "unit", "periods", "conditions"),
     "history.list": ("limit", "undoable_only"),
+    "recipe.run": ("inputs",),
 }
 
 

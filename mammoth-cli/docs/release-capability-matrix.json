@@ -63,6 +63,8 @@
     "project.get",
     "project.memory.list",
     "project.needs-attention",
+    "recipe.list",
+    "recipe.run",
     "resolve",
     "run",
     "skill.agents-md.install",
