@@ -34,6 +34,7 @@ import inspect
 import logging
 import math
 import time
+import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from ipaddress import ip_address
 from typing import TYPE_CHECKING, Any, TypeVar, cast
@@ -168,6 +169,49 @@ _RETRY_METHODS = frozenset({"GET", "HEAD"})
 _MAX_READ_RETRIES = 2
 _RETRY_BACKOFF_S = 0.25
 _RETRY_AFTER_CAP_S = 5.0
+#: Header that makes a write safe to send again: the server runs it once per key.
+IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
+#: Backend error code of a keyed write whose first attempt is still running.
+_KEY_IN_PROGRESS_CODE = "4GENR038"
+#: API base URLs that echoed an ``Idempotency-Key``, so honour it (learned per process).
+_HONOURS_IDEMPOTENCY: set[str] = set()
+
+
+def honours_idempotency_keys(base_url: str) -> bool:
+    """Whether the server at ``base_url`` is known to run a keyed write only once.
+
+    Args:
+        base_url: The client's API base URL.
+
+    Returns:
+        True once a response from it echoed an ``Idempotency-Key``, or after
+        :func:`mark_idempotency_keys_honoured`.
+    """
+    return base_url.rstrip("/") in _HONOURS_IDEMPOTENCY
+
+
+def mark_idempotency_keys_honoured(base_url: str) -> None:
+    """Record that the server at ``base_url`` honours ``Idempotency-Key``.
+
+    A caller that keeps state between processes (the CLI) calls this with what
+    an earlier process learned, so the first write of a new process can be
+    retried too.
+
+    Args:
+        base_url: The client's API base URL.
+    """
+    _HONOURS_IDEMPOTENCY.add(base_url.rstrip("/"))
+
+
+def _key_in_progress(response: httpx.Response) -> bool:
+    """Whether a keyed write was refused because its first attempt still runs."""
+    if response.status_code != 409:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    return isinstance(body, dict) and body.get("error_code") == _KEY_IN_PROGRESS_CODE
 
 
 def _retry_delay(attempt: int, retry_after: str | None) -> float:
@@ -1029,18 +1073,26 @@ class MammothClient:
 
         A draining worker answers a read with one transient gateway error; a 429
         waits for its Retry-After (capped at 5 seconds).
-        Writes are never replayed. When retries run out the last response (or
-        connect error) is returned/raised for the normal error mapping.
+        A write is replayed only when it carries an ``Idempotency-Key`` and the
+        server is known to honour one: then a dropped connection, a gateway error
+        or "first attempt still running" is retried with the same key, and the
+        server runs the write once. When retries run out the last response (or
+        transport error) is returned/raised for the normal error mapping.
         """
+        keyed = any(
+            name.lower() == IDEMPOTENCY_KEY_HEADER.lower()
+            for name in request_kwargs.get("headers") or {}
+        )
         retryable = method in _RETRY_METHODS
         for attempt in range(_MAX_READ_RETRIES + 1):
             started = time.perf_counter()
-            last = attempt == _MAX_READ_RETRIES or not retryable
+            replayable = keyed and honours_idempotency_keys(self.base_url)
+            last = attempt == _MAX_READ_RETRIES or not (retryable or replayable)
             _log_attempt_start(method, endpoint, attempt + 1, request_kwargs.get("timeout"))
             try:
                 response = await self.session.request(method, url, **request_kwargs)
-            except httpx.ConnectError as e:
-                if last:
+            except httpx.TransportError as e:
+                if last or not (replayable or isinstance(e, httpx.ConnectError)):
                     raise
                 _log_http(
                     method,
@@ -1053,7 +1105,12 @@ class MammothClient:
                 )
                 await asyncio.sleep(_retry_delay(attempt, None))
                 continue
-            if last or response.status_code not in _RETRY_STATUSES or not self.retry_gateway_errors:
+            if keyed and getattr(response, "headers", {}).get(IDEMPOTENCY_KEY_HEADER):
+                mark_idempotency_keys_honoured(self.base_url)
+            again = (response.status_code in _RETRY_STATUSES and self.retry_gateway_errors) or (
+                replayable and _key_in_progress(response)
+            )
+            if last or not again:
                 return response
             _log_http(
                 method,
@@ -1173,6 +1230,20 @@ class MammothClient:
         if "headers" in kwargs:
             headers.update(kwargs.pop("headers"))
 
+        request_method = method.upper()
+        if operation_effect not in {None, "read", "mutation"}:
+            raise ValueError("operation_effect must be 'read', 'mutation', or None")
+        is_mutation = operation_effect == "mutation" or (
+            operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
+        )
+        # A file stream can't be sent twice, so an upload is never keyed.
+        if (
+            is_mutation
+            and not files
+            and not any(name.lower() == IDEMPOTENCY_KEY_HEADER.lower() for name in headers)
+        ):
+            headers[IDEMPOTENCY_KEY_HEADER] = uuid.uuid4().hex
+
         if files:
             request_kwargs["files"] = files
             request_kwargs["headers"] = headers
@@ -1183,12 +1254,6 @@ class MammothClient:
         else:
             request_kwargs["headers"] = headers
 
-        request_method = method.upper()
-        if operation_effect not in {None, "read", "mutation"}:
-            raise ValueError("operation_effect must be 'read', 'mutation', or None")
-        is_mutation = operation_effect == "mutation" or (
-            operation_effect is None and request_method not in {"GET", "HEAD", "OPTIONS"}
-        )
         operation_state = "outcome_unknown" if is_mutation else "not_started"
 
         cache_key, cached = self._conditional(request_method, url, params, headers, is_mutation)

@@ -45,6 +45,7 @@ from mammoth_cli.runtime import (
     dryrun,
     embedded,
     etag_store,
+    idempotency_servers,
     parents,
     trace,
     view_dataset_cache,
@@ -260,6 +261,8 @@ class SdkMammothService:
         etags = etag_store.cache_for(auth, profile, self._runtime)
         if etags is not None:
             self._client.etag_cache = etags
+        # Whether this server replays keyed writes, as an earlier command learned it.
+        idempotency_servers.recall(self._client.base_url)
         self._default_job_timeout = self._client.job_timeout
         self._default_pipeline_timeout = self._client.pipeline_timeout
         # One loop for the process, not one per call: the client's connection
@@ -1251,6 +1254,7 @@ class SdkMammothService:
         On a host's shared runtime only this client's own download session closes: the
         pool and the loop belong to the host.
         """
+        idempotency_servers.remember(self._client.base_url)
         if self._loop is None:
             if self._closed:
                 return
