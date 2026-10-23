@@ -530,8 +530,7 @@ _COMMAND_DISCOVERY_PURPOSES = {
     # complete periods and gives a range. Generic words (will, estimate, next,
     # month) are left out: each would make other goals need this text to match.
     "view.data.forecast": (
-        "forecast forecasts forecasting projection projections projected predict prediction "
-        "future"
+        "forecast forecasts forecasting projection projections projected predict prediction future"
     ),
     # What a term means for one dataset (gap proposal P13): said once, used by
     # every chat on it. "remember that churned means" is a definition, not a
@@ -1192,6 +1191,10 @@ _MATCHED_ON_MAX_CHARS = 120
 _NO_MATCH_HINT_WITH_SUGGESTIONS = (
     "No single command matched every word, but 'suggestions' lists the closest candidates "
     "-- each with its own matched_terms. Try one of those before rephrasing."
+)
+_NO_MATCH_HINT_PARTIAL = (
+    "No single command matched every word; 'matches' lists the closest candidates "
+    "(partial: true) -- each with its own matched_terms. Try one of those before rephrasing."
 )
 _NO_MATCH_HINT_NO_SUGGESTIONS = (
     "No command matched any word; try fewer or other words. 'mammoth view transform --help' "
@@ -2215,7 +2218,9 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     contract_level = (
         "opaque_expert"
         if record["command_id"] in _OPAQUE_EXPERT_COMMANDS
-        else "partially_typed" if opaque_fields else "typed"
+        else "partially_typed"
+        if opaque_fields
+        else "typed"
     )
     return {
         "server_status": record.get("server_status", "served"),
@@ -2610,6 +2615,50 @@ def find_schemas(
         )
     result["browse"] = _browse(page or result.get("suggestions", []))
     return result
+
+
+#: Keys of an inlined accepted field that a caller needs to fill it in; its
+#: nested JSON Schema is what ``schema get`` is for.
+_FIND_FIELD_KEYS = ("name", "type", "required", "enum")
+#: Entry keys a find leaves out unless ``--full``: ``schema get`` has them.
+_FIND_DROPPED_KEYS = ("full_schema_command", "known_restrictions", "matched_on")
+
+
+def _trim_find_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    """One match cut to what picks and calls it: id, summary, safety class, example.
+
+    The command id is the key ``schema get`` takes for the rest.
+    """
+    from mammoth_cli.app import _indexed_summary
+
+    trimmed = {key: value for key, value in entry.items() if key not in _FIND_DROPPED_KEYS}
+    summary = _indexed_summary(entry["command_id"])
+    if summary:
+        trimmed["summary"] = summary
+    if trimmed.get("server_status") == "served":
+        del trimmed["server_status"]
+    if "accepted_fields" in trimmed:
+        trimmed["accepted_fields"] = [
+            {key: field[key] for key in _FIND_FIELD_KEYS if field.get(key) is not None}
+            for field in trimmed["accepted_fields"]
+        ]
+    return trimmed
+
+
+def trim_find_result(result: dict[str, Any]) -> dict[str, Any]:
+    """The default ``schema find`` shape: trimmed entries, near misses listed once.
+
+    ``suggestions`` repeated the partial ``matches`` entry for entry, so only
+    ``matches`` stays. ``--full`` returns the whole shape.
+    """
+    trimmed = dict(result)
+    trimmed["matches"] = [_trim_find_entry(entry) for entry in result["matches"]]
+    if "suggestions" in trimmed:
+        del trimmed["suggestions"]
+        trimmed["hint"] = (
+            _NO_MATCH_HINT_PARTIAL if trimmed["matches"] else _NO_MATCH_HINT_NO_SUGGESTIONS
+        )
+    return trimmed
 
 
 def _browse(entries: list[dict[str, Any]]) -> dict[str, Any]:
