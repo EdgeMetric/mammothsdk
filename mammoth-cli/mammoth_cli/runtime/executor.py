@@ -35,7 +35,7 @@ from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
 from mammoth_cli.output.render import render
-from mammoth_cli.runtime import embedded, linecapture, updates
+from mammoth_cli.runtime import embedded, linecapture, trace, updates
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
 from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
 from mammoth_cli.runtime.invocation import Invocation
@@ -350,7 +350,9 @@ def run(
 ) -> None:
     """Run one command's producer and emit its envelope.
 
-    When ``invocation`` is given a run log is opened for the command
+    Every API request the command makes names it and carries one invocation id
+    (:mod:`mammoth_cli.runtime.trace`), so the server's request log can tell
+    commands apart. When ``invocation`` is given a run log is opened for the command
     (:mod:`mammoth_cli.runtime.runlog`): SDK request and job records are
     captured while ``producer`` runs, the outcome is recorded, and an error
     envelope carries ``log_ref`` so the failure can be traced.
@@ -371,6 +373,27 @@ def run(
             the error's mapped exit status. On success the function returns
             normally after rendering the success envelope.
     """
+    with trace.begin(command_id):
+        _run(
+            command_id,
+            output,
+            producer,
+            agent_mode=agent_mode,
+            profile=profile,
+            invocation=invocation,
+        )
+
+
+def _run(
+    command_id: str,
+    output: str,
+    producer: Producer,
+    *,
+    agent_mode: bool = False,
+    profile: str | None = None,
+    invocation: Invocation | None = None,
+) -> None:
+    """:func:`run` inside the invocation's trace."""
     # An invalid mode cannot itself identify a renderer. In redirected/non-TTY
     # execution, or when the caller explicitly selected agent mode, keep the
     # error contract machine-readable. A human TTY still receives the concise
@@ -510,11 +533,13 @@ def _open_run_log(command_id: str, invocation: Invocation | None) -> RunLog | No
     if invocation is None or embedded.active():
         return None
     try:
+        traced = trace.current()
         return RunLog.start(
             command_id,
             profile=invocation.profile,
             project_id=invocation.project,
             debug=invocation.debug,
+            run_id=traced.invocation_id if traced is not None else None,
         )
     except Exception:
         return None

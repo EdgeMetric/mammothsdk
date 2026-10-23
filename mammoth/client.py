@@ -41,6 +41,8 @@ from urllib.parse import urljoin, urlsplit
 
 import httpx
 
+from mammoth.etag import MAX_BODY_BYTES as MAX_ETAG_BODY_BYTES
+from mammoth.etag import CachedResponse, ETagCache, MemoryETagCache
 from mammoth.exceptions import MammothAPIError, MammothAuthError, safe_response_body
 
 
@@ -834,6 +836,11 @@ class MammothClient:
         #: Optional store that keeps dataview -> dataset answers between processes
         #: (:class:`mammoth.api.pipeline.DataviewDatasetStore`). None: kept in memory only.
         self.dataview_dataset_store: DataviewDatasetStore | None = None
+        #: Where reads that came with an ``ETag`` are kept, so the next read of the same
+        #: URL sends ``If-None-Match`` and a 304 reuses the body (:mod:`mammoth.etag`).
+        #: In memory by default; a store that outlives the process may replace it, and
+        #: None turns conditional reads off.
+        self.etag_cache: ETagCache | None = MemoryETagCache()
 
         self._owns_session = http_client is None
         self.session = (
@@ -937,6 +944,82 @@ class MammothClient:
         if dataset_id is None:
             return await self.pipeline.find_dataset_for_dataview(dataview_id)
         return await self.pipeline.find_dataset_for_dataview(dataview_id, dataset_id)
+
+    def _conditional(
+        self,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None,
+        headers: dict[str, str],
+        is_mutation: bool,
+    ) -> tuple[str | None, CachedResponse | None]:
+        """Prepare a read to be conditional, or forget what was kept before a write.
+
+        A write may change anything kept, and the server may answer the next read
+        before it has changed the tag, so every write empties :attr:`etag_cache`.
+
+        Args:
+            method: The upper-case HTTP method.
+            url: The request URL, without its query string.
+            params: The query parameters.
+            headers: The request headers; ``If-None-Match`` is added to them when a body
+                is kept for this URL and the caller did not set one.
+            is_mutation: Whether the request may change server state.
+
+        Returns:
+            The cache key and the kept response, or ``(None, None)`` when the request
+            does not go through the cache.
+        """
+        cache = self.etag_cache
+        if cache is None:
+            return None, None
+        if is_mutation:
+            cache.clear()
+            return None, None
+        if method != "GET" or any(name.lower() == "if-none-match" for name in headers):
+            return None, None
+        key = str(httpx.URL(url, params=params)) if params else url
+        cached = cache.get(key)
+        if cached is not None:
+            headers["If-None-Match"] = cached.etag
+        return key, cached
+
+    def _through_etag_cache(
+        self, key: str, cached: CachedResponse | None, response: httpx.Response
+    ) -> httpx.Response:
+        """Answer a 304 from the kept body, and keep a new body that came with an ``ETag``.
+
+        Args:
+            key: The cache key of the read.
+            cached: The response kept for it, if any.
+            response: What the server answered.
+
+        Returns:
+            ``response``, or for a 304 a 200 rebuilt from the kept body.
+        """
+        cache = self.etag_cache
+        if cache is None:
+            return response
+        if response.status_code == 304 and cached is not None:
+            return httpx.Response(
+                200,
+                content=cached.content,
+                headers={**cached.headers, "etag": cached.etag},
+                request=response.request,
+            )
+        etag = response.headers.get("etag") if response.status_code == 200 else None
+        content = getattr(response, "content", None)
+        if etag and isinstance(content, bytes) and len(content) <= MAX_ETAG_BODY_BYTES:
+            content_type = response.headers.get("content-type")
+            cache.put(
+                key,
+                CachedResponse(
+                    etag=etag,
+                    content=content,
+                    headers={"content-type": content_type} if content_type else {},
+                ),
+            )
+        return response
 
     async def _send_with_read_retry(
         self, method: str, endpoint: str, url: str, request_kwargs: dict[str, Any]
@@ -1108,11 +1191,15 @@ class MammothClient:
         )
         operation_state = "outcome_unknown" if is_mutation else "not_started"
 
+        cache_key, cached = self._conditional(request_method, url, params, headers, is_mutation)
+
         started = time.perf_counter()
         try:
             response = await self._send_with_read_retry(
                 request_method, endpoint, url, request_kwargs
             )
+            if cache_key is not None:
+                response = self._through_etag_cache(cache_key, cached, response)
         except httpx.TimeoutException as e:
             _log_http(
                 request_method,

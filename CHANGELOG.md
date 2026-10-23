@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- SDK: conditional reads. A GET whose response had an `ETag` is sent again with `If-None-Match`, and a `304 Not Modified` returns the kept body, so an unchanged resource is not downloaded twice. This covers every route the API tags (workspaces, users, projects, folders, browse, datasets, views, project resources) without a per-route list. The server changes a tag on every change event (a pipeline's status and row count included), and any write the client sends empties the kept bodies first. `MammothClient.etag_cache` is the store. By default it's `MemoryETagCache`, bounded by entry count and bytes; `MemoryETagCache.scoped(name)` gives one caller their own share of a cache that many callers use. Pass any `mammoth.etag.ETagCache` to keep the bodies elsewhere, or `None` to turn this off.
+
+### Added (next mammoth-cli)
+
+- CLI: ETag'd bodies are kept on disk between commands, so repeated `project list`, `dataset list` or `view get` calls download only what changed. There is one owner-only directory per credential, profile, server and workspace, under the user cache dir. A write through that credential empties it, and `auth login`/`auth logout` remove all of them. `MAMMOTH_CLI_ETAG_CACHE=0` keeps the bodies for one command only. Embedded calls (`embed.invoke(runtime=...)`) never touch the disk. The host's `EmbedRuntime` keeps one in-memory cache, capped at 4096 bodies and 128 MB, and each caller uses only their own scope of it, named by a digest of their credential. Two users therefore never share a body, even when the server gives them the same tag for differently filtered lists.
+
+- CLI: every API request names the command that sent it in its `User-Agent`, which the server's request log already stores: `mammoth-cli/<version> (cmd=view.data.get; inv=3f9c2a1b7d4e; surface=run; agent=claude-code) mammoth-io/<version>`. `inv` is one id per command invocation, shared by all its requests and equal to the local run log's `run_id`. `surface` is `terminal`, `run` (a `mammoth run` line) or `embed`. `agent` is set from `MAMMOTH_AGENT`, or from the variable a coding agent sets (`CLAUDECODE`, `CURSOR_AGENT`, `GEMINI_CLI`, `CODEX_SANDBOX`), and never for an embedded call. Only identifiers are sent: no argument values, paths or data.
+
 ## mammoth-io 0.8.51, mammoth-cli 2.2.100 (2026-10-23)
 
 ### Added (mammoth-io 0.8.51)

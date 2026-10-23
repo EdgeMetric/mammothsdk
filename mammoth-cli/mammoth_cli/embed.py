@@ -90,8 +90,10 @@ def invoke(
             ``schema find``. Off by default: a terminal user may target a newer server.
         runtime: A host-owned :class:`EmbedRuntime` (or :func:`shared_pool`): the
             call sends its requests through its one connection pool and loop, so
-            keep-alive connections are reused across calls and users. Omitted, the
-            call builds and closes a pool of its own.
+            keep-alive connections are reused across calls and users, and each
+            caller's ETag'd reads are kept for their next call (in the caller's own
+            scope, named by their credential). Omitted, the call builds and closes a
+            pool of its own and keeps nothing.
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope

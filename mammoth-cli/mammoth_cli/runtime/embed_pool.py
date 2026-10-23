@@ -28,6 +28,8 @@ import threading
 from concurrent.futures import CancelledError, Future
 from typing import Any
 
+from mammoth.etag import MemoryETagCache
+
 
 def sdk_takes_default_headers() -> bool:
     """Whether the installed SDK's client takes ``default_headers`` (after mammoth-io 0.8.48)."""
@@ -83,6 +85,10 @@ class EmbedRuntime:
         self._pending: set[Future[Any]] = set()
         #: The shared pool, or None when the installed SDK cannot build one safely.
         self.http_client: Any = None
+        #: Bodies of ETag'd reads for every call this runtime serves, one scope per caller
+        #: (``etag_store.caller_scope``), so a caller's next call revalidates instead of
+        #: downloading again.
+        self.etag_cache = MemoryETagCache(max_entries=4096, max_bytes=128 * 1024 * 1024)
         if sdk_can_share_a_client():
             from mammoth.client import shared_http_client
 
