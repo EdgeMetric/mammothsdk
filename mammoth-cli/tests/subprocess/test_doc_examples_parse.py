@@ -27,7 +27,7 @@ from jsonschema import validate
 
 from mammoth_cli.commands.schema import schema_entries
 from mammoth_cli.manifest.loader import load_commands
-from mammoth_cli.runtime.strict import validate_input_fields
+from mammoth_cli.runtime.strict import _relax_numeric_oneof, validate_input_fields
 
 pytestmark = pytest.mark.subprocess
 
@@ -224,7 +224,9 @@ def _validate_structured_input(tokens: list[str], command_id: str) -> None:
         return  # file/stdin input is intentionally not read by this offline gate
     document = json.loads(value)
     validate_input_fields(command_id, document)
-    validate(document, _SCHEMAS[command_id]["input_schema"])
+    # Validate as the CLI does: strict.py relaxes numeric ``oneOf`` to ``anyOf``,
+    # because an integral value matches both ``number`` and ``integer``.
+    validate(document, _relax_numeric_oneof(_SCHEMAS[command_id]["input_schema"]))
 
 
 def test_docs_contain_examples_from_readme_and_docs() -> None:
