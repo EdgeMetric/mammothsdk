@@ -78,9 +78,7 @@ _EXAMPLES: dict[str, str] = {
         'mammoth agent access grant update 123 --input \'{"level": "ask"}\''
     ),
     "folder.bulk-delete": "mammoth folder bulk-delete --input '{\"folder_ids\": [1]}' --yes",
-    "batch.create": (
-        'mammoth batch create 123 456 --input \'{"mapping": {"example": "example"}}\''
-    ),
+    "batch.create": 'mammoth batch create 123 456 --input \'{"mapping": {"example": "example"}}\'',
     "view.explore-panel.edit": (
         "mammoth view explore-panel edit 123 456 --input"
         ' \'{"edits": [{"op": "metric", "card": "Region", "agg": "SUM",'
