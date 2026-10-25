@@ -4875,7 +4875,7 @@ Total commands: 851.
 - Mutation class: `high_impact`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth_cli.commands.recipe.recipe_run`
-- Agent example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1}}' --yes`
+- Agent example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes`
 
 ## report
 

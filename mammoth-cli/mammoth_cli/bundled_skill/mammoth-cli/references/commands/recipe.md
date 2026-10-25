@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth recipe run`. Exact input fields: `mammoth schema get recipe.run`.
 
-Example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `RecipeRunResult`; mutation `high_impact`, confirmation `prompt_or_yes`, wait policy `not_async`.
 

@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (next mammoth-cli)
+
+- CLI: the `export-csv` recipe takes `dataset_id` as well as `view_id`, so it needs no earlier read of the view to find the dataset.
+
 ### Fixed (next mammoth-cli)
 
 - CLI: `numbers_stored_as_text` (and `dates_stored_as_text`) now catch a column whose missing values are written as a placeholder. Values like `N/A`, `NA`, `#N/A`, `-`, `--`, `null`, `none`, `nil`, `?` and `nan` no longer count against the column's share of numbers. Before, `100, 250, 75, N/A` (3 of 4, under the 80% bar) uploaded as TEXT with no warning. The finding still lists the placeholders, which the conversion makes empty.
@@ -21,6 +25,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-cli)
 
+- CLI: every recipe in `discovery/recipes.json` is now an executable task (32, up from 4): `mammoth recipe run ID --input '{"inputs": {...}}'` runs the whole flow as one batch with `--dry-run`, a read-back and one summary envelope. New tasks: upload-clean, join-files, lookup-column, add-calculated-column, extract-date-part, split-column, find-replace, fill-blanks-with-value, rename-columns, remove-duplicates, pivot-summary, top-n, filter-export-csv, export-xlsx, export-to-s3, email-view, dashboard-from-view, summarize-by, compare-views, refresh-now, undo-last-change and revert-view-version. The tasks that would replace a view's rows (pivot-summary, top-n, filter-export-csv) work on a copy. The existing recipes refresh-daily, blend-by-key, stuck-upload, export-powerbi, clean-data and cleanup-mine are executable too. A recipe input can now be an array, an object or `any`.
+- CLI: `schema list` and `capability find` put the tasks first (`tasks` ahead of the families or matches), as `schema find` already did. The single commands stay reachable (`schema list FAMILY`, the `matches`).
+- CLI: `scripts/eval_task_calls.py` counts the calls each task takes with its recipe against step by step and writes `docs/task-call-eval.md` (60 against 110 for the 32 tasks, with a preview before every write). It counts calls, not live accuracy.
 - CLI: ETag'd bodies are kept on disk between commands, so repeated `project list`, `dataset list` or `view get` calls download only what changed. There is one owner-only directory per credential, profile, server and workspace, under the user cache dir. A write through that credential empties it, and `auth login`/`auth logout` remove all of them. `MAMMOTH_CLI_ETAG_CACHE=0` keeps the bodies for one command only. Embedded calls (`embed.invoke(runtime=...)`) never touch the disk. The host's `EmbedRuntime` keeps one in-memory cache, capped at 4096 bodies and 128 MB, and each caller uses only their own scope of it, named by a digest of their credential. Two users therefore never share a body, even when the server gives them the same tag for differently filtered lists.
 
 - CLI: every API request names the command that sent it in its `User-Agent`, which the server's request log already stores: `mammoth-cli/<version> (cmd=view.data.get; inv=3f9c2a1b7d4e; surface=run; agent=claude-code) mammoth-io/<version>`. `inv` is one id per command invocation, shared by all its requests and equal to the local run log's `run_id`. `surface` is `terminal`, `run` (a `mammoth run` line) or `embed`. `agent` is set from `MAMMOTH_AGENT`, or from the variable a coding agent sets (`CLAUDECODE`, `CURSOR_AGENT`, `GEMINI_CLI`, `CODEX_SANDBOX`), and never for an embedded call. Only identifiers are sent: no argument values, paths or data.

@@ -33,7 +33,13 @@ CODE_RECIPE_NOT_FOUND = "recipe_not_found"
 CODE_RECIPE_INPUT_INVALID = "recipe_input_invalid"
 
 #: The JSON types a recipe input may declare, and the Python types that satisfy each.
-_INPUT_TYPES: dict[str, tuple[type, ...]] = {"string": (str,), "integer": (int,)}
+_INPUT_TYPES: dict[str, tuple[type, ...]] = {
+    "string": (str,),
+    "integer": (int,),
+    "array": (list,),
+    "object": (dict,),
+    "any": (str, int, float),
+}
 
 
 def recipe_list(invocation: Invocation) -> HandlerResult:

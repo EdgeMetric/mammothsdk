@@ -1074,7 +1074,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth recipe list` [read/none] -> mammoth_cli.commands.recipe.recipe_list
   example: mammoth recipe list
 - `mammoth recipe run` [high_impact/prompt_or_yes] -> mammoth_cli.commands.recipe.recipe_run
-  example: mammoth recipe run export-csv --input '{"inputs": {"view_id": 1}}' --yes
+  example: mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes
 
 ## report
 

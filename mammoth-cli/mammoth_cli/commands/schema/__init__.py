@@ -20,6 +20,7 @@ from functools import cache
 from typing import Any, cast
 
 from mammoth_cli.commands.schema.examples import _positionals, runnable_example
+from mammoth_cli.discovery import task_summaries
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
 from mammoth_cli.output.normalize import trusted_json_schema
 from mammoth_cli.runtime import embedded
@@ -625,9 +626,15 @@ def schema_index(family: str | None = None) -> dict[str, Any]:
             counts.get(entry["command_path"].split()[0], 0) + 1
         )
     return {
+        # Whole tasks first: one command each, with a dry run and a read-back. The families
+        # below are the long tail, every command, for a goal no task covers.
+        "tasks": task_summaries(),
         "total": len(entries),
         "families": [{"family": name, "commands": count} for name, count in sorted(counts.items())],
-        "next": "mammoth schema list FAMILY, then mammoth schema get COMMAND_ID",
+        "next": (
+            "mammoth recipe run TASK_ID (a task above), or mammoth schema list FAMILY, "
+            "then mammoth schema get COMMAND_ID"
+        ),
     }
 
 
