@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
 from mammoth_cli.runtime.invocation import Invocation
 
 
@@ -29,7 +29,7 @@ def _bind(monkeypatch: pytest.MonkeyPatch, service: Any):
     def context(_invocation: Invocation):
         yield service, type("Auth", (), {"workspace_id": 4})()
 
-    monkeypatch.setattr(dashboard_cmd, "open_service", context)
+    monkeypatch.setattr(dashboard_generated, "open_service", context)
     yield
 
 
@@ -42,7 +42,7 @@ def test_rel335_approved_cli_emits_exact_wire_and_returns_response(
     source = tmp_path / "blank.json"
     source.write_text(json.dumps(payload), encoding="utf-8")
     with _bind(monkeypatch, service):
-        data, _meta = dashboard_cmd.generated_dashboard(_invocation(str(source)))
+        data, _meta = dashboard_generated.generated_dashboard(_invocation(str(source)))
     request = api.requests[0]  # then one canvas read for deliverable_check
     assert request.method == "POST"
     assert request.path.removeprefix("/api/v2") == "/dashboards/v3/blank"
@@ -58,7 +58,7 @@ def test_rel335_create_blank_needs_no_confirmation_flag(
     source = tmp_path / "blank.json"
     source.write_text(json.dumps({"params": {"dataview_id": 42}}), encoding="utf-8")
     with _bind(monkeypatch, service):
-        dashboard_cmd.generated_dashboard(_invocation(str(source)))
+        dashboard_generated.generated_dashboard(_invocation(str(source)))
     assert api.requests[0].method == "POST"
 
 
@@ -71,7 +71,7 @@ def test_a_failed_deliverable_check_is_reported_not_omitted(
     source = tmp_path / "blank.json"
     source.write_text(json.dumps({"params": {"dataview_id": 42}}), encoding="utf-8")
     with _bind(monkeypatch, service):
-        data, _meta = dashboard_cmd.generated_dashboard(_invocation(str(source)))
+        data, _meta = dashboard_generated.generated_dashboard(_invocation(str(source)))
     check = data["deliverable_check"]
     assert check["checked"] is False
     assert check["warnings"] == []

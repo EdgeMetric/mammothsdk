@@ -21,7 +21,7 @@ from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime import dispatch, embedded, executor
 from mammoth_cli.runtime.local_paths import local_path_commands
 from mammoth_cli.services import factory as service_factory
-from mammoth_cli.services.positionals import LOCAL_PATH
+from mammoth_cli.services.positional_spec import LOCAL_PATH
 from mammoth_cli.services.testing import FakeMammothService
 
 _LOGIN = ExplicitLogin(

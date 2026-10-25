@@ -9,6 +9,8 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
+from mammoth_cli.commands.dashboard import workbook as dashboard_workbook
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.verify import with_verify
@@ -59,7 +61,7 @@ def test_canvas_save_with_an_unknown_column_is_not_verified(
     fake_service.responses[_CANVAS_SAVE] = {"sequence": 2, "bake_job_id": 9}
     fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": [bad]}])
     body = {"body": {"params": {"canvas": {"pages": [{"id": "p1", "added": [bad]}]}}}}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.canvas.save",
             extra_args=["7"],
@@ -83,7 +85,7 @@ def test_canvas_save_with_a_bake_error_is_not_verified(
         [{"id": "p1", "added": []}], bake_error="unknown column 'Nope'"
     )
     body = {"body": {"params": {"canvas": {"pages": []}}}}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.canvas.save",
             extra_args=["7"],
@@ -103,7 +105,7 @@ def test_canvas_save_of_a_good_figure_stays_verified(
     fake_service.responses[_CANVAS_SAVE] = {"sequence": 2}
     fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": [good]}])
     body = {"body": {"params": {"canvas": {"pages": [{"id": "p1", "added": [good]}]}}}}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.canvas.save",
             extra_args=["7"],
@@ -146,7 +148,7 @@ def test_pages_add_with_a_swapped_measure_is_partial(
             }
         }
     }
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.pages.add",
             extra_args=["7"],
@@ -176,7 +178,7 @@ def test_v3_generate_swapping_revenue_for_quantity_is_partial(
         "plan": {"hints": {"_profiles": profiles}},
     }
     body = {"body": {"params": {"dataview_id": 42, "intent": "revenue by region"}}}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv("dashboard.v3.generate", input_file=_doc(tmp_path, body), yes=True)
     )
     assert data["substitution_check"]["problems"][0]["used"]["measures"] == ["Quantity"]
@@ -189,7 +191,7 @@ def test_a_couldnt_do_message_makes_generate_partial(
     fake_service.responses[_GENERATE] = {"id": 7, "message": "Couldn't do: a pie of Region."}
     fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": []}])
     body = {"body": {"params": {"dataview_id": 42, "intent": "region mix"}}}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv("dashboard.v3.generate", input_file=_doc(tmp_path, body), yes=True)
     )
     assert data["partial"] is True
@@ -252,7 +254,7 @@ def test_import_workbook_waits_and_says_the_rows_are_synthetic(
     book.write_bytes(b"x")
     fake_service.responses[_IMPORT] = {"job_id": "j1"}
     fake_service.job_result = {"dataview_id": 5, "data_source": "fitted_sample"}
-    data, _ = dashboard_cmd.dashboard_import_workbook(
+    data, _ = dashboard_workbook.dashboard_import_workbook(
         _inv(
             "dashboard.import-workbook",
             extra_args=[str(book)],
@@ -326,7 +328,7 @@ def test_packaged_row_count_counts_records_not_lines(tmp_path: Path) -> None:
     """A quoted value with a line break is one row, not two."""
     import zipfile
 
-    from mammoth_cli.commands.dashboard import _packaged_row_count
+    from mammoth_cli.commands.dashboard.workbook import _packaged_row_count
 
     book = tmp_path / "q.twbx"
     with zipfile.ZipFile(book, "w") as bundle:
@@ -341,7 +343,7 @@ def test_v3_generate_reads_the_canvas_once_for_the_check_and_the_numbers(
     fake_service.responses[_GENERATE] = {"id": 7, "message": "done"}
     fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": []}])
     body = {"body": {"params": {"dataview_id": 42, "intent": "region mix"}}}
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.v3.generate", input_file=_doc(tmp_path, body), yes=True)
     )
     assert fake_service.calls.count(_CANVAS_GET) == 1

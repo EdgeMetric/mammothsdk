@@ -60,7 +60,8 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.policy import (
     MACHINE_OUTPUTS,
 )
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positional_spec import PositionalSpec
+from mammoth_cli.services.positionals import resolve_positionals
 
 if TYPE_CHECKING:
     from mammoth_cli.runtime.invocation import Invocation

@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import support as support_cmd
+from mammoth_cli.commands import support_template
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -1885,11 +1886,11 @@ def test_storage_option_archive_proceeds(fake_service: FakeMammothService) -> No
     ("handler", "command_id", "method"),
     [
         (
-            support_cmd.support_template_data_preview,
+            support_template.support_template_data_preview,
             "support.template.data-preview",
             "data_preview",
         ),
-        (support_cmd.support_template_canvas, "support.template.canvas", "canvas"),
+        (support_template.support_template_canvas, "support.template.canvas", "canvas"),
     ],
 )
 def test_template_reads_take_the_slug(
@@ -1902,15 +1903,15 @@ def test_template_reads_take_the_slug(
 @pytest.mark.parametrize(
     ("handler", "command_id", "method"),
     [
-        (support_cmd.support_template_publish, "support.template.publish", "publish"),
-        (support_cmd.support_template_unpublish, "support.template.unpublish", "unpublish"),
-        (support_cmd.support_template_retire, "support.template.retire", "retire"),
+        (support_template.support_template_publish, "support.template.publish", "publish"),
+        (support_template.support_template_unpublish, "support.template.unpublish", "unpublish"),
+        (support_template.support_template_retire, "support.template.retire", "retire"),
         (
-            support_cmd.support_template_thumbnail_clear,
+            support_template.support_template_thumbnail_clear,
             "support.template.thumbnail.clear",
             "thumbnail_clear",
         ),
-        (support_cmd.support_template_discard, "support.template.discard", "discard"),
+        (support_template.support_template_discard, "support.template.discard", "discard"),
     ],
 )
 def test_template_writes_confirm_the_slug(
@@ -1925,9 +1926,9 @@ def test_template_writes_confirm_the_slug(
 
 
 def test_template_list_audit_snapshots_take_nothing(fake_service: FakeMammothService) -> None:
-    support_cmd.support_template_list(_inv("support.template.list"))
-    support_cmd.support_template_audit(_inv("support.template.audit"))
-    support_cmd.support_template_snapshots(_inv("support.template.snapshots"))
+    support_template.support_template_list(_inv("support.template.list"))
+    support_template.support_template_audit(_inv("support.template.audit"))
+    support_template.support_template_snapshots(_inv("support.template.snapshots"))
     assert fake_service.call_log == [
         (_SUPPORT + "template_list", {}),
         (_SUPPORT + "template_audit", {}),
@@ -1937,7 +1938,7 @@ def test_template_list_audit_snapshots_take_nothing(fake_service: FakeMammothSer
 
 def test_template_edit_requires_changes(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_template_edit(
+        support_template.support_template_edit(
             _inv("support.template.edit", extra_args=["sales"], yes=True, confirm="sales")
         )
     assert excinfo.value.code == "missing_field"
@@ -1945,7 +1946,7 @@ def test_template_edit_requires_changes(fake_service: FakeMammothService) -> Non
 
 def test_template_edit_forwards_changes(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"changes": {"title": "Sales", "function": None}})
-    support_cmd.support_template_edit(
+    support_template.support_template_edit(
         _inv(
             "support.template.edit", extra_args=["sales"], input_file=doc, yes=True, confirm="sales"
         )
@@ -1959,13 +1960,15 @@ def test_template_edit_forwards_changes(fake_service: FakeMammothService, tmp_pa
 
 
 def test_template_inspect_is_a_read(fake_service: FakeMammothService) -> None:
-    support_cmd.support_template_inspect(_inv("support.template.inspect", extra_args=["t.zip"]))
+    support_template.support_template_inspect(
+        _inv("support.template.inspect", extra_args=["t.zip"])
+    )
     assert fake_service.call_log == [(_SUPPORT + "template_inspect", {"file": "t.zip"})]
 
 
 def test_template_import_requires_yes(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_template_import(
+        support_template.support_template_import(
             _inv("support.template.import", extra_args=["t.zip"], output="json")
         )
     assert excinfo.value.code == "confirmation_required"
@@ -1974,7 +1977,7 @@ def test_template_import_requires_yes(fake_service: FakeMammothService) -> None:
 
 def test_template_import_forwards_dataset(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _write(tmp_path, {"dataset": "Orders"})
-    support_cmd.support_template_import(
+    support_template.support_template_import(
         _inv("support.template.import", extra_args=["t.zip"], input_file=doc, yes=True)
     )
     assert fake_service.call_log == [
@@ -1983,7 +1986,7 @@ def test_template_import_forwards_dataset(fake_service: FakeMammothService, tmp_
 
 
 def test_template_thumbnail_set_takes_slug_and_file(fake_service: FakeMammothService) -> None:
-    support_cmd.support_template_thumbnail_set(
+    support_template.support_template_thumbnail_set(
         _inv(
             "support.template.thumbnail.set",
             extra_args=["sales", "card.png"],
@@ -2001,7 +2004,7 @@ def test_template_export_returns_the_written_path(
 ) -> None:
     doc = _write(tmp_path, {"output_path": "out.zip", "with_data": True})
     fake_service.responses[_SUPPORT + "template_export"] = Path("out.zip")
-    data, _ = support_cmd.support_template_export(
+    data, _ = support_template.support_template_export(
         _inv("support.template.export", extra_args=["sales"], input_file=doc)
     )
     assert data == {"output_path": "out.zip"}
@@ -2015,7 +2018,7 @@ def test_template_export_returns_the_written_path(
 
 def test_template_export_dashboard_requires_slug(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        support_cmd.support_template_export_dashboard(
+        support_template.support_template_export_dashboard(
             _inv("support.template.export-dashboard", extra_args=["42"])
         )
     assert excinfo.value.code == "missing_field"
@@ -2025,7 +2028,7 @@ def test_template_export_dashboard_forwards_slug(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write(tmp_path, {"slug": "my-board", "with_data": False})
-    support_cmd.support_template_export_dashboard(
+    support_template.support_template_export_dashboard(
         _inv("support.template.export-dashboard", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log == [

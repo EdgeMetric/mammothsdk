@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dashboard import generated_dashboard
+from mammoth_cli.commands.dashboard.generated import generated_dashboard
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,

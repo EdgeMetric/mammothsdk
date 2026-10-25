@@ -865,7 +865,7 @@ def _preview_dataset(
 
 
 def _check_dashboard(invocation: Invocation) -> Callable[[Any, Any, Any], dict[str, Any]]:
-    from mammoth_cli.commands.dashboard import _with_deliverable_check
+    from mammoth_cli.commands.dashboard.generated import _with_deliverable_check
 
     def _check(service: Any, auth: Any, board: Any) -> dict[str, Any]:
         dashboard_id = board.get("id") if isinstance(board, dict) else None

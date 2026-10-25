@@ -433,13 +433,15 @@ def test_live_chart_create_waits_for_its_bake_and_keeps_the_dashboard_id(
     # #281: a 202 with a bake job was returned raw: no wait, no readback.
     from mammoth.models.dashboard_generated import CreateLiveChartResponse
 
-    from mammoth_cli.commands import dashboard as dashboard_cmd
+    from mammoth_cli.commands.dashboard import generated as dashboard_generated
 
     fake_service.responses[f"{_DASHBOARDS}.live_chart_create"] = CreateLiveChartResponse(
         dashboard_id=99, job_id=12
     )
     fake_service.job_result = {"status": "success"}
     doc = _doc(tmp_path, {"body": {"params": {"view_id": 12, "title": "Revenue", "figure": {}}}})
-    data, _ = dashboard_cmd.generated_dashboard(_inv("dashboard.live-chart.create", input_file=doc))
+    data, _ = dashboard_generated.generated_dashboard(
+        _inv("dashboard.live-chart.create", input_file=doc)
+    )
     assert fake_service.wait_log == [{"dashboard_id": 99, "job_id": 12}]
     assert data == {"dashboard_id": 99, "job_id": 12, "status": "success"}

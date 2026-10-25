@@ -15,7 +15,7 @@ import pytest
 from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli.commands import billing as billing_cmd
-from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import workbook as dashboard_workbook
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
@@ -342,7 +342,7 @@ def test_attachment_upload_rejects_a_missing_file(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_chat_attachment_upload(
+        dashboard_workbook.dashboard_chat_attachment_upload(
             _inv(
                 "dashboard.chat.attachment.upload",
                 extra_args=["12", str(tmp_path / "missing.pdf")],
@@ -358,7 +358,7 @@ def test_attachment_upload_sends_the_dashboard_and_file(
     path = tmp_path / "notes.txt"
     path.write_text("hello", encoding="utf-8")
     fake_service.responses[f"{_DASHBOARDS}.chat_attachment_upload"] = {"ref": "att:abc"}
-    data, _ = dashboard_cmd.dashboard_chat_attachment_upload(
+    data, _ = dashboard_workbook.dashboard_chat_attachment_upload(
         _inv("dashboard.chat.attachment.upload", extra_args=["12", str(path)])
     )
     assert data == {"ref": "att:abc"}

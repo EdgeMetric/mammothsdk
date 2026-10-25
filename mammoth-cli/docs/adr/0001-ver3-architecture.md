@@ -270,16 +270,20 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    `STREAMED_META` and `EXIT_STATUS_META` meta keys and `dispatch`'s special case for `doctor`.
    A handler that names its own exit status, or printed its own envelopes, returns an `Outcome`
    (`run`, `recipe run`, `history undo`/`resume`, `doctor`).
-9. **Module size** (#312, started): `commands/view_ops.py` (2,775 lines) is now a package: the
-   shared write path in `__init__`, and `crud`, `draft`, `transforms` and `batch` for the
-   handlers. The `schema find` purpose tables moved to `discovery/purposes.py`. Still over 1,500
-   lines: `app.py`, `dataset.py`, `dashboard.py`, `services/positionals.py` and `schema.py`.
-10. **Generated manifests** (#313, done for records): `scripts/build_manifests.py` writes a
+9. **Module size** (#312, done): no module is over 1,500 lines. `commands/view_ops`,
+   `commands/schema` (`examples`, `find`), `commands/dataset` (`find`, `create`) and
+   `commands/dashboard` (`generated`, `workbook`) are packages with their shared helpers in a
+   `_common` module where they had them; `app` is a package (`help_text`, `usage`, `options`,
+   `tree`); `services/positionals.py` keeps the derivation and moved its spec and its override
+   table to `positional_spec.py` and `positional_overrides.py`; the `support template` commands
+   moved to `commands/support_template.py`. The `schema find` purpose tables are in
+   `discovery/purposes.py`, and `HandlerResult` is defined once, in `commands/registry.py`.
+10. **Generated manifests** (#313, done): `scripts/build_manifests.py` writes a
     record for every operation-backed or SDK-catalog command to
     `spec/manifests/commands.generated.yaml`. `commands/<group>.yaml` keeps only the fields that
     differ (and `unset`), or the full record of a command the generator doesn't make (38 of
     851). The loader merges the two, so the compiled records are unchanged; the hand-written YAML
-    went from 37,720 lines to 6,711. Not done: generated thin handlers.
+    went from 37,720 lines to 6,711. Thin handlers are not generated, by decision: a command with no logic of its own already runs through one manifest-driven handler (`generated_dashboard`, 119 commands), so a generated function per command would add code rather than remove it.
 
 ## Consequences
 

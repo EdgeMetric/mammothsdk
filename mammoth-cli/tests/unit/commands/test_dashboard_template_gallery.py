@@ -1,7 +1,7 @@
 """Unit tests for ``dashboard template thumbnail *`` and ``dashboard gallery *``.
 
 All five dispatch through the generic
-:func:`mammoth_cli.commands.dashboard.generated_dashboard` handler; these tests
+:func:`mammoth_cli.commands.dashboard.generated.generated_dashboard` handler; these tests
 pin the SDK symbol, the kwargs and the confirmation policy of each.
 """
 
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -35,14 +35,14 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
 
 
 def test_thumbnail_get_uses_positional_template(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.template.thumbnail.get", extra_args=["sales-overview"])
     )
     assert fake_service.call_log == [(_THUMB_GET, {"template_id": "sales-overview"})]
 
 
 def test_thumbnail_set_passes_template_and_file(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.template.thumbnail.set", extra_args=["sales-overview", "card.png"])
     )
     assert fake_service.call_log == [
@@ -52,7 +52,7 @@ def test_thumbnail_set_passes_template_and_file(fake_service: FakeMammothService
 
 def test_thumbnail_clear_requires_yes(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.generated_dashboard(
+        dashboard_generated.generated_dashboard(
             _inv("dashboard.template.thumbnail.clear", extra_args=["sales-overview"])
         )
     assert excinfo.value.code == "confirmation_required"
@@ -60,7 +60,7 @@ def test_thumbnail_clear_requires_yes(fake_service: FakeMammothService) -> None:
 
 
 def test_thumbnail_clear_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.template.thumbnail.clear", extra_args=["sales-overview"], yes=True)
     )
     assert fake_service.call_log == [(_THUMB_CLEAR, {"template_id": "sales-overview"})]
@@ -69,10 +69,12 @@ def test_thumbnail_clear_proceeds_with_yes(fake_service: FakeMammothService) -> 
 def test_gallery_list_forwards_facets(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = tmp_path / "in.json"
     doc.write_text('{"function": "sales"}', encoding="utf-8")
-    dashboard_cmd.generated_dashboard(_inv("dashboard.gallery.list", input_file=str(doc)))
+    dashboard_generated.generated_dashboard(_inv("dashboard.gallery.list", input_file=str(doc)))
     assert fake_service.call_log == [(_GALLERY_LIST, {"function": "sales"})]
 
 
 def test_gallery_get_uses_positional_slug(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.generated_dashboard(_inv("dashboard.gallery.get", extra_args=["sales-overview"]))
+    dashboard_generated.generated_dashboard(
+        _inv("dashboard.gallery.get", extra_args=["sales-overview"])
+    )
     assert fake_service.call_log == [(_GALLERY_GET, {"slug": "sales-overview"})]

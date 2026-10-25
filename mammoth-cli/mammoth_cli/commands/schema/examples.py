@@ -16,7 +16,8 @@ from mammoth_cli.services.openapi_types import (
     openapi_body_schema_for,
     sample_from_schema,
 )
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positional_spec import PositionalSpec
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, sample_value
 
 # Agent examples carry no ``--output json --no-input``: a piped run already

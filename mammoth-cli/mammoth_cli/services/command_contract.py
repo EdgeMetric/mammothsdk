@@ -27,7 +27,8 @@ from mammoth_cli.services.input_fields import (
     is_closed_zero_input,
 )
 from mammoth_cli.services.openapi_types import openapi_body_schema_for
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positional_spec import PositionalSpec
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema
 
 

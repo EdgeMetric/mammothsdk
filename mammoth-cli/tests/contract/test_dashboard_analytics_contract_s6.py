@@ -18,6 +18,7 @@ import pytest
 from mammoth_cli.commands import dashboard as dashboard_cmd
 from mammoth_cli.commands import report as report_cmd
 from mammoth_cli.commands import template as template_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
@@ -217,7 +218,7 @@ def test_distinctive_fields_reach_owned_family_destinations(
 def test_generated_dashboard_route_binds_positional_and_input_values(
     fake_family_service: FakeMammothService, tmp_path: Path
 ) -> None:
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.canvas.get",
             extra_args=["31"],
@@ -237,7 +238,7 @@ def test_s6_positional_identity_cannot_be_overridden_by_input(
 ) -> None:
     """A resource positional is context, never an input-field fallback."""
     with pytest.raises(CliError) as error:
-        dashboard_cmd.generated_dashboard(
+        dashboard_generated.generated_dashboard(
             _inv(
                 "dashboard.canvas.get",
                 extra_args=["31"],

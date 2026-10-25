@@ -33,7 +33,8 @@ from mammoth_cli.services.openapi_types import (
     openapi_body_schema_for,
     openapi_response_schema_for,
 )
-from mammoth_cli.services.positionals import LOCAL_PATH, resolve_positionals
+from mammoth_cli.services.positional_spec import LOCAL_PATH
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema
 
 _OPAQUE_EXPERT_COMMANDS = frozenset({"view.task.add", "view.task.preview", "view.task.update"})

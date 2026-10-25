@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mammoth_cli.commands.dashboard import _reflect_not_applied
+from mammoth_cli.commands.dashboard.generated import _reflect_not_applied
 from mammoth_cli.services.dashboard_pages import generate_substitutions, refused_notes
 
 _MESSAGE = (

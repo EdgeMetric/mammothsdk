@@ -14,7 +14,7 @@ from mammoth_cli.output.policy import (
     SELECTABLE_OUTPUTS,
     VALID_OUTPUTS,
 )
-from mammoth_cli.services.positionals import PositionalSpec
+from mammoth_cli.services.positional_spec import PositionalSpec
 
 if TYPE_CHECKING:
     pass
