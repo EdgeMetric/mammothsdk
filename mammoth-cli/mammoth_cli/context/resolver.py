@@ -175,6 +175,19 @@ def _env_token_login() -> ExplicitLogin | None:
     return ExplicitLogin(api_key=None, api_secret=None, server_prefix=prefix, api_token=token)
 
 
+def env_token_in_use(invocation: Invocation) -> bool:
+    """Whether this invocation would sign in with ``MAMMOTH_API_TOKEN``.
+
+    Args:
+        invocation: The command's resolved global options.
+
+    Returns:
+        True when the token is set and no explicit ``--profile`` outranks it.
+    """
+    explicit = invocation.profile is not None and not invocation.profile_is_default
+    return not explicit and _env_token_login() is not None
+
+
 def resolve_auth(
     invocation: Invocation,
     explicit_login: ExplicitLogin | None = None,

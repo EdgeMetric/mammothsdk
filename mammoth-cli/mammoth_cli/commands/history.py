@@ -24,6 +24,7 @@ from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.registry import HandlerResult
+from mammoth_cli.context.resolver import env_token_in_use
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     EXIT_API,
@@ -45,6 +46,7 @@ CODE_NOTHING_TO_RESUME = "nothing_to_resume"
 CODE_RESUME_OUTCOME_UNKNOWN = "resume_outcome_unknown"
 CODE_RESUME_NEEDS_VALUE = "resume_secret_needed"
 CODE_UNDO_IN_PROGRESS = "undo_in_progress"
+CODE_UNDO_NEEDS_TOKEN = "undo_needs_token"  # noqa: S105 -- an error code, not a secret
 CODE_VIEW_CHANGED = "view_changed_since_edit"
 #: Most entries ``history list`` shows unless asked for more.
 DEFAULT_LIMIT = 20
@@ -199,6 +201,10 @@ def _undo_entry(
     for index, line in enumerate(entry.undo):
         if index < entry.undone_lines and not invocation.dry_run:
             continue
+        refused = _account_missing(entry, invocation)
+        if refused is not None:
+            return refused
+        line = _as_account(entry, line)
         blocked = _changed_since(entry, line, invocation, steps, force=force)
         if blocked is not None:
             return blocked
@@ -217,6 +223,40 @@ def _undo_entry(
         if not invocation.dry_run:
             journal.mark_undo_step(store, entry.inv, index + 1)
     return None
+
+
+def _account_missing(entry: journal.Entry, invocation: Invocation) -> dict[str, Any] | None:
+    """The failure to report when the write used ``MAMMOTH_API_TOKEN`` and none is set now."""
+    if entry.auth != journal.AUTH_ENV or env_token_in_use(invocation):
+        return None
+    return {
+        "inv": entry.inv,
+        "cmd": entry.command.replace(".", " "),
+        "exit": EXIT_USAGE,
+        "code": CODE_UNDO_NEEDS_TOKEN,
+        "message": (
+            f"{entry.inv} was made with MAMMOTH_API_TOKEN, and none is set now, so the undo"
+            " would run as another account."
+        ),
+        "hint": "Set MAMMOTH_API_TOKEN to the token the write used, then run the undo again.",
+    }
+
+
+def _as_account(entry: journal.Entry, line: dict[str, Any]) -> dict[str, Any]:
+    """The line run with the stored profile the write used, not the profile selected now.
+
+    Args:
+        entry: The write being undone.
+        line: One of its undo lines.
+
+    Returns:
+        The line with ``--profile`` set when the write used a stored profile and the line
+        does not name one.
+    """
+    flags = line.get("flags") or {}
+    if entry.auth != journal.AUTH_PROFILE or not entry.profile or "profile" in flags:
+        return line
+    return {**line, "flags": {**flags, "profile": entry.profile}}
 
 
 def _changed_since(

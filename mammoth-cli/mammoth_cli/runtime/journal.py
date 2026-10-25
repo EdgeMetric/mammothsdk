@@ -56,6 +56,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
+from mammoth_cli.context.resolver import env_token_in_use
 from mammoth_cli.errors.envelope import CODE_ABORTED, EXIT_PARTIAL, EXIT_USAGE
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.normalize import REDACTED, normalize
@@ -83,6 +84,10 @@ RUN_KEEP_DAYS = 60
 _RUN_EVENTS = frozenset({"plan", "step", "item", "resume", "ack"})
 #: The commands that only run other commands; their lines are the journal entries, not them.
 CONTAINER_COMMANDS = frozenset({"run", "recipe.run"})
+
+#: What a write signed in with, kept in its ``begin`` record for the undo.
+AUTH_PROFILE = "profile"
+AUTH_ENV = "env"
 #: ``error.code`` values of a failure after the write may have been sent.
 _UNCERTAIN_CODES = frozenset({"interrupted", "timeout", "outcome_unknown"})
 #: ``error.details.operation_state`` values that say the same.
@@ -311,6 +316,8 @@ class Entry:
         command: The command id.
         started: When the write began (UTC, ISO 8601).
         profile: The profile it ran with, if any.
+        auth: ``profile`` when it ran with a stored profile, ``env`` when it ran with
+            ``MAMMOTH_API_TOKEN``; None for a record from before this was kept.
         project_id: The project it ran in, if any.
         exit: Its exit status; None while its outcome is unknown.
         opens: The objects it made or changed.
@@ -328,6 +335,7 @@ class Entry:
     command: str
     started: str
     profile: str | None = None
+    auth: str | None = None
     project_id: int | None = None
     exit: int | None = None
     opens: list[dict[str, Any]] = field(default_factory=list)
@@ -432,6 +440,7 @@ def entries(store: JournalStore) -> list[Entry]:
                 command=str(record.get("command") or ""),
                 started=str(record.get("ts") or ""),
                 profile=record.get("profile"),
+                auth=record.get("auth"),
                 project_id=record.get("project_id"),
             )
             continue
@@ -545,7 +554,8 @@ def fingerprint(tasks: Iterable[Mapping[str, Any]]) -> str:
 
     Returns:
         A short hex digest of the tasks in order, without their ids, sequence numbers,
-        timestamps or run status.
+        timestamps or run status. Secrets are redacted first, as the CLI output redacts
+        them, so the raw SDK list and the ``view task list`` envelope give the same digest.
     """
     kept = [
         {
@@ -553,7 +563,7 @@ def fingerprint(tasks: Iterable[Mapping[str, Any]]) -> str:
             for key, value in task.items()
             if key not in _VOLATILE_TASK_KEYS and not key.endswith(("_id", "_at"))
         }
-        for task in tasks
+        for task in _without_secrets(list(tasks))
     ]
     text = json.dumps(kept, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
@@ -764,6 +774,7 @@ def journal_writes(
                 "ts": _now(),
                 "command": request.command_id,
                 "profile": request.profile,
+                "auth": AUTH_ENV if env_token_in_use(invocation) else AUTH_PROFILE,
                 "project_id": invocation.project,
             }
         )
