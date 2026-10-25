@@ -117,7 +117,7 @@ def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, An
                 f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
                 {"input_field": guessed},
             )
-    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.app.usage import _global_option_flags
     from mammoth_cli.services.suggest import option_suggestion
 
     known = sorted(_global_option_flags()[0] | COMMAND_FLAGS.get(command_id, frozenset()))

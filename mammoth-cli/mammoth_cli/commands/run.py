@@ -166,7 +166,7 @@ _SCHEMA_HINT = (
 @cache
 def _flag_tables() -> tuple[frozenset[str], frozenset[str]]:
     """Every global flag spelling, and the subset that takes a value."""
-    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.app.usage import _global_option_flags
 
     return _global_option_flags()
 
@@ -390,7 +390,7 @@ def _click_root() -> Any:
 
 def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str, Any]]:
     """Run ``argv`` as a command in this process; return its exit status and envelope."""
-    from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS
+    from mammoth_cli.app.usage import _ABORT_ERRORS, _USAGE_ERRORS
 
     root = _click_root()
     buffer = io.StringIO()

@@ -33,7 +33,8 @@ from typing import Any
 from typer._click.core import Command, Context
 
 from mammoth_cli import SCHEMA_VERSION, __version__
-from mammoth_cli.app import _ABORT_ERRORS, _USAGE_ERRORS, _root_click_command
+from mammoth_cli.app import _root_click_command
+from mammoth_cli.app.usage import _ABORT_ERRORS, _USAGE_ERRORS
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import (
     CODE_SKIPPED,
