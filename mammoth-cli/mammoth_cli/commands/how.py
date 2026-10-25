@@ -63,7 +63,7 @@ _NOTHING_HINT = (
 
 @cache
 def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
-    from mammoth_cli.commands.schema import _tokens
+    from mammoth_cli.commands.schema.find import _tokens
 
     recipe = next(r for r in load_recipes() if r["id"] == recipe_id)
     words = " ".join([recipe["id"], recipe["title"], *recipe["goals"], *recipe.get("keywords", [])])
@@ -71,7 +71,7 @@ def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
 
 
 def _term_forms(term: str, compounds: frozenset[str]) -> frozenset[str]:
-    from mammoth_cli.commands.schema import _token_aliases
+    from mammoth_cli.commands.schema.find import _token_aliases
 
     # "refreshes", "joined", "building": the recipe words are the plain forms.
     stems = {term[: -len(end)] for end in ("es", "s", "ed", "ing") if term.endswith(end)}
@@ -91,7 +91,7 @@ def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | N
     Two or more of its words match the recipe, or, in a clause of one or two
     words, one word the recipe itself uses ("join orders", "refresh daily").
     """
-    from mammoth_cli.commands.schema import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
 
     terms = _query_tokens(clause) or tuple(_tokens(clause))
     if not terms:
@@ -141,7 +141,7 @@ def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, 
 
 def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
     """Recipes that fit ``goal``, best first, each with how many goal words it matched."""
-    from mammoth_cli.commands.schema import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
 
     terms = _query_tokens(goal) or tuple(_tokens(goal))
     if not terms:
@@ -244,7 +244,7 @@ def _recipe_steps(recipe: dict[str, Any], context: dict[str, Any]) -> list[dict[
 
 
 def _fallback_steps(goal: str, context: dict[str, Any]) -> list[dict[str, Any]]:
-    from mammoth_cli.commands.schema import find_schemas
+    from mammoth_cli.commands.schema.find import find_schemas
     from mammoth_cli.manifest.loader import command_by_id
 
     found = find_schemas(goal)

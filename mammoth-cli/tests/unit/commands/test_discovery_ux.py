@@ -7,7 +7,8 @@ import json
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
-from mammoth_cli.commands.schema import find_schemas, schema_entries
+from mammoth_cli.commands.schema import schema_entries
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.discovery.purposes import COMMAND_DISCOVERY_PURPOSES
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import load_commands

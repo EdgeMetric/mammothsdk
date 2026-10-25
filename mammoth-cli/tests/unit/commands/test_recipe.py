@@ -12,7 +12,7 @@ from mammoth_cli import discovery
 from mammoth_cli.app import app
 from mammoth_cli.commands import how as how_cmd
 from mammoth_cli.commands import run as run_cmd
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.context import resolver
 from mammoth_cli.errors.envelope import EXIT_PARTIAL
 from mammoth_cli.services import factory as service_factory

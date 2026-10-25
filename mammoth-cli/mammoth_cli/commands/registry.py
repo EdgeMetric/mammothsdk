@@ -209,7 +209,7 @@ def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
 
 
 def _schema_find(invocation: Invocation) -> HandlerResult:
-    from mammoth_cli.commands import schema as schema_cmd
+    from mammoth_cli.commands.schema.find import find_schemas
     from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
     flags = COMMAND_FLAGS["schema.find"]
@@ -224,7 +224,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
     if not query.strip():
         raise _EMPTY_QUERY_ERROR
     if ";" not in query:
-        return schema_cmd.find_schemas(query), {}
+        return find_schemas(query), {}
     # Several goals in one call ("join customers onto orders; remove
     # duplicate rows; build a dashboard"): run the existing single-goal
     # search per goal instead of round-tripping once per goal.
@@ -241,7 +241,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Split the goals across more than one 'schema find' call.",
         )
-    results = [schema_cmd.find_schemas(goal) for goal in goals]
+    results = [find_schemas(goal) for goal in goals]
     if len(results) > 1:
         # Cap inline accepted_fields/agent_example to the top match per goal
         # so a multi-goal envelope stays small even when every goal has

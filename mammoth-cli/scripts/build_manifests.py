@@ -318,7 +318,7 @@ def build_command_record(
     # This is the same recursive, shell-safe example used by schema discovery;
     # keeping it here prevents manifests and generated docs from carrying a
     # syntactically valid but semantically incomplete invocation.
-    from mammoth_cli.commands.schema import runnable_example
+    from mammoth_cli.commands.schema.examples import runnable_example
 
     if not (catalog or {}).get("agent_example"):
         record["agent_example"] = (

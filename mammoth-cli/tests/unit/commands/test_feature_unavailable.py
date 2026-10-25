@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands.capability import capability_entries, find_capabilities
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner

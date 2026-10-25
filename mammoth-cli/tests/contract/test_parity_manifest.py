@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from mammoth_cli.commands.schema import runnable_example
+from mammoth_cli.commands.schema.examples import runnable_example
 from mammoth_cli.manifest.loader import (
     load_commands,
     load_operations,

@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import capability, schema
+from mammoth_cli.commands.schema import find as schema_find
 from mammoth_cli.context import resolver
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.embed import invoke
@@ -53,6 +54,7 @@ def pending_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
     monkeypatch.setattr(loader, "load_commands", lambda: records)
     monkeypatch.setattr(schema, "load_commands", lambda: records)
+    monkeypatch.setattr(schema_find, "load_commands", lambda: records)
 
 
 # --- derivation --------------------------------------------------------------
@@ -172,7 +174,7 @@ def test_schema_get_brief_and_full_carry_the_status(pending_manifest: None) -> N
 def test_schema_list_and_find_rows_carry_the_status(pending_manifest: None) -> None:
     family = schema.schema_index("automation")["commands"]
     assert {row["command_id"]: row["server_status"] for row in family}[PENDING] == "pending"
-    found = schema.find_schemas("automation runs")["matches"]
+    found = schema_find.find_schemas("automation runs")["matches"]
     assert {row["command_id"]: row["server_status"] for row in found}[PENDING] == "pending"
     assert any(e["command_id"] == PENDING for e in schema.schema_entries())
 
@@ -196,7 +198,7 @@ def test_hide_pending_hides_pending_commands_from_discovery(
         assert all(e["command_id"] != PENDING for e in schema.schema_entries())
         family = schema.schema_index("automation")["commands"]
         assert all(row["command_id"] != PENDING for row in family)
-        found = schema.find_schemas("automation runs")
+        found = schema_find.find_schemas("automation runs")
         assert all(row["command_id"] != PENDING for row in found["matches"])
         assert capability.hidden_pending({"server_status": "pending"})
         assert not capability.hidden_pending({"server_status": "served"})

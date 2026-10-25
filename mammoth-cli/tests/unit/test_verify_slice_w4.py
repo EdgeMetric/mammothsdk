@@ -8,7 +8,7 @@ import pytest
 
 from mammoth_cli.commands.project import _scoped_dataset_id
 from mammoth_cli.commands.registry import HANDLERS
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import state as state_mod

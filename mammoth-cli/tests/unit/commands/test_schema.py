@@ -16,7 +16,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from mammoth_cli.commands.schema import brief_schema, find_schemas, get_schema, runnable_example
+from mammoth_cli.commands.schema import brief_schema, get_schema
+from mammoth_cli.commands.schema.examples import runnable_example
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
@@ -817,7 +819,7 @@ def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
         lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
     )
     monkeypatch.setattr(
-        "mammoth_cli.commands.schema.resolve_positionals",
+        "mammoth_cli.commands.schema.examples.resolve_positionals",
         lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
     )
     record = {
@@ -1000,7 +1002,7 @@ def test_open_explore_cards_ranks_the_panel_command_first(query: str) -> None:
 
 
 def _find_ids(query: str) -> list[str]:
-    from mammoth_cli.commands.schema import find_schemas
+    from mammoth_cli.commands.schema.find import find_schemas
 
     return [m["command_id"] for m in find_schemas(query)["matches"]]
 
