@@ -1469,6 +1469,10 @@ class MammothClient:
             400 <= response.status_code < 500 and response.status_code not in {408, 425, 429}
         ):
             response_operation_state = "failed"
+        if is_mutation and _key_in_progress(response):
+            # 409 "first attempt still running" is the server saying the write is under way:
+            # it may still finish, so it is neither failed nor safe to send again.
+            response_operation_state = "outcome_unknown"
 
         raise MammothAPIError(
             f"API request failed: {error_detail}",

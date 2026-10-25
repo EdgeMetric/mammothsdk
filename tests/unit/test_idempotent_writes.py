@@ -132,3 +132,16 @@ async def test_a_caller_key_is_kept(server: _KeyServer) -> None:
     client = _client(server.server_port)
     await client._request("POST", "/things", json={}, headers={"idempotency-key": "mine"})
     assert server.keys == ["mine"]
+
+
+async def test_a_write_still_running_after_the_retries_is_an_unknown_outcome(
+    server: _KeyServer,
+) -> None:
+    client = _client(server.server_port)
+    mark_idempotency_keys_honoured(client.base_url)
+    server.fail_first, server.failure = 99, 409
+    with pytest.raises(MammothAPIError) as excinfo:
+        await client._request("POST", "/things", json={})
+    assert excinfo.value.status_code == 409
+    assert excinfo.value.operation_state == "outcome_unknown"
+    assert len(server.keys) == 3 and len(set(server.keys)) == 1
