@@ -45,6 +45,31 @@ one more major release:
 - A deprecated field is listed under `### Deprecated` in the CHANGELOG with the release
   that removes it.
 
+## Field review for mammoth-cli 3.0
+
+Every envelope field was reviewed for 3.0 (#314). None is renamed or dropped, so the 3.0
+envelope is frozen as `schema_version` 1 rather than a new version: a host written against
+2.x keeps working unchanged, and `embed.invoke(..., schema_version=1)` pins it.
+
+| Field | Decision | Why |
+|---|---|---|
+| `schema_version` | keep | The version a consumer branches on. |
+| `data` | keep | The command's result; its shape is declared by `output_schema` where a command has one. |
+| `meta.command` | keep | The command id, the key for `schema get`. |
+| `meta.profile`, `meta.workspace_id`, `meta.project_id` | keep | Which account and scope the call ran in. |
+| `meta.pagination` | keep | The page a list returned and how to get the next. |
+| `meta.dataset`, `meta.view` | keep | The objects a view command resolved. |
+| `meta.opens` | keep | The objects a write made or changed; undo reads `created: true` from it. |
+| `meta.next_commands` | keep | Suggested follow-ups; advisory, never required. |
+| `meta.update_available` | keep | Optional; absent when there is no newer CLI or the check is off. |
+| `meta.exit` | keep | The process exit code, for hosts that don't see the process. |
+| `meta.run_id` | added | The invocation id that joins the envelope to the run log, the journal and the server's request log. |
+| `error.code`, `error.exit`, `error.retryable` | keep | What a consumer branches on. |
+| `error.message`, `error.hint` | keep | Human text; not part of the contract (see above). |
+| `error.details`, `error.recovery_commands` | keep | Structured context and the commands that fix the error. |
+| `error.authorization_required`, `error.log_ref` | keep | Re-login signal; pointer into the local run log. |
+| `mammoth run` lines and summary | keep, extended | Per-step envelopes stay one JSON line each; `name`, `when`, `for_each` and the summary's `partial_lines` and `run_id` are additions. |
+
 ## Added in mammoth-cli 3.0 (version 1, no break)
 
 - `meta.run_id`: the invocation id. It is the run log's `run_id`, the journal's `inv`

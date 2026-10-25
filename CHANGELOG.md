@@ -33,6 +33,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - CLI: `mammoth recipe list` and `mammoth recipe run ID --input '{"inputs": {...}}'` run a common task as one command: append-rows, upload-dashboard, export-csv and share-dashboard. A recipe's steps run through the `mammoth run` path in one process, printing one envelope per step and a summary (`recipe`, `inputs`, `partial_lines`). A recipe that writes asks once (prompt or `--yes`), and `--dry-run` previews every step. `mammoth how` returns the recipe's `run_command`, and `schema find` lists matching recipes (`recipes`) before single commands. New error codes: `recipe_not_found`, `recipe_input_invalid`.
 - CLI: `mammoth history resume GROUP` goes on with a `mammoth run` or `recipe run` that stopped (a failed line, Ctrl-C, a crash). It reruns from the first line that did not finish, and later lines still read the earlier lines' results (`{{steps...}}`). The run's lines and those results are kept in the journal; a result larger than 256 KB is not kept. If the run stopped while a write was being sent, resume refuses (`resume_outcome_unknown`): check the write, then pass `--input '{"from_line": N}'`. Needs a prompt or `--yes`; `--dry-run` previews.
 
+### Changed (next mammoth-cli)
+
+- CLI: this is mammoth-cli 3.0.0 (#307). It is a major release because the architecture changed: one command path with interceptors, a write journal with undo and resume, steps and recipes in `mammoth run`. The envelope does not break: every field was reviewed, none is renamed or dropped, so `schema_version` stays 1 (the field review is in `mammoth-cli/docs/envelope-compatibility.md`). A host or agent written against 2.x needs no change.
+
 ### Added (next mammoth-mcp-server)
 
 - `undo` takes a change back. With what="trash" it restores views, datasets, dashboards and automations from the project's trash and reports which came back. With what="pipeline" it puts a view's pipeline back as one of its versions had it, and says when the view is still running again. The version list keeps the pipeline as it was just before, so a rollback can be taken back too.
