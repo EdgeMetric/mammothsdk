@@ -1,4 +1,4 @@
-# ADR 0001: mammoth-cli 3.0 architecture
+# ADR 0001: mammoth-cli 2.3 architecture (ver3)
 
 - Status: proposed
 - Date: 2026-10-23
