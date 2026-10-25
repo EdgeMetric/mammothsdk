@@ -958,7 +958,7 @@
     },
     {
       "id": "cleanup-mine",
-      "title": "Delete what you created, safely: one id at a time",
+      "title": "Clean up what you created, safely: trash one id at a time",
       "goals": [
         "delete everything i made",
         "clean up my test data",
@@ -994,30 +994,29 @@
           "key_flags": []
         },
         {
-          "command_id": "dataset.delete",
-          "purpose": "Dry-run the delete: its dependents block lists the views and dashboards that read the dataset.",
-          "example": "mammoth dataset delete DATASET_ID --dry-run",
+          "command_id": "dataset.trash",
+          "purpose": "Dry-run the trash: its dependents block lists the views and dashboards that read the dataset.",
+          "example": "mammoth dataset trash DATASET_ID --dry-run",
           "key_flags": [
             "--dry-run"
           ]
         },
         {
-          "command_id": "dataset.delete",
-          "purpose": "Delete that one id. Never pass several ids to one delete.",
-          "example": "mammoth dataset delete DATASET_ID --yes",
-          "key_flags": [
-            "--yes"
-          ]
+          "command_id": "dataset.trash",
+          "purpose": "Move that one id to the trash, where 'dataset restore' brings it back. Never pass several ids at once.",
+          "example": "mammoth dataset trash DATASET_ID",
+          "key_flags": []
         },
         {
           "command_id": "trash.list",
-          "purpose": "Check what can still be restored.",
+          "purpose": "Check that the dataset is in the trash and can still be restored.",
           "example": "mammoth trash list",
           "key_flags": []
         }
       ],
       "notes": [
-        "Never delete everything you own: 'owned' does not mean 'temporary'. Keep every deliverable the user asked for."
+        "Never delete everything you own: 'owned' does not mean 'temporary'. Keep every deliverable the user asked for.",
+        "The recipe stops short of a permanent delete. The trash and the dependents steps are skipped, and shown as skipped, when the name read back is not the name you gave. Delete for good by hand with 'dataset delete DATASET_ID --dry-run', then '--yes', after the user agrees."
       ],
       "inputs": {
         "dataset_id": {
@@ -1025,6 +1024,12 @@
           "required": true,
           "example": 1,
           "help": "The one dataset you made and want gone."
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "example": "Test upload",
+          "help": "The exact name you gave that dataset; nothing is trashed if the dataset has another name."
         }
       },
       "run": [
@@ -1036,8 +1041,30 @@
           ]
         },
         {
-          "name": "delete",
-          "cmd": "dataset delete",
+          "name": "impact",
+          "cmd": "dataset trash",
+          "when": {
+            "eq": [
+              "{{steps.dataset.data.dataset.name}}",
+              "{{inputs.name}}"
+            ]
+          },
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "flags": {
+            "dry-run": true
+          }
+        },
+        {
+          "name": "trashed",
+          "cmd": "dataset trash",
+          "when": {
+            "eq": [
+              "{{steps.dataset.data.dataset.name}}",
+              "{{inputs.name}}"
+            ]
+          },
           "args": [
             "{{inputs.dataset_id}}"
           ]
@@ -2487,7 +2514,7 @@
           "type": "any",
           "required": true,
           "example": "Active",
-          "help": "The value to compare with (text or number)."
+          "help": "The value to compare with: text or a number, or a list for the IN_LIST and IN_RANGE operators."
         }
       },
       "run": [

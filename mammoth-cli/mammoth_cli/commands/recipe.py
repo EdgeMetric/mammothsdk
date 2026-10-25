@@ -8,7 +8,8 @@ prose steps (what ``mammoth how`` prints) and its run lines live in the same rec
 test checks that each line runs a command the steps name, so the two cannot drift.
 
 ``recipe run`` asks once (prompt or ``--yes``) before a recipe that writes, then confirms
-each line that needs it. ``--dry-run`` previews every line. It stops at the first failed
+each line that needs it. A recipe with a destructive line needs ``--yes`` (no prompt), and
+only that ``--yes`` confirms the destructive line. ``--dry-run`` previews every line. It stops at the first failed
 line, but not at a partial one (exit 3: the step made its object, with a warning); the run
 then exits 3 and lists it in ``partial_lines``. Output is the ``mammoth run`` stream: one
 envelope per line, then a summary naming the recipe.
@@ -25,7 +26,11 @@ from mammoth_cli.discovery import line_record, run_command, runnable_recipes, wr
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
+from mammoth_cli.runtime.confirm import (
+    POLICY_PROMPT_OR_YES,
+    POLICY_YES_ALWAYS,
+    enforce_confirmation,
+)
 from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -38,7 +43,8 @@ _INPUT_TYPES: dict[str, tuple[type, ...]] = {
     "integer": (int,),
     "array": (list,),
     "object": (dict,),
-    "any": (str, int, float),
+    # Any JSON value but null: text, a number, a boolean, a list (IN_LIST) or an object.
+    "any": (str, int, float, bool, list, dict),
 }
 
 
@@ -64,13 +70,19 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
     recipe = _recipe(invocation.positionals.get("id"))
     inputs = _inputs(recipe, invocation.bound_input().get("inputs"))
     if writes(recipe) and not invocation.dry_run:
+        destructive = _destructive_lines(recipe)
+        action = f"run the {recipe['id']} recipe ({len(recipe['run'])} steps)"
+        if destructive:
+            action += f", including destructive steps: {', '.join(destructive)}"
         enforce_confirmation(
             invocation,
-            policy=POLICY_PROMPT_OR_YES,
-            action=f"run the {recipe['id']} recipe ({len(recipe['run'])} steps)",
+            # A destructive step is never confirmed by a prompt the caller may click through:
+            # the caller names it by passing --yes.
+            policy=POLICY_YES_ALWAYS if destructive else POLICY_PROMPT_OR_YES,
+            action=action,
         )
     numbered = [
-        (number, json.dumps(_confirmed(line), ensure_ascii=False))
+        (number, json.dumps(_confirmed(line, invocation.yes), ensure_ascii=False))
         for number, line in enumerate(recipe["run"], start=1)
     ]
     summary = run_cmd.run_lines(
@@ -90,12 +102,33 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
     return Outcome(streamed=True, exit_status=run_exit)
 
 
-def _confirmed(line: dict[str, Any]) -> dict[str, Any]:
+def _destructive_lines(recipe: dict[str, Any]) -> list[str]:
+    """The commands of the recipe's destructive lines that really run (not a ``--dry-run``)."""
+    return [
+        line["cmd"]
+        for line in recipe["run"]
+        if line_record(line).get("mutation_class") == "destructive"
+        and not line.get("flags", {}).get("dry-run")
+    ]
+
+
+def _confirmed(line: dict[str, Any], explicit_yes: bool) -> dict[str, Any]:
     """The line with ``yes`` set when its command asks for confirmation.
 
-    ``recipe run`` has already asked once for the whole recipe.
+    ``recipe run`` has already asked once for the whole recipe. A destructive line gets
+    ``yes`` only from a caller who passed ``--yes`` themselves, never from the prompt.
+
+    Args:
+        line: One of the recipe's ``run`` lines.
+        explicit_yes: Whether the caller passed ``--yes`` to ``recipe run``.
+
+    Returns:
+        The line, with ``flags.yes`` set where it applies.
     """
-    if line_record(line).get("confirmation", "none") == "none":
+    record = line_record(line)
+    if record.get("confirmation", "none") == "none":
+        return line
+    if record.get("mutation_class") == "destructive" and not explicit_yes:
         return line
     return {**line, "flags": {**line.get("flags", {}), "yes": True}}
 
@@ -142,7 +175,8 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
             continue
         value = given[name]
         allowed = _INPUT_TYPES[spec["type"]]
-        if isinstance(value, bool) or not isinstance(value, allowed):
+        # A boolean is an int in Python, but only an 'any' input means it as a value.
+        if not isinstance(value, allowed) or (isinstance(value, bool) and spec["type"] != "any"):
             raise _input_error(f"'{name}' must be {spec['type']}.", usage, field=name)
         values[name] = value
     return values
