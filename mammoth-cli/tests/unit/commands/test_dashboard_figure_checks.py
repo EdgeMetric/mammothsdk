@@ -277,7 +277,9 @@ def test_assess_twb_surfaces_not_a_workbook(
     fake_service.responses[_ASSESS_TWB] = {"job_id": "j2"}
     fake_service.job_result = {"rejected": {"reason": "not_a_workbook"}, "source": {}}
     with pytest.raises(CliError) as caught:
-        dashboard_cmd.dashboard_assess_twb(_inv("dashboard.assess-twb", extra_args=[str(junk)]))
+        dashboard_workbook.dashboard_assess_twb(
+            _inv("dashboard.assess-twb", extra_args=[str(junk)])
+        )
     assert caught.value.code == "not_a_workbook"
     assert fake_service.wait_log == [{"job_id": "j2"}]
 

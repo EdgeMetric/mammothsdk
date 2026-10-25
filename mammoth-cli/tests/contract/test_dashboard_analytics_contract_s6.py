@@ -63,7 +63,7 @@ def fake_family_service(
     def context(_invocation: Invocation) -> _ServiceContext:
         return _ServiceContext()
 
-    for module in (dashboard_cmd, report_cmd, template_cmd):
+    for module in (dashboard_cmd, dashboard_generated, report_cmd, template_cmd):
         monkeypatch.setattr(module, "open_service", context)
     return service
 
