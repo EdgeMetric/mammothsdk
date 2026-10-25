@@ -45,6 +45,7 @@ CODE_JOURNAL_OFF = "journal_off"
 CODE_NOTHING_TO_RESUME = "nothing_to_resume"
 CODE_RESUME_OUTCOME_UNKNOWN = "resume_outcome_unknown"
 CODE_RESUME_NEEDS_VALUE = "resume_secret_needed"
+CODE_RESUME_RESULT_TOO_LARGE = "resume_result_too_large"
 CODE_UNDO_IN_PROGRESS = "undo_in_progress"
 CODE_UNDO_NEEDS_TOKEN = "undo_needs_token"  # noqa: S105 -- an error code, not a secret
 CODE_VIEW_CHANGED = "view_changed_since_edit"
@@ -355,6 +356,8 @@ def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
     from_line = invocation.bound_input().get("from_line")
     remaining = _remaining(plan, from_line, store)
     _refuse_secrets(plan, remaining)
+    _refuse_omitted(plan, remaining)
+    progress = _progress(plan, remaining) if from_line is None else None
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
@@ -378,7 +381,7 @@ def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
         resumed=True,
         # With 'from_line' the caller starts the line over; items done before stay done only
         # when the resume picks the line up by itself.
-        progress=plan.items if from_line is None else None,
+        progress=progress,
     )
     run_exit = summary["exit"]
     data = {"resumed": target, "from_line": remaining[0][0], **summary}
@@ -454,6 +457,96 @@ def _refuse_secrets(plan: journal.Plan, remaining: list[tuple[int, str]]) -> Non
                 ),
                 details={"line": number, "references": needed},
             )
+
+
+def _refuse_omitted(plan: journal.Plan, remaining: list[tuple[int, str]]) -> None:
+    """Refuse a resume whose line reads the result of a line the history could not keep.
+
+    A result over the journal's size limit is not stored, so a line that reads it would
+    read nothing. The line that made it can be run again from the history.
+
+    Args:
+        plan: The run.
+        remaining: The lines the resume runs.
+
+    Raises:
+        CliError: A remaining line reads a named result that was too large to keep.
+    """
+    made_again = {name for _, text in remaining if (name := journal.line_name(text))}
+    for number, text in remaining:
+        for name in sorted(set(plan.omitted) - made_again):
+            if not re.search(r"\{\{\s*steps\." + re.escape(name) + r"(?![A-Za-z0-9_-])", text):
+                continue
+            maker = next((n for n, line in plan.lines if journal.line_name(line) == name), None)
+            hint = (
+                f"Resume with --input '{{\"from_line\": {maker}}}' to run the line that made it"
+                " again first."
+                if maker is not None
+                else "Run the line that made it again, then resume after it."
+            )
+            raise CliError(
+                code=CODE_RESUME_RESULT_TOO_LARGE,
+                message=(
+                    f"Line {number} reads steps.{name}, whose result was too large for the "
+                    "history to keep."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=hint,
+                details={"line": number, "step": name, "made_by": maker},
+            )
+
+
+def _progress(plan: journal.Plan, remaining: list[tuple[int, str]]) -> dict[int, dict[int, Any]]:
+    """The finished items of the ``for_each`` lines a resume picks up, with their results.
+
+    An item whose result was too large to keep is not restorable. A read is run again; a
+    write is not, because running it again would repeat it.
+
+    Args:
+        plan: The run.
+        remaining: The lines the resume runs.
+
+    Returns:
+        The items to treat as done, by line and index.
+
+    Raises:
+        CliError: An item of a write finished, but its result was not kept.
+    """
+    progress = {number: dict(items) for number, items in plan.items.items()}
+    texts = dict(remaining)
+    for number, indexes in sorted(plan.omitted_items.items()):
+        if number not in texts:
+            continue
+        if not _is_read(texts[number]):
+            raise CliError(
+                code=CODE_RESUME_RESULT_TOO_LARGE,
+                message=(
+                    f"Line {number} ran for some items whose results were too large for the "
+                    "history to keep, so it cannot be picked up where it stopped without "
+                    "repeating them."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=(
+                    f"Check what items {sorted(indexes)} did, then resume with --input "
+                    f"'{{\"from_line\": {number + 1}}}' for the line after it."
+                ),
+                details={"line": number, "items": sorted(indexes)},
+            )
+        for index in indexes:
+            progress.get(number, {}).pop(index, None)
+    return progress
+
+
+def _is_read(text: str) -> bool:
+    """Whether a journaled run line runs a command that only reads."""
+    line = _loads(text)
+    if not isinstance(line, dict) or not isinstance(line.get("cmd"), str):
+        return False
+    try:
+        record = command_by_id(run_cmd.resolve_command_id(line["cmd"].split())) or {}
+    except CliError:
+        return False
+    return record.get("mutation_class") == "read"
 
 
 def _loads(text: str) -> Any:

@@ -856,6 +856,9 @@ class Plan:
         omitted: The named lines whose result was too large to keep.
         items: For a ``for_each`` line that did not finish, the data of each item that
             did, by item index.
+        omitted_items: For a ``for_each`` line that did not finish, the indexes of the items
+            that did finish but whose result was too large to keep (their ``items`` data is
+            None, which is not their result).
     """
 
     group: str
@@ -870,6 +873,7 @@ class Plan:
     line_steps: dict[int, dict[str, Any]] = field(default_factory=dict)
     omitted: list[str] = field(default_factory=list)
     items: dict[int, dict[int, Any]] = field(default_factory=dict)
+    omitted_items: dict[int, set[int]] = field(default_factory=dict)
 
     def steps_without(self, rerun: Iterable[int]) -> dict[str, Any]:
         """The named results of the finished lines that are not about to run again.
@@ -888,14 +892,39 @@ class Plan:
         return restored
 
     def redacted_references(self) -> set[str]:
-        """The references (``steps.NAME``, ``inputs.KEY``) whose journaled value was redacted."""
+        """The references (``steps.NAME``, ``inputs.KEY``) whose journaled value was redacted.
+
+        A ``for_each`` line that did not finish counts too: the items it did finish become
+        its ``steps.NAME`` once the resume completes it.
+        """
         found = {f"steps.{name}" for name, value in self.steps.items() if has_redacted(value)}
+        names = {number: line_name(text) for number, text in self.lines}
+        for number, done in self.items.items():
+            if names.get(number) and any(has_redacted(data) for data in done.values()):
+                found.add(f"steps.{names[number]}")
         for key, value in self.scope.items():
             if isinstance(value, Mapping):
                 found |= {f"{key}.{name}" for name, item in value.items() if has_redacted(item)}
             elif has_redacted(value):
                 found.add(key)
         return found
+
+
+def line_name(text: str) -> str | None:
+    """The ``name`` of a journaled run line, or None when it has none.
+
+    Args:
+        text: The line's JSON text.
+
+    Returns:
+        The name, or None for an unnamed line or text that is not a line.
+    """
+    try:
+        line = json.loads(text)
+    except ValueError:
+        return None
+    name = line.get("name") if isinstance(line, dict) else None
+    return name if isinstance(name, str) else None
 
 
 def has_redacted(value: Any) -> bool:
@@ -1030,19 +1059,21 @@ def record_item(number: int, index: int, exit_status: int, data: Any) -> None:
     if store is None:
         return
     kept = _without_secrets(data)
-    if len(json.dumps(kept, default=str)) > MAX_STEP_BYTES:
+    omitted = len(json.dumps(kept, default=str)) > MAX_STEP_BYTES
+    if omitted:
         kept = None
-    store.append(
-        {
-            "event": "item",
-            "group": group,
-            "ts": _now(),
-            "line": number,
-            "index": index,
-            "exit": exit_status,
-            "data": kept,
-        }
-    )
+    record: dict[str, Any] = {
+        "event": "item",
+        "group": group,
+        "ts": _now(),
+        "line": number,
+        "index": index,
+        "exit": exit_status,
+        "data": kept,
+    }
+    if omitted:
+        record["omitted"] = True
+    store.append(record)
 
 
 def plan_for(store: JournalStore, group: str) -> Plan | None:
@@ -1084,12 +1115,16 @@ def plan_for(store: JournalStore, group: str) -> Plan | None:
         elif event == "step":
             _fold_step(plan, record)
         elif event == "item" and record.get("exit") == 0:
-            line_items = plan.items.setdefault(int(record.get("line") or 0), {})
-            line_items[int(record.get("index") or 0)] = record.get("data")
+            number = int(record.get("line") or 0)
+            index = int(record.get("index") or 0)
+            plan.items.setdefault(number, {})[index] = record.get("data")
+            if record.get("omitted"):
+                plan.omitted_items.setdefault(number, set()).add(index)
     if plan is not None:
         plan.steps = plan.steps_without(())
         for number in plan.finished:
             plan.items.pop(number, None)
+            plan.omitted_items.pop(number, None)
     return plan
 
 
