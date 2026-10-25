@@ -45,11 +45,11 @@ one more major release:
 - A deprecated field is listed under `### Deprecated` in the CHANGELOG with the release
   that removes it.
 
-## Field review for mammoth-cli 3.0
+## Field review for mammoth-cli 2.3 (ver3)
 
-Every envelope field was reviewed for 3.0 (#314). None is renamed or dropped, so the 3.0
-envelope is frozen as `schema_version` 1 rather than a new version: a host written against
-2.x keeps working unchanged, and `embed.invoke(..., schema_version=1)` pins it.
+Every envelope field was reviewed for the ver3 work (#314). None is renamed or dropped, so
+the envelope is frozen as `schema_version` 1 rather than a new version, and the release is
+a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `embed.invoke(..., schema_version=1)` pins it.
 
 | Field | Decision | Why |
 |---|---|---|
@@ -70,7 +70,7 @@ envelope is frozen as `schema_version` 1 rather than a new version: a host writt
 | `error.authorization_required`, `error.log_ref` | keep | Re-login signal; pointer into the local run log. |
 | `mammoth run` lines and summary | keep, extended | Per-step envelopes stay one JSON line each; `name`, `when`, `for_each` and the summary's `partial_lines` and `run_id` are additions. |
 
-## Added in mammoth-cli 3.0 (version 1, no break)
+## Added in mammoth-cli 2.3 (version 1, no break)
 
 - `meta.run_id`: the invocation id. It is the run log's `run_id`, the journal's `inv`
   (`mammoth history show RUN_ID`) and the `inv` in the request's User-Agent.

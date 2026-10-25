@@ -35,7 +35,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed (next mammoth-cli)
 
-- CLI: this is mammoth-cli 3.0.0 (#307). It is a major release because the architecture changed: one command path with interceptors, a write journal with undo and resume, steps and recipes in `mammoth run`. The envelope does not break: every field was reviewed, none is renamed or dropped, so `schema_version` stays 1 (the field review is in `mammoth-cli/docs/envelope-compatibility.md`). A host or agent written against 2.x needs no change.
+- CLI: this is mammoth-cli 2.3.0, the ver3 architecture (#307): one command path with interceptors, a write journal with undo and resume, steps and recipes in `mammoth run`. Nothing breaks: no command, flag or input was removed or changed, and every envelope field was reviewed and kept, so `schema_version` stays 1 (the field review is in `mammoth-cli/docs/envelope-compatibility.md`). A host or agent written against 2.2 needs no change.
 
 ### Added (next mammoth-mcp-server)
 
