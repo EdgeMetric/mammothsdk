@@ -36,7 +36,7 @@ from typer.core import TyperCommand, TyperGroup
 from mammoth_cli import __version__
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands.registry import HANDLERS
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_implemented_error
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.output.policy import (
     COLOR_MODES,
@@ -50,7 +50,6 @@ from mammoth_cli.output.policy import (
 from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
 
 if TYPE_CHECKING:
-    from mammoth_cli.commands.registry import Handler
     from mammoth_cli.runtime.invocation import Invocation
 
 OUTPUT_MODES = VALID_OUTPUTS
@@ -1204,17 +1203,9 @@ def _execute(invocation: Invocation) -> None:
     # must inspect the same account that submitted/observed a job, rather than
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
-    from mammoth_cli.runtime import executor, validate
-    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
-    from mammoth_cli.runtime.confirm import refuse_mismatched_confirm
-    from mammoth_cli.runtime.dataset_health import with_dataset_health
-    from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
-    from mammoth_cli.runtime.locked_files import with_locked_files
-    from mammoth_cli.runtime.new_data import with_new_data_path
-    from mammoth_cli.runtime.next_commands import with_next_commands
-    from mammoth_cli.runtime.opens import with_opens
+    from mammoth_cli.runtime import executor, leaf
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
     from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
-    from mammoth_cli.runtime.strict import validate_extra_args
 
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
@@ -1231,96 +1222,15 @@ def _execute(invocation: Invocation) -> None:
             reveal_secrets=True,
         )
 
-    def producer() -> tuple[Any, dict[str, Any]]:
-        refuse_hand_crafted_write(invocation.command_id)
-        validate.validate_invocation(invocation)
-        validate_extra_args(invocation.command_id, invocation.extra_args)
-        validate.validate_positional_ids(invocation.command_id, invocation.extra_args)
-        refuse_mismatched_confirm(invocation)
-        # Admit structured input before resolving a handler or opening a
-        # service.  Handlers retain ``load_input`` for compatibility, but it
-        # now returns this invocation-local prepared value.
-        invocation.prepare_input()
-        # S2 API-backed families use the same resolved contract for the final
-        # input-to-SDK binding.  Run that boundary before dispatch even for a
-        # zero-input/positional-only handler so every migrated route has one
-        # admission and binding path and a binding defect cannot become a
-        # late network-side error.
-        from mammoth_cli.services.command_contract import S2_COMMANDS
-
-        if invocation.command_id in S2_COMMANDS:
-            invocation.bound_input()
-        handler = HANDLERS.get(invocation.command_id)
-        if handler is None:
-            record = command_by_id(invocation.command_id)
-            sdk_symbol = record.get("sdk_symbol", "") if record else ""
-            raise not_implemented_error(invocation.command_id, sdk_symbol)
-        if invocation.dry_run:
-            return _dry_run(handler, invocation)
-        data, meta = handler(invocation)
-        checked = with_locked_files(with_dataset_health(_apply_verify(invocation, data)))
-        meta = with_next_commands(invocation, checked, with_opens(invocation, checked, meta))
-        return with_compact(invocation, with_new_data_path(checked)), meta
-
     executor.run(
         invocation.command_id,
         invocation.output,
-        producer,
+        leaf.producer(invocation),
         agent_mode=invocation.no_input,
         invocation=invocation,
         profile=invocation.profile,
+        interceptors=leaf.LEAF_INTERCEPTORS,
     )
-
-
-def _apply_verify(invocation: Invocation, data: Any) -> Any:
-    """Add the automatic write read-back to a real, mutating, API-backed result.
-
-    A read command and a command with no reviewed ``sdk_symbol`` (a local or
-    not-yet-backed command) are returned unchanged; ``--dry-run`` never
-    reaches this at all, since it returns before the handler's real call.
-
-    Two independent read-backs are layered on top of the raw result: ``verify``
-    (status/row-count signals derived from the write's own response) and
-    ``state`` (a fresh read of what the write actually produced, per the
-    command's manifest ``readback``/``no_readback`` declaration -- see
-    :mod:`mammoth_cli.runtime.state`).
-    """
-    from mammoth_cli.runtime.state import with_state
-    from mammoth_cli.runtime.verify import with_verify
-
-    record = command_by_id(invocation.command_id) or {}
-    if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
-        return data
-    return with_state(invocation, with_verify(data, invocation))
-
-
-def _dry_run(handler: Handler, invocation: Invocation) -> tuple[Any, dict[str, Any]]:
-    """Run ``handler`` until its request would leave; report that request.
-
-    Local commands never open a service, so a dry run of one is the real run.
-    An API-backed handler that returns normally under ``--dry-run`` made no
-    gated SDK call at all (a pure read path); its result is returned as is.
-    """
-    from mammoth_cli.runtime.dryrun import DryRunStop
-    from mammoth_cli.runtime.dryrun_targets import resolve_dependents, resolve_targets
-    from mammoth_cli.runtime.session import open_service, resolved_project
-
-    try:
-        return handler(invocation)
-    except DryRunStop as stop:
-        with open_service(invocation) as (service, _auth):
-            would_call = stop.record["would_call"]
-            targets = resolve_targets(service, invocation.command_id, would_call)
-            dependents = resolve_dependents(
-                service, invocation.command_id, would_call, resolved_project(invocation)
-            )
-        impact = invocation.predicted_impact
-        report = {**stop.record, "targets": targets}
-        if dependents is not None:
-            report["dependents"] = dependents
-        if impact is not None:
-            report["predicted_impact"] = impact
-        return report, {"profile": invocation.profile, "project_id": resolved_project(invocation)}
 
 
 #: One-line help for commands that share the generic ``generated_dashboard`` handler, whose

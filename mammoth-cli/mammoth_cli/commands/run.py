@@ -67,7 +67,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import bindings, journal, linecapture
-from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
+from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.shared import forget_reads, remembering_auth
@@ -530,7 +530,7 @@ def command_flags(command_id: str) -> frozenset[str]:
     return COMMAND_FLAGS.get(command_id, frozenset())
 
 
-def run(invocation: Invocation) -> HandlerResult:
+def run(invocation: Invocation) -> HandlerResult | Outcome:
     """Run many commands in one process: JSON Lines of cmd, args, input and flags."""
     _refuse_global_confirmation(invocation)
     # ``--continue`` is the command's own flag; wherever it came in, it is not the FILE.
@@ -561,7 +561,7 @@ def run(invocation: Invocation) -> HandlerResult:
     run_exit = summary["exit"]
     meta = Meta(command="run", profile=invocation.profile, exit=run_exit, run_id=run_id())
     write_envelope(Result(data=summary, meta=meta).to_envelope())
-    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+    return Outcome(streamed=True, exit_status=run_exit)
 
 
 def run_lines(

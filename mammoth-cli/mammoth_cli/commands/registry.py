@@ -24,10 +24,13 @@ from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime import runlog
 
 if TYPE_CHECKING:
+    from mammoth_cli.runtime.dispatch import Outcome
     from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
-type Handler = Callable[[Invocation], HandlerResult]
+#: A handler returns ``(data, meta_extra)``, or an ``Outcome`` when it names its own exit
+#: status or printed its own envelopes.
+type Handler = Callable[[Invocation], HandlerResult | Outcome]
 
 
 def _require_arg(invocation: Invocation, name: str) -> str:

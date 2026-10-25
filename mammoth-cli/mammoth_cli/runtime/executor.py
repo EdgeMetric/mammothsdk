@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 import traceback
+from collections.abc import Sequence
 
 import typer
 
@@ -45,6 +46,7 @@ def run(
     agent_mode: bool = False,
     profile: str | None = None,
     invocation: Invocation | None = None,
+    interceptors: Sequence[Interceptor] = TERMINAL_INTERCEPTORS,
 ) -> None:
     """Run one command's producer and emit its envelope.
 
@@ -65,6 +67,9 @@ def run(
         agent_mode: Whether the invocation explicitly disabled interaction
             (``--no-input``). This is used only when an invalid output mode
             needs an error renderer before a concrete machine mode exists.
+        profile: The active profile name, if any.
+        invocation: The parsed call; it opens the run log.
+        interceptors: The steps around the handler (a generic command adds its own).
 
     Raises:
         typer.Exit: Always, when ``producer`` raises a :class:`CliError`, with
@@ -79,6 +84,7 @@ def run(
             agent_mode=agent_mode,
             profile=profile,
             invocation=invocation,
+            interceptors=interceptors,
         )
 
 
@@ -90,6 +96,7 @@ def _run(
     agent_mode: bool = False,
     profile: str | None = None,
     invocation: Invocation | None = None,
+    interceptors: Sequence[Interceptor] = TERMINAL_INTERCEPTORS,
 ) -> None:
     """:func:`run` inside the invocation's trace."""
     # An invalid mode cannot itself identify a renderer. In redirected/non-TTY
@@ -103,7 +110,7 @@ def _run(
     )
     run_log = _open_run_log(command_id, invocation)
     request = Request(command_id, output, producer, invocation=invocation, profile=profile)
-    outcome = dispatch(request, TERMINAL_INTERCEPTORS)
+    outcome = dispatch(request, interceptors)
     # A ``mammoth run`` line leaves the update notice and the skill refresh to the run itself.
     in_line = linecapture.active()
     if outcome.error is None:

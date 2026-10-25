@@ -8,10 +8,9 @@ import pytest
 import typer
 from mammoth.exceptions import MammothJobTimeoutError
 
-from mammoth_cli.errors.envelope import EXIT_API, EXIT_AUTH, CliError
+from mammoth_cli.errors.envelope import EXIT_API, CliError
 from mammoth_cli.runtime.dispatch import (
     INTERCEPTORS,
-    STREAMED_META,
     Next,
     Outcome,
     Request,
@@ -86,15 +85,9 @@ def test_a_failed_read_back_sets_the_exit_status() -> None:
     assert outcome.ok and outcome.exit_status == EXIT_API
 
 
-def test_a_failed_doctor_report_exits_as_auth() -> None:
-    outcome = dispatch(_request(lambda: ({"ok": False}, {}), command_id="doctor"))
-    assert outcome.ok and outcome.exit_status == EXIT_AUTH
-
-
-def test_a_streamed_result_names_its_own_exit_status() -> None:
-    outcome = dispatch(_request(lambda: (None, {STREAMED_META: True, "exit_status": 3})))
-    assert outcome.streamed and outcome.exit_status == 3
-    assert outcome.meta == {}
+def test_a_handler_may_return_its_own_outcome() -> None:
+    returned = Outcome(streamed=True, exit_status=3)
+    assert dispatch(_request(lambda: returned)) is returned
 
 
 def test_return_running_hands_back_the_handle() -> None:

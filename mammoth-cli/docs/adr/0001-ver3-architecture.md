@@ -219,10 +219,18 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    interceptors for output, refusals, dry-run gate and shared services. `executor.run` is the
    terminal adapter: it calls `dispatch`, then renders, logs and exits. The `producer` built by
    `app._execute` is the legacy-handler adapter, so no handler changed. Behaviour is identical.
-2. **Interceptors:** move the steps out of `executor.run` in the order above, one PR per group:
-   refusals, dry run, policy, verify, lifecycle.
-3. **run and embed adapters:** take the `Envelope` from `dispatch`. Delete `linecapture`'s stdout
-   redirect and embed's stray-output guard where nothing still prints.
+2. **Interceptors** (done): a generic command runs through `runtime/leaf.py`'s chain:
+   output check, refusals, dry-run gate, shared services, `admit_input` (argument, positional id,
+   `--confirm` and `--input` checks, before anything is journaled), the journal, and
+   `normalize_result` (the `verify` and `state` read-backs, health notes, `meta.opens`, next
+   commands, compaction, and the exit status of a write whose read-back failed). `verify`'s
+   `settled`/`pending`/`failed` outcome is the lifecycle translator. A command's confirmation
+   prompt stays in its handler, which is the one place that knows what the prompt names; the
+   generic `--confirm` check is in `admit_input`.
+3. **run and embed adapters** (done as far as it goes): both receive the envelope value through a
+   context variable (`linecapture`, `embedded`) and never parse printed text. `mammoth run` keeps
+   its stdout redirect because Click prints help, version and usage errors itself, and embed keeps
+   its stray-output guard because a handler or library can still print.
 4. **Journal** (#310, port done): `runtime/journal.py` adds the `JournalStore` port and its file
    adapter, written by the `journal_writes` interceptor: a `begin` record before the handler (the
    outbox: a crash leaves a `begin` with no `end`, shown as status `unknown`), an `end` record with
@@ -258,8 +266,10 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
 7. **Idempotency** (done in the CLI): writes send `Idempotency-Key: <inv>`, and a retry resends
    the same key only where the server honours it; elsewhere the CLI reconciles before it retries.
    The backend middleware is mvc-service PR #7156, checked on a dev server.
-8. **Delete the old path:** `executor.run`'s inline steps and the `STREAMED_META` and
-   `EXIT_STATUS_META` meta keys.
+8. **Delete the old path** (done): the producer `app._execute` built is gone, and so are the
+   `STREAMED_META` and `EXIT_STATUS_META` meta keys and `dispatch`'s special case for `doctor`.
+   A handler that names its own exit status, or printed its own envelopes, returns an `Outcome`
+   (`run`, `recipe run`, `history undo`/`resume`, `doctor`).
 9. **Module size** (#312, started): `commands/view_ops.py` (2,775 lines) is now a package: the
    shared write path in `__init__`, and `crud`, `draft`, `transforms` and `batch` for the
    handlers. The `schema find` purpose tables moved to `discovery/purposes.py`. Still over 1,500

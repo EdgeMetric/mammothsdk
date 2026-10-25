@@ -27,7 +27,7 @@ from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import journal, trace
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
-from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
+from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -94,7 +94,7 @@ def history_show(invocation: Invocation) -> HandlerResult:
     return {"id": target, "entries": [entry.view() for entry in _matching(target)]}, {}
 
 
-def history_undo(invocation: Invocation) -> HandlerResult:
+def history_undo(invocation: Invocation) -> HandlerResult | Outcome:
     """Undo one write (by inv) or a whole run (by group), newest first. Prompt or '--yes'."""
     target = _target(invocation)
     found = _matching(target)
@@ -135,7 +135,7 @@ def history_undo(invocation: Invocation) -> HandlerResult:
             result["not_undone"] = remaining
             # Some writes may have been undone already: partial, or failed when none was.
             result["outcome"] = "partial" if position else "failed"
-            return result, {EXIT_STATUS_META: EXIT_PARTIAL if position else EXIT_API}
+            return Outcome(data=result, exit_status=EXIT_PARTIAL if position else EXIT_API)
         if not invocation.dry_run:
             journal.mark_undone(store, entry.inv, by)
     result["outcome"] = "planned" if invocation.dry_run else "undone"
@@ -205,7 +205,7 @@ def _run(
     return run_cmd.execute_line(spec.argv, spec.cmd)
 
 
-def history_resume(invocation: Invocation) -> HandlerResult:
+def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
     """Go on with a stopped run (by its group) from its first unfinished line. Prompt or '--yes'."""
     target = _target(invocation)
     store = _store()
@@ -242,7 +242,7 @@ def history_resume(invocation: Invocation) -> HandlerResult:
         command="history resume", profile=invocation.profile, exit=run_exit, run_id=run_id()
     )
     run_cmd.write_envelope(Result(data=data, meta=meta).to_envelope())
-    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+    return Outcome(streamed=True, exit_status=run_exit)
 
 
 def _remaining(

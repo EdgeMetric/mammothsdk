@@ -10,7 +10,7 @@ from mammoth.exceptions import MammothAPIError
 from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import doctor as doctor_cmd
 from mammoth_cli.context import credentials, oauth, profiles
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.testing import FakeMammothService
@@ -24,8 +24,11 @@ def _inv(command_id: str, **overrides: object) -> Invocation:
 def test_doctor_reports_no_credentials_when_unauthenticated(
     isolated_cli_config: Path,
 ) -> None:
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+    data = outcome.data
     assert data["ok"] is False
+    # The report prints either way; a failed one exits as an auth failure.
+    assert outcome.exit_status == EXIT_AUTH
     names = {c["name"]: c["ok"] for c in data["checks"]}
     assert names["credentials"] is False
     assert names["connection"] is False
@@ -36,7 +39,7 @@ def test_doctor_reports_no_credentials_when_unauthenticated(
 def test_doctor_missing_explicit_profile_scopes_login_recovery(
     isolated_cli_config: Path,
 ) -> None:
-    data, _meta = doctor_cmd.doctor(_inv("doctor", profile="named"))
+    data = doctor_cmd.doctor(_inv("doctor", profile="named")).data
     assert data["profile"] == "named"
     assert data["recommendations"] == ["mammoth auth login --profile named"]
 
@@ -68,7 +71,7 @@ def test_doctor_recommends_login_when_the_stored_login_expired(
 ) -> None:
     _store_oauth(profile)
     monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
-    data, _meta = doctor_cmd.doctor(_inv("doctor", profile=profile))
+    data = doctor_cmd.doctor(_inv("doctor", profile=profile)).data
     names = {c["name"]: c for c in data["checks"]}
     assert names["endpoint"]["ok"] is False
     assert names["endpoint"]["detail"] == "login_expired"
@@ -80,7 +83,7 @@ def test_doctor_names_an_oauth_sign_in_not_an_api_token(
 ) -> None:
     _store_oauth("default")
     monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     assert _credential_detail(data) == "oauth sign-in present"
 
 
@@ -90,7 +93,7 @@ def test_doctor_names_an_api_token_for_a_token_login(
     profiles.save_profile(profiles.ProfileRecord(name="default", workspace_id=4))
     credentials.store_credentials("default", storage="file", api_token="mm_x")
     monkeypatch.setattr(doctor_cmd, "resolve_auth", _expired_login)
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     assert _credential_detail(data) == "api token present"
 
 
@@ -98,7 +101,7 @@ def test_doctor_connection_ok_with_fake_service(
     isolated_cli_config: Path, fake_service: object
 ) -> None:
     login_default_profile()
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     names = {c["name"]: c["ok"] for c in data["checks"]}
     assert names["endpoint"] is True
     assert names["connection"] is True
@@ -144,7 +147,7 @@ def test_doctor_connection_diagnostics_are_typed_and_secret_safe(
     assert hasattr(service, "check_connection")
     service.check_connection = lambda: (_ for _ in ()).throw(map_sdk_exception(error))  # type: ignore[attr-defined]
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     connection = next(check for check in data["checks"] if check["name"] == "connection")
     assert connection["error_code"] == "retryable_error"
     assert connection["reason"] == error_code
@@ -170,7 +173,7 @@ def test_doctor_debug_adds_only_safe_request_context(
         )
     )
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor", debug=True))
+    data = doctor_cmd.doctor(_inv("doctor", debug=True)).data
     connection = next(check for check in data["checks"] if check["name"] == "connection")
     assert connection["method"] == "GET"
     assert connection["endpoint"] == "/api/v2/projects"
@@ -187,7 +190,7 @@ def test_doctor_explicit_profile_scopes_recovery_command(
         map_sdk_exception(MammothAPIError("failed", status_code=503, method="GET"))
     )
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor", profile="named"))
+    data = doctor_cmd.doctor(_inv("doctor", profile="named")).data
     assert data["profile"] == "named"
     assert "--profile named" in data["recommendations"][-1]
 
@@ -225,7 +228,7 @@ def test_doctor_reports_visible_projects_and_selected_project(
     login_default_profile()
     fake_service.projects = [{"id": 3, "name": "API Tests_project"}, {"id": 8, "name": "Other"}]
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["projects"]["ok"] is True
     assert checks["projects"]["projects"] == [
@@ -237,7 +240,7 @@ def test_doctor_reports_visible_projects_and_selected_project(
     assert "not verifiable" in checks["project_context"]["write_access"]
     assert "mammoth context project use PROJECT_ID" in data["recommendations"]
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor", project=3))
+    data = doctor_cmd.doctor(_inv("doctor", project=3)).data
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["project_context"] == {
         "name": "project_context",
@@ -248,7 +251,7 @@ def test_doctor_reports_visible_projects_and_selected_project(
     }
     assert data["ok"] is True
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor", project=99))
+    data = doctor_cmd.doctor(_inv("doctor", project=99)).data
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["project_context"]["ok"] is False
     assert data["ok"] is False
@@ -258,7 +261,7 @@ def test_doctor_reports_visible_projects_and_selected_project(
 def test_doctor_checks_the_run_log_directory(
     isolated_cli_config: Path, isolated_run_log: Path
 ) -> None:
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "log_directory")
     assert check["ok"] is True
     assert str(isolated_run_log) in check["detail"]
@@ -271,14 +274,14 @@ def test_doctor_reports_installed_vs_latest_version(
 
     monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
     monkeypatch.setattr(updates, "_fetch_latest", lambda: "99.0.0")
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True  # informational: an older CLI still works
     assert "99.0.0 available" in check["detail"]
     assert "mammoth upgrade --yes" in check["detail"]
 
     monkeypatch.setattr(updates, "_fetch_latest", lambda: None)
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     assert "not reachable" in check["detail"]
@@ -289,7 +292,7 @@ def test_doctor_names_a_disabled_update_check(
 ) -> None:
     # A disabled check is not an unreachable PyPI; the detail says which.
     monkeypatch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     assert "update check disabled (MAMMOTH_NO_UPDATE_CHECK)" in check["detail"]
@@ -306,7 +309,7 @@ def test_doctor_config_check_walks_up_to_an_existing_ancestor(
 
     missing = tmp_path / "home" / ".config" / "mammoth-cli"
     monkeypatch.setattr(profiles, "config_dir", lambda: missing)
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "config_directory")
     assert check["ok"] is True, check
 
@@ -319,7 +322,7 @@ def test_doctor_passes_in_an_empty_workspace(
     login_default_profile()
     fake_service.projects = []
 
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["projects"]["ok"] is True
     assert "project ensure" in checks["projects"]["detail"]
@@ -337,7 +340,7 @@ def test_doctor_reports_unresponsive_keyring_as_a_failed_check(
         raise credentials.keyring_unresponsive_error()
 
     monkeypatch.setattr(credentials, "load_credential", _unresponsive)
-    data, _meta = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     checks = {c["name"]: c for c in data["checks"]}
     assert checks["credentials"]["ok"] is False
     assert checks["credentials"]["detail"] == "keyring_unresponsive"
@@ -368,7 +371,7 @@ def test_doctor_wait_probes_again_through_an_outage(
     doc = tmp_path / "wait.json"
     doc.write_text('{"wait": 120}', encoding="utf-8")
 
-    data, _ = doctor_cmd.doctor(_inv("doctor", input_file=str(doc)))
+    data = doctor_cmd.doctor(_inv("doctor", input_file=str(doc))).data
     connection = next(check for check in data["checks"] if check["name"] == "connection")
     assert len(attempts) == 3
     assert connection["ok"] is True
@@ -386,7 +389,7 @@ def test_doctor_without_wait_reports_the_first_outage(
         raise CliError(code="retryable_error", message="502", retryable=True)
 
     fake_service.check_connection = down  # type: ignore[method-assign]
-    data, _ = doctor_cmd.doctor(_inv("doctor"))
+    data = doctor_cmd.doctor(_inv("doctor")).data
     assert calls == [1]
     assert data["ok"] is False
 

@@ -25,7 +25,7 @@ from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
-from mammoth_cli.runtime.dispatch import EXIT_STATUS_META, STREAMED_META
+from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
@@ -54,7 +54,7 @@ def recipe_list(invocation: Invocation) -> HandlerResult:
     return {"recipes": recipes, "count": len(recipes)}, {}
 
 
-def recipe_run(invocation: Invocation) -> HandlerResult:
+def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
     """Run a recipe's steps in one process; 'inputs' fills them. Prompt or '--yes'."""
     recipe = _recipe(invocation.positionals.get("id"))
     inputs = _inputs(recipe, invocation.bound_input().get("inputs"))
@@ -82,7 +82,7 @@ def recipe_run(invocation: Invocation) -> HandlerResult:
     data = {"recipe": recipe["id"], "inputs": inputs, **summary}
     meta = Meta(command="recipe run", profile=invocation.profile, exit=run_exit, run_id=run_id())
     run_cmd.write_envelope(Result(data=data, meta=meta).to_envelope())
-    return None, {STREAMED_META: True, EXIT_STATUS_META: run_exit}
+    return Outcome(streamed=True, exit_status=run_exit)
 
 
 def _confirmed(line: dict[str, Any]) -> dict[str, Any]:

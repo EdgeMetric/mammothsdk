@@ -43,13 +43,6 @@ from mammoth_cli.runtime.local_paths import local_path_commands
 from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
 
-Producer = Callable[[], tuple[Any, dict[str, Any]]]
-
-#: ``meta_extra`` keys a streaming command (``run``) sets: it printed its own envelopes, so
-#: the executor prints none, and the process exits with the given status.
-STREAMED_META = "streamed"
-EXIT_STATUS_META = "exit_status"
-
 # Commands that act on the host machine (login, config, installs, upgrade); an
 # embedded call has no profile, keyring or shell to act on.
 EMBEDDED_UNAVAILABLE = frozenset(
@@ -236,11 +229,17 @@ def _with_pin_checked(error: CliError, invocation: Invocation | None) -> CliErro
     return qualify_pin_hint(error, lookup, names.get)
 
 
-def _verify_exit_status(data: Any) -> int:
+def verify_exit_status(data: Any) -> int:
     """Exit code for a write whose read-back says it did not take effect.
 
     ``verify.outcome`` ``failed`` exits 1 and ``partial`` exits 3; the envelope
     is still printed so the caller can read what happened.
+
+    Args:
+        data: A command's result.
+
+    Returns:
+        The exit status the read-back calls for, or 0.
     """
     verify = data.get("verify") if isinstance(data, dict) else None
     outcome = verify.get("outcome") if isinstance(verify, dict) else None
@@ -258,7 +257,7 @@ class Request:
     Attributes:
         command_id: The manifest command id (dotted form).
         output: The requested ``--output`` mode.
-        producer: Runs the command's handler; returns ``(data, meta_extra)``.
+        producer: Runs the command's handler (see :data:`Producer`).
         invocation: The parsed call, when the command has one (bespoke commands may not).
         profile: The active profile name, if any.
     """
@@ -301,6 +300,9 @@ class Outcome:
         return self.error is None
 
 
+#: Runs a command's handler. It returns ``(data, meta_extra)``, or an :class:`Outcome` when
+#: the handler names its own exit status or printed its own envelopes (``run``).
+Producer = Callable[[], tuple[Any, dict[str, Any]] | Outcome]
 Next = Callable[[Request], Outcome]
 Interceptor = Callable[[Request, Next], Outcome]
 
@@ -339,18 +341,13 @@ def call_handler(request: Request) -> Outcome:
     sees the handler's result as a value (the journal records a failed write too).
     """
     try:
-        data, meta_extra = request.producer()
+        result = request.producer()
     except (Exception, KeyboardInterrupt) as exc:
         return contained(request, exc)
-    # A streaming command (``run``) printed its own envelopes and names its exit status.
-    streamed = bool(meta_extra.pop(STREAMED_META, False))
-    stream_exit = int(meta_extra.pop(EXIT_STATUS_META, 0) or 0)
-    # doctor prints its report either way; a failed report must not exit 0.
-    if request.command_id == "doctor" and isinstance(data, dict) and data.get("ok") is False:
-        exit_status = EXIT_AUTH
-    else:
-        exit_status = stream_exit or _verify_exit_status(data)
-    return Outcome(data=data, meta=meta_extra, exit_status=exit_status, streamed=streamed)
+    if isinstance(result, Outcome):
+        return result
+    data, meta_extra = result
+    return Outcome(data=data, meta=meta_extra, exit_status=verify_exit_status(data))
 
 
 #: The steps around every handler, outermost first.
