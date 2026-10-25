@@ -11,14 +11,20 @@ commands:
 - command_id: workspace.app-usage
   output_schema: openapi
 - command_id: workspace.check-expression
+  output_schema:
+    ref: WriteResult
   no_readback: generates a preview expression only; nothing is persisted to read back
 - command_id: workspace.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: workspace.get
     ids:
       workspace_id: result.id
     kind: object
 - command_id: workspace.current
+  output_schema:
+    ref: OpenObject
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read-only; checked live on the koyal profile, not in the automated live suite.
@@ -31,14 +37,19 @@ commands:
   unset:
   - options
 - command_id: workspace.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: workspace.list
     ids: {}
     kind: object
 - command_id: workspace.get
+  output_schema: openapi
 - command_id: workspace.list
   output_schema: openapi
 - command_id: workspace.invite.delete
+  output_schema:
+    ref: WriteResult
   known_restrictions: Deletes pending invites for good and frees their seats. Take invite_ids from workspace
     invite list (a pending invite is not a workspace user; workspace user list never shows it).
   readback:
@@ -46,6 +57,8 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.invite.list
+  output_schema:
+    ref: WorkspaceInviteList
   mutation_class: read
   acceptance_evidence: live_read_only
   live_test: LT-WORKSPACE-INVITE-LIST
@@ -57,12 +70,16 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.invite.resend
+  output_schema:
+    ref: WriteResult
   known_restrictions: Sends the invitation email again. Take invite_ids from workspace invite list.
   readback:
     command: workspace.invite.list
     ids: {}
     kind: object
 - command_id: workspace.invite.revoke
+  output_schema:
+    ref: WriteResult
   known_restrictions: Marks pending invites revoked; the row stays. To remove an invite for good use workspace
     invite delete.
   readback:
@@ -70,6 +87,8 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.invite.update-role
+  output_schema:
+    ref: WriteResult
   mutation_class: high_impact
   confirmation: yes_always
   agent_example: 'mammoth workspace invite update-role --input ''{"invite_id": 1, "role": "workspace_member"}''
@@ -81,12 +100,16 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.llm-task
+  output_schema:
+    ref: WriteResult
   readback:
     command: job.get
     ids:
       job_id: result.job.id
     kind: delivery
 - command_id: workspace.oauth-client.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: workspace.oauth-client.delete
@@ -108,6 +131,8 @@ commands:
   unset:
   - options
 - command_id: workspace.oauth-client.delete
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
   unit_tests:
   - test_oauth_clients_delete_names_the_client_in_the_workspace_path
@@ -137,6 +162,8 @@ commands:
   unset:
   - options
 - command_id: workspace.oauth-client.revoke-grant
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
   unit_tests:
   - test_oauth_clients_revoke_grant_hits_the_grant_sub_path
@@ -151,6 +178,8 @@ commands:
   unset:
   - options
 - command_id: workspace.reactivate
+  output_schema:
+    ref: WriteResult
   known_restrictions: Turns a deactivated workspace back on; its users regain access and billing resumes.
     Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
   readback:
@@ -161,6 +190,8 @@ commands:
 - command_id: workspace.segment.list
   output_schema: openapi
 - command_id: workspace.segment.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: workspace.segment.list
     ids: {}
@@ -168,6 +199,8 @@ commands:
 - command_id: workspace.storage-breakdown
   output_schema: openapi
 - command_id: workspace.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: Patches workspace settings that apply to every member. Read them first (`workspace
     get`). Needs --yes and --confirm WORKSPACE_ID.
   readback:
@@ -176,6 +209,8 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: workspace.user.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: workspace.user.remove
@@ -185,10 +220,16 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.user.get
+  output_schema:
+    ref: OpenObject
 - command_id: workspace.user.list
+  output_schema:
+    ref: OpenObjectList
   known_restrictions: Lists members only; a pending invite is not a member. For pending invites and their
     ids run workspace invite list. Optional project_id keeps one project's members.
 - command_id: workspace.user.remove
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: workspace.user.add
@@ -204,6 +245,8 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.user.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: workspace.user.get
     ids:
@@ -217,6 +260,8 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.home
+  output_schema:
+    ref: WorkspaceHome
   operation_ids: []
   known_restrictions: 'The Home read: usage_summary (storage, plan), health_issues (type, severity, occurrence_count,
     available_actions) and suggestions. Read-only; not a chat turn.'
@@ -227,6 +272,7 @@ commands:
 - command_id: workspace.export-hosts.get
   output_schema: openapi
 - command_id: workspace.export-hosts.set
+  output_schema: openapi
   mutation_class: high_impact
   confirmation: yes_always
   readback:

@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: parameter.create
+  output_schema:
+    ref: WriteResult
   known_restrictions: param_type is NUMERIC, TEXT or DATE (uppercase; 4PARM008 otherwise).
   readback:
     command: parameter.get
@@ -8,19 +10,27 @@ commands:
       parameter_id: result.id
     kind: object
 - command_id: parameter.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: parameter.list
     ids: {}
     kind: object
 - command_id: parameter.dependencies
+  output_schema: openapi
 - command_id: parameter.duplicate
+  output_schema:
+    ref: WriteResult
   readback:
     command: parameter.get
     ids:
       parameter_id: result.id
     kind: object
 - command_id: parameter.get
+  output_schema: openapi
 - command_id: parameter.group.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: parameter.group.delete
@@ -29,6 +39,8 @@ commands:
     ids: {}
     kind: object
 - command_id: parameter.group.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: parameter.group.list
     ids: {}
@@ -36,6 +48,8 @@ commands:
 - command_id: parameter.group.list
   output_schema: openapi
 - command_id: parameter.group.reorder
+  output_schema:
+    ref: WriteResult
   readback:
     command: parameter.group.list
     ids: {}
@@ -48,6 +62,8 @@ commands:
 - command_id: parameter.list
   output_schema: openapi
 - command_id: parameter.rerun
+  output_schema:
+    ref: WriteResult
   known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome
     and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   readback:
@@ -56,6 +72,8 @@ commands:
       parameter_id: positional.0
     kind: object
 - command_id: parameter.rerun-all-stale
+  output_schema:
+    ref: WriteResult
   known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome
     and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   readback:

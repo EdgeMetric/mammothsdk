@@ -6,7 +6,11 @@ commands:
     ids: {}
     kind: object
 - command_id: context.project.status
+  output_schema:
+    ref: ContextProjectStatus
 - command_id: context.show
+  output_schema:
+    ref: ContextShow
   known_restrictions: Local read, no network call. Shows which profile, endpoint, workspace and project
     the next command would use; it never prints credentials.
 - command_id: context.project.use

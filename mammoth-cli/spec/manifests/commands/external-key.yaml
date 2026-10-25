@@ -13,10 +13,13 @@ commands:
       key_id: result.id
     kind: object
 - command_id: external-key.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: external-key.list
     ids: {}
     kind: object
 - command_id: external-key.get
+  output_schema: openapi
 - command_id: external-key.list
   output_schema: openapi

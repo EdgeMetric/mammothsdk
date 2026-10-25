@@ -1,5 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: activity.export
+  output_schema:
+    ref: ActivityExport
 - command_id: activity.list
   output_schema: openapi

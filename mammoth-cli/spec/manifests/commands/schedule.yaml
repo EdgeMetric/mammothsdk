@@ -10,16 +10,23 @@ commands:
       schedule_id: result.id
     kind: object
 - command_id: schedule.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: schedule.list
     ids: {}
     kind: object
 - command_id: schedule.get
+  output_schema: openapi
 - command_id: schedule.list
+  output_schema:
+    ref: NeverReturns
   known_restrictions: 'Retired: the command answers not_available and names the web app. No Mammoth server
     can list schedules for a project (GET answers HTTP 400 NOT_IMPLEMENTED), so do not poll it. Use `schedule
     get SCHEDULE_ID` with an id obtained elsewhere.'
 - command_id: schedule.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: schedule.get
     ids:

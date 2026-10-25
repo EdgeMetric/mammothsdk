@@ -1,5 +1,11 @@
 manifest_schema_version: 1
 commands:
 - command_id: capability.find
+  output_schema:
+    ref: CapabilityFind
 - command_id: capability.get
+  output_schema:
+    ref: CapabilityGet
 - command_id: capability.list
+  output_schema:
+    ref: CapabilityList

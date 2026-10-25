@@ -1,21 +1,31 @@
 manifest_schema_version: 1
 commands:
 - command_id: dashboard.action
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.analytics
+  output_schema: openapi
 - command_id: dashboard.archive
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.assess-pbix
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.assess-twb
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.bi-preflight
+  output_schema: openapi
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.powerbi_preflight or .tableau_preflight, chosen
     by input `target`, with validated request fields.
   result_model: PowerBiPreflightResponse
@@ -31,6 +41,8 @@ commands:
   known_restrictions: Author-only, like the release routes it calls -- a non-author caller is refused,
     unlike `dashboard pdf export` (which any viewer can run).
 - command_id: dashboard.bi-export
+  output_schema:
+    ref: OpenObject
   sdk_conversion: Call mammoth.api.dashboards.DashboardsAPI.export_powerbi or .export_tableau, chosen
     by input `target`, with validated request fields.
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -47,16 +59,22 @@ commands:
     Export to Power BI / Export to Tableau, where they download the file themselves. No command makes
     a PDF of a board: that is the board''s Download PDF in the app.'
 - command_id: dashboard.cancel-generation
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.canvas.get
+  output_schema:
+    ref: DashboardCanvas
   known_restrictions: 'A board''s data is the view in the canvas dataset.dataview_id: read it with view
     data get VIEW_ID. After a board''s bake job, read the canvas and quote one number from it, such as
     a KPI total.'
 - command_id: dashboard.canvas.restore
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.canvas.get
     ids:
@@ -66,6 +84,8 @@ commands:
     chat history DASHBOARD_ID, whose revisions[] gives {sequence, updated_at, updated_by_name} for every
     saved version, oldest first; pick the sequence to undo/redo/revert to.
 - command_id: dashboard.canvas.save
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.canvas.get
     ids:
@@ -81,6 +101,8 @@ commands:
     descriptor-data to evaluate. This raw route does not pass the LLM unit guard that pages add / chat
     edit apply.'
 - command_id: dashboard.chat.edit
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.canvas.get
     ids:
@@ -92,11 +114,14 @@ commands:
     edit). Use it for a change you can say in a sentence; use dashboard canvas save to author the canvas
     yourself (units, hiding built-in tiles).'
 - command_id: dashboard.chat.history
+  output_schema:
+    ref: OpenObject
   known_restrictions: 'The response carries a revisions[] list (one {sequence, updated_at, updated_by_name}
     per saved version, oldest first) -- real on the wire but not yet in the typed SDK model, so read it
     from --output json. It is the version list for dashboard canvas restore''s target_sequence: to undo/revert
     the board, find the sequence to go back to here and pass it there.'
 - command_id: dashboard.context.create
+  output_schema: openapi
   undo:
     strategy: manual
     command: dashboard.context.delete
@@ -105,21 +130,27 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.context.delete
+  output_schema: openapi
   readback:
     command: dashboard.context.list
     ids: {}
     kind: object
 - command_id: dashboard.context.extract
+  output_schema:
+    ref: WriteResult
   no_readback: ExtractContext returns an extracted preview (condensed/figure data) from an uploaded file;
     nothing is persisted, so no read command can show it.
 - command_id: dashboard.context.list
   output_schema: openapi
 - command_id: dashboard.context.update
+  output_schema: openapi
   readback:
     command: dashboard.context.list
     ids: {}
     kind: object
 - command_id: dashboard.create-blank
+  output_schema:
+    ref: WriteResult
   mutation_class: benign_mutation
   confirmation: none
   readback:
@@ -132,14 +163,20 @@ commands:
     has one page (p1) and no figures: author it with dashboard chat edit, or by hand with dashboard canvas
     get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
 - command_id: dashboard.data.draft
+  output_schema: openapi
 - command_id: dashboard.data.published
+  output_schema: openapi
 - command_id: dashboard.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.descriptor-data
+  output_schema:
+    ref: WriteResult
   no_readback: 'DescriptorData evaluates already-baked descriptors and returns their computed values directly
     in the result ({descriptor_id: {status, value|data}}); it does not change persisted dashboard state
     for a read command to show.'
@@ -160,7 +197,9 @@ commands:
     in that view''s project and its data swap is queued: the command waits for that job and adds swap_state
     and swap_result next to id and swap_job_id. project_id (optional) names the project for the copy.'
 - command_id: dashboard.embed.config.get
+  output_schema: openapi
 - command_id: dashboard.embed.config.set
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: dashboard.embed.config.get
@@ -171,6 +210,7 @@ commands:
     fixture in tests/live.
   known_restrictions: null
 - command_id: dashboard.embed.key.rotate
+  output_schema: openapi
   readback:
     command: dashboard.embed.config.get
     ids:
@@ -178,7 +218,9 @@ commands:
     kind: object
   known_restrictions: null
 - command_id: dashboard.embed.usage.get
+  output_schema: openapi
 - command_id: dashboard.embed.origin.revoke
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: dashboard.embed.config.get
@@ -189,25 +231,33 @@ commands:
     fixture in tests/live.
   known_restrictions: null
 - command_id: dashboard.embed.preview-token.create
+  output_schema: openapi
   no_readback: PreviewToken's created token (embed_url/expires_at/token) is returned directly in the result
     and is not listed anywhere; no read command retrieves embed preview tokens.
 - command_id: dashboard.embed.secret.rotate
+  output_schema: openapi
   no_readback: RotateEmbedSecret's new secret (rotated_at/secret/token_ttl) is workspace-scoped and returned
     directly in the result; no read command exposes workspace-level embed secret state.
   known_restrictions: null
 - command_id: dashboard.embed.lifetime.set
+  output_schema: openapi
   no_readback: SetEmbedLifetime's new token_ttl is workspace-scoped and returned directly in the result;
     no read command exposes workspace-level embed token lifetime.
 - command_id: dashboard.exemplar.extract
+  output_schema:
+    ref: WriteResult
   no_readback: ExtractExemplar returns an extracted style/exemplar preview from an uploaded file; nothing
     is persisted, so no read command can show it.
 - command_id: dashboard.figure-intent
+  output_schema: openapi
   readback:
     command: dashboard.canvas.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.filter.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dashboard.filter.remove
@@ -265,6 +315,8 @@ commands:
     "Region", "control": "dropdown", "label": "Region"}''.'
   reviewed_by: primary
 - command_id: dashboard.filter.list
+  output_schema:
+    ref: DashboardFilterList
   command_path: dashboard filter list
   disposition: command
   alias_of: null
@@ -357,15 +409,25 @@ commands:
     and bake_job_id.'
   reviewed_by: primary
 - command_id: dashboard.get
+  output_schema:
+    ref: DashboardGet
 - command_id: dashboard.get-by-url
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.import-workbook
   no_readback: ImportWorkbookDataset's result gives dataview_id only; the matching read (view.get) also
     requires dataset_id, which the response does not include, and this route is release-only / unverified
     against release besides.
   agent_example: mammoth dashboard import-workbook Sales.twbx --project 456 --yes --confirm 456
 - command_id: dashboard.job-by-url
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.list
+  output_schema:
+    ref: OpenObjectList
 - command_id: dashboard.og-card
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.page.plan
   no_readback: PlanPage only proposes a page (composed/message/page in the result); nothing is persisted
     until dashboard chat edit or dashboard pages add applies it.
@@ -382,7 +444,11 @@ commands:
     unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save
     had kept, and reports that in data.message.'
 - command_id: dashboard.pdf-artifact
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.pdf.export
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.pdf-artifact
     ids:
@@ -393,15 +459,27 @@ commands:
     widget results); the server stores only query descriptors and cannot rebuild it, so a PDF cannot be
     produced from the CLI alone; point the user to the board's Download PDF in the app.
 - command_id: dashboard.published-data-by-url
+  output_schema:
+    ref: WriteResult
   no_readback: GetPublishDataFromSqlByUrl evaluates an existing published descriptor and returns its data
     directly in the result; it does not change persisted dashboard state.
 - command_id: dashboard.published.canvas
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.published.data
+  output_schema:
+    ref: WriteResult
   no_readback: DescriptorDataByUrl evaluates existing published descriptors and returns their computed
     values; it does not change persisted dashboard state for a read command to show.
 - command_id: dashboard.published.og-card
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.published.pdf-artifact
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.published.pdf.export
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.published.pdf-artifact
     ids:
@@ -409,14 +487,22 @@ commands:
       job_id: result.job_id
     kind: delivery
 - command_id: dashboard.published.share-page
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.published.video-artifact
+  output_schema:
+    ref: BinaryArtifactResult
 - command_id: dashboard.published.video.export
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.published.video-artifact
     ids:
       url: positional.0
     kind: delivery
 - command_id: dashboard.qa.ask
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -424,6 +510,7 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.comment.create
+  output_schema: openapi
   undo:
     strategy: manual
     command: dashboard.qa.comment.delete
@@ -434,6 +521,7 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.comment.delete
+  output_schema: openapi
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -441,6 +529,7 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.feedback
+  output_schema: openapi
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -448,6 +537,7 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.session.create
+  output_schema: openapi
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -455,12 +545,15 @@ commands:
       session_id: result.session.id
     kind: object
 - command_id: dashboard.qa.session.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.qa.session.list
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.qa.session.fork
+  output_schema: openapi
   undo:
     strategy: manual
     command: dashboard.qa.session.delete
@@ -471,8 +564,12 @@ commands:
       session_id: result.session.id
     kind: object
 - command_id: dashboard.qa.session.get
+  output_schema: openapi
 - command_id: dashboard.qa.session.list
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.qa.session.rename
+  output_schema: openapi
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -480,6 +577,7 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.session.set-visibility
+  output_schema: openapi
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -487,6 +585,8 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.settings.get
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.qa.settings.set
   readback:
     command: dashboard.qa.settings.get
@@ -494,9 +594,13 @@ commands:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.query
+  output_schema:
+    ref: WriteResult
   no_readback: AdhocQuery returns a computed descriptor_id/job_id for one-off exploration; evaluating
     it further (dashboard descriptor-data) is itself a mutation, so no read command can show its value.
 - command_id: dashboard.figure.add
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.canvas.get
     ids:
@@ -511,27 +615,37 @@ commands:
     first content page. The server checks the figure against the dashboard''s source and queues the bake:
     the result carries bake_job_id; wait for it with job wait.'
 - command_id: dashboard.restore
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.rls.assignment.list
+  output_schema: openapi
 - command_id: dashboard.rls.assignment.set
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.rls.assignment.list
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.rls.column.list
+  output_schema: openapi
 - command_id: dashboard.rls.value.list
+  output_schema: openapi
 - command_id: dashboard.share
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.signature.create
+  output_schema: openapi
   undo:
     strategy: manual
     command: dashboard.signature.delete
@@ -540,6 +654,7 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.signature.delete
+  output_schema: openapi
   readback:
     command: dashboard.signature.list
     ids: {}
@@ -547,13 +662,17 @@ commands:
 - command_id: dashboard.signature.list
   output_schema: openapi
 - command_id: dashboard.signature.update
+  output_schema: openapi
   readback:
     command: dashboard.signature.list
     ids: {}
     kind: object
 - command_id: dashboard.source.list
+  output_schema:
+    ref: OpenObjectList
   known_restrictions: Some servers answer this with HTTP 500.
 - command_id: dashboard.style.custom.create
+  output_schema: openapi
   undo:
     strategy: manual
     command: dashboard.style.custom.delete
@@ -562,6 +681,7 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.style.custom.delete
+  output_schema: openapi
   readback:
     command: dashboard.style.custom.list
     ids: {}
@@ -569,35 +689,46 @@ commands:
 - command_id: dashboard.style.custom.list
   output_schema: openapi
 - command_id: dashboard.style.custom.update
+  output_schema: openapi
   readback:
     command: dashboard.style.custom.list
     ids: {}
     kind: object
 - command_id: dashboard.style.default.get
+  output_schema: openapi
 - command_id: dashboard.style.default.set
+  output_schema: openapi
   readback:
     command: dashboard.style.default.get
     ids: {}
     kind: object
 - command_id: dashboard.style.derive
+  output_schema: openapi
   no_readback: DeriveStyle returns computed style_tokens directly in the result; nothing is persisted
     for dashboard style token list (which needs an unrelated dashboard id) to show.
 - command_id: dashboard.style.extract-brand
+  output_schema:
+    ref: WriteResult
   no_readback: ExtractBrand returns computed brand style tokens as a preview; nothing is persisted for
     a read command to show.
 - command_id: dashboard.style.preset.list
   output_schema: openapi
 - command_id: dashboard.style.token.list
+  output_schema: openapi
 - command_id: dashboard.suggestion.list
   output_schema: openapi
   wait_policy: not_async
 - command_id: dashboard.swap-data
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.canvas.get
     ids:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.tags.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.tags.list
     ids: {}
@@ -606,12 +737,16 @@ commands:
 - command_id: dashboard.tags.list
   output_schema: openapi
 - command_id: dashboard.tags.merge
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.tags.list
     ids: {}
     kind: object
   agent_example: 'mammoth dashboard tags merge 123 --input ''{"target_id": 456}'' --yes --confirm 123'
 - command_id: dashboard.tags.rename
+  output_schema:
+    ref: WriteResult
   confirmation: none
   readback:
     command: dashboard.tags.list
@@ -619,6 +754,8 @@ commands:
     kind: object
   agent_example: 'mammoth dashboard tags rename 123 --input ''{"name": "Revenue"}'''
 - command_id: dashboard.tags.set
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
@@ -626,12 +763,15 @@ commands:
     kind: object
   agent_example: 'mammoth dashboard tags set 123 --input ''{"tags": ["Revenue"]}'' --yes --confirm 123'
 - command_id: dashboard.template.apply
+  output_schema:
+    ref: WriteResult
   readback:
     command: job.get
     ids:
       job_id: result.job_id
     kind: delivery
 - command_id: dashboard.template.create
+  output_schema: openapi
   readback:
     command: dashboard.template.get
     ids:
@@ -641,6 +781,7 @@ commands:
     fails with "None of the columns this template binds are in the dataset". Build the dashboard first
     (dashboard create, then widgets), then save it as a template.
 - command_id: dashboard.template.delete
+  output_schema: openapi
   readback:
     command: dashboard.template.list
     ids: {}
@@ -648,12 +789,14 @@ commands:
 - command_id: dashboard.template.fit
   output_schema: openapi
 - command_id: dashboard.template.get
+  output_schema: openapi
 - command_id: dashboard.template.list
   output_schema: openapi
 - command_id: dashboard.template.preview
   no_readback: PreviewTemplate returns a computed preview (canvas/mapping/plan/specs) only; nothing is
     persisted until dashboard template apply.
 - command_id: dashboard.template.rename
+  output_schema: openapi
   readback:
     command: dashboard.template.get
     ids:
@@ -662,11 +805,15 @@ commands:
 - command_id: dashboard.template.resolve-mapping
   no_readback: ResolveTemplateMapping computes a mapping preview only; nothing is persisted.
 - command_id: dashboard.templates.pending
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.template.list
     ids: {}
     kind: object
 - command_id: dashboard.templates.use
+  output_schema:
+    ref: WriteResult
   readback:
     command: job.get
     ids:
@@ -675,11 +822,15 @@ commands:
   agent_example: 'mammoth dashboard templates use revenue-overview --input ''{"body": {"params": {"project_id":
     1}}}'' --yes --confirm revenue-overview'
 - command_id: dashboard.trash
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.list
     ids: {}
     kind: object
 - command_id: dashboard.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
@@ -687,6 +838,8 @@ commands:
     kind: object
   known_restrictions: Updates dashboard fields; read the dashboard first (`dashboard get`).
 - command_id: dashboard.v3.generate
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.get
     ids:
@@ -699,19 +852,28 @@ commands:
     board), so compare them with what you saw in the data before you report. Change it afterwards with
     dashboard chat edit. dashboard create-blank is only for authoring a canvas by hand.'
 - command_id: dashboard.video-state
+  output_schema: openapi
 - command_id: dashboard.video.export
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.video-state
     ids:
       dashboard_id: positional.0
     kind: delivery
 - command_id: dashboard.widget-data
+  output_schema:
+    ref: WriteResult
   no_readback: BulkWidgetData fetches data for existing widget descriptors and returns it directly in
     the result; it does not change persisted dashboard state.
 - command_id: dashboard.widget-data-by-url
+  output_schema:
+    ref: WriteResult
   no_readback: BulkWidgetDataByUrl fetches data for existing widget descriptors and returns it directly
     in the result; it does not change persisted dashboard state.
 - command_id: dashboard.embed.usage.summary
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: Active embed origins per board over the last 90 days, for several boards in one
     call (the library view). Boards outside the workspace are ignored. For one board's origins and render
@@ -721,6 +883,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.format-preview
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Dry run of a format switch on a copy of the canvas: what carries over, what the
     new style adds, and what the target cannot show (not_shown). Nothing is saved. Take style names from
@@ -730,6 +894,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.template.thumbnail.get
+  output_schema:
+    ref: BinaryArtifactResult
   operation_ids: []
   known_restrictions: The picture a template's card shows, as content_type and content_base64. A template
     with no picture answers 404; that is an ordinary state and its card falls back to the og-card.
@@ -748,6 +914,8 @@ commands:
     templates are not writable). PNG, JPEG or WebP read from the file's content, 1 MB at most. The file
     comes from the local disk.
 - command_id: dashboard.template.thumbnail.clear
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.template.get
     ids:
@@ -758,6 +926,8 @@ commands:
   known_restrictions: Removes a saved template's picture (owner or workspace admin); its card falls back
     to the og-card. ok is false when there was no picture.
 - command_id: dashboard.gallery.list
+  output_schema:
+    ref: DashboardGalleryList
   operation_ids: []
   known_restrictions: 'The public template gallery as data: curated, live templates only, with copy, taxonomy
     labels, thumbnail_ref and viewer_url, and the function/industry facets with counts. No internal ids.
@@ -768,6 +938,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.gallery.get
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: One card of the public template gallery. A user-saved template, or a curated one
     that is not live, answers 404 exactly as an unknown slug does.
@@ -776,6 +948,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.swap-fit
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   mutation_class: read
   acceptance_evidence: live_read_only
@@ -793,6 +967,8 @@ commands:
   unset:
   - edits_target
 - command_id: dashboard.audience.get
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Who read the board over the last days (7, 30 or 90; default 7): totals against
     the window before, a daily series, named workspace viewers, anonymous counts, country, device and
@@ -803,6 +979,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.audience.summary
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Views per board for the dashboard library: pass dashboard_ids in --input (200 are
     read at most). Per board: views and people over 7 days, views over 30 days, the last view and a 14-day
@@ -813,6 +991,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.audience.digest.get
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Your weekly audience email setting for the board: enabled is the effective answer,
     explicit the stored choice (null when you never chose; the email then turns on by itself above 5 people
@@ -822,6 +1002,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.audience.digest.set
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.audience.digest.get
     ids: {}
@@ -830,6 +1012,8 @@ commands:
   known_restrictions: 'Writes your own weekly audience email setting for the board, nobody else''s. Pass
     enabled in --input: true, false, or null to clear the choice and return to the default. Editors only.'
 - command_id: dashboard.columns
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Every column of the board''s source dataset with its profile: value samples, measure
     ranges and aggregates, date spans, and the profiler''s identifier and protected-attribute verdicts,
@@ -839,6 +1023,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.context.review
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   mutation_class: read
   acceptance_evidence: live_read_only
@@ -856,6 +1042,8 @@ commands:
   unset:
   - edits_target
 - command_id: dashboard.context.apply
+  output_schema:
+    ref: WriteResult
   confirmation: confirm_target
   readback:
     command: dashboard.canvas.get
@@ -869,6 +1057,8 @@ commands:
     against). The server rejects an expired or superseded review, and a board whose head moved since the
     review.
 - command_id: dashboard.qa.insights
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'The questions viewers asked on the board over the last days (7, 30 or 90; default
     7), grouped by their text, with feedback and unanswered counts and the measure and dimension each
@@ -879,6 +1069,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.pbix-intent
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   mutation_class: read
   wait_policy: always_wait
@@ -890,6 +1082,8 @@ commands:
   unset:
   - edits_target
 - command_id: dashboard.pbix-assess
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   mutation_class: read
   wait_policy: always_wait
@@ -899,6 +1093,7 @@ commands:
   unset:
   - edits_target
 - command_id: dashboard.engagement.get
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
@@ -906,12 +1101,15 @@ commands:
     per page and per person, hours (UTC), surface, devices, actions and board events. days is 7, 30 or
     90 (default 30); viewers is all, named or anonymous.
 - command_id: dashboard.engagement.person
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: Read-only. One person's visits to the board, newest first, at most 50. Take USER_ID
     from the people list of dashboard engagement get. days is 7, 30 or 90 (default 30).
 - command_id: dashboard.engagement.remind
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: dashboard.engagement.get
@@ -924,12 +1122,15 @@ commands:
     reminder per person per board every 7 days; skipped lists who was left out and why. Always needs --yes;
     --dry-run sends nothing.
 - command_id: dashboard.own-data.status
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: 'Read-only. The board''s pending ''use my data'' run: status and stage, and once
     fitted the proposal. status null means nothing is pending.'
 - command_id: dashboard.own-data.start
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dashboard.own-data.dismiss
@@ -944,11 +1145,14 @@ commands:
     dashboard own-data status and preview, then accept or dismiss. Replaces any pending run. Uses an AI
     call.
 - command_id: dashboard.own-data.preview
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: Read-only. The adapted board as proposed, baked but not saved.
 - command_id: dashboard.own-data.accept
+  output_schema:
+    ref: WriteResult
   confirmation: confirm_target
   readback:
     command: dashboard.own-data.status
@@ -961,6 +1165,8 @@ commands:
     (default), partial or reshape; exclude lists change ids of added items to leave out. Waits for the
     applying job.
 - command_id: dashboard.own-data.dismiss
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.own-data.status
     ids:
@@ -976,9 +1182,15 @@ commands:
     dashboard pbix-intent and dashboard pbix-assess. Inside the Mammoth app the user's file cannot reach
     the agent, so send the user to the dashboard import page at /workspaces/{workspace_id}/publish/import.
 - command_id: dashboard.email-updates.get
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.email-updates.list
+  output_schema:
+    ref: DashboardEmailUpdatesList
 - command_id: dashboard.email-updates.me.get
+  output_schema: openapi
 - command_id: dashboard.email-updates.me.set
+  output_schema: openapi
   readback:
     command: dashboard.email-updates.me.get
     ids:
@@ -1004,6 +1216,7 @@ commands:
   known_restrictions: Saves the email-update schedule and the people who get the dashboard's headline
     numbers by mail. Needs --yes. Editors only.
 - command_id: dashboard.email-updates.test
+  output_schema: openapi
   mutation_class: external_effect
   confirmation: yes_always
   acceptance_evidence: contract_only_high_impact
@@ -1014,6 +1227,7 @@ commands:
   agent_example: mammoth dashboard email-updates test 123 --yes
   known_restrictions: Sends a real test email update right away. Needs --yes.
 - command_id: dashboard.live-chart.audience
+  output_schema: openapi
   mutation_class: high_impact
   confirmation: confirm_target
   acceptance_evidence: contract_only_high_impact
@@ -1030,6 +1244,8 @@ commands:
   known_restrictions: Changes who can open the live chart. Pass the new audience in --input. Confirms
     the dashboard id.
 - command_id: dashboard.live-chart.create
+  output_schema:
+    ref: WriteResult
   wait_policy: start_or_wait
   readback:
     command: dashboard.live-chart.get
@@ -1043,8 +1259,12 @@ commands:
     making the same chat chart live twice returns the first chart with no job. --project names the project
     the chart belongs to; without it the server uses the source view's project.
 - command_id: dashboard.live-chart.get
+  output_schema: openapi
 - command_id: dashboard.live-chart.list
+  output_schema: openapi
 - command_id: dashboard.live-chart.placement
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.live-chart.usage
     ids:
@@ -1054,12 +1274,18 @@ commands:
   live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
   known_restrictions: Records where a live chart is shown (an embed or a page).
 - command_id: dashboard.live-chart.usage
+  output_schema: openapi
 - command_id: dashboard.oembed
+  output_schema: openapi
 - command_id: dashboard.chat.attachment.upload
   no_readback: returns the attachment ref and metadata; the file is readable only through a chat turn
     that names the ref
 - command_id: dashboard.unpublished
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.chart-type.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dashboard.chart-type.delete
@@ -1068,6 +1294,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.chart-type.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: dashboard.chart-type.list
     ids: {}
@@ -1075,7 +1303,16 @@ commands:
 - command_id: dashboard.chart-type.list
   output_schema: openapi
 - command_id: dashboard.figure.drill
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.figure.recipe
+  output_schema: openapi
 - command_id: dashboard.figure.rows
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.published.drill
+  output_schema:
+    ref: OpenObject
 - command_id: dashboard.published.rows
+  output_schema:
+    ref: OpenObject

@@ -1072,3 +1072,31 @@ def test_project_members_find_workspace_user_list() -> None:
     # #256: no search reached the command that lists a project's members.
     found = [item["command_id"] for item in find_schemas("project members role")["matches"]]
     assert found[0] == "workspace.user.list"
+
+
+@pytest.mark.parametrize(
+    ("command_id", "required"),
+    [
+        ("version", ["version", "schema_version"]),  # a named schema
+        ("dashboard.get", ["id"]),  # a named schema over an object the API leaves open
+        ("project.update", ["verify"]),  # the shared write result
+    ],
+)
+def test_schema_get_returns_the_declared_output_schema(
+    command_id: str, required: list[str]
+) -> None:
+    schema = get_schema(command_id)
+    assert schema is not None
+    assert schema["output_schema"]["required"] == required
+
+
+def test_schema_get_returns_an_api_body_schema_for_an_openapi_declaration() -> None:
+    schema = get_schema("project.list")
+    assert schema is not None
+    assert "$defs" in schema["output_schema"]
+
+
+def test_schema_get_returns_no_output_schema_for_an_undeclared_command() -> None:
+    schema = get_schema("client-app.delete")
+    assert schema is not None
+    assert schema["output_schema"] is None

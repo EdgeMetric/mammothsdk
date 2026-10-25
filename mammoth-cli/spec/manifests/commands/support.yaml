@@ -1,11 +1,15 @@
 manifest_schema_version: 1
 commands:
 - command_id: support.connector-profile.add-connector
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.connector-profile.list
     ids: {}
     kind: object
 - command_id: support.connector-profile.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.connector-profile.delete
@@ -16,6 +20,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.connector-profile.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.connector-profile.list
     ids: {}
@@ -23,11 +29,15 @@ commands:
 - command_id: support.connector-profile.list
   output_schema: openapi
 - command_id: support.connector-profile.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.connector-profile.list
     ids: {}
     kind: object
 - command_id: support.connector.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.connector.delete
@@ -38,6 +48,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.connector.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.connector.list
     ids: {}
@@ -45,16 +57,22 @@ commands:
 - command_id: support.connector.list
   output_schema: openapi
 - command_id: support.connector.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.connector.list
     ids: {}
     kind: object
 - command_id: support.feature-profile.add-feature
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.feature-profile.list
     ids: {}
     kind: object
 - command_id: support.feature-profile.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.feature-profile.delete
@@ -65,6 +83,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.feature-profile.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.feature-profile.list
     ids: {}
@@ -72,11 +92,15 @@ commands:
 - command_id: support.feature-profile.list
   output_schema: openapi
 - command_id: support.feature-profile.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.feature-profile.list
     ids: {}
     kind: object
 - command_id: support.feature.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.feature.delete
@@ -87,6 +111,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.feature.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.feature.list
     ids: {}
@@ -94,17 +120,23 @@ commands:
 - command_id: support.feature.list
   output_schema: openapi
 - command_id: support.feature.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.feature.list
     ids: {}
     kind: object
 - command_id: support.ownership.transfer
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.user.list
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.plan.archive
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.plan.unarchive
@@ -116,6 +148,8 @@ commands:
 - command_id: support.plan.chargebee-list
   output_schema: openapi
 - command_id: support.plan.create
+  output_schema:
+    ref: WriteResult
   known_restrictions: Support staff only. Creates a billing plan that workspaces can subscribe to. Needs
     --yes and --confirm TARGET.
   readback:
@@ -124,22 +158,29 @@ commands:
       plan_id: result.plan.id
     kind: object
 - command_id: support.plan.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.plan.list
     ids: {}
     kind: object
 - command_id: support.plan.get
+  output_schema: openapi
 - command_id: support.plan.list
   output_schema: openapi
 - command_id: support.plan.self-serve-list
   output_schema: openapi
 - command_id: support.plan.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.plan.get
     ids:
       plan_id: positional.0
     kind: object
 - command_id: support.plan.update-storage-tiers
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.plan.get
     ids:
@@ -152,14 +193,20 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.subscription.get
+  output_schema: openapi
 - command_id: support.subscription.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.subscription.get
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.user.list-all
+  output_schema: openapi
 - command_id: support.user.register
+  output_schema:
+    ref: WriteResult
   known_restrictions: Support staff only. Registers a new user account and may send them an invitation
     email. Needs --yes and --confirm TARGET.
   readback:
@@ -167,6 +214,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.user.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: Support staff only. Changes another user's account details. Needs --yes and --confirm
     TARGET.
   readback:
@@ -174,6 +223,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.workspace.create
+  output_schema:
+    ref: WriteResult
   known_restrictions: Support staff only. Creates a workspace with its owner and plan (payment_frequency
     monthly or yearly). Needs --yes and --confirm TARGET.
   readback:
@@ -182,13 +233,20 @@ commands:
       job_id: result.id
     kind: delivery
 - command_id: support.workspace.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.list
     ids: {}
     kind: object
 - command_id: support.workspace.get
+  output_schema:
+    ref: OpenResult
 - command_id: support.workspace.list
+  output_schema: openapi
 - command_id: support.workspace.restore-access
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.workspace.suspend-access
@@ -198,6 +256,8 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.suspend-access
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.workspace.restore-access
@@ -207,31 +267,42 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.get
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.user.add
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.user.list
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.user.list
+  output_schema: openapi
 - command_id: support.workspace.user.remove
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.user.list
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.user.transfer
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.user.list
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.plan.unarchive
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.plan.archive
@@ -245,6 +316,8 @@ commands:
       plan_id: positional.0
     kind: object
 - command_id: support.plan.storage-option.list
+  output_schema:
+    ref: SupportStorageOptionList
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -256,6 +329,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.plan.storage-option.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.plan.storage-option.archive
@@ -281,6 +356,8 @@ commands:
       plan_id: positional.0
     kind: object
 - command_id: support.plan.storage-option.archive
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Retires
@@ -292,6 +369,8 @@ commands:
       plan_id: positional.0
     kind: object
 - command_id: support.template.list
+  output_schema:
+    ref: SupportTemplateList
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -304,6 +383,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.edit
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Edits a
@@ -315,6 +396,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.data-preview
+  output_schema:
+    ref: SupportTemplateDataPreview
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -326,6 +409,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.canvas
+  output_schema:
+    ref: SupportTemplateCanvas
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -337,6 +422,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.publish
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.template.unpublish
@@ -350,6 +437,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.unpublish
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.template.publish
@@ -362,6 +451,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.retire
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Keeps the
@@ -371,6 +462,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.inspect
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   mutation_class: read
   confirmation: none
@@ -409,6 +502,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.thumbnail.clear
+  output_schema:
+    ref: WriteResult
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Removes
@@ -418,6 +513,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.discard
+  output_schema:
+    ref: WriteResult
   mutation_class: destructive
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
@@ -429,6 +526,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.snapshots
+  output_schema:
+    ref: SupportTemplateSnapshots
   operation_ids: []
   pagination_policy: single_page
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -441,6 +540,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.audit
+  output_schema:
+    ref: SupportTemplateAudit
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -453,6 +554,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.export
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -465,6 +568,8 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.export-dashboard
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   acceptance_evidence: contract_only_no_disposable_fixture
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
@@ -477,44 +582,60 @@ commands:
     ids: {}
     kind: object
 - command_id: support.billing.cancel-subscription
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.billing.change-plan
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.billing.end-trial
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.billing.refund
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.billing.retry-payment
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.billing.start-trial
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.connector.bucket-impact
+  output_schema: openapi
 - command_id: support.deal.activity
+  output_schema: openapi
 - command_id: support.deal.cancel-move-to-partner
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.deal.move-to-partner
@@ -524,15 +645,20 @@ commands:
       deal_id: positional.0
     kind: object
 - command_id: support.deal.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.deal.get
     ids:
       deal_id: result.id
     kind: object
 - command_id: support.deal.get
+  output_schema: openapi
 - command_id: support.deal.list
   output_schema: openapi
 - command_id: support.deal.move-to-partner
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: support.deal.cancel-move-to-partner
@@ -542,13 +668,18 @@ commands:
       deal_id: positional.0
     kind: object
 - command_id: support.deal.opt-in
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.deal.get
     ids:
       deal_id: positional.0
     kind: object
 - command_id: support.deal.preview-entitlement
+  output_schema: openapi
 - command_id: support.deal.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.deal.get
     ids:
@@ -557,16 +688,25 @@ commands:
 - command_id: support.entitlement.registry
   output_schema: openapi
 - command_id: support.identity.get
+  output_schema: openapi
 - command_id: support.identity.list
+  output_schema:
+    ref: SupportIdentityList
 - command_id: support.partner.activity
+  output_schema: openapi
 - command_id: support.partner.billing
+  output_schema: openapi
 - command_id: support.partner.charge-invoices
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.partner.invoices
     ids:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.cancel-detach
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.partner.client.detach
@@ -576,12 +716,16 @@ commands:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.partner.client.list
     ids:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.detach
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.partner.client.cancel-detach
@@ -591,19 +735,28 @@ commands:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.list
+  output_schema: openapi
 - command_id: support.partner.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.partner.get
     ids:
       partner_id: result.id
     kind: object
 - command_id: support.partner.get
+  output_schema: openapi
 - command_id: support.partner.invoices
+  output_schema: openapi
 - command_id: support.partner.list
   output_schema: openapi
 - command_id: support.partner.send-payment-link
+  output_schema:
+    ref: WriteResult
   no_readback: emails the partner contact a payment link; the email is not readable through the API
 - command_id: support.partner.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.partner.get
     ids:
@@ -618,7 +771,10 @@ commands:
 - command_id: support.usage-tiles
   output_schema: openapi
 - command_id: support.workspace.activity
+  output_schema: openapi
 - command_id: support.workspace.archive
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.workspace.restore-archive
@@ -628,20 +784,31 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.archive-info
+  output_schema: openapi
 - command_id: support.workspace.chargebee-cancelled
+  output_schema:
+    ref: WriteResult
   readback:
     command: support.workspace.entitlement
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.deal-seed
+  output_schema: openapi
 - command_id: support.workspace.entitlement
+  output_schema: openapi
 - command_id: support.workspace.invite.cancel
+  output_schema:
+    ref: WriteResult
   no_readback: returns a message naming the invited address; the support API has no invite list to read
     back
 - command_id: support.workspace.invite.resend
+  output_schema:
+    ref: WriteResult
   no_readback: emails the invitee again; the email is not readable through the API
 - command_id: support.workspace.restore-archive
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: support.workspace.archive
@@ -651,6 +818,8 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.plan.update-entitlements
+  output_schema:
+    ref: WriteResult
   known_restrictions: Changes what every workspace on the plan is granted, at once. Legacy and system
     plans are read-only. Read `support plan get` first. Needs --yes and --confirm PLAN_ID (the refusal
     prints the exact target). --dry-run names the plan and the new values; the plan's current values are

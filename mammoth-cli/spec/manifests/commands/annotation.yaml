@@ -1,10 +1,14 @@
 manifest_schema_version: 1
 commands:
 - command_id: annotation.comment.add
+  output_schema:
+    ref: WriteResult
   no_readback: AddComment's response (id/annotation_id/body/created_by/created_at) has no target_type/target_id;
     the only read command (annotation.list) filters by target, not by annotation_id, so the specific comment
     thread cannot be read back.
 - command_id: annotation.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: annotation.delete
@@ -15,6 +19,8 @@ commands:
       target_id: input.target_id
     kind: object
 - command_id: annotation.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: annotation.list
     ids: {}
@@ -22,6 +28,8 @@ commands:
 - command_id: annotation.list
   output_schema: openapi
 - command_id: annotation.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: annotation.list
     ids:

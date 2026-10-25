@@ -8,6 +8,8 @@ commands:
     ids: {}
     kind: object
 - command_id: folder.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: folder.get
     ids:
@@ -19,6 +21,8 @@ commands:
     ids: {}
     kind: object
 - command_id: folder.find
+  output_schema:
+    ref: FolderFind
   command_path: folder find
   disposition: command
   alias_of: null
@@ -58,7 +62,11 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: folder.get
+  output_schema:
+    ref: FolderGet
 - command_id: folder.list
+  output_schema:
+    ref: FolderList
 - command_id: folder.move
   known_restrictions: Prefer dataset_ids/view_ids (the plain ids dataset get/view get return) over resource_ids
     -- the SDK resolves them to resource ids for you. resource_ids itself takes each item's resource id,
@@ -70,6 +78,8 @@ commands:
       job_id: result.job_id
     kind: delivery
 - command_id: folder.root
+  output_schema:
+    ref: FolderGet
 - command_id: folder.trash
   readback:
     command: folder.get

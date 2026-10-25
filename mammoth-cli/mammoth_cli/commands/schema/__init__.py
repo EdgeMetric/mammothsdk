@@ -14,6 +14,7 @@ and an ``--input`` document combine.
 
 from __future__ import annotations
 
+import copy
 import json
 from collections import defaultdict
 from functools import cache
@@ -21,7 +22,12 @@ from typing import Any, cast
 
 from mammoth_cli.commands.schema.examples import _positionals, runnable_example
 from mammoth_cli.discovery import task_summaries
-from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
+from mammoth_cli.manifest.loader import (
+    command_by_id,
+    load_commands,
+    load_operations,
+    load_output_schemas,
+)
 from mammoth_cli.output.normalize import trusted_json_schema
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.local_paths import local_path_fields
@@ -684,21 +690,75 @@ def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
 #: ``output_schema`` value of a command whose ``data`` is the API's own ``200`` body,
 #: checked live against the API (``tests/live/test_output_schema.py``).
 OUTPUT_SCHEMA_OPENAPI = "openapi"
+#: Key of a named reference, ``output_schema: {ref: NAME}``, to ``output-schemas.yaml``.
+OUTPUT_SCHEMA_REF = "ref"
+_DEFS_PREFIX = "#/$defs/"
+
+
+def _refs(node: Any) -> set[str]:
+    """The ``#/$defs/NAME`` names a JSON Schema fragment refers to."""
+    names: set[str] = set()
+    if isinstance(node, dict):
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref.startswith(_DEFS_PREFIX):
+            names.add(ref[len(_DEFS_PREFIX) :])
+        for value in node.values():
+            names |= _refs(value)
+    elif isinstance(node, list):
+        for value in node:
+            names |= _refs(value)
+    return names
+
+
+def self_contained_schema(body: dict[str, Any]) -> dict[str, Any]:
+    """Copy ``body`` with every shared definition it (transitively) refers to under ``$defs``.
+
+    Args:
+        body: A JSON Schema whose ``$ref`` values are ``#/$defs/NAME``: either its own
+            ``$defs`` or a shared definition from ``output-schemas.yaml``.
+
+    Returns:
+        A new schema that needs nothing outside itself.
+
+    Raises:
+        KeyError: A ``$ref`` names a definition that exists nowhere.
+    """
+    shared = load_output_schemas()["defs"]
+    schema = copy.deepcopy(body)
+    defs: dict[str, Any] = schema.setdefault("$defs", {})
+    pending = _refs(schema)
+    while pending:
+        name = pending.pop()
+        if name not in defs:
+            defs[name] = copy.deepcopy(shared[name])
+            pending |= _refs(defs[name])
+    if not defs:
+        del schema["$defs"]
+    return schema
 
 
 def output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
     """The JSON Schema (2020-12) of a command's envelope ``data``, when it declares one.
 
+    A command declares it in its manifest record as ``output_schema``: ``openapi`` (its
+    ``data`` is the API's own ``200`` body), ``{ref: NAME}`` (a named schema in
+    ``spec/manifests/output-schemas.yaml``, shared between commands) or an inline JSON
+    Schema object.
+
     Args:
         record: The command's manifest record.
 
     Returns:
-        The schema with its ``$defs``, or None for a command that declares none (its
-        result is reshaped by the CLI, or not yet checked against the API).
+        The schema with its ``$defs``, or None for a command that declares none.
     """
-    if record.get("output_schema") != OUTPUT_SCHEMA_OPENAPI:
-        return None
-    return openapi_response_schema_for(tuple(record.get("operation_ids") or ()))
+    declared = record.get("output_schema")
+    if declared == OUTPUT_SCHEMA_OPENAPI:
+        return openapi_response_schema_for(tuple(record.get("operation_ids") or ()))
+    if isinstance(declared, dict):
+        if set(declared) == {OUTPUT_SCHEMA_REF}:
+            declared = load_output_schemas()["schemas"][declared[OUTPUT_SCHEMA_REF]]
+        return self_contained_schema(declared)
+    return None
 
 
 def get_schema(command_id: str) -> dict[str, Any] | None:

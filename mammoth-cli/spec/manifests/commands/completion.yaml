@@ -7,3 +7,5 @@ commands:
       shell: positional.0
     kind: object
 - command_id: completion.show
+  output_schema:
+    ref: CompletionShow

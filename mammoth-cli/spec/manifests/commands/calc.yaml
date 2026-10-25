@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: calc
+  output_schema:
+    ref: Calc
   command_path: calc
   disposition: command
   alias_of: null

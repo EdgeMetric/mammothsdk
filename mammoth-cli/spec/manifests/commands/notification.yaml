@@ -1,11 +1,15 @@
 manifest_schema_version: 1
 commands:
 - command_id: notification.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: notification.list
     ids: {}
     kind: object
 - command_id: notification.delete-batch
+  output_schema:
+    ref: WriteResult
   known_restrictions: Deletes the matching notifications for good. List them first (`notification list`)
     with the same filters. Needs a prompt or --yes.
   readback:

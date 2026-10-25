@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: billing.chargebee-plan
+  output_schema: openapi
 - command_id: billing.hosted-page
   known_restrictions: Creates a hosted billing page URL for object_type (for example change_plan). Nothing
     changes until someone completes the page. Needs --yes and --confirm TARGET (the refusal prints the
@@ -15,6 +16,8 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.invoice.list
+  output_schema:
+    ref: BillingInvoiceList
   mutation_class: read
   confirmation: none
   pagination_policy: single_page
@@ -49,9 +52,12 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.get
+  output_schema: openapi
 - command_id: billing.stripe.history
   output_schema: openapi
 - command_id: billing.stripe.payment-method.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: billing.stripe.payment-method.list
     ids: {}
@@ -59,6 +65,8 @@ commands:
 - command_id: billing.stripe.payment-method.list
   output_schema: openapi
 - command_id: billing.stripe.payment-method.set-default
+  output_schema:
+    ref: WriteResult
   readback:
     command: billing.stripe.payment-method.list
     ids: {}
@@ -68,6 +76,7 @@ commands:
     not log or share it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   no_readback: returns a one-time Stripe customer-portal URL; nothing persisted to read back
 - command_id: billing.stripe.preview-invoice
+  output_schema: openapi
 - command_id: billing.stripe.retry-payment
   known_restrictions: Retries the failed payment on the workspace's latest invoice; money moves if it
     succeeds. Needs --yes and --confirm TARGET (the refusal prints the exact target).
@@ -85,6 +94,7 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.upcoming-invoice
+  output_schema: openapi
 - command_id: billing.stripe.usage
   output_schema: openapi
 - command_id: billing.subscription.get
@@ -106,6 +116,8 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.recheck-limits
+  output_schema:
+    ref: WriteResult
   mutation_class: benign_mutation
   confirmation: none
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -134,4 +146,5 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.held-change.get
+  output_schema: openapi
   known_restrictions: Answers not found when no plan change is waiting for payment.

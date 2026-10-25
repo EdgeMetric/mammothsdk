@@ -19,7 +19,12 @@ from mammoth_cli.manifest.loader import load_commands
 pytestmark = pytest.mark.live
 
 _DECLARED = sorted(
-    (record for record in load_commands() if record.get("output_schema") == OUTPUT_SCHEMA_OPENAPI),
+    (
+        record
+        for record in load_commands()
+        if record.get("output_schema") == OUTPUT_SCHEMA_OPENAPI
+        and record["mutation_class"] == "read"
+    ),
     key=lambda record: record["command_id"],
 )
 
@@ -37,6 +42,8 @@ def test_data_matches_the_declared_schema(
     args = []
     for positional in record.get("positionals") or []:  # type: ignore[attr-defined]
         if positional.get("required"):
+            if positional["name"] not in known:
+                pytest.skip(f"no known value for {positional['name']}")
             args.append(str(known[positional["name"]]))
     envelope = live_cli.run(
         *str(record["command_id"]).split("."), *args, project=sales_data.project

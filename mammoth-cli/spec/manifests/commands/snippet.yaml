@@ -1,27 +1,37 @@
 manifest_schema_version: 1
 commands:
 - command_id: snippet.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: snippet.get
     ids:
       snippet_id: result.id
     kind: object
 - command_id: snippet.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: snippet.list
     ids: {}
     kind: object
 - command_id: snippet.dependencies
+  output_schema: openapi
 - command_id: snippet.duplicate
+  output_schema:
+    ref: WriteResult
   readback:
     command: snippet.get
     ids:
       snippet_id: result.id
     kind: object
 - command_id: snippet.get
+  output_schema: openapi
 - command_id: snippet.list
   output_schema: openapi
 - command_id: snippet.rerun
+  output_schema:
+    ref: WriteResult
   readback:
     command: snippet.get
     ids:

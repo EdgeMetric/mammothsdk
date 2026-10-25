@@ -3,6 +3,8 @@ commands:
 - command_id: view.active-user.list
   output_schema: openapi
 - command_id: view.active-user.mark
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.active-user.list
     ids:
@@ -15,19 +17,27 @@ commands:
       view_id: positional.0
     kind: data
 - command_id: view.ai.generation-info
+  output_schema:
+    ref: OpenObject
 - command_id: view.ai.profile
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.ai.generation-info
     ids:
       dataview_id: positional.0
     kind: object
 - command_id: view.bulk-delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: view.checkpoint.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: view.checkpoint.delete
@@ -37,15 +47,20 @@ commands:
       view_id: positional.0
     kind: object
 - command_id: view.checkpoint.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.checkpoint.list
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.checkpoint.get
+  output_schema: openapi
 - command_id: view.checkpoint.list
   output_schema: openapi
 - command_id: view.checkpoint.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.checkpoint.get
     ids:
@@ -77,6 +92,8 @@ commands:
     over any/all (match) of the columns. A raw rule body ({"cf_type": "RULE"|"COLOR_SCALE", "payload":
     {...}}) still works instead; applies_to must be row or columns.'
 - command_id: view.conditional-format.delete-all
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.conditional-format.list
     ids:
@@ -98,12 +115,16 @@ commands:
     rules created so far and the error names deleted_rule_ids and created_rule_ids. To add a rule beside
     the others use create.
 - command_id: view.conditional-format.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.conditional-format.list
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -174,6 +195,8 @@ commands:
     (delete it, then rerun the rest). Returns view_ids and per-value variants.'
   reviewed_by: primary
 - command_id: view.data-check.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data-check.list
     ids:
@@ -188,15 +211,20 @@ commands:
     notice when it starts failing (once, not on every failing run). Say it fires when the count goes above
     the value, not below.'
 - command_id: view.data-check.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data-check.list
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.data-check.get
+  output_schema: openapi
 - command_id: view.data-check.list
   output_schema: openapi
 - command_id: view.data-check.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data-check.get
     ids:
@@ -208,8 +236,14 @@ commands:
     500 (outcome_unknown) from backend validation that runs after the change is committed; read the check
     back with view data-check get before retrying.'
 - command_id: view.data.get
+  output_schema:
+    ref: OpenObject
 - command_id: view.data.query
+  output_schema:
+    ref: OpenObject
 - command_id: view.data.aggregate
+  output_schema:
+    ref: OpenObject
   mutation_class: read
   wait_policy: always_wait
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -236,6 +270,8 @@ commands:
   unset:
   - edits_target
 - command_id: view.data.compare
+  output_schema:
+    ref: ViewDataCompare
   command_path: view data compare
   disposition: command
   alias_of: null
@@ -290,6 +326,8 @@ commands:
     diff.'
   reviewed_by: primary
 - command_id: view.data.explore
+  output_schema:
+    ref: OpenObject
   command_path: view data explore
   disposition: command
   alias_of: null
@@ -374,6 +412,8 @@ commands:
     back rounded to two decimals: quote them as returned.'
   reviewed_by: primary
 - command_id: view.data.profile
+  output_schema:
+    ref: OpenObject
   command_path: view data profile
   disposition: command
   alias_of: null
@@ -438,6 +478,8 @@ commands:
     20}''.'
   reviewed_by: primary
 - command_id: view.data.drivers
+  output_schema:
+    ref: OpenObject
   command_path: view data drivers
   disposition: command
   alias_of: null
@@ -498,6 +540,8 @@ commands:
     when it is null give plain numbers and never invent a currency.'
   reviewed_by: primary
 - command_id: view.data.forecast
+  output_schema:
+    ref: OpenObject
   command_path: view data forecast
   disposition: command
   alias_of: null
@@ -559,11 +603,15 @@ commands:
     null give plain numbers and never invent a currency.'
   reviewed_by: primary
 - command_id: view.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.list
     ids: {}
     kind: object
 - command_id: view.derivative.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.derivative.list
     ids:
@@ -576,6 +624,8 @@ commands:
     it to the metric card (type metric, info.title = the AS name); pass display_properties to override.
     card says whether a card exists (verify.card mirrors it).'
 - command_id: view.derivative.data
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.derivative.list
     ids:
@@ -585,6 +635,8 @@ commands:
     web app posts; {"limit": null} is the minimal accepted body and an empty body is rejected (4GENR007).
     Returns STATUS, the metric row(s) under data and their metadata.'
 - command_id: view.derivative.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.derivative.list
     ids:
@@ -593,29 +645,41 @@ commands:
 - command_id: view.derivative.list
   output_schema: openapi
 - command_id: view.derivative.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.derivative.list
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.draft.auto-run
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.draft.command
+  output_schema:
+    ref: WriteResult
   no_readback: a draft command stages a change in the draft session; the real view is unchanged until
     the draft is submitted
 - command_id: view.draft.discard
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.draft.enter
+  output_schema:
+    ref: WriteResult
   no_readback: entering draft mode stages a session; the real view is unchanged until the draft is submitted
 - command_id: view.draft.status
+  output_schema:
+    ref: ViewDraftStatus
 - command_id: view.draft.submit
   readback:
     command: view.data.get
@@ -679,6 +743,8 @@ commands:
     pipeline re-runs, so after a refresh check the target''s row count for rows added twice. A real union
     step needs backend work.'
 - command_id: view.export.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.export.list
     ids:
@@ -710,6 +776,8 @@ commands:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.get
+  output_schema:
+    ref: OpenObject
 - command_id: view.export.list
   output_schema: openapi
 - command_id: view.export.managed-s3
@@ -775,6 +843,8 @@ commands:
     It drops and recreates the destination table each time (any existing table of that name is lost),
     so it is refused unless the input sets replace_table to true (replace_table_not_acknowledged).
 - command_id: view.export.publish-db-update
+  output_schema:
+    ref: WriteResult
   no_readback: ODBC publish-to-database has no CLI read command to confirm the external table was written
 - command_id: view.export.redshift
   readback:
@@ -814,6 +884,8 @@ commands:
     kind: delivery
   known_restrictions: Prohibit secret in CA bundle file.
 - command_id: view.export.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.export.get
     ids:
@@ -821,6 +893,8 @@ commands:
       export_id: positional.1
     kind: object
 - command_id: view.exportable-config.apply
+  output_schema:
+    ref: WriteResult
   confirmation: confirm_target
   readback:
     command: view.exportable-config.get
@@ -832,8 +906,11 @@ commands:
     dependencies, tasks, checkpoints, derivatives, data_checks) with your edits applied; the job rejects
     a bare {"tasks": []} (verified on release 2026-09-19). Round-trip get -> edit -> apply.'
 - command_id: view.exportable-config.get
+  output_schema:
+    ref: OpenObject
   operation_ids: []
 - command_id: view.get
+  output_schema: openapi
 - command_id: view.list
   output_schema: openapi
   known_restrictions: B01. Each view names its dataset (dataset_id and dataset_name) and carries rows
@@ -853,8 +930,14 @@ commands:
 - command_id: view.pipeline.get
   output_schema: openapi
 - command_id: view.pipeline.items
+  output_schema:
+    ref: OpenObject
 - command_id: view.pipeline.items-all
+  output_schema:
+    ref: OpenResult
 - command_id: view.pipeline.rerun
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -866,37 +949,53 @@ commands:
     that appends or replaces into an existing dataset also carries blank_columns: the sorted destination
     column names the write would leave NULL ([] when none).'
 - command_id: view.pipeline.wait
+  output_schema:
+    ref: OpenObject
 - command_id: view.preview
   output_schema: openapi
 - command_id: view.restore
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.get
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.task.add
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.task.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.task.get
+  output_schema:
+    ref: OpenObject
 - command_id: view.task.list
   output_schema: openapi
 - command_id: view.task.preview
+  output_schema:
+    ref: OpenObject
 - command_id: view.task.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.transform.add-column
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -905,6 +1004,8 @@ commands:
   known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the new column name is unused and
     the types of any column it is built from.'
 - command_id: view.transform.add-sql
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -1062,6 +1163,8 @@ commands:
   agent_example: 'mammoth view transform delete-columns 123 --input ''{"columns": ["Status"], "dataset_id":
     456}'' --yes'
 - command_id: view.transform.discard-duplicates
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -1152,6 +1255,8 @@ commands:
     DONE), not on the pipeline reading ready.'
   reviewed_by: primary
 - command_id: view.transform.generate-sql
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -1183,6 +1288,8 @@ commands:
       view_id: positional.0
     kind: data
 - command_id: view.transform.limit-rows
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -1365,12 +1472,16 @@ commands:
     for blanks in the partition and order columns. Exactly one of new_column or existing_column is required;
     both or neither is refused.'
 - command_id: view.trash
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.get
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.get
     ids:
@@ -1379,21 +1490,28 @@ commands:
   known_restrictions: 'Only the typed rename is offered (--input {"name": ...}); any other patch is refused
     with B09 DATAVIEW_INPUT_UNTYPED because patch_data is an arbitrary dictionary.'
 - command_id: view.version.apply
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.version.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.version.list
     ids:
       view_id: positional.0
     kind: object
 - command_id: view.version.get
+  output_schema: openapi
 - command_id: view.version.list
   output_schema: openapi
 - command_id: view.version.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.version.get
     ids:
@@ -1401,6 +1519,8 @@ commands:
       version_id: positional.1
     kind: object
 - command_id: view.impact
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   known_restrictions: 'Read-only. What deleting a pipeline task (scope task, with task_id) or the whole
     view (scope view) would affect: dashboards, exports, dependent views and automations. Pass scope in
@@ -1410,6 +1530,8 @@ commands:
     ids: {}
     kind: object
 - command_id: view.analyze
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   live_test: null
   live_exemption_reason: Backend route ships with this release; no disposable fixture runs it yet.
@@ -1424,6 +1546,8 @@ commands:
     ids: {}
     kind: object
 - command_id: view.optimize
+  output_schema:
+    ref: WriteResult
   mutation_class: reversible_pipeline
   confirmation: prompt_or_yes
   wait_policy: start_or_wait
@@ -1444,6 +1568,8 @@ commands:
       view_id: positional.0
     kind: data
 - command_id: view.explore-panel.get
+  output_schema:
+    ref: OpenObject
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Needs a disposable project with a saved Explore panel; no live config locally.
@@ -1592,6 +1718,8 @@ commands:
     are refused with the web app''s reason. Wait for the bake with job wait.'
   reviewed_by: primary
 - command_id: view.explore-panel.export-image
+  output_schema:
+    ref: ViewExplorePanelExportImage
   sdk_conversion: Read the view's saved Explore panel and the card's grouped rows, build the engine figure
     spec from them, call mammoth.api.dashboards.DashboardsAPI.render_figure_svg, and write the returned
     SVG to output_path.
@@ -1609,6 +1737,8 @@ commands:
     inside the Mammoth app: it writes a file on the host. It is a per-user preference read; it does not
     change the view or the panel.'
 - command_id: view.compare
+  output_schema:
+    ref: ViewCompare
   operation_ids: []
   mutation_class: read
   acceptance_evidence: live_read_only
@@ -1625,6 +1755,7 @@ commands:
   unset:
   - edits_target
 - command_id: view.export.runs
+  output_schema: openapi
 - command_id: view.summary
   output_schema: openapi
 - command_id: view.export.rest-fill

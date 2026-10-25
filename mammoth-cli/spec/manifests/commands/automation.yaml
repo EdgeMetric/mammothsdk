@@ -11,6 +11,8 @@ commands:
     summary, fields, options). Answer "can an automation do X?" (a PDF, an email attachment, a schedule)
     from this, never from memory. Then create with `automation create`.'
 - command_id: automation.create
+  output_schema:
+    ref: WriteResult
   known_restrictions: 'B15 AUTOMATION_EXTERNAL_EFFECTS: run `automation capabilities` first: it lists
     every task, trigger, option and file format in and out (PDF included). Task models can pull cloud
     files and send email; requires connector/email allowlists and dedicated fixtures. Delete old rows
@@ -26,29 +28,40 @@ commands:
       automation_id: result.id
     kind: object
 - command_id: automation.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.get
+  output_schema: openapi
   known_restrictions: Some servers answer this with HTTP 500 and an empty body for an automation that
     automation create just returned. The automation exists; this is a server error, so do not retry more
     than once.
 - command_id: automation.list
+  output_schema:
+    ref: OpenObjectList
 - command_id: automation.restore
+  output_schema:
+    ref: WriteResult
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.trash
+  output_schema:
+    ref: WriteResult
   readback:
     command: automation.get
     ids:
       automation_id: positional.0
     kind: object
 - command_id: automation.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation
     get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` +
     `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description,
@@ -61,12 +74,18 @@ commands:
 - command_id: automation.folders
   output_schema: openapi
 - command_id: automation.route.order
+  output_schema:
+    ref: WriteResult
   readback:
     command: automation.folders
     ids: {}
     kind: object
 - command_id: automation.route.preview
+  output_schema: openapi
 - command_id: automation.run-file.add-anyway
+  output_schema:
+    ref: WriteResult
   no_readback: the held file is added to its destination dataset by the automation's next run; `automation
     runs AUTOMATION_ID` shows that run
 - command_id: automation.runs
+  output_schema: openapi

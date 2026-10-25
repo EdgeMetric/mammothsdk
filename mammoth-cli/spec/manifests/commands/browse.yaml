@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: browse.folder
+  output_schema:
+    ref: BrowseFolder
 - command_id: browse.project
   output_schema: openapi
   known_restrictions: Some servers answer this with HTTP 500; that is a server error, not server_unavailable.
@@ -9,6 +11,8 @@ commands:
 - command_id: browse.workspace
   output_schema: openapi
 - command_id: browse.resources
+  output_schema:
+    ref: BrowseResources
   operation_ids: []
   pagination_policy: cursor
   known_restrictions: 'One project''s resources a cursor page at a time (resources v2): pass next_cursor
@@ -19,6 +23,8 @@ commands:
     ids: {}
     kind: object
 - command_id: browse.resource
+  output_schema:
+    ref: BrowseResource
   operation_ids: []
   known_restrictions: One resource of the project with its full properties (resources v2); name the type,
     then the id.
@@ -27,6 +33,8 @@ commands:
     ids: {}
     kind: object
 - command_id: browse.ancestors
+  output_schema:
+    ref: BrowseAncestors
   operation_ids: []
   known_restrictions: 'The folder path (breadcrumb) of a FOLDER of the active project: the chain from
     the project root down to the folder itself, root first (resources v2). Pass the folder''s resource_id
@@ -37,6 +45,8 @@ commands:
     ids: {}
     kind: object
 - command_id: browse.search
+  output_schema:
+    ref: BrowseResources
   operation_ids: []
   pagination_policy: cursor
   known_restrictions: 'Searches resources across every project you can open in the workspace (resources
@@ -49,6 +59,8 @@ commands:
     ids: {}
     kind: object
 - command_id: browse.resources.bulk
+  output_schema:
+    ref: BrowseResourcesBulk
   operation_ids: []
   mutation_class: read
   acceptance_evidence: live_read_only

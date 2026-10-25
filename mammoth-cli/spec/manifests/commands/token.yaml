@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: token.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: token.revoke

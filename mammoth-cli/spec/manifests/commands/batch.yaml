@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: batch.bulk-delete
+  output_schema:
+    ref: WriteResult
   known_restrictions: ids is required (the backend rejects a delete with no batch ids; it never deletes
     all batches). List ids with batch list.
   readback:
@@ -28,6 +30,8 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: batch.create-spec
+  output_schema:
+    ref: WriteResult
   agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'''
   readback:
     command: batch.list
@@ -35,13 +39,17 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: batch.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: batch.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: batch.get
+  output_schema: openapi
 - command_id: batch.list
+  output_schema: openapi
 - command_id: batch.update
   known_restrictions: 'The server takes one patch operation per call: {"patch": {"op": "replace", "path":
     "batches", "value": {"suspend": [BATCH_ID], "restore": [BATCH_ID]}}} (a list holding that one operation

@@ -225,7 +225,18 @@
         "mutation_class": {"$ref": "#/$defs/mutation_class"},
         "edits_target": {"type": "boolean"},
         "undo": {"$ref": "#/$defs/undo"},
-        "output_schema": {"enum": ["openapi"]},
+        "output_schema": {
+          "oneOf": [
+            {"enum": ["openapi"]},
+            {
+              "type": "object",
+              "required": ["ref"],
+              "properties": {"ref": {"type": "string"}},
+              "additionalProperties": false
+            },
+            {"type": "object", "not": {"required": ["ref"]}}
+          ]
+        },
         "confirmation": {"$ref": "#/$defs/confirmation"},
         "wait_policy": {"$ref": "#/$defs/wait_policy"},
         "pagination_policy": {"$ref": "#/$defs/pagination_policy"},

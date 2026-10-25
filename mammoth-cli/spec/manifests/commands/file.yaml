@@ -13,14 +13,21 @@ commands:
     ids: {}
     kind: object
 - command_id: file.extract-sheets
+  output_schema: openapi
   readback:
     command: file.get
     ids:
       file_id: positional.0
     kind: object
 - command_id: file.get
+  output_schema:
+    ref: FileGet
 - command_id: file.list
+  output_schema:
+    ref: FileList
 - command_id: file.multi-sheet-extract
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   no_readback: the file is gone after a default extract; read the new datasets with dataset list
   live_test: null
@@ -29,6 +36,8 @@ commands:
     source_label?, sheet_block_count?}] (1 to 100 accepted reads from file multi-sheet-preview), delete_file_after_extract?}.
     The file is deleted after extraction unless delete_file_after_extract is false.'
 - command_id: file.multi-sheet-preview
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   no_readback: preview only; nothing is created until file multi-sheet-extract
   live_test: null
@@ -46,6 +55,7 @@ commands:
   - password
   agent_example: mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123
 - command_id: file.update
+  output_schema: openapi
   readback:
     command: file.get
     ids:

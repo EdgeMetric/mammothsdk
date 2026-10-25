@@ -14,6 +14,8 @@ commands:
     ids: {}
     kind: object
 - command_id: project.check
+  output_schema:
+    ref: ProjectCheck
   command_path: project check
   disposition: command
   alias_of: null
@@ -134,6 +136,8 @@ commands:
 - command_id: project.data-check.list
   output_schema: openapi
 - command_id: project.delete
+  output_schema:
+    ref: WriteResult
   mutation_class: high_impact
   confirmation: confirm_target
   agent_example: mammoth project delete 123 --yes --confirm 123
@@ -142,17 +146,23 @@ commands:
     ids: {}
     kind: object
 - command_id: project.get
+  output_schema:
+    ref: ProjectGet
   known_restrictions: Reads one project by id. A token limited to one project can read only that project.
 - command_id: project.list
   output_schema: openapi
   known_restrictions: 'B01 FIRST_PAGE_ONLY: no offset/cursor continuation proven yet.'
 - command_id: project.memory.list
+  output_schema:
+    ref: ProjectMemoryList
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
   known_restrictions: The saved preferences are the caller's own, per project, oldest first; the in-app
     agent reads them at the start of every turn. Remove one by its zero-based position in this list.
 - command_id: project.memory.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: project.memory.remove
@@ -169,6 +179,8 @@ commands:
       project_id: positional.0
     kind: object
 - command_id: project.memory.remove
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: project.memory.add
@@ -185,6 +197,8 @@ commands:
       project_id: positional.0
     kind: object
 - command_id: project.needs-attention
+  output_schema:
+    ref: ProjectNeedsAttention
   mutation_class: read
   acceptance_evidence: live_read_only
   known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide
@@ -203,8 +217,12 @@ commands:
 - command_id: project.pending-changes
   output_schema: openapi
 - command_id: project.publish-credentials
+  output_schema: openapi
 - command_id: project.resource-dependencies
+  output_schema: openapi
 - command_id: project.resource-dependencies.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: Changes the resources the project declares it depends on; views and dashboards that
     read through a removed dependency can stop resolving data. Read the current set first (`project resource-dependencies`).
     Needs --yes and --confirm PROJECT_ID.
@@ -214,19 +232,27 @@ commands:
       project_id: positional.0
     kind: object
 - command_id: project.resource-status
+  output_schema:
+    ref: ProjectResourceStatus
 - command_id: project.sample-flow
+  output_schema:
+    ref: WriteResult
   readback:
     command: job.get
     ids:
       job_id: result.job_id
     kind: delivery
 - command_id: project.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: project.get
     ids:
       project_id: positional.0
     kind: object
 - command_id: project.user.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: project.user.remove
@@ -238,17 +264,23 @@ commands:
     how a project gets a new person.'
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.remove
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: project.user.add
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.update
+  output_schema:
+    ref: WriteResult
   mutation_class: high_impact
   confirmation: yes_always
   known_restrictions: Changes one project member's role (role plus exactly one of user_id or invite_id);
     the person gains or loses access at once. Needs --yes.
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.copy
+  output_schema:
+    ref: WriteResult
   wait_policy: always_wait
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null

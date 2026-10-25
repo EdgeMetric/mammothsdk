@@ -1,11 +1,17 @@
 manifest_schema_version: 1
 commands:
 - command_id: ai.condition.generate
+  output_schema: openapi
 - command_id: ai.expression.generate
+  output_schema: openapi
 - command_id: ai.retention.condition
+  output_schema:
+    ref: WriteResult
   no_readback: generates a retention condition preview; nothing is persisted to read back
 - command_id: ai.sql.generate
+  output_schema: openapi
 - command_id: ai.suggestion.list
+  output_schema: openapi
   known_restrictions: Body is the release UnifiedPromptSpec. suggestion_type is one of extract_text, add_condition,
     generate_task, apply_ai_template, dashboards, derivative_fuzzy_bucket and params follows that type
     (generate_task {prompt}; add_condition {prompt, sequence_number}; extract_text {column_name, sequence_number,

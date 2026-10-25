@@ -74,7 +74,8 @@ a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `em
 
 - `meta.run_id`: the invocation id. It is the run log's `run_id`, the journal's `inv`
   (`mammoth history show RUN_ID`) and the `inv` in the request's User-Agent.
-- `schema get --full` returns `output_schema`.
+- `schema get --full` returns `output_schema`: declared by every read command and by most
+  writes (the shared `WriteResult`: the `verify` and `state` blocks plus the API's own body).
 - `mammoth run` lines take `name`, `when` and `for_each`.
 - `history` commands and the `history_not_found`, `journal_off` and
   `unresolved_reference` error codes.

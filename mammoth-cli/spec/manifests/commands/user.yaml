@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: user.avatar.delete
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: user.avatar.upload
@@ -28,6 +30,8 @@ commands:
 - command_id: user.preference.get
   output_schema: openapi
 - command_id: user.preference.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: 'Body is the release {"patch": [{"op", "path", "value"}]} list; the CLI does not
     validate preference paths (observed key GLOBAL.PREFERENCES.TOP_TABS). Not verified live.'
   readback:
@@ -35,6 +39,8 @@ commands:
     ids: {}
     kind: object
 - command_id: user.update
+  output_schema:
+    ref: WriteResult
   mutation_class: benign_mutation
   confirmation: none
   live_exemption_reason: Account or workspace mutation without a disposable fixture.

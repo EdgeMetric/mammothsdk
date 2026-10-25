@@ -1,13 +1,19 @@
 manifest_schema_version: 1
 commands:
 - command_id: dataset.batch-data
+  output_schema:
+    ref: OpenObject
   operation_ids: []
 - command_id: dataset.broken-rows.list
+  output_schema:
+    ref: DatasetBrokenRows
   operation_ids: []
   known_restrictions: Returns the first 100 lines the upload could not parse, each with its line number,
     upload (batch_id) and why it does not fit the columns; row_count is the total. A dataset not made
     from a file upload has none.
 - command_id: dataset.broken-rows.resolve
+  output_schema:
+    ref: WriteResult
   readback:
     command: dataset.broken-rows.list
     ids:
@@ -34,6 +40,8 @@ commands:
     ids: {}
     kind: object
 - command_id: dataset.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: view.data.get
     ids:
@@ -83,6 +91,8 @@ commands:
 - command_id: dataset.data
   output_schema: openapi
 - command_id: dataset.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: dataset.list
     ids: {}
@@ -90,6 +100,8 @@ commands:
 - command_id: dataset.file-settings.get
   output_schema: openapi
 - command_id: dataset.file-settings.undo
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dataset.file-settings.update
@@ -99,6 +111,8 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.file-settings.update
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: inverse
     command: dataset.file-settings.undo
@@ -109,6 +123,8 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.find
+  output_schema:
+    ref: DatasetFind
   command_path: dataset find
   disposition: command
   alias_of: null
@@ -149,6 +165,8 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: dataset.schema-diff
+  output_schema:
+    ref: DatasetSchemaDiff
   command_path: dataset schema-diff
   disposition: command
   alias_of: null
@@ -194,6 +212,8 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: dataset.get
+  output_schema:
+    ref: DatasetGet
 - command_id: dataset.interpretation.confirm
   readback:
     command: dataset.get
@@ -222,6 +242,8 @@ commands:
     or destination_dataset_id. Nothing is applied to the file until interpretation confirm. Example: --input
     ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
 - command_id: dataset.list
+  output_schema:
+    ref: OpenResult
   known_restrictions: 'B01. Newest first. Each item carries rows and cols, created and updated time (updated
     is left out when it equals created), the source kind (file, connector, created in Mammoth, export
     of a view), and its column names with types, from the list route''s stored stats, sources and data_schema,
@@ -233,6 +255,8 @@ commands:
     first, with total and more: use it for a list of names (which files can I see), never page offsets.
     Without a project use dataset find NAME_SUBSTRING.'
 - command_id: dataset.refresh
+  output_schema:
+    ref: WriteResult
   operation_ids:
   - UpdateDataset
   confirmation: prompt_or_yes
@@ -252,18 +276,24 @@ commands:
     reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval
     cannot refresh it; for a scheduled pull from a URL use the REST API connector.
 - command_id: dataset.rename
+  output_schema:
+    ref: WriteResult
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.restore
+  output_schema:
+    ref: WriteResult
   readback:
     command: dataset.get
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.column-stats
+  output_schema:
+    ref: DatasetColumnStats
   operation_ids: []
   sdk_symbol: mammoth_cli.commands.dataset.column_stats
   sdk_conversion: Call mammoth_cli.commands.dataset.column_stats with validated request fields.
@@ -274,6 +304,8 @@ commands:
     columns with their blank count and share, type and distinct count, from stats stored at the last load
     or pipeline run. Rank columns by blank_pct (or blank_count) and name the worst dataset and column.'
 - command_id: dataset.definition.list
+  output_schema:
+    ref: DatasetDefinitionList
   operation_ids: []
   pagination_policy: none
   live_test: null
@@ -282,6 +314,8 @@ commands:
     chats on it. The project's definitions already appear in every turn's context, so there is no need
     to list them before answering; list them to find the id to remove.
 - command_id: dataset.definition.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dataset.definition.remove
@@ -303,6 +337,8 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.definition.remove
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: dataset.definition.add
@@ -319,12 +355,16 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.search
+  output_schema:
+    ref: DatasetSearch
   operation_ids: []
   sdk_symbol: mammoth_cli.commands.dataset.search
   sdk_conversion: Call mammoth_cli.commands.dataset.search with validated request fields.
   live_test: null
   live_exemption_reason: Read-only composite over the project's datasets search route.
 - command_id: dataset.trash
+  output_schema:
+    ref: WriteResult
   readback:
     command: dataset.get
     ids:
@@ -334,7 +374,10 @@ commands:
   no_readback: this command always rejects with a typed-command redirect before any write happens; there
     is no new state to read back
 - command_id: dataset.tool-claim.get
+  output_schema: openapi
 - command_id: dataset.tool-claim.redeem
+  output_schema:
+    ref: WriteResult
   known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing
     and returns where the tables already are.
   no_readback: returns the workspace, project and new folder ids; the folder is the new state

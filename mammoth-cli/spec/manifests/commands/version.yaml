@@ -1,3 +1,5 @@
 manifest_schema_version: 1
 commands:
 - command_id: version
+  output_schema:
+    ref: Version

@@ -27,7 +27,9 @@ ver3 adds three things:
 
 - a task layer (#309);
 - an invocation journal with resume and undo (#310, #311);
-- output schemas (#315).
+- output schemas (#315): each command's manifest record declares the shape of its `data` as
+  `output_schema` (`openapi` for the API's own body, `{ref: NAME}` for a named schema in
+  `spec/manifests/output-schemas.yaml`, or an inline JSON Schema). `schema get --full` returns it.
 
 All three would add more cases to that function. ver3 must also stay a production CLI. Startup cost is
 guarded (`test_startup_cost.py`). The envelope contract is public. `embed` runs many users

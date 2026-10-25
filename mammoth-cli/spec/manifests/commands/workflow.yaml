@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: workflow.archive
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -12,6 +14,8 @@ commands:
   known_restrictions: 'Input: {archived: true|false, dataset_ids?: [int]}. The dataset ids are the workflow''s
     datasets now; it reads as active once it has others.'
 - command_id: workflow.attach-dataset
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -22,6 +26,8 @@ commands:
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
   known_restrictions: Takes the dataset to attach as the second positional, DATASOURCE_ID. No input document.
 - command_id: workflow.block.add
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
@@ -34,24 +40,32 @@ commands:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.config
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.type
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.canvas
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.cleanup
+  output_schema:
+    ref: WriteResult
   known_restrictions: Deletes the active project's ghost (orphaned, half-created) workflows for good;
     real workflows are untouched. Needs --project or an active project, and a prompt or --yes.
   readback:
@@ -59,28 +73,37 @@ commands:
     ids: {}
     kind: object
 - command_id: workflow.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: result.id
     kind: object
 - command_id: workflow.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.list
     ids: {}
     kind: object
 - command_id: workflow.from-template
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: result.id
     kind: object
 - command_id: workflow.get
+  output_schema: openapi
 - command_id: workflow.graph
   output_schema: openapi
 - command_id: workflow.list
   output_schema: openapi
 - command_id: workflow.resolve-held
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -93,6 +116,8 @@ commands:
     (true: already in Mammoth, not built again; false: lift the hold so the next Save builds it), expected_version?:
     int}.'
 - command_id: workflow.save
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: workflow.save-undo
@@ -119,6 +144,8 @@ commands:
 - command_id: workflow.workspace-sources
   output_schema: openapi
 - command_id: workflow.save-undo
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: workflow.save
@@ -134,6 +161,8 @@ commands:
   known_restrictions: Removes what the Save built (datasets, views, steps). Prompts, or pass --yes. Waits
     for the undo run.
 - command_id: workflow.duplicate
+  output_schema:
+    ref: WriteResult
   wait_policy: always_wait
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
@@ -146,6 +175,8 @@ commands:
   known_restrictions: Copies the chosen datasets, with their rows, views and steps, into a new workflow.
     Automations and outside exports are not copied.
 - command_id: workflow.save-cancel-step
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get

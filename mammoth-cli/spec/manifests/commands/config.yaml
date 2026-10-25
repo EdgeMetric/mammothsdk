@@ -1,8 +1,14 @@
 manifest_schema_version: 1
 commands:
 - command_id: config.get
+  output_schema:
+    ref: ConfigGet
 - command_id: config.list
+  output_schema:
+    ref: ConfigList
 - command_id: config.path
+  output_schema:
+    ref: ConfigPath
 - command_id: config.set
   readback:
     command: config.get

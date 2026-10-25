@@ -8,12 +8,14 @@ commands:
   known_restrictions: Read-only. The collections you manage or were shared, each with its role (manager
     or member), url, project and dashboard count.
 - command_id: collection.get
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: Read-only. One collection with its dashboards in order, its members (managers only),
     and its refresh setup.
 - command_id: collection.get-by-url
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
@@ -21,6 +23,8 @@ commands:
     is the invite token, which the server redeems on the way in; email is the address the invite went
     to.
 - command_id: collection.create
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -33,6 +37,8 @@ commands:
     is 1 to 120 characters; dashboard_ids puts boards in it, in order. Nobody else sees it until collection
     share.
 - command_id: collection.update
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -45,6 +51,8 @@ commands:
     the new order), tab_labels (dashboard id to a short label; empty clears it), automation_id to link
     the upload-to-refresh automation, or unlink_automation.'
 - command_id: collection.delete
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.list
@@ -55,6 +63,8 @@ commands:
   known_restrictions: Deletes the collection and ends every member's access through it. The dashboards
     in it are kept.
 - command_id: collection.dashboards.add
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: collection.dashboards.remove
@@ -68,6 +78,8 @@ commands:
   known_restrictions: Adds dashboards to the collection, which gives its members access to them. notify
     true also emails the members. Always needs --yes.
 - command_id: collection.dashboards.remove
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: collection.dashboards.add
@@ -81,6 +93,8 @@ commands:
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
   known_restrictions: Takes one dashboard out of the collection. The dashboard is kept.
 - command_id: collection.share
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -92,6 +106,8 @@ commands:
     lists added, already (members before) and in_project (skipped: they already edit the project''s boards).
     Always needs --yes.'
 - command_id: collection.members.remove
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -102,18 +118,21 @@ commands:
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
   known_restrictions: Takes one person off the collection by email.
 - command_id: collection.for-dashboard
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: Read-only. The collections that hold this dashboard, in the shape collection list
     returns.
 - command_id: collection.activity
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
   known_restrictions: 'Read-only. Who opened the collection and which of its dashboards get opened: opened,
     member_count, people (email, status, last_opened_at) and dashboards (views, viewers).'
 - command_id: collection.pipeline-changes
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection or board; not in the automated live suite.
@@ -132,19 +151,25 @@ commands:
     paths; append_to_ds_id appends to one of the refresh datasets. The server answers with an upload job
     id and refreshes in the background.
 - command_id: collection.active-job
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection; not in the automated live suite.
   known_restrictions: Read-only. Returns the collection's upload job that is still in flight, so an interrupted
     upload can be resumed. Use collection job to poll one job by id.
 - command_id: collection.job
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read of a disposable collection job; not in the automated live suite.
   known_restrictions: Read-only. Polls one collection upload job by id and returns its state.
 - command_id: collection.email-updates.get
+  output_schema: openapi
 - command_id: collection.email-updates.me.get
+  output_schema: openapi
 - command_id: collection.email-updates.me.set
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.email-updates.me.get
@@ -155,6 +180,8 @@ commands:
   live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
   known_restrictions: Turns your own email updates for the collection on or off; nobody else's.
 - command_id: collection.email-updates.set
+  output_schema:
+    ref: WriteResult
   mutation_class: external_effect
   confirmation: yes_always
   acceptance_evidence: contract_only_high_impact
@@ -171,6 +198,8 @@ commands:
   known_restrictions: Saves the collection's email-update schedule and the phone numbers or people it
     reaches. Needs --yes. Editors only.
 - command_id: collection.email-updates.test
+  output_schema:
+    ref: WriteResult
   mutation_class: external_effect
   confirmation: yes_always
   acceptance_evidence: contract_only_high_impact

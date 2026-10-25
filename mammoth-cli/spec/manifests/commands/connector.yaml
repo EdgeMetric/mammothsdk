@@ -3,19 +3,29 @@ commands:
 - command_id: connector.active
   output_schema: openapi
 - command_id: connector.ai.chat
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
     kind: object
 - command_id: connector.ai.history
+  output_schema: openapi
 - command_id: connector.ai.session.list
+  output_schema:
+    ref: ConnectorAiSessionList
 - command_id: connector.ai.session.messages
+  output_schema: openapi
 - command_id: connector.ai.submit-column-selection
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
     kind: object
 - command_id: connector.ai.submit-credentials
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
@@ -35,6 +45,8 @@ commands:
       connector_key: positional.0
     kind: object
 - command_id: connector.connection.delete
+  output_schema:
+    ref: WriteResult
   known_restrictions: Resolve immutable key before confirmation.
   readback:
     command: connector.connection.list
@@ -42,11 +54,16 @@ commands:
       connector_key: positional.0
     kind: object
 - command_id: connector.connection.get
+  output_schema: openapi
   known_restrictions: Secrets in the returned config are redacted.
 - command_id: connector.connection.list
+  output_schema:
+    ref: OpenObjectList
   known_restrictions: Without a connector key the result lists the connections of every connector in 'connector
     active', each row with its connector_key. Secrets in a connection's config are redacted.
 - command_id: connector.connection.query
+  output_schema:
+    ref: OpenResult
   pagination_policy: single_page
   known_restrictions: Runs one SELECT on the connected database and returns a sample of its rows in data_sample
     (dataschema and rows). It saves no data source configuration and creates no dataset, so it needs no
@@ -78,6 +95,8 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.delete
+  output_schema:
+    ref: WriteResult
   known_restrictions: Resolve immutable key before confirmation.
   readback:
     command: connector.ds-config.list
@@ -86,6 +105,8 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.delete-all
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ds-config.list
     ids:
@@ -93,11 +114,15 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.get
+  output_schema: openapi
   known_restrictions: Reads one data-source config by key (from `connector ds-config list`); secrets in
     it are redacted.
 - command_id: connector.ds-config.list
+  output_schema: openapi
   known_restrictions: Secrets in nested configuration are redacted.
 - command_id: connector.ds-config.update
+  output_schema:
+    ref: WriteResult
   known_restrictions: Only the query path is supported by the server today; other paths are refused. Read
     the config first with `connector ds-config get`.
   readback:
@@ -108,19 +133,30 @@ commands:
       ds_config_key: positional.2
     kind: object
 - command_id: connector.get
+  output_schema: openapi
 - command_id: connector.list
+  output_schema:
+    ref: OpenObjectList
 - command_id: connector.query.generate
+  output_schema:
+    ref: OpenObject
   known_restrictions: Keys are nonempty and cannot contain '/'.
 - command_id: connector.query.status
+  output_schema: openapi
 - command_id: connector.connection.list-all
   output_schema: openapi
 - command_id: connector.connection.test
+  output_schema:
+    ref: WriteResult
   known_restrictions: Needs project admin; the check reaches the connection's own service and its result
     is kept.
   no_readback: returns the health check result itself (success, health_status, message); nothing else
     to read back
 - command_id: connector.draft.browse
+  output_schema: openapi
 - command_id: connector.draft.create
+  output_schema:
+    ref: WriteResult
   undo:
     strategy: manual
     command: connector.draft.discard
@@ -130,29 +166,38 @@ commands:
       draft_id: result.id
     kind: object
 - command_id: connector.draft.discard
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.fill
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.get
+  output_schema: openapi
 - command_id: connector.draft.known-sources
   output_schema: openapi
 - command_id: connector.draft.list
   output_schema: openapi
 - command_id: connector.draft.open
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.read-tables
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
@@ -165,16 +210,24 @@ commands:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.save
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.source.join-candidates
+  output_schema: openapi
 - command_id: connector.draft.source.list
+  output_schema: openapi
 - command_id: connector.draft.source.preview
+  output_schema:
+    ref: WriteResult
   no_readback: returns the source's first rows itself; nothing is saved for a read to show
 - command_id: connector.draft.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:

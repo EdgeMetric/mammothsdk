@@ -1,5 +1,11 @@
 manifest_schema_version: 1
 commands:
 - command_id: schema.find
+  output_schema:
+    ref: SchemaFind
 - command_id: schema.get
+  output_schema:
+    ref: SchemaGet
 - command_id: schema.list
+  output_schema:
+    ref: SchemaList

@@ -1,0 +1,864 @@
+# The shape of `data` (JSON Schema 2020-12) for commands whose result is not the API's own
+# `200` body (those say `output_schema: openapi`). A command refers to a schema here with
+#   output_schema:
+#     ref: Name
+# or writes an inline JSON Schema object in its own record. `defs` are fragments shared by
+# several schemas, referenced as `#/$defs/Name`; `schemas` are the named ones. A schema states
+# only what its handler guarantees: `required` lists keys the handler always sets, and a part
+# the CLI passes through from the API (or that varies by input) stays an open `object`.
+# Run `scripts/build_manifests.py` after editing: it compiles this file to
+# `compiled/output-schemas.json`. `tests/contract/test_output_schema_declared.py` checks that
+# every schema is valid and `tests/unit/commands/test_output_schema_fixtures.py` runs the
+# handlers' outputs through them.
+
+defs:
+  Id:
+    type: integer
+  Text:
+    type: string
+  TextOrNull:
+    type: [string, "null"]
+  IdOrNull:
+    type: [integer, "null"]
+  Object:
+    type: object
+  ObjectList:
+    type: array
+    items:
+      type: object
+  TextList:
+    type: array
+    items:
+      type: string
+  # `[{...}]` of rows the CLI shows as it received them.
+  Rows:
+    type: array
+    items:
+      type: object
+  # A list result the CLI pages: the shown rows, and how to get the next ones.
+  Paging:
+    type: object
+    properties:
+      count:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+      next_offset:
+        type: [integer, "null"]
+      next_command:
+        type: [string, "null"]
+      previous_offset:
+        type: [integer, "null"]
+      previous_command:
+        type: [string, "null"]
+  CapabilityEntry:
+    description: One API operation, with the CLI command that covers it (null when none does).
+    type: object
+    required: [operation_id, identity, disposition]
+    properties:
+      operation_id: {type: string}
+      identity: {type: string}
+      disposition: {type: string}
+      canonical_command: {type: [string, "null"]}
+      command_path: {type: [string, "null"]}
+      unavailable: {type: boolean}
+      server_status: {type: [string, "null"]}
+      sdk_symbol: {type: [string, "null"]}
+      mutation_class: {type: [string, "null"]}
+      confirmation: {type: [string, "null"]}
+      wait_policy: {type: [string, "null"]}
+      pagination_policy: {type: [string, "null"]}
+      acceptance_evidence: {type: [string, "null"]}
+      contract: {type: [object, "null"]}
+  HistoryEntry:
+    type: object
+    required: [inv, group, command, started, status, exit, undo, undoable]
+    properties:
+      inv:
+        type: string
+      group:
+        type: string
+      command:
+        type: string
+      started:
+        type: string
+      status:
+        enum: [unknown, failed, done, undone]
+      exit:
+        type: [integer, "null"]
+      profile:
+        type: [string, "null"]
+      project_id:
+        $ref: '#/$defs/IdOrNull'
+      opens:
+        $ref: '#/$defs/ObjectList'
+      undo:
+        $ref: '#/$defs/ObjectList'
+      undoable:
+        type: boolean
+      irreversible:
+        $ref: '#/$defs/TextOrNull'
+      undone_by:
+        $ref: '#/$defs/TextOrNull'
+  File:
+    description: One uploaded file, as the files routes return it.
+    type: object
+    required: [id]
+    properties:
+      id: {type: integer}
+      name: {type: [string, "null"]}
+      status: {type: [string, "null"]}
+      created_at: {type: [string, "null"]}
+      last_updated_at: {type: [string, "null"]}
+      additional_info: {type: [object, "null"]}
+      status_info: {type: [object, "null"]}
+  Folder:
+    description: One folder, shown by its open id.
+    type: object
+    required: [id]
+    properties:
+      id: {type: integer}
+      name: {type: [string, "null"]}
+      parent_id: {type: [integer, "null"]}
+      resource_id: {type: [integer, "null"]}
+      resource_path: {type: [string, "null"]}
+      status: {type: [string, "null"]}
+      created_at: {type: [string, "null"]}
+      updated_at: {type: [string, "null"]}
+      created_by: {type: [integer, "null"]}
+  BrowseResources:
+    description: A cursor page of tree resources.
+    type: object
+    required: [resources]
+    properties:
+      resources: {type: array, items: {type: object}}
+      has_more: {type: boolean}
+      next_cursor: {type: [string, "null"]}
+  # What `_request_binary` returns for a non-JSON artifact (an image, PDF, video or page).
+  BinaryArtifact:
+    type: object
+    required: [content_type, size_bytes, sha256]
+    properties:
+      content_type: {type: string}
+      size_bytes: {type: integer}
+      sha256: {type: string}
+      text: {type: string}
+      content_base64: {type: string}
+  TruncatedNote:
+    type: object
+    properties:
+      truncated: {type: boolean}
+      note: {type: string}
+
+schemas:
+  Version:
+    type: object
+    required: [version, schema_version]
+    properties:
+      version:
+        type: string
+      schema_version:
+        type: integer
+  Calc:
+    type: object
+    required: [expression, result]
+    properties:
+      expression:
+        type: string
+      result:
+        description: The exact decimal result, as text.
+        type: string
+  Link:
+    description: The ids one pasted app URL carries; an id the URL lacks is left out.
+    type: object
+    required: [url, workspace_id]
+    properties:
+      url:
+        type: string
+      workspace_id:
+        type: integer
+      project_id:
+        type: integer
+      note:
+        type: string
+  CompletionShow:
+    type: object
+    required: [shell, script]
+    properties:
+      shell:
+        type: string
+      script:
+        type: string
+  Capabilities:
+    type: object
+    required: [count, limitations]
+    properties:
+      count:
+        type: integer
+      hint:
+        type: string
+      limitations:
+        type: array
+        items:
+          type: object
+          required: [id, limitation, instead]
+          properties:
+            id:
+              type: string
+            area:
+              type: string
+            limitation:
+              type: string
+            instead:
+              type: string
+            doc:
+              type: string
+            workarounds:
+              type: array
+  CapabilityList:
+    type: array
+    items:
+      $ref: '#/$defs/CapabilityEntry'
+  CapabilityGet:
+    $ref: '#/$defs/CapabilityEntry'
+  CapabilityFind:
+    type: object
+    required: [query, matches, total_matches, truncated, continuation]
+    properties:
+      query: {type: string}
+      matches: {type: array, items: {$ref: '#/$defs/CapabilityEntry'}}
+      total_matches: {type: integer}
+      truncated: {type: boolean}
+      continuation:
+        type: [object, "null"]
+        properties:
+          next_cursor: {type: string}
+          has_more: {type: boolean}
+          limit: {type: integer}
+          query: {type: string}
+  LogPath:
+    type: object
+    required: [directory, files, retention_days]
+    properties:
+      directory:
+        type: string
+      files:
+        $ref: '#/$defs/TextList'
+      today:
+        type: string
+      override_env:
+        type: string
+      retention_days:
+        type: integer
+  LogTail:
+    type: object
+    required: [records, count]
+    properties:
+      count:
+        type: integer
+      records:
+        $ref: '#/$defs/ObjectList'
+  HistoryList:
+    type: object
+    required: [entries, count, total]
+    properties:
+      count:
+        type: integer
+      total:
+        type: integer
+      entries:
+        type: array
+        items:
+          $ref: '#/$defs/HistoryEntry'
+  HistoryShow:
+    type: object
+    required: [id, entries]
+    properties:
+      id:
+        type: string
+      entries:
+        type: array
+        items:
+          $ref: '#/$defs/HistoryEntry'
+  RecipeList:
+    type: object
+    required: [recipes, count]
+    properties:
+      count:
+        type: integer
+      recipes:
+        type: array
+        items:
+          type: object
+          required: [id, title, inputs, writes, steps, run_command]
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            inputs:
+              type: object
+            writes:
+              type: boolean
+            steps:
+              $ref: '#/$defs/TextList'
+            run_command:
+              type: string
+  How:
+    description: A recipe for a goal (matched), or the best-guess steps when none matches.
+    type: object
+    required: [goal, steps]
+    properties:
+      goal:
+        type: string
+      matched:
+        type: boolean
+      recipe:
+        type: object
+        properties:
+          id:
+            type: string
+          title:
+            type: string
+          doc:
+            type: string
+      context:
+        type: object
+      steps:
+        $ref: '#/$defs/ObjectList'
+      notes:
+        type: array
+      alternatives:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            command:
+              type: string
+      run_command:
+        type: string
+      inputs:
+        type: object
+      hint:
+        type: string
+  SkillList:
+    type: object
+    required: [skill, installs]
+    properties:
+      skill:
+        type: string
+      installs:
+        type: array
+        items:
+          type: object
+          required: [agent, scope, path]
+          properties:
+            agent:
+              type: string
+            scope:
+              type: string
+            path:
+              type: string
+            present:
+              type: boolean
+            intact:
+              type: boolean
+            current:
+              type: boolean
+  SkillPath:
+    type: object
+    required: [skill, canonical, targets]
+    properties:
+      skill:
+        type: string
+      canonical:
+        type: string
+      targets:
+        type: array
+        items:
+          type: object
+          required: [agent, scope, path]
+          properties:
+            agent:
+              type: string
+            scope:
+              type: string
+            path:
+              type: string
+  SkillShow:
+    type: object
+    required: [skill, file, text]
+    properties:
+      skill:
+        type: string
+      file:
+        type: string
+      path:
+        type: string
+      text:
+        type: string
+  AuthStatus:
+    description: Local sign-in state of a profile; `--check` adds a live connection check.
+    type: object
+    required: [profile, workspace_id, endpoint, has_credentials, credential, checked, connected]
+    properties:
+      profile: {type: string}
+      workspace_id: {type: [integer, "null"]}
+      endpoint: {type: string}
+      has_credentials: {type: boolean}
+      credential: {type: [string, "null"]}
+      checked: {type: boolean}
+      connected: {type: [boolean, "null"]}
+      client_id: {type: string}
+      expires_at: {type: string}
+      access_token_expires_at: {type: string}
+      expires_at_note: {type: string}
+      refreshes_automatically: {type: boolean}
+      recommendation: {type: string}
+      token_project: {type: [integer, "null"]}
+      token_projects: {type: [array, "null"], items: {type: integer}}
+      workspace_name: {type: string}
+      token_project_name: {type: string}
+      token_project_names: {type: array}
+  ConfigGet:
+    type: object
+    required: [key, value, profile]
+    properties:
+      key: {type: string}
+      value: {}
+      profile: {type: string}
+  ConfigList:
+    type: object
+    required: [profile, values]
+    properties:
+      profile: {type: string}
+      values: {type: object}
+  ConfigPath:
+    type: object
+    required: [profiles_path]
+    properties:
+      profiles_path: {type: string}
+  ContextShow:
+    type: object
+    required: [profile, endpoint, workspace_id, project_id, project_source]
+    properties:
+      profile: {type: string}
+      endpoint: {type: string}
+      workspace_id: {type: [integer, "null"]}
+      project_id: {type: [integer, "null"]}
+      project_source: {type: string}
+  ContextProjectStatus:
+    type: object
+    required: [profile, project_id, source]
+    properties:
+      profile: {type: string}
+      project_id: {type: [integer, "null"]}
+      source: {type: string}
+  ActivityExport:
+    description: The export request's result; the API names a download or a job.
+    type: object
+  BillingInvoiceList:
+    type: object
+    properties:
+      billing_history: {type: array, items: {type: object}}
+  BrowseAncestors:
+    description: The folders from the root down to the one asked for.
+    type: object
+    required: [resources]
+    properties:
+      resources: {type: array, items: {type: object}}
+  BrowseResource:
+    type: object
+    required: [resource]
+    properties:
+      resource: {type: object}
+  BrowseResourcesBulk:
+    type: object
+    required: [resources]
+    properties:
+      resources: {type: array}
+  BrowseFolder:
+    description: A folder's child resources; the API leaves the shape open.
+    type: object
+  FileGet:
+    $ref: '#/$defs/File'
+  FileList:
+    type: object
+    required: [files, paging]
+    properties:
+      files: {type: array, items: {$ref: '#/$defs/File'}}
+      paging: {$ref: '#/$defs/Paging'}
+  FolderGet:
+    $ref: '#/$defs/Folder'
+  FolderList:
+    type: object
+    required: [folders, paging]
+    properties:
+      folders: {type: array, items: {$ref: '#/$defs/Folder'}}
+      paging: {$ref: '#/$defs/Paging'}
+  FolderFind:
+    type: object
+    required: [matches, projects_searched]
+    properties:
+      matches:
+        type: array
+        items:
+          type: object
+          required: [project_id, project_name, id, name]
+          properties:
+            project_id: {type: integer}
+            project_name: {type: [string, "null"]}
+            id: {type: [integer, "null"]}
+            name: {type: [string, "null"]}
+      projects_searched: {type: integer}
+      truncated: {type: boolean}
+      note: {type: string}
+  OpenObject:
+    description: An object whose keys the API leaves open; the CLI passes it through.
+    type: object
+  OpenObjectList:
+    description: A list of objects whose keys the API leaves open.
+    type: array
+    items:
+      type: object
+  OpenResult:
+    description: An object or a list; the shape depends on the options passed.
+    type: [object, array]
+  NeverReturns:
+    description: The command always fails with `not_available`, so it returns no data.
+    not: {}
+  BinaryArtifactResult:
+    $ref: '#/$defs/BinaryArtifact'
+  ConnectorAiSessionList:
+    type: object
+    required: [sessions]
+    properties:
+      sessions: {type: array, items: {type: object}}
+  DashboardCanvas:
+    type: object
+    required: [canvas, meta]
+    properties:
+      canvas: {type: object}
+      dashboard_id: {type: [integer, "null"]}
+      meta: {type: object}
+  DashboardGet:
+    type: object
+    required: [id]
+    properties:
+      id: {type: integer}
+      project_id: {type: [integer, "null"]}
+      html: {type: string}
+      dashboard_link: {type: string}
+      role: {type: string}
+      sources: {type: array, items: {type: integer}}
+      source_views: {type: array, items: {type: object}}
+      messages: {type: array, items: {type: object}}
+  DashboardFilterList:
+    type: object
+    required: [dashboard_id, filters]
+    properties:
+      dashboard_id: {type: integer}
+      filters: {type: array}
+  DashboardGalleryList:
+    type: object
+    required: [templates]
+    properties:
+      templates: {type: array, items: {type: object}}
+  DashboardEmailUpdatesList:
+    type: object
+    required: [updates]
+    properties:
+      updates: {type: array, items: {type: object}}
+  DatasetBrokenRows:
+    type: object
+    required: [row_count, unstructured_rows]
+    properties:
+      row_count: {type: integer}
+      unstructured_rows: {type: array, items: {type: object}}
+  DatasetColumnStats:
+    type: object
+    required: [datasets, dataset_count, note]
+    properties:
+      datasets: {type: array, items: {type: object}}
+      dataset_count: {type: integer}
+      omitted: {type: integer}
+      note: {type: string}
+  DatasetDefinitionList:
+    type: object
+    required: [dataset_id, definitions]
+    properties:
+      dataset_id: {type: integer}
+      definitions: {type: array, items: {type: object}}
+  DatasetFind:
+    type: object
+    required: [matches, projects_searched]
+    properties:
+      matches: {type: array, items: {type: object}}
+      projects_searched: {type: integer}
+      trashed_matches: {type: array, items: {type: object}}
+      elsewhere: {type: integer}
+      truncated: {type: boolean}
+      note: {type: string}
+  DatasetSearch:
+    type: object
+    required: [term, datasets, matched]
+    properties:
+      term: {type: string}
+      datasets: {type: array, items: {type: object}}
+      matched: {type: integer}
+      omitted: {type: integer}
+      note: {type: string}
+  DatasetSchemaDiff:
+    type: object
+    required: [destination_dataset_id, source_dataset_id, next]
+    properties:
+      destination_dataset_id: {type: integer}
+      source_dataset_id: {type: integer}
+      next: {type: string}
+  DatasetGet:
+    description: The dataset as the API returns it, plus the view count and a hint.
+    type: object
+  Doctor:
+    type: object
+    required: [cli_version, python_version, python_executable, profile, project_id, checks, recommendations, ok]
+    properties:
+      cli_version: {type: string}
+      python_version: {type: string}
+      python_executable: {type: string}
+      profile: {type: [string, "null"]}
+      project_id: {type: [integer, "null"]}
+      checks:
+        type: array
+        items:
+          type: object
+          required: [name, ok, detail]
+          properties:
+            name: {type: string}
+            ok: {type: boolean}
+            detail: {type: string}
+      recommendations: {type: array, items: {type: string}}
+      ok: {type: boolean}
+  JobWait:
+    type: object
+    required: [job_id, status]
+    properties:
+      job_id: {type: integer}
+      status: {type: string}
+      result: {}
+      operation: {type: string}
+      path: {type: string}
+  ProjectCheck:
+    type: object
+    required: [project_id, checked, skipped, to_report, resources, views, dashboards, elapsed_seconds]
+    properties:
+      project_id: {type: integer}
+      scope: {type: object}
+      checked: {type: array, items: {type: object}}
+      skipped: {type: array, items: {type: object}}
+      to_report: {type: array, items: {type: string}}
+      resources: {type: array, items: {type: object}}
+      views: {type: array, items: {type: object}}
+      dashboards: {type: array, items: {type: object}}
+      elapsed_seconds: {type: number}
+      note: {type: string}
+  ProjectGet:
+    description: The project as the API returns it, plus a `covers` note.
+    type: object
+    required: [covers]
+    properties:
+      covers: {type: string}
+  ProjectMemoryList:
+    type: object
+    required: [items]
+    properties:
+      items: {type: array, items: {type: object}}
+  ProjectNeedsAttention:
+    type: object
+    required: [project_id, items, datasets, counts, unresolved_view_ids]
+    properties:
+      project_id: {type: integer}
+      items: {type: array, items: {type: object}}
+      datasets: {type: array, items: {type: object}}
+      counts: {type: object}
+      unresolved_view_ids: {type: array, items: {type: integer}}
+  ProjectResourceStatus:
+    type: object
+    required: [in_flight, covers]
+    properties:
+      in_flight: {type: object}
+      covers: {type: string}
+  Resolve:
+    type: object
+    required: [name, matches, note]
+    properties:
+      name: {type: string}
+      matches: {type: array, items: {type: object}}
+      note: {type: string}
+      elsewhere: {type: integer}
+      truncated: {type: boolean}
+  Run:
+    type: object
+    required: [lines, ok, failed, skipped, stopped_at, failed_lines, continue, dry_run, exit]
+    properties:
+      lines: {type: integer}
+      ok: {type: integer}
+      failed: {type: integer}
+      skipped: {type: integer}
+      stopped_at: {type: [integer, "null"]}
+      failed_lines: {type: array}
+      continue: {type: boolean}
+      dry_run: {type: boolean}
+      exit: {type: integer}
+      partial_lines: {}
+  SchemaFind:
+    type: object
+    required: [query, matches]
+    properties:
+      query: {type: string}
+      matches: {type: array, items: {type: object}}
+      total_matches: {type: integer}
+      truncated: {type: boolean}
+      continuation: {type: object}
+      browse: {type: object}
+  SchemaGet:
+    type: object
+    required: [command_id, command_path]
+    properties:
+      command_id: {type: string}
+      command_path: {type: string}
+      output_schema: {type: object}
+  SchemaList:
+    type: object
+    required: [commands, total]
+    properties:
+      family: {type: string}
+      commands: {type: array, items: {type: object}}
+      total: {type: integer}
+  SupportIdentityList:
+    type: object
+    required: [users]
+    properties:
+      users: {type: array, items: {type: object}}
+  SupportStorageOptionList:
+    type: object
+    required: [storage_options]
+    properties:
+      storage_options: {type: array, items: {type: object}}
+  SupportTemplateAudit:
+    type: object
+    required: [faults]
+    properties:
+      faults: {type: array, items: {type: object}}
+      checked: {}
+      missing: {}
+  SupportTemplateCanvas:
+    type: object
+    required: [canvas]
+    properties:
+      canvas: {type: object}
+      meta: {type: object}
+  SupportTemplateDataPreview:
+    type: object
+    required: [columns]
+    properties:
+      columns: {type: array, items: {type: object}}
+      rows: {type: array}
+      capped: {type: boolean}
+  SupportTemplateList:
+    type: object
+    required: [templates]
+    properties:
+      templates: {type: array, items: {type: object}}
+      counts: {type: object}
+  SupportTemplateSnapshots:
+    type: object
+    required: [snapshots]
+    properties:
+      snapshots: {type: array, items: {type: object}}
+      unstored: {type: array}
+  TemplateList:
+    type: object
+    required: [templates]
+    properties:
+      templates: {type: array, items: {type: object}}
+  WorkspaceHome:
+    type: object
+    required: [usage_summary, health_issues, suggestions]
+    properties:
+      usage_summary: {type: object}
+      health_issues: {type: array, items: {type: object}}
+      suggestions: {type: object}
+  WorkspaceInviteList:
+    type: object
+    required: [invites]
+    properties:
+      invites: {type: array, items: {type: object}}
+  ViewDataCompare:
+    type: object
+    required: [rows]
+    properties:
+      rows: {type: array, items: {type: object}}
+  ViewDraftStatus:
+    type: object
+    required: [dataview_id, is_draft]
+    properties:
+      dataview_id: {type: integer}
+      is_draft: {type: boolean}
+      draft: {}
+  ViewExplorePanelExportImage:
+    type: object
+    required: [output_path]
+    properties:
+      output_path: {type: string}
+  ViewCompare:
+    type: object
+    required: [results]
+    properties:
+      results: {type: array, items: {type: object}}
+  WriteResult:
+    description: >-
+      A write's result. The runtime adds `verify` (did the write do what it should) to
+      every API-backed write that returns an object, and `state` (what the write produced, read
+      back) where the command declares a read-back; the rest is the API's own body or the
+      handler's summary and is open. A `--dry-run` report has neither block.
+    type: object
+    required: [verify]
+    properties:
+      verify:
+        type: object
+        required: [verified, state, warnings, reason, needs_user, outcome]
+        properties:
+          verified: {type: boolean}
+          state: {type: string}
+          warnings: {type: array, items: {type: string}}
+          reason: {type: [string, "null"]}
+          needs_user: {}
+          outcome: {enum: [settled, pending, failed, partial]}
+          rows_before: {type: [integer, "null"]}
+          rows_after: {type: [integer, "null"]}
+          changed: {type: boolean}
+          card: {}
+          next_command: {type: string}
+          reported_status: {}
+      state:
+        type: object
+        required: [kind, read_by]
+        properties:
+          kind: {type: string}
+          read_by: {type: string}
+          object: {}
+          absent: {type: boolean}
+          reason: {type: string}
+          detail: {}
+          status: {}
+          columns: {type: array}
+          row_count: {}
+          sample: {type: array}
+  BrowseResources:
+    $ref: '#/$defs/BrowseResources'

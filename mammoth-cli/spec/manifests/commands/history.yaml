@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: history.list
+  output_schema:
+    ref: HistoryList
   command_path: history list
   disposition: command
   alias_of: null
@@ -32,6 +34,8 @@ commands:
   known_restrictions: Lists writes made from this machine only. Not available embedded.
   reviewed_by: primary
 - command_id: history.show
+  output_schema:
+    ref: HistoryShow
   command_path: history show
   disposition: command
   alias_of: null

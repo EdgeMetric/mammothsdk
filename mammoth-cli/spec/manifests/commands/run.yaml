@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: run
+  output_schema:
+    ref: Run
   command_path: run
   disposition: command
   alias_of: null

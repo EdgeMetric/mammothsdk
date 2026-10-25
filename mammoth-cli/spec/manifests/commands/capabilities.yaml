@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: capabilities
+  output_schema:
+    ref: Capabilities
   command_path: capabilities
   disposition: command
   alias_of: null

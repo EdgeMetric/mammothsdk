@@ -9,7 +9,11 @@ commands:
     ids: {}
     kind: object
 - command_id: skill.list
+  output_schema:
+    ref: SkillList
 - command_id: skill.path
+  output_schema:
+    ref: SkillPath
 - command_id: skill.agents-md.install
   command_path: skill agents-md install
   disposition: command
@@ -51,6 +55,8 @@ commands:
   reviewed_by: primary
   no_readback: writes a local AGENTS.md file; no read command in this manifest reports its installed state
 - command_id: skill.show
+  output_schema:
+    ref: SkillShow
   command_path: skill show
   disposition: command
   alias_of: null

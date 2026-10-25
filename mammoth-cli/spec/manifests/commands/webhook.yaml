@@ -1,24 +1,35 @@
 manifest_schema_version: 1
 commands:
 - command_id: webhook.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: webhook.get
     ids:
       webhook_id: result.webhook.id
     kind: object
 - command_id: webhook.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: webhook.list
     ids: {}
     kind: object
 - command_id: webhook.get
+  output_schema: openapi
 - command_id: webhook.list
+  output_schema:
+    ref: OpenObjectList
 - command_id: webhook.send
+  output_schema:
+    ref: WriteResult
   known_restrictions: 'Delivers a payload to the webhook, which ingests it into its dataset. Never retry
     a send: each call adds data. Check `webhook get` first.'
   no_readback: posts data to an external webhook URL; the external receiver's state is not something this
     CLI can read back
 - command_id: webhook.send-get
+  output_schema:
+    ref: WriteResult
   no_readback: posts data to an external webhook URL; the external receiver's state is not something this
     CLI can read back
 - command_id: webhook.update

@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: client-app.create
+  output_schema:
+    ref: WriteResult
   known_restrictions: The app key and token are shown once, in this response only; store them at once.
     They are redacted from logs and diagnostics. Needs --yes.
   readback:
@@ -16,11 +18,13 @@ commands:
     ids: {}
     kind: object
 - command_id: client-app.get
+  output_schema: openapi
   known_restrictions: client_key is a secret-bearing identifier and is redacted in diagnostics.
 - command_id: client-app.list
   output_schema: openapi
   known_restrictions: Lists the workspace's client apps.
 - command_id: client-app.update
+  output_schema: openapi
   readback:
     command: client-app.get
     ids:

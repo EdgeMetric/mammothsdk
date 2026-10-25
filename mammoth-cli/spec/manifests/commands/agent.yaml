@@ -18,6 +18,8 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.action.list
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_list with the session id from --session and
     the positional id.
@@ -123,6 +125,8 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.list
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_list with the session id from --session and the
     positional id.
@@ -172,6 +176,8 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.status
+  output_schema:
+    ref: OpenObject
   operation_ids: []
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_status with the session id from --session and
     the positional id.
@@ -219,6 +225,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.instance.list
+  output_schema: openapi
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instances_list with the session id from --session
     and the positional run id.
   edits_target: false
@@ -229,6 +236,7 @@ commands:
   known_restrictions: 'Read-only. Lists the agents of the run: the main agent, its workers and recon helpers,
     with the ids the instance commands take. Needs --session SESSION_ID; an embedded chat supplies it.'
 - command_id: agent.run.instance.messages
+  output_schema: openapi
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_messages with the session id from --session
     and the positional run and instance ids.
   edits_target: false
@@ -239,6 +247,7 @@ commands:
   known_restrictions: Read-only. The messages one agent of the run sent or received. Needs --session SESSION_ID;
     an embedded chat supplies it.
 - command_id: agent.run.instance.transcript
+  output_schema: openapi
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_instance_transcript with the session id from --session
     and the positional run and instance ids.
   edits_target: false
@@ -263,6 +272,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.units.list
+  output_schema: openapi
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_list with the session id from --session,
     the positional run id and the optional step, state and cursor from --input.
   edits_target: false
@@ -274,6 +284,8 @@ commands:
     one state (queued, running, done, failed or skipped) or from an offset (cursor). Needs --session SESSION_ID;
     an embedded chat supplies it.
 - command_id: agent.session.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: agent.session.list
     ids: {}
@@ -281,7 +293,10 @@ commands:
 - command_id: agent.session.list
   output_schema: openapi
 - command_id: agent.session.messages
+  output_schema: openapi
 - command_id: agent.session.set-visibility
+  output_schema:
+    ref: WriteResult
   readback:
     command: agent.session.list
     ids: {}
@@ -303,8 +318,12 @@ commands:
   known_restrictions: Needs a manager of the workspace's AI Agent settings, or someone who manages the
     project's people. Returns a count.
 - command_id: agent.access.chart.save
+  output_schema:
+    ref: WriteResult
   no_readback: returns the dashboard id the chart was saved to; that dashboard is the new state
 - command_id: agent.access.grant.give
+  output_schema:
+    ref: WriteResult
   known_restrictions: Only a manager of the workspace's AI Agent settings can give access. People outside
     the workspace are invited as free guests. Needs --yes. Read `agent access grant list` afterwards.
   readback:
@@ -312,8 +331,11 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.access.grant.list
+  output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can list grants.
 - command_id: agent.access.grant.revoke
+  output_schema:
+    ref: WriteResult
   known_restrictions: Only a manager of the workspace's AI Agent settings can revoke. Removes the grant
     at once; the person loses the access. Prompts, or pass --yes.
   readback:
@@ -329,26 +351,35 @@ commands:
 - command_id: agent.access.me
   output_schema: openapi
 - command_id: agent.access.people
+  output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can list the people.
 - command_id: agent.access.reach
   output_schema: openapi
   known_restrictions: Anyone reads their own; another person's (user_id) is for managers of the AI Agent
     settings only.
 - command_id: agent.access.request.add-to-context
+  output_schema:
+    ref: WriteResult
   readback:
     command: agent.access.request.list
     ids: {}
     kind: object
 - command_id: agent.access.request.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: agent.access.request.list
     ids: {}
     kind: object
 - command_id: agent.access.request.list
+  output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can list everyone's requests;
     `agent access request mine` lists your own.
 - command_id: agent.access.request.mine
+  output_schema: openapi
 - command_id: agent.access.request.resolve
+  output_schema:
+    ref: WriteResult
   mutation_class: destructive
   confirmation: prompt_or_yes
   agent_example: 'mammoth agent access request resolve 123 --input ''{"status": "done"}'' --yes'
@@ -359,6 +390,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.access.settings.get
+  output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can read them.
 - command_id: agent.access.settings.update
   mutation_class: high_impact
@@ -376,9 +408,13 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.access.tree
+  output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can read the tree.
 - command_id: agent.session.feedback.list
+  output_schema: openapi
 - command_id: agent.turn.rate
+  output_schema:
+    ref: WriteResult
   readback:
     command: agent.session.feedback.list
     ids:

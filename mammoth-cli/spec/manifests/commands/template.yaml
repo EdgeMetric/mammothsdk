@@ -1,19 +1,28 @@
 manifest_schema_version: 1
 commands:
 - command_id: template.create
+  output_schema:
+    ref: WriteResult
   readback:
     command: template.get
     ids:
       template_id: result.id
     kind: object
 - command_id: template.delete
+  output_schema:
+    ref: WriteResult
   readback:
     command: template.list
     ids: {}
     kind: object
 - command_id: template.get
+  output_schema: openapi
 - command_id: template.list
+  output_schema:
+    ref: TemplateList
 - command_id: template.update
+  output_schema:
+    ref: WriteResult
   readback:
     command: template.get
     ids:

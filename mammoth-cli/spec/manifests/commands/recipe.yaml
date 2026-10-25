@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: recipe.list
+  output_schema:
+    ref: RecipeList
   command_path: recipe list
   disposition: command
   alias_of: null
