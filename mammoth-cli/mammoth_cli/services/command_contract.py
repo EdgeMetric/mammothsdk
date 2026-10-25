@@ -288,7 +288,7 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("undoable_only", required=False, annotation=bool, default=False),
     ),
     "history.show": (),
-    "history.undo": (),
+    "history.undo": (FieldSpec("force", required=False, annotation=bool, default=False),),
     "history.resume": (
         FieldSpec("from_line", required=False, annotation=int | None, default=None),
     ),

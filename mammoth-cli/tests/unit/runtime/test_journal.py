@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import os
 import stat
+import threading
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +27,12 @@ class _Memory:
 
     def records(self) -> list[dict[str, Any]]:
         return list(self.kept)
+
+    @classmethod
+    def of(cls, kept: list[dict[str, Any]]) -> _Memory:
+        memory = cls()
+        memory.kept = list(kept)
+        return memory
 
 
 def _request(command_id: str, **positionals: Any) -> Request:
@@ -231,3 +240,139 @@ def test_the_journal_is_off_when_switched_off_or_embedded(
     monkeypatch.delenv(journal.JOURNAL_ENV)
     monkeypatch.setattr(embedded, "active", lambda: True)
     assert journal.default_store() is None
+
+
+def test_a_defaulted_profile_is_not_recorded_in_the_undo() -> None:
+    request = _request("dataset.trash", dataset_id=5)
+    assert request.invocation is not None
+    request = replace(request, invocation=replace(request.invocation, profile_is_default=True))
+    lines, _ = journal.compensation(request, _success(), journal._Before())
+    assert "profile" not in lines[0]["flags"]
+
+
+def test_a_write_that_may_have_happened_is_marked_uncertain() -> None:
+    def timed_out() -> tuple[Any, dict[str, Any]]:
+        raise CliError(
+            code="timeout", message="Slow.", exit_status=75, details={"operation_state": "running"}
+        )
+
+    _, kept = _journaled("dataset.trash", timed_out, _Memory(), dataset_id=5)
+    assert kept[-1]["outcome_unknown"] is True
+    (entry,) = journal.entries(_Memory.of(kept))
+    assert entry.view()["status"] == "unknown"
+
+
+def test_a_write_refused_before_sending_leaves_no_entry() -> None:
+    def refused() -> tuple[Any, dict[str, Any]]:
+        raise CliError(code="confirmation_required", message="Sure?", exit_status=2)
+
+    _, kept = _journaled("dataset.trash", refused, _Memory(), dataset_id=5)
+    assert kept[-1]["nothing_sent"] is True
+    assert journal.entries(_Memory.of(kept)) == []
+
+
+def test_a_container_run_is_not_a_journal_entry() -> None:
+    store = _Memory()
+    _, kept = _journaled("recipe.run", lambda: ({}, {}), store)
+    assert kept == []
+    store.append({"event": "begin", "inv": "x", "group": "x", "command": "run"})
+    assert journal.entries(store) == []
+
+
+def test_a_pipeline_edit_undo_carries_the_fingerprint_taken_after_the_edit() -> None:
+    store = _Memory()
+    request = _request("view.transform.filter", view_id=7)
+    request = Request(
+        request.command_id, "json", lambda: ({}, {}), invocation=request.invocation, profile="p"
+    )
+    before = journal._Before(view_id=7, dataset_id=6, version_id=40)
+    interceptor = journal.journal_writes(lambda: store, lambda _r: before, lambda _r, _b: "fp1")
+    with trace.begin(request.command_id):
+        dispatch(request, (interceptor,))
+    assert store.kept[-1]["undo"][0]["expect"] == "fp1"
+
+
+def test_the_fingerprint_ignores_ids_and_order_numbers() -> None:
+    first = [{"id": 1, "sequence": 1, "type": "FILTER", "args": {"a": 1}}]
+    again = [{"id": 9, "sequence": 4, "type": "FILTER", "args": {"a": 1}, "updated_at": "x"}]
+    assert journal.fingerprint(first) == journal.fingerprint(again)
+    assert journal.fingerprint(first) != journal.fingerprint([{"type": "SORT"}])
+
+
+def test_run_records_hold_no_secret(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    line = json.dumps({"cmd": "connector create", "input": {"name": "c", "password": "hunter2"}})
+    journal.record_plan(
+        [(1, line)],
+        {},
+        scope={"inputs": {"api_key": "k-123"}},
+        keep_going=False,
+        past_partial=False,
+    )
+    journal.record_step(1, 0, {"made": {"data": {"access_token": "tok-abc", "id": 4}}})
+    text = "".join(path.read_text() for path in tmp_path.rglob("*.jsonl"))
+    assert "hunter2" not in text and "k-123" not in text and "tok-abc" not in text
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None
+    assert plan.steps["made"]["data"]["id"] == 4
+    assert plan.redacted_references() == {"steps.made", "inputs.api_key"}
+
+
+def test_a_failed_named_line_restores_nothing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan(
+        [(1, "{}"), (2, "{}")], {}, scope=None, keep_going=False, past_partial=False
+    )
+    journal.record_step(1, 0, {"a": 1})
+    journal.record_step(2, 1, {"p": 2})
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None
+    assert plan.steps == {"a": 1} and plan.finished == {1}
+    assert plan.steps_without([1]) == {}
+
+
+def test_a_partial_line_is_finished_when_the_run_goes_past_partial(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan([(1, "{}")], {}, scope=None, keep_going=False, past_partial=True)
+    journal.record_step(1, 3, {})
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None and plan.finished == {1}
+
+
+def test_concurrent_appends_of_large_records_do_not_interleave(tmp_path: Path) -> None:
+    def write(worker: int) -> None:
+        store = journal.FileJournal(tmp_path)
+        for number in range(10):
+            store.append({"event": "begin", "inv": f"{worker}-{number}", "pad": "x" * 20000})
+
+    threads = [threading.Thread(target=write, args=(worker,)) for worker in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(list(journal.FileJournal(tmp_path).records())) == 80
+
+
+def test_a_plan_survives_rotation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(journal, "MAX_BYTES", 100)
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan([(1, "{}")], {}, scope=None, keep_going=False, past_partial=False)
+    for number in range(12):
+        store.append({"event": "begin", "inv": str(number), "pad": "x" * 60})
+    assert journal.plan_for(store, "g1") is not None
+
+
+def test_a_claim_is_exclusive(tmp_path: Path) -> None:
+    store = journal.FileJournal(tmp_path)
+    with store.claim("undo-a"), pytest.raises(journal.JournalBusy), store.claim("undo-a"):
+        pass
+    with store.claim("undo-a"):
+        pass

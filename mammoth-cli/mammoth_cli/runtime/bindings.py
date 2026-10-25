@@ -21,7 +21,8 @@ Reference syntax:
 Conditions (``when``): ``{"in": [A, B]}`` (A is an item of list B),
 ``{"eq": [A, B]}``, ``{"not": COND}``, ``{"all": [COND, ...]}``,
 ``{"any": [COND, ...]}``, ``{"present": REF}`` (resolves and is not null or
-empty), or a bare reference, which is true when its value is truthy.
+empty), or a bare reference (``"{{steps.a.data.ok}}"``, braces included), which is true when its
+value is truthy. A string without the braces is refused: it would always be true.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ _WHOLE = re.compile(r"^\{\{\s*([^{}]+?)\s*\}\}$")
 _INNER = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
 _SEGMENT = re.compile(r"([A-Za-z_][A-Za-z0-9_-]*)|\[(\d+)\]")
 
-#: The value operators :func:`resolve` applies; any other ``$`` key is an error.
+#: The value operators :func:`resolve` applies; any other ``$`` key is plain data.
 VALUE_OPERATORS = frozenset({"$keys", "$without", "$first", "$default"})
 CONDITION_OPERATORS = frozenset({"in", "eq", "not", "all", "any", "present"})
 
@@ -144,9 +145,10 @@ def resolve(value: Any, scope: Mapping[str, Any], *, plan: bool = False) -> Any:
     if isinstance(value, list):
         return [resolve(item, scope, plan=plan) for item in value]
     if isinstance(value, Mapping):
-        operators = [key for key in value if isinstance(key, str) and key.startswith("$")]
-        if operators:
-            return _operator(value, operators, scope, plan)
+        # Only an object that is exactly ``{"$name": ARGUMENT}`` is an operator; any other
+        # ``$`` key (a ``$schema`` or ``$ref`` in a payload) is data and passes through.
+        if len(value) == 1 and next(iter(value)) in VALUE_OPERATORS:
+            return _operator(value, scope, plan)
         return {key: resolve(item, scope, plan=plan) for key, item in value.items()}
     return value
 
@@ -157,15 +159,8 @@ def _text(value: Any) -> str:
     return str(value)
 
 
-def _operator(
-    value: Mapping[str, Any], operators: list[str], scope: Mapping[str, Any], plan: bool
-) -> Any:
-    if len(value) != 1 or operators[0] not in VALUE_OPERATORS:
-        raise BindingError(
-            "a value operator is an object with one key, one of: "
-            + ", ".join(sorted(VALUE_OPERATORS))
-        )
-    name = operators[0]
+def _operator(value: Mapping[str, Any], scope: Mapping[str, Any], plan: bool) -> Any:
+    ((name, _),) = value.items()
     argument = value[name]
     if name == "$default":
         if not isinstance(argument, list) or len(argument) != 2:
@@ -228,6 +223,12 @@ def evaluate(condition: Any, scope: Mapping[str, Any], *, plan: bool = False) ->
         BindingError: The condition is malformed, or a reference in it does not resolve.
     """
     if isinstance(condition, str):
+        if _WHOLE.match(condition) is None:
+            raise BindingError(
+                f"the condition '{condition}' is a bare string, which is always true; "
+                "write a reference as '{{steps.NAME.data.FIELD}}' or use an operator such as "
+                + ", ".join(sorted(CONDITION_OPERATORS))
+            )
         value = resolve(condition, scope, plan=plan)
         return None if isinstance(value, Unresolved) else bool(value)
     if not isinstance(condition, Mapping) or len(condition) != 1:

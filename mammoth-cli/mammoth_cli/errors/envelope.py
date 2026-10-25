@@ -145,6 +145,11 @@ ERROR_SUMMARIES: dict[str, str] = {
     "journal_off": "Change history is switched off, so there is nothing to show or undo.",
     "nothing_to_resume": "Every line of that run finished.",
     "resume_outcome_unknown": "A write's outcome is unknown, so the run wasn't resumed.",
+    "resume_secret_needed": (
+        "A line needs a secret the history doesn't keep, so the run wasn't resumed."
+    ),
+    "undo_in_progress": "Another undo of the same change is running.",
+    "view_changed_since_edit": "The view changed after that edit, so it wasn't undone.",
     "recipe_not_found": "No runnable recipe has that name.",
     "recipe_input_invalid": "The recipe's inputs weren't valid.",
     "run_global_flag_refused": (

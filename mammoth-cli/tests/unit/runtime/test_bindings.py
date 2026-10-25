@@ -65,9 +65,24 @@ def test_value_operators() -> None:
     assert resolve({"$default": ["{{steps.upload.data.dataset_id}}", 5]}, SCOPE) == 12
 
 
-def test_an_unknown_operator_is_refused() -> None:
+def test_a_malformed_operator_is_refused() -> None:
     with pytest.raises(BindingError):
-        resolve({"$eval": "1+1"}, SCOPE)
+        resolve({"$first": "{{steps.upload.data}}"}, SCOPE)
+
+
+def test_other_dollar_keys_are_data() -> None:
+    schema = {"$schema": "draft-07", "$ref": "#/a", "n": "{{steps.upload.data.name}}"}
+    assert resolve(schema, SCOPE) == {**schema, "n": "s"}
+    assert resolve({"$first": "{{steps.empty.data}}", "extra": 1}, SCOPE) == {
+        "$first": [],
+        "extra": 1,
+    }
+
+
+@pytest.mark.parametrize("bare", ["steps.upload.data.ok", "yes", "x {{steps.upload.data.name}}"])
+def test_a_bare_string_condition_is_refused(bare: str) -> None:
+    with pytest.raises(BindingError, match="always true"):
+        evaluate(bare, SCOPE)
 
 
 def test_plan_mode_stands_in_for_pending_steps() -> None:

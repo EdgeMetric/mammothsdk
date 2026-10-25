@@ -104,6 +104,7 @@ EXPECTED_FIELDS: dict[str, tuple[str, ...]] = {
     "history.list": ("limit", "undoable_only"),
     "recipe.run": ("inputs",),
     "history.resume": ("from_line",),
+    "history.undo": ("force",),
 }
 
 

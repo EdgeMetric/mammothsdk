@@ -572,6 +572,8 @@ def run_lines(
     scope: dict[str, Any] | None = None,
     past_partial: bool = False,
     steps: dict[str, Any] | None = None,
+    resumed: bool = False,
+    progress: dict[int, dict[int, Any]] | None = None,
 ) -> dict[str, Any]:
     """Run numbered JSON Lines in order, writing each line's envelopes as it finishes.
 
@@ -585,6 +587,9 @@ def run_lines(
         past_partial: Go on after a line that exits partial (it made what it reports,
             with a warning), counting it in ``partial_lines`` instead of ``failed``.
         steps: The named results of lines that already ran (``history resume``).
+        resumed: Whether this goes on with an earlier run, which already journaled the plan.
+        progress: For a ``for_each`` line a resume runs again, the data of the items that
+            already finished, by line number and item index; those items are not run again.
 
     Returns:
         The summary: line counts, where the run stopped, and its exit status.
@@ -593,19 +598,24 @@ def run_lines(
     run_exit = 0
     steps = dict(steps or {})
     partial: list[int] = []
-    if not dry_run:
+    if not dry_run and not resumed:
         # The plan and each finished line are journaled, so 'history resume' can go on
         # from the first line that did not finish.
         journal.record_plan(
             numbered, defaults, scope=scope, keep_going=keep_going, past_partial=past_partial
         )
-        if steps:
-            journal.record_step(0, 0, steps)
     with remembering_auth() as credentials:
         for position, (number, text) in enumerate(numbered):
             named_before = set(steps)
             exit_status, ran_argv = _run_line(
-                number, text, defaults, steps, dry_run=dry_run, scope=scope
+                number,
+                text,
+                defaults,
+                steps,
+                dry_run=dry_run,
+                scope=scope,
+                keep_going=keep_going,
+                done_items=(progress or {}).get(number),
             )
             if not dry_run:
                 added = {name: steps[name] for name in steps.keys() - named_before}
@@ -657,6 +667,8 @@ def _run_line(
     *,
     dry_run: bool,
     scope: dict[str, Any] | None = None,
+    keep_going: bool = False,
+    done_items: dict[int, Any] | None = None,
 ) -> tuple[int, list[str]]:
     """Run one line (once, or once per ``for_each`` item) and write its envelopes.
 
@@ -667,6 +679,9 @@ def _run_line(
         steps: The results of the named lines run so far; a named line adds its own.
         dry_run: Whether the run previews only: an unresolved reference plans the line.
         scope: Values the line's references may read besides ``steps``.
+        keep_going: Whether the run goes on past a failure: a ``for_each`` line then runs
+            the items after a failed one too.
+        done_items: The data of the items a resume finds already done (by index).
 
     Returns:
         The line's exit status (the first failed item's, for ``for_each``) and the
@@ -695,19 +710,27 @@ def _run_line(
         if name is not None:
             steps[name] = envelope
         return exit_status, argv
+    if not items:
+        write_envelope({**shown, "exit": 0, "skipped": True, **_result(shown["cmd"], [])})
     datas: list[Any] = []
     first_exit = 0
     last_argv: list[str] = []
     for index, item in enumerate(items):
+        if done_items is not None and index in done_items:
+            datas.append(done_items[index])
+            continue
         item_scope = {**line_scope, "item": item, "index": index}
         exit_status, envelope, argv = _run_once(
             number, line, defaults, item_scope, {**shown, "item": index}, dry_run
         )
         datas.append(envelope.get("data"))
         last_argv = argv or last_argv
+        if not dry_run:
+            journal.record_item(number, index, exit_status, envelope.get("data"))
         if exit_status != 0:
-            first_exit = exit_status
-            break
+            first_exit = first_exit or exit_status
+            if exit_status == EXIT_INTERRUPT or not keep_going:
+                break
     if name is not None:
         steps[name] = {"data": datas, "exit": first_exit}
     return first_exit, last_argv
@@ -730,7 +753,7 @@ def _run_once(
         forget_reads()
         argv = spec.argv
     except bindings.BindingError as error:
-        exit_status = _unresolved(shown, error, {}, line, dry_run=dry_run)
+        exit_status = _unresolved(shown, error, scope.get("steps") or {}, line, dry_run=dry_run)
         return exit_status, {"planned": dry_run, "data": None, "exit": exit_status}, []
     except CliError as error:
         exit_status, envelope, argv = error.exit_status, error.to_envelope(), []
@@ -785,11 +808,12 @@ def _unresolved(
 ) -> int:
     """Write the envelope of a line whose reference does not resolve; return its exit.
 
-    Under ``--dry-run`` the line is planned, not failed: the earlier lines only previewed,
-    so the values it reads do not exist yet.
+    Under ``--dry-run`` a reference into an earlier line's result plans the line instead:
+    the earlier lines only previewed, so the values it reads do not exist yet. Anything
+    else (a malformed expression, a step no line makes, a missing input) still fails.
     """
     name = line.get("name") if isinstance(line, dict) else None
-    if dry_run:
+    if dry_run and _reads_a_preview(error.path, steps):
         data = {"planned": True, "waits_on": error.path, "reason": str(error)}
         write_envelope({**shown, "exit": 0, **_result(shown["cmd"], data)})
         if isinstance(name, str) and name not in steps and _STEP_NAME.match(name):
@@ -809,6 +833,12 @@ def _unresolved(
     )
     write_envelope({**shown, "exit": failure.exit_status, **failure.to_envelope()})
     return failure.exit_status
+
+
+def _reads_a_preview(path: str | None, steps: dict[str, Any]) -> bool:
+    """Whether ``path`` reads from the result of a line that ran (previewed) before."""
+    parts = (path or "").split(".")
+    return len(parts) > 1 and parts[0] == "steps" and parts[1].split("[")[0] in steps
 
 
 def _best_effort_cmd(text: str) -> str:

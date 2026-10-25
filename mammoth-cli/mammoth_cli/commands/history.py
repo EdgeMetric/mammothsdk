@@ -18,11 +18,19 @@ caller checks it and names the line to start from (``from_line``).
 
 from __future__ import annotations
 
+import json
+import re
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.registry import HandlerResult
-from mammoth_cli.errors.envelope import EXIT_API, EXIT_PARTIAL, EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
+    EXIT_API,
+    EXIT_PARTIAL,
+    EXIT_USAGE,
+    CliError,
+)
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
@@ -35,6 +43,9 @@ CODE_HISTORY_NOT_FOUND = "history_not_found"
 CODE_JOURNAL_OFF = "journal_off"
 CODE_NOTHING_TO_RESUME = "nothing_to_resume"
 CODE_RESUME_OUTCOME_UNKNOWN = "resume_outcome_unknown"
+CODE_RESUME_NEEDS_VALUE = "resume_secret_needed"
+CODE_UNDO_IN_PROGRESS = "undo_in_progress"
+CODE_VIEW_CHANGED = "view_changed_since_edit"
 #: Most entries ``history list`` shows unless asked for more.
 DEFAULT_LIMIT = 20
 
@@ -52,7 +63,10 @@ def _store() -> journal.JournalStore:
 
 
 def _matching(target: str) -> list[journal.Entry]:
-    found = [e for e in journal.entries(_store()) if target in (e.inv, e.group)]
+    store = _store()
+    # A resume journals under a group of its own, but its writes belong to the run it resumed.
+    target = journal.group_roots(store.records()).get(target, target)
+    found = [e for e in journal.entries(store) if target in (e.inv, e.group)]
     if not found:
         raise CliError(
             code=CODE_HISTORY_NOT_FOUND,
@@ -79,7 +93,14 @@ def _target(invocation: Invocation) -> str:
 def history_list(invocation: Invocation) -> HandlerResult:
     """List the journaled writes, newest first; filter with 'limit', 'undoable_only'."""
     document = invocation.bound_input()
-    limit = int(document.get("limit") or DEFAULT_LIMIT)
+    limit = DEFAULT_LIMIT if document.get("limit") is None else int(document["limit"])
+    if limit < 1:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"'limit' must be 1 or more, not {limit}.",
+            exit_status=EXIT_USAGE,
+            hint="Leave 'limit' out for the newest 20 entries.",
+        )
     views = [entry.view() for entry in reversed(journal.entries(_store()))]
     if document.get("undoable_only"):
         views = [view for view in views if view["undoable"]]
@@ -124,9 +145,25 @@ def history_undo(invocation: Invocation) -> HandlerResult | Outcome:
     traced = trace.current()
     by = traced.invocation_id if traced is not None else ""
     store = _store()
+    force = bool(invocation.bound_input().get("force"))
     for position, entry in enumerate(todo):
         steps: list[dict[str, Any]] = []
-        failed = _undo_entry(entry, invocation, steps)
+        try:
+            with store.claim(f"undo-{entry.inv}"):
+                if _already_undone(store, entry.inv):
+                    result["undone"].append(
+                        {"inv": entry.inv, "command": entry.command, "steps": []}
+                    )
+                    continue
+                failed = _undo_entry(entry, invocation, steps, store, force=force)
+        except journal.JournalBusy as busy:
+            raise CliError(
+                code=CODE_UNDO_IN_PROGRESS,
+                message=f"Another 'history undo' is already undoing {entry.inv}.",
+                exit_status=EXIT_USAGE,
+                hint="Wait for it to finish, then run 'mammoth history show' for the result.",
+                details={"inv": entry.inv},
+            ) from busy
         result["undone"].append({"inv": entry.inv, "command": entry.command, "steps": steps})
         if failed is not None:
             remaining = [e.inv for e in todo[position:]]
@@ -141,23 +178,81 @@ def history_undo(invocation: Invocation) -> HandlerResult | Outcome:
     return result, {}
 
 
+def _already_undone(store: journal.JournalStore, inv: str) -> bool:
+    """Whether another undo finished this write while this one waited its turn."""
+    return any(e.inv == inv and e.undone_by is not None for e in journal.entries(store))
+
+
 def _undo_entry(
-    entry: journal.Entry, invocation: Invocation, steps: list[dict[str, Any]]
+    entry: journal.Entry,
+    invocation: Invocation,
+    steps: list[dict[str, Any]],
+    store: journal.JournalStore,
+    *,
+    force: bool = False,
 ) -> dict[str, Any] | None:
-    """Run one write's undo lines; return the failure, or None when every line ran."""
-    for line in _expanded(entry.undo, invocation, steps):
-        exit_status, envelope = _run(line, invocation)
-        steps.append({"cmd": line["cmd"], "args": line.get("args", []), "exit": exit_status})
-        if exit_status != 0:
-            error = envelope.get("error") or {}
-            return {
-                "inv": entry.inv,
-                "cmd": line["cmd"],
-                "exit": exit_status,
-                "code": error.get("code"),
-                "message": error.get("message") or "An undo step failed.",
-            }
+    """Run one write's undo lines; return the failure, or None when every line ran.
+
+    The lines an earlier, stopped undo already ran are skipped, and each line that runs is
+    recorded, so a retry goes on from the line that failed.
+    """
+    for index, line in enumerate(entry.undo):
+        if index < entry.undone_lines and not invocation.dry_run:
+            continue
+        blocked = _changed_since(entry, line, invocation, steps, force=force)
+        if blocked is not None:
+            return blocked
+        for step in _expanded([line], invocation, steps):
+            exit_status, envelope = _run(step, invocation)
+            steps.append({"cmd": step["cmd"], "args": step.get("args", []), "exit": exit_status})
+            if exit_status != 0:
+                error = envelope.get("error") or {}
+                return {
+                    "inv": entry.inv,
+                    "cmd": step["cmd"],
+                    "exit": exit_status,
+                    "code": error.get("code"),
+                    "message": error.get("message") or "An undo step failed.",
+                }
+        if not invocation.dry_run:
+            journal.mark_undo_step(store, entry.inv, index + 1)
     return None
+
+
+def _changed_since(
+    entry: journal.Entry,
+    line: dict[str, Any],
+    invocation: Invocation,
+    steps: list[dict[str, Any]],
+    *,
+    force: bool,
+) -> dict[str, Any] | None:
+    """The failure to report when the view's pipeline is not what the edit left, or None.
+
+    Applying the pipeline from before an edit also drops every edit made after it, so the
+    undo of an edit checks the fingerprint taken right after the edit (``expect``).
+    """
+    expected = line.get("expect")
+    if expected is None or force:
+        return None
+    view = line["args"][0]
+    listing = {"cmd": "view task list", "args": [view], "flags": line.get("flags", {})}
+    exit_status, envelope = _run(listing, invocation, read=True)
+    steps.append({"cmd": listing["cmd"], "args": [view], "exit": exit_status})
+    tasks = (envelope.get("data") or {}).get("tasks") if exit_status == 0 else None
+    if isinstance(tasks, list) and journal.fingerprint(tasks) == expected:
+        return None
+    return {
+        "inv": entry.inv,
+        "cmd": line["cmd"],
+        "exit": EXIT_USAGE,
+        "code": CODE_VIEW_CHANGED,
+        "message": (
+            f"View {view} is not as the edit left it (it was changed since, or could not be"
+            " read), and undoing the edit would drop those changes."
+        ),
+        "hint": "To undo anyway, run again with --input '{\"force\": true}'.",
+    }
 
 
 def _expanded(
@@ -168,7 +263,7 @@ def _expanded(
     for line in lines:
         keep = line.get("keep_tasks")
         if keep is None:
-            expanded.append(line)
+            expanded.append({key: value for key, value in line.items() if key != "expect"})
             continue
         view = line["args"][0]
         listing = {"cmd": "view task list", "args": [view], "flags": line.get("flags", {})}
@@ -219,6 +314,7 @@ def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
         )
     from_line = invocation.bound_input().get("from_line")
     remaining = _remaining(plan, from_line, store)
+    _refuse_secrets(plan, remaining)
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
@@ -226,6 +322,11 @@ def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
     )
     # The flags given to resume (a new --profile, --dry-run) win over the run's own.
     defaults = {**plan.defaults, **run_cmd.global_defaults(invocation)}
+    if not invocation.dry_run:
+        # The resume's own records count for the run it goes on with, so a second resume
+        # skips what this one does and 'history undo' of the run reaches its writes.
+        journal.record_resume(plan.group, acknowledged=from_line is not None)
+    rerun = [number for number, _ in remaining]
     summary = run_cmd.run_lines(
         remaining,
         defaults,
@@ -233,7 +334,11 @@ def history_resume(invocation: Invocation) -> HandlerResult | Outcome:
         dry_run=invocation.dry_run,
         scope=plan.scope,
         past_partial=plan.past_partial,
-        steps=plan.steps,
+        steps=plan.steps_without(rerun),
+        resumed=True,
+        # With 'from_line' the caller starts the line over; items done before stay done only
+        # when the resume picks the line up by itself.
+        progress=plan.items if from_line is None else None,
     )
     run_exit = summary["exit"]
     data = {"resumed": target, "from_line": remaining[0][0], **summary}
@@ -251,18 +356,21 @@ def _remaining(
     if from_line is not None:
         remaining = [(number, text) for number, text in plan.lines if number >= int(from_line)]
     else:
+        # A line that exited partial in a run that goes on past partial lines is done.
         remaining = [(number, text) for number, text in plan.lines if number not in plan.finished]
         unknown = [
             entry.inv
             for entry in journal.entries(store)
-            if entry.group == plan.group and entry.exit is None
+            if entry.group == plan.group
+            and (entry.exit is None or entry.uncertain)
+            and not entry.acknowledged
         ]
         if unknown and remaining:
             raise CliError(
                 code=CODE_RESUME_OUTCOME_UNKNOWN,
                 message=(
-                    f"The run stopped while a write was being sent (line {remaining[0][0]}), "
-                    "so it may or may not have happened."
+                    f"A write of the run may or may not have happened (line {remaining[0][0]}): "
+                    "it was interrupted, timed out or lost its connection while being sent."
                 ),
                 exit_status=EXIT_USAGE,
                 hint=(
@@ -281,3 +389,35 @@ def _remaining(
             details={"id": plan.group},
         )
     return remaining
+
+
+def _refuse_secrets(plan: journal.Plan, remaining: list[tuple[int, str]]) -> None:
+    """Refuse a resume that needs a value the journal replaced because it is a secret."""
+    redacted = plan.redacted_references()
+    for number, text in remaining:
+        needed = [
+            reference
+            for reference in sorted(redacted)
+            if re.search(r"\{\{[^{}]*" + re.escape(reference) + r"(?![A-Za-z0-9_-])", text)
+        ]
+        if journal.has_redacted(_loads(text)) or needed:
+            raise CliError(
+                code=CODE_RESUME_NEEDS_VALUE,
+                message=(
+                    f"Line {number} holds or reads a secret that the history does not keep, "
+                    "so it cannot be run again from the history."
+                ),
+                exit_status=EXIT_USAGE,
+                hint=(
+                    f"Run line {number} yourself with its secret (mammoth run, or the "
+                    "command), then resume with --input '{\"from_line\": N}' for the line after it."
+                ),
+                details={"line": number, "references": needed},
+            )
+
+
+def _loads(text: str) -> Any:
+    try:
+        return json.loads(text)
+    except ValueError:
+        return None
