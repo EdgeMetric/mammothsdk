@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from mammoth_cli.commands.how import runnable_for
 from mammoth_cli.commands.schema import command_scope
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_operations
@@ -205,8 +206,12 @@ def find_capabilities(
         if has_more
         else None
     )
-    return {
-        "query": query,
+    result: dict[str, Any] = {"query": query}
+    tasks = runnable_for(query) if offset == 0 else []
+    if tasks:
+        # A task that does the whole job in one command comes before the operations it uses.
+        result["tasks"] = tasks
+    return result | {
         "matches": matches,
         "total_matches": total,
         "truncated": has_more,

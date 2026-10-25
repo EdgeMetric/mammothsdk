@@ -38,7 +38,12 @@ def test_the_top_recipes_are_executable() -> None:
         "upload-dashboard",
         "export-csv",
         "share-dashboard",
+        "upload-clean",
+        "join-files",
+        "pivot-summary",
+        "dashboard-from-view",
     }
+    assert len(_RUNNABLE) >= 20
 
 
 def test_a_recipe_has_both_inputs_and_run_or_neither() -> None:

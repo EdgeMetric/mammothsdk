@@ -66,7 +66,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth recipe run ID --help
-  agent_example: 'mammoth recipe run export-csv --input ''{"inputs": {"view_id": 1}}'' --yes'
+  agent_example: 'mammoth recipe run export-csv --input ''{"inputs": {"view_id": 1, "dataset_id": 2}}'' --yes'
   unit_tests:
   - UT-RECIPE-RUN
   contract_tests:

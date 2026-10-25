@@ -34,6 +34,26 @@ def runnable_recipes() -> tuple[dict[str, Any], ...]:
     return tuple(recipe for recipe in load_recipes() if recipe.get("run"))
 
 
+def task_summaries() -> list[dict[str, Any]]:
+    """The executable recipes as one short record each, for the index commands.
+
+    ``schema list`` and ``capability find`` put these ahead of the single commands, so an
+    agent picks a whole task before it reads a family of operations.
+
+    Returns:
+        Each task's ``id``, ``title``, whether it ``writes`` and its ``run_command``.
+    """
+    return [
+        {
+            "id": recipe["id"],
+            "title": recipe["title"],
+            "writes": writes(recipe),
+            "run_command": run_command(recipe),
+        }
+        for recipe in runnable_recipes()
+    ]
+
+
 def run_command(recipe: dict[str, Any]) -> str:
     """The ``recipe run`` command for a recipe, with each input's example value.
 

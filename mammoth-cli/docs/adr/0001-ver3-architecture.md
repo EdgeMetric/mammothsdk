@@ -248,8 +248,22 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    `run_lines` (the same path as `mammoth run`), with `--dry-run` as the plan and one prompt or
    `--yes` before a recipe that writes. A contract test keeps each run line on a command the
    recipe's prose steps name. `how` returns the recipe's `run_command`, and `schema find` lists
-   matching recipes before single commands. Executable today: append-rows, upload-dashboard,
-   export-csv, share-dashboard, each run end to end on a dev server. A partial step (exit 3)
+   matching recipes before single commands, and so do `schema list` (a `tasks` list ahead of the
+   families) and `capability find` (a `tasks` list ahead of the matches); the long tail stays
+   one `schema list FAMILY` or `schema find` page away. Every recipe is executable (32): the
+   first four ran end to end on a dev server (append-rows, upload-dashboard, export-csv,
+   share-dashboard); the rest are covered by contract tests and a `--dry-run` plan test with
+   mocked services, not yet by a live run: refresh-daily, blend-by-key, stuck-upload (reads
+   only), export-powerbi, clean-data, cleanup-mine, upload-clean, join-files, lookup-column,
+   add-calculated-column, extract-date-part, split-column, find-replace,
+   fill-blanks-with-value, rename-columns, remove-duplicates, pivot-summary, top-n,
+   filter-export-csv, export-xlsx, export-to-s3, email-view, dashboard-from-view,
+   summarize-by, compare-views, refresh-now, undo-last-change, revert-view-version. Tasks that
+   would destroy a view's rows (pivot-summary, top-n, filter-export-csv) work on a
+   `view create --input '{"clone_from": ...}'` copy. An input may be a string, integer, array,
+   object or `any` (text or number). `scripts/eval_task_calls.py` counts the calls per task
+   with a recipe against step by step (`docs/task-call-eval.md`: 60 against 110 for the 32
+   tasks, previews included; it counts calls, not accuracy). A partial step (exit 3)
    doesn't stop a recipe, so its read-back still runs. The live run found that an append read its
    target before the rows landed; `file upload` now waits for the target to read `ready`.
 6. **Undo** (#311, done): each journaled write records its compensation as `mammoth run` lines, so

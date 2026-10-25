@@ -233,7 +233,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
     "history.list": {"undoable_only": True},
-    "recipe.run": {"inputs": {"view_id": 1}},
+    "recipe.run": {"inputs": {"view_id": 1, "dataset_id": 2}},
     # first_name/last_name are each individually optional (either one alone is
     # a valid update), so neither is `required`; show one so the example is a
     # real call rather than the bare command, which the handler rejects.
