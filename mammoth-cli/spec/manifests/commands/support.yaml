@@ -708,8 +708,10 @@ commands:
   output_schema:
     ref: WriteResult
   undo:
-    strategy: inverse
+    strategy: manual
     command: support.partner.client.detach
+    note: Detaching again needs the price and contact_email of the direct deal, which the cancelled
+      detach did not keep; run it with those two input fields.
   readback:
     command: support.partner.client.list
     ids:
@@ -810,8 +812,10 @@ commands:
   output_schema:
     ref: WriteResult
   undo:
-    strategy: inverse
+    strategy: manual
     command: support.workspace.archive
+    note: Archiving again needs a storage_class and the workspace's name as confirm_name, which the
+      restore did not keep; run it with those two input fields.
   readback:
     command: support.workspace.archive-info
     ids:

@@ -608,8 +608,9 @@ def compensation(
     strategy = undo.get("strategy")
     if strategy == _INVERSE:
         target = command_by_id(undo["command"]) or {}
-        line: dict[str, Any] = {"cmd": target.get("command_path", ""), "flags": flags}
         args = _positional_args(request, record)
+        flags.update(_carried_flags(request, target, args))
+        line: dict[str, Any] = {"cmd": target.get("command_path", ""), "flags": flags}
         if args:
             line["args"] = args
         document = request.invocation.bound_input() if request.invocation else None
@@ -631,11 +632,12 @@ def compensation(
         return [], "It made nothing the trash can take back."
     if strategy == _MANUAL:
         target = command_by_id(undo["command"]) or {}
-        why = (
-            f"`mammoth {target.get('command_path', undo['command'])}` reverses it, but it needs"
-            " the id this write made, so it is not run for you."
+        path = f"`mammoth {target.get('command_path', undo['command'])}`"
+        if undo.get("note"):
+            return [], f"{path} reverses it, but it is not run for you. {undo['note']}"
+        return [], (
+            f"{path} reverses it, but it needs the id this write made, so it is not run for you."
         )
-        return [], f"{why} {undo['note']}" if undo.get("note") else why
     if strategy == _IRREVERSIBLE:
         return [], str(undo["reason"])
     return [], "No undo is declared for it."
@@ -679,6 +681,31 @@ def _flags(request: Request, outcome: Outcome) -> dict[str, Any]:
     if project is not None:
         flags["project"] = project
     return flags
+
+
+def _carried_flags(request: Request, target: Mapping[str, Any], args: list[Any]) -> dict[str, Any]:
+    """The flags the inverse command needs that only the write's own call had.
+
+    ``history undo`` runs the line with ``--yes`` alone, so a ``confirm_target`` inverse needs
+    the id it will be asked to confirm (its last positional: the workspace of a partner
+    detach, the only id of the others), and a command that works inside a chat session needs
+    the ``--session`` the write was made with.
+
+    Args:
+        request: The write.
+        target: The manifest record of the inverse command.
+        args: The positional arguments the inverse line carries.
+
+    Returns:
+        The extra flags: ``confirm`` and ``session`` where they apply.
+    """
+    carried: dict[str, Any] = {}
+    if target.get("confirmation") == "confirm_target" and args:
+        carried["confirm"] = str(args[-1])
+    invocation = request.invocation
+    if invocation is not None and invocation.session:
+        carried["session"] = invocation.session
+    return carried
 
 
 def _positional_args(request: Request, record: Mapping[str, Any]) -> list[Any]:
