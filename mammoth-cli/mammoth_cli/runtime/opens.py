@@ -42,6 +42,11 @@ _RESULT_KINDS = ("view", "dashboard")
 #: Writes that make whole new datasets and name them as ``dataset_id`` (an upload of
 #: several sheets also as ``dataset_ids``) in their result.
 MAKES_DATASET = frozenset({"view.export.dataset", "file.upload"})
+#: Writes that list every view they made as ``view_ids`` (their readback names the first).
+MAKES_VIEWS = frozenset({"view.variants.create"})
+#: Writes that return the object made by an earlier call, with no job, when it exists: a
+#: result without ``job_id`` is then not a new object.
+FINDS_EXISTING = frozenset({"dashboard.live-chart.create"})
 _SOURCE_FROM_CALL = ("positional.", "input.")
 _API_SUFFIX = "/api/v2"
 
@@ -98,6 +103,8 @@ def _targets(
         made = []
     else:
         made += _result_made(invocation, record, result)
+    if invocation.command_id in FINDS_EXISTING and not result.get("job_id"):
+        existing, made = [*existing, *made], []
     named = _named_by_call(invocation)
     # An object the call names (an append's ``append_to_ds_id``, an export's ``target_ds_id``)
     # existed before the write, even when the result names it too: changed, never made.
@@ -121,6 +128,8 @@ def _result_made(
     keys = [_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds]
     if "dataset" in kinds and isinstance(result.get("dataset_ids"), list):
         keys += [_object_key("dataset_id", value) for value in result["dataset_ids"]]
+    if invocation.command_id in MAKES_VIEWS and isinstance(result.get("view_ids"), list):
+        keys += [_object_key("view_id", value) for value in result["view_ids"]]
     return [key for key in dict.fromkeys(keys) if key is not None]
 
 
