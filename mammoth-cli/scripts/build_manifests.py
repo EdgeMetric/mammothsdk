@@ -44,6 +44,7 @@ sys.path.insert(0, str(REPO_ROOT))
 import _command_map as cmap  # noqa: E402
 from _openapi_extract import iter_operations, load_snapshot  # noqa: E402
 from _sdk_catalog import CLI_ONLY_COMMANDS, EXTRA_OP_HINTS, load_sdk_catalog  # noqa: E402
+from _undo_rules import derive_undo  # noqa: E402
 
 from mammoth_cli.manifest.loader import merge_command_record  # noqa: E402
 from mammoth_cli.services.positionals import positionals_for  # noqa: E402
@@ -69,6 +70,31 @@ def _with_edits_target(record: dict[str, Any], edits: set[str]) -> dict[str, Any
         out[key] = value
         if key == "mutation_class":
             out["edits_target"] = record["command_id"] in edits
+    return out
+
+
+def _with_undo(
+    record: dict[str, Any], written: dict[str, Any] | None, known: set[str]
+) -> dict[str, Any]:
+    """Return the record with the default ``undo`` placed right after ``edits_target``.
+
+    Args:
+        record: The generated record of a write.
+        written: Its hand-written record, whose fields (``readback``) the default reads.
+        known: Every command id.
+
+    Returns:
+        The record with ``undo``; a read keeps none.
+    """
+    full = merge_command_record(record, written or {})
+    if full["mutation_class"] == "read":
+        return record
+    after = "edits_target" if "edits_target" in record else "mutation_class"
+    out: dict[str, Any] = {}
+    for key, value in record.items():
+        out[key] = value
+        if key == after:
+            out["undo"] = derive_undo(full, known)
     return out
 
 
@@ -637,7 +663,13 @@ def build() -> dict[str, int]:
             f"edits-target.source.yaml lists non-mutating or unknown commands: {unknown}"
         )
 
-    generated = [_with_edits_target(commands[command_id], edits) for command_id in sorted(commands)]
+    known_ids = set(commands) | set(on_disk)
+    generated = [
+        _with_undo(
+            _with_edits_target(commands[command_id], edits), on_disk.get(command_id), known_ids
+        )
+        for command_id in sorted(commands)
+    ]
     (MANIFESTS / GENERATED_COMMANDS).write_text(
         _yaml_dump({"manifest_schema_version": 1, "commands": generated}), encoding="utf-8"
     )

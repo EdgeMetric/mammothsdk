@@ -9,6 +9,9 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: batch.create
+  undo:
+    strategy: manual
+    command: batch.delete
   known_restrictions: Every source column must be mapped to an existing destination column; the CLI reads
     both schemas and refuses (append_mapping_incomplete) an unmapped source column or a destination the
     dataset lacks, because the backend appends only mapped columns. A destination column no mapping item

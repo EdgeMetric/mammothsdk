@@ -97,6 +97,38 @@ def test_a_permanent_delete_says_why_it_cannot_be_undone() -> None:
     assert reason is not None and "permanently" in reason
 
 
+def test_a_declared_inverse_is_run_with_the_arguments_of_the_write() -> None:
+    lines, reason = journal.compensation(
+        _request("agent.run.pause", run_id=12), _success(), journal._Before()
+    )
+    assert reason is None
+    assert lines == [
+        {"cmd": "agent run resume", "args": [12], "flags": {"profile": "p", "project": 9}}
+    ]
+
+
+def test_a_manual_inverse_is_named_but_not_run() -> None:
+    lines, reason = journal.compensation(
+        _request("webhook.create", name="w"), _success(), journal._Before()
+    )
+    assert lines == []
+    assert reason is not None and "webhook delete" in reason
+
+
+def test_a_write_that_made_nothing_for_the_trash_says_so() -> None:
+    lines, reason = journal.compensation(
+        _request("file.upload"), _success(opens=[]), journal._Before()
+    )
+    assert lines == [] and reason is not None
+
+
+def test_an_external_effect_gives_its_own_reason() -> None:
+    _, reason = journal.compensation(
+        _request("view.export.postgres", view_id=3), _success(), journal._Before()
+    )
+    assert reason is not None and "PostgreSQL" in reason
+
+
 def _journaled(
     command_id: str, producer: Any, store: _Memory, **positionals: Any
 ) -> tuple[Outcome, list[dict[str, Any]]]:

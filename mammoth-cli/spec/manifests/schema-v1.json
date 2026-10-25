@@ -18,6 +18,36 @@
     "mutation_class": {
       "enum": ["read", "benign_mutation", "reversible_pipeline", "destructive", "high_impact", "external_effect"]
     },
+    "undo": {
+      "description": "How the journal reverses a write; see scripts/_undo_rules.py.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "command"],
+          "properties": {
+            "strategy": {"enum": ["inverse", "manual"]},
+            "command": {"$ref": "#/$defs/no_placeholder"},
+            "note": {"$ref": "#/$defs/no_placeholder"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy"],
+          "properties": {"strategy": {"enum": ["pipeline_version", "trash_created"]}}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "reason"],
+          "properties": {
+            "strategy": {"const": "irreversible"},
+            "reason": {"$ref": "#/$defs/no_placeholder"}
+          }
+        }
+      ]
+    },
     "confirmation": {
       "enum": ["none", "prompt_or_yes", "confirm_target", "yes_always", "workspace_confirm"]
     },
@@ -194,6 +224,7 @@
         "result_model": {"$ref": "#/$defs/no_placeholder"},
         "mutation_class": {"$ref": "#/$defs/mutation_class"},
         "edits_target": {"type": "boolean"},
+        "undo": {"$ref": "#/$defs/undo"},
         "output_schema": {"enum": ["openapi"]},
         "confirmation": {"$ref": "#/$defs/confirmation"},
         "wait_policy": {"$ref": "#/$defs/wait_policy"},
@@ -219,7 +250,7 @@
       "allOf": [
         {
           "if": {"properties": {"mutation_class": {"not": {"const": "read"}}}},
-          "then": {"required": ["edits_target"]}
+          "then": {"required": ["edits_target", "undo"]}
         },
         {
           "if": {"properties": {"disposition": {"const": "alias"}}},

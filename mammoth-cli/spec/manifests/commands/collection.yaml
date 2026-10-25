@@ -55,6 +55,9 @@ commands:
   known_restrictions: Deletes the collection and ends every member's access through it. The dashboards
     in it are kept.
 - command_id: collection.dashboards.add
+  undo:
+    strategy: manual
+    command: collection.dashboards.remove
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -65,6 +68,9 @@ commands:
   known_restrictions: Adds dashboards to the collection, which gives its members access to them. notify
     true also emails the members. Always needs --yes.
 - command_id: collection.dashboards.remove
+  undo:
+    strategy: manual
+    command: collection.dashboards.add
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get

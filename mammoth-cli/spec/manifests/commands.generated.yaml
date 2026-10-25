@@ -83,6 +83,10 @@ commands:
   result_model: AddonConnectorAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the addon connector; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -118,6 +122,9 @@ commands:
   result_model: AddonConnectorRemoveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the addon connector entry; the entry is not kept, so it cannot be put back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -153,6 +160,10 @@ commands:
   result_model: AddonStorageAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the addon storage; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -188,6 +199,9 @@ commands:
   result_model: AddonStorageRemoveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the addon storage entry; the entry is not kept, so it cannot be put back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -223,6 +237,10 @@ commands:
   result_model: AddonUserAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the addon user; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -258,6 +276,9 @@ commands:
   result_model: AddonUserRemoveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the addon user entry; the entry is not kept, so it cannot be put back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -345,6 +366,9 @@ commands:
   result_model: AgentAccessChartSaveResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent access chart; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -380,6 +404,10 @@ commands:
   result_model: AgentAccessGrantGiveResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Gives an agent access to data; the only way to take the grant back is `agent access grant
+      revoke`, which is final.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -456,6 +484,9 @@ commands:
   result_model: AgentAccessGrantRevokeResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: 'Revoking is final: the agent access grant cannot be reactivated, so issue a new one.'
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -497,6 +528,9 @@ commands:
   result_model: AgentAccessGrantUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent access grant; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -641,6 +675,10 @@ commands:
   result_model: AgentAccessRequestAddToContextResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Adds to the agent access request; the journal does not know the id of the added entry, so
+      it cannot take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -676,6 +714,10 @@ commands:
   result_model: AgentAccessRequestCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new agent access request, and no delete command exists for it; remove it in the
+      web app.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -792,6 +834,9 @@ commands:
   result_model: AgentAccessRequestResolveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Resolves an access request and tells the requester; a resolved request cannot be reopened.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -861,6 +906,9 @@ commands:
   result_model: AgentAccessSettingsUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent access settings; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -936,6 +984,9 @@ commands:
   result_model: AgentActionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the agent action permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -1005,6 +1056,9 @@ commands:
   result_model: AgentChatResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a message into the agent; the exchange stays in its history and cannot be unsent.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1047,6 +1101,9 @@ commands:
   result_model: AgentMessageSetRequestKindResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent message; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1088,6 +1145,10 @@ commands:
   result_model: AgentPlanApproveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent plan on (approve); the earlier state is not recorded and no command moves
+      it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1128,6 +1189,9 @@ commands:
   result_model: AgentPlanDiscardResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Discards the agent plan for good; no copy is kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1163,6 +1227,9 @@ commands:
   result_model: AgentPlanEditProposalResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent plan; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1210,6 +1277,10 @@ commands:
   result_model: AgentPlanSkipResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent plan on (skip); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1251,6 +1322,10 @@ commands:
   result_model: AgentRunExtendResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent run on (extend); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1458,6 +1533,10 @@ commands:
   result_model: AgentRunPauseResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent run on (pause); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1499,6 +1578,10 @@ commands:
   result_model: AgentRunResumeResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent run on (resume); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1540,6 +1623,10 @@ commands:
   result_model: AgentRunRetryResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent run on (retry); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1615,6 +1702,9 @@ commands:
   result_model: AgentRunStopResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the agent run on (stop); the earlier state is not recorded and no command moves it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1696,6 +1786,9 @@ commands:
   result_model: AgentRunUnitsSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent run units; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1738,6 +1831,9 @@ commands:
   result_model: AgentSessionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the chat session and its messages for good.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -1893,6 +1989,9 @@ commands:
   result_model: AgentSessionSetVisibilityResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the agent session; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1934,6 +2033,9 @@ commands:
   result_model: AgentTurnCancelResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Discards the agent turn for good; no copy is kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1981,6 +2083,9 @@ commands:
   result_model: AgentTurnRateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Records a rating on the turn; the earlier rating is overwritten and not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2103,6 +2208,10 @@ commands:
   result_model: AiRetentionConditionResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (condition on the ai retention) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
@@ -2222,6 +2331,10 @@ commands:
   result_model: AnnotationCommentAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the annotation comment; the journal does not know the id of the added entry, so it
+      cannot take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2257,6 +2370,9 @@ commands:
   result_model: AnnotationCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: annotation.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2299,6 +2415,9 @@ commands:
   result_model: AnnotationDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the annotation permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -2374,6 +2493,9 @@ commands:
   result_model: AnnotationUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the annotation; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2450,6 +2572,9 @@ commands:
   result_model: AuthConnectedAppsRevokeResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: 'Revoking is final: the auth connected apps cannot be reactivated, so issue a new one.'
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -2484,6 +2609,10 @@ commands:
   result_model: AuthLoginResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Signs in on this machine; sign out with `mammoth auth logout`, which the journal does not
+      run for you.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2518,6 +2647,9 @@ commands:
   result_model: AuthLogoutResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Signs out on this machine; sign in again with `mammoth auth login`.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2626,6 +2758,8 @@ commands:
   result_model: AutomationCreateResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -2673,6 +2807,9 @@ commands:
   result_model: AutomationDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the automation permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -2823,6 +2960,9 @@ commands:
   result_model: AutomationRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: automation.trash
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2864,6 +3004,9 @@ commands:
   result_model: AutomationRouteOrderResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the automation route; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -2948,6 +3091,10 @@ commands:
   result_model: AutomationRunFileAddAnywayResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Moves the automation run file on (add anyway); the earlier state is not recorded and no command
+      moves it back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -3031,6 +3178,9 @@ commands:
   result_model: AutomationTrashResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: automation.restore
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -3072,6 +3222,9 @@ commands:
   result_model: AutomationUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the automation; the earlier value is not kept, so it cannot be restored.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -3114,6 +3267,9 @@ commands:
   result_model: BatchBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the batch permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -3161,6 +3317,9 @@ commands:
   result_model: BatchCreateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: batch.delete
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -3202,6 +3361,9 @@ commands:
   result_model: BatchCreateSpecResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Creates a new batch, and no delete command exists for it; remove it in the web app.
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -3250,6 +3412,9 @@ commands:
   result_model: BatchDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the batch permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: returns_job
   pagination_policy: none
@@ -3377,6 +3542,9 @@ commands:
   result_model: BatchUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the batch; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -3452,6 +3620,10 @@ commands:
   result_model: BillingHostedPageResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (hosted page on the billing) and stores nothing in the workspace, so
+      there is nothing to reverse.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3487,6 +3659,10 @@ commands:
   result_model: BillingInvoiceChargeResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Charges the customer's card; the payment provider has taken the money and a refund is a separate,
+      manual step.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3556,6 +3732,10 @@ commands:
   result_model: BillingStripeCancelResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Cancels the Stripe subscription; whether it can be resumed depends on the billing period,
+      so the journal does not try.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3591,6 +3771,10 @@ commands:
   result_model: BillingStripeCheckoutUrlResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (checkout url on the billing stripe) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3633,6 +3817,10 @@ commands:
   result_model: BillingStripeCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates the Stripe customer and subscription; the provider keeps them, and Mammoth has no
+      command that deletes them.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3668,6 +3856,9 @@ commands:
   result_model: BillingStripeEndTrialResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Ends the free trial now and starts billing; a trial cannot be started again.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3738,6 +3929,10 @@ commands:
   result_model: BillingStripeHeldChangeCancelResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Cancels a plan change that was waiting to apply; the change cannot be queued again from the
+      CLI.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3848,6 +4043,9 @@ commands:
   result_model: BillingStripePaymentMethodDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the billing stripe payment method permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3925,6 +4123,9 @@ commands:
   result_model: BillingStripePaymentMethodSetDefaultResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the default card; the earlier default is not recorded.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -3960,6 +4161,10 @@ commands:
   result_model: BillingStripePortalUrlResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (portal url on the billing stripe) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4029,6 +4234,10 @@ commands:
   result_model: BillingStripeRecheckLimitsResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (recheck limits on the billing stripe) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4064,6 +4273,9 @@ commands:
   result_model: BillingStripeResumeResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Resumes the subscription and bills from now on; a payment taken is not reversed here.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4099,6 +4311,9 @@ commands:
   result_model: BillingStripeRetryPaymentResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Charges the card again; a payment taken is not reversed here.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4168,6 +4383,9 @@ commands:
   result_model: BillingStripeStorageSetResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the paid storage; the earlier amount is not recorded and a charge already made stays.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4203,6 +4421,9 @@ commands:
   result_model: BillingStripeSyncResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Pulls the subscription state from Stripe into Mammoth; the earlier synced state is not kept.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4340,6 +4561,10 @@ commands:
   result_model: BillingSubscriptionUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the subscription and what it costs; the earlier terms are not recorded and a charge
+      already made stays.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4824,6 +5049,9 @@ commands:
   result_model: ClientAppCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: client-app.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -4866,6 +5094,9 @@ commands:
   result_model: ClientAppDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the client app permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -4981,6 +5212,9 @@ commands:
   result_model: ClientAppUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the client app; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -5098,6 +5332,9 @@ commands:
   result_model: CollectionCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: collection.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5139,6 +5376,10 @@ commands:
   result_model: CollectionDashboardsAddResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the collection dashboards; the journal does not know the id of the added entry, so
+      it cannot take the entry out.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -5187,6 +5428,9 @@ commands:
   result_model: CollectionDashboardsRemoveResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the collection dashboards entry; the entry is not kept, so it cannot be put back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -5228,6 +5472,9 @@ commands:
   result_model: CollectionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the collection permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -5351,6 +5598,9 @@ commands:
   result_model: CollectionEmailUpdatesMeSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Subscribes people to email updates; mail already sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5393,6 +5643,9 @@ commands:
   result_model: CollectionEmailUpdatesSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Subscribes people to email updates; mail already sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5435,6 +5688,9 @@ commands:
   result_model: CollectionEmailUpdatesTestResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a test email now; a sent email cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5476,6 +5732,9 @@ commands:
   result_model: CollectionFilesUploadResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Uploads a file to the collection files; the journal lacks its id, so it cannot remove it.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5717,6 +5976,9 @@ commands:
   result_model: CollectionMembersRemoveResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the collection members entry; the entry is not kept, so it cannot be put back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -5799,6 +6061,9 @@ commands:
   result_model: CollectionShareResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sends the share to the people named; Mammoth cannot withdraw a sent message.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -5840,6 +6105,9 @@ commands:
   result_model: CollectionUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the collection; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -5880,6 +6148,9 @@ commands:
   result_model: CompletionInstallResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Installs the shell completion script; delete the file it names to remove it.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6070,6 +6341,9 @@ commands:
   result_model: ConfigSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the config; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6139,6 +6413,9 @@ commands:
   result_model: ConnectorAiChatResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a message into the connector ai; the exchange stays in its history and cannot be unsent.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6291,6 +6568,9 @@ commands:
   result_model: ConnectorAiSubmitColumnSelectionResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Records the column choice on the connector assistant's draft; the earlier choice is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6328,6 +6608,10 @@ commands:
   result_model: ConnectorAiSubmitCredentialsResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Hands credentials to the connector assistant's draft; the draft keeps them and the earlier
+      ones are not recorded.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6370,6 +6654,9 @@ commands:
   result_model: ConnectorConnectionCreateResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: manual
+    command: connector.connection.delete
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -6418,6 +6705,9 @@ commands:
   result_model: ConnectorConnectionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the connector connection permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -6627,6 +6917,10 @@ commands:
   result_model: ConnectorConnectionTestResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (test on the connector connection) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6674,6 +6968,9 @@ commands:
   result_model: ConnectorConnectionUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the connector connection; the earlier value is not kept, so it cannot be restored.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -6751,6 +7048,9 @@ commands:
   result_model: ConnectorDraftCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new connector draft, and no delete command exists for it; remove it in the web app.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6796,6 +7096,9 @@ commands:
   result_model: ConnectorDraftDiscardResult
   mutation_class: destructive
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Discards the connector draft for good; no copy is kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -6837,6 +7140,9 @@ commands:
   result_model: ConnectorDraftFillResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Fills the draft's fields in place; the earlier values are not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -6989,6 +7295,9 @@ commands:
   result_model: ConnectorDraftOpenResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Opens the draft for editing; closing it is not a recorded step.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7032,6 +7341,10 @@ commands:
   result_model: ConnectorDraftReadTablesResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (read tables on the connector draft) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7081,6 +7394,10 @@ commands:
   result_model: ConnectorDraftSampleResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (sample on the connector draft) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7123,6 +7440,9 @@ commands:
   result_model: ConnectorDraftSaveResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the connector draft; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -7261,6 +7581,10 @@ commands:
   result_model: ConnectorDraftSourcePreviewResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (preview on the connector draft source) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7303,6 +7627,9 @@ commands:
   result_model: ConnectorDraftUpdateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the connector draft; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7351,6 +7678,9 @@ commands:
   result_model: ConnectorDsConfigCreateResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: manual
+    command: connector.ds-config.delete
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -7404,6 +7734,9 @@ commands:
   result_model: ConnectorDsConfigDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the connector ds config permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -7452,6 +7785,9 @@ commands:
   result_model: ConnectorDsConfigDeleteAllResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the connector ds config permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -7604,6 +7940,9 @@ commands:
   result_model: ConnectorDsConfigUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the connector ds config; the earlier value is not kept, so it cannot be restored.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -7808,6 +8147,10 @@ commands:
   result_model: ContextProjectClearResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Clears the project this CLI uses by default (local state); set it again with `mammoth context
+      project use`.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7881,6 +8224,10 @@ commands:
   result_model: ContextProjectUseResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sets the project this CLI uses by default (local state); the earlier one is not kept, so set
+      it back with `mammoth context project use`.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -7955,6 +8302,10 @@ commands:
   result_model: DashboardActionResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Runs a dashboard action that reaches outside Mammoth (a message or a webhook); what it sent
+      cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -8037,6 +8388,10 @@ commands:
   result_model: DashboardArchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the dashboard on (archive); the earlier state is not recorded and no command moves it
+      back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -8161,6 +8516,9 @@ commands:
   result_model: DashboardAttachmentCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Uploads an attachment to the dashboard; no command removes it again.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8245,6 +8603,9 @@ commands:
   result_model: DashboardAudienceDigestSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard audience digest; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8443,6 +8804,9 @@ commands:
   result_model: DashboardCancelGenerationResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Stops the dashboard generation job; a stopped job cannot be resumed.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8525,6 +8889,9 @@ commands:
   result_model: DashboardCanvasRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Replaces the dashboard canvas with a saved one; the canvas it replaced is not kept.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -8568,6 +8935,9 @@ commands:
   result_model: DashboardCanvasSaveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard canvas; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8604,6 +8974,9 @@ commands:
   result_model: DashboardChartTypeCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.chart-type.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8652,6 +9025,9 @@ commands:
   result_model: DashboardChartTypeDeleteResult
   mutation_class: destructive
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard chart type permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -8736,6 +9112,10 @@ commands:
   result_model: DashboardChatAttachmentUploadResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Uploads a file to the dashboard chat attachment; the journal lacks its id, so it cannot remove
+      it.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8778,6 +9158,9 @@ commands:
   result_model: DashboardChatEditResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard chat; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -8907,6 +9290,9 @@ commands:
   result_model: DashboardContextApplyResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard context; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -8943,6 +9329,9 @@ commands:
   result_model: DashboardContextCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.context.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -8985,6 +9374,9 @@ commands:
   result_model: DashboardContextDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard context permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -9021,6 +9413,10 @@ commands:
   result_model: ContextExtractResponse
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (extract on the dashboard context) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9137,6 +9533,9 @@ commands:
   result_model: DashboardContextUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard context; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9174,6 +9573,8 @@ commands:
   result_model: DashboardCreateBlankResult
   mutation_class: destructive
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -9296,6 +9697,9 @@ commands:
   result_model: DashboardDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -9338,6 +9742,10 @@ commands:
   result_model: DashboardDescriptorDataResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (descriptor data on the dashboard) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -9381,6 +9789,8 @@ commands:
   result_model: DashboardDuplicateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9540,6 +9950,9 @@ commands:
   result_model: DashboardEmailUpdatesMeSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Subscribes people to email updates; mail already sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9582,6 +9995,9 @@ commands:
   result_model: DashboardEmailUpdatesSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Subscribes people to email updates; mail already sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9626,6 +10042,9 @@ commands:
   result_model: DashboardEmailUpdatesTestResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a test email now; a sent email cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9708,6 +10127,9 @@ commands:
   result_model: DashboardEmbedConfigSetResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard embed config; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -9750,6 +10172,9 @@ commands:
   result_model: DashboardEmbedKeyRotateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Rotates the embed key; the old key is gone and embeds that use it stop working.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -9793,6 +10218,9 @@ commands:
   result_model: DashboardEmbedLifetimeSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard embed lifetime; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9836,6 +10264,9 @@ commands:
   result_model: DashboardEmbedOriginRevokeResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: 'Revoking is final: the dashboard embed origin cannot be reactivated, so issue a new one.'
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -9879,6 +10310,10 @@ commands:
   result_model: DashboardEmbedPreviewTokenCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new dashboard embed preview token, and no delete command exists for it; remove it
+      in the web app.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -9922,6 +10357,9 @@ commands:
   result_model: DashboardEmbedSecretRotateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Rotates the embed secret; the old secret is gone and embeds signed with it stop working.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -10125,6 +10563,9 @@ commands:
   result_model: DashboardEngagementRemindResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Emails a reminder to the dashboard's audience; a sent email cannot be recalled.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -10160,6 +10601,10 @@ commands:
   result_model: ExemplarExtractResponse
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (extract on the dashboard exemplar) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -10200,6 +10645,10 @@ commands:
   result_model: DashboardFigureIntentResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (figure intent on the dashboard) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -10243,6 +10692,10 @@ commands:
   result_model: DashboardFigureAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the dashboard figure; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -10611,6 +11064,10 @@ commands:
   result_model: ImportDatasetResponse
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Imports a workbook as a new dashboard and datasets; the objects are listed in its result,
+      and the journal does not track them.
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -10734,6 +11191,9 @@ commands:
   result_model: DashboardLiveChartAudienceResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard live chart; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -10771,6 +11231,8 @@ commands:
   result_model: DashboardLiveChartCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -10895,6 +11357,9 @@ commands:
   result_model: DashboardLiveChartPlacementResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard live chart; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -11052,6 +11517,10 @@ commands:
   result_model: DashboardOwnDataAcceptResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the dashboard own data on (accept); the earlier state is not recorded and no command
+      moves it back.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11094,6 +11563,10 @@ commands:
   result_model: DashboardOwnDataDismissResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Moves the dashboard own data on (dismiss); the earlier state is not recorded and no command
+      moves it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -11176,6 +11649,10 @@ commands:
   result_model: DashboardOwnDataStartResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Moves the dashboard own data on (start); the earlier state is not recorded and no command
+      moves it back.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11258,6 +11735,10 @@ commands:
   result_model: DashboardPagePlanResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (plan on the dashboard page) and stores nothing in the workspace, so
+      there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -11301,6 +11782,10 @@ commands:
   result_model: DashboardPagesAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the dashboard pages; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
@@ -11481,6 +11966,10 @@ commands:
   result_model: DashboardPdfExportResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dashboard pdf outside Mammoth; the produced file cannot be
+      recalled.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11524,6 +12013,10 @@ commands:
   result_model: DashboardPublishedDataByUrlResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (published data by url on the dashboard) and stores nothing in the
+      workspace, so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11607,6 +12100,10 @@ commands:
   result_model: DashboardPublishedDataResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (data on the dashboard published) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11780,6 +12277,10 @@ commands:
   result_model: DashboardPublishedPdfExportResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dashboard published pdf outside Mammoth; the produced file
+      cannot be recalled.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11949,6 +12450,10 @@ commands:
   result_model: DashboardPublishedVideoExportResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dashboard published video outside Mammoth; the produced file
+      cannot be recalled.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -11997,6 +12502,9 @@ commands:
   result_model: DashboardQaAskResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a message into the dashboard qa; the exchange stays in its history and cannot be unsent.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -12046,6 +12554,9 @@ commands:
   result_model: DashboardQaCommentCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.qa.comment.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12101,6 +12612,9 @@ commands:
   result_model: DashboardQaCommentDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard qa comment permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -12155,6 +12669,9 @@ commands:
   result_model: DashboardQaFeedbackResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a message into the dashboard qa; the exchange stays in its history and cannot be unsent.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12237,6 +12754,9 @@ commands:
   result_model: DashboardQaSessionCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.qa.session.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12286,6 +12806,9 @@ commands:
   result_model: DashboardQaSessionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard qa session permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -12334,6 +12857,10 @@ commands:
   result_model: DashboardQaSessionForkResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Sends a message into the dashboard qa session; the exchange stays in its history and cannot
+      be unsent.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12468,6 +12995,9 @@ commands:
   result_model: DashboardQaSessionRenameResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard qa session; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12518,6 +13048,9 @@ commands:
   result_model: DashboardQaSessionSetVisibilityResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard qa session; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12601,6 +13134,9 @@ commands:
   result_model: DashboardQaSettingsSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard qa settings; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12644,6 +13180,10 @@ commands:
   result_model: DashboardQueryResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (query on the dashboard) and stores nothing in the workspace, so there
+      is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12687,6 +13227,9 @@ commands:
   result_model: DashboardRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: dashboard.trash
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -12771,6 +13314,9 @@ commands:
   result_model: DashboardRlsAssignmentSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard rls assignment; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12894,6 +13440,9 @@ commands:
   result_model: DashboardShareResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sends the share to the people named; Mammoth cannot withdraw a sent message.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -12930,6 +13479,9 @@ commands:
   result_model: DashboardSignatureCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.signature.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -12972,6 +13524,9 @@ commands:
   result_model: DashboardSignatureDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard signature permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -13048,6 +13603,9 @@ commands:
   result_model: DashboardSignatureUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard signature; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13120,6 +13678,9 @@ commands:
   result_model: DashboardStyleCustomCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.style.custom.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13163,6 +13724,9 @@ commands:
   result_model: DashboardStyleCustomDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard style custom permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -13240,6 +13804,9 @@ commands:
   result_model: DashboardStyleCustomUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard style custom; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13311,6 +13878,9 @@ commands:
   result_model: DashboardStyleDefaultSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard style default; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13347,6 +13917,10 @@ commands:
   result_model: DashboardStyleDeriveResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (derive on the dashboard style) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13384,6 +13958,10 @@ commands:
   result_model: DashboardStyleExtractBrandResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (extract brand on the dashboard style) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -13540,6 +14118,9 @@ commands:
   result_model: ObjectJobSchema
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -13623,6 +14204,9 @@ commands:
   result_model: DashboardTagsDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the tag for good; which dashboards carried it is not kept.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -13699,6 +14283,9 @@ commands:
   result_model: DashboardTagsMergeResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Merges the tag into another; which dashboards carried it is not kept.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -13742,6 +14329,9 @@ commands:
   result_model: DashboardTagsRenameResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard tags; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -13785,6 +14375,9 @@ commands:
   result_model: DashboardTagsSetResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard tags; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -13821,6 +14414,9 @@ commands:
   result_model: DashboardTemplateApplyResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard template; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -13858,6 +14454,9 @@ commands:
   result_model: DashboardTemplateCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: dashboard.template.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -13901,6 +14500,9 @@ commands:
   result_model: DashboardTemplateDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dashboard template permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -14051,6 +14653,10 @@ commands:
   result_model: DashboardTemplatePreviewResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (preview on the dashboard template) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -14094,6 +14700,9 @@ commands:
   result_model: DashboardTemplateRenameResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard template; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -14132,6 +14741,10 @@ commands:
   result_model: DashboardTemplateResolveMappingResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Moves the dashboard template on (resolve mapping); the earlier state is not recorded and no
+      command moves it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -14176,6 +14789,9 @@ commands:
   result_model: DashboardTemplateThumbnailClearResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the template's thumbnail; the image is not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -14267,6 +14883,10 @@ commands:
   result_model: DashboardTemplateThumbnailSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard template thumbnail; the earlier value is not kept, so it cannot be
+      restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -14304,6 +14924,10 @@ commands:
   result_model: PendingTemplateResponse
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (pending on the dashboard templates) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -14343,6 +14967,10 @@ commands:
   result_model: ObjectJobSchema | JobResponse
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Builds a dashboard from a template as a job; the objects it made are in its result, and the
+      journal does not track them.
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -14383,6 +15011,9 @@ commands:
   result_model: DashboardTrashResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: dashboard.restore
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14465,6 +15096,9 @@ commands:
   result_model: DashboardUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dashboard; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -14502,6 +15136,8 @@ commands:
   result_model: DashboardV3GenerateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14585,6 +15221,10 @@ commands:
   result_model: DashboardVideoExportResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dashboard video outside Mammoth; the produced file cannot be
+      recalled.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14627,6 +15267,10 @@ commands:
   result_model: DashboardWidgetDataResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (widget data on the dashboard) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14671,6 +15315,10 @@ commands:
   result_model: DashboardWidgetDataByUrlResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (widget data by url on the dashboard) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14801,6 +15449,9 @@ commands:
   result_model: DatasetBrokenRowsResolveResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Fixes or drops the dataset's broken rows; the rows as they were are not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -14837,6 +15488,9 @@ commands:
   result_model: DatasetBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dataset permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -14872,6 +15526,9 @@ commands:
   result_model: DatasetBulkUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -14941,6 +15598,8 @@ commands:
   result_model: DatasetCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -14986,6 +15645,9 @@ commands:
   result_model: DatasetCreateFromPdfResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new dataset, and no delete command exists for it; remove it in the web app.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15067,6 +15729,10 @@ commands:
   result_model: DatasetDefinitionAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the dataset definition; the journal does not know the id of the added entry, so it
+      cannot take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15155,6 +15821,9 @@ commands:
   result_model: DatasetDefinitionRemoveResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the dataset definition entry; the entry is not kept, so it cannot be put back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -15196,6 +15865,9 @@ commands:
   result_model: DatasetDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the dataset permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -15277,6 +15949,10 @@ commands:
   result_model: DatasetFileSettingsUndoResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Is itself the undo of a file-settings update; to redo it, run `dataset file-settings update`
+      again.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -15318,6 +15994,9 @@ commands:
   result_model: DatasetFileSettingsUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset file settings; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15401,6 +16080,10 @@ commands:
   result_model: DatasetInterpretationConfirmResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the dataset interpretation on (confirm); the earlier state is not recorded and no command
+      moves it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15443,6 +16126,10 @@ commands:
   result_model: DatasetInterpretationPreviewResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (preview on the dataset interpretation) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15517,6 +16204,9 @@ commands:
   result_model: DatasetRefreshResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Starts work on the dataset; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -15558,6 +16248,9 @@ commands:
   result_model: DatasetRenameResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15600,6 +16293,9 @@ commands:
   result_model: DatasetRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: dataset.trash
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15710,6 +16406,9 @@ commands:
   result_model: DatasetToolClaimRedeemResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Redeems a one-time tool claim; a claim cannot be redeemed twice.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15751,6 +16450,9 @@ commands:
   result_model: DatasetTrashResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: dataset.restore
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -15786,6 +16488,9 @@ commands:
   result_model: DatasetUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -15857,6 +16562,9 @@ commands:
   result_model: ExternalKeyCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: external-key.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -15899,6 +16607,9 @@ commands:
   result_model: ExternalKeyDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the external key permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16008,6 +16719,9 @@ commands:
   result_model: FileBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the file permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16049,6 +16763,9 @@ commands:
   result_model: FileDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the file permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16091,6 +16808,10 @@ commands:
   result_model: FileExtractSheetsResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (extract sheets on the file) and stores nothing in the workspace, so
+      there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -16207,6 +16928,10 @@ commands:
   result_model: FileMultiSheetExtractResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (multi sheet extract on the file) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -16248,6 +16973,10 @@ commands:
   result_model: FileMultiSheetPreviewResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (multi sheet preview on the file) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -16289,6 +17018,9 @@ commands:
   result_model: FileSetPasswordResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sets the password used to open an encrypted file; the earlier password is not kept.
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -16332,6 +17064,9 @@ commands:
   result_model: FileUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the file; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -16376,6 +17111,8 @@ commands:
   result_model: FileUploadResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
@@ -16421,6 +17158,9 @@ commands:
   result_model: FileUploadFolderResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new file, and no delete command exists for it; remove it in the web app.
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none
@@ -16456,6 +17196,9 @@ commands:
   result_model: FolderBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the folder permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16497,6 +17240,8 @@ commands:
   result_model: FolderCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -16538,6 +17283,9 @@ commands:
   result_model: FolderDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the folder permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16648,6 +17396,9 @@ commands:
   result_model: FolderMoveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the folder; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -16728,6 +17479,10 @@ commands:
   result_model: FolderTrashResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the folder to the trash, but no `folder restore` command exists; restore it from the
+      Trash page in the web app.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -16769,6 +17524,9 @@ commands:
   result_model: FolderUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the folder; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -16959,6 +17717,9 @@ commands:
   result_model: NotificationDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the notification permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -16995,6 +17756,9 @@ commands:
   result_model: NotificationDeleteBatchResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the notification permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -17070,6 +17834,9 @@ commands:
   result_model: NotificationUpdateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the notification; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17106,6 +17873,9 @@ commands:
   result_model: NotificationUpdateBatchResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the notification; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17147,6 +17917,9 @@ commands:
   result_model: ParameterCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: parameter.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17188,6 +17961,9 @@ commands:
   result_model: ParameterDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the parameter permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -17269,6 +18045,9 @@ commands:
   result_model: ParameterDuplicateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: parameter.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17350,6 +18129,9 @@ commands:
   result_model: ParameterGroupCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: parameter.group.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17391,6 +18173,9 @@ commands:
   result_model: ParameterGroupDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the parameter group permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -17460,6 +18245,9 @@ commands:
   result_model: ParameterGroupReorderResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the parameter group; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17501,6 +18289,9 @@ commands:
   result_model: ParameterGroupUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the parameter group; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17576,6 +18367,9 @@ commands:
   result_model: ParameterRerunResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the parameter; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17611,6 +18405,9 @@ commands:
   result_model: ParameterRerunAllStaleResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the parameter; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17652,6 +18449,9 @@ commands:
   result_model: ParameterUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the parameter; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17688,6 +18488,9 @@ commands:
   result_model: ProjectBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the project permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -17723,6 +18526,9 @@ commands:
   result_model: ProjectBulkUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the project; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -17814,6 +18620,9 @@ commands:
   result_model: ProjectCopyResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: project.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17855,6 +18664,9 @@ commands:
   result_model: ProjectCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: project.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17936,6 +18748,9 @@ commands:
   result_model: ProjectDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the project permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -18051,6 +18866,10 @@ commands:
   result_model: ProjectMemoryAddResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Adds to the project memory; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -18131,6 +18950,9 @@ commands:
   result_model: ProjectMemoryRemoveResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Removes the project memory entry; the entry is not kept, so it cannot be put back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -18333,6 +19155,10 @@ commands:
   result_model: ProjectResourceDependenciesUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the project resource dependencies; the earlier value is not kept, so it cannot
+      be restored.
   confirmation: confirm_target
   wait_policy: always_wait
   pagination_policy: none
@@ -18415,6 +19241,9 @@ commands:
   result_model: ProjectSampleFlowResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the project; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -18456,6 +19285,9 @@ commands:
   result_model: ProjectUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the project; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -18497,6 +19329,10 @@ commands:
   result_model: ProjectUserAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the project user; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -18539,6 +19375,9 @@ commands:
   result_model: ProjectUserRemoveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the project user entry; the entry is not kept, so it cannot be put back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -18581,6 +19420,9 @@ commands:
   result_model: ProjectUserUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the project user; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -18651,6 +19493,9 @@ commands:
   result_model: ScheduleCreateResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: manual
+    command: schedule.delete
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -18693,6 +19538,9 @@ commands:
   result_model: ScheduleDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the schedule permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -18808,6 +19656,9 @@ commands:
   result_model: ScheduleUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the schedule; the earlier value is not kept, so it cannot be restored.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -18963,6 +19814,10 @@ commands:
   result_model: SkillInstallResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (install on the skill) and stores nothing in the workspace, so there
+      is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19063,6 +19918,10 @@ commands:
   result_model: SkillUninstallResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (uninstall on the skill) and stores nothing in the workspace, so there
+      is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19097,6 +19956,9 @@ commands:
   result_model: SkillUpdateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the skill; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19138,6 +20000,9 @@ commands:
   result_model: SnippetCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: snippet.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19180,6 +20045,9 @@ commands:
   result_model: SnippetDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the snippet permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -19261,6 +20129,9 @@ commands:
   result_model: SnippetDuplicateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: snippet.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19376,6 +20247,9 @@ commands:
   result_model: SnippetRerunResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the snippet; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19417,6 +20291,9 @@ commands:
   result_model: SnippetUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the snippet; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -19459,6 +20336,10 @@ commands:
   result_model: SupportBillingCancelSubscriptionResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Cancels the customer's subscription at the billing provider; it cannot be reinstated from
+      the CLI.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19509,6 +20390,10 @@ commands:
   result_model: SupportBillingChangePlanResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the workspace to another plan and bills for it; the earlier plan is not recorded and
+      a charge already made stays.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19552,6 +20437,9 @@ commands:
   result_model: SupportBillingEndTrialResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Ends the workspace's trial now and starts billing.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19595,6 +20483,9 @@ commands:
   result_model: SupportBillingRefundResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: The payment provider pays the refund out; Mammoth cannot take it back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19640,6 +20531,9 @@ commands:
   result_model: SupportBillingRetryPaymentResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Charges the card again; a payment taken is not reversed here.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19683,6 +20577,9 @@ commands:
   result_model: SupportBillingStartTrialResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Starts the workspace's trial; the trial clock cannot be rewound.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19733,6 +20630,10 @@ commands:
   result_model: SupportConnectorProfileAddConnectorResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the support connector profile; the journal does not know the id of the added entry,
+      so it cannot take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19775,6 +20676,9 @@ commands:
   result_model: SupportConnectorProfileCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.connector-profile.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19817,6 +20721,9 @@ commands:
   result_model: SupportConnectorProfileDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support connector profile permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19893,6 +20800,9 @@ commands:
   result_model: SupportConnectorProfileUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support connector profile; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -19974,6 +20884,9 @@ commands:
   result_model: SupportConnectorCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.connector.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20015,6 +20928,9 @@ commands:
   result_model: SupportConnectorDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support connector permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20090,6 +21006,9 @@ commands:
   result_model: SupportConnectorUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support connector; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20172,6 +21091,9 @@ commands:
   result_model: SupportDealCancelMoveToPartnerResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support deal; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20214,6 +21136,9 @@ commands:
   result_model: SupportDealCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new support deal, and no delete command exists for it; remove it in the web app.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20338,6 +21263,9 @@ commands:
   result_model: SupportDealMoveToPartnerResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support deal; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20383,6 +21311,9 @@ commands:
   result_model: SupportDealOptInResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Opts the deal in; the earlier opt-in state is not recorded.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20467,6 +21398,9 @@ commands:
   result_model: SupportDealUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support deal; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20553,6 +21487,10 @@ commands:
   result_model: SupportFeatureProfileAddFeatureResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the support feature profile; the journal does not know the id of the added entry,
+      so it cannot take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20594,6 +21532,9 @@ commands:
   result_model: SupportFeatureProfileCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.feature-profile.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20635,6 +21576,9 @@ commands:
   result_model: SupportFeatureProfileDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support feature profile permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20710,6 +21654,9 @@ commands:
   result_model: SupportFeatureProfileUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support feature profile; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20751,6 +21698,9 @@ commands:
   result_model: SupportFeatureCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.feature.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20792,6 +21742,9 @@ commands:
   result_model: SupportFeatureDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support feature permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20867,6 +21820,9 @@ commands:
   result_model: SupportFeatureUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support feature; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -20988,6 +21944,10 @@ commands:
   result_model: SupportOwnershipTransferResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Transfers ownership of the workspace; the previous owner is not recorded here, so transfer
+      it back by hand.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21109,6 +22069,9 @@ commands:
   result_model: SupportPartnerChargeInvoicesResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Charges the partner's open invoices; payments taken are not reversed here.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21159,6 +22122,9 @@ commands:
   result_model: SupportPartnerClientCancelDetachResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support partner client; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21208,6 +22174,9 @@ commands:
   result_model: SupportPartnerClientDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support partner client permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21258,6 +22227,9 @@ commands:
   result_model: SupportPartnerClientDetachResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support partner client; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21343,6 +22315,9 @@ commands:
   result_model: SupportPartnerCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new support partner, and no delete command exists for it; remove it in the web app.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21500,6 +22475,9 @@ commands:
   result_model: SupportPartnerSendPaymentLinkResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Emails the partner a payment link; a sent email cannot be recalled.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21542,6 +22520,9 @@ commands:
   result_model: SupportPartnerUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support partner; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21586,6 +22567,10 @@ commands:
   result_model: SupportPlanArchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the support plan on (archive); the earlier state is not recorded and no command moves
+      it back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21695,6 +22680,9 @@ commands:
   result_model: SupportPlanCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.plan.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21737,6 +22725,9 @@ commands:
   result_model: SupportPlanDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support plan permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21893,6 +22884,10 @@ commands:
   result_model: SupportPlanStorageOptionArchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the support plan storage option on (archive); the earlier state is not recorded and
+      no command moves it back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -21935,6 +22930,10 @@ commands:
   result_model: SupportPlanStorageOptionCreateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Creates a new support plan storage option, and no delete command exists for it; remove it
+      in the web app.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22025,6 +23024,10 @@ commands:
   result_model: SupportPlanStorageOptionUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support plan storage option; the earlier value is not kept, so it cannot be
+      restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22066,6 +23069,10 @@ commands:
   result_model: SupportPlanUnarchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the support plan on (unarchive); the earlier state is not recorded and no command moves
+      it back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22107,6 +23114,9 @@ commands:
   result_model: SupportPlanUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support plan; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22149,6 +23159,9 @@ commands:
   result_model: SupportPlanUpdateEntitlementsResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support plan; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22192,6 +23205,9 @@ commands:
   result_model: SupportPlanUpdateStorageTiersResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support plan; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22280,6 +23296,10 @@ commands:
   result_model: SupportSubscriptionCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Creates a new support subscription, and no delete command exists for it; remove it in the
+      web app.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22367,6 +23387,9 @@ commands:
   result_model: SupportSubscriptionUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support subscription; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22522,6 +23545,9 @@ commands:
   result_model: SupportTemplateDiscardResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Discards the template draft for good; no copy is kept.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22563,6 +23589,9 @@ commands:
   result_model: SupportTemplateEditResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support template; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22687,6 +23716,9 @@ commands:
   result_model: SupportTemplateImportResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Imports a template into the catalogue; nothing in the journal names what it added.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22804,6 +23836,9 @@ commands:
   result_model: SupportTemplatePublishResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support template; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22845,6 +23880,9 @@ commands:
   result_model: SupportTemplateRetireResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Retires the template from the catalogue; the CLI has no command that un-retires it.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22921,6 +23959,9 @@ commands:
   result_model: SupportTemplateThumbnailClearResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Discards the support template thumbnail for good; no copy is kept.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -22969,6 +24010,10 @@ commands:
   result_model: SupportTemplateThumbnailSetResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support template thumbnail; the earlier value is not kept, so it cannot be
+      restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23010,6 +24055,9 @@ commands:
   result_model: SupportTemplateUnpublishResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support template; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23153,6 +24201,9 @@ commands:
   result_model: SupportUserRegisterResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Registers a user account; Mammoth has no command that deletes one.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23195,6 +24246,9 @@ commands:
   result_model: SupportUserUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support user; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23277,6 +24331,10 @@ commands:
   result_model: SupportWorkspaceArchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the support workspace on (archive); the earlier state is not recorded and no command
+      moves it back.
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
@@ -23365,6 +24423,10 @@ commands:
   result_model: SupportWorkspaceChargebeeCancelledResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Marks the workspace's Chargebee subscription as cancelled; the earlier billing state is not
+      recorded.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23408,6 +24470,9 @@ commands:
   result_model: SupportWorkspaceCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: support.workspace.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23490,6 +24555,9 @@ commands:
   result_model: SupportWorkspaceDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the support workspace permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23617,6 +24685,9 @@ commands:
   result_model: SupportWorkspaceInviteCancelResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Cancels an invite; a cancelled invite is dead, so send a new one.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23665,6 +24736,9 @@ commands:
   result_model: SupportWorkspaceInviteResendResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Emails the invite again; a sent email cannot be recalled.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23742,6 +24816,9 @@ commands:
   result_model: SupportWorkspaceRestoreAccessResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23784,6 +24861,9 @@ commands:
   result_model: SupportWorkspaceRestoreArchiveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: returns_job
   pagination_policy: none
@@ -23829,6 +24909,9 @@ commands:
   result_model: SupportWorkspaceSuspendAccessResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23870,6 +24953,9 @@ commands:
   result_model: SupportWorkspaceUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -23912,6 +24998,10 @@ commands:
   result_model: SupportWorkspaceUserAddResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the support workspace user; the journal does not know the id of the added entry, so
+      it cannot take the entry out.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -24000,6 +25090,9 @@ commands:
   result_model: SupportWorkspaceUserRemoveResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the support workspace user entry; the entry is not kept, so it cannot be put back.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -24047,6 +25140,9 @@ commands:
   result_model: SupportWorkspaceUserTransferResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the user's ownership to another account; the earlier owner is not recorded here.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -24083,6 +25179,9 @@ commands:
   result_model: TemplateCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: template.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -24124,6 +25223,9 @@ commands:
   result_model: TemplateDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the template permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -24239,6 +25341,9 @@ commands:
   result_model: TemplateUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the template; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -24274,6 +25379,9 @@ commands:
   result_model: TrashAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: trash.restore
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -24343,6 +25451,9 @@ commands:
   result_model: TrashRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: trash.add
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -24377,6 +25488,9 @@ commands:
   result_model: UpgradeResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Replaces the installed CLI; install the earlier version again with the installer or pip.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -24412,6 +25526,9 @@ commands:
   result_model: UserAvatarDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the profile picture; Mammoth keeps no copy of the image.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -24454,6 +25571,9 @@ commands:
   result_model: UserAvatarUploadResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Uploads a file to the user avatar; the journal lacks its id, so it cannot remove it.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -24489,6 +25609,9 @@ commands:
   result_model: UserDeleteAccountResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the user account for good; Mammoth keeps no copy.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -24594,6 +25717,9 @@ commands:
   result_model: UserPreferenceUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the user preference; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -24630,6 +25756,9 @@ commands:
   result_model: UserUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the user; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -24757,6 +25886,9 @@ commands:
   result_model: ViewActiveUserMarkResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Records that the user is looking at the view; it expires by itself.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -24798,6 +25930,10 @@ commands:
   result_model: ViewAiGenerateDataResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (generate data on the view ai) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -24880,6 +26016,10 @@ commands:
   result_model: ViewAiProfileResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (profile on the view ai) and stores nothing in the workspace, so there
+      is nothing to reverse.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -24967,6 +26107,9 @@ commands:
   result_model: ViewBulkDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the view permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -25015,6 +26158,9 @@ commands:
   result_model: ViewCheckpointCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: view.checkpoint.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25070,6 +26216,9 @@ commands:
   result_model: ViewCheckpointDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the checkpoint; the saved pipeline state is not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -25222,6 +26371,9 @@ commands:
   result_model: ViewCheckpointUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view checkpoint; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25264,6 +26416,9 @@ commands:
   result_model: ViewColumnFormatSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view column format; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25349,6 +26504,10 @@ commands:
   result_model: ViewConditionalFormatCreateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Creates a new view conditional format, and no delete command exists for it; remove it in the
+      web app.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25400,6 +26559,9 @@ commands:
   result_model: ViewConditionalFormatDeleteAllResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes every conditional format on the view; their rules are not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -25496,6 +26658,9 @@ commands:
   result_model: ViewConditionalFormatReplaceResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Replaces the view's conditional formats; the earlier rules are not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -25546,6 +26711,9 @@ commands:
   result_model: ViewConditionalFormatUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view conditional format; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25587,6 +26755,8 @@ commands:
   result_model: ViewCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -25635,6 +26805,9 @@ commands:
   result_model: ViewDataCheckCreateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: view.data-check.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -25691,6 +26864,9 @@ commands:
   result_model: ViewDataCheckDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the view data check permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -25843,6 +27019,9 @@ commands:
   result_model: ViewDataCheckUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view data check; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26033,6 +27212,9 @@ commands:
   result_model: ViewDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the view permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -26082,6 +27264,9 @@ commands:
   result_model: ViewDerivativeCreateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: view.derivative.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26137,6 +27322,10 @@ commands:
   result_model: ViewDerivativeDataResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (data on the view derivative) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26191,6 +27380,9 @@ commands:
   result_model: ViewDerivativeDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the view derivative permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -26291,6 +27483,9 @@ commands:
   result_model: ViewDerivativeUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view derivative; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26334,6 +27529,8 @@ commands:
   result_model: ViewDraftAutoRunResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -26375,6 +27572,9 @@ commands:
   result_model: ViewDraftCommandResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sends a command to the view's draft; the draft's earlier steps are not recorded here.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26416,6 +27616,9 @@ commands:
   result_model: ViewDraftDiscardResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Discards the draft's steps for good; they are not kept.
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
@@ -26457,6 +27660,8 @@ commands:
   result_model: ViewDraftEnterResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -26539,6 +27744,8 @@ commands:
   result_model: ViewDraftSubmitResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -26679,6 +27886,9 @@ commands:
   result_model: ViewExplorePanelSetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view explore panel; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -26727,6 +27937,9 @@ commands:
   result_model: ViewExportAzureBlobResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Azure Blob Storage, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -26776,6 +27989,9 @@ commands:
   result_model: ViewExportBigqueryResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to BigQuery, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -26818,6 +28034,9 @@ commands:
   result_model: ViewExportCreateResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: manual
+    command: view.export.delete
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -26860,6 +28079,9 @@ commands:
   result_model: ViewExportCsvResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (csv) outside Mammoth; the earlier setting is not kept.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -26910,6 +28132,8 @@ commands:
   result_model: ViewExportDatasetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: trash_created
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -26958,6 +28182,9 @@ commands:
   result_model: ViewExportDeleteResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (delete) outside Mammoth; the earlier setting is not kept.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -26999,6 +28226,9 @@ commands:
   result_model: ViewExportDownloadResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (download) outside Mammoth; the earlier setting is not kept.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -27048,6 +28278,9 @@ commands:
   result_model: ViewExportElasticsearchResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Elasticsearch, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27097,6 +28330,9 @@ commands:
   result_model: ViewExportEmailResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to the email recipients, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27147,6 +28383,9 @@ commands:
   result_model: ViewExportFtpResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to an FTP server, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27289,6 +28528,9 @@ commands:
   result_model: ViewExportLiveLinkResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (live-link) outside Mammoth; the earlier setting is not kept.
   confirmation: yes_always
   wait_policy: always_wait
   pagination_policy: none
@@ -27339,6 +28581,9 @@ commands:
   result_model: ViewExportManagedS3Result
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Mammoth's managed S3 bucket, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: always_wait
   pagination_policy: none
@@ -27388,6 +28633,9 @@ commands:
   result_model: ViewExportMssqlResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to SQL Server, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27437,6 +28685,9 @@ commands:
   result_model: ViewExportMysqlResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to MySQL, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27486,6 +28737,9 @@ commands:
   result_model: ViewExportOnedriveResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to OneDrive, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27535,6 +28789,9 @@ commands:
   result_model: ViewExportPostgresResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to PostgreSQL, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27584,6 +28841,9 @@ commands:
   result_model: ViewExportPowerbiResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Power BI, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27628,6 +28888,9 @@ commands:
   result_model: ViewExportPublishDbResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (publish-db) outside Mammoth; the earlier setting is not kept.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -27670,6 +28933,10 @@ commands:
   result_model: ViewExportPublishDbUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (publish-db-update) outside Mammoth; the earlier setting is not
+      kept.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -27719,6 +28986,9 @@ commands:
   result_model: ViewExportRedshiftResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Redshift, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27768,6 +29038,9 @@ commands:
   result_model: ViewExportRestResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to a REST endpoint, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27819,6 +29092,9 @@ commands:
   result_model: ViewExportRestFillResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to a REST endpoint, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -27920,6 +29196,9 @@ commands:
   result_model: ViewExportSftpResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to an SFTP server, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -27972,6 +29251,9 @@ commands:
   result_model: ViewExportSharepointResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to SharePoint, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -28021,6 +29303,9 @@ commands:
   result_model: ViewExportTableauResult
   mutation_class: external_effect
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes the view's data to Tableau, outside Mammoth; it cannot be recalled.
   confirmation: yes_always
   wait_policy: returns_job
   pagination_policy: none
@@ -28069,6 +29354,9 @@ commands:
   result_model: ViewExportUpdateResult
   mutation_class: external_effect
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Changes the export target (update) outside Mammoth; the earlier setting is not kept.
   confirmation: yes_always
   wait_policy: not_async
   pagination_policy: none
@@ -28118,6 +29406,8 @@ commands:
   result_model: ViewExportableConfigApplyResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: returns_job
   pagination_policy: none
@@ -28347,6 +29637,8 @@ commands:
   result_model: ViewOptimizeResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -28434,6 +29726,9 @@ commands:
   result_model: ViewPipelineEditResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: view.version.apply
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -28604,6 +29899,9 @@ commands:
   result_model: ViewPipelineRerunResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the view pipeline; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -28737,6 +30035,9 @@ commands:
   result_model: ViewRestoreResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: view.trash
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -28824,6 +30125,8 @@ commands:
   result_model: ViewTaskAddResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -28873,6 +30176,10 @@ commands:
   result_model: ViewTaskDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes a pipeline step; its settings are not kept. Take a checkpoint (`view checkpoint create`)
+      before editing a pipeline.
   confirmation: prompt_or_yes
   wait_policy: always_wait
   pagination_policy: none
@@ -29050,6 +30357,10 @@ commands:
   result_model: ViewTaskPreviewCancelResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (preview cancel on the view task) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -29097,6 +30408,8 @@ commands:
   result_model: ViewTaskUpdateResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29140,6 +30453,8 @@ commands:
   result_model: ViewTransformAddColumnResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29182,6 +30497,8 @@ commands:
   result_model: ViewTransformAddSqlResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29224,6 +30541,8 @@ commands:
   result_model: ViewTransformAiResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29267,6 +30586,8 @@ commands:
   result_model: ViewTransformBulkReplaceResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29311,6 +30632,8 @@ commands:
   result_model: ViewTransformCombineColumnsResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29355,6 +30678,8 @@ commands:
   result_model: ViewTransformConvertTypeResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29398,6 +30723,8 @@ commands:
   result_model: ViewTransformCopyColumnsResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29441,6 +30768,8 @@ commands:
   result_model: ViewTransformCrosstabResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29485,6 +30814,8 @@ commands:
   result_model: ViewTransformDateDiffResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29528,6 +30859,8 @@ commands:
   result_model: ViewTransformDeleteColumnsResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29572,6 +30905,8 @@ commands:
   result_model: ViewTransformDiscardDuplicatesResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29613,6 +30948,8 @@ commands:
   result_model: ViewTransformExtractDateResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29655,6 +30992,8 @@ commands:
   result_model: ViewTransformFillMissingResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29697,6 +31036,8 @@ commands:
   result_model: ViewTransformFilterResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29740,6 +31081,8 @@ commands:
   result_model: ViewTransformGenerateSqlResult
   mutation_class: reversible_pipeline
   edits_target: false
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29783,6 +31126,8 @@ commands:
   result_model: ViewTransformIncrementDateResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29825,6 +31170,8 @@ commands:
   result_model: ViewTransformJoinResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29869,6 +31216,8 @@ commands:
   result_model: ViewTransformJsonExtractResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29914,6 +31263,8 @@ commands:
   result_model: ViewTransformLimitRowsResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29955,6 +31306,8 @@ commands:
   result_model: ViewTransformLookupResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -29998,6 +31351,8 @@ commands:
   result_model: ViewTransformMathResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30040,6 +31395,8 @@ commands:
   result_model: ViewTransformPivotResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30082,6 +31439,9 @@ commands:
   result_model: ViewTransformRenameColumnsResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: view.version.apply
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30124,6 +31484,8 @@ commands:
   result_model: ViewTransformReplaceResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30166,6 +31528,8 @@ commands:
   result_model: ViewTransformSetValuesResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30208,6 +31572,8 @@ commands:
   result_model: ViewTransformSmallLargeResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30249,6 +31615,9 @@ commands:
   result_model: ViewTransformSortResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: manual
+    command: view.version.apply
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30291,6 +31660,8 @@ commands:
   result_model: ViewTransformSplitResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30333,6 +31704,8 @@ commands:
   result_model: ViewTransformSubstringResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30374,6 +31747,8 @@ commands:
   result_model: ViewTransformTextResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30415,6 +31790,8 @@ commands:
   result_model: ViewTransformUnnestResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30457,6 +31834,8 @@ commands:
   result_model: ViewTransformWindowResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: pipeline_version
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30506,6 +31885,9 @@ commands:
   result_model: ViewTrashResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: inverse
+    command: view.restore
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30554,6 +31936,9 @@ commands:
   result_model: ViewUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30610,6 +31995,9 @@ commands:
   result_model: ViewVersionApplyResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view version; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -30665,6 +32053,9 @@ commands:
   result_model: ViewVersionDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes a pipeline version; the version is not kept.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -30818,6 +32209,9 @@ commands:
   result_model: ViewVersionUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the view version; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30860,6 +32254,9 @@ commands:
   result_model: WebhookCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: webhook.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -30901,6 +32298,9 @@ commands:
   result_model: WebhookDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the webhook permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -31010,6 +32410,9 @@ commands:
   result_model: WebhookSendResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sends a request to the webhook URL; a request that was sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31047,6 +32450,9 @@ commands:
   result_model: WebhookSendGetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Sends a request to the webhook URL; a request that was sent cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31089,6 +32495,9 @@ commands:
   result_model: WebhookUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the webhook; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31130,6 +32539,10 @@ commands:
   result_model: WorkflowArchiveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the workflow on (archive); the earlier state is not recorded and no command moves it
+      back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31177,6 +32590,9 @@ commands:
   result_model: WorkflowAttachDatasetResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31218,6 +32634,10 @@ commands:
   result_model: WorkflowBlockAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the workflow block; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31265,6 +32685,9 @@ commands:
   result_model: WorkflowBlockAuthResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow block; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -31313,6 +32736,9 @@ commands:
   result_model: WorkflowBlockConfigResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow block; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31360,6 +32786,9 @@ commands:
   result_model: WorkflowBlockTypeResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow block; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31401,6 +32830,9 @@ commands:
   result_model: WorkflowCanvasResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31467,6 +32899,9 @@ commands:
   result_model: WorkflowCleanupResult
   mutation_class: destructive
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Removes the workflow's leftover files and runs for good.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -31508,6 +32943,9 @@ commands:
   result_model: WorkflowCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: workflow.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31551,6 +32989,9 @@ commands:
   result_model: WorkflowDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the workflow permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -31592,6 +33033,9 @@ commands:
   result_model: WorkflowDuplicateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: workflow.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31633,6 +33077,9 @@ commands:
   result_model: WorkflowFromTemplateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: workflow.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31788,6 +33235,10 @@ commands:
   result_model: WorkflowResolveHeldResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Moves the workflow on (resolve held); the earlier state is not recorded and no command moves
+      it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31829,6 +33280,9 @@ commands:
   result_model: WorkflowSaveResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31882,6 +33336,10 @@ commands:
   result_model: WorkflowSaveCancelStepResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Moves the workflow on (save cancel step); the earlier state is not recorded and no command
+      moves it back.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31929,6 +33387,9 @@ commands:
   result_model: WorkflowSaveUndoResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Is itself the undo of a workflow save; to redo it, run `workflow save` again.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -31970,6 +33431,9 @@ commands:
   result_model: WorkflowUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32109,6 +33573,10 @@ commands:
   result_model: WorkspaceAcceptInviteResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Accepts the invite and joins the workspace; leaving is a separate step the journal does not
+      run.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32178,6 +33646,10 @@ commands:
   result_model: WorkspaceCheckExpressionResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Only computes or reads (check expression on the workspace) and stores nothing in the workspace,
+      so there is nothing to reverse.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32214,6 +33686,9 @@ commands:
   result_model: WorkspaceCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: manual
+    command: workspace.delete
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32290,6 +33765,9 @@ commands:
   result_model: WorkspaceDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the workspace permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -32359,6 +33837,9 @@ commands:
   result_model: WorkspaceExportHostsSetResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace export hosts; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32468,6 +33949,9 @@ commands:
   result_model: WorkspaceInviteDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the workspace invite permanently; Mammoth keeps no copy to restore.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -32537,6 +34021,9 @@ commands:
   result_model: WorkspaceInviteResendResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Emails the invite again; a sent email cannot be recalled.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32572,6 +34059,9 @@ commands:
   result_model: WorkspaceInviteRevokeResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: A revoked invite is dead; send a new invite with `workspace user add`.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -32608,6 +34098,9 @@ commands:
   result_model: WorkspaceInviteUpdateRoleResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace invite; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32677,6 +34170,9 @@ commands:
   result_model: WorkspaceLlmTaskResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Starts work on the workspace; its output replaces the earlier output, which is not kept.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -32719,6 +34215,9 @@ commands:
   result_model: WorkspaceOauthClientCreateResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: manual
+    command: workspace.oauth-client.delete
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -32767,6 +34266,9 @@ commands:
   result_model: WorkspaceOauthClientDeleteResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the workspace oauth client permanently; Mammoth keeps no copy to restore.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -32854,6 +34356,9 @@ commands:
   result_model: WorkspaceOauthClientRevokeGrantResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Revokes an OAuth grant; the app must be authorised again by its user.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -32895,6 +34400,9 @@ commands:
   result_model: WorkspaceReactivateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Reactivates a deactivated workspace; the earlier state is not recorded.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -32964,6 +34472,9 @@ commands:
   result_model: WorkspaceSegmentUpdateResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace segment; the earlier value is not kept, so it cannot be restored.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -33041,6 +34552,9 @@ commands:
   result_model: WorkspaceUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -33077,6 +34591,10 @@ commands:
   result_model: WorkspaceUserAddResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Adds to the workspace user; the journal does not know the id of the added entry, so it cannot
+      take the entry out.
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -33191,6 +34709,9 @@ commands:
   result_model: WorkspaceUserRemoveResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the workspace user entry; the entry is not kept, so it cannot be put back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -33226,6 +34747,9 @@ commands:
   result_model: WorkspaceUserRemoveBatchResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Removes the workspace user entry; the entry is not kept, so it cannot be put back.
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -33267,6 +34791,9 @@ commands:
   result_model: WorkspaceUserUpdateResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace user; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none
@@ -33303,6 +34830,9 @@ commands:
   result_model: WorkspaceUserUpdateBatchResult
   mutation_class: high_impact
   edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workspace user; the earlier value is not kept, so it cannot be restored.
   confirmation: confirm_target
   wait_policy: not_async
   pagination_policy: none

@@ -135,6 +135,9 @@ commands:
   known_restrictions: Read-only. Lists the runs of the chat session, newest first, with the same fields
     as agent run status. Needs --session SESSION_ID; an embedded chat supplies it.
 - command_id: agent.run.pause
+  undo:
+    strategy: inverse
+    command: agent.run.resume
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_pause with the session id from --session and the
     positional id.
   live_test: null
@@ -150,6 +153,9 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.resume
+  undo:
+    strategy: inverse
+    command: agent.run.pause
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_resume with the session id from --session and
     the positional id.
   live_test: null

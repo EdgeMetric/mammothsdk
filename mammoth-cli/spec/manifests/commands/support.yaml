@@ -6,6 +6,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.connector-profile.create
+  undo:
+    strategy: manual
+    command: support.connector-profile.delete
   known_restrictions: Support staff only. Creates a connector profile that workspaces can be assigned.
     Needs --yes and --confirm TARGET.
   readback:
@@ -25,6 +28,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.connector.create
+  undo:
+    strategy: manual
+    command: support.connector.delete
   known_restrictions: Support staff only. Adds a connector to the catalog for every workspace. Needs --yes
     and --confirm TARGET.
   readback:
@@ -49,6 +55,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.feature-profile.create
+  undo:
+    strategy: manual
+    command: support.feature-profile.delete
   known_restrictions: Support staff only. Creates a feature profile that workspaces can be assigned. Needs
     --yes and --confirm TARGET.
   readback:
@@ -68,6 +77,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.feature.create
+  undo:
+    strategy: manual
+    command: support.feature.delete
   known_restrictions: Support staff only. Adds a feature flag to the catalog for every workspace. Needs
     --yes and --confirm TARGET.
   readback:
@@ -93,6 +105,9 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.plan.archive
+  undo:
+    strategy: inverse
+    command: support.plan.unarchive
   readback:
     command: support.plan.get
     ids:
@@ -174,12 +189,18 @@ commands:
 - command_id: support.workspace.get
 - command_id: support.workspace.list
 - command_id: support.workspace.restore-access
+  undo:
+    strategy: inverse
+    command: support.workspace.suspend-access
   readback:
     command: support.workspace.get
     ids:
       workspace_id: positional.0
     kind: object
 - command_id: support.workspace.suspend-access
+  undo:
+    strategy: inverse
+    command: support.workspace.restore-access
   readback:
     command: support.workspace.get
     ids:
@@ -211,6 +232,9 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: support.plan.unarchive
+  undo:
+    strategy: inverse
+    command: support.plan.archive
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Unarchives
@@ -232,6 +256,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.plan.storage-option.create
+  undo:
+    strategy: manual
+    command: support.plan.storage-option.archive
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Adds a purchasable
@@ -310,6 +337,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.publish
+  undo:
+    strategy: inverse
+    command: support.template.unpublish
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Takes a
@@ -320,6 +350,9 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.unpublish
+  undo:
+    strategy: inverse
+    command: support.template.publish
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Returns
@@ -482,6 +515,9 @@ commands:
 - command_id: support.connector.bucket-impact
 - command_id: support.deal.activity
 - command_id: support.deal.cancel-move-to-partner
+  undo:
+    strategy: manual
+    command: support.deal.move-to-partner
   readback:
     command: support.deal.get
     ids:
@@ -497,6 +533,9 @@ commands:
 - command_id: support.deal.list
   output_schema: openapi
 - command_id: support.deal.move-to-partner
+  undo:
+    strategy: manual
+    command: support.deal.cancel-move-to-partner
   readback:
     command: support.deal.get
     ids:
@@ -528,6 +567,9 @@ commands:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.cancel-detach
+  undo:
+    strategy: inverse
+    command: support.partner.client.detach
   readback:
     command: support.partner.client.list
     ids:
@@ -540,6 +582,9 @@ commands:
       partner_id: positional.0
     kind: object
 - command_id: support.partner.client.detach
+  undo:
+    strategy: inverse
+    command: support.partner.client.cancel-detach
   readback:
     command: support.partner.client.list
     ids:
@@ -574,6 +619,9 @@ commands:
   output_schema: openapi
 - command_id: support.workspace.activity
 - command_id: support.workspace.archive
+  undo:
+    strategy: inverse
+    command: support.workspace.restore-archive
   readback:
     command: support.workspace.archive-info
     ids:
@@ -594,6 +642,9 @@ commands:
 - command_id: support.workspace.invite.resend
   no_readback: emails the invitee again; the email is not readable through the API
 - command_id: support.workspace.restore-archive
+  undo:
+    strategy: inverse
+    command: support.workspace.archive
   readback:
     command: support.workspace.archive-info
     ids:

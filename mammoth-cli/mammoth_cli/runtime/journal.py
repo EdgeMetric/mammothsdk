@@ -13,16 +13,22 @@ journal says what changed and how to change it back, for ``mammoth history``:
   exit, and a named line's result up to :data:`MAX_STEP_BYTES`), so ``history resume``
   can go on from the first line that did not finish.
 
-What can be undone (a saga's compensations, run in reverse order):
+What can be undone is declared by each command's manifest ``undo`` (derived by
+``scripts/_undo_rules.py``, overridden in ``spec/manifests/commands/<group>.yaml``), and
+:func:`compensation` only reads it (a saga's compensations, run in reverse order):
 
-* a pipeline edit (``reversible_pipeline``): apply the view's pipeline version from
-  before the edit, or, when the view had none yet, delete the steps the edit added;
-* an object a write made (``meta.opens`` with ``created``): move it to the trash;
-* a move to the trash: restore it, and a restore: move it back.
-
-A permanent delete, an export, a send or any other effect outside Mammoth has no
-compensation: its ``end`` record says why, and ``history undo`` reports it instead of
-pretending. An embedded call is never journaled: the host serves many users.
+* ``inverse``: run the named command with the write's own arguments (a move to the trash
+  and its restore, a pause and its resume);
+* ``pipeline_version``: apply the view's pipeline version from before the edit, or, when
+  the view had none yet, delete the steps the edit added;
+* ``trash_created``: move the objects the write made (``meta.opens`` with ``created``) to
+  the trash;
+* ``manual``: a command reverses it but needs an id the write made, so it is named in the
+  reason and not run;
+* ``irreversible`` (a permanent delete, an export, a send or any other effect outside
+  Mammoth): no compensation. The ``end`` record gives the manifest's reason, and
+  ``history undo`` reports it instead of pretending.
+An embedded call is never journaled: the host serves many users.
 
 Records are JSON Lines in ``<log dir>/journal/journal.jsonl``, owner-only, rotated at
 :data:`MAX_BYTES`. ``MAMMOTH_CLI_JOURNAL=0`` (also false, no, off) turns the journal off.
@@ -54,7 +60,12 @@ MAX_STEP_BYTES = 256 * 1024
 
 #: The manifest mutation class of a read; reads are not journaled.
 _READ = "read"
-_REVERSIBLE_PIPELINE = "reversible_pipeline"
+#: The ``undo.strategy`` values a command's manifest declares (see ``scripts/_undo_rules.py``).
+_INVERSE = "inverse"
+_PIPELINE_VERSION = "pipeline_version"
+_TRASH_CREATED = "trash_created"
+_MANUAL = "manual"
+_IRREVERSIBLE = "irreversible"
 _VERSION_LIST = "mammoth.api.pipeline_versions.PipelineVersionsAPI.list"
 _TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
@@ -62,25 +73,12 @@ _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
 _NEWEST_FIRST = "(id:desc)"
 
 #: Kinds of object a write can make that the trash takes back, and the command that does.
-_TRASH_COMMAND = {
+TRASH_COMMAND = {
     "view": "view trash",
     "dataset": "dataset trash",
     "dashboard": "dashboard trash",
     "automation": "automation trash",
     "folder": "folder trash",
-}
-#: A move to the trash and the command that reverses it, both ways.
-_INVERSE = {
-    "view.trash": "view restore",
-    "view.restore": "view trash",
-    "dataset.trash": "dataset restore",
-    "dataset.restore": "dataset trash",
-    "dashboard.trash": "dashboard restore",
-    "dashboard.restore": "dashboard trash",
-    "automation.trash": "automation restore",
-    "automation.restore": "automation trash",
-    "trash.add": "trash restore",
-    "trash.restore": "trash add",
 }
 #: Positional names that hold the view a pipeline command edits.
 _VIEW_POSITIONALS = ("view_id", "dataview_id")
@@ -353,9 +351,11 @@ def compensation(
     command_id = request.command_id
     flags = _flags(request, outcome)
     record = command_by_id(command_id) or {}
-    mutation = record.get("mutation_class")
-    if command_id in _INVERSE:
-        line: dict[str, Any] = {"cmd": _INVERSE[command_id], "flags": flags}
+    undo = record.get("undo") or {}
+    strategy = undo.get("strategy")
+    if strategy == _INVERSE:
+        target = command_by_id(undo["command"]) or {}
+        line: dict[str, Any] = {"cmd": target.get("command_path", ""), "flags": flags}
         args = _positional_args(request, record)
         if args:
             line["args"] = args
@@ -363,20 +363,27 @@ def compensation(
         if command_id.startswith("trash.") and document:
             line["input"] = document
         return [line], None
-    if mutation == _REVERSIBLE_PIPELINE:
+    if strategy == _PIPELINE_VERSION:
         return _pipeline_undo(before, flags)
-    created = [
-        {"cmd": _TRASH_COMMAND[o["kind"]], "args": [o["id"]], "flags": flags}
-        for o in outcome.meta.get("opens") or []
-        if o.get("created") and o.get("kind") in _TRASH_COMMAND and o.get("id") is not None
-    ]
-    if created:
-        return list(reversed(created)), None
-    if mutation == "destructive":
-        return [], "It deleted something permanently; Mammoth keeps no copy to restore."
-    if mutation == "external_effect":
-        return [], "Its effect is outside Mammoth (an export, a message or a send)."
-    return [], "No command reverses it."
+    if strategy == _TRASH_CREATED:
+        created = [
+            {"cmd": TRASH_COMMAND[o["kind"]], "args": [o["id"]], "flags": flags}
+            for o in outcome.meta.get("opens") or []
+            if o.get("created") and o.get("kind") in TRASH_COMMAND and o.get("id") is not None
+        ]
+        if created:
+            return list(reversed(created)), None
+        return [], "It made nothing the trash can take back."
+    if strategy == _MANUAL:
+        target = command_by_id(undo["command"]) or {}
+        why = (
+            f"`mammoth {target.get('command_path', undo['command'])}` reverses it, but it needs"
+            " the id this write made, so it is not run for you."
+        )
+        return [], f"{why} {undo['note']}" if undo.get("note") else why
+    if strategy == _IRREVERSIBLE:
+        return [], str(undo["reason"])
+    return [], "No undo is declared for it."
 
 
 def _pipeline_undo(
@@ -459,7 +466,8 @@ def journal_writes(
             return call_next(request)
         traced = trace.current()
         inv = traced.invocation_id if traced is not None else ""
-        before = before_reader(request) if mutation == _REVERSIBLE_PIPELINE else _Before()
+        strategy = (record.get("undo") or {}).get("strategy")
+        before = before_reader(request) if strategy == _PIPELINE_VERSION else _Before()
         store.append(
             {
                 "event": "begin",

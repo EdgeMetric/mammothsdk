@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-cli)
+
+- CLI: every write command declares how `history undo` reverses it in its manifest, as `undo`: `{strategy: inverse, command}` (run the named command with the write's own arguments, e.g. `agent run pause` and `resume`, `dataset file-settings update` and `undo`), `pipeline_version` (apply the view's version from before the edit), `trash_created` (trash what the write made), `manual` (a command reverses it but needs an id the write made, so it is named, not run) or `irreversible` with a specific reason (a permanent delete, an export to a named system, an email, a refund). `journal.compensation` reads the declaration instead of working it out from `mutation_class`. `scripts/build_manifests.py` derives the default; `spec/manifests/commands/<group>.yaml` overrides it, and a contract test fails a write with no `undo`. #311
+
 ### Fixed (next mammoth-cli)
 
 - CLI: `numbers_stored_as_text` (and `dates_stored_as_text`) now catch a column whose missing values are written as a placeholder. Values like `N/A`, `NA`, `#N/A`, `-`, `--`, `null`, `none`, `nil`, `?` and `nan` no longer count against the column's share of numbers. Before, `100, 250, 75, N/A` (3 of 4, under the 80% bar) uploaded as TEXT with no warning. The finding still lists the placeholders, which the conversion makes empty.

@@ -99,6 +99,10 @@ commands:
   result_model: ProjectEnsureResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: "manual"
+    command: "project.delete"
+    note: "It may have found an existing project instead of making one: check before deleting."
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -149,6 +153,9 @@ commands:
   known_restrictions: The saved preferences are the caller's own, per project, oldest first; the in-app
     agent reads them at the start of every turn. Remove one by its zero-based position in this list.
 - command_id: project.memory.add
+  undo:
+    strategy: manual
+    command: project.memory.remove
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
@@ -162,6 +169,9 @@ commands:
       project_id: positional.0
     kind: object
 - command_id: project.memory.remove
+  undo:
+    strategy: manual
+    command: project.memory.add
   confirmation: prompt_or_yes
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -217,6 +227,9 @@ commands:
       project_id: positional.0
     kind: object
 - command_id: project.user.add
+  undo:
+    strategy: manual
+    command: project.user.remove
   known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. role is required, and a user who is already a
     project member is refused (the backend would replace that member''s role, demoting an admin); change
     roles with project user update. Takes existing workspace users'' ids. To add someone by email who
@@ -225,6 +238,9 @@ commands:
     how a project gets a new person.'
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.remove
+  undo:
+    strategy: manual
+    command: project.user.add
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.update
   mutation_class: high_impact

@@ -87,6 +87,9 @@ commands:
   result_model: HistoryUndoResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Reverses an earlier write; to redo that write, run its command again."
   no_readback: each undo line verifies itself through its own command, and 'history show' reports the
     write as undone
   confirmation: prompt_or_yes
@@ -130,6 +133,9 @@ commands:
   result_model: HistoryResumeResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Re-runs the steps that had not finished; undo each step it ran with `mammoth history undo`."
   no_readback: each resumed line verifies itself through its own command
   confirmation: prompt_or_yes
   wait_policy: not_async

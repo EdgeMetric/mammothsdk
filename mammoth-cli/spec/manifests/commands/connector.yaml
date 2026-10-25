@@ -21,6 +21,9 @@ commands:
     ids: {}
     kind: object
 - command_id: connector.connection.create
+  undo:
+    strategy: manual
+    command: connector.connection.delete
   secret_fields:
   - config
   agent_example: mammoth connector connection create postgres --input /private/path/request.json --yes
@@ -64,6 +67,9 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.create
+  undo:
+    strategy: manual
+    command: connector.ds-config.delete
   known_restrictions: Needs exactly one source; validate and data_sample cannot be combined.
   readback:
     command: connector.ds-config.list
@@ -115,6 +121,9 @@ commands:
     to read back
 - command_id: connector.draft.browse
 - command_id: connector.draft.create
+  undo:
+    strategy: manual
+    command: connector.draft.discard
   readback:
     command: connector.draft.get
     ids:

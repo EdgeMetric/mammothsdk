@@ -50,6 +50,9 @@ commands:
   result_model: RecipeRunResult
   mutation_class: high_impact
   edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Runs the recipe's commands; each of them is journaled and undone by its own entry, not as one step."
   no_readback: each step verifies itself through its own command, and the recipes end with a read-back
     step
   confirmation: prompt_or_yes

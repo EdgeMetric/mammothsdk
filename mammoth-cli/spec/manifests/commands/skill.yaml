@@ -1,6 +1,9 @@
 manifest_schema_version: 1
 commands:
 - command_id: skill.install
+  undo:
+    strategy: manual
+    command: skill.uninstall
   readback:
     command: skill.list
     ids: {}
@@ -20,6 +23,9 @@ commands:
   result_model: SkillAgentsMdInstallResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Writes the Mammoth block into the AGENTS.md file; a block already there is replaced and not kept, so delete the block by hand to remove it."
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -79,6 +85,9 @@ commands:
     prints one reference file. Read-only, local.'
   reviewed_by: primary
 - command_id: skill.uninstall
+  undo:
+    strategy: manual
+    command: skill.install
   readback:
     command: skill.list
     ids: {}
