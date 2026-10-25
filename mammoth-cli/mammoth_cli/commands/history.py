@@ -160,13 +160,28 @@ def history_undo(invocation: Invocation) -> HandlerResult | Outcome:
                     continue
                 failed = _undo_entry(entry, invocation, steps, store, force=force)
         except journal.JournalBusy as busy:
-            raise CliError(
-                code=CODE_UNDO_IN_PROGRESS,
-                message=f"Another 'history undo' is already undoing {entry.inv}.",
-                exit_status=EXIT_USAGE,
-                hint="Wait for it to finish, then run 'mammoth history show' for the result.",
-                details={"inv": entry.inv},
-            ) from busy
+            message = f"Another 'history undo' is already undoing {entry.inv}."
+            hint = "Wait for it to finish, then run 'mammoth history show' for the result."
+            if not position:
+                raise CliError(
+                    code=CODE_UNDO_IN_PROGRESS,
+                    message=message,
+                    exit_status=EXIT_USAGE,
+                    hint=hint,
+                    details={"inv": entry.inv},
+                ) from busy
+            # The writes before this one are undone already: report them with the busy one.
+            result["failed"] = {
+                "inv": entry.inv,
+                "cmd": entry.command.replace(".", " "),
+                "exit": EXIT_USAGE,
+                "code": CODE_UNDO_IN_PROGRESS,
+                "message": message,
+                "hint": hint,
+            }
+            result["not_undone"] = [e.inv for e in todo[position:]]
+            result["outcome"] = "partial"
+            return Outcome(data=result, exit_status=EXIT_PARTIAL)
         result["undone"].append({"inv": entry.inv, "command": entry.command, "steps": steps})
         if failed is not None:
             remaining = [e.inv for e in todo[position:]]

@@ -9,10 +9,10 @@ test checks that each line runs a command the steps name, so the two cannot drif
 
 ``recipe run`` asks once (prompt or ``--yes``) before a recipe that writes, then confirms
 each line that needs it. A recipe with a destructive line needs ``--yes`` (no prompt), and
-only that ``--yes`` confirms the destructive line. ``--dry-run`` previews every line. It stops at the first failed
-line, but not at a partial one (exit 3: the step made its object, with a warning); the run
-then exits 3 and lists it in ``partial_lines``. Output is the ``mammoth run`` stream: one
-envelope per line, then a summary naming the recipe.
+only that ``--yes`` confirms the destructive line. ``--dry-run`` previews every line. It stops
+at the first failed line, but not at a partial one (exit 3: the step made its object, with a
+warning); the run then exits 3 and lists it in ``partial_lines``. Output is the ``mammoth run``
+stream: one envelope per line, then a summary naming the recipe.
 """
 
 from __future__ import annotations

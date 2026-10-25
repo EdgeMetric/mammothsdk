@@ -186,6 +186,27 @@ def _write_all(path: Path, data: bytes) -> None:
         os.close(fd)
 
 
+#: Whether this process already told the caller that the journal cannot be written.
+_unwritable_warned = False
+
+
+def _warn_unwritable(error: OSError) -> None:
+    """Say once per process that a write is not being journaled, so it cannot be undone.
+
+    Args:
+        error: Why the record could not be written.
+    """
+    global _unwritable_warned  # noqa: PLW0603 -- one warning per process
+    if _unwritable_warned:
+        return
+    _unwritable_warned = True
+    print(
+        f"mammoth: the history could not be written ({error}); this and later writes of this"
+        " command cannot be undone with 'mammoth history undo'.",
+        file=sys.stderr,
+    )
+
+
 class FileJournal:
     """Journal records as JSON Lines in owner-only files, rotated once.
 
@@ -216,8 +237,8 @@ class FileJournal:
                 if self._path.exists() and self._path.stat().st_size > MAX_BYTES:
                     os.replace(self._path, self._directory / "journal.1.jsonl")
                 _write_all(self._path, data)
-        except OSError:
-            return
+        except OSError as error:
+            _warn_unwritable(error)
 
     def _append_run(self, record: Mapping[str, Any], data: bytes) -> None:
         self._runs.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -258,7 +279,13 @@ class FileJournal:
             # A journal that cannot be written cannot be claimed either; do not block the undo.
             pass
         with stack:
-            yield
+            try:
+                yield
+            finally:
+                # A finished claim leaves no file behind. Another process that opened it
+                # meanwhile is no risk: 'history undo' re-reads the journal once it holds it.
+                with contextlib.suppress(OSError):
+                    path.unlink()
 
     def records(self) -> Iterable[dict[str, Any]]:
         """Read every record: the rotated file, the journal, then each run's file.
