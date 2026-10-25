@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from mammoth_cli.commands.dataset import _tag_scope, elsewhere_note, narrow_to_project
+from mammoth_cli.commands.dataset.find import _tag_scope, elsewhere_note, narrow_to_project
 from mammoth_cli.commands.resolve import kinds_note, resolve_matches
 
 _PROJECTS = [

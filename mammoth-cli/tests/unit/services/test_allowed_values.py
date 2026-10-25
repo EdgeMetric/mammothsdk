@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from mammoth_cli.commands.dataset import _default_data_pull_file
+from mammoth_cli.commands.dataset.create import _default_data_pull_file
 from mammoth_cli.commands.view_ops.batch import _batch_steps
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.services.command_contract import resolve_command_contract

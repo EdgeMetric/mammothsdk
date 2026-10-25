@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dataset import named_project, search_cut_note, search_hits
+from mammoth_cli.commands.dataset.find import named_project, search_cut_note, search_hits
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,

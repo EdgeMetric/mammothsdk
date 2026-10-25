@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.commands.dataset import create as create_cmd
+from mammoth_cli.commands.dataset import find as find_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
@@ -61,7 +63,7 @@ def _write(tmp_path: Path, payload: dict[str, object]) -> str:
 
 def test_find_requires_name_substring(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_find(_inv("dataset.find"))
+        find_cmd.dataset_find(_inv("dataset.find"))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -80,7 +82,7 @@ def test_find_without_project_searches_every_visible_project(
         "resources": [_hit(1, 10, "Sales Q1"), _hit(2, 10, "Sales Q1"), _hit(2, 11, "Other")],
         "has_more": False,
     }
-    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    result, meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
         {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1", "source": "unknown"},
@@ -97,7 +99,7 @@ def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> 
         "resources": [_hit(1, 10, "SALES Q1")],
         "has_more": False,
     }
-    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    result, _meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert [m["id"] for m in result["matches"]] == [10]
 
 
@@ -109,7 +111,7 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
         "resources": [_hit(1, 9, "Sales 2023"), _hit(42, 10, "Sales Q1")],
         "has_more": False,
     }
-    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
+    result, meta = find_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
         {
@@ -152,7 +154,7 @@ def test_find_with_no_live_match_reads_the_trash_and_offers_restore(
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
     fake_service.responses[_TRASH_LIST] = {"items": [_trashed(451, "Late delivery log")]}
 
-    result, _meta = dataset_cmd.dataset_find(
+    result, _meta = find_cmd.dataset_find(
         _inv("dataset.find", project=42, extra_args=["Late delivery log"])
     )
 
@@ -181,7 +183,7 @@ def test_a_trashed_name_that_does_not_match_is_left_out(
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
     fake_service.responses[_TRASH_LIST] = {"items": [_trashed(9, "Delivery log late")]}
 
-    result, _meta = dataset_cmd.dataset_find(
+    result, _meta = find_cmd.dataset_find(
         _inv("dataset.find", project=42, extra_args=["late delivery"])
     )
 
@@ -194,7 +196,7 @@ def test_find_without_a_project_never_reads_the_trash(
     fake_service.projects = [{"id": 1, "name": "P1"}]
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
 
-    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
+    result, _meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
 
     assert "trashed_matches" not in result
     assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
@@ -215,7 +217,7 @@ def _col(name: str, blank_count: int, blank_pct: float) -> dict[str, object]:
 
 def test_column_stats_requires_project(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_column_stats(_inv("dataset.column-stats"))
+        find_cmd.dataset_column_stats(_inv("dataset.column-stats"))
     assert excinfo.value.code == "project_required"
     assert fake_service.call_log == []
 
@@ -232,7 +234,7 @@ def test_column_stats_reads_the_project_in_one_call(fake_service: FakeMammothSer
             },
         ]
     }
-    result, meta = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+    result, meta = find_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
 
     assert fake_service.call_log == [(_COLUMN_STATS, {"project_id": 180})]
     assert meta["project_id"] == 180
@@ -262,7 +264,7 @@ def test_column_stats_cuts_a_wide_project_to_the_output_cap(
             {"id": i, "name": f"Source {i}", "rows": 10, "columns": columns} for i in range(17)
         ]
     }
-    result, _ = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+    result, _ = find_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
 
     first = result["datasets"][0]
     assert first["columns"][0]["name"] == "Column 19"
@@ -765,7 +767,7 @@ def test_file_settings_undo_proceeds_with_yes(fake_service: FakeMammothService) 
 def test_create_requires_dataset_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"ds_creation_type": "sketch"})
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+        create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert excinfo.value.code == "missing_field"
 
 
@@ -780,7 +782,7 @@ def test_create_forwards_folder_resource_id(
             "folder_resource_id": "r1",
         },
     )
-    dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+    create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert fake_service.call_log == [
         (
             _CREATE,
@@ -802,7 +804,7 @@ def test_create_waits_and_reports_dataset_id(
     fake_service.responses[_CREATE] = {"job_id": 14}
     fake_service.job_result = {"ds_id": 303686}
     input_file = _write(tmp_path, {"dataset_spec": {"url": "x"}, "ds_creation_type": "weburl"})
-    data, _ = dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+    data, _ = create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert "wait_if_job" in fake_service.calls
     assert data == {"status": "ready", "dataset_id": 303686, "job_id": 14}
 
@@ -815,7 +817,7 @@ def test_create_from_pdf_requires_file_name(
 ) -> None:
     input_file = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_create_from_pdf(
+        create_cmd.dataset_create_from_pdf(
             _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
         )
     assert excinfo.value.code == "missing_field"
@@ -832,7 +834,7 @@ def test_create_from_pdf_forwards_optional_fields(
             "delete_file_after_extract": True,
         },
     )
-    dataset_cmd.dataset_create_from_pdf(
+    create_cmd.dataset_create_from_pdf(
         _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
     )
     assert fake_service.call_log == [
@@ -1181,19 +1183,19 @@ def test_update_rejects_raw_patch_even_with_confirmation(
 def test_created_dataset_reads_every_settled_shape(
     settled: dict[str, object], expected: dict[str, object]
 ) -> None:
-    assert dataset_cmd._created_dataset({"job_id": 9}, settled) == expected
+    assert create_cmd._created_dataset({"job_id": 9}, settled) == expected
 
 
 def test_created_dataset_raises_when_the_job_made_nothing() -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd._created_dataset({"job_id": 9}, {"message": "No such file"})
+        create_cmd._created_dataset({"job_id": 9}, {"message": "No such file"})
     assert excinfo.value.code == "job_failed"
     assert "No such file" in excinfo.value.message
 
 
 def test_created_dataset_passes_a_sketch_through() -> None:
     sketch = {"id": 12, "name": "n", "status": "ready"}
-    assert dataset_cmd._created_dataset(sketch, sketch) == sketch
+    assert create_cmd._created_dataset(sketch, sketch) == sketch
 
 
 # -- delete that the server accepts but does not carry out ----------------------

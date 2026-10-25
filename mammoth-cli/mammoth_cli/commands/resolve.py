@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dataset import (
-    _require_string_positional,
+from mammoth_cli.commands.dataset._common import _require_string_positional
+from mammoth_cli.commands.dataset.find import (
     _visible_projects,
     all_projects_requested,
     elsewhere_note,
