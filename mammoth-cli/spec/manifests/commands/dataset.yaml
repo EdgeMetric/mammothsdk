@@ -90,12 +90,18 @@ commands:
 - command_id: dataset.file-settings.get
   output_schema: openapi
 - command_id: dataset.file-settings.undo
+  undo:
+    strategy: manual
+    command: dataset.file-settings.update
   readback:
     command: dataset.file-settings.get
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.file-settings.update
+  undo:
+    strategy: inverse
+    command: dataset.file-settings.undo
   wait_policy: always_wait
   readback:
     command: dataset.file-settings.get
@@ -276,6 +282,9 @@ commands:
     chats on it. The project's definitions already appear in every turn's context, so there is no need
     to list them before answering; list them to find the id to remove.
 - command_id: dataset.definition.add
+  undo:
+    strategy: manual
+    command: dataset.definition.remove
   confirmation: confirm_target
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -294,6 +303,9 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.definition.remove
+  undo:
+    strategy: manual
+    command: dataset.definition.add
   mutation_class: benign_mutation
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null

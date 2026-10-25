@@ -40,7 +40,7 @@ _GONE_VERBS = frozenset({"trash", "delete"})
 _RESULT_KINDS = ("view", "dashboard")
 #: Writes that make whole new datasets and name them as ``dataset_id`` (an upload of
 #: several sheets also as ``dataset_ids``) in their result.
-_MAKES_DATASET = frozenset({"view.export.dataset", "file.upload"})
+MAKES_DATASET = frozenset({"view.export.dataset", "file.upload"})
 _SOURCE_FROM_CALL = ("positional.", "input.")
 _API_SUFFIX = "/api/v2"
 
@@ -93,7 +93,7 @@ def _targets(
             continue
         from_call = all(part.startswith(_SOURCE_FROM_CALL) for part in str(source).split("|"))
         (existing if from_call else made).append(key)
-    if existing and invocation.command_id not in _MAKES_DATASET:
+    if existing and invocation.command_id not in MAKES_DATASET:
         made = []
     else:
         made += _result_made(invocation, record, result)
@@ -111,7 +111,7 @@ def _result_made(
 ) -> list[str]:
     """The ``kind:id`` of each object the result names as ``<kind>_id``."""
     kinds: tuple[str, ...] = _RESULT_KINDS
-    if invocation.command_id in _MAKES_DATASET or _new_kind(record) == "dataset":
+    if invocation.command_id in MAKES_DATASET or _new_kind(record) == "dataset":
         kinds = ("dataset", *kinds)
     keys = [_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds]
     if "dataset" in kinds and isinstance(result.get("dataset_ids"), list):

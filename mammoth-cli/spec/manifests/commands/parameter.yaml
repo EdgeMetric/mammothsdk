@@ -21,6 +21,9 @@ commands:
     kind: object
 - command_id: parameter.get
 - command_id: parameter.group.create
+  undo:
+    strategy: manual
+    command: parameter.group.delete
   readback:
     command: parameter.group.list
     ids: {}

@@ -97,6 +97,9 @@ commands:
     from --output json. It is the version list for dashboard canvas restore''s target_sequence: to undo/revert
     the board, find the sequence to go back to here and pass it there.'
 - command_id: dashboard.context.create
+  undo:
+    strategy: manual
+    command: dashboard.context.delete
   readback:
     command: dashboard.context.list
     ids: {}
@@ -205,6 +208,9 @@ commands:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.filter.add
+  undo:
+    strategy: manual
+    command: dashboard.filter.remove
   command_path: dashboard filter add
   disposition: command
   alias_of: null
@@ -299,6 +305,9 @@ commands:
     it before adding one.
   reviewed_by: primary
 - command_id: dashboard.filter.remove
+  undo:
+    strategy: manual
+    command: dashboard.filter.add
   command_path: dashboard filter remove
   disposition: command
   alias_of: null
@@ -415,6 +424,9 @@ commands:
       session_id: positional.1
     kind: object
 - command_id: dashboard.qa.comment.create
+  undo:
+    strategy: manual
+    command: dashboard.qa.comment.delete
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -449,6 +461,9 @@ commands:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.qa.session.fork
+  undo:
+    strategy: manual
+    command: dashboard.qa.session.delete
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -517,6 +532,9 @@ commands:
       dashboard_id: positional.0
     kind: object
 - command_id: dashboard.signature.create
+  undo:
+    strategy: manual
+    command: dashboard.signature.delete
   readback:
     command: dashboard.signature.list
     ids: {}
@@ -536,6 +554,9 @@ commands:
 - command_id: dashboard.source.list
   known_restrictions: Some servers answer this with HTTP 500.
 - command_id: dashboard.style.custom.create
+  undo:
+    strategy: manual
+    command: dashboard.style.custom.delete
   readback:
     command: dashboard.style.custom.list
     ids: {}
@@ -909,6 +930,9 @@ commands:
   known_restrictions: 'Read-only. The board''s pending ''use my data'' run: status and stage, and once
     fitted the proposal. status null means nothing is pending.'
 - command_id: dashboard.own-data.start
+  undo:
+    strategy: manual
+    command: dashboard.own-data.dismiss
   readback:
     command: dashboard.own-data.status
     ids:
@@ -1036,6 +1060,9 @@ commands:
     that names the ref
 - command_id: dashboard.unpublished
 - command_id: dashboard.chart-type.create
+  undo:
+    strategy: manual
+    command: dashboard.chart-type.delete
   readback:
     command: dashboard.chart-type.list
     ids: {}

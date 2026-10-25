@@ -28,6 +28,9 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: view.checkpoint.create
+  undo:
+    strategy: manual
+    command: view.checkpoint.delete
   readback:
     command: view.checkpoint.list
     ids:
@@ -132,6 +135,8 @@ commands:
   result_model: ViewVariantsCreateResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: "trash_created"
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -940,6 +945,8 @@ commands:
   result_model: ViewTransformBatchResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: "pipeline_version"
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1109,6 +1116,8 @@ commands:
   result_model: ViewTransformFirstNameResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: "pipeline_version"
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1311,6 +1320,8 @@ commands:
   result_model: ViewTransformUpdateColumnResult
   mutation_class: reversible_pipeline
   edits_target: true
+  undo:
+    strategy: "pipeline_version"
   confirmation: none
   wait_policy: always_wait
   pagination_policy: none
@@ -1479,6 +1490,9 @@ commands:
   result_model: ViewExplorePanelEditResult
   mutation_class: benign_mutation
   edits_target: true
+  undo:
+    strategy: "irreversible"
+    reason: "Overwrites the view explore panel; the earlier value is not kept, so it cannot be restored."
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -1542,6 +1556,9 @@ commands:
   result_model: ViewExplorePanelAddToDashboardResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Puts a copy of the explore panel on a dashboard; the journal does not know the figure it made, so remove it from the dashboard."
   confirmation: none
   wait_policy: not_async
   pagination_policy: none

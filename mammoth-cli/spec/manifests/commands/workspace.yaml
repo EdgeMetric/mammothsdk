@@ -87,6 +87,9 @@ commands:
       job_id: result.job.id
     kind: delivery
 - command_id: workspace.oauth-client.create
+  undo:
+    strategy: manual
+    command: workspace.oauth-client.delete
   confirmation: yes_always
   live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
   agent_example: 'mammoth workspace oauth-client create 123 --input ''{"name": "Revenue report", "redirect_uris":
@@ -173,6 +176,9 @@ commands:
       workspace_id: positional.0
     kind: object
 - command_id: workspace.user.add
+  undo:
+    strategy: manual
+    command: workspace.user.remove
   confirmation: yes_always
   readback:
     command: workspace.user.list
@@ -183,6 +189,9 @@ commands:
   known_restrictions: Lists members only; a pending invite is not a member. For pending invites and their
     ids run workspace invite list. Optional project_id keeps one project's members.
 - command_id: workspace.user.remove
+  undo:
+    strategy: manual
+    command: workspace.user.add
   readback:
     command: workspace.user.list
     ids: {}

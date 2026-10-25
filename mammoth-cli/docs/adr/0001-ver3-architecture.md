@@ -259,8 +259,14 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
    the read asks `(id:desc)` because the API lists oldest first), or, on a view with no version
    yet, deletes the steps the edit added. `history undo` runs the lines as a saga through the
    normal command path, newest first, stops at the first failure and reports `partial`.
-   `destructive` and `external_effect` writes record why they cannot be undone. Checked live on a
-   dev server: a pipeline edit, an upload and a trash, each undone, and the undo of an undo.
+   `destructive` and `external_effect` writes record why they cannot be undone. Each command
+   declares this in its manifest as `undo` (`inverse` with a `command`, `pipeline_version`,
+   `trash_created`, `manual` with a `command`, or `irreversible` with a `reason`). The build script
+   derives the default from `mutation_class`, the verb and the readback (`scripts/_undo_rules.py`),
+   `commands/<group>.yaml` overrides it, `journal.compensation` only reads it, and a contract test
+   fails a write with none. An `inverse` runs with the write's own positionals, so the two commands
+   must take the same ones; a `manual` inverse needs an id from the result, so the journal names it
+   in the reason and does not run it. Checked live on a dev server: a pipeline edit, an upload and a trash, each undone, and the undo of an undo.
    `view version apply` now waits for its job: without that, an undo returned before the view
    showed the restored steps.
 7. **Idempotency** (done in the CLI): writes send `Idempotency-Key: <inv>`, and a retry resends

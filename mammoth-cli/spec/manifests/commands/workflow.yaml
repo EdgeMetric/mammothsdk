@@ -93,6 +93,9 @@ commands:
     (true: already in Mammoth, not built again; false: lift the hold so the next Save builds it), expected_version?:
     int}.'
 - command_id: workflow.save
+  undo:
+    strategy: manual
+    command: workflow.save-undo
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -116,6 +119,9 @@ commands:
 - command_id: workflow.workspace-sources
   output_schema: openapi
 - command_id: workflow.save-undo
+  undo:
+    strategy: manual
+    command: workflow.save
   mutation_class: destructive
   confirmation: prompt_or_yes
   wait_policy: always_wait

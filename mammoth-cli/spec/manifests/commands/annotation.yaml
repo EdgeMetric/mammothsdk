@@ -5,6 +5,9 @@ commands:
     the only read command (annotation.list) filters by target, not by annotation_id, so the specific comment
     thread cannot be read back.
 - command_id: annotation.create
+  undo:
+    strategy: manual
+    command: annotation.delete
   readback:
     command: annotation.list
     ids:

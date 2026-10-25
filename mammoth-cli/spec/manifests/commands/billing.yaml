@@ -22,6 +22,9 @@ commands:
   unset:
   - edits_target
 - command_id: billing.stripe.cancel
+  undo:
+    strategy: manual
+    command: billing.stripe.resume
   known_restrictions: Cancels the workspace subscription at the billing provider. Read `billing stripe
     status` first; `billing stripe resume` reverses a pending cancel. Needs --yes and --confirm TARGET
     (the refusal prints the exact target).
@@ -93,6 +96,9 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.resume
+  undo:
+    strategy: manual
+    command: billing.stripe.cancel
   known_restrictions: 'Keep the paid plan: clears a scheduled cancel-at-period-end downgrade, so the workspace
     does not move to Free at period end. With nothing scheduled the message says so and nothing changes.'
   readback:

@@ -1,6 +1,9 @@
 manifest_schema_version: 1
 commands:
 - command_id: token.create
+  undo:
+    strategy: manual
+    command: token.revoke
   command_path: token create
   disposition: command
   alias_of: null
@@ -102,6 +105,9 @@ commands:
   result_model: ClientAppDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: "irreversible"
+    reason: "A revoked token stays revoked; issue a new one with `mammoth token create`."
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
