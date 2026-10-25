@@ -11,6 +11,7 @@ commands:
       view_id: positional.0
     kind: object
 - command_id: view.ai.generate-data
+  output_schema: {ref: WriteResult}
   readback:
     command: view.data.get
     ids:
@@ -68,6 +69,14 @@ commands:
       checkpoint_id: positional.1
     kind: object
 - command_id: view.column.format.set
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [formatted, row_check]
+      properties:
+        formatted: {type: object}
+        row_check: {type: object}
   operation_ids:
   - Patch
   readback:
@@ -82,6 +91,15 @@ commands:
     replace the same keys of the column''s format; the rest are kept. To change how TEXT is read as a
     date, use view transform convert-type.'
 - command_id: view.conditional-format.create
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [created_rule_ids, rules_created]
+      properties:
+        created_rule_ids: {type: array}
+        rules_created: {type: integer}
+        note: {type: string}
   readback:
     command: view.conditional-format.list
     ids:
@@ -102,6 +120,14 @@ commands:
 - command_id: view.conditional-format.list
   output_schema: openapi
 - command_id: view.conditional-format.replace
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [created_rule_ids, deleted_rule_ids]
+      properties:
+        created_rule_ids: {type: array}
+        deleted_rule_ids: {type: array}
   operation_ids:
   - CreateConditionalFormat
   - DeleteConditionalFormat
@@ -135,6 +161,19 @@ commands:
     is the default_view of view list, never the newest or an agent-made view: read it, or clone it with
     clone_from when steps are needed; edit it in place only when asked to change that view.'
 - command_id: view.variants.create
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [column, dataset_id, from_view, variants, view_ids]
+      properties:
+        column: {type: string}
+        dataset_id: {type: integer}
+        from_view: {type: integer}
+        variants: {type: array}
+        view_ids:
+          type: array
+          items: {type: integer}
   command_path: view variants create
   disposition: command
   alias_of: null
@@ -681,18 +720,21 @@ commands:
   output_schema:
     ref: ViewDraftStatus
 - command_id: view.draft.submit
+  output_schema: {ref: WriteResult}
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.export.azure-blob
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.bigquery
+  output_schema: {ref: DatabaseExportResult}
   readback:
     command: job.get
     ids:
@@ -703,18 +745,21 @@ commands:
     run of the view's pipeline; refused unless the input sets replace_table to true (replace_table_not_acknowledged).
     The result carries refreshes_on_pipeline_run and a note saying so.
 - command_id: view.export.create
+  output_schema: {ref: JobResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.csv
+  output_schema: {ref: FileExportResult}
   no_readback: a CSV export returns a one-time download link that settles synchronously; no CLI read command
     can re-fetch it
   known_restrictions: SDK target for view export csv VIEW_ID; uses partial file, fsync, atomic rename,
     and explicit --overwrite; an existing output file is refused with file_exists unless --overwrite is
     given.
 - command_id: view.export.dataset
+  output_schema: {ref: WriteResult}
   readback:
     command: view.data.get
     ids:
@@ -751,6 +796,7 @@ commands:
       dataview_id: positional.0
     kind: object
 - command_id: view.export.download
+  output_schema: {ref: FileExportResult}
   no_readback: a file download returns a one-time download link that settles synchronously; no CLI read
     command can re-fetch it
   known_restrictions: 'SDK target for view export download VIEW_ID. The format goes in the input, e.g.
@@ -758,18 +804,21 @@ commands:
     yaml or parquet; csv by default). Uses partial file, fsync, atomic rename, and explicit --overwrite;
     an existing output file is refused with file_exists unless --overwrite is given.'
 - command_id: view.export.elasticsearch
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.email
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.ftp
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
@@ -781,14 +830,23 @@ commands:
 - command_id: view.export.list
   output_schema: openapi
 - command_id: view.export.managed-s3
+  output_schema: {ref: JobResult}
   no_readback: S3 delivery is external; no CLI read command can confirm the object landed in the bucket
   known_restrictions: Alias `view export s3`. A download-only destination starts and waits; any other
     destination sends data outside Mammoth and needs confirmation.
 - command_id: view.export.live-link
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [url]
+      properties:
+        url: {type: string}
   no_readback: the live link is external; the command returns its URL, and no CLI read command can open
     it
   known_restrictions: Needs a plan that includes live links; the backend's refusal is returned as is.
 - command_id: view.export.mssql
+  output_schema: {ref: DatabaseExportResult}
   readback:
     command: job.get
     ids:
@@ -799,6 +857,7 @@ commands:
     to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note
     saying so.
 - command_id: view.export.mysql
+  output_schema: {ref: DatabaseExportResult}
   readback:
     command: job.get
     ids:
@@ -810,12 +869,14 @@ commands:
     saying so. Table names over 60 characters are refused (table_name_too_long): the database export would
     cut them and write a different table.'
 - command_id: view.export.onedrive
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.postgres
+  output_schema: {ref: DatabaseExportResult}
   readback:
     command: job.get
     ids:
@@ -827,6 +888,7 @@ commands:
     saying so. Table names over 60 characters are refused (table_name_too_long): the database export would
     cut them and write a different table.'
 - command_id: view.export.powerbi
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
@@ -837,6 +899,14 @@ commands:
     file, never in argv. Becomes a persistent pipeline step, like 'view export dataset'; the target refreshes
     automatically every time the source view's pipeline reruns, not just once at call time.
 - command_id: view.export.publish-db
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [note, refreshes_on_pipeline_run]
+      properties:
+        note: {type: string}
+        refreshes_on_pipeline_run: {type: boolean}
   no_readback: ODBC publish-to-database has no CLI read command to confirm the external table was written
   known_restrictions: Becomes a persistent pipeline step, like 'view export dataset'; the published target
     refreshes automatically every time the source view's pipeline reruns, not just once at call time.
@@ -847,6 +917,7 @@ commands:
     ref: WriteResult
   no_readback: ODBC publish-to-database has no CLI read command to confirm the external table was written
 - command_id: view.export.redshift
+  output_schema: {ref: DatabaseExportResult}
   readback:
     command: job.get
     ids:
@@ -857,6 +928,7 @@ commands:
     to true (replace_table_not_acknowledged). The result carries refreshes_on_pipeline_run and a note
     saying so.
 - command_id: view.export.rest
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
@@ -865,18 +937,21 @@ commands:
   known_restrictions: Type all auth variants, reject secrets in static headers/query/body, allow insecure
     TLS only with --yes.
 - command_id: view.export.sftp
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.sharepoint
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
       job_id: result.future_id|result.job.id
     kind: delivery
 - command_id: view.export.tableau
+  output_schema: {ref: ExportResult}
   readback:
     command: job.get
     ids:
@@ -922,6 +997,7 @@ commands:
 - command_id: view.parameter-context
   output_schema: openapi
 - command_id: view.pipeline.edit
+  output_schema: {ref: WriteResult}
   readback:
     command: view.data.get
     ids:
@@ -1019,12 +1095,14 @@ commands:
     replaces every column of the view; run it on a copy (view export dataset) when the source columns
     are still needed. Read the result back with view data get. Evidence: docs/capability-evidence/ilg-sim-20260919.'
 - command_id: view.transform.ai
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
       view_id: positional.0
     kind: data
 - command_id: view.transform.batch
+  output_schema: {ref: TransformResult}
   command_path: view transform batch
   disposition: command
   alias_of: null
@@ -1089,6 +1167,7 @@ commands:
     (batch_step_failed). In draft mode the tasks are staged, not run.'
   reviewed_by: primary
 - command_id: view.transform.bulk-replace
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1100,6 +1179,7 @@ commands:
     error, the view enters ref_error and the CLI answers pipeline_reference_error with the view task delete
     that removes the task.'
 - command_id: view.transform.combine-columns
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1109,6 +1189,7 @@ commands:
     escape at the CLI boundary. Exactly one of new_column or existing_column is required; both or neither
     is refused.'
 - command_id: view.transform.convert-type
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1120,6 +1201,7 @@ commands:
     ambiguity; strict blanks ambiguous day/month values and converts equal-part dates) on the conversions
     entry; format (python-style date_format) still works.'
 - command_id: view.transform.copy-columns
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1128,6 +1210,16 @@ commands:
   known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the source columns exist and the new
     names are unused.'
 - command_id: view.transform.crosstab
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [dataset_id, source_view_id, refreshes_on_pipeline_run, note]
+      properties:
+        dataset_id: {type: integer}
+        source_view_id: {type: integer}
+        refreshes_on_pipeline_run: {type: boolean}
+        note: {type: string}
   readback:
     command: view.data.get
     ids:
@@ -1139,6 +1231,7 @@ commands:
     note). A target the view already exports into, the view''s own dataset, and a view held in a draft
     are refused, as for view export dataset.'
 - command_id: view.transform.date-diff
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1154,6 +1247,7 @@ commands:
     mvc-service api/api/dataview/helpers/validators/date_diff.py (allowed TYPE values COLUMN/VALUE/SYSTEM_TIME)
     and CommonConstants/dba_const.py KEYWORDS.SYSTEM_TIME = "__TIME__".'
 - command_id: view.transform.delete-columns
+  output_schema: {ref: TransformResult}
   confirmation: prompt_or_yes
   readback:
     command: view.data.get
@@ -1173,6 +1267,7 @@ commands:
   known_restrictions: 'Observe first: `view data profile VIEW_ID` (or `view data aggregate` counting rows
     grouped by the key columns) to count the duplicate rows this will drop.'
 - command_id: view.transform.extract-date
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1183,6 +1278,7 @@ commands:
     ("2026-10"), which sorts in time order; `year_month` ("2026, October") sorts alphabetically on a chart
     axis.'
 - command_id: view.transform.fill-missing
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1191,6 +1287,7 @@ commands:
   known_restrictions: 'Observe first: `view data profile VIEW_ID` for the blank count of the column, so
     the result can be compared to it.'
 - command_id: view.transform.filter
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1199,6 +1296,7 @@ commands:
   known_restrictions: 'Observe first: count the rows that match with `view data aggregate` using the same
     condition, and the total with no condition.'
 - command_id: view.transform.first-name
+  output_schema: {ref: TransformResult}
   command_path: view transform first-name
   disposition: command
   alias_of: null
@@ -1266,6 +1364,7 @@ commands:
     does not change the view (release, 2026-09-25: no task was added). Apply the query with view transform
     add-sql (data.apply is the exact command); add-sql replaces the view''s columns with the result.'
 - command_id: view.transform.increment-date
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1274,6 +1373,7 @@ commands:
   known_restrictions: 'Observe first: `view get VIEW_ID` to confirm the column type is DATE, and `view
     data get` to check a few values.'
 - command_id: view.transform.join
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1282,6 +1382,7 @@ commands:
   known_restrictions: 'Observe first: read both key columns (`view data get`, `view data profile`) and
     run this with `--dry-run` for `join_preview.match_rate`.'
 - command_id: view.transform.json-extract
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1298,6 +1399,7 @@ commands:
   known_restrictions: 'Observe first: `view get VIEW_ID` for the current row count, so the row count after
     can be checked against N. `limit` is accepted as an alias of `n`; give one, not both.'
 - command_id: view.transform.lookup
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1307,6 +1409,7 @@ commands:
     lookup view must have one row per key. Exactly one of new_column or existing_column is required; both
     or neither is refused.'
 - command_id: view.transform.math
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1316,6 +1419,7 @@ commands:
     and run it with `--dry-run` to validate the expression. Exactly one of new_column or existing_column
     is required; both or neither is refused.'
 - command_id: view.transform.pivot
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1325,6 +1429,17 @@ commands:
     Every as_name must be a display name that does not already exist on the view (4DTVW018 SAME_DISPLAY_NAME_CANNOT_BE_REUSED):
     aggregate a joined column under a new name.'
 - command_id: view.transform.rename-columns
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [renamed, columns]
+      properties:
+        renamed: {type: object}
+        columns:
+          type: array
+          items: {type: string}
+        row_check: {type: object}
   operation_ids:
   - Patch
   readback:
@@ -1336,6 +1451,7 @@ commands:
   known_restrictions: 'A view display setting (the web grid''s column rename), not a pipeline task: it
     changes no data and adds no task.'
 - command_id: view.transform.replace
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1345,6 +1461,7 @@ commands:
     is stored with a type-mismatch reference error, the view enters ref_error and the CLI answers pipeline_reference_error
     with the view task delete that removes the task.'
 - command_id: view.transform.set-values
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1354,6 +1471,7 @@ commands:
     using the same condition. Exactly one of new_column or existing_column is required; both or neither
     is refused.'
 - command_id: view.transform.small-large
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1361,6 +1479,14 @@ commands:
     kind: data
   known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to see its type and range.'
 - command_id: view.transform.sort
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [row_check, sort]
+      properties:
+        row_check: {type: object}
+        sort: {type: array}
   operation_ids:
   - Patch
   readback:
@@ -1375,6 +1501,7 @@ commands:
     A string ending in asc or desc is read as column plus direction, so for a column whose name ends in
     asc or desc use the pair form [column, ASC|DESC].'
 - command_id: view.transform.split
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1383,6 +1510,7 @@ commands:
   known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the separator appears
     in real values.'
 - command_id: view.transform.substring
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1391,6 +1519,7 @@ commands:
   known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see the real value lengths
     and formats.'
 - command_id: view.transform.text
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1399,6 +1528,7 @@ commands:
   known_restrictions: 'Observe first: `view data profile VIEW_ID` on the column to see the current values
     (case, padding, spelling variants).'
 - command_id: view.transform.unnest
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1407,6 +1537,7 @@ commands:
   known_restrictions: 'Observe first: `view data get VIEW_ID` on the column to see how the nested values
     are stored.'
 - command_id: view.transform.update-column
+  output_schema: {ref: TransformResult}
   command_path: view transform update-column
   disposition: command
   alias_of: null
@@ -1463,6 +1594,7 @@ commands:
     on this step''s own run (run.transform_status DONE), not on the pipeline reading ready.'
   reviewed_by: primary
 - command_id: view.transform.window
+  output_schema: {ref: TransformResult}
   readback:
     command: view.data.get
     ids:
@@ -1577,6 +1709,7 @@ commands:
     or {} when none is saved. It is a per-user preference: other users do not see it. VIEW_ID is the only
     id needed.'
 - command_id: view.explore-panel.set
+  output_schema: {ref: ExplorePanelResult}
   acceptance_evidence: contract_only_no_disposable_fixture
   no_readback: the command reads the saved panel back itself and returns it as "panel" (the same data
     view explore-panel get returns); a generic state block would drop the open flag and nested fields
@@ -1590,6 +1723,7 @@ commands:
     back after the write (what get returns): check its cards to see which are open. It is a per-user preference:
     it does not change the view or what other users see.'
 - command_id: view.explore-panel.edit
+  output_schema: {ref: ExplorePanelResult}
   command_path: view explore-panel edit
   disposition: command
   alias_of: null
@@ -1656,6 +1790,14 @@ commands:
     change the view or what other users see.'
   reviewed_by: primary
 - command_id: view.explore-panel.add-to-dashboard
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [dashboard_id, created_dashboard]
+      properties:
+        dashboard_id: {type: integer}
+        created_dashboard: {type: boolean}
   command_path: view explore-panel add-to-dashboard
   disposition: command
   alias_of: null
@@ -1759,9 +1901,11 @@ commands:
 - command_id: view.summary
   output_schema: openapi
 - command_id: view.export.rest-fill
+  output_schema: {ref: WriteResult}
   wait_policy: always_wait
   no_readback: Proposes settings only; nothing is stored or configured.
   known_restrictions: Makes Mammoth's server fetch the docs URL and propose REST export settings; nothing
     is configured or sent. Needs --yes.
 - command_id: view.task.preview-cancel
+  output_schema: {ref: WriteResult}
   no_readback: stops a preview job and answers empty; nothing persisted to read back

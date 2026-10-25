@@ -34,6 +34,14 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: recipe.run
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/Run'}
+    - type: object
+      required: [recipe, inputs]
+      properties:
+        recipe: {type: string}
+        inputs: {type: object}
   command_path: recipe run
   disposition: command
   alias_of: null

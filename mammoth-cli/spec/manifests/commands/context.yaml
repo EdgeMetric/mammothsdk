@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: context.project.clear
+  output_schema: {ref: ContextProjectChange}
   readback:
     command: context.project.status
     ids: {}
@@ -14,6 +15,7 @@ commands:
   known_restrictions: Local read, no network call. Shows which profile, endpoint, workspace and project
     the next command would use; it never prints credentials.
 - command_id: context.project.use
+  output_schema: {ref: ContextProjectChange}
   readback:
     command: context.project.status
     ids: {}

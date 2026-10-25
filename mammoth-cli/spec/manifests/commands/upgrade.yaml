@@ -1,6 +1,20 @@
 manifest_schema_version: 1
 commands:
 - command_id: upgrade
+  output_schema:
+    type: object
+    required: [manager, current_version, latest_version, target_version, action, command]
+    properties:
+      manager: {type: string}
+      current_version: {type: string}
+      latest_version:
+        type: [string, 'null']
+      target_version:
+        type: [string, 'null']
+      action: {type: string}
+      command:
+        type: [array, 'null']
+        items: {type: string}
   known_restrictions: Installs a different mammoth CLI version from PyPI over the current one. Run `mammoth
     version` first. Needs a prompt or --yes; the install is skipped when the version is already current.
   readback:

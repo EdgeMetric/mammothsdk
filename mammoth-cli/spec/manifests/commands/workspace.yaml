@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: workspace.accept-invite
+  output_schema: {ref: WriteResult}
   secret_fields:
   - token
   agent_example: mammoth workspace accept-invite --input /private/path/request.json
@@ -239,6 +240,7 @@ commands:
     ids: {}
     kind: object
 - command_id: workspace.user.remove-batch
+  output_schema: {ref: WriteResult}
   known_restrictions: Removes members (ids) and/or pending invites (invite_ids). Take invite ids from
     workspace invite list; workspace invite delete is the dedicated command for invites.
   readback:
@@ -254,6 +256,7 @@ commands:
       user_id: positional.0
     kind: object
 - command_id: workspace.user.update-batch
+  output_schema: {ref: WriteResult}
   known_restrictions: Changes the roles of several workspace users in one JSON-patch call; each gains
     or loses access at once. Read `workspace user list` first. Needs --yes and --confirm WORKSPACE_ID.
   readback:

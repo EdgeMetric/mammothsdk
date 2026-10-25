@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: agent.action.delete
+  output_schema: {ref: WriteResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.action_delete with the session id from --session and
     the positional id.
   live_test: null
@@ -34,6 +35,7 @@ commands:
     state after the write). Read it before agent action delete. Needs --session SESSION_ID; an embedded
     chat supplies it.'
 - command_id: agent.chat
+  output_schema: {ref: AgentTurnResult}
   known_restrictions: 'Scope is {"type": "workspace", "workspace_id": N}, {"type": "user", "user_id":
     N} or {"type": "account"}. Put the project the question is about in client_context as {"project_id":
     N}. The command starts the turn and waits for the reply, up to 120 seconds: pass "wait": 0 to return
@@ -45,6 +47,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.message.set-request-kind
+  output_schema: {ref: WriteResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.message_set_request_kind with the session id from
     --session, the positional message id and request_kind from --input.
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -57,6 +60,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.plan.edit-proposal
+  output_schema: {ref: WriteResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_edit_proposal with the session id from --session
     and plan_id, action, key and the optional name from --input.
   acceptance_evidence: contract_only_no_disposable_fixture
@@ -67,6 +71,7 @@ commands:
     an embedded chat supplies it.
   no_readback: returns the updated proposal
 - command_id: agent.plan.approve
+  output_schema: {ref: AgentTurnResult}
   operation_ids:
   - AgentChat
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_approve with the session id; the plan reference
@@ -83,6 +88,7 @@ commands:
     is refused. agent session messages shows when a chat waits for approval.'
   no_readback: returns the started turn
 - command_id: agent.plan.skip
+  output_schema: {ref: AgentTurnResult}
   operation_ids:
   - AgentChat
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_skip with the session id; the plan reference
@@ -95,6 +101,7 @@ commands:
     is refused.'
   no_readback: returns the started turn
 - command_id: agent.plan.discard
+  output_schema: {ref: AgentTurnResult}
   operation_ids:
   - AgentChat
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.plan_discard with the session id; the plan reference
@@ -108,6 +115,7 @@ commands:
     no model turn. The plan_id is read from the session. A user control: an embedded chat is refused.'
   no_readback: returns the started turn
 - command_id: agent.run.extend
+  output_schema: {ref: AgentRunResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_extend with the session id from --session and
     the positional id.
   live_test: null
@@ -139,6 +147,7 @@ commands:
   known_restrictions: Read-only. Lists the runs of the chat session, newest first, with the same fields
     as agent run status. Needs --session SESSION_ID; an embedded chat supplies it.
 - command_id: agent.run.pause
+  output_schema: {ref: AgentRunResult}
   undo:
     strategy: inverse
     command: agent.run.resume
@@ -157,6 +166,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.resume
+  output_schema: {ref: AgentRunResult}
   undo:
     strategy: inverse
     command: agent.run.pause
@@ -192,6 +202,7 @@ commands:
     time used and left of its 8 hour budget (time spent waiting on you does not count). Needs --session
     SESSION_ID; an embedded chat supplies it.'
 - command_id: agent.run.stop
+  output_schema: {ref: AgentRunResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_stop with the session id from --session and the
     positional id.
   live_test: null
@@ -207,6 +218,14 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.run.units.set
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [registered, units_total]
+      properties:
+        registered: {type: integer}
+        units_total: {type: integer}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_units_set with the session id from --session,
     the positional run id and validated request fields.
   live_test: null
@@ -258,6 +277,7 @@ commands:
   known_restrictions: Read-only. The model messages of one agent of the run, credentials redacted. Needs
     --session SESSION_ID; an embedded chat supplies it.
 - command_id: agent.run.retry
+  output_schema: {ref: AgentRunResult}
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.run_retry with the session id from --session and the
     positional run id.
   confirmation: prompt_or_yes
@@ -302,6 +322,15 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.turn.cancel
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [session_id, turn_id, status]
+      properties:
+        session_id: {type: string}
+        turn_id: {type: string}
+        status: {type: string}
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: agent.session.messages
@@ -343,6 +372,7 @@ commands:
     ids: {}
     kind: object
 - command_id: agent.access.grant.update
+  output_schema: {ref: WriteResult}
   known_restrictions: Only a manager of the workspace's AI Agent settings can change a grant.
   readback:
     command: agent.access.grant.list
@@ -393,6 +423,7 @@ commands:
   output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can read them.
 - command_id: agent.access.settings.update
+  output_schema: {ref: WriteResult}
   mutation_class: high_impact
   confirmation: confirm_target
   acceptance_evidence: contract_only_high_impact

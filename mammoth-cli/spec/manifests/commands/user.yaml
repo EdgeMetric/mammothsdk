@@ -13,6 +13,7 @@ commands:
     ids: {}
     kind: object
 - command_id: user.avatar.upload
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: user.avatar.delete
@@ -22,6 +23,7 @@ commands:
     ids: {}
     kind: object
 - command_id: user.delete-account
+  output_schema: {ref: WriteResult}
   known_restrictions: Deletes the signed-in user's account for good. Pass validate_only to check what
     would be removed first. Needs --yes and --confirm WORKSPACE_ID (the refusal prints it).
   no_readback: deletes the caller's own account; no parent listing exists and the account can no longer

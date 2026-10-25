@@ -10,6 +10,7 @@ commands:
   output_schema:
     ref: ConfigPath
 - command_id: config.set
+  output_schema: {ref: ConfigGet}
   readback:
     command: config.get
     ids:

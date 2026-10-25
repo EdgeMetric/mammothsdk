@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: file.bulk-delete
+  output_schema: {ref: WriteResultOrNull}
   readback:
     command: file.list
     ids: {}
@@ -8,6 +9,7 @@ commands:
   known_restrictions: Deletes every listed uploaded file for good and cannot be undone. List them first
     (`file list`). Needs a prompt or --yes.
 - command_id: file.delete
+  output_schema: {ref: WriteResultOrNull}
   readback:
     command: file.list
     ids: {}
@@ -46,6 +48,15 @@ commands:
   known_restrictions: 'Input: {sheet_name (required), block_id?, user_instruction?, structure_map?}. Shows
     how one sheet reads before any dataset exists; nothing is saved.'
 - command_id: file.set-password
+  output_schema:
+    type: object
+    properties:
+      failure_reason:
+        type: [string, 'null']
+      job_id:
+        type: [integer, 'null']
+      status_code:
+        type: [integer, 'null']
   readback:
     command: file.get
     ids:
@@ -67,6 +78,7 @@ commands:
     delete_file_after_extract) - the extraction setting a dataset's saved recipe replays for PDFs an automation
     receives.
 - command_id: file.upload
+  output_schema: {ref: WriteResult}
   no_readback: the upload result already carries each ready dataset's post-processing view (columns, row_count,
     sample rows) from a real read
   known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic webp
@@ -79,6 +91,7 @@ commands:
     IDs, read them back, and verify owned cleanup; do not assume other upload variants are qualified.
     Each sheet of an Excel file becomes its own dataset.'
 - command_id: file.upload-folder
+  output_schema: {ref: WriteResultOrNull}
   readback:
     command: file.list
     ids: {}

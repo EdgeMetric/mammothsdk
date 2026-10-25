@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: schedule.create
+  output_schema: {ref: WriteResult}
   known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011 NOT_IMPLEMENTED;
     the command fails with feature_unavailable and makes no API call. Use `mammoth automation create`
     instead.'

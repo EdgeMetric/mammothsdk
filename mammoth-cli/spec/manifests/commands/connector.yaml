@@ -31,6 +31,7 @@ commands:
     ids: {}
     kind: object
 - command_id: connector.connection.create
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: connector.connection.delete
@@ -72,6 +73,7 @@ commands:
     The sample is limited to the first rows of the result, so add your own LIMIT or aggregate for a large
     table. To turn a query into a dataset use dataset create.
 - command_id: connector.connection.update
+  output_schema: {ref: WriteResult}
   secret_fields:
   - credentials
   agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json
@@ -84,6 +86,7 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.create
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: connector.ds-config.delete
@@ -204,6 +207,7 @@ commands:
       draft_id: positional.0
     kind: object
 - command_id: connector.draft.sample
+  output_schema: {ref: WriteResult}
   readback:
     command: connector.draft.get
     ids:

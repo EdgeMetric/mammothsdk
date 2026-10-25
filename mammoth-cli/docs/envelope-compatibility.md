@@ -26,7 +26,6 @@ previous version. Adding a field doesn't change it. Today it is `1`.
 | New optional field in `meta`, `error` or `details` | minor | same |
 | New `error.code`, new command, new `data` field | minor | same |
 | New value in an open set (a `status`, a `kind`) | minor | same |
-| A `data` field of a command without `output_schema` changes shape | minor, with a CHANGELOG entry | same |
 | A field is deprecated | minor; it stays for at least one major | same |
 | A field is removed or renamed, or its type changes | major | +1 |
 | An exit code changes meaning, or an `error.code` is removed | major | +1 |
@@ -74,8 +73,12 @@ a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `em
 
 - `meta.run_id`: the invocation id. It is the run log's `run_id`, the journal's `inv`
   (`mammoth history show RUN_ID`) and the `inv` in the request's User-Agent.
-- `schema get --full` returns `output_schema`: declared by every read command and by most
-  writes (the shared `WriteResult`: the `verify` and `state` blocks plus the API's own body).
+- `schema get --full` returns `output_schema`: declared by every command (the shared
+  `WriteResult` for a write: the `verify` and `state` blocks plus the API's own body).
+  `output_schema` describes the real run's `data` only. A `--dry-run` of an API-backed write
+  returns a report instead (`ran: false`, `would_call`, `targets`; no `verify`), and `schema
+  get --full` returns its schema as `dry_run_output_schema` (`null` for a read). A local
+  command has no dry run; it runs for real and returns its `output_schema` data.
 - `mammoth run` lines take `name`, `when` and `for_each`.
 - `history` commands and the `history_not_found`, `journal_off` and
   `unresolved_reference` error codes.

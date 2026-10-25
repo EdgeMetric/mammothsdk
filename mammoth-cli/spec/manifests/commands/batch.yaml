@@ -11,6 +11,7 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: batch.create
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: batch.delete
@@ -54,6 +55,7 @@ commands:
 - command_id: batch.list
   output_schema: openapi
 - command_id: batch.update
+  output_schema: {ref: WriteResult}
   known_restrictions: 'The server takes one patch operation per call: {"patch": {"op": "replace", "path":
     "batches", "value": {"suspend": [BATCH_ID], "restore": [BATCH_ID]}}} (a list holding that one operation
     is also accepted; "path" defaults to batches). Any remove operation in the patch changes the mutation

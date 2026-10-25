@@ -692,6 +692,9 @@ def brief_schema(entry: dict[str, Any]) -> dict[str, Any]:
 OUTPUT_SCHEMA_OPENAPI = "openapi"
 #: Key of a named reference, ``output_schema: {ref: NAME}``, to ``output-schemas.yaml``.
 OUTPUT_SCHEMA_REF = "ref"
+
+#: Name, in ``output-schemas.yaml``, of the report ``--dry-run`` returns for an API-backed write.
+DRY_RUN_REPORT = "DryRunReport"
 _DEFS_PREFIX = "#/$defs/"
 
 
@@ -718,13 +721,17 @@ def self_contained_schema(body: dict[str, Any]) -> dict[str, Any]:
             ``$defs`` or a shared definition from ``output-schemas.yaml``.
 
     Returns:
-        A new schema that needs nothing outside itself.
+        A new schema that needs nothing outside itself. A ``body`` that is only a reference
+        to a shared definition comes back as that definition's own body.
 
     Raises:
         KeyError: A ``$ref`` names a definition that exists nowhere.
     """
     shared = load_output_schemas()["defs"]
     schema = copy.deepcopy(body)
+    # A schema that is only a reference is that definition: show its body, not a pointer.
+    while set(schema) == {"$ref"} and str(schema["$ref"]).startswith(_DEFS_PREFIX):
+        schema = copy.deepcopy(shared[schema["$ref"][len(_DEFS_PREFIX) :]])
     defs: dict[str, Any] = schema.setdefault("$defs", {})
     pending = _refs(schema)
     while pending:
@@ -761,6 +768,24 @@ def output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+def dry_run_output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
+    """The JSON Schema of the report ``--dry-run`` returns in place of the real ``data``.
+
+    ``output_schema`` always describes the real run. A dry run of an API-backed write stops
+    before its first write and reports the request instead (``DryRunReport``); a read has no
+    dry run, and a local command runs for real, so both return None here.
+
+    Args:
+        record: The command's manifest record.
+
+    Returns:
+        The report's schema with its ``$defs``, or None for a read.
+    """
+    if record.get("mutation_class") == "read":
+        return None
+    return self_contained_schema({"$ref": f"#/$defs/{DRY_RUN_REPORT}"})
+
+
 def get_schema(command_id: str) -> dict[str, Any] | None:
     record = command_by_id(command_id)
     if record is None or record.get("disposition") == "alias":
@@ -787,6 +812,7 @@ def get_schema(command_id: str) -> dict[str, Any] | None:
         "human_example": record["human_example"],
         "agent_example": record["agent_example"],
         "output_schema": output_schema(record),
+        "dry_run_output_schema": dry_run_output_schema(record),
         "exit_codes": {
             "0": "success (a pending write exits 0 with status pending; see verify.next_command)",
             "1": "API or operation failure (including a write with verify.outcome failed)",

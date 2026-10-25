@@ -141,6 +141,7 @@ commands:
   known_restrictions: Read-only. Progress of the collection's data refresh; empty when no automation is
     linked.
 - command_id: collection.files.upload
+  output_schema: {ref: WriteResult}
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get

@@ -3,11 +3,13 @@ commands:
 - command_id: billing.chargebee-plan
   output_schema: openapi
 - command_id: billing.hosted-page
+  output_schema: {ref: WriteResult}
   known_restrictions: Creates a hosted billing page URL for object_type (for example change_plan). Nothing
     changes until someone completes the page. Needs --yes and --confirm TARGET (the refusal prints the
     exact target).
   no_readback: returns a one-time hosted checkout page URL; nothing persisted to read back
 - command_id: billing.invoice.charge
+  output_schema: {ref: WriteResult}
   known_restrictions: Charges the workspace's open invoice to its saved payment method now; money moves.
     Read `billing stripe status` first. Needs --yes and --confirm TARGET (the refusal prints the exact
     target).
@@ -25,6 +27,7 @@ commands:
   unset:
   - edits_target
 - command_id: billing.stripe.cancel
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: billing.stripe.resume
@@ -37,15 +40,18 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.checkout-url
+  output_schema: {ref: WriteResult}
   known_restrictions: Creates a checkout URL (success_url and cancel_url are required); nothing is charged
     until someone completes it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   no_readback: returns a one-time Stripe checkout URL; nothing persisted to read back
 - command_id: billing.stripe.create
+  output_schema: {ref: WriteResult}
   readback:
     command: billing.stripe.status
     ids: {}
     kind: object
 - command_id: billing.stripe.end-trial
+  output_schema: {ref: WriteResult}
   known_restrictions: Ends the workspace's free trial now and starts billing; the CLI cannot undo it.
     Needs --yes and --confirm TARGET (the refusal prints the exact target).
   readback:
@@ -73,12 +79,14 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.portal-url
+  output_schema: {ref: WriteResult}
   known_restrictions: Creates a customer-portal link that grants access to the workspace's billing; do
     not log or share it. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   no_readback: returns a one-time Stripe customer-portal URL; nothing persisted to read back
 - command_id: billing.stripe.preview-invoice
   output_schema: openapi
 - command_id: billing.stripe.retry-payment
+  output_schema: {ref: WriteResult}
   known_restrictions: Retries the failed payment on the workspace's latest invoice; money moves if it
     succeeds. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   readback:
@@ -88,6 +96,7 @@ commands:
 - command_id: billing.stripe.status
   output_schema: openapi
 - command_id: billing.stripe.sync
+  output_schema: {ref: WriteResult}
   known_restrictions: Re-reads the subscription from the billing provider and overwrites Mammoth's copy
     of plan and status. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   readback:
@@ -101,12 +110,14 @@ commands:
 - command_id: billing.subscription.get
   output_schema: openapi
 - command_id: billing.subscription.update
+  output_schema: {ref: WriteResult}
   known_restrictions: 'Plans: storage 1 GB Free, 10 GB Starter, 50 GB Pro; users 1, 5, 10.'
   readback:
     command: billing.subscription.get
     ids: {}
     kind: object
 - command_id: billing.stripe.resume
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: billing.stripe.cancel
@@ -130,6 +141,7 @@ commands:
     everything is under the limits. Safe to repeat.'
   no_readback: returns the recomputed over-limit report itself
 - command_id: billing.stripe.storage.set
+  output_schema: {ref: WriteResult}
   known_restrictions: Sets the TOTAL purchased storage in GB (the plan's included storage or one of its
     storage options), not an increment. Inline-pricing plans only; the subscription is re-priced and the
     difference invoiced at once. Preview the cost first with billing stripe preview-invoice.
@@ -138,6 +150,7 @@ commands:
     ids: {}
     kind: object
 - command_id: billing.stripe.held-change.cancel
+  output_schema: {ref: WriteResult}
   mutation_class: destructive
   known_restrictions: 'Irreversible: voids the unpaid invoice of the plan change the workspace is holding.
     If that invoice was already paid, the change is applied instead and the result says landed: true.

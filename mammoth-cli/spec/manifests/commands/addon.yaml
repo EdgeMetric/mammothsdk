@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: addon.connector.add
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.connector.remove
@@ -10,6 +11,7 @@ commands:
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
     under Settings > Plan
 - command_id: addon.connector.remove
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.connector.add
@@ -20,6 +22,7 @@ commands:
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
     under Settings > Plan
 - command_id: addon.storage.add
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.storage.remove
@@ -29,6 +32,7 @@ commands:
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
     under Settings > Plan
 - command_id: addon.storage.remove
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.storage.add
@@ -39,6 +43,7 @@ commands:
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
     under Settings > Plan
 - command_id: addon.user.add
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.user.remove
@@ -48,6 +53,7 @@ commands:
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
     under Settings > Plan
 - command_id: addon.user.remove
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: addon.user.add

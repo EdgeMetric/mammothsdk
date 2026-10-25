@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: external-key.create
+  output_schema: {ref: WriteResult}
   secret_fields:
   - secure_key
   agent_example: mammoth external-key create --input /private/path/request.json --yes

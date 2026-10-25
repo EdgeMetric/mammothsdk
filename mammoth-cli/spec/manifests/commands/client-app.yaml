@@ -11,6 +11,7 @@ commands:
       client_key: result.app_key
     kind: object
 - command_id: client-app.delete
+  output_schema: {ref: WriteResultOrNull}
   known_restrictions: Deletes the client app and invalidates its key for good. Needs --yes and --confirm
     CLIENT_KEY (the exact key).
   readback:

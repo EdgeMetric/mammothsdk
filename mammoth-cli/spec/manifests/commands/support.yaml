@@ -187,6 +187,7 @@ commands:
       plan_id: positional.0
     kind: object
 - command_id: support.subscription.create
+  output_schema: {ref: WriteResult}
   readback:
     command: support.subscription.get
     ids:
@@ -353,6 +354,7 @@ commands:
       plan_id: positional.0
     kind: object
 - command_id: support.plan.storage-option.update
+  output_schema: {ref: WriteResult}
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: Platform admin only (Mammoth staff role); refused for every other user. Re-prices
@@ -489,6 +491,7 @@ commands:
   unset:
   - edits_target
 - command_id: support.template.import
+  output_schema: {ref: WriteResult}
   confirmation: yes_always
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
@@ -501,6 +504,7 @@ commands:
     ids: {}
     kind: object
 - command_id: support.template.thumbnail.set
+  output_schema: {ref: WriteResult}
   live_exemption_reason: Platform-admin operation on shared catalog or billing configuration; no disposable
     fixture.
   known_restrictions: 'Platform admin only (Mammoth staff role); refused for every other user. Uploads

@@ -186,6 +186,7 @@ commands:
     categorical controls a list of values; an undeclared field is rejected. Results are {descriptor_id:
     {status, value | data}}. Used to prove a countDistinct card under a Month range (ILG simulation 2026-09-19).'
 - command_id: dashboard.duplicate
+  output_schema: {ref: WriteResult}
   wait_policy: start_or_wait
   readback:
     command: dashboard.get
@@ -358,6 +359,7 @@ commands:
     it before adding one.
   reviewed_by: primary
 - command_id: dashboard.filter.remove
+  output_schema: {ref: WriteResult}
   undo:
     strategy: manual
     command: dashboard.filter.add
@@ -417,6 +419,14 @@ commands:
   output_schema:
     ref: OpenObject
 - command_id: dashboard.import-workbook
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: []
+      properties:
+        source: {type: object}
+        fields: {type: array}
   no_readback: ImportWorkbookDataset's result gives dataview_id only; the matching read (view.get) also
     requires dataset_id, which the response does not include, and this route is release-only / unverified
     against release besides.
@@ -431,9 +441,17 @@ commands:
   output_schema:
     ref: BinaryArtifactResult
 - command_id: dashboard.page.plan
+  output_schema:
+    type: object
+    properties:
+      composed: {type: boolean}
+      message: {type: string}
+      page: {type: object}
+      preview: {type: array}
   no_readback: PlanPage only proposes a page (composed/message/page in the result); nothing is persisted
     until dashboard chat edit or dashboard pages add applies it.
 - command_id: dashboard.pages.add
+  output_schema: {ref: WriteResult}
   readback:
     command: dashboard.canvas.get
     ids:
@@ -591,6 +609,12 @@ commands:
   output_schema:
     ref: OpenObject
 - command_id: dashboard.qa.settings.set
+  output_schema:
+    type: object
+    properties:
+      allow_viewer_qa: {type: boolean}
+      can_manage: {type: boolean}
+      public_link: {type: boolean}
   readback:
     command: dashboard.qa.settings.get
     ids:
@@ -796,6 +820,18 @@ commands:
 - command_id: dashboard.template.list
   output_schema: openapi
 - command_id: dashboard.template.preview
+  output_schema:
+    type: object
+    properties:
+      canvas: {type: object}
+      coverage: {type: object}
+      fidelity: {type: object}
+      mapping: {type: object}
+      meta: {type: object}
+      plan: {type: object}
+      results: {type: object}
+      specs: {type: object}
+      target_fields: {type: object}
   no_readback: PreviewTemplate returns a computed preview (canvas/mapping/plan/specs) only; nothing is
     persisted until dashboard template apply.
 - command_id: dashboard.template.rename
@@ -806,6 +842,12 @@ commands:
       template_id: positional.0
     kind: object
 - command_id: dashboard.template.resolve-mapping
+  output_schema:
+    type: object
+    properties:
+      fidelity: {type: object}
+      mapping: {type: object}
+      target_fields: {type: object}
   no_readback: ResolveTemplateMapping computes a mapping preview only; nothing is persisted.
 - command_id: dashboard.templates.pending
   output_schema:
@@ -907,6 +949,7 @@ commands:
     ids: {}
     kind: object
 - command_id: dashboard.template.thumbnail.set
+  output_schema: {ref: WriteResult}
   readback:
     command: dashboard.template.thumbnail.get
     ids:
@@ -1179,6 +1222,7 @@ commands:
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
   known_restrictions: Drops the pending 'use my data' run. The board is not changed.
 - command_id: dashboard.attachment-create
+  output_schema: {ref: WriteResult}
   live_exemption_reason: Multipart upload of a workbook; no approved workbook fixture on the dev box.
   no_readback: the upload answers with the new attachment id; no read command lists attachments to read
     it back.
@@ -1204,6 +1248,14 @@ commands:
   live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
   known_restrictions: Turns your own email updates for the dashboard on or off; nobody else's.
 - command_id: dashboard.email-updates.set
+  output_schema:
+    type: object
+    properties:
+      update: {type: object}
+      boards: {type: array}
+      people: {type: integer}
+      covered_by: {type: array}
+      unsubscribed: {type: array}
   mutation_class: external_effect
   confirmation: yes_always
   acceptance_evidence: contract_only_high_impact
@@ -1282,6 +1334,7 @@ commands:
 - command_id: dashboard.oembed
   output_schema: openapi
 - command_id: dashboard.chat.attachment.upload
+  output_schema: {ref: WriteResult}
   no_readback: returns the attachment ref and metadata; the file is readable only through a chat turn
     that names the ref
 - command_id: dashboard.unpublished

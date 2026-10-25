@@ -27,6 +27,7 @@ commands:
     dataset status ready mean it is finished). Confirm with the user first, and say that discarded lines
     do not come back.'
 - command_id: dataset.bulk-delete
+  output_schema: {ref: BulkDeleteResult}
   readback:
     command: dataset.list
     ids: {}
@@ -35,6 +36,7 @@ commands:
     view uses as a lookup or join source is kept, and the result says so. List them first (`dataset list`).
     Needs a prompt or --yes.
 - command_id: dataset.bulk-update
+  output_schema: {ref: WriteResult}
   readback:
     command: dataset.list
     ids: {}
@@ -81,6 +83,7 @@ commands:
     CONNECTION_KEY with {"query": SELECT, "table": NAME}; the recipe is recipes/database-import.md. Other
     ds_creation_type values and dataset_spec shapes: variants beyond the documented path are not qualified.'
 - command_id: dataset.create-from-pdf
+  output_schema: {ref: WriteResult}
   readback:
     command: dataset.list
     ids: {}
@@ -216,6 +219,7 @@ commands:
   output_schema:
     ref: DatasetGet
 - command_id: dataset.interpretation.confirm
+  output_schema: {ref: WriteResult}
   readback:
     command: dataset.get
     ids:
@@ -232,6 +236,7 @@ commands:
     for the dataset are then ingested the same way, without review. The result state shows the dataset
     afterwards. Example: --input ''{"user_instruction": "Skip preamble rows, row 5 is the header"}''.'
 - command_id: dataset.interpretation.preview
+  output_schema: {ref: WriteResult}
   no_readback: preview only; nothing is applied to the dataset until interpretation confirm
   live_test: null
   live_exemption_reason: Live coverage is tests/live/test_dataset_interpretation.py (runs on the test
@@ -373,6 +378,7 @@ commands:
       dataset_id: positional.0
     kind: object
 - command_id: dataset.update
+  output_schema: {ref: WriteResult}
   no_readback: this command always rejects with a typed-command redirect before any write happens; there
     is no new state to read back
 - command_id: dataset.tool-claim.get

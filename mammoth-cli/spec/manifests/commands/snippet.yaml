@@ -42,6 +42,7 @@ commands:
       snippet_id: positional.0
     kind: object
 - command_id: snippet.update
+  output_schema: {ref: WriteResult}
   readback:
     command: snippet.get
     ids:

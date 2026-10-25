@@ -19,11 +19,13 @@ commands:
 - command_id: notification.list
   output_schema: openapi
 - command_id: notification.update
+  output_schema: {ref: WriteResult}
   readback:
     command: notification.list
     ids: {}
     kind: object
 - command_id: notification.update-batch
+  output_schema: {ref: WriteResult}
   readback:
     command: notification.list
     ids: {}

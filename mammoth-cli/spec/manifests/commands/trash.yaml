@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: trash.add
+  output_schema: {ref: WriteResult}
   readback:
     command: trash.list
     ids: {}
@@ -8,6 +9,7 @@ commands:
 - command_id: trash.list
   output_schema: openapi
 - command_id: trash.restore
+  output_schema: {ref: WriteResult}
   readback:
     command: trash.list
     ids: {}

@@ -29,7 +29,10 @@ ver3 adds three things:
 - an invocation journal with resume and undo (#310, #311);
 - output schemas (#315): each command's manifest record declares the shape of its `data` as
   `output_schema` (`openapi` for the API's own body, `{ref: NAME}` for a named schema in
-  `spec/manifests/output-schemas.yaml`, or an inline JSON Schema). `schema get --full` returns it.
+  `spec/manifests/output-schemas.yaml`, or an inline JSON Schema). All 851 commands declare one
+  (346 reads, 505 writes; a contract test keeps it so). It describes the real run's `data`;
+  the report `--dry-run` returns instead is `DryRunReport`, which `schema get --full` returns
+  as `dry_run_output_schema`. `schema get --full` returns both.
 
 All three would add more cases to that function. ver3 must also stay a production CLI. Startup cost is
 guarded (`test_startup_cost.py`). The envelope contract is public. `embed` runs many users

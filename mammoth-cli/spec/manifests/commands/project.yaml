@@ -1,11 +1,13 @@
 manifest_schema_version: 1
 commands:
 - command_id: project.bulk-delete
+  output_schema: {ref: WriteResult}
   readback:
     command: project.list
     ids: {}
     kind: object
 - command_id: project.bulk-update
+  output_schema: {ref: WriteResult}
   known_restrictions: Release contract is ProjectsPatch (role add/replace/remove across projects). The
     CLI requires every patches[].value item to name a project_id and the confirmation names those ids;
     a body that names no project is refused before dispatch. Not verified live.
@@ -75,12 +77,21 @@ commands:
 - command_id: project.checkpoint.list
   output_schema: openapi
 - command_id: project.create
+  output_schema: {ref: WriteResult}
   readback:
     command: project.get
     ids:
       project_id: result.id
     kind: object
 - command_id: project.ensure
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [created, duplicates]
+      properties:
+        created: {type: boolean}
+        duplicates: {type: array}
   command_path: project ensure
   disposition: command
   alias_of: null

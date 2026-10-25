@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: skill.install
+  output_schema: {ref: SkillWriteResult}
   undo:
     strategy: manual
     command: skill.uninstall
@@ -16,6 +17,15 @@ commands:
   output_schema:
     ref: SkillPath
 - command_id: skill.agents-md.install
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [action, path, skill_version]
+      properties:
+        action: {type: string}
+        path: {type: string}
+        skill_version: {type: string}
   command_path: skill agents-md install
   disposition: command
   alias_of: null
@@ -92,6 +102,7 @@ commands:
     prints one reference file. Read-only, local.'
   reviewed_by: primary
 - command_id: skill.uninstall
+  output_schema: {ref: SkillWriteResult}
   undo:
     strategy: manual
     command: skill.install
@@ -101,6 +112,7 @@ commands:
     ids: {}
     kind: object
 - command_id: skill.update
+  output_schema: {ref: SkillWriteResult}
   readback:
     command: skill.list
     ids: {}

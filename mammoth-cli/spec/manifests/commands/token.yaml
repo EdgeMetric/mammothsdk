@@ -88,6 +88,7 @@ commands:
   known_restrictions: Lists the workspace's API tokens.
   reviewed_by: primary
 - command_id: token.revoke
+  output_schema: {ref: WriteResultOrNull}
   command_path: token revoke
   disposition: command
   alias_of: null

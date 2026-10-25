@@ -59,6 +59,7 @@ commands:
     ids: {}
     kind: object
 - command_id: parameter.group.update
+  output_schema: {ref: WriteResult}
   readback:
     command: parameter.group.list
     ids: {}
@@ -85,6 +86,7 @@ commands:
     ids: {}
     kind: object
 - command_id: parameter.update
+  output_schema: {ref: WriteResult}
   known_restrictions: A filter bound to a parameter can stay pending after the call returns; check verify.outcome
     and run `mammoth view pipeline wait VIEW_ID` before reading the view.
   readback:

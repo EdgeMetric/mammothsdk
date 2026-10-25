@@ -14,6 +14,7 @@ commands:
   unset:
   - options
 - command_id: auth.connected-apps.revoke
+  output_schema: {ref: WriteResult}
   live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
   unit_tests:
   - test_revoke_connected_app_deletes_that_grant_on_an_empty_204
@@ -28,12 +29,31 @@ commands:
   unset:
   - options
 - command_id: auth.login
+  output_schema:
+    type: object
+    required: [profile, workspace_id, base_url, storage, credential]
+    properties:
+      profile: {type: string}
+      workspace_id:
+        type: [integer, 'null']
+      base_url: {type: string}
+      storage: {type: string}
+      credential: {type: string}
+      workspace_name: {type: string}
   agent_example: mammoth auth login
   readback:
     command: auth.status
     ids: {}
     kind: object
 - command_id: auth.logout
+  output_schema:
+    type: object
+    required: [all, removed_profiles]
+    properties:
+      all: {type: boolean}
+      removed_profiles:
+        type: array
+        items: {type: string}
   readback:
     command: auth.status
     ids: {}

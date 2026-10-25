@@ -33,6 +33,7 @@ commands:
   no_readback: posts data to an external webhook URL; the external receiver's state is not something this
     CLI can read back
 - command_id: webhook.update
+  output_schema: {ref: WriteResult}
   readback:
     command: webhook.get
     ids:

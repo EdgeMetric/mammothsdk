@@ -127,7 +127,7 @@ defs:
       status: {type: [string, "null"]}
       created_at: {type: [string, "null"]}
       updated_at: {type: [string, "null"]}
-      created_by: {type: [integer, "null"]}
+      created_by: {type: [string, integer, "null"]}
   BrowseResources:
     description: A cursor page of tree resources.
     type: object
@@ -151,6 +151,86 @@ defs:
     properties:
       truncated: {type: boolean}
       note: {type: string}
+  Run:
+    type: object
+    required: [lines, ok, failed, skipped, stopped_at, failed_lines, continue, dry_run, exit]
+    properties:
+      lines: {type: integer}
+      ok: {type: integer}
+      failed: {type: integer}
+      skipped: {type: integer}
+      stopped_at: {type: [integer, "null"]}
+      failed_lines: {type: array}
+      continue: {type: boolean}
+      dry_run: {type: boolean}
+      exit: {type: integer}
+      partial_lines: {}
+  WriteResult:
+    description: >-
+      A write's result. The runtime adds `verify` (did the write do what it should) to
+      every API-backed write that returns an object, and `state` (what the write produced, read
+      back) where the command declares a read-back; the rest is the API's own body or the
+      handler's summary and is open. A `--dry-run` report has neither block.
+    type: object
+    required: [verify]
+    properties:
+      verify:
+        type: object
+        required: [verified, state, warnings, reason, needs_user, outcome]
+        properties:
+          verified: {type: boolean}
+          state: {type: string}
+          warnings: {type: array, items: {type: string}}
+          reason: {type: [string, "null"]}
+          needs_user: {}
+          outcome: {enum: [settled, pending, failed, partial]}
+          rows_before: {type: [integer, "null"]}
+          rows_after: {type: [integer, "null"]}
+          changed: {type: boolean}
+          card: {}
+          next_command: {type: string}
+          reported_status: {}
+      state:
+        type: object
+        required: [kind, read_by]
+        properties:
+          kind: {type: string}
+          read_by: {type: string}
+          object: {}
+          absent: {type: boolean}
+          reason: {type: string}
+          detail: {}
+          status: {}
+          columns: {type: array}
+          row_count: {}
+          sample: {type: array}
+  # What `--dry-run` returns instead of the real result. A `schema get --full` of a write shows
+  # it as `dry_run_output_schema`; `output_schema` is always the real run's `data`. A command
+  # that makes no API call (a local one) has no dry run: it runs for real and returns its
+  # `output_schema` data.
+  DryRunReport:
+    type: object
+    required: [dry_run, ran, pending, hint, command, mutation_class, irreversible, would_call, note, targets]
+    properties:
+      dry_run: {const: true}
+      ran: {const: false}
+      pending: {const: true}
+      hint: {type: string}
+      command: {type: string}
+      mutation_class: {type: string}
+      irreversible: {type: boolean}
+      would_call:
+        type: object
+        required: [sdk_symbol, arguments]
+        properties:
+          sdk_symbol: {type: string}
+          arguments: {type: object}
+          view_id: {type: integer}
+          dataset_id: {type: integer}
+      note: {type: string}
+      targets: {type: array, items: {type: object}}
+      dependents: {type: object}
+      predicted_impact: {type: object}
 
 schemas:
   Version:
@@ -703,19 +783,7 @@ schemas:
       elsewhere: {type: integer}
       truncated: {type: boolean}
   Run:
-    type: object
-    required: [lines, ok, failed, skipped, stopped_at, failed_lines, continue, dry_run, exit]
-    properties:
-      lines: {type: integer}
-      ok: {type: integer}
-      failed: {type: integer}
-      skipped: {type: integer}
-      stopped_at: {type: [integer, "null"]}
-      failed_lines: {type: array}
-      continue: {type: boolean}
-      dry_run: {type: boolean}
-      exit: {type: integer}
-      partial_lines: {}
+    $ref: '#/$defs/Run'
   SchemaFind:
     type: object
     required: [query, matches]
@@ -801,9 +869,9 @@ schemas:
       invites: {type: array, items: {type: object}}
   ViewDataCompare:
     type: object
-    required: [rows]
+    required: [data]
     properties:
-      rows: {type: array, items: {type: object}}
+      data: {type: array, items: {type: object}}
   ViewDraftStatus:
     type: object
     required: [dataview_id, is_draft]
@@ -822,43 +890,134 @@ schemas:
     properties:
       results: {type: array, items: {type: object}}
   WriteResult:
-    description: >-
-      A write's result. The runtime adds `verify` (did the write do what it should) to
-      every API-backed write that returns an object, and `state` (what the write produced, read
-      back) where the command declares a read-back; the rest is the API's own body or the
-      handler's summary and is open. A `--dry-run` report has neither block.
-    type: object
-    required: [verify]
-    properties:
-      verify:
-        type: object
-        required: [verified, state, warnings, reason, needs_user, outcome]
-        properties:
-          verified: {type: boolean}
-          state: {type: string}
-          warnings: {type: array, items: {type: string}}
-          reason: {type: [string, "null"]}
-          needs_user: {}
-          outcome: {enum: [settled, pending, failed, partial]}
-          rows_before: {type: [integer, "null"]}
-          rows_after: {type: [integer, "null"]}
-          changed: {type: boolean}
-          card: {}
-          next_command: {type: string}
-          reported_status: {}
-      state:
-        type: object
-        required: [kind, read_by]
-        properties:
-          kind: {type: string}
-          read_by: {type: string}
-          object: {}
-          absent: {type: boolean}
-          reason: {type: string}
-          detail: {}
-          status: {}
-          columns: {type: array}
-          row_count: {}
-          sample: {type: array}
+    $ref: '#/$defs/WriteResult'
   BrowseResources:
     $ref: '#/$defs/BrowseResources'
+  # The shapes below build on `WriteResult`: the API's body or the handler's summary, plus the
+  # runtime's `verify` (and `state`). Each lists only the keys its handler always sets.
+  WriteResultOrNull:
+    description: >-
+      A write whose API answers with no body (a delete, a revoke): `null`, since the runtime
+      adds `verify` to an object result only. A body, when the API sends one, is a `WriteResult`.
+    anyOf:
+      - type: 'null'
+      - $ref: '#/$defs/WriteResult'
+  TransformResult:
+    description: >-
+      A `view transform` step: the pipeline task's response plus `status` (`done`, `staged` for
+      a draft pipeline, or `validated` for a build-only check), the view's `pipeline_state` and
+      the rows before and after (`row_check`). A step may add its own notes (`note`, `skipped`,
+      `join_check`, `blank_inputs`).
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [status]
+        properties:
+          status: {type: string}
+          pipeline_state: {type: string}
+          row_check: {type: object}
+          pipeline_error: {type: object}
+          message: {type: string}
+          note: {type: string}
+          skipped: {type: array}
+          join_check: {type: object}
+          sort: {type: array}
+  ExportResult:
+    description: >-
+      A `view export` to a destination: the export (`export`, its trigger and status) and the
+      background `job` that ran it.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [export, job]
+        properties:
+          export: {type: object}
+          job: {type: object}
+  DatabaseExportResult:
+    description: >-
+      An export to a database (`export` and `job` as in `ExportResult`): the table is rewritten on every pipeline run of the view
+      (`refreshes_on_pipeline_run`), which `note` says.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [export, job, note, refreshes_on_pipeline_run]
+        properties:
+          export: {type: object}
+          job: {type: object}
+          note: {type: string}
+          refreshes_on_pipeline_run: {type: boolean}
+  FileExportResult:
+    description: >-
+      A `view export` that wrote a file: the path it was saved to.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [output_path]
+        properties:
+          output_path: {type: string}
+  JobResult:
+    description: >-
+      A write that runs as a background job: the job to follow with `job wait`.
+    type: object
+    required: [job]
+    properties:
+      job: {type: object}
+      verify: {type: object}
+      state: {type: object}
+  BulkDeleteResult:
+    description: >-
+      A bulk delete: how many were asked for and what happened to each.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [requested, deleted, results]
+        properties:
+          requested: {type: integer}
+          deleted: {type: array}
+          results: {type: array, items: {type: object}}
+  ExplorePanelResult:
+    description: The explore panel after an edit or a replace.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [panel]
+        properties:
+          panel: {type: object}
+  AgentTurnResult:
+    description: >-
+      A message or plan decision sent to an agent: the session and turn it started, and the
+      agent's `reply` when it answered within the wait (`null` while it is still `working`).
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [session_id, turn_id, working]
+        properties:
+          session_id: {type: string}
+          turn_id: {type: string}
+          working: {type: boolean}
+          request_key: {type: string}
+          reply: {type: [string, object, 'null']}
+  AgentRunResult:
+    description: An agent run after a pause, resume, stop, retry or extend.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [run]
+        properties:
+          run: {type: object}
+  SkillWriteResult:
+    description: An install, update or uninstall of the Mammoth skill, per agent it was done for.
+    allOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: object
+        required: [skill, results]
+        properties:
+          skill: {type: string}
+          results: {type: array, items: {type: object}}
+  ContextProjectChange:
+    description: The profile's default project after `context project use` or `clear`.
+    type: object
+    required: [profile, project_id]
+    properties:
+      profile: {type: string}
+      project_id: {type: [integer, 'null']}

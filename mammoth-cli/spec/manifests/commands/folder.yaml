@@ -1,6 +1,7 @@
 manifest_schema_version: 1
 commands:
 - command_id: folder.bulk-delete
+  output_schema: {ref: BulkDeleteResult}
   known_restrictions: Deletes every listed folder for good and cannot be undone. List them first (`folder
     list`). Needs a prompt or --yes.
   readback:
@@ -16,6 +17,7 @@ commands:
       folder_id: result.id
     kind: object
 - command_id: folder.delete
+  output_schema: {ref: WriteResult}
   readback:
     command: folder.list
     ids: {}
@@ -68,6 +70,15 @@ commands:
   output_schema:
     ref: FolderList
 - command_id: folder.move
+  output_schema:
+    type: object
+    properties:
+      failure_reason:
+        type: [string, 'null']
+      job_id:
+        type: [integer, 'null']
+      status_code:
+        type: [integer, 'null']
   known_restrictions: Prefer dataset_ids/view_ids (the plain ids dataset get/view get return) over resource_ids
     -- the SDK resolves them to resource ids for you. resource_ids itself takes each item's resource id,
     not a dataset/view's own id. target_folder_resource_id is the destination folder's id, exactly as
@@ -81,12 +92,14 @@ commands:
   output_schema:
     ref: FolderGet
 - command_id: folder.trash
+  output_schema: {ref: JobResult}
   readback:
     command: folder.get
     ids:
       folder_id: positional.0
     kind: object
 - command_id: folder.update
+  output_schema: {ref: WriteResult}
   readback:
     command: folder.get
     ids:

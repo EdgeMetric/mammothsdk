@@ -73,6 +73,24 @@ commands:
   known_restrictions: Not available embedded.
   reviewed_by: primary
 - command_id: history.undo
+  output_schema:
+    type: object
+    required: [id, dry_run, undone, not_undoable]
+    properties:
+      id: {type: string}
+      dry_run: {type: boolean}
+      undone:
+        type: array
+        items: {type: object}
+      not_undoable:
+        type: array
+        items: {type: object}
+      not_undone:
+        type: array
+        items: {type: string}
+      failed: {type: object}
+      outcome:
+        enum: [undone, planned, partial, failed, nothing_to_undo]
   command_path: history undo
   disposition: command
   alias_of: null
@@ -119,6 +137,14 @@ commands:
     cannot be undone and are reported. Not available embedded.
   reviewed_by: primary
 - command_id: history.resume
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/Run'}
+    - type: object
+      required: [resumed, from_line]
+      properties:
+        resumed: {type: string}
+        from_line: {type: integer}
   command_path: history resume
   disposition: command
   alias_of: null

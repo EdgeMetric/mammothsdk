@@ -7,30 +7,23 @@ import json
 import jsonschema
 import pytest
 
-from mammoth_cli.commands.schema import OUTPUT_SCHEMA_OPENAPI, OUTPUT_SCHEMA_REF, output_schema
+from mammoth_cli.commands.schema import (
+    OUTPUT_SCHEMA_OPENAPI,
+    OUTPUT_SCHEMA_REF,
+    dry_run_output_schema,
+    output_schema,
+)
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_output_schemas
 
 _RECORDS = sorted(load_commands(), key=lambda record: record["command_id"])
-_READS = [record for record in _RECORDS if record["mutation_class"] == "read"]
 _DECLARED = [record["command_id"] for record in _RECORDS if record.get("output_schema")]
 
-#: Writes that declare nothing yet (their examples need inputs the sampled responses cannot
-#: supply, so none could be checked). A new write must declare one; lower this as they do.
-MAX_UNDECLARED_WRITES = 176
 
-
-def test_every_read_command_declares_an_output_schema() -> None:
-    undeclared = [r["command_id"] for r in _READS if not r.get("output_schema")]
+def test_every_command_declares_an_output_schema() -> None:
+    """Reads and writes alike: a new command must say what its ``data`` is."""
+    undeclared = [r["command_id"] for r in _RECORDS if not r.get("output_schema")]
     assert not undeclared, undeclared
-
-
-def test_undeclared_writes_do_not_grow() -> None:
-    undeclared = [
-        r["command_id"]
-        for r in _RECORDS
-        if r["mutation_class"] != "read" and not r.get("output_schema")
-    ]
-    assert len(undeclared) <= MAX_UNDECLARED_WRITES, len(undeclared)
+    assert len(_DECLARED) == len(_RECORDS) >= 851
 
 
 @pytest.mark.parametrize("command_id", _DECLARED)
@@ -62,9 +55,18 @@ def test_every_named_schema_is_used_and_every_use_is_defined() -> None:
     assert set(named) <= used, sorted(set(named) - used)
 
 
-def test_a_command_without_a_declaration_has_none() -> None:
-    undeclared = next(r for r in _RECORDS if not r.get("output_schema"))
-    assert output_schema(undeclared) is None
+def test_a_record_without_a_declaration_has_no_schema() -> None:
+    assert output_schema({"command_id": "x", "mutation_class": "read"}) is None
+
+
+def test_a_write_exposes_the_dry_run_report_a_read_has_none() -> None:
+    read = next(r for r in _RECORDS if r["mutation_class"] == "read")
+    write = next(r for r in _RECORDS if r["mutation_class"] != "read")
+    assert dry_run_output_schema(read) is None
+    report = dry_run_output_schema(write)
+    assert report is not None
+    jsonschema.Draft202012Validator.check_schema(report)
+    assert {"dry_run", "ran", "would_call"} <= set(report["required"])
 
 
 def _refs(value: object) -> set[str]:

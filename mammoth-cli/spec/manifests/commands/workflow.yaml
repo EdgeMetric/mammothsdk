@@ -34,6 +34,7 @@ commands:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.auth
+  output_schema: {ref: WriteResult}
   readback:
     command: workflow.get
     ids:
@@ -132,6 +133,7 @@ commands:
   known_restrictions: 'Input (optional): {keys?: [change keys to save], expected_version?: int}. Omitted
     keys save every unsaved change; a stale expected_version fails with 409.'
 - command_id: workflow.update
+  output_schema: {ref: WriteResult}
   readback:
     command: workflow.get
     ids:

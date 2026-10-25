@@ -1096,7 +1096,14 @@ def test_schema_get_returns_an_api_body_schema_for_an_openapi_declaration() -> N
     assert "$defs" in schema["output_schema"]
 
 
-def test_schema_get_returns_no_output_schema_for_an_undeclared_command() -> None:
-    schema = get_schema("client-app.delete")
-    assert schema is not None
-    assert schema["output_schema"] is None
+def test_schema_get_returns_the_real_result_and_the_dry_run_report_of_a_write() -> None:
+    write = get_schema("client-app.delete")
+    assert write is not None
+    assert write["output_schema"] is not None
+    assert {"dry_run", "ran", "would_call"} <= set(write["dry_run_output_schema"]["required"])
+
+
+def test_schema_get_returns_no_dry_run_report_for_a_read() -> None:
+    read = get_schema("project.list")
+    assert read is not None
+    assert read["dry_run_output_schema"] is None
