@@ -90,6 +90,8 @@ LINE_KEYS = ("cmd", "args", "input", "flags", "id", "name", "when", "for_each")
 BOUND_KEYS = ("args", "input", "flags")
 _WORD = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _STEP_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]{0,63}$")
+#: The step a ``{{steps.NAME...}}`` reference reads.
+_STEP_REFERENCE = re.compile(r"\{\{\s*steps\.([A-Za-z_][A-Za-z0-9_-]*)")
 
 #: Commands a line may not run: ``run`` itself (no nesting), and the two that read secrets
 #: from stdin, which carries the lines.
@@ -694,7 +696,11 @@ def _run_line(
         if "id" in line:
             shown["id"] = _line_id(line["id"])
         line_scope: dict[str, Any] = {**(scope or {}), "steps": steps}
-        if "when" in line and not bindings.evaluate(line["when"], line_scope):
+        if (
+            "when" in line
+            and not bindings.evaluate(line["when"], line_scope)
+            and not (dry_run and _waits_on_preview(line["when"], steps))
+        ):
             write_envelope({**shown, "exit": 0, "skipped": True, **_result(shown["cmd"], None)})
             if name is not None:
                 steps[name] = {"skipped": True, "data": None, "exit": 0}
@@ -836,9 +842,38 @@ def _unresolved(
 
 
 def _reads_a_preview(path: str | None, steps: dict[str, Any]) -> bool:
-    """Whether ``path`` reads from the result of a line that ran (previewed) before."""
+    """Whether ``path`` reads from the result of a line that ran (previewed) before.
+
+    A line that a ``when`` skipped made no preview: reading it fails, as it does for real.
+    """
     parts = (path or "").split(".")
-    return len(parts) > 1 and parts[0] == "steps" and parts[1].split("[")[0] in steps
+    if len(parts) < 2 or parts[0] != "steps":
+        return False
+    step = steps.get(parts[1].split("[")[0])
+    return step is not None and not step.get("skipped")
+
+
+def _waits_on_preview(condition: Any, steps: dict[str, Any]) -> bool:
+    """Whether a ``when`` reads a line that only previewed, so it cannot be decided yet.
+
+    Under ``--dry-run`` a write sends nothing, so a condition on its result (a view id the
+    upload would make) is unknown, not false: the line is planned rather than skipped.
+
+    Args:
+        condition: The line's ``when``.
+        steps: The results of the named lines run so far.
+
+    Returns:
+        True when any step the condition reads has only a preview or a plan.
+    """
+    for name in _STEP_REFERENCE.findall(json.dumps(condition)):
+        step = steps.get(name)
+        if step is None or step.get("skipped"):
+            continue
+        data = step.get("data")
+        if step.get("planned") or (isinstance(data, dict) and "would_call" in data):
+            return True
+    return False
 
 
 def _best_effort_cmd(text: str) -> str:

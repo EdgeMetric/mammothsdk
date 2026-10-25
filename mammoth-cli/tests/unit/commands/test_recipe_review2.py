@@ -10,7 +10,9 @@ import pytest
 
 from mammoth_cli import discovery
 from mammoth_cli.app import app
+from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import recipe as recipe_cmd
+from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.context import resolver
 from mammoth_cli.discovery import runnable_recipes
 from mammoth_cli.runtime import dryrun_targets, leaf
@@ -148,3 +150,75 @@ def test_an_any_input_takes_any_json_value(value: Any) -> None:
         "run": [],
     }
     assert recipe_cmd._inputs(recipe, {"value": value}) == {"value": value}
+
+
+_VIEWLESS = "This file has more than one plausible way to be read."
+
+
+def _needs_view_upload(dataset_ids: list[int]) -> dict[str, Any]:
+    """What the real ``file upload`` returns for datasets that came up ready with no view."""
+    return file_cmd._upload_result(
+        dataset_ids, lambda dataset_id: ("ready", {"ready": _VIEWLESS}, f"d{dataset_id}.csv")
+    )
+
+
+@pytest.fixture
+def uploads_without_a_view(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    """``file upload`` answers with the real needs_view shape; every other line is recorded."""
+    calls: list[list[str]] = []
+    next_ids = iter([[7], [8]])
+
+    def execute(argv: list[str], command: str = "") -> tuple[int, dict[str, Any]]:
+        calls.append(list(argv))
+        if argv[:2] == ["file", "upload"]:
+            return 0, {"data": _needs_view_upload(next(next_ids))}
+        return 0, {"data": {"dataset": {"id": 7}}}
+
+    monkeypatch.setattr(run_cmd, "execute_line", execute)
+    return calls
+
+
+def _example_inputs(recipe_id: str, tmp_path: Path) -> dict[str, Any]:
+    recipe = next(r for r in runnable_recipes() if r["id"] == recipe_id)
+    inputs: dict[str, Any] = {}
+    for name, spec in recipe["inputs"].items():
+        value = spec["example"]
+        if isinstance(value, str) and value.startswith("./"):
+            path = tmp_path / Path(value).name
+            path.write_text("a,b\n1,2\n", encoding="utf-8")
+            value = str(path)
+        inputs[name] = value
+    return inputs
+
+
+@pytest.mark.parametrize("recipe_id", ["upload-clean", "upload-dashboard", "join-files"])
+def test_an_upload_with_no_view_ends_the_recipe_with_the_dataset_not_a_crash(
+    service: FakeMammothService,
+    uploads_without_a_view: list[list[str]],
+    recipe_id: str,
+    tmp_path: Path,
+) -> None:
+    inputs = _example_inputs(recipe_id, tmp_path)
+    code, lines = _recipe("run", recipe_id, *_inputs(inputs), "--yes")
+    assert code == 0, lines
+    ran = [argv[:2] for argv in uploads_without_a_view]
+    assert ran[-1] == ["dataset", "get"], "the dataset is shown, with its status"
+    assert all(argv[0] in ("file", "dataset") for argv in uploads_without_a_view), ran
+    assert lines[-1]["data"]["failed"] == 0
+    skipped = [line["cmd"] for line in lines[:-1] if line.get("skipped")]
+    assert skipped and "dataset get" not in skipped
+
+
+@pytest.mark.parametrize("recipe_id", ["upload-clean", "upload-dashboard", "join-files"])
+def test_a_dry_run_still_plans_the_lines_that_wait_on_the_upload(
+    service: FakeMammothService, recipe_id: str, tmp_path: Path
+) -> None:
+    inputs = _example_inputs(recipe_id, tmp_path)
+    code, lines = _recipe("run", recipe_id, *_inputs(inputs), "--dry-run")
+    assert code == 0, lines
+    waiting = [
+        line
+        for line in lines[:-1]
+        if line["cmd"] in ("view data get", "dashboard v3 generate", "view transform join")
+    ]
+    assert waiting and not any(line.get("skipped") for line in waiting)

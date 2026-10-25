@@ -149,6 +149,12 @@ def resolve(value: Any, scope: Mapping[str, Any], *, plan: bool = False) -> Any:
         # ``$`` key (a ``$schema`` or ``$ref`` in a payload) is data and passes through.
         if len(value) == 1 and next(iter(value)) in VALUE_OPERATORS:
             return _operator(value, scope, plan)
+        mixed = sorted(key for key in value if key in VALUE_OPERATORS)
+        if mixed:
+            raise BindingError(
+                f"'{mixed[0]}' is an operator and must be the only key of its object, but "
+                f"it sits beside {sorted(set(value) - {mixed[0]})}"
+            )
         return {key: resolve(item, scope, plan=plan) for key, item in value.items()}
     return value
 

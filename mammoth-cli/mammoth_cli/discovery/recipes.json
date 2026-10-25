@@ -433,6 +433,12 @@
           "purpose": "Read the dashboard back: its figures and its link.",
           "example": "mammoth dashboard get DASHBOARD_ID",
           "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
         }
       ],
       "notes": [],
@@ -461,6 +467,9 @@
         {
           "name": "data",
           "cmd": "view data get",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
           "args": [
             "{{steps.upload.data.datasets[0].view.view_id}}",
             "{{steps.upload.data.dataset_id}}"
@@ -469,6 +478,9 @@
         {
           "name": "dashboard",
           "cmd": "dashboard v3 generate",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
           "input": {
             "body": {
               "params": {
@@ -481,8 +493,23 @@
         {
           "name": "readback",
           "cmd": "dashboard get",
+          "when": {
+            "present": "{{steps.dashboard.data.id}}"
+          },
           "args": [
             "{{steps.dashboard.data.id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+            }
+          },
+          "args": [
+            "{{steps.upload.data.dataset_id}}"
           ]
         }
       ]
@@ -1130,6 +1157,12 @@
           "purpose": "Read the view back: the new column or rows, and the row count.",
           "example": "mammoth view data get VIEW_ID DATASET_ID",
           "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
         }
       ],
       "notes": [
@@ -1175,7 +1208,14 @@
           "name": "convert",
           "cmd": "view transform convert-type",
           "when": {
-            "present": "{{inputs.type_column}}"
+            "all": [
+              {
+                "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{inputs.type_column}}"
+              }
+            ]
           },
           "args": [
             "{{steps.upload.data.datasets[0].view.view_id}}"
@@ -1193,6 +1233,9 @@
         {
           "name": "clean",
           "cmd": "view transform batch",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
           "args": [
             "{{steps.upload.data.datasets[0].view.view_id}}"
           ],
@@ -1216,8 +1259,23 @@
         {
           "name": "readback",
           "cmd": "view data get",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
           "args": [
             "{{steps.upload.data.datasets[0].view.view_id}}",
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+            }
+          },
+          "args": [
             "{{steps.upload.data.dataset_id}}"
           ]
         }
@@ -1274,6 +1332,12 @@
           "command_id": "view.data.get",
           "purpose": "Read the view back: the new column or rows, and the row count.",
           "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
           "key_flags": []
         }
       ],
@@ -1339,6 +1403,16 @@
         {
           "name": "join",
           "cmd": "view transform join",
+          "when": {
+            "all": [
+              {
+                "present": "{{steps.left.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{steps.right.data.datasets[0].view.view_id}}"
+              }
+            ]
+          },
           "args": [
             "{{steps.left.data.datasets[0].view.view_id}}"
           ],
@@ -1359,8 +1433,37 @@
         {
           "name": "readback",
           "cmd": "view data get",
+          "when": {
+            "all": [
+              {
+                "present": "{{steps.left.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{steps.right.data.datasets[0].view.view_id}}"
+              }
+            ]
+          },
           "args": [
             "{{steps.left.data.datasets[0].view.view_id}}",
+            "{{steps.left.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "all": [
+                {
+                  "present": "{{steps.left.data.datasets[0].view.view_id}}"
+                },
+                {
+                  "present": "{{steps.right.data.datasets[0].view.view_id}}"
+                }
+              ]
+            }
+          },
+          "args": [
             "{{steps.left.data.dataset_id}}"
           ]
         }
