@@ -32,8 +32,9 @@ _PROJECT_PATHS: dict[str, str] = {
 }
 _DASHBOARD = "dashboard"
 _OPENABLE = frozenset({*_PROJECT_PATHS, _DASHBOARD})
-#: Manifest id names for the same object: a view is ``dataview_id`` in some commands.
-_KIND_ALIASES = {"dataview": "view"}
+#: Manifest id names for the same object: a view is ``dataview_id`` in some commands, a
+#: dataset ``ds_id`` in ``append_to_ds_id`` and ``target_ds_id``.
+_KIND_ALIASES = {"dataview": "view", "ds": "dataset"}
 #: Last word of a command that leaves nothing to open.
 _GONE_VERBS = frozenset({"trash", "delete"})
 #: Kinds a write names in its own result by ``<kind>_id`` without a readback id.
@@ -98,6 +99,9 @@ def _targets(
     else:
         made += _result_made(invocation, record, result)
     named = _named_by_call(invocation)
+    # An object the call names (an append's ``append_to_ds_id``, an export's ``target_ds_id``)
+    # existed before the write, even when the result names it too: changed, never made.
+    existing += [key for key in made if key in named]
     made = [key for key in made if key not in named]
     keys = dict.fromkeys([*existing, *made])
     targets = [(*key.partition(":")[::2], key in made) for key in keys]
@@ -109,8 +113,9 @@ def _targets(
 def _result_made(
     invocation: Invocation, record: dict[str, Any], result: dict[str, Any]
 ) -> list[str]:
-    """The ``kind:id`` of each object the result names as ``<kind>_id``."""
-    kinds: tuple[str, ...] = _RESULT_KINDS
+    """The ``kind:id`` of each object a command that makes objects names as ``<kind>_id``."""
+    # A command that edits its target names that target in its result: not a new object.
+    kinds: tuple[str, ...] = () if record.get("edits_target") else _RESULT_KINDS
     if invocation.command_id in MAKES_DATASET or _new_kind(record) == "dataset":
         kinds = ("dataset", *kinds)
     keys = [_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds]
@@ -145,7 +150,7 @@ def _object_key(name: str, object_id: object) -> str | None:
     """``view:12`` for an id name like ``dataview_id`` and its value."""
     if not name.endswith("_id") or not str(object_id).isdigit():
         return None
-    kind = name.removesuffix("_id")
+    kind = name.removesuffix("_id").rpartition("_")[2]
     return f"{_KIND_ALIASES.get(kind, kind)}:{object_id}"
 
 

@@ -373,6 +373,8 @@ def compensation(
         ]
         if created:
             return list(reversed(created)), None
+        if any(o.get("kind") == "dataset" for o in outcome.meta.get("opens") or []):
+            return [], "It added to a dataset that already existed; rows cannot be taken out again."
         return [], "It made nothing the trash can take back."
     if strategy == _MANUAL:
         target = command_by_id(undo["command"]) or {}

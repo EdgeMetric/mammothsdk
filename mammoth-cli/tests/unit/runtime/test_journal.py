@@ -122,6 +122,15 @@ def test_a_write_that_made_nothing_for_the_trash_says_so() -> None:
     assert lines == [] and reason is not None
 
 
+def test_an_append_is_not_undone_by_trashing_its_target() -> None:
+    opens = [{"kind": "dataset", "id": 49, "created": False}]
+    lines, reason = journal.compensation(
+        _request("file.upload"), _success(opens=opens), journal._Before()
+    )
+    assert lines == []
+    assert reason is not None and "rows cannot be taken out" in reason
+
+
 def test_an_external_effect_gives_its_own_reason() -> None:
     _, reason = journal.compensation(
         _request("view.export.postgres", view_id=3), _success(), journal._Before()
