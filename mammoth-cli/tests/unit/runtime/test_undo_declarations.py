@@ -1,4 +1,4 @@
-"""Undo declarations that claimed a reversing command did not exist (#318, second review)."""
+"""Undo declarations that claimed a reversing command did not exist (#311)."""
 
 from __future__ import annotations
 

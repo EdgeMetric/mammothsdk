@@ -73,7 +73,7 @@ def test_a_malformed_operator_is_refused() -> None:
 def test_other_dollar_keys_are_data() -> None:
     schema = {"$schema": "draft-07", "$ref": "#/a", "n": "{{steps.upload.data.name}}"}
     assert resolve(schema, SCOPE) == {**schema, "n": "s"}
-    # An operator key beside others is a mistake, not data (second review of #318).
+    # An operator key beside others is a mistake, not data. #310
     with pytest.raises(BindingError, match="only key"):
         resolve({"$first": "{{steps.empty.data}}", "extra": 1}, SCOPE)
 

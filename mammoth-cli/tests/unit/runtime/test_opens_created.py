@@ -1,4 +1,4 @@
-"""``meta.opens`` and the undo built from it: defects a second review found (#318)."""
+"""``meta.opens`` and the undo built from it (#311)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""``mammoth run``: references to skipped lines and operator objects (#318, second review)."""
+"""``mammoth run``: references to skipped lines and operator objects (#310)."""
 
 from __future__ import annotations
 

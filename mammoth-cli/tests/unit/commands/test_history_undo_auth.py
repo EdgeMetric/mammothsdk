@@ -1,4 +1,4 @@
-"""``history undo``: the account an undo runs as (#318, second review)."""
+"""``history undo``: the account an undo runs as (#311)."""
 
 from __future__ import annotations
 
