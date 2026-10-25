@@ -92,6 +92,21 @@ class TestConditionalReads:
         await shared.aclose()
 
 
+class TestTokenProvider:
+    async def test_a_body_kept_for_one_token_is_not_offered_to_another(self) -> None:
+        server = _Server()
+        shared = httpx.AsyncClient(transport=httpx.MockTransport(server))
+        tokens = iter(["mm_alice", "mm_bob", "mm_alice"])
+        client = MammothClient(
+            token_provider=lambda: next(tokens), workspace_id=7, http_client=shared
+        )
+        for _ in range(3):
+            await client.request_json("GET", "/projects")
+        assert "if-none-match" not in server.seen[1].headers
+        assert server.seen[2].headers["if-none-match"] == 'W/"v1"'
+        await shared.aclose()
+
+
 def test_memory_cache_drops_the_least_recently_used() -> None:
     cache = MemoryETagCache(max_entries=2)
     for key in ("a", "b"):

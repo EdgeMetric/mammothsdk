@@ -1023,6 +1023,11 @@ class MammothClient:
         if method != "GET" or any(name.lower() == "if-none-match" for name in headers):
             return None, None
         key = str(httpx.URL(url, params=params)) if params else url
+        if self._token_provider is not None:
+            # The credential changes between requests (one client, many users): a body kept
+            # for one token is never offered to another.
+            token = next((v for n, v in headers.items() if n.lower() == "authorization"), "")
+            key = f"{hashlib.sha256(token.encode()).hexdigest()[:16]}|{key}"
         cached = cache.get(key)
         if cached is not None:
             headers["If-None-Match"] = cached.etag

@@ -22,6 +22,7 @@ import re
 import threading
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 from types import TracebackType
 from typing import Any, NoReturn
 
@@ -309,8 +310,10 @@ class SdkMammothService:
         if _loop_running_here():
             # An async caller (the agent eval harness) already runs a loop on this
             # thread, and a thread runs one loop at a time: run ours on a helper.
+            # The helper runs in a copy of this context, so it sees this command's trace
+            # and embedded call as a pool thread otherwise would not.
             with ThreadPoolExecutor(max_workers=1) as helper:
-                return helper.submit(self._run_on_own_loop, work).result()
+                return helper.submit(copy_context().run, self._run_on_own_loop, work).result()
         return self._run_on_own_loop(work)
 
     def _tag_invocation(self) -> None:

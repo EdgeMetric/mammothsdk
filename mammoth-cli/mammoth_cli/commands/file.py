@@ -283,7 +283,7 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         if target is not None and data:
             # The upload job ends when the staging dataset is made; the rows reach the
             # target after that, while it reads 'processing' (found by recipe run, live).
-            _wait_until_ready(service, target)
+            target_ready = _wait_until_ready(service, target)
         refused = _refused_files(outcome.get("errors"))
         if outcome.get("errors") and not data:
             raise _upload_refused_error(outcome["errors"], refused)
@@ -303,9 +303,20 @@ def file_upload(invocation: Invocation) -> HandlerResult:
                     rows_after=rows_after,
                     rows_added=rows_after - rows_before,
                 )
+        warnings: list[str] = []
+        if target is not None and data and not target_ready:
+            # The rows may still be on their way: rows_added is what had landed by now.
+            result["append_pending"] = True
+            warnings.append(
+                f"Dataset {target} was still processing after {_APPEND_WAIT_S:.0f} s, so the "
+                f"appended rows may not be in it yet. Check with 'mammoth dataset get {target}' "
+                "before using it."
+            )
         if refused:
-            result["warnings"] = [_upload_refused_message(outcome["errors"], refused)]
+            warnings.append(_upload_refused_message(outcome["errors"], refused))
             result["refused_files"] = refused
+        if warnings:
+            result["warnings"] = warnings
         _mark_partial_upload(result, bool(refused))
         project_id = resolved_project(invocation)
         previewed = 0
@@ -456,18 +467,22 @@ def _dataset_rows(service: Any, dataset_id: int) -> int | None:
     return rows if isinstance(rows, int) else None
 
 
-def _wait_until_ready(service: Any, dataset_id: int) -> None:
+def _wait_until_ready(service: Any, dataset_id: int) -> bool:
     """Wait (up to ``_APPEND_WAIT_S``) until the dataset reads ``ready`` or failed.
 
     Args:
         service: The SDK service.
         dataset_id: The dataset an append writes into.
+
+    Returns:
+        True when the dataset settled (ready or failed), False when the wait ran out.
     """
     for delay in poll_delays(_APPEND_WAIT_S, _APPEND_RETRY_S):
         status = _dataset_status(service, dataset_id)[0]
         if status == "ready" or status in _UPLOAD_FAILED_STATUSES:
-            return
+            return True
         time.sleep(delay)
+    return False
 
 
 def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:

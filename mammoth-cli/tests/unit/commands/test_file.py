@@ -658,3 +658,13 @@ def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(document))
     return doc
+
+
+def test_an_append_wait_that_runs_out_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(file_cmd, "_APPEND_WAIT_S", 0.3)
+    monkeypatch.setattr(file_cmd.time, "sleep", lambda _s: None)
+    status = ["processing"]
+    monkeypatch.setattr(file_cmd, "_dataset_status", lambda _s, _d: (status[0], None, None))
+    assert file_cmd._wait_until_ready(object(), 5) is False
+    status[0] = "ready"
+    assert file_cmd._wait_until_ready(object(), 5) is True

@@ -314,3 +314,38 @@ Each step ships alone, keeps the envelope contract, and passes the full CLI suit
   `test_startup_cost.py` keeps guarding it.
 - Risk: step 1 touches the path every command takes. The guard is the full non-live suite plus the
   `-m subprocess` tests on both Python 3.12 and 3.14, and a live koyal run of the epic's recipes.
+
+## Review follow-ups (journal, undo, resume)
+
+An independent review of the journal, `history undo`/`resume` and `run` bindings found these
+rules; each has a test.
+
+- **Created means new.** `meta.opens` marks an object `created` only when the call does not name
+  it: an id in the input (`append_to_ds_id`, `target_ds_id`, `source_view_id`) or an argument is
+  an existing object, and a command that edits its target never makes the view or dashboard in
+  its result. An append is therefore not `trash_created`; its undo says rows cannot be taken out.
+- **Uncertain outcomes.** The `end` record carries `outcome_unknown` for an interrupt, a timeout
+  or a lost connection after the write was sent (error code, or `details.operation_state` of
+  `outcome_unknown`/`running`). Resume treats it like a missing `end`: it refuses
+  (`resume_outcome_unknown`) until `from_line` names where to start, and that choice settles the
+  earlier unknowns (an `ack` record). A resume is a `resume` record linking its group to the run
+  it resumed, so repeated resumes, `history show` and `history undo` use one group. A line that
+  exited partial in a run that goes past partial lines is finished.
+- **Run records** (`plan`, `step`, `item`, `resume`, `ack`) live in `journal/runs/<group>.jsonl`,
+  not in the rotating file, and are pruned after 60 days. Every append holds `journal.lock`
+  (`flock`, `msvcrt` on Windows) and is one `write`. Secrets are replaced before writing, by the
+  same key rules the output uses; a line that holds or reads one is refused on resume
+  (`resume_secret_needed`) and must be run by hand. The run log redacts the whole `--input`; the
+  journal keeps the rest of the input so a resume can work.
+- **Pipeline undo is guarded.** A pipeline edit's `end` record stores a fingerprint of the view's
+  tasks right after it (type and parameters, not ids). The undo refuses
+  (`view_changed_since_edit`) when the view differs, because applying the earlier version also
+  drops later edits; `--input '{"force": true}'` overrides. The check costs one read on each side
+  and is skipped when the read fails. An undo records each line it finishes and holds a claim
+  (`undo-<inv>.lock`) so two undos of one write cannot run together.
+- **Declined prompts and usage errors** are journaled (the journal and, for a pipeline edit, the
+  version read run before the handler's checks) and then marked `nothing_sent`, which
+  `history` hides. The reads are the cost; they stay because the handler cannot be asked early.
+- **Not changed:** the SDK keeps its ETag bodies per client, keyed by URL and, with a
+  `token_provider`, by the token sent; the CLI's disk store is already per credential.
+  `view data profile` workers already run in a copy of the caller's context.
