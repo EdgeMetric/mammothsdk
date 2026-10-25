@@ -135,150 +135,241 @@ _DESTINATIONS = {
 #: Exact reasons for commands whose verb says too little.
 _PLATFORM = "Changes billing or platform records on the server; the earlier values are not kept."
 SPECIFIC_REASONS = {
-    "agent.access.grant.give": "Gives an agent access to data; the only way to take the grant"
-    " back is `agent access grant revoke`, which is final.",
-    "agent.access.request.resolve": "Resolves an access request and tells the requester; a"
-    " resolved request cannot be reopened.",
+    "agent.access.grant.give": (
+        "Gives an agent access to data; the only way to take the grant"
+        " back is `agent access grant revoke`, which is final."
+    ),
+    "agent.access.request.resolve": (
+        "Resolves an access request and tells the requester; a"
+        " resolved request cannot be reopened."
+    ),
     "agent.session.delete": "Deletes the chat session and its messages for good.",
-    "auth.login": "Signs in on this machine; sign out with `mammoth auth logout`, which the"
-    " journal does not run for you.",
+    "auth.login": (
+        "Signs in on this machine; sign out with `mammoth auth logout`, which the"
+        " journal does not run for you."
+    ),
     "auth.logout": "Signs out on this machine; sign in again with `mammoth auth login`.",
-    "billing.invoice.charge": "Charges the customer's card; the payment provider has taken the"
-    " money and a refund is a separate, manual step.",
-    "billing.stripe.cancel": "Cancels the Stripe subscription; whether it can be resumed depends"
-    " on the billing period, so the journal does not try.",
-    "billing.stripe.create": "Creates the Stripe customer and subscription; the provider keeps"
-    " them, and Mammoth has no command that deletes them.",
-    "billing.stripe.end-trial": "Ends the free trial now and starts billing; a trial cannot be"
-    " started again.",
-    "billing.stripe.held-change.cancel": "Cancels a plan change that was waiting to apply; the"
-    " change cannot be queued again from the CLI.",
-    "billing.stripe.payment-method.set-default": "Changes the default card; the earlier default"
-    " is not recorded.",
-    "billing.stripe.resume": "Resumes the subscription and bills from now on; a payment taken"
-    " is not reversed here.",
+    "billing.invoice.charge": (
+        "Charges the customer's card; the payment provider has taken the"
+        " money and a refund is a separate, manual step."
+    ),
+    "billing.stripe.cancel": (
+        "Cancels the Stripe subscription; whether it can be resumed depends"
+        " on the billing period, so the journal does not try."
+    ),
+    "billing.stripe.create": (
+        "Creates the Stripe customer and subscription; the provider keeps"
+        " them, and Mammoth has no command that deletes them."
+    ),
+    "billing.stripe.end-trial": (
+        "Ends the free trial now and starts billing; a trial cannot be" " started again."
+    ),
+    "billing.stripe.held-change.cancel": (
+        "Cancels a plan change that was waiting to apply; the"
+        " change cannot be queued again from the CLI."
+    ),
+    "billing.stripe.payment-method.set-default": (
+        "Changes the default card; the earlier default" " is not recorded."
+    ),
+    "billing.stripe.resume": (
+        "Resumes the subscription and bills from now on; a payment taken" " is not reversed here."
+    ),
     "billing.stripe.retry-payment": "Charges the card again; a payment taken is not reversed here.",
-    "billing.stripe.storage.set": "Changes the paid storage; the earlier amount is not recorded"
-    " and a charge already made stays.",
-    "billing.stripe.sync": "Pulls the subscription state from Stripe into Mammoth; the earlier"
-    " synced state is not kept.",
-    "billing.subscription.update": "Changes the subscription and what it costs; the earlier terms"
-    " are not recorded and a charge already made stays.",
-    "agent.turn.rate": "Records a rating on the turn; the earlier rating is overwritten and not"
-    " kept.",
-    "connector.ai.submit-credentials": "Hands credentials to the connector assistant's draft; the"
-    " draft keeps them and the earlier ones are not recorded.",
-    "connector.ai.submit-column-selection": "Records the column choice on the connector assistant's"
-    " draft; the earlier choice is not kept.",
+    "billing.stripe.storage.set": (
+        "Changes the paid storage; the earlier amount is not recorded"
+        " and a charge already made stays."
+    ),
+    "billing.stripe.sync": (
+        "Pulls the subscription state from Stripe into Mammoth; the earlier"
+        " synced state is not kept."
+    ),
+    "billing.subscription.update": (
+        "Changes the subscription and what it costs; the earlier terms"
+        " are not recorded and a charge already made stays."
+    ),
+    "agent.turn.rate": (
+        "Records a rating on the turn; the earlier rating is overwritten and not" " kept."
+    ),
+    "connector.ai.submit-credentials": (
+        "Hands credentials to the connector assistant's draft; the"
+        " draft keeps them and the earlier ones are not recorded."
+    ),
+    "connector.ai.submit-column-selection": (
+        "Records the column choice on the connector assistant's"
+        " draft; the earlier choice is not kept."
+    ),
     "connector.draft.fill": "Fills the draft's fields in place; the earlier values are not kept.",
     "connector.draft.open": "Opens the draft for editing; closing it is not a recorded step.",
-    "context.project.clear": "Clears the project this CLI uses by default (local state); set it"
-    " again with `mammoth context project use`.",
-    "context.project.use": "Sets the project this CLI uses by default (local state); the earlier"
-    " one is not kept, so set it back with `mammoth context project use`.",
-    "dashboard.cancel-generation": "Stops the dashboard generation job; a stopped job cannot be"
-    " resumed.",
-    "completion.install": "Installs the shell completion script; delete the file it names to"
-    " remove it.",
-    "dashboard.action": "Runs a dashboard action that reaches outside Mammoth (a message or a"
-    " webhook); what it sent cannot be recalled.",
-    "dashboard.canvas.restore": "Replaces the dashboard canvas with a saved one; the canvas it"
-    " replaced is not kept.",
-    "dashboard.embed.key.rotate": "Rotates the embed key; the old key is gone and embeds that"
-    " use it stop working.",
-    "dashboard.embed.secret.rotate": "Rotates the embed secret; the old secret is gone and embeds"
-    " signed with it stop working.",
-    "dashboard.engagement.remind": "Emails a reminder to the dashboard's audience; a sent email"
-    " cannot be recalled.",
-    "dashboard.import-workbook": "Imports a workbook as a new dashboard and datasets; the"
-    " objects are listed in its result, and the journal does not track them.",
+    "context.project.clear": (
+        "Clears the project this CLI uses by default (local state); set it"
+        " again with `mammoth context project use`."
+    ),
+    "context.project.use": (
+        "Sets the project this CLI uses by default (local state); the earlier"
+        " one is not kept, so set it back with `mammoth context project use`."
+    ),
+    "dashboard.cancel-generation": (
+        "Stops the dashboard generation job; a stopped job cannot be" " resumed."
+    ),
+    "completion.install": (
+        "Installs the shell completion script; delete the file it names to" " remove it."
+    ),
+    "dashboard.action": (
+        "Runs a dashboard action that reaches outside Mammoth (a message or a"
+        " webhook); what it sent cannot be recalled."
+    ),
+    "dashboard.canvas.restore": (
+        "Replaces the dashboard canvas with a saved one; the canvas it" " replaced is not kept."
+    ),
+    "dashboard.embed.key.rotate": (
+        "Rotates the embed key; the old key is gone and embeds that" " use it stop working."
+    ),
+    "dashboard.embed.secret.rotate": (
+        "Rotates the embed secret; the old secret is gone and embeds"
+        " signed with it stop working."
+    ),
+    "dashboard.engagement.remind": (
+        "Emails a reminder to the dashboard's audience; a sent email" " cannot be recalled."
+    ),
+    "dashboard.import-workbook": (
+        "Imports a workbook as a new dashboard and datasets; the"
+        " objects are listed in its result, and the journal does not track them."
+    ),
     "dashboard.tags.delete": "Deletes the tag for good; which dashboards carried it is not kept.",
-    "dashboard.tags.merge": "Merges the tag into another; which dashboards carried it is not"
-    " kept.",
-    "dashboard.template.thumbnail.clear": "Removes the template's thumbnail; the image is not"
-    " kept.",
-    "dashboard.templates.use": "Builds a dashboard from a template as a job; the objects it made"
-    " are in its result, and the journal does not track them.",
-    "dataset.broken-rows.resolve": "Fixes or drops the dataset's broken rows; the rows as they"
-    " were are not kept.",
-    "dataset.file-settings.undo": "Is itself the undo of a file-settings update; to redo it,"
-    " run `dataset file-settings update` again.",
+    "dashboard.tags.merge": (
+        "Merges the tag into another; which dashboards carried it is not" " kept."
+    ),
+    "dashboard.template.thumbnail.clear": (
+        "Removes the template's thumbnail; the image is not" " kept."
+    ),
+    "dashboard.templates.use": (
+        "Builds a dashboard from a template as a job; the objects it made"
+        " are in its result, and the journal does not track them."
+    ),
+    "dataset.broken-rows.resolve": (
+        "Fixes or drops the dataset's broken rows; the rows as they" " were are not kept."
+    ),
+    "dataset.file-settings.undo": (
+        "Is itself the undo of a file-settings update; to redo it,"
+        " run `dataset file-settings update` again."
+    ),
     "dataset.tool-claim.redeem": "Redeems a one-time tool claim; a claim cannot be redeemed twice.",
-    "file.set-password": "Sets the password used to open an encrypted file; the earlier password"
-    " is not kept.",
-    "folder.trash": "Moves the folder to the trash, but no `folder restore` command exists;"
-    " restore it from the Trash page in the web app.",
-    "history.resume": "Re-runs the steps that had not finished; undo each step it ran with"
-    " `mammoth history undo`.",
+    "file.set-password": (
+        "Sets the password used to open an encrypted file; the earlier password" " is not kept."
+    ),
+    "folder.trash": (
+        "Moves the folder to the trash, but no `folder restore` command exists;"
+        " restore it from the Trash page in the web app."
+    ),
+    "history.resume": (
+        "Re-runs the steps that had not finished; undo each step it ran with"
+        " `mammoth history undo`."
+    ),
     "history.undo": "Reverses an earlier write; to redo that write, run its command again.",
-    "recipe.run": "Runs the recipe's commands; each of them is journaled and undone by its own"
-    " entry, not as one step.",
-    "skill.agents-md.install": "Writes the Mammoth block into the AGENTS.md file; a block already"
-    " there is replaced and not kept, so delete the block by hand to remove it.",
-    "view.explore-panel.add-to-dashboard": "Puts a copy of the explore panel on a dashboard; the"
-    " journal does not know the figure it made, so remove it from the dashboard.",
-    "support.billing.cancel-subscription": "Cancels the customer's subscription at the billing"
-    " provider; it cannot be reinstated from the CLI.",
-    "support.billing.change-plan": "Moves the workspace to another plan and bills for it; the"
-    " earlier plan is not recorded and a charge already made stays.",
+    "recipe.run": (
+        "Runs the recipe's commands; each of them is journaled and undone by its own"
+        " entry, not as one step."
+    ),
+    "skill.agents-md.install": (
+        "Writes the Mammoth block into the AGENTS.md file; a block already"
+        " there is replaced and not kept, so delete the block by hand to remove it."
+    ),
+    "view.explore-panel.add-to-dashboard": (
+        "Puts a copy of the explore panel on a dashboard; the"
+        " journal does not know the figure it made, so remove it from the dashboard."
+    ),
+    "support.billing.cancel-subscription": (
+        "Cancels the customer's subscription at the billing"
+        " provider; it cannot be reinstated from the CLI."
+    ),
+    "support.billing.change-plan": (
+        "Moves the workspace to another plan and bills for it; the"
+        " earlier plan is not recorded and a charge already made stays."
+    ),
     "support.billing.end-trial": "Ends the workspace's trial now and starts billing.",
-    "support.billing.refund": "The payment provider pays the refund out; Mammoth cannot take it"
-    " back.",
-    "support.billing.retry-payment": "Charges the card again; a payment taken is not reversed"
-    " here.",
-    "support.billing.start-trial": "Starts the workspace's trial; the trial clock cannot be"
-    " rewound.",
+    "support.billing.refund": (
+        "The payment provider pays the refund out; Mammoth cannot take it" " back."
+    ),
+    "support.billing.retry-payment": (
+        "Charges the card again; a payment taken is not reversed" " here."
+    ),
+    "support.billing.start-trial": (
+        "Starts the workspace's trial; the trial clock cannot be" " rewound."
+    ),
     "support.deal.opt-in": "Opts the deal in; the earlier opt-in state is not recorded.",
-    "support.ownership.transfer": "Transfers ownership of the workspace; the previous owner is"
-    " not recorded here, so transfer it back by hand.",
-    "support.partner.charge-invoices": "Charges the partner's open invoices; payments taken are"
-    " not reversed here.",
-    "support.partner.send-payment-link": "Emails the partner a payment link; a sent email cannot be"
-    " recalled.",
+    "support.ownership.transfer": (
+        "Transfers ownership of the workspace; the previous owner is"
+        " not recorded here, so transfer it back by hand."
+    ),
+    "support.partner.charge-invoices": (
+        "Charges the partner's open invoices; payments taken are" " not reversed here."
+    ),
+    "support.partner.send-payment-link": (
+        "Emails the partner a payment link; a sent email cannot be" " recalled."
+    ),
     "support.template.discard": "Discards the template draft for good; no copy is kept.",
-    "support.template.import": "Imports a template into the catalogue; nothing in the journal"
-    " names what it added.",
-    "support.template.retire": "Retires the template from the catalogue; the CLI has no command"
-    " that un-retires it.",
+    "support.template.import": (
+        "Imports a template into the catalogue; nothing in the journal" " names what it added."
+    ),
+    "support.template.retire": (
+        "Retires the template from the catalogue; the CLI has no command" " that un-retires it."
+    ),
     "support.user.register": "Registers a user account; Mammoth has no command that deletes one.",
-    "support.workspace.chargebee-cancelled": "Marks the workspace's Chargebee subscription as"
-    " cancelled; the earlier billing state is not recorded.",
+    "support.workspace.chargebee-cancelled": (
+        "Marks the workspace's Chargebee subscription as"
+        " cancelled; the earlier billing state is not recorded."
+    ),
     "support.workspace.create": "Creates a workspace as a job; the new workspace is in its result.",
-    "support.workspace.invite.cancel": "Cancels an invite; a cancelled invite is dead, so send a"
-    " new one.",
+    "support.workspace.invite.cancel": (
+        "Cancels an invite; a cancelled invite is dead, so send a" " new one."
+    ),
     "support.workspace.invite.resend": "Emails the invite again; a sent email cannot be recalled.",
-    "support.workspace.user.transfer": "Moves the user's ownership to another account; the earlier"
-    " owner is not recorded here.",
+    "support.workspace.user.transfer": (
+        "Moves the user's ownership to another account; the earlier" " owner is not recorded here."
+    ),
     "token.create": "Issues a token; the secret is shown once, and the journal does not hold it.",
     "token.revoke": "A revoked token stays revoked; issue a new one with `mammoth token create`.",
-    "upgrade": "Replaces the installed CLI; install the earlier version again with the installer"
-    " or pip.",
+    "upgrade": (
+        "Replaces the installed CLI; install the earlier version again with the installer"
+        " or pip."
+    ),
     "user.avatar.delete": "Deletes the profile picture; Mammoth keeps no copy of the image.",
     "user.delete-account": "Deletes the user account for good; Mammoth keeps no copy.",
     "view.active-user.mark": "Records that the user is looking at the view; it expires by itself.",
     "view.checkpoint.delete": "Deletes the checkpoint; the saved pipeline state is not kept.",
-    "view.conditional-format.delete-all": "Deletes every conditional format on the view; their"
-    " rules are not kept.",
-    "view.conditional-format.replace": "Replaces the view's conditional formats; the earlier"
-    " rules are not kept.",
-    "view.draft.command": "Sends a command to the view's draft; the draft's earlier steps are"
-    " not recorded here.",
+    "view.conditional-format.delete-all": (
+        "Deletes every conditional format on the view; their" " rules are not kept."
+    ),
+    "view.conditional-format.replace": (
+        "Replaces the view's conditional formats; the earlier" " rules are not kept."
+    ),
+    "view.draft.command": (
+        "Sends a command to the view's draft; the draft's earlier steps are" " not recorded here."
+    ),
     "view.draft.discard": "Discards the draft's steps for good; they are not kept.",
-    "view.task.delete": "Deletes a pipeline step; its settings are not kept. Take a checkpoint"
-    " (`view checkpoint create`) before editing a pipeline.",
+    "view.task.delete": (
+        "Deletes a pipeline step; its settings are not kept. Take a checkpoint"
+        " (`view checkpoint create`) before editing a pipeline."
+    ),
     "view.version.delete": "Deletes a pipeline version; the version is not kept.",
     "workflow.cleanup": "Removes the workflow's leftover files and runs for good.",
-    "workflow.save-undo": "Is itself the undo of a workflow save; to redo it, run `workflow"
-    " save` again.",
-    "workspace.accept-invite": "Accepts the invite and joins the workspace; leaving is a"
-    " separate step the journal does not run.",
+    "workflow.save-undo": (
+        "Is itself the undo of a workflow save; to redo it, run `workflow" " save` again."
+    ),
+    "workspace.accept-invite": (
+        "Accepts the invite and joins the workspace; leaving is a"
+        " separate step the journal does not run."
+    ),
     "workspace.invite.resend": "Emails the invite again; a sent email cannot be recalled.",
-    "workspace.invite.revoke": "A revoked invite is dead; send a new invite with `workspace user"
-    " add`.",
-    "workspace.oauth-client.revoke-grant": "Revokes an OAuth grant; the app must be authorised"
-    " again by its user.",
-    "workspace.reactivate": "Reactivates a deactivated workspace; the earlier state is not"
-    " recorded.",
+    "workspace.invite.revoke": (
+        "A revoked invite is dead; send a new invite with `workspace user" " add`."
+    ),
+    "workspace.oauth-client.revoke-grant": (
+        "Revokes an OAuth grant; the app must be authorised" " again by its user."
+    ),
+    "workspace.reactivate": (
+        "Reactivates a deactivated workspace; the earlier state is not" " recorded."
+    ),
 }
 
 
