@@ -105,6 +105,7 @@ commands:
   undo:
     strategy: manual
     command: dataset.file-settings.update
+    note: 'Run it with the settings you want back (--input); the undo did not keep the ones it replaced.'
   readback:
     command: dataset.file-settings.get
     ids:
@@ -342,6 +343,7 @@ commands:
   undo:
     strategy: manual
     command: dataset.definition.add
+    note: 'Run it with the term and definition that were removed (--input); the removal did not keep them.'
   mutation_class: benign_mutation
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null

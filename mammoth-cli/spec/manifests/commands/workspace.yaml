@@ -233,6 +233,7 @@ commands:
   undo:
     strategy: manual
     command: workspace.user.add
+    note: 'Run it with --input of the removed user''s email in email_ids; the removal did not keep it.'
   readback:
     command: workspace.user.list
     ids: {}

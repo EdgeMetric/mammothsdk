@@ -4,6 +4,7 @@ commands:
   undo:
     strategy: manual
     command: skill.uninstall
+    note: 'Run it with the same agents and scope. The install may have replaced files, which the uninstall does not bring back, so the journal does not run it for you.'
   readback:
     command: skill.list
     ids: {}
@@ -94,6 +95,7 @@ commands:
   undo:
     strategy: manual
     command: skill.install
+    note: 'Run it with the same agents and scope; it writes the bundled skill again.'
   readback:
     command: skill.list
     ids: {}

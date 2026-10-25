@@ -68,6 +68,7 @@ commands:
   undo:
     strategy: manual
     command: collection.dashboards.remove
+    note: 'Run it once per dashboard added (collection dashboards remove COLLECTION_ID DASHBOARD_ID): the add takes a list of dashboards and the removal one, so the journal cannot reuse its arguments.'
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get
@@ -83,6 +84,7 @@ commands:
   undo:
     strategy: manual
     command: collection.dashboards.add
+    note: 'Run it with --input ''{"dashboard_ids": [DASHBOARD_ID]}'': the removal names the dashboard as an argument and the add takes a list, so the journal cannot reuse its arguments.'
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: collection.get

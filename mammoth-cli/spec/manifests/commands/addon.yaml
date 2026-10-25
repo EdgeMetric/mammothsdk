@@ -4,6 +4,7 @@ commands:
   undo:
     strategy: manual
     command: addon.connector.remove
+    note: 'Run it with the same connector_id or connector_ids, --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Adds paid connector add-ons to the workspace and changes its bill. Pass connector_id
     or connector_ids. Needs --yes and --confirm TARGET (the refusal prints the exact target).
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
@@ -12,6 +13,7 @@ commands:
   undo:
     strategy: manual
     command: addon.connector.add
+    note: 'Run it with the same connector_id or connector_ids, --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Removes paid connector add-ons from the workspace; connections that use them stop
     working. Pass connector_id or connector_ids. Needs --yes and --confirm TARGET (the refusal prints
     the exact target).
@@ -21,6 +23,7 @@ commands:
   undo:
     strategy: manual
     command: addon.storage.remove
+    note: 'Run it with removal_storage_gb set to the additional_storage_gb that was added, --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Adds paid storage to the workspace and changes its bill. Needs --yes and --confirm
     TARGET (the refusal prints the exact target).
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
@@ -29,6 +32,7 @@ commands:
   undo:
     strategy: manual
     command: addon.storage.add
+    note: 'Run it with additional_storage_gb set to the removal_storage_gb that was removed, --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Removes paid storage from the workspace; it fails or data becomes read-only if usage
     exceeds what is left. Check `workspace storage-breakdown` first. Needs --yes and --confirm TARGET
     (the refusal prints the exact target).
@@ -38,6 +42,7 @@ commands:
   undo:
     strategy: manual
     command: addon.user.remove
+    note: 'Run it with the same user_count (the removal requires it), --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Adds paid user seats to the workspace and changes its bill. Needs --yes and --confirm
     TARGET (the refusal prints the exact target).
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill
@@ -46,6 +51,7 @@ commands:
   undo:
     strategy: manual
     command: addon.user.add
+    note: 'Run it with the same user_count, --yes and --confirm WORKSPACE_ID. It changes the workspace''s bill, so it is not run for you.'
   known_restrictions: Removes paid user seats; fails if more users than seats would remain. Needs --yes
     and --confirm TARGET (the refusal prints the exact target).
   no_readback: the server has no route that lists a workspace's add-ons; the add-on shows on the bill

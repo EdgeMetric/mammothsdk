@@ -41,7 +41,9 @@ _GONE_VERBS = frozenset({"trash", "delete"})
 _RESULT_KINDS = ("view", "dashboard")
 #: Writes that make whole new datasets and name them as ``dataset_id`` (an upload of
 #: several sheets also as ``dataset_ids``) in their result.
-MAKES_DATASET = frozenset({"view.export.dataset", "file.upload"})
+MAKES_DATASET = frozenset(
+    {"view.export.dataset", "file.upload", "file.upload-folder", "dataset.create-from-pdf"}
+)
 #: Writes that list every view they made as ``view_ids`` (their readback names the first).
 MAKES_VIEWS = frozenset({"view.variants.create"})
 #: Writes that return the object made by an earlier call, with no job, when it exists: a
@@ -56,7 +58,7 @@ def with_opens(invocation: Invocation, data: Any, meta: dict[str, Any]) -> dict[
     record = command_by_id(invocation.command_id) or {}
     if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
         return meta
-    result = data if isinstance(data, dict) else {}
+    result = _as_result(invocation, data)
     if invocation.command_id.rsplit(".", 1)[-1] in _GONE_VERBS or _changed_nothing(result):
         return meta
     targets = _targets(invocation, record, result)
@@ -75,6 +77,28 @@ def with_opens(invocation: Invocation, data: Any, meta: dict[str, Any]) -> dict[
         for kind, object_id, created in targets
     ]
     return {**meta, "opens": opens}
+
+
+def _as_result(invocation: Invocation, data: Any) -> dict[str, Any]:
+    """The command's result as a mapping.
+
+    ``file upload-folder`` returns the dataset ids it made as a bare id or list of ids
+    (the SDK's own return); they are read as ``dataset_ids``.
+
+    Args:
+        invocation: The call.
+        data: What the handler returned.
+
+    Returns:
+        The result when it is a mapping, the ids of a command that makes datasets as
+        ``{"dataset_ids": [...]}``, else an empty mapping.
+    """
+    if isinstance(data, dict):
+        return data
+    if invocation.command_id in MAKES_DATASET:
+        ids = data if isinstance(data, list) else [data]
+        return {"dataset_ids": [item for item in ids if isinstance(item, int)]}
+    return {}
 
 
 def _changed_nothing(result: dict[str, Any]) -> bool:

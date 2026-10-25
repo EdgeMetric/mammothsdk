@@ -16,6 +16,7 @@ commands:
   undo:
     strategy: manual
     command: user.avatar.delete
+    note: 'Run it with no arguments; it removes the picture the upload set, and the picture before it was not kept.'
   readback:
     command: user.get
     ids: {}

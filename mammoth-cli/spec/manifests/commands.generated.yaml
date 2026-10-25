@@ -15646,8 +15646,7 @@ commands:
   mutation_class: benign_mutation
   edits_target: false
   undo:
-    strategy: irreversible
-    reason: Creates a new dataset, and no delete command exists for it; remove it in the web app.
+    strategy: trash_created
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -17159,8 +17158,7 @@ commands:
   mutation_class: benign_mutation
   edits_target: false
   undo:
-    strategy: irreversible
-    reason: Creates a new file, and no delete command exists for it; remove it in the web app.
+    strategy: trash_created
   confirmation: none
   wait_policy: start_or_wait
   pagination_policy: none

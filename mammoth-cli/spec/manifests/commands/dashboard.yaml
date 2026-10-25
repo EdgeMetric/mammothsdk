@@ -261,6 +261,7 @@ commands:
   undo:
     strategy: manual
     command: dashboard.filter.remove
+    note: 'Run it with the same DASHBOARD_ID and --input ''{"field": FIELD}'': the removal takes no control, label or default, so the add''s input cannot be reused as it is.'
   command_path: dashboard filter add
   disposition: command
   alias_of: null
@@ -360,6 +361,7 @@ commands:
   undo:
     strategy: manual
     command: dashboard.filter.add
+    note: 'Run it with the same DASHBOARD_ID and field, and name the control, label and default again: the removal did not keep them.'
   command_path: dashboard filter remove
   disposition: command
   alias_of: null
@@ -557,6 +559,7 @@ commands:
   undo:
     strategy: manual
     command: dashboard.qa.session.delete
+    note: 'Run it with the id of the session the fork made (in its result), not the session that was forked.'
   readback:
     command: dashboard.qa.session.get
     ids:
@@ -1134,6 +1137,7 @@ commands:
   undo:
     strategy: manual
     command: dashboard.own-data.dismiss
+    note: 'Run it with the same DASHBOARD_ID. Dismissing is a decision about the dashboard''s own data, so the journal does not take it for you.'
   readback:
     command: dashboard.own-data.status
     ids:

@@ -18,6 +18,10 @@ commands:
 - command_id: snippet.dependencies
   output_schema: openapi
 - command_id: snippet.duplicate
+  undo:
+    strategy: manual
+    command: snippet.delete
+    note: 'Run it with the id of the copy (in its result), not the snippet that was copied.'
   output_schema:
     ref: WriteResult
   readback:

@@ -32,6 +32,9 @@ commands:
 - command_id: batch.create-spec
   output_schema:
     ref: WriteResult
+  undo:
+    strategy: manual
+    command: batch.delete
   agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'''
   readback:
     command: batch.list

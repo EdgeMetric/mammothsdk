@@ -277,6 +277,10 @@ commands:
 - command_id: support.workspace.user.add
   output_schema:
     ref: WriteResult
+  undo:
+    strategy: manual
+    command: support.workspace.user.remove
+    note: 'Run it with the WORKSPACE_ID and the id of the user it added (find it with `support workspace user list WORKSPACE_ID`), --yes and --confirm WORKSPACE_ID.'
   readback:
     command: support.workspace.user.list
     ids:
@@ -287,6 +291,10 @@ commands:
 - command_id: support.workspace.user.remove
   output_schema:
     ref: WriteResult
+  undo:
+    strategy: manual
+    command: support.workspace.user.add
+    note: 'Run it with the WORKSPACE_ID and --input of the user''s email and role: the removal did not keep either, --yes and --confirm WORKSPACE_ID.'
   readback:
     command: support.workspace.user.list
     ids:
@@ -662,6 +670,7 @@ commands:
   undo:
     strategy: manual
     command: support.deal.cancel-move-to-partner
+    note: 'Run it with the same DEAL_ID. Whether a move can still be cancelled depends on its state, so the journal does not run it for you.'
   readback:
     command: support.deal.get
     ids:

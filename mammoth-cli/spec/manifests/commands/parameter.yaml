@@ -19,6 +19,10 @@ commands:
 - command_id: parameter.dependencies
   output_schema: openapi
 - command_id: parameter.duplicate
+  undo:
+    strategy: manual
+    command: parameter.delete
+    note: 'Run it with the id of the copy (in its result), not the parameter that was copied.'
   output_schema:
     ref: WriteResult
   readback:

@@ -82,6 +82,35 @@ def test_an_inverse_takes_the_arguments_of_the_write() -> None:
     assert not bad, bad
 
 
+def test_an_irreversible_reason_does_not_deny_a_delete_that_exists() -> None:
+    """``no delete command exists for it`` is false when ``<object> delete`` is a command."""
+    ids = _ids()
+    bad = []
+    for record in _writes():
+        undo = record["undo"]
+        if undo["strategy"] != "irreversible" or "no delete command" not in undo["reason"]:
+            continue
+        prefix = record["command_id"].rpartition(".")[0]
+        siblings = [f"{prefix}.{verb}" for verb in ("delete", "remove", "trash")]
+        bad.extend((record["command_id"], name) for name in siblings if name in ids)
+    assert not bad, f"declare the delete as the undo, or trash_created: {bad}"
+
+
+def test_a_manual_undo_that_takes_the_same_arguments_says_why_it_is_not_run() -> None:
+    """Without a note the message says the undo needs an id the write made: false for these."""
+    by_id = {r["command_id"]: r for r in command_records()}
+    bad = []
+    for record in _writes():
+        undo = record["undo"]
+        if undo["strategy"] != "manual" or undo.get("note"):
+            continue
+        own = {p["name"] for p in record["positionals"]}
+        target = [p["name"] for p in by_id[undo["command"]]["positionals"]]
+        if not set(target) - own:
+            bad.append((record["command_id"], undo["command"]))
+    assert not bad, f"add an `undo.note` that states the real reason: {bad}"
+
+
 def test_a_pipeline_version_undo_is_for_a_pipeline_edit() -> None:
     declared = {r["command_id"] for r in _writes() if r["undo"]["strategy"] == "pipeline_version"}
     edits = {r["command_id"] for r in _writes() if r["mutation_class"] == "reversible_pipeline"}

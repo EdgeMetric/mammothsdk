@@ -166,6 +166,7 @@ commands:
   undo:
     strategy: manual
     command: project.memory.remove
+    note: 'Run it with the index of the memory it added (see `project memory list`); the add''s text is not what the removal takes.'
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
@@ -184,6 +185,7 @@ commands:
   undo:
     strategy: manual
     command: project.memory.add
+    note: 'Run it with the text of the memory it removed (--input); the removal did not keep it.'
   confirmation: prompt_or_yes
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
@@ -256,6 +258,7 @@ commands:
   undo:
     strategy: manual
     command: project.user.remove
+    note: 'Run it with the same user_ids, --yes and --confirm. The add''s role is not part of the removal, so the journal cannot reuse the add''s input as it is.'
   known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. role is required, and a user who is already a
     project member is refused (the backend would replace that member''s role, demoting an admin); change
     roles with project user update. Takes existing workspace users'' ids. To add someone by email who
@@ -269,6 +272,7 @@ commands:
   undo:
     strategy: manual
     command: project.user.add
+    note: 'Run it with the same user_ids and a role for each: the removal did not keep the role the users had, so the journal cannot rebuild the add.'
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.update
   output_schema:
@@ -279,6 +283,10 @@ commands:
     the person gains or loses access at once. Needs --yes.
   no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.copy
+  undo:
+    strategy: manual
+    command: project.delete
+    note: 'Run it with the id of the copy (in its result), not the project that was copied.'
   output_schema:
     ref: WriteResult
   wait_policy: always_wait
