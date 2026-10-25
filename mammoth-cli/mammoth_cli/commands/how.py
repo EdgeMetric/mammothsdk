@@ -16,11 +16,10 @@ import re
 from functools import cache
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.discovery import load_recipes, run_command
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Goal words that mean the same as words the recipes use. Added to the
 #: ``schema find`` synonyms, which also apply.

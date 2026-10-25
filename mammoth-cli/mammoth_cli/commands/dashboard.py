@@ -20,6 +20,7 @@ from mammoth.api import dashboards as dashboards_api
 from mammoth.exceptions import MammothValidationError
 from pydantic import ValidationError
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import _FIND_DATASET_SYMBOL
 from mammoth_cli.commands.view.upload import view_profiles
 from mammoth_cli.context import profiles
@@ -77,8 +78,6 @@ from mammoth_cli.services.local_files import refuse_existing_file
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.read_memo import forget, remember
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 # Wait policies for which a job-shaped dashboard response must be resolved to
 # its completed result (honoring --job-timeout) rather than returned raw. The

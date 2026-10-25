@@ -27,6 +27,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -43,8 +44,6 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
 _QUERY_OPTIONAL = ("table", "profile")

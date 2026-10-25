@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_API_ERROR,
     CODE_INVALID_ARGUMENT,
@@ -51,9 +52,6 @@ from mammoth_cli.services.listing import (
     source_of,
 )
 from mammoth_cli.services.schema_diff import column_samples, schema_diff
-
-HandlerResult = tuple[Any, dict[str, Any]]
-
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
 

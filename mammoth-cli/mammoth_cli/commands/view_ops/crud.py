@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
@@ -45,8 +46,6 @@ from mammoth_cli.services.view_variants import (
     require_known_column,
     variants_result,
 )
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def view_create(invocation: Invocation) -> HandlerResult:

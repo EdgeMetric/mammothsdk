@@ -15,9 +15,8 @@ from functools import cache
 from importlib import resources
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _HINT = (
     "Each entry's workarounds are ready to run once the upper-case ids are filled in. "

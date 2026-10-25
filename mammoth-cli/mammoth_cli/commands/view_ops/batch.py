@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
 )
@@ -49,9 +50,6 @@ from mammoth_cli.services.command_contract import resolve_command_contract
 from mammoth_cli.services.field_enums import BATCH_LAST_OPS, BATCH_OPS, allowed_values_text
 from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.suggest import nearest_one
-
-HandlerResult = tuple[Any, dict[str, Any]]
-
 
 #: The ops a batch takes; one list for the check, the error hint and ``--help``.
 _BATCH_OPS = BATCH_OPS

@@ -20,10 +20,9 @@ from mammoth_cli.commands.dataset import (
     search_cut_note,
     search_hits,
 )
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Resource-search type for each kind of match, in the order the kinds are listed.
 _SEARCH_TYPES = (("dataset", "datasource"), ("view", "dataview"))

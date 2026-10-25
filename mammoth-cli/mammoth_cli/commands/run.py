@@ -56,6 +56,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     EXIT_API,
     EXIT_INTERRUPT,
@@ -72,8 +73,6 @@ from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.shared import forget_reads, remembering_auth
 from mammoth_cli.runtime.strict import NEGATIVE_NUMBER
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 CODE_INVALID_RUN_LINE = "invalid_run_line"
 CODE_RUN_COMMAND_REFUSED = "run_command_refused"

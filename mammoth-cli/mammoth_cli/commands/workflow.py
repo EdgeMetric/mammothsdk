@@ -14,6 +14,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_JOB_FAILED,
@@ -37,8 +38,6 @@ from mammoth_cli.runtime.session import (
     open_service,
     require_project,
 )
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _graph_projection(raw: Any) -> dict[str, Any]:

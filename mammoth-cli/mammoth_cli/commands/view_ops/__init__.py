@@ -19,6 +19,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import _DATAVIEW_GET_SYMBOL, _require_discovery_allowed
 from mammoth_cli.commands.view.settle import (
     UNFINISHED_STATE,
@@ -48,8 +49,6 @@ from mammoth_cli.services.input_fields import TASK_COUNT_FIELD
 from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.read_memo import prefetch
 from mammoth_cli.services.write_impact import STANDING_NOTE
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Error code for a task the backend accepted but could not bind to the view.
 CODE_PIPELINE_REFERENCE_ERROR = "pipeline_reference_error"

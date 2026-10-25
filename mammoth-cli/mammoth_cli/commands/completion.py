@@ -11,12 +11,10 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 # click/Typer complete-var for the ``mammoth`` program.
 _COMPLETE_VAR = "_MAMMOTH_COMPLETE"

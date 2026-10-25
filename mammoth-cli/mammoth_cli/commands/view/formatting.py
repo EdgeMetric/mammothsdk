@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DISPLAY_NAME_KEY,
     _INTERNAL_NAME_KEY,
-    HandlerResult,
     _forward_optional,
     _int_positional_at,
     _meta,

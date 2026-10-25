@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -26,8 +27,6 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
 from mammoth_cli.services.folder_ids import FolderIds
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: The route's resource types are datasource, dataview, label, file_object, report and webhook;
 #: these are the names a caller reaches for instead.

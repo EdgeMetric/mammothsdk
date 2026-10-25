@@ -11,12 +11,10 @@ and no secret is involved.
 from __future__ import annotations
 
 import time
-from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.skills import installer
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _options(invocation: Invocation) -> tuple[list[str] | None, str, bool]:

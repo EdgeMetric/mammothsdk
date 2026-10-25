@@ -12,6 +12,7 @@ import shlex
 from collections.abc import Callable
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     apply_column_renames,
@@ -66,8 +67,6 @@ from mammoth_cli.services.write_impact import (
     measure_replace,
     no_op_error,
 )
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def view_transform_add_column(invocation: Invocation) -> HandlerResult:

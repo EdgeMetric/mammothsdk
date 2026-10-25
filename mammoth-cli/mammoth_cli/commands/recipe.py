@@ -20,6 +20,7 @@ import json
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.discovery import line_record, run_command, runnable_recipes, writes
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.emit import run_id
@@ -27,8 +28,6 @@ from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 CODE_RECIPE_NOT_FOUND = "recipe_not_found"
 CODE_RECIPE_INPUT_INVALID = "recipe_input_invalid"

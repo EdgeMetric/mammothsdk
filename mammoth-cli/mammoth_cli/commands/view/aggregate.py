@@ -6,9 +6,9 @@ import dataclasses
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _ROWS_KEY,
-    HandlerResult,
     _forward_optional,
     _read_meta,
     _require_int_positional_at,

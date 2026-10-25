@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_AUTHORIZATION_REQUIRED,
@@ -48,8 +49,6 @@ from mammoth_cli.runtime.token_scope import (
     require_unpinned_token,
 )
 from mammoth_cli.services import job_outcome
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:

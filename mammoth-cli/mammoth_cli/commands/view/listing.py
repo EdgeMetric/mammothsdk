@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATASET_GET_SYMBOL,
     _DATASET_ID_FIELD,
-    HandlerResult,
     _forward_optional,
     _int_positional_at,
     _meta,

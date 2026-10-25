@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
 )
@@ -33,8 +34,6 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.dryrun import DryRunStop
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def view_draft_enter(invocation: Invocation) -> HandlerResult:
