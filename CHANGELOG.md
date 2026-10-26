@@ -27,6 +27,12 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
+## mammoth-cli 2.3.1 (2026-10-26)
+
+### Fixed (mammoth-cli 2.3.1)
+
+- CLI: `how` / `schema find` recipe matching: wrong matches, tied parts reported as unresolved, results no longer depend on the hash seed.
+
 ## mammoth-io 0.8.52, mammoth-cli 2.3.0 (2026-10-26)
 
 ### Added (mammoth-io 0.8.52)
