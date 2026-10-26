@@ -537,6 +537,15 @@ def test_schema_get_returns_one_schema_per_comma_joined_id_in_a_single_call() ->
         assert entry == _get(entry["command_id"])["data"]
 
 
+def test_schema_get_takes_space_separated_ids_like_comma_joined_ones() -> None:
+    """P4 of the 10-26 speed pass: an agent told the comma form sent two ids with a space,
+    got ``unexpected_argument`` and spent a round on the retry."""
+    ids = ["view.list", "view.analyze"]
+
+    assert _get(*ids)["data"] == _get(",".join(ids))["data"]
+    assert _get(*ids)["data"]["requested"] == 2
+
+
 def test_schema_get_unknown_id_is_an_entry_in_errors_not_a_failed_call() -> None:
     combined = _get("view.list;no.such.command,view.list")["data"]
 
