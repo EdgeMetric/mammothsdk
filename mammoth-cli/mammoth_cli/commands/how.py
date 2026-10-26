@@ -65,6 +65,12 @@ _TIED_HINT = (
     "data. Pick one from 'alternatives' (mammoth how \"...\" shows its steps), or say more "
     "about what the goal changes."
 )
+_UNRESOLVED_HINT = (
+    "Part of this goal fits more than one recipe equally well, and running the wrong one "
+    "changes data, so nothing is matched. 'unresolved' names each such part with its "
+    "recipes; 'recipes' are the parts that are clear. Say which recipe the unclear part "
+    "means, or run the parts one by one with mammoth how."
+)
 _NOTHING_HINT = (
     "No recipe and no command matched this goal. Try other words, or run "
     "'mammoth schema list' for every command."
@@ -156,8 +162,10 @@ def _forms(terms: tuple[str, ...], compounds: dict[str, frozenset[str]]) -> list
 _CLAUSE_SPLIT = re.compile(r"\s*(?:;|,|\band then\b|\bthen\b|\band\b|\bthat\b|\bwhich\b)\s*")
 
 
-def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> dict[str, Any] | None:
-    """The one recipe a clause of a longer goal clearly asks for, or None.
+def _clause_fits(clause: str, prefer: str | None = None, goal: str = "") -> list[dict[str, Any]]:
+    """The recipe a clause of a longer goal clearly asks for, or the recipes tied for it.
+
+    One recipe is a clear ask; two or more fit the clause equally; none is an empty list.
 
     Two or more of its words match the recipe, or, in a clause of one or two
     words, one word the recipe itself uses ("join orders", "refresh daily").
@@ -166,7 +174,7 @@ def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> di
 
     terms = _query_tokens(clause) or tuple(_tokens(clause))
     if not terms:
-        return None
+        return []
     compounds = _adjacent_compound_forms(terms)
     whole = _query_tokens(goal) or tuple(_tokens(goal))
     whole_compounds = _adjacent_compound_forms(whole)
@@ -187,9 +195,8 @@ def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> di
         # The recipe that fits the whole goal wins any clause it also fits.
         fits.append(((int(recipe["id"] == prefer), len(hits), literal, -order), recipe))
     fits.sort(key=lambda fit: fit[0], reverse=True)
-    if len(fits) > 1 and fits[0][0][:3] == fits[1][0][:3]:
-        return None  # two recipes fit the clause equally: file order must not pick one
-    return fits[0][1] if fits else None
+    # Recipes that fit equally well: file order must not pick one.
+    return [recipe for key, recipe in fits if fits and key[:3] == fits[0][0][:3]]
 
 
 #: How well a recipe fits a goal: share of words matched, whole-phrase match, literal words.
@@ -232,17 +239,26 @@ _STAGE = {
 }
 
 
-def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, Any]]]:
-    """Each clause of a several-part goal with its recipe, in pipeline order, no repeats."""
+def _compose(
+    goal: str, prefer: str | None = None
+) -> tuple[list[tuple[str, dict[str, Any]]], list[tuple[str, list[dict[str, Any]]]]]:
+    """Each clause of a several-part goal with its recipe, in pipeline order, no repeats.
+
+    Also the clauses that fit two or more recipes equally, each with those recipes: a
+    clause the goal does not settle is reported, not dropped.
+    """
     clauses = [part.strip() for part in _CLAUSE_SPLIT.split(goal) if part.strip()]
     if len(clauses) < 2:
-        return []  # one part: the whole-goal match decides
+        return [], []  # one part: the whole-goal match decides
     found: list[tuple[str, dict[str, Any]]] = []
+    unresolved: list[tuple[str, list[dict[str, Any]]]] = []
     for clause in clauses:
-        recipe = _clause_recipe(clause, prefer, goal)
-        if recipe is not None and all(recipe["id"] != seen["id"] for _, seen in found):
-            found.append((clause, recipe))
-    return sorted(found, key=lambda item: _STAGE.get(item[1]["id"], 3))
+        fits = [r for r in _clause_fits(clause, prefer, goal) if not recipe_hidden_embedded(r)]
+        if len(fits) > 1:
+            unresolved.append((clause, fits))
+        elif fits and all(fits[0]["id"] != seen["id"] for _, seen in found):
+            found.append((clause, fits[0]))
+    return sorted(found, key=lambda item: _STAGE.get(item[1]["id"], 3)), unresolved
 
 
 def _rank(goal: str) -> list[tuple[_Key, dict[str, Any]]]:
@@ -284,7 +300,7 @@ def _tied(ranked: list[tuple[_Key, dict[str, Any]]]) -> list[tuple[_Key, dict[st
     Two or more of them means the goal does not say which recipe is meant. A recipe run
     changes data, so the caller must choose rather than take the first.
     """
-    tied = [item for item in ranked if ranked and item[0] == ranked[0][0]]
+    tied = [item for item in ranked if item[0] == ranked[0][0]]
     return tied if len(tied) > 1 else []
 
 
@@ -298,7 +314,17 @@ def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
     Returns:
         Each recipe's id, title and ``run_command``.
     """
-    # Recipes that fit equally well are all returned: the caller chooses between them.
+    # Recipes that fit equally well are all returned: the caller chooses between them, so
+    # the limit never cuts inside a tie group.
+    fits = [
+        (key, recipe)
+        for key, recipe in _rank(goal)
+        if recipe.get("run") and not recipe_hidden_embedded(recipe)
+    ]
+    keys = [key for key, _ in fits]
+    cut = limit
+    while cut < len(fits) and keys[cut] == keys[cut - 1]:
+        cut += 1
     return [
         {
             "id": recipe["id"],
@@ -306,9 +332,8 @@ def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
             "run_command": run_command(recipe),
             "full_detail_command": f"mammoth how \"{recipe['goals'][0]}\"",
         }
-        for _, recipe in _rank(goal)
-        if recipe.get("run") and not recipe_hidden_embedded(recipe)
-    ][:limit]
+        for _, recipe in fits[:cut]
+    ]
 
 
 def _context(invocation: Invocation) -> dict[str, Any]:
@@ -409,11 +434,11 @@ def how(invocation: Invocation) -> HandlerResult:
     best_unavailable = bool(ranked) and recipe_hidden_embedded(ranked[0][1])
     ranked = [item for item in ranked if not recipe_hidden_embedded(item[1])]
     tied = _tied(ranked)
-    composed = [
-        part
-        for part in _compose(goal, ranked[0][1]["id"] if ranked and not tied else None)
-        if not recipe_hidden_embedded(part[1])
-    ]
+    found, unresolved = _compose(goal, ranked[0][1]["id"] if ranked and not tied else None)
+    composed = [part for part in found if not recipe_hidden_embedded(part[1])]
+    if unresolved:
+        # A part of the goal fits several recipes equally: the whole goal is not run on a guess.
+        return _unresolved_result(goal, composed, unresolved, context), {}
     if len(composed) >= 2 or (composed and not ranked):
         # A goal with several parts gets every part's steps, not only the best one's.
         return _composed_result(goal, composed, context), {}
@@ -465,7 +490,7 @@ def how(invocation: Invocation) -> HandlerResult:
     return result, {}
 
 
-def _alternatives(ranked: list[tuple[_Key, dict[str, Any]]]) -> list[dict[str, Any]]:
+def _alternatives(ranked: list[tuple[Any, dict[str, Any]]]) -> list[dict[str, Any]]:
     """The first few recipes of ``ranked``, each with the ``how`` command that shows it.
 
     Args:
@@ -488,6 +513,32 @@ def _alternatives(ranked: list[tuple[_Key, dict[str, Any]]]) -> list[dict[str, A
 _SETUP_COMMANDS = frozenset(
     {"file.upload", "view.list", "view.get", "view.data.get", "dataset.get", "dataset.list"}
 )
+
+
+def _unresolved_result(
+    goal: str,
+    composed: list[tuple[str, dict[str, Any]]],
+    unresolved: list[tuple[str, list[dict[str, Any]]]],
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    """No match, with the clear parts of a several-part goal and the parts that are tied."""
+    return {
+        "goal": goal,
+        "matched": False,
+        "recipes": [
+            {"id": recipe["id"], "title": recipe["title"], "doc": recipe["doc"], "for": clause}
+            for clause, recipe in composed
+        ],
+        "unresolved": [
+            {"for": clause, "alternatives": _alternatives([(None, r) for r in fits])}
+            for clause, fits in unresolved
+        ],
+        "context": context,
+        "steps": [],
+        "notes": [],
+        "alternatives": _alternatives([(None, r) for _, fits in unresolved for r in fits]),
+        "hint": _UNRESOLVED_HINT,
+    }
 
 
 def _composed_result(

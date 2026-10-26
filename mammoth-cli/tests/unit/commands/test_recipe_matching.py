@@ -137,3 +137,34 @@ def test_a_short_goal_two_recipes_share_lists_both(goal: str, tied: frozenset[st
 def test_the_rule_behind_each_blind_miss(goal: str, recipe: str | None) -> None:
     assert _how(goal) == recipe
     assert _find(goal) == recipe
+
+
+def _result(goal: str) -> dict[str, object]:
+    data, _ = how_cmd.how(Invocation(command_id="how", positionals={"goal": goal}))
+    return dict(data)
+
+
+def test_a_tied_part_of_a_several_part_goal_is_reported_not_dropped() -> None:
+    result = _result("remove duplicates then rollback")
+    assert result["matched"] is False and result["steps"] == []
+    assert [r["id"] for r in result["recipes"]] == ["remove-duplicates"]  # type: ignore[attr-defined]
+    (part,) = result["unresolved"]  # type: ignore[misc]
+    assert part["for"] == "rollback"
+    assert {a["id"] for a in part["alternatives"]} == {"undo-last-change", "revert-view-version"}
+
+
+def test_each_part_of_a_goal_is_resolved_on_its_own() -> None:
+    # Not "pick one of three": the first part is clear, only the second is tied.
+    result = _result("remove duplicates, then download a spreadsheet")
+    assert result["matched"] is False
+    assert [r["id"] for r in result["recipes"]] == ["remove-duplicates"]  # type: ignore[attr-defined]
+    (part,) = result["unresolved"]  # type: ignore[misc]
+    assert part["for"] == "download a spreadsheet"
+    assert {a["id"] for a in part["alternatives"]} == {"export-csv", "export-xlsx"}
+
+
+def test_the_limit_never_cuts_a_tie_group() -> None:
+    # Three recipes fit this goal equally well; a limit of two must not hide the third.
+    goal = "remove duplicates, then download a spreadsheet"
+    ids = [r["id"] for r in how_cmd.runnable_for(goal, limit=2)]
+    assert set(ids) == {"export-csv", "remove-duplicates", "export-xlsx"}
