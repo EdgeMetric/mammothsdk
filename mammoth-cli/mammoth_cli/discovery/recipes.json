@@ -8,9 +8,9 @@
         "refresh daily",
         "schedule a refresh",
         "refresh data every day",
-        "run every week automatically",
+        "refresh every week automatically",
         "automate the refresh",
-        "keep my data up to date"
+        "keep my data refreshed automatically"
       ],
       "keywords": [
         "refresh",
@@ -26,6 +26,31 @@
         "every",
         "update",
         "sync"
+      ],
+      "intent": [
+        [
+          "schedule",
+          "scheduled",
+          "daily",
+          "weekly",
+          "hourly",
+          "monthly",
+          "nightly",
+          "night",
+          "every",
+          "recurring",
+          "automate",
+          "automatically",
+          "automation",
+          "regularly"
+        ],
+        [
+          "refresh",
+          "update",
+          "sync",
+          "dataset",
+          "data"
+        ]
       ],
       "doc": "references/recipes/scheduling.md",
       "steps": [
@@ -160,6 +185,26 @@
         "dataset",
         "upload"
       ],
+      "intent": [
+        [
+          "append",
+          "add",
+          "load",
+          "more",
+          "new",
+          "same",
+          "existing"
+        ],
+        [
+          "rows",
+          "row",
+          "data",
+          "file",
+          "dataset",
+          "csv",
+          "month"
+        ]
+      ],
       "doc": "references/recipes/file-import.md",
       "steps": [
         {
@@ -215,12 +260,12 @@
       "id": "blend-by-key",
       "title": "Blend (join) two files on a shared key, such as the day",
       "goals": [
-        "blend two files by day",
+        "blend two datasets by day",
         "join two datasets",
-        "combine two files on a key",
-        "merge two csv files by date",
+        "combine two datasets on a key",
+        "merge two datasets by date",
         "match rows from two tables",
-        "vlookup between two files"
+        "vlookup between two datasets"
       ],
       "keywords": [
         "blend",
@@ -237,7 +282,48 @@
         "tables",
         "vlookup",
         "lookup",
-        "together"
+        "together",
+        "view",
+        "views"
+      ],
+      "intent": [
+        [
+          "blend",
+          "join",
+          "merge",
+          "combine",
+          "match",
+          "vlookup",
+          "lookup",
+          "together"
+        ],
+        [
+          "key",
+          "shared",
+          "datasets",
+          "dataset",
+          "files",
+          "tables",
+          "table",
+          "views",
+          "sheets",
+          "spreadsheets",
+          "day",
+          "date",
+          "id",
+          "view",
+          "views"
+        ]
+      ],
+      "reject": [
+        "csv",
+        "xlsx",
+        "upload",
+        "uploaded",
+        "files",
+        "file",
+        "spreadsheet",
+        "spreadsheets"
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -378,7 +464,7 @@
         "upload and build a dashboard",
         "make a dashboard from a csv",
         "visualize my file",
-        "chart my data",
+        "chart my spreadsheet",
         "create charts from a spreadsheet"
       ],
       "keywords": [
@@ -395,6 +481,27 @@
         "build",
         "make",
         "report"
+      ],
+      "intent": [
+        [
+          "dashboard",
+          "chart",
+          "charts",
+          "visualize",
+          "visualise",
+          "graph",
+          "kpi",
+          "plot",
+          "report",
+          "figure"
+        ],
+        [
+          "upload",
+          "csv",
+          "spreadsheet",
+          "spreadsheets",
+          "file"
+        ]
       ],
       "doc": "references/recipes/dashboards.md",
       "steps": [
@@ -542,6 +649,20 @@
         "error",
         "failed"
       ],
+      "intent": [
+        [
+          "stuck",
+          "hung",
+          "need_action",
+          "action",
+          "pending",
+          "waiting",
+          "processing",
+          "failed",
+          "error",
+          "no"
+        ]
+      ],
       "doc": "references/recipes/need-action.md",
       "steps": [
         {
@@ -631,6 +752,12 @@
         "push",
         "microsoft"
       ],
+      "intent": [
+        [
+          "powerbi",
+          "bi"
+        ]
+      ],
       "doc": "references/recipes/exports.md",
       "steps": [
         {
@@ -719,6 +846,19 @@
         "spreadsheet",
         "excel"
       ],
+      "intent": [
+        [
+          "csv",
+          "local",
+          "spreadsheet"
+        ],
+        [
+          "export",
+          "download",
+          "save",
+          "get"
+        ]
+      ],
       "doc": "references/recipes/exports.md",
       "steps": [
         {
@@ -766,13 +906,11 @@
     },
     {
       "id": "clean-data",
-      "title": "Clean a view: duplicates, blanks, column types, unwanted rows",
+      "title": "Clean a view: remove duplicate rows and fill blanks (optionally convert one column's type)",
       "goals": [
         "clean my data",
-        "remove duplicate rows",
-        "fill blank values",
-        "fix column types",
-        "filter out rows"
+        "tidy up a messy dataset",
+        "clean up duplicates and blanks"
       ],
       "keywords": [
         "clean",
@@ -791,6 +929,13 @@
         "remove",
         "rows",
         "tidy"
+      ],
+      "intent": [
+        [
+          "clean",
+          "cleanup",
+          "tidy"
+        ]
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -930,6 +1075,17 @@
         "colleague",
         "send"
       ],
+      "intent": [
+        [
+          "share",
+          "sharing",
+          "access",
+          "link"
+        ],
+        [
+          "dashboard"
+        ]
+      ],
       "doc": "references/recipes/dashboards.md",
       "steps": [
         {
@@ -990,7 +1146,7 @@
         "delete everything i made",
         "clean up my test data",
         "remove what i created",
-        "tidy up after a task"
+        "tidy up what I created in this task"
       ],
       "keywords": [
         "delete",
@@ -1005,6 +1161,26 @@
         "trash",
         "test",
         "mine"
+      ],
+      "intent": [
+        [
+          "delete",
+          "remove",
+          "clean",
+          "cleanup",
+          "trash",
+          "tidy",
+          "erase",
+          "wipe"
+        ],
+        [
+          "everything",
+          "created",
+          "made",
+          "mine",
+          "test",
+          "cleanup"
+        ]
       ],
       "doc": "references/recipes/cleanup.md",
       "steps": [
@@ -1126,6 +1302,27 @@
         "file",
         "csv",
         "tidy"
+      ],
+      "intent": [
+        [
+          "upload",
+          "import"
+        ],
+        [
+          "clean",
+          "tidy",
+          "dedupe",
+          "duplicate",
+          "duplicates",
+          "blank",
+          "blanks",
+          "missing",
+          "fill",
+          "convert",
+          "type",
+          "types",
+          "fix"
+        ]
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -1286,9 +1483,9 @@
       "title": "Upload two files and join them on a shared key",
       "goals": [
         "upload two files and join them",
-        "join two csv files on a key",
+        "upload two csv files and join them on a key",
         "merge two uploaded files by a shared column",
-        "combine two spreadsheets on a column"
+        "upload two spreadsheets and combine them on a column"
       ],
       "keywords": [
         "join",
@@ -1303,6 +1500,26 @@
         "spreadsheets",
         "csv",
         "vlookup"
+      ],
+      "intent": [
+        [
+          "join",
+          "merge",
+          "blend",
+          "combine",
+          "vlookup"
+        ],
+        [
+          "upload",
+          "uploaded",
+          "import",
+          "files",
+          "file",
+          "csv",
+          "xlsx",
+          "spreadsheet",
+          "spreadsheets"
+        ]
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -1489,6 +1706,24 @@
         "match",
         "add"
       ],
+      "intent": [
+        [
+          "lookup",
+          "vlookup",
+          "look",
+          "across",
+          "bring"
+        ],
+        [
+          "another",
+          "other",
+          "view",
+          "dataset",
+          "key",
+          "column",
+          "value"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -1614,6 +1849,31 @@
         "column",
         "add"
       ],
+      "intent": [
+        [
+          "calculate",
+          "calculated",
+          "calculation",
+          "formula",
+          "multiply",
+          "multiplies",
+          "divide",
+          "expression",
+          "compute",
+          "math",
+          "times",
+          "multiplied"
+        ],
+        [
+          "column",
+          "columns",
+          "price",
+          "quantity",
+          "revenue",
+          "total",
+          "new"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -1695,7 +1955,7 @@
         "extract the year from a date",
         "get the month from a date column",
         "split a date into year and month",
-        "add a weekday column"
+        "add a weekday column from a date"
       ],
       "keywords": [
         "date",
@@ -1707,6 +1967,27 @@
         "component",
         "day",
         "week"
+      ],
+      "intent": [
+        [
+          "year",
+          "month",
+          "weekday",
+          "quarter",
+          "extract",
+          "week",
+          "component"
+        ],
+        [
+          "date",
+          "dates",
+          "timestamp"
+        ]
+      ],
+      "reject": [
+        "convert",
+        "format",
+        "type"
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -1808,6 +2089,32 @@
         "first",
         "last",
         "parts"
+      ],
+      "intent": [
+        [
+          "split",
+          "separate",
+          "break",
+          "apart",
+          "delimiter",
+          "first",
+          "last",
+          "parts"
+        ],
+        [
+          "column",
+          "columns",
+          "name",
+          "comma",
+          "delimiter"
+        ]
+      ],
+      "reject": [
+        "merge",
+        "combine",
+        "join",
+        "concatenate",
+        "together"
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -1916,6 +2223,15 @@
         "unknown",
         "swap"
       ],
+      "intent": [
+        [
+          "find",
+          "replace",
+          "substitute",
+          "swap",
+          "typo"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2018,6 +2334,22 @@
         "zero",
         "constant"
       ],
+      "intent": [
+        [
+          "fill",
+          "set",
+          "replace",
+          "put"
+        ],
+        [
+          "blank",
+          "blanks",
+          "empty",
+          "missing",
+          "null",
+          "default"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2119,6 +2451,22 @@
         "label",
         "display"
       ],
+      "intent": [
+        [
+          "rename",
+          "header",
+          "headers",
+          "label",
+          "names"
+        ],
+        [
+          "column",
+          "columns",
+          "header",
+          "headers",
+          "names"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2206,6 +2554,20 @@
         "remove",
         "drop"
       ],
+      "intent": [
+        [
+          "duplicate",
+          "duplicates",
+          "dedupe",
+          "deduplicate",
+          "unique",
+          "repeated"
+        ]
+      ],
+      "reject": [
+        "column",
+        "columns"
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2289,6 +2651,28 @@
         "by",
         "per"
       ],
+      "intent": [
+        [
+          "pivot",
+          "group",
+          "grouped",
+          "aggregate",
+          "summarize",
+          "summarise",
+          "totals",
+          "total",
+          "sum"
+        ],
+        [
+          "by",
+          "per",
+          "group",
+          "grouped",
+          "pivot",
+          "each"
+        ]
+      ],
+      "bare_ok": true,
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2422,6 +2806,20 @@
         "rows",
         "n"
       ],
+      "intent": [
+        [
+          "top",
+          "bottom",
+          "highest",
+          "lowest",
+          "largest",
+          "smallest",
+          "best",
+          "worst",
+          "rank",
+          "ranking"
+        ]
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2551,6 +2949,23 @@
         "condition",
         "file"
       ],
+      "intent": [
+        [
+          "filter",
+          "filtered",
+          "where",
+          "only",
+          "subset",
+          "some",
+          "slice",
+          "condition"
+        ],
+        [
+          "csv",
+          "export",
+          "download"
+        ]
+      ],
       "doc": "references/recipes/exports.md",
       "steps": [
         {
@@ -2676,6 +3091,19 @@
         "file",
         "view"
       ],
+      "intent": [
+        [
+          "excel",
+          "xlsx",
+          "spreadsheet"
+        ],
+        [
+          "export",
+          "download",
+          "save",
+          "get"
+        ]
+      ],
       "doc": "references/recipes/exports.md",
       "steps": [
         {
@@ -2750,6 +3178,14 @@
         "file",
         "csv",
         "view"
+      ],
+      "intent": [
+        [
+          "s3",
+          "bucket",
+          "cloud",
+          "storage"
+        ]
       ],
       "doc": "references/recipes/exports.md",
       "steps": [
@@ -2837,6 +3273,34 @@
         "recipients",
         "attachment",
         "view"
+      ],
+      "intent": [
+        [
+          "email",
+          "mail",
+          "emailed"
+        ],
+        [
+          "view",
+          "data",
+          "report",
+          "csv",
+          "dataset",
+          "attachment"
+        ]
+      ],
+      "reject": [
+        "weekly",
+        "daily",
+        "monthly",
+        "hourly",
+        "nightly",
+        "every",
+        "schedule",
+        "scheduled",
+        "recurring",
+        "automatically",
+        "automate"
       ],
       "doc": "references/recipes/exports.md",
       "steps": [
@@ -2937,6 +3401,27 @@
         "existing",
         "kpi"
       ],
+      "intent": [
+        [
+          "dashboard",
+          "chart",
+          "charts",
+          "visualize",
+          "visualise",
+          "graph",
+          "kpi",
+          "plot"
+        ],
+        [
+          "view",
+          "dataset",
+          "existing",
+          "data",
+          "blend",
+          "join",
+          "merge"
+        ]
+      ],
       "doc": "references/recipes/dashboards.md",
       "steps": [
         {
@@ -3005,7 +3490,7 @@
         "total revenue by region",
         "count rows per status",
         "average amount per customer",
-        "summarize a view without changing it"
+        "summarize a view by group without changing it"
       ],
       "keywords": [
         "total",
@@ -3020,6 +3505,29 @@
         "summarise",
         "read",
         "only"
+      ],
+      "intent": [
+        [
+          "total",
+          "count",
+          "average",
+          "sum",
+          "summarize",
+          "summarise",
+          "aggregate"
+        ],
+        [
+          "by",
+          "per",
+          "group",
+          "grouped",
+          "each"
+        ]
+      ],
+      "reject": [
+        "pivot",
+        "new",
+        "copy"
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -3119,6 +3627,16 @@
         "before",
         "after",
         "change"
+      ],
+      "intent": [
+        [
+          "compare",
+          "comparison",
+          "diff",
+          "difference",
+          "versus",
+          "vs"
+        ]
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -3221,6 +3739,24 @@
         "reload",
         "dataset"
       ],
+      "intent": [
+        [
+          "refresh",
+          "pull",
+          "sync",
+          "reload",
+          "update",
+          "latest"
+        ],
+        [
+          "now",
+          "immediately",
+          "latest",
+          "right",
+          "resync",
+          "re-sync"
+        ]
+      ],
       "doc": "references/recipes/scheduling.md",
       "steps": [
         {
@@ -3300,6 +3836,26 @@
         "history",
         "restore"
       ],
+      "intent": [
+        [
+          "undo",
+          "revert",
+          "rollback",
+          "roll",
+          "back"
+        ],
+        [
+          "last",
+          "change",
+          "edit",
+          "just",
+          "did",
+          "mistake",
+          "transform",
+          "history"
+        ]
+      ],
+      "bare_ok": true,
       "doc": "references/recipes/cleanup.md",
       "steps": [
         {
@@ -3366,6 +3922,26 @@
         "view",
         "back"
       ],
+      "intent": [
+        [
+          "version",
+          "versions",
+          "restore",
+          "revert",
+          "rollback",
+          "roll",
+          "earlier",
+          "previous",
+          "back"
+        ],
+        [
+          "view",
+          "version",
+          "versions",
+          "pipeline"
+        ]
+      ],
+      "bare_ok": true,
       "doc": "references/recipes/cleanup.md",
       "steps": [
         {

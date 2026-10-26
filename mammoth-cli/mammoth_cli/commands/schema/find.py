@@ -212,26 +212,31 @@ _NO_MATCH_HINT_NO_SUGGESTIONS = (
 _TOKEN_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 
-def _tokens(value: str) -> frozenset[str]:
-    """Tokenize search text consistently across platforms and Python runs.
+def _ordered_tokens(value: str) -> tuple[str, ...]:
+    """The words of ``value`` in the order written, each once.
 
     A hyphenated word is kept whole and also split into its parts, so that
     ``date`` finds ``extract-date`` and ``date-diff`` as well as ``convert-type``'s
-    example text.
+    example text. The order is the text's, not a hash's: adjacent words make compounds.
     """
-    tokens: set[str] = set()
+    tokens: dict[str, None] = {}
     for token in _TOKEN_RE.findall(value.casefold()):
-        tokens.add(token)
+        tokens[token] = None
         if "-" in token:
-            tokens.update(token.split("-"))
-    return frozenset(tokens)
+            tokens.update(dict.fromkeys(token.split("-")))
+    return tuple(tokens)
+
+
+def _tokens(value: str) -> frozenset[str]:
+    """Tokenize search text consistently across platforms and Python runs."""
+    return frozenset(_ordered_tokens(value))
 
 
 def _query_tokens(query: str) -> tuple[str, ...]:
     # Bare numbers ("top 10") are values, not intent words.
     return tuple(
         token
-        for token in _tokens(query)
+        for token in _ordered_tokens(query)
         if token not in _DISCOVERY_STOPWORDS and not token.isdigit()
     )
 
