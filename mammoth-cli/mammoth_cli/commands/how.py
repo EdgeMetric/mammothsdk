@@ -78,19 +78,56 @@ def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
 def _term_forms(term: str, compounds: frozenset[str]) -> frozenset[str]:
     from mammoth_cli.commands.schema.find import _token_aliases
 
+    return _token_aliases(term) | frozenset(_HOW_SYNONYMS.get(term, ())) | _stems(term) | compounds
+
+
+def _stems(term: str) -> frozenset[str]:
     # "refreshes", "joined", "building": the recipe words are the plain forms.
     stems = {term[: -len(end)] for end in ("es", "s", "ed", "ing") if term.endswith(end)}
-    stems = {stem for stem in stems if len(stem) >= 3}
-    return (
-        _token_aliases(term) | frozenset(_HOW_SYNONYMS.get(term, ())) | frozenset(stems) | compounds
+    return frozenset(stem for stem in stems if len(stem) >= 3)
+
+
+def _intent_met(
+    recipe: dict[str, Any], action: list[frozenset[str]], rest: list[frozenset[str]]
+) -> bool:
+    """Whether the goal says what the recipe does, not only words it shares with it.
+
+    A recipe declares ``intent``: groups of words, the action first and then its object.
+    Each group needs one goal word (or a stem or synonym of one). Generic words
+    ("column", "view", "convert") sit in the vocabulary of many recipes, so overlap on
+    them proves nothing. ``action`` is checked against the first group and ``rest``
+    against the others; they differ for one clause of a longer goal, which may name its
+    object elsewhere ("upload sales.csv, then make a dashboard").
+    """
+    first, *others = recipe["intent"]
+    return any(form & frozenset(first) for form in action) and all(
+        any(form & frozenset(group) for form in rest) for group in others
     )
+
+
+def _rejected(
+    recipe: dict[str, Any], terms: tuple[str, ...], compounds: dict[str, frozenset[str]]
+) -> bool:
+    """Whether the goal has a word for the opposite job ("merge" for a split)."""
+    reject = frozenset(recipe.get("reject", ()))
+    return any(form & reject for form in _forms(terms, compounds))
+
+
+def _forms(terms: tuple[str, ...], compounds: dict[str, frozenset[str]]) -> list[frozenset[str]]:
+    """Each word with its stems, compounds and ``how`` synonyms, but not the ``schema find``
+    aliases: those widen a word ("download" also means "csv"), which is right for finding
+    a command and wrong for deciding what the user asked to have done to their data."""
+    return [
+        frozenset({term, *_HOW_SYNONYMS.get(term, ()), *compounds.get(term, ())}) | _stems(term)
+        for term in terms
+    ]
 
 
 #: Where a goal with several parts splits: "join X and Y, then build a dashboard".
 _CLAUSE_SPLIT = re.compile(r"\s*(?:;|,|\band then\b|\bthen\b|\band\b|\bthat\b|\bwhich\b)\s*")
 
 
-def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | None:
+def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> dict[str, Any] | None:
     """The one recipe a clause of a longer goal clearly asks for, or None.
 
     Two or more of its words match the recipe, or, in a clause of one or two
@@ -102,8 +139,17 @@ def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | N
     if not terms:
         return None
     compounds = _adjacent_compound_forms(terms)
+    whole = _query_tokens(goal) or tuple(_tokens(goal))
+    whole_compounds = _adjacent_compound_forms(whole)
+    clause_forms, whole_forms = _forms(terms, compounds), _forms(whole, whole_compounds)
     best: tuple[int, int, int, int, dict[str, Any]] | None = None
     for order, recipe in enumerate(load_recipes()):
+        # The recipe that fits the whole goal is judged on all of it: "upload a csv" alone
+        # does not say "clean", and a "merge" anywhere in the goal rules out a split.
+        if _rejected(recipe, whole, whole_compounds) or not _intent_met(
+            recipe, clause_forms if recipe["id"] != prefer else whole_forms, whole_forms
+        ):
+            continue
         vocabulary = _recipe_vocabulary(recipe["id"])
         hits = [t for t in terms if _term_forms(t, compounds.get(t, frozenset())) & vocabulary]
         literal = sum(1 for term in hits if term in vocabulary)
@@ -160,7 +206,7 @@ def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, 
         return []  # one part: the whole-goal match decides
     found: list[tuple[str, dict[str, Any]]] = []
     for clause in clauses:
-        recipe = _clause_recipe(clause, prefer)
+        recipe = _clause_recipe(clause, prefer, goal)
         if recipe is not None and all(recipe["id"] != seen["id"] for _, seen in found):
             found.append((clause, recipe))
     return sorted(found, key=lambda item: _STAGE.get(item[1]["id"], 3))
@@ -175,8 +221,11 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
         return []
     compounds = _adjacent_compound_forms(terms)
     folded = " ".join(goal.casefold().split())
+    forms = _forms(terms, compounds)
     ranked: list[tuple[float, int, int, int, dict[str, Any]]] = []
     for order, recipe in enumerate(load_recipes()):
+        if _rejected(recipe, terms, compounds) or not _intent_met(recipe, forms, forms):
+            continue
         vocabulary = _recipe_vocabulary(recipe["id"])
         matched = sum(
             1 for term in terms if _term_forms(term, compounds.get(term, frozenset())) & vocabulary
@@ -190,6 +239,10 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
         phrase = int(any(folded == goal_text.casefold() for goal_text in recipe["goals"]))
         ranked.append((matched / len(terms), phrase, literal, -order, recipe))
     ranked.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
+    if len(ranked) > 1 and ranked[0][:3] == ranked[1][:3]:
+        # Two recipes fit equally well and only file order separates them. A recipe run
+        # changes data, so an arbitrary pick is worse than none.
+        return []
     return [(literal, recipe) for _, _, literal, _, recipe in ranked]
 
 
