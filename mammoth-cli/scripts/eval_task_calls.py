@@ -134,9 +134,9 @@ def render(rows: list[TaskCalls]) -> str:
     same = sum(1 for row in rows if row.recipe_preview == row.manual)
     lines += [
         "",
-        f"With the recipe and a preview the {len(rows)} tasks take {preview} calls against "
-        f"{manual} step by step ({lookups} with lookups): {fewer} tasks need fewer calls, "
-        f"{same} the same.",
+        f"With the recipe and a preview the {len(rows)} tasks take {preview} calls. Step by "
+        f"step they take {manual} ({lookups} with lookups). {fewer} tasks need fewer calls "
+        f"and {same} the same.",
         "",
     ]
     return "\n".join(lines)

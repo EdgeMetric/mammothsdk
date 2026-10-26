@@ -14,15 +14,15 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 | `refresh-daily` | yes | 3 | 4 | 8 | 1 | 2 |
 | `append-rows` | yes | 1 | 3 | 6 | 1 | 2 |
 | `blend-by-key` | yes | 2 | 6 | 12 | 1 | 2 |
-| `upload-dashboard` | yes | 4 | 5 | 10 | 1 | 2 |
+| `upload-dashboard` | yes | 5 | 6 | 12 | 1 | 2 |
 | `stuck-upload` | no | 2 | 6 | 12 | 1 | 1 |
 | `export-powerbi` | no | 2 | 3 | 6 | 1 | 1 |
 | `export-csv` | yes | 1 | 2 | 4 | 1 | 2 |
 | `clean-data` | yes | 3 | 4 | 7 | 1 | 2 |
 | `share-dashboard` | yes | 2 | 3 | 6 | 1 | 2 |
-| `cleanup-mine` | yes | 3 | 5 | 9 | 1 | 2 |
-| `upload-clean` | yes | 4 | 4 | 8 | 1 | 2 |
-| `join-files` | yes | 4 | 4 | 7 | 1 | 2 |
+| `cleanup-mine` | yes | 4 | 5 | 9 | 1 | 2 |
+| `upload-clean` | yes | 5 | 5 | 10 | 1 | 2 |
+| `join-files` | yes | 5 | 5 | 9 | 1 | 2 |
 | `lookup-column` | yes | 2 | 3 | 6 | 1 | 2 |
 | `add-calculated-column` | yes | 2 | 3 | 6 | 1 | 2 |
 | `extract-date-part` | yes | 2 | 3 | 6 | 1 | 2 |
@@ -43,6 +43,6 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 | `refresh-now` | yes | 3 | 3 | 5 | 1 | 2 |
 | `undo-last-change` | yes | 2 | 2 | 4 | 1 | 2 |
 | `revert-view-version` | yes | 3 | 4 | 8 | 1 | 2 |
-| **32 tasks** | | 73 | **110** | **215** | **32** | **60** |
+| **32 tasks** | | 77 | **113** | **221** | **32** | **60** |
 
-With the recipe and a preview the 32 tasks take 60 calls against 110 step by step (215 with lookups): 29 tasks need fewer calls, 3 the same.
+With the recipe and a preview the 32 tasks take 60 calls. Step by step they take 113 (221 with lookups). 29 tasks need fewer calls and 3 the same.

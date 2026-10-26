@@ -150,6 +150,8 @@ ERROR_SUMMARIES: dict[str, str] = {
     ),
     "undo_in_progress": "Another undo of the same change is running.",
     "view_changed_since_edit": "The view changed after that edit, so it wasn't undone.",
+    "undo_needs_token": "That change was made with another API token, so it wasn't undone.",
+    "resume_result_too_large": "A result the run needs again was too large to keep.",
     "recipe_not_found": "No runnable recipe has that name.",
     "recipe_input_invalid": "The recipe's inputs weren't valid.",
     "run_global_flag_refused": (
