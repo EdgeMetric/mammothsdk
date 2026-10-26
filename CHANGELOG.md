@@ -39,6 +39,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed (next mammoth-cli)
 
+- CLI: needs mammoth-io 0.8.52 or later: the response cache (`mammoth.etag`) and the safe write retries are not in 0.8.51. Publish the SDK first.
 - CLI: embedded in a host (`mammoth_cli.embed.invoke`), the discovery commands leave out what the host refuses: `schema list`, `schema find`, `capability find` and `capability list` drop the host-machine commands (`history`, `auth`, `config`, `log`, `skill`...) and those that read a local file (`file upload`); `recipe list`, the `tasks` and `recipes` of the index commands, and `how` drop the recipes that use them (append-rows, upload-clean, upload-dashboard, join-files, undo-last-change). When the best recipe for a goal is one of them, `how` says so (`matched: false`, a hint) instead of answering with a weaker recipe, and a several-part goal keeps the parts the host can run. A terminal run is unchanged.
 - CLI: this is mammoth-cli 2.3.0, the ver3 architecture (#307): one command path with interceptors, a write journal with undo and resume, steps and recipes in `mammoth run`. Nothing breaks: no command, flag or input was removed or changed, and every envelope field was reviewed and kept, so `schema_version` stays 1 (the field review is in `mammoth-cli/docs/envelope-compatibility.md`). A host or agent written against 2.2 needs no change.
 
