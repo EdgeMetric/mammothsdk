@@ -668,6 +668,23 @@ def test_a_file_dataset_in_a_retrieval_automation_gets_its_own_code_and_a_way_fo
     assert any("file upload" in c and "append_to_ds_id" in c for c in mapped.recovery_commands)
 
 
+def test_refreshing_a_file_dataset_gets_the_same_code_as_automating_it() -> None:
+    """Live recipe sweep 2026-10-26: 'dataset refresh' on a file dataset (4DSET048) was a
+    generic api_error, while the automation refusal (4AUTO006) said what to do."""
+    error = MammothAPIError(
+        "bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={"message": "Invalid source type [4DSET048]"},
+    )
+    mapped = map_sdk_exception(error)
+    assert mapped.code == "dataset_not_refreshable"
+    assert mapped.exit_status == EXIT_USAGE
+    assert "cloud or database source" in mapped.message
+    assert any("file upload" in c and "append_to_ds_id" in c for c in mapped.recovery_commands)
+
+
 def test_an_unknown_dataset_or_file_id_is_resource_not_found_like_a_view() -> None:
     """Bug bash 2026-10-15: 4DSET001 / 4FILE001 came back as a generic api_error."""
     for code, noun in (("4DSET001", "dataset"), ("4FILE001", "file")):

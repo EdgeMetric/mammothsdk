@@ -12,16 +12,15 @@ recipe covers falls back to the ``schema find`` matches and says so.
 
 from __future__ import annotations
 
-import json
 import re
 from functools import cache
-from importlib import resources
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
+from mammoth_cli.discovery import load_recipes, run_command
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
+from mammoth_cli.runtime.embed_scope import recipe_hidden_embedded
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Goal words that mean the same as words the recipes use. Added to the
 #: ``schema find`` synonyms, which also apply.
@@ -57,6 +56,10 @@ _NO_RECIPE_HINT = (
     "'mammoth schema find'. Run 'mammoth schema get COMMAND_ID' for a command's inputs, "
     "or describe the goal in other words."
 )
+_NOT_HERE_HINT = (
+    "The recipe for this goal needs the user's machine (a local file or the run history), "
+    "which the app does not have. Use the app's own tools for that part."
+)
 _NOTHING_HINT = (
     "No recipe and no command matched this goal. Try other words, or run "
     "'mammoth schema list' for every command."
@@ -64,15 +67,8 @@ _NOTHING_HINT = (
 
 
 @cache
-def load_recipes() -> tuple[dict[str, Any], ...]:
-    """The recipes shipped in the package, in file order."""
-    text = resources.files("mammoth_cli.discovery").joinpath("recipes.json").read_text("utf-8")
-    return tuple(json.loads(text)["recipes"])
-
-
-@cache
 def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
-    from mammoth_cli.commands.schema import _tokens
+    from mammoth_cli.commands.schema.find import _tokens
 
     recipe = next(r for r in load_recipes() if r["id"] == recipe_id)
     words = " ".join([recipe["id"], recipe["title"], *recipe["goals"], *recipe.get("keywords", [])])
@@ -80,7 +76,7 @@ def _recipe_vocabulary(recipe_id: str) -> frozenset[str]:
 
 
 def _term_forms(term: str, compounds: frozenset[str]) -> frozenset[str]:
-    from mammoth_cli.commands.schema import _token_aliases
+    from mammoth_cli.commands.schema.find import _token_aliases
 
     # "refreshes", "joined", "building": the recipe words are the plain forms.
     stems = {term[: -len(end)] for end in ("es", "s", "ed", "ing") if term.endswith(end)}
@@ -100,7 +96,7 @@ def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | N
     Two or more of its words match the recipe, or, in a clause of one or two
     words, one word the recipe itself uses ("join orders", "refresh daily").
     """
-    from mammoth_cli.commands.schema import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
 
     terms = _query_tokens(clause) or tuple(_tokens(clause))
     if not terms:
@@ -124,13 +120,35 @@ def _clause_recipe(clause: str, prefer: str | None = None) -> dict[str, Any] | N
 _STAGE = {
     "append-rows": 0,
     "stuck-upload": 0,
+    "upload-clean": 0,
     "blend-by-key": 1,
+    "join-files": 1,
+    "lookup-column": 1,
     "clean-data": 2,
+    "remove-duplicates": 2,
+    "fill-blanks-with-value": 2,
+    "rename-columns": 2,
+    "find-replace": 2,
+    "split-column": 2,
+    "extract-date-part": 2,
+    "add-calculated-column": 2,
+    "pivot-summary": 2,
+    "top-n": 2,
+    "summarize-by": 2,
+    "compare-views": 2,
     "upload-dashboard": 3,
+    "dashboard-from-view": 3,
     "share-dashboard": 4,
     "export-csv": 4,
+    "filter-export-csv": 4,
+    "export-xlsx": 4,
+    "export-to-s3": 4,
+    "email-view": 4,
     "export-powerbi": 4,
     "refresh-daily": 5,
+    "refresh-now": 5,
+    "undo-last-change": 6,
+    "revert-view-version": 6,
     "cleanup-mine": 6,
 }
 
@@ -150,7 +168,7 @@ def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, 
 
 def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
     """Recipes that fit ``goal``, best first, each with how many goal words it matched."""
-    from mammoth_cli.commands.schema import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
 
     terms = _query_tokens(goal) or tuple(_tokens(goal))
     if not terms:
@@ -173,6 +191,28 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
         ranked.append((matched / len(terms), phrase, literal, -order, recipe))
     ranked.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
     return [(literal, recipe) for _, _, literal, _, recipe in ranked]
+
+
+def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
+    """The executable recipes that fit ``goal``, best first, each with its run command.
+
+    Args:
+        goal: The caller's goal, in their words.
+        limit: The most recipes to return.
+
+    Returns:
+        Each recipe's id, title and ``run_command``.
+    """
+    return [
+        {
+            "id": recipe["id"],
+            "title": recipe["title"],
+            "run_command": run_command(recipe),
+            "full_detail_command": f"mammoth how \"{recipe['goals'][0]}\"",
+        }
+        for _, recipe in _rank(goal)
+        if recipe.get("run") and not recipe_hidden_embedded(recipe)
+    ][:limit]
 
 
 def _context(invocation: Invocation) -> dict[str, Any]:
@@ -231,7 +271,7 @@ def _recipe_steps(recipe: dict[str, Any], context: dict[str, Any]) -> list[dict[
 
 
 def _fallback_steps(goal: str, context: dict[str, Any]) -> list[dict[str, Any]]:
-    from mammoth_cli.commands.schema import find_schemas
+    from mammoth_cli.commands.schema.find import find_schemas
     from mammoth_cli.manifest.loader import command_by_id
 
     found = find_schemas(goal)
@@ -268,10 +308,28 @@ def how(invocation: Invocation) -> HandlerResult:
         )
     context = _context(invocation)
     ranked = _rank(goal)
-    composed = _compose(goal, ranked[0][1]["id"] if ranked else None)
+    # Ranked over every recipe, so a goal this call cannot do is not answered with a
+    # weaker recipe that only shares a word with it; the parts it can do still are.
+    best_unavailable = bool(ranked) and recipe_hidden_embedded(ranked[0][1])
+    ranked = [item for item in ranked if not recipe_hidden_embedded(item[1])]
+    composed = [
+        part
+        for part in _compose(goal, ranked[0][1]["id"] if ranked else None)
+        if not recipe_hidden_embedded(part[1])
+    ]
     if len(composed) >= 2 or (composed and not ranked):
         # A goal with several parts gets every part's steps, not only the best one's.
         return _composed_result(goal, composed, context), {}
+    if best_unavailable:
+        return {
+            "goal": goal,
+            "matched": False,
+            "context": context,
+            "steps": [],
+            "notes": [],
+            "alternatives": _alternatives(ranked),
+            "hint": _NOT_HERE_HINT,
+        }, {}
     if not ranked:
         steps = _fallback_steps(goal, context)
         return {
@@ -284,22 +342,39 @@ def how(invocation: Invocation) -> HandlerResult:
             "hint": _NO_RECIPE_HINT if steps else _NOTHING_HINT,
         }, {}
     _, best = ranked[0]
-    return {
+    result = {
         "goal": goal,
         "matched": True,
         "recipe": {"id": best["id"], "title": best["title"], "doc": best["doc"]},
         "context": context,
         "steps": _recipe_steps(best, context),
         "notes": list(best.get("notes", [])),
-        "alternatives": [
-            {
-                "id": recipe["id"],
-                "title": recipe["title"],
-                "command": f'mammoth how "{recipe["goals"][0]}"',
-            }
-            for _, recipe in ranked[1 : 1 + _MAX_ALTERNATIVES]
-        ],
-    }, {}
+        "alternatives": _alternatives(ranked[1:]),
+    }
+    if best.get("run"):
+        # The steps as one command: an agent runs it instead of chaining them by hand.
+        result["run_command"] = run_command(best)
+        result["inputs"] = best.get("inputs", {})
+    return result, {}
+
+
+def _alternatives(ranked: list[tuple[int, dict[str, Any]]]) -> list[dict[str, Any]]:
+    """The first few recipes of ``ranked``, each with the ``how`` command that shows it.
+
+    Args:
+        ranked: Recipes from :func:`_rank`, best first.
+
+    Returns:
+        At most ``_MAX_ALTERNATIVES`` records of id, title and command.
+    """
+    return [
+        {
+            "id": recipe["id"],
+            "title": recipe["title"],
+            "command": f'mammoth how "{recipe["goals"][0]}"',
+        }
+        for _, recipe in ranked[:_MAX_ALTERNATIVES]
+    ]
 
 
 #: Steps that set up the data a recipe works on; a composed recipe keeps the first of each.

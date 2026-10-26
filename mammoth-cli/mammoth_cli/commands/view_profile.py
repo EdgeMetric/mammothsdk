@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _read_meta,
     _require_int_positional_at,
@@ -33,8 +34,6 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import stored_stats
 from mammoth_cli.services.conditions import compile_condition
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _AGGREGATE = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 _STORED_STATS = "mammoth.api.ai.AIAPI.generate_profile"

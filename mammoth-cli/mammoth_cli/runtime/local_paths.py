@@ -14,7 +14,7 @@ from functools import cache
 from typing import Any
 
 from mammoth_cli.manifest.loader import load_commands
-from mammoth_cli.services.positionals import LOCAL_PATH, LOCAL_PATH_INPUT_FIELDS
+from mammoth_cli.services.positional_spec import LOCAL_PATH, LOCAL_PATH_INPUT_FIELDS
 
 
 def local_path_fields(command_id: str, positionals: Iterable[dict[str, Any]]) -> frozenset[str]:

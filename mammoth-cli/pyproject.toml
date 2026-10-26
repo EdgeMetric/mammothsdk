@@ -1,13 +1,13 @@
 [project]
 name = "mammoth-cli"
-version = "2.2.100"
+version = "2.3.0"
 description = "Command-line interface for the Mammoth Analytics platform"
 authors = [{name = "Mammoth Analytics", email = "support@mammoth.io"}]
 readme = "README.md"
 license = "LicenseRef-Proprietary"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "mammoth-io (>=0.8.51,<0.9)",
+    "mammoth-io (>=0.8.52,<0.9)",
     "typer (>=0.27,<0.28)",
     "rich (>=15,<16)",
     "platformdirs (>=4.10,<5)",
@@ -41,6 +41,7 @@ core-metadata-version = "2.4"
 [dependency-groups]
 dev = [
     "pytest (>=9.1,<10)",
+    "pytest-xdist (>=3.8,<4)",
     "mypy (>=1.11)",
     "ruff (>=0.6)",
     "black (>=24)",

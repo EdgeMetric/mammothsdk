@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: capabilities
+  output_schema:
+    ref: Capabilities
   command_path: capabilities
   disposition: command
   alias_of: null
@@ -29,5 +31,6 @@ commands:
   - CT-CAPABILITIES-S1-LOCAL
   draft_test: null
   undo_test: null
-  known_restrictions: Lists only the known gaps. A goal it does not name may simply be supported; run mammoth how GOAL or mammoth schema find WORDS.
+  known_restrictions: Lists only the known gaps. A goal it does not name may simply be supported; run
+    mammoth how GOAL or mammoth schema find WORDS.
   reviewed_by: primary

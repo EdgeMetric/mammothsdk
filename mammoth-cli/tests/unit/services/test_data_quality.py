@@ -34,6 +34,22 @@ def test_numbers_stored_as_text_names_the_odd_values_and_the_fix() -> None:
     )
 
 
+def test_placeholders_do_not_count_against_a_number_column() -> None:
+    """``100, 250, 75, N/A`` is a number column: 3 of 4 is under the 80% bar only
+    because the placeholder counted as a value (found live, 2026-10-23)."""
+    for placeholder in ("N/A", "na", "-", "null", "#N/A"):
+        rows = _rows(["100", "250", "75", placeholder])
+        (warning,) = column_warnings(rows, {"price": "TEXT"})
+        assert warning["issue"] == "numbers_stored_as_text"
+        assert "3 of 4 non-blank values are numbers" in warning["detail"]
+        assert "the conversion makes them empty" in warning["detail"]
+
+
+def test_mostly_placeholders_is_too_few_values_to_call() -> None:
+    warnings = column_warnings(_rows(["1", "2", "N/A", "-", "?"]), {"price": "TEXT"})
+    assert not [w for w in warnings if w["issue"] == "numbers_stored_as_text"]
+
+
 def test_money_and_percent_text_counts_as_numbers() -> None:
     rows = _rows(["$1,200.50", "15%", "-3", ".5"])
     assert column_warnings(rows, {"price": "TEXT"})[0]["issue"] == "numbers_stored_as_text"

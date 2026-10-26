@@ -18,7 +18,9 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli.commands import view_profile
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import trace
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
@@ -448,3 +450,9 @@ def test_blanks_are_known_without_a_query_only_from_stats_or_all_rows_distinct()
     # as many distinct values as rows leaves no room for a blank; one fewer might hide one
     assert nulls(None, "C", {}, 10, 10) == 0  # type: ignore[arg-type]
     assert nulls(None, "C", {}, 9, 10) is None  # type: ignore[arg-type]
+
+
+def test_profile_workers_run_in_the_trace_of_the_command() -> None:
+    with trace.begin("view.data.profile") as traced:
+        seen = view_profile._map_all(3, lambda _item: trace.current(), [1, 2, 3])
+    assert [worker.invocation_id for worker in seen if worker] == [traced.invocation_id] * 3

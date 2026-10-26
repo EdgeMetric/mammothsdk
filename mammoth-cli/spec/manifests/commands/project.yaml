@@ -1,86 +1,23 @@
 manifest_schema_version: 1
 commands:
 - command_id: project.bulk-delete
-  command_path: project bulk-delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteProjects
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_delete_and_verify with validated request fields.
-  request_model: ProjectBulkDeleteRequest
-  result_model: ProjectBulkDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-BULK-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project bulk-delete --help
-  agent_example: 'mammoth project bulk-delete --input ''{"project_ids": [1]}'' --yes'
-  unit_tests:
-  - UT-PROJECT-BULK-DELETE
-  contract_tests:
-  - CT-PROJECT-BULK-DELETE-HUMAN
-  - CT-PROJECT-BULK-DELETE-JSON
-  - CT-PROJECT-BULK-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Sorted comma-separated ID-set confirmation.
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
   readback:
     command: project.list
     ids: {}
     kind: object
 - command_id: project.bulk-update
-  command_path: project bulk-update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateProjects
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.bulk_update
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.bulk_update with validated request fields.
-  request_model: ProjectBulkUpdateRequest
-  result_model: ProjectBulkUpdateResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project bulk-update --help
-  agent_example: 'mammoth project bulk-update --input ''{"patch_data": {"patches": [{"op": "add", "path": "role", "value": [{"project_id": 456, "user_roles": [{"user_id": 123, "role": "project_analyst"}]}]}]}}'' --yes'
-  unit_tests:
-  - UT-PROJECT-BULK-UPDATE
-  contract_tests:
-  - CT-PROJECT-BULK-UPDATE-HUMAN
-  - CT-PROJECT-BULK-UPDATE-JSON
-  - CT-PROJECT-BULK-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Release contract is ProjectsPatch (role add/replace/remove across projects).
-    The CLI requires every patches[].value item to name a project_id and the confirmation names
-    those ids; a body that names no project is refused before dispatch. Not verified live.
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
+  known_restrictions: Release contract is ProjectsPatch (role add/replace/remove across projects). The
+    CLI requires every patches[].value item to name a project_id and the confirmation names those ids;
+    a body that names no project is refused before dispatch. Not verified live.
   readback:
     command: project.list
     ids: {}
     kind: object
 - command_id: project.check
+  output_schema:
+    ref: ProjectCheck
   command_path: project check
   disposition: command
   alias_of: null
@@ -97,7 +34,8 @@ commands:
     required: false
     metavar: DATASET_ID
     falls_back_to_field: null
-    help: Check only this dataset (its first view unless VIEW_ID is given); no other dataset or dashboard is read.
+    help: Check only this dataset (its first view unless VIEW_ID is given); no other dataset or dashboard
+      is read.
   - name: view_id
     type: int
     required: false
@@ -129,95 +67,31 @@ commands:
   - CT-PROJECT-CHECK-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and one data page per view, six resources at a time. `resources` has one status row per dataset and dashboard with its freshness (in_sync, out_of_sync or running, with data_updated_at) kept apart from its data quality (warning count), or the error that stopped its check. Given DATASET_ID it reads only that dataset's first view and skips the dashboards; also given VIEW_ID it reads that view instead. Every status row names the view_id and view_name it checked, so compare it with the view the work was on.
+  known_restrictions: Reads the first view of each dataset (the one uploads and the playbooks use) and
+    one data page per view, six resources at a time. `resources` has one status row per dataset and dashboard
+    with its freshness (in_sync, out_of_sync or running, with data_updated_at) kept apart from its data
+    quality (warning count), or the error that stopped its check. Given DATASET_ID it reads only that
+    dataset's first view and skips the dashboards; also given VIEW_ID it reads that view instead. Every
+    status row names the view_id and view_name it checked, so compare it with the view the work was on.
   reviewed_by: primary
 - command_id: project.checkpoint.list
-  command_path: project checkpoint list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetProjectCheckpoints
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.checkpoint_list
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.checkpoint_list with validated request fields.
-  request_model: ProjectCheckpointListRequest
-  result_model: ProjectCheckpointListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-CHECKPOINT-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project checkpoint list --help
-  agent_example: mammoth project checkpoint list 123
-  unit_tests:
-  - UT-PROJECT-CHECKPOINT-LIST
-  contract_tests:
-  - CT-PROJECT-CHECKPOINT-LIST-HUMAN
-  - CT-PROJECT-CHECKPOINT-LIST-JSON
-  - CT-PROJECT-CHECKPOINT-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: project.create
-  command_path: project create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateProject
-  positionals:
-  - name: name
-    type: str
-    required: false
-    metavar: NAME
-    falls_back_to_field: name
-    help: Name of the new project; or pass it via the 'name' input field.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.create
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.create with validated request fields.
-  request_model: ProjectCreateRequest
-  result_model: ProjectCreateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project create --help
-  agent_example: mammoth project create 'Revenue report'
-  unit_tests:
-  - UT-PROJECT-CREATE
-  contract_tests:
-  - CT-PROJECT-CREATE-HUMAN
-  - CT-PROJECT-CREATE-JSON
-  - CT-PROJECT-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
   readback:
     command: project.get
     ids:
       project_id: result.id
     kind: object
 - command_id: project.ensure
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/WriteResult'}
+    - type: object
+      required: [created, duplicates]
+      properties:
+        created: {type: boolean}
+        duplicates: {type: array}
   command_path: project ensure
   disposition: command
   alias_of: null
@@ -238,6 +112,10 @@ commands:
   result_model: ProjectEnsureResult
   mutation_class: benign_mutation
   edits_target: false
+  undo:
+    strategy: "manual"
+    command: "project.delete"
+    note: "It may have found an existing project instead of making one: check before deleting."
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
@@ -267,819 +145,171 @@ commands:
       project_id: result.project_id
     kind: object
 - command_id: project.data-check.list
-  command_path: project data-check list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetProjectDataChecks
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.data_check_list
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.data_check_list with validated request fields.
-  request_model: ProjectDataCheckListRequest
-  result_model: ProjectDataCheckListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-DATA-CHECK-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project data-check list --help
-  agent_example: mammoth project data-check list 123
-  unit_tests:
-  - UT-PROJECT-DATA-CHECK-LIST
-  contract_tests:
-  - CT-PROJECT-DATA-CHECK-LIST-HUMAN
-  - CT-PROJECT-DATA-CHECK-LIST-JSON
-  - CT-PROJECT-DATA-CHECK-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: project.delete
-  command_path: project delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.delete_and_verify
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.delete_and_verify with validated request fields.
-  request_model: ProjectDeleteRequest
-  result_model: ProjectDeleteResult
+  output_schema:
+    ref: WriteResult
   mutation_class: high_impact
-  edits_target: true
   confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project delete --help
   agent_example: mammoth project delete 123 --yes --confirm 123
-  unit_tests:
-  - UT-PROJECT-DELETE
-  contract_tests:
-  - CT-PROJECT-DELETE-HUMAN
-  - CT-PROJECT-DELETE-JSON
-  - CT-PROJECT-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Immutable project-ID confirmation.
-  reviewed_by: primary
   readback:
     command: project.list
     ids: {}
     kind: object
 - command_id: project.get
-  command_path: project get
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.get
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.get with validated request fields.
-  request_model: ProjectGetRequest
-  result_model: ProjectGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project get --help
-  agent_example: mammoth project get 123
-  unit_tests:
-  - UT-PROJECT-GET
-  contract_tests:
-  - CT-PROJECT-GET-HUMAN
-  - CT-PROJECT-GET-JSON
-  - CT-PROJECT-GET-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema:
+    ref: ProjectGet
   known_restrictions: Reads one project by id. A token limited to one project can read only that project.
-  reviewed_by: primary
 - command_id: project.list
-  command_path: project list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetProject
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.list
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.list with validated request fields.
-  request_model: ProjectListRequest
-  result_model: ProjectListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project list --help
-  agent_example: mammoth project list
-  unit_tests:
-  - UT-PROJECT-LIST
-  contract_tests:
-  - CT-PROJECT-LIST-HUMAN
-  - CT-PROJECT-LIST-JSON
-  - CT-PROJECT-LIST-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema: openapi
   known_restrictions: 'B01 FIRST_PAGE_ONLY: no offset/cursor continuation proven yet.'
-  reviewed_by: primary
 - command_id: project.memory.list
-  command_path: project memory list
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.list_agent_memory
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.list_agent_memory with validated request fields.
-  request_model: ProjectMemoryListRequest
-  result_model: ProjectMemoryListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: ProjectMemoryList
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project memory list --help
-  agent_example: 'mammoth project memory list 123'
-  unit_tests:
-  - UT-PROJECT-MEMORY-LIST
-  contract_tests:
-  - CT-PROJECT-MEMORY-LIST-HUMAN
-  - CT-PROJECT-MEMORY-LIST-JSON
-  - CT-PROJECT-MEMORY-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'The saved preferences are the caller''s own, per project, oldest first; the in-app agent reads them at the start of every turn. Remove one by its zero-based position in this list.'
-  reviewed_by: primary
+  known_restrictions: The saved preferences are the caller's own, per project, oldest first; the in-app
+    agent reads them at the start of every turn. Remove one by its zero-based position in this list.
 - command_id: project.memory.add
-  command_path: project memory add
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.add_agent_memory
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.add_agent_memory with validated request fields.
-  request_model: ProjectMemoryAddRequest
-  result_model: ProjectMemoryAddResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: project.memory.remove
+    note: 'Run it with the index of the memory it added (see `project memory list`); the add''s text is not what the removal takes.'
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project memory add --help
-  agent_example: 'mammoth project memory add 123 --input ''{"text": "Quarterly revenue summary"}'''
-  unit_tests:
-  - UT-PROJECT-MEMORY-ADD
-  contract_tests:
-  - CT-PROJECT-MEMORY-ADD-HUMAN
-  - CT-PROJECT-MEMORY-ADD-JSON
-  - CT-PROJECT-MEMORY-ADD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Save only a preference the user stated for how the agent works or shows things (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies them in every later turn in this project. A rule about what a board''s data means (for example, Returned orders are refunds) belongs to that board: dashboard context create.'
-  reviewed_by: primary
+  known_restrictions: 'Save only a preference the user stated for how the agent works or shows things
+    (at most 20, each at most 200 characters); never data, results or secrets. The in-app agent applies
+    them in every later turn in this project. A rule about what a board''s data means (for example, Returned
+    orders are refunds) belongs to that board: dashboard context create.'
   readback:
     command: project.memory.list
     ids:
       project_id: positional.0
     kind: object
 - command_id: project.memory.remove
-  command_path: project memory remove
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_agent_memory
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.remove_agent_memory with validated request fields.
-  request_model: ProjectMemoryRemoveRequest
-  result_model: ProjectMemoryRemoveResult
-  mutation_class: benign_mutation
-  edits_target: false
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: project.memory.add
+    note: 'Run it with the text of the memory it removed (--input); the removal did not keep it.'
   confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project memory remove --help
   agent_example: 'mammoth project memory remove 123 --input ''{"index": 1}'' --yes'
-  unit_tests:
-  - UT-PROJECT-MEMORY-REMOVE
-  contract_tests:
-  - CT-PROJECT-MEMORY-REMOVE-HUMAN
-  - CT-PROJECT-MEMORY-REMOVE-JSON
-  - CT-PROJECT-MEMORY-REMOVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'index is the zero-based position from project memory list; use it when the user asks to forget a preference.'
-  reviewed_by: primary
+  known_restrictions: index is the zero-based position from project memory list; use it when the user
+    asks to forget a preference.
   readback:
     command: project.memory.list
     ids:
       project_id: positional.0
     kind: object
 - command_id: project.needs-attention
-  command_path: project needs-attention
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.needs_attention
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.needs_attention with validated request fields.
-  request_model: ProjectNeedsAttentionRequest
-  result_model: ProjectNeedsAttentionResult
+  output_schema:
+    ref: ProjectNeedsAttention
   mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
   acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-NEEDS-ATTENTION
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project needs-attention --help
-  agent_example: mammoth project needs-attention 123
-  unit_tests:
-  - UT-PROJECT-NEEDS-ATTENTION
-  contract_tests:
-  - CT-PROJECT-NEEDS-ATTENTION-HUMAN
-  - CT-PROJECT-NEEDS-ATTENTION-JSON
-  - CT-PROJECT-NEEDS-ATTENTION-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed), each with view_id and the owning dataset_id, and needs_input (a file or dataset waiting for a person; action is unstructured_rows, ambiguous_date_format, password_required, sheet_selection_required or schema_mismatch); datasets lists each affected dataset once with its view_ids. Pending retentions are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id from datasets and run dataset delete or dataset bulk-delete (confirm first).'
-  reviewed_by: primary
+  known_restrictions: 'The rows of the Monitor Needs Attention tab for one project (the app has no workspace-wide
+    list): pipeline_error, pending_pipeline, pending_data, checkpoint (needs approval), data_check (failed),
+    each with view_id and the owning dataset_id, and needs_input (a file or dataset waiting for a person;
+    action is unstructured_rows, ambiguous_date_format, password_required, sheet_selection_required or
+    schema_mismatch); datasets lists each affected dataset once with its view_ids. Pending retentions
+    are not returned by the API and are not included. To delete the datasets behind the views, take dataset_id
+    from datasets and run dataset delete or dataset bulk-delete (confirm first).'
   readback:
     command: project.needs-attention
     ids: {}
     kind: object
+  unset:
+  - edits_target
 - command_id: project.pending-changes
-  command_path: project pending-changes
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetPendingChanges
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.pending_changes
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.pending_changes with validated request fields.
-  request_model: ProjectPendingChangesRequest
-  result_model: ProjectPendingChangesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-PENDING-CHANGES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project pending-changes --help
-  agent_example: mammoth project pending-changes 123
-  unit_tests:
-  - UT-PROJECT-PENDING-CHANGES
-  contract_tests:
-  - CT-PROJECT-PENDING-CHANGES-HUMAN
-  - CT-PROJECT-PENDING-CHANGES-JSON
-  - CT-PROJECT-PENDING-CHANGES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: project.publish-credentials
-  command_path: project publish-credentials
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetPublishCredentials
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.publish_credentials
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.publish_credentials with validated request fields.
-  request_model: ProjectPublishCredentialsRequest
-  result_model: ProjectPublishCredentialsResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-PUBLISH-CREDENTIALS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project publish-credentials --help
-  agent_example: 'mammoth project publish-credentials 123 --input ''{"odbc_type": "postgres"}'''
-  unit_tests:
-  - UT-PROJECT-PUBLISH-CREDENTIALS
-  contract_tests:
-  - CT-PROJECT-PUBLISH-CREDENTIALS-HUMAN
-  - CT-PROJECT-PUBLISH-CREDENTIALS-JSON
-  - CT-PROJECT-PUBLISH-CREDENTIALS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: project.resource-dependencies
-  command_path: project resource-dependencies
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetResourceDependencies
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_dependencies
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_dependencies with validated request fields.
-  request_model: ProjectResourceDependenciesRequest
-  result_model: ProjectResourceDependenciesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-RESOURCE-DEPENDENCIES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project resource-dependencies --help
-  agent_example: 'mammoth project resource-dependencies 123 --input ''{"resource_ids": [456]}'''
-  unit_tests:
-  - UT-PROJECT-RESOURCE-DEPENDENCIES
-  contract_tests:
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-HUMAN
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-JSON
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: project.resource-dependencies.update
-  command_path: project resource-dependencies update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - BulkModify
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_dependencies_update
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_dependencies_update with validated request
-    fields.
-  request_model: ProjectResourceDependenciesUpdateRequest
-  result_model: ProjectResourceDependenciesUpdateResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project resource-dependencies update --help
-  agent_example: 'mammoth project resource-dependencies update 123 --input ''{"patches": [{"op": "replace",
-    "path": "data_sync", "value": {"context_type": "dataview", "context_id": 1}}]}'' --yes --confirm 123'
-  unit_tests:
-  - UT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE
-  contract_tests:
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-HUMAN
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-JSON
-  - CT-PROJECT-RESOURCE-DEPENDENCIES-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Changes the resources the project declares it depends on; views and dashboards that read through a removed dependency can stop resolving data. Read the current set first (`project resource-dependencies`). Needs --yes and --confirm PROJECT_ID.
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
+  known_restrictions: Changes the resources the project declares it depends on; views and dashboards that
+    read through a removed dependency can stop resolving data. Read the current set first (`project resource-dependencies`).
+    Needs --yes and --confirm PROJECT_ID.
   readback:
     command: project.resource-dependencies
     ids:
       project_id: positional.0
     kind: object
 - command_id: project.resource-status
-  command_path: project resource-status
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetResourceStatus
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.resource_status
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.resource_status with validated request fields.
-  request_model: ProjectResourceStatusRequest
-  result_model: ProjectResourceStatusResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-PROJECT-RESOURCE-STATUS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project resource-status --help
-  agent_example: mammoth project resource-status 123
-  unit_tests:
-  - UT-PROJECT-RESOURCE-STATUS
-  contract_tests:
-  - CT-PROJECT-RESOURCE-STATUS-HUMAN
-  - CT-PROJECT-RESOURCE-STATUS-JSON
-  - CT-PROJECT-RESOURCE-STATUS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: ProjectResourceStatus
 - command_id: project.sample-flow
-  command_path: project sample-flow
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateSampleFlow
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.sample_flow
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.sample_flow with validated request fields.
-  request_model: ProjectSampleFlowRequest
-  result_model: ProjectSampleFlowResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-SAMPLE-FLOW
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project sample-flow --help
-  agent_example: mammoth project sample-flow 123
-  unit_tests:
-  - UT-PROJECT-SAMPLE-FLOW
-  contract_tests:
-  - CT-PROJECT-SAMPLE-FLOW-HUMAN
-  - CT-PROJECT-SAMPLE-FLOW-JSON
-  - CT-PROJECT-SAMPLE-FLOW-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: job.get
     ids:
       job_id: result.job_id
     kind: delivery
 - command_id: project.update
-  command_path: project update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.update
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.update with validated request fields.
-  request_model: ProjectUpdateRequest
-  result_model: ProjectUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project update --help
-  agent_example: 'mammoth project update 123 --input ''{"name": "Renamed project"}'''
-  unit_tests:
-  - UT-PROJECT-UPDATE
-  contract_tests:
-  - CT-PROJECT-UPDATE-HUMAN
-  - CT-PROJECT-UPDATE-JSON
-  - CT-PROJECT-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: project.get
     ids:
       project_id: positional.0
     kind: object
 - command_id: project.user.add
-  command_path: project user add
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AddUserProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.add_users
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.add_users with validated request fields.
-  request_model: ProjectUserAddRequest
-  result_model: ProjectUserAddResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project user add --help
-  agent_example: 'mammoth project user add 123 --input ''{"user_ids": [123], "role": "project_analyst"}'' --yes --confirm 123'
-  unit_tests:
-  - UT-PROJECT-USER-ADD
-  contract_tests:
-  - CT-PROJECT-USER-ADD-HUMAN
-  - CT-PROJECT-USER-ADD-JSON
-  - CT-PROJECT-USER-ADD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. role is required, and a user who is already a project member is refused (the backend would replace that member''s role, demoting an admin); change roles with project user update. Takes existing workspace users'' ids. To add
-    someone by email who is not in the workspace yet, use workspace user add with
-    {"email_ids": [EMAIL], "projects": [{"project_id": PROJECT_ID, "role": ROLE}]}: it invites them as a workspace member
-    with that project role, which is how a project gets a new person.'
-  reviewed_by: primary
-  no_readback: "no CLI read command exposes per-project user role assignments"
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: project.user.remove
+    note: 'Run it with the same user_ids, --yes and --confirm. The add''s role is not part of the removal, so the journal cannot reuse the add''s input as it is.'
+  known_restrictions: 'B03 PROJECT_USER_ID_ROLE_UNTYPED. role is required, and a user who is already a
+    project member is refused (the backend would replace that member''s role, demoting an admin); change
+    roles with project user update. Takes existing workspace users'' ids. To add someone by email who
+    is not in the workspace yet, use workspace user add with {"email_ids": [EMAIL], "projects": [{"project_id":
+    PROJECT_ID, "role": ROLE}]}: it invites them as a workspace member with that project role, which is
+    how a project gets a new person.'
+  no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.remove
-  command_path: project user remove
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RemoveUserProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.remove_users
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.remove_users with validated request fields.
-  request_model: ProjectUserRemoveRequest
-  result_model: ProjectUserRemoveResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project user remove --help
-  agent_example: 'mammoth project user remove 123 --input ''{"user_ids": ["resource-123"]}'' --yes --confirm 123'
-  unit_tests:
-  - UT-PROJECT-USER-REMOVE
-  contract_tests:
-  - CT-PROJECT-USER-REMOVE-HUMAN
-  - CT-PROJECT-USER-REMOVE-JSON
-  - CT-PROJECT-USER-REMOVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: B03 PROJECT_USER_ID_ROLE_UNTYPED; sorted target-set confirmation.
-  reviewed_by: primary
-  no_readback: "no CLI read command exposes per-project user role assignments"
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: project.user.add
+    note: 'Run it with the same user_ids and a role for each: the removal did not keep the role the users had, so the journal cannot rebuild the add.'
+  no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.user.update
-  command_path: project user update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateUserProject
-  positionals:
-  - name: project_id
-    type: int
-    required: false
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to act on; defaults to the active project.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.user_update
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.user_update with validated request fields.
-  request_model: ProjectUserUpdateRequest
-  result_model: ProjectUserUpdateResult
+  output_schema:
+    ref: WriteResult
   mutation_class: high_impact
-  edits_target: true
   confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-PROJECT-USER-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project user update --help
-  agent_example: 'mammoth project user update 123 --input ''{"role": "project_admin", "user_id": 123}''
-    --yes'
-  unit_tests:
-  - UT-PROJECT-USER-UPDATE
-  contract_tests:
-  - CT-PROJECT-USER-UPDATE-HUMAN
-  - CT-PROJECT-USER-UPDATE-JSON
-  - CT-PROJECT-USER-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Changes one project member's role (role plus exactly one of user_id or invite_id); the person gains or loses access at once. Needs --yes.
-  reviewed_by: primary
-  no_readback: "no CLI read command exposes per-project user role assignments"
+  known_restrictions: Changes one project member's role (role plus exactly one of user_id or invite_id);
+    the person gains or loses access at once. Needs --yes.
+  no_readback: no CLI read command exposes per-project user role assignments
 - command_id: project.copy
-  command_path: project copy
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CopyProject
-  positionals:
-  - name: project_id
-    type: int
-    required: true
-    metavar: PROJECT_ID
-    falls_back_to_field: null
-    help: ID of the project to copy.
-  - name: name
-    type: str
-    required: true
-    metavar: NAME
-    falls_back_to_field: null
-    help: Name of the new project. If it is already taken, the copy is named with the next free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.
-  options: []
-  sdk_symbol: mammoth.api.projects.ProjectsAPI.copy
-  sdk_conversion: Call mammoth.api.projects.ProjectsAPI.copy with validated request fields.
-  request_model: ProjectCopyRequest
-  result_model: ProjectCopyResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
+  undo:
+    strategy: manual
+    command: project.delete
+    note: 'Run it with the id of the copy (in its result), not the project that was copied.'
+  output_schema:
+    ref: WriteResult
   wait_policy: always_wait
-  pagination_policy: none
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Backend route ships with this release; no disposable fixture runs it yet.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth project copy PROJECT_ID NAME --help
-  agent_example: mammoth project copy 123 'Revenue report'
-  unit_tests:
-  - UT-PROJECT-COPY
-  contract_tests:
-  - CT-PROJECT-COPY-HUMAN
-  - CT-PROJECT-COPY-JSON
-  - CT-PROJECT-COPY-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Creates a project: copies the datasets, views and pipelines of PROJECT_ID into
     a new project NAME, in one job the command waits for. Input fields: dataset_ids (copy only these;
     default all), include_dashboards (default false), exclude_data (default false, copies pipelines without
     rows). The result is project_id, dataset_map, view_map, skipped (what was left behind or still points
     outside the copy) and dashboards (dashboard_id, new_dashboard_id). Needs permission to create projects.
     Sweep with ''project delete ID --yes --confirm ID''.'
-  reviewed_by: primary
   readback:
     command: project.get
     ids:

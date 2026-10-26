@@ -16,10 +16,9 @@ import re
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: ``(pattern, field)``: each pattern captures one id out of the URL path.
 _PATH_IDS: tuple[tuple[re.Pattern[str], str], ...] = (

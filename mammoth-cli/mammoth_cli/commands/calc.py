@@ -25,12 +25,10 @@ from decimal import (
     InvalidOperation,
     localcontext,
 )
-from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: A trailing "N%" is rewritten to "(N/100)" before parsing -- ``%`` is not
 #: valid Python expression syntax on its own.

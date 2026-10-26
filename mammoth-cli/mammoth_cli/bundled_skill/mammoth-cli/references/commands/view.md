@@ -1082,7 +1082,7 @@ Run: `mammoth view version apply`. Exact input fields: `mammoth schema get view.
 
 Example: `mammoth view version apply 123 456 789`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `ViewVersionApplyResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `ViewVersionApplyResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.14 — write sweep 2026-09-18: exit 0 on release with CLI 2.0.14. job 351 apply_pipeline_version -> status success (reapplied the 'add_rule' version that had the convert-type task, restoring task 24's state on view 73). Single invocation only.
 

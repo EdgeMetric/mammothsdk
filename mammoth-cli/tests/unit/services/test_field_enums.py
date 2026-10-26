@@ -112,3 +112,26 @@ def test_registered_value_is_normalised_in_place() -> None:
 def test_match_choice_ignores_case_spaces_and_hyphens() -> None:
     assert match_choice("Data Quality", ("stats", "data_quality")) == ("data_quality", None)
     assert match_choice("zzz", ("stats",)) == (None, None)
+
+
+@pytest.mark.parametrize(
+    "command_id", ["view.conditional-format.create", "view.conditional-format.replace"]
+)
+def test_a_guessed_highlight_colour_is_refused_before_the_request_with_the_swatches(
+    command_id: str,
+) -> None:
+    """P5 of the 10-26 speed pass: 5 of 6 agent runs sent "yellow" and learned the swatches
+    from the backend's 400, costing a rejected write and a ``schema get`` round."""
+    schema = get_schema(command_id)
+    assert schema is not None
+    prop = dict(schema["input_schema"])["properties"]["color"]
+    listed = [m.get("enum") for m in [prop, *(prop.get("anyOf") or [])]]
+    assert any(values and "amber" in values and "yellow" not in values for values in listed)
+
+    with pytest.raises(CliError) as caught:
+        validate_input_fields(command_id, {"color": "yellow"})
+    assert "amber" in (caught.value.details or {})["accepted"]
+
+    document = {"color": "Amber"}
+    validate_input_fields(command_id, document)
+    assert document["color"] == "amber"

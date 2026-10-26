@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: log.path
+  output_schema:
+    ref: LogPath
   command_path: log path
   disposition: command
   alias_of: null
@@ -34,6 +36,8 @@ commands:
   known_restrictions: null
   reviewed_by: primary
 - command_id: log.tail
+  output_schema:
+    ref: LogTail
   command_path: log tail
   disposition: command
   alias_of: null

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+import types
 import typing
 from typing import Any
 
@@ -11,6 +13,7 @@ from mammoth.view import View
 
 from mammoth_cli.services.type_system import (
     TypeValidationError,
+    _is_resource_domain,
     is_opaque_mapping,
     json_schema,
     sample_value,
@@ -134,3 +137,18 @@ def test_condition_value_documents_the_parameter_binding_marker() -> None:
     assert binding["additionalProperties"] is False
     assert binding["example"] == {"type": "parameter", "parameter_id": 12}
     assert "parameter create" in binding["description"]
+
+
+def test_a_view_module_still_importing_in_another_thread_is_not_a_crash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Live 2026-10-26: two cold embedded calls at once; one saw ``mammoth.view`` in
+    ``sys.modules`` before ``View`` was defined and failed with AttributeError."""
+    monkeypatch.setitem(sys.modules, "mammoth.view", types.ModuleType("mammoth.view"))
+    assert _is_resource_domain(int) is False
+    assert _is_resource_domain(View) is False
+
+
+def test_a_loaded_view_module_still_marks_view_a_resource() -> None:
+    assert _is_resource_domain(View) is True
+    assert _is_resource_domain(int) is False

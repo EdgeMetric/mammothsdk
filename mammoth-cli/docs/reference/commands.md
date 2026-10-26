@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.100.
+Generated from the reviewed command manifests for mammoth-cli 2.3.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 845.
+Total commands: 851.
 
 ## activity
 
@@ -3670,7 +3670,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.v3_generate`
-- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Weekly sales by region", "dataview_id": 1}}}'`
 
 ### `mammoth dashboard video export`
 
@@ -4282,6 +4282,48 @@ Total commands: 845.
 - Backing SDK: `mammoth.api.folders.FoldersAPI.update`
 - Agent example: `mammoth folder update 123 --input '{"name": "Revenue report"}'`
 
+## history
+
+### `mammoth history list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.history.history_list`
+- Agent example: `mammoth history list --input '{"undoable_only": true}'`
+
+### `mammoth history resume`
+
+**Arguments**
+
+- `ID` (str, required) — The group of the mammoth run or recipe run that stopped (from 'history list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.history.history_resume`
+- Agent example: `mammoth history resume 97b9ee41d15d --yes`
+
+### `mammoth history show`
+
+**Arguments**
+
+- `ID` (str, required) — The write's inv, or the group of a whole mammoth run (from 'history list').
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.history.history_show`
+- Agent example: `mammoth history show 97b9ee41d15d`
+
+### `mammoth history undo`
+
+**Arguments**
+
+- `ID` (str, required) — The write's inv, or the group of a whole mammoth run (from 'history list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.history.history_undo`
+- Agent example: `mammoth history undo 97b9ee41d15d --yes`
+
 ## how
 
 ### `mammoth how`
@@ -4814,6 +4856,26 @@ Total commands: 845.
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
 - Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes`
+
+## recipe
+
+### `mammoth recipe list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_list`
+- Agent example: `mammoth recipe list`
+
+### `mammoth recipe run`
+
+**Arguments**
+
+- `ID` (str, required) — The recipe to run (from 'recipe list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_run`
+- Agent example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes`
 
 ## report
 

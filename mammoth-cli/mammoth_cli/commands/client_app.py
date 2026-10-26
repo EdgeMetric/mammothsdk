@@ -22,6 +22,7 @@ from typing import Any
 
 from mammoth.exceptions import MammothModelDriftWarning
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.errors.envelope import (
@@ -42,8 +43,6 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:

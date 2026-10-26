@@ -15,9 +15,8 @@ from functools import cache
 from importlib import resources
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.runtime.invocation import Invocation
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _HINT = (
     "Each entry's workarounds are ready to run once the upper-case ids are filled in. "
@@ -58,7 +57,7 @@ def _entry(limitation: dict[str, Any]) -> dict[str, Any]:
 
 
 def _matches(limitation: dict[str, Any], terms: tuple[str, ...]) -> bool:
-    from mammoth_cli.commands.schema import _token_aliases, _tokens
+    from mammoth_cli.commands.schema.find import _token_aliases, _tokens
 
     vocabulary = _tokens(
         " ".join(
@@ -75,7 +74,7 @@ def _matches(limitation: dict[str, Any], terms: tuple[str, ...]) -> bool:
 
 def unsupported(words: str = "") -> dict[str, Any]:
     """Every known limitation, or those that match ``words`` when any match."""
-    from mammoth_cli.commands.schema import _query_tokens
+    from mammoth_cli.commands.schema.find import _query_tokens
 
     entries = list(load_limitations())
     terms = _query_tokens(words) if words.strip() else ()

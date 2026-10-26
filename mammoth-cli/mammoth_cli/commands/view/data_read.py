@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _COLUMNS_KEY,
     _QUERY_DATA_SYMBOL,
     _ROWS_KEY,
-    HandlerResult,
     _explain_swapped_ids,
     _forward_optional,
     _int_field,

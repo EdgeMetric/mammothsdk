@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
-    HandlerResult,
     _forward_optional,
     _read_meta,
     _require_int_positional_at,

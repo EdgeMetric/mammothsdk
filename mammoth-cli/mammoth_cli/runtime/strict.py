@@ -68,6 +68,7 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
 
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
+SCHEMA_GET = "schema.get"
 CODE_UNKNOWN_INPUT_FIELD = "unknown_input_field"
 CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 
@@ -117,7 +118,7 @@ def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, An
                 f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
                 {"input_field": guessed},
             )
-    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.app.usage import _global_option_flags
     from mammoth_cli.services.suggest import option_suggestion
 
     known = sorted(_global_option_flags()[0] | COMMAND_FLAGS.get(command_id, frozenset()))
@@ -161,7 +162,9 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
             )
 
     max_positionals = len(resolve_positionals(command_id))
-    if len(tokens) > max_positionals:
+    # 'schema get' takes ids separated by spaces as well as by ',' or ';' (an agent that
+    # was told the comma form still writes the space form), or a command as typed.
+    if len(tokens) > max_positionals and command_id != SCHEMA_GET:
         surplus = tokens[max_positionals:]
         raise CliError(
             code=CODE_UNEXPECTED_ARGUMENT,

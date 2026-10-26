@@ -32,14 +32,25 @@ _PROJECT_PATHS: dict[str, str] = {
 }
 _DASHBOARD = "dashboard"
 _OPENABLE = frozenset({*_PROJECT_PATHS, _DASHBOARD})
-#: Manifest id names for the same object: a view is ``dataview_id`` in some commands.
-_KIND_ALIASES = {"dataview": "view"}
+#: Manifest id names for the same object: a view is ``dataview_id`` in some commands, a
+#: dataset ``ds_id`` in ``append_to_ds_id`` and ``target_ds_id``.
+_KIND_ALIASES = {"dataview": "view", "ds": "dataset"}
 #: Last word of a command that leaves nothing to open.
 _GONE_VERBS = frozenset({"trash", "delete"})
 #: Kinds a write names in its own result by ``<kind>_id`` without a readback id.
 _RESULT_KINDS = ("view", "dashboard")
-#: A view export makes a whole new dataset and says so as ``dataset_id`` in its result.
-_MAKES_DATASET = frozenset({"view.export.dataset"})
+#: Writes that make whole new datasets and name them as ``dataset_id`` (an upload of
+#: several sheets also as ``dataset_ids``) in their result.
+MAKES_DATASET = frozenset(
+    {"view.export.dataset", "file.upload", "file.upload-folder", "dataset.create-from-pdf"}
+)
+#: The upload whose bare result is the ids of the datasets it made, once it has waited.
+FOLDER_UPLOAD = "file.upload-folder"
+#: Writes that list every view they made as ``view_ids`` (their readback names the first).
+MAKES_VIEWS = frozenset({"view.variants.create"})
+#: Writes that return the object made by an earlier call, with no job, when it exists: a
+#: result without ``job_id`` is then not a new object.
+FINDS_EXISTING = frozenset({"dashboard.live-chart.create"})
 _SOURCE_FROM_CALL = ("positional.", "input.")
 _API_SUFFIX = "/api/v2"
 
@@ -49,7 +60,7 @@ def with_opens(invocation: Invocation, data: Any, meta: dict[str, Any]) -> dict[
     record = command_by_id(invocation.command_id) or {}
     if record.get("mutation_class") == "read" or not record.get("sdk_symbol"):
         return meta
-    result = data if isinstance(data, dict) else {}
+    result = _as_result(invocation, data)
     if invocation.command_id.rsplit(".", 1)[-1] in _GONE_VERBS or _changed_nothing(result):
         return meta
     targets = _targets(invocation, record, result)
@@ -68,6 +79,31 @@ def with_opens(invocation: Invocation, data: Any, meta: dict[str, Any]) -> dict[
         for kind, object_id, created in targets
     ]
     return {**meta, "opens": opens}
+
+
+def _as_result(invocation: Invocation, data: Any) -> dict[str, Any]:
+    """The command's result as a mapping.
+
+    ``file upload-folder`` that waited returns the dataset ids it made as a bare id or
+    list of ids (the SDK's own return); they are read as ``dataset_ids``. Any other bare
+    value, such as the job id an upload returns with ``wait_for_completion: false``, names
+    no object.
+
+    Args:
+        invocation: The call.
+        data: What the handler returned.
+
+    Returns:
+        The result when it is a mapping, the dataset ids of a folder upload that waited as
+        ``{"dataset_ids": [...]}``, else an empty mapping.
+    """
+    if isinstance(data, dict):
+        return data
+    waited = (invocation.load_input() or {}).get("wait_for_completion", True) is not False
+    if invocation.command_id == FOLDER_UPLOAD and waited:
+        ids = data if isinstance(data, list) else [data]
+        return {"dataset_ids": [item for item in ids if isinstance(item, int)]}
+    return {}
 
 
 def _changed_nothing(result: dict[str, Any]) -> bool:
@@ -92,11 +128,16 @@ def _targets(
             continue
         from_call = all(part.startswith(_SOURCE_FROM_CALL) for part in str(source).split("|"))
         (existing if from_call else made).append(key)
-    if existing and invocation.command_id not in _MAKES_DATASET:
+    if existing and invocation.command_id not in MAKES_DATASET:
         made = []
     else:
         made += _result_made(invocation, record, result)
+    if invocation.command_id in FINDS_EXISTING and not result.get("job_id"):
+        existing, made = [*existing, *made], []
     named = _named_by_call(invocation)
+    # An object the call names (an append's ``append_to_ds_id``, an export's ``target_ds_id``)
+    # existed before the write, even when the result names it too: changed, never made.
+    existing += [key for key in made if key in named]
     made = [key for key in made if key not in named]
     keys = dict.fromkeys([*existing, *made])
     targets = [(*key.partition(":")[::2], key in made) for key in keys]
@@ -108,12 +149,17 @@ def _targets(
 def _result_made(
     invocation: Invocation, record: dict[str, Any], result: dict[str, Any]
 ) -> list[str]:
-    """The ``kind:id`` of each object the result names as ``<kind>_id``."""
-    kinds: tuple[str, ...] = _RESULT_KINDS
-    if invocation.command_id in _MAKES_DATASET or _new_kind(record) == "dataset":
+    """The ``kind:id`` of each object a command that makes objects names as ``<kind>_id``."""
+    # A command that edits its target names that target in its result: not a new object.
+    kinds: tuple[str, ...] = () if record.get("edits_target") else _RESULT_KINDS
+    if invocation.command_id in MAKES_DATASET or _new_kind(record) == "dataset":
         kinds = ("dataset", *kinds)
-    keys = (_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds)
-    return [key for key in keys if key is not None]
+    keys = [_object_key(f"{kind}_id", result.get(f"{kind}_id")) for kind in kinds]
+    if "dataset" in kinds and isinstance(result.get("dataset_ids"), list):
+        keys += [_object_key("dataset_id", value) for value in result["dataset_ids"]]
+    if invocation.command_id in MAKES_VIEWS and isinstance(result.get("view_ids"), list):
+        keys += [_object_key("view_id", value) for value in result["view_ids"]]
+    return [key for key in dict.fromkeys(keys) if key is not None]
 
 
 def _new_kind(record: dict[str, Any]) -> str | None:
@@ -142,7 +188,7 @@ def _object_key(name: str, object_id: object) -> str | None:
     """``view:12`` for an id name like ``dataview_id`` and its value."""
     if not name.endswith("_id") or not str(object_id).isdigit():
         return None
-    kind = name.removesuffix("_id")
+    kind = name.removesuffix("_id").rpartition("_")[2]
     return f"{_KIND_ALIASES.get(kind, kind)}:{object_id}"
 
 

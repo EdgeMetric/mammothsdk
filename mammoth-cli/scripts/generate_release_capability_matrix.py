@@ -45,6 +45,8 @@ import _route_scan  # noqa: E402
 from _sdk_catalog import CLI_ONLY_COMMANDS  # noqa: E402
 from report_release_capability_drift import scaffold_addition  # noqa: E402
 
+from mammoth_cli.manifest.loader import command_records  # noqa: E402
+
 DOCS = CLI_ROOT / "docs"
 DEFAULT_MATRIX = DOCS / "release-capability-matrix.json"
 DEFAULT_MARKDOWN = DOCS / "release-capability-matrix.md"
@@ -106,10 +108,8 @@ class Manifests:
         sdk = yaml.safe_load((MANIFESTS / "sdk-methods.yaml").read_text(encoding="utf-8"))
         self.sdk = {record["sdk_symbol"]: record for record in sdk["methods"]}
         self.commands: dict[str, dict[str, Any]] = {}
-        for source in sorted((MANIFESTS / "commands").glob("*.yaml")):
-            loaded = yaml.safe_load(source.read_text(encoding="utf-8"))
-            for record in loaded["commands"]:
-                self.commands[record["command_id"]] = record
+        for record in command_records():
+            self.commands[record["command_id"]] = record
         operations = yaml.safe_load((MANIFESTS / "openapi-operations.yaml").read_text("utf-8"))
         self.operations = {record["operation_id"]: record for record in operations["operations"]}
         self.commands_by_operation: dict[str, set[str]] = defaultdict(set)

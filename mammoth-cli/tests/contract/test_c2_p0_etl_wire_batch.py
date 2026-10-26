@@ -7,8 +7,10 @@ They are offline contract evidence only; they do not exercise release access.
 from __future__ import annotations
 
 import asyncio
+import importlib
 import inspect
 import json
+import pkgutil
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,7 @@ from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands import file as file_cmd
 from mammoth_cli.commands import view as view_cmd
 from mammoth_cli.commands import view_ops
+from mammoth_cli.commands.view_ops import crud as view_crud
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -26,18 +29,18 @@ from mammoth_cli.runtime.invocation import Invocation
 def _set_open_service(monkeypatch: pytest.MonkeyPatch, module: Any, replacement: Any) -> None:
     """Patch ``open_service`` in every module that looks it up.
 
-    The ``view`` package spreads its handlers over submodules, each importing
-    ``open_service`` itself, so the patch must land on each of them.
+    The ``view`` and ``view_ops`` packages spread their handlers over submodules, each
+    importing ``open_service`` itself, so the patch must land on each of them.
     """
-    import importlib
-
-    if module.__name__ != "mammoth_cli.commands.view":
-        monkeypatch.setattr(module, "open_service", replacement)
-        return
-    for name in module._SUBMODULES:
-        submodule = importlib.import_module(f"{module.__name__}.{name}")
-        if "open_service" in vars(submodule):
-            monkeypatch.setattr(submodule, "open_service", replacement)
+    modules = [module]
+    if hasattr(module, "__path__"):
+        modules += [
+            importlib.import_module(f"{module.__name__}.{info.name}")
+            for info in pkgutil.iter_modules(module.__path__)
+        ]
+    for each in modules:
+        if "open_service" in vars(each):
+            monkeypatch.setattr(each, "open_service", replacement)
 
 
 PROJECT = 3
@@ -97,7 +100,7 @@ def test_p0_upload_view_create_and_task_add_wires(
     assert api.last().path.endswith(f"/workspaces/4/projects/{PROJECT}/files")
 
     with _bind(monkeypatch, view_ops, service):
-        _drive(view_ops.view_create(_inv("view.create", [str(DATASET)])))
+        _drive(view_crud.view_create(_inv("view.create", [str(DATASET)])))
     assert api.last().method == "POST"
     assert _path(api) == f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}/dataviews"
 
@@ -175,12 +178,12 @@ def test_p0_export_wire_and_delete_confirmation_controls(
 
     with _bind(monkeypatch, view_ops, service):
         with pytest.raises(CliError) as exc:
-            _drive(view_ops.view_delete(_inv("view.delete", [str(VIEW)])))
+            _drive(view_crud.view_delete(_inv("view.delete", [str(VIEW)])))
     assert exc.value.code == "confirmation_required"
 
     with _bind(monkeypatch, view_ops, service):
         _drive(
-            view_ops.view_delete(
+            view_crud.view_delete(
                 _inv("view.delete", [str(VIEW), str(DATASET)], yes=True, input_file=None)
             )
         )
@@ -202,7 +205,7 @@ def test_p0_export_wire_and_delete_confirmation_controls(
     wrong_parent = tmp_path / "wrong-parent.json"
     _drive(wrong_parent.write_text(json.dumps({"dataset_id": 999}), encoding="utf-8"))
     with _bind(monkeypatch, view_ops, service):
-        _drive(view_ops.view_delete(_inv("view.delete", [str(VIEW)], str(wrong_parent), yes=True)))
+        _drive(view_crud.view_delete(_inv("view.delete", [str(VIEW)], str(wrong_parent), yes=True)))
     assert _deletion(api).path.removeprefix("/api/v2") == (
         f"/workspaces/4/projects/{PROJECT}/datasets/999/dataviews/{VIEW}"
     )

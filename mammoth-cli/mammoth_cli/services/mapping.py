@@ -366,6 +366,31 @@ _UNKNOWN_ID_CODES = (
 )
 
 
+def _not_refreshable(message: str, details: dict[str, Any], request_id: str | None) -> CliError:
+    """The error for refreshing, or automating the refresh of, a dataset with no source.
+
+    Args:
+        message: The message to show.
+        details: The structured details of the API error.
+        request_id: The server's request id, when it sent one.
+
+    Returns:
+        A ``dataset_not_refreshable`` error with the ways forward.
+    """
+    return CliError(
+        code="dataset_not_refreshable",
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=REFRESH_FILE_DATASET_HINT,
+        details=details,
+        request_id=request_id,
+        recovery_commands=[
+            "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
+            "mammoth connector connection list",
+        ],
+    )
+
+
 def map_sdk_exception(
     exc: BaseException,
     *,
@@ -753,17 +778,13 @@ def map_sdk_exception(
                     request_id=request_id,
                 )
         if message and "4AUTO006" in message:
-            return CliError(
-                code="dataset_not_refreshable",
-                message=message,
-                exit_status=EXIT_USAGE,
-                hint=REFRESH_FILE_DATASET_HINT,
-                details=details,
-                request_id=request_id,
-                recovery_commands=[
-                    "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
-                    "mammoth connector connection list",
-                ],
+            return _not_refreshable(message, details, request_id)
+        if message and "4DSET048" in message:
+            # 'dataset refresh' on a dataset with no cloud or database source.
+            return _not_refreshable(
+                f"Only a dataset with a cloud or database source can be refreshed ({message}).",
+                details,
+                request_id,
             )
         return CliError(
             code=CODE_API_ERROR,

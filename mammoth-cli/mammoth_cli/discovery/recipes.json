@@ -1,5 +1,5 @@
 {
-  "_comment": "Goal recipes for 'mammoth how'. Each step names a real command id (a unit test checks every one exists). Upper-case words in an example (VIEW_ID, DATASET_ID, ...) are ids to take from the previous step's output; {project_id} is filled from --project or the profile.",
+  "_comment": "Goal recipes for 'mammoth how'. Each step names a real command id (a unit test checks every one exists). Upper-case words in an example (VIEW_ID, DATASET_ID, ...) are ids to take from the previous step's output; {project_id} is filled from --project or the profile. A recipe with 'inputs' and 'run' is executable: 'mammoth recipe run ID' runs its 'run' lines (mammoth run lines, which read '{{inputs.NAME}}' and '{{steps.NAME.data...}}'), and a test checks each line runs a command its steps name.",
   "recipes": [
     {
       "id": "refresh-daily",
@@ -61,6 +61,80 @@
       ],
       "notes": [
         "A file dataset cannot refresh itself. Upload each new file into it with: mammoth file upload ./new.csv --input '{\"append_to_ds_id\": DATASET_ID}'. Automating that needs a cloud connector. Run 'mammoth capabilities' for the details."
+      ],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The cloud or database dataset to refresh."
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "example": "Daily refresh",
+          "help": "A name for the automation."
+        },
+        "start_at": {
+          "type": "string",
+          "required": true,
+          "example": "2027-01-01T02:00:00Z",
+          "help": "When the first run starts (ISO time, 2+ minutes ahead)."
+        },
+        "frequency": {
+          "type": "string",
+          "required": false,
+          "default": "daily",
+          "example": "daily",
+          "help": "hourly, daily, weekly or monthly."
+        }
+      },
+      "run": [
+        {
+          "name": "source",
+          "cmd": "dataset get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "automation",
+          "cmd": "automation create",
+          "args": [
+            "{{inputs.name}}"
+          ],
+          "input": {
+            "tasks": [
+              {
+                "task_type": "run_data_retrieval",
+                "details": {
+                  "ds_details": [
+                    {
+                      "ds_id": "{{inputs.dataset_id}}"
+                    }
+                  ]
+                }
+              }
+            ],
+            "conditions": [
+              {
+                "condition_type": "at_specific_time",
+                "details": {
+                  "frequency": "{{inputs.frequency}}",
+                  "interval": 1,
+                  "start_at": "{{inputs.start_at}}"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "automation get",
+          "args": [
+            "{{steps.automation.data.id}}"
+          ]
+        }
       ]
     },
     {
@@ -109,7 +183,33 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./new_rows.csv",
+          "help": "The file of new rows (same columns)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the rows go into."
+        }
+      },
+      "run": [
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ],
+          "input": {
+            "append_to_ds_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
     },
     {
       "id": "blend-by-key",
@@ -186,6 +286,89 @@
       ],
       "notes": [
         "Use 'view transform lookup' instead when you need one value per key and the other side repeats keys."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The left view (the one that keeps its rows)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The left view's dataset."
+        },
+        "foreign_view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "The right view to join in."
+        },
+        "foreign_dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "The right view's dataset."
+        },
+        "left_key": {
+          "type": "string",
+          "required": true,
+          "example": "day",
+          "help": "The key column on the left (display name)."
+        },
+        "right_key": {
+          "type": "string",
+          "required": true,
+          "example": "day",
+          "help": "The key column on the right (display name)."
+        },
+        "select": {
+          "type": "array",
+          "required": true,
+          "example": [
+            "Region"
+          ],
+          "help": "The right-side columns to bring in (display names)."
+        },
+        "join_type": {
+          "type": "string",
+          "required": false,
+          "default": "LEFT",
+          "example": "LEFT",
+          "help": "INNER, LEFT, RIGHT or FULL."
+        }
+      },
+      "run": [
+        {
+          "name": "join",
+          "cmd": "view transform join",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "foreign_view": "{{inputs.foreign_view_id}}",
+            "join_type": "{{inputs.join_type}}",
+            "on": [
+              {
+                "left": "{{inputs.left_key}}",
+                "right": "{{inputs.right_key}}"
+              }
+            ],
+            "select": "{{inputs.select}}",
+            "dataset_id": "{{inputs.dataset_id}}",
+            "foreign_dataset_id": "{{inputs.foreign_dataset_id}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
       ]
     },
     {
@@ -250,9 +433,86 @@
           "purpose": "Read the dashboard back: its figures and its link.",
           "example": "mammoth dashboard get DASHBOARD_ID",
           "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./sales.csv",
+          "help": "The file to upload."
+        },
+        "intent": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue by region over time",
+          "help": "What the dashboard should show."
+        }
+      },
+      "run": [
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ]
+        },
+        {
+          "name": "data",
+          "cmd": "view data get",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
+          "args": [
+            "{{steps.upload.data.datasets[0].view.view_id}}",
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "dashboard",
+          "cmd": "dashboard v3 generate",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
+          "input": {
+            "body": {
+              "params": {
+                "intent": "{{inputs.intent}}",
+                "dataview_id": "{{steps.upload.data.datasets[0].view.view_id}}"
+              }
+            }
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "dashboard get",
+          "when": {
+            "present": "{{steps.dashboard.data.id}}"
+          },
+          "args": [
+            "{{steps.dashboard.data.id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+            }
+          },
+          "args": [
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "stuck-upload",
@@ -324,7 +584,32 @@
         }
       ],
       "notes": [
-        "If the status becomes error, read status_info and stop. Do not retry with guessed settings."
+        "If the status becomes error, read status_info and stop. Do not retry with guessed settings.",
+        "'recipe run stuck-upload' only reads: the dataset's status and its file settings in one call. The fix (file-settings update, view create) depends on what they show, so it stays a step you take."
+      ],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset whose upload is stuck."
+        }
+      },
+      "run": [
+        {
+          "name": "dataset",
+          "cmd": "dataset get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "settings",
+          "cmd": "dataset file-settings get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        }
       ]
     },
     {
@@ -374,7 +659,46 @@
           ]
         }
       ],
-      "notes": []
+      "notes": [
+        "'recipe run export-powerbi' sends a dashboard. To push a view into a Power BI dataset use 'view export powerbi' with a credentials file."
+      ],
+      "inputs": {
+        "dashboard_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dashboard to send."
+        },
+        "target": {
+          "type": "string",
+          "required": false,
+          "default": "powerbi",
+          "example": "powerbi",
+          "help": "The BI tool."
+        }
+      },
+      "run": [
+        {
+          "name": "preflight",
+          "cmd": "dashboard bi-preflight",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ],
+          "input": {
+            "target": "{{inputs.target}}"
+          }
+        },
+        {
+          "name": "export",
+          "cmd": "dashboard bi-export",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ],
+          "input": {
+            "target": "{{inputs.target}}"
+          }
+        }
+      ]
     },
     {
       "id": "export-csv",
@@ -412,7 +736,33 @@
           ]
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to export."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        }
+      },
+      "run": [
+        {
+          "name": "export",
+          "cmd": "view export csv",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
     },
     {
       "id": "clean-data",
@@ -474,7 +824,93 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "fill_column": {
+          "type": "string",
+          "required": true,
+          "example": "region",
+          "help": "The column whose blanks are filled from the row above (display name)."
+        },
+        "type_column": {
+          "type": "string",
+          "required": false,
+          "default": null,
+          "example": "amount",
+          "help": "A column to convert; skipped when empty. It must not already have that type."
+        },
+        "type_to": {
+          "type": "string",
+          "required": false,
+          "default": "NUMERIC",
+          "example": "NUMERIC",
+          "help": "The type to convert to: NUMERIC, TEXT or DATE."
+        }
+      },
+      "run": [
+        {
+          "name": "convert",
+          "cmd": "view transform convert-type",
+          "when": {
+            "present": "{{inputs.type_column}}"
+          },
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "conversions": [
+              {
+                "column": "{{inputs.type_column}}",
+                "to": "{{inputs.type_to}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "clean",
+          "cmd": "view transform batch",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "steps": [
+              {
+                "op": "discard-duplicates",
+                "input": {}
+              },
+              {
+                "op": "fill-missing",
+                "input": {
+                  "column": "{{inputs.fill_column}}",
+                  "direction": "FIRST_VALUE"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "share-dashboard",
@@ -518,11 +954,38 @@
           "key_flags": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "inputs": {
+        "dashboard_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dashboard to share."
+        }
+      },
+      "run": [
+        {
+          "name": "share",
+          "cmd": "dashboard share",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ],
+          "input": {
+            "type_of_auth": "mammoth"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "dashboard get",
+          "args": [
+            "{{inputs.dashboard_id}}"
+          ]
+        }
+      ]
     },
     {
       "id": "cleanup-mine",
-      "title": "Delete what you created, safely: one id at a time",
+      "title": "Clean up what you created, safely: trash one id at a time",
       "goals": [
         "delete everything i made",
         "clean up my test data",
@@ -558,30 +1021,2426 @@
           "key_flags": []
         },
         {
-          "command_id": "dataset.delete",
-          "purpose": "Dry-run the delete: its dependents block lists the views and dashboards that read the dataset.",
-          "example": "mammoth dataset delete DATASET_ID --dry-run",
+          "command_id": "dataset.trash",
+          "purpose": "Dry-run the trash: its dependents block lists the views and dashboards that read the dataset.",
+          "example": "mammoth dataset trash DATASET_ID --dry-run",
           "key_flags": [
             "--dry-run"
           ]
         },
         {
-          "command_id": "dataset.delete",
-          "purpose": "Delete that one id. Never pass several ids to one delete.",
-          "example": "mammoth dataset delete DATASET_ID --yes",
-          "key_flags": [
-            "--yes"
-          ]
+          "command_id": "dataset.trash",
+          "purpose": "Move that one id to the trash, where 'dataset restore' brings it back. Never pass several ids at once.",
+          "example": "mammoth dataset trash DATASET_ID",
+          "key_flags": []
         },
         {
           "command_id": "trash.list",
-          "purpose": "Check what can still be restored.",
+          "purpose": "Check that the dataset is in the trash and can still be restored.",
           "example": "mammoth trash list",
           "key_flags": []
         }
       ],
       "notes": [
-        "Never delete everything you own: 'owned' does not mean 'temporary'. Keep every deliverable the user asked for."
+        "Never delete everything you own: 'owned' does not mean 'temporary'. Keep every deliverable the user asked for.",
+        "The recipe stops short of a permanent delete. The trash and the dependents steps are skipped, and shown as skipped, when the name read back is not the name you gave. Delete for good by hand with 'dataset delete DATASET_ID --dry-run', then '--yes', after the user agrees."
+      ],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The one dataset you made and want gone."
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "example": "Test upload",
+          "help": "The exact name you gave that dataset; nothing is trashed if the dataset has another name."
+        }
+      },
+      "run": [
+        {
+          "name": "dataset",
+          "cmd": "dataset get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "impact",
+          "cmd": "dataset trash",
+          "when": {
+            "eq": [
+              "{{steps.dataset.data.dataset.name}}",
+              "{{inputs.name}}"
+            ]
+          },
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "flags": {
+            "dry-run": true
+          }
+        },
+        {
+          "name": "trashed",
+          "cmd": "dataset trash",
+          "when": {
+            "eq": [
+              "{{steps.dataset.data.dataset.name}}",
+              "{{inputs.name}}"
+            ]
+          },
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "trash",
+          "cmd": "trash list"
+        }
+      ]
+    },
+    {
+      "id": "upload-clean",
+      "title": "Upload a file and clean it: convert types, fill blanks, drop duplicates",
+      "goals": [
+        "upload and clean a file",
+        "upload a csv then remove duplicates and fill blanks",
+        "import a file and fix its column types",
+        "clean new data after upload"
+      ],
+      "keywords": [
+        "upload",
+        "import",
+        "clean",
+        "dedupe",
+        "duplicates",
+        "fill",
+        "blank",
+        "missing",
+        "convert",
+        "type",
+        "types",
+        "file",
+        "csv",
+        "tidy"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the file; the result names the dataset and its view.",
+          "example": "mammoth file upload ./data.csv",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.convert-type",
+          "purpose": "Convert a column that uploaded as TEXT (a number with 'N/A', a non-ISO date).",
+          "example": "mammoth view transform convert-type VIEW_ID --input '{\"conversions\": [{\"column\": \"amount\", \"to\": \"NUMERIC\"}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input conversions[].to"
+          ]
+        },
+        {
+          "command_id": "view.transform.batch",
+          "purpose": "Drop duplicate rows and fill blanks from the row above in one pipeline run.",
+          "example": "mammoth view transform batch VIEW_ID --input '{\"steps\": [{\"op\": \"discard-duplicates\", \"input\": {}}, {\"op\": \"fill-missing\", \"input\": {\"column\": \"region\", \"direction\": \"FIRST_VALUE\"}}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input steps[].op",
+            "--input steps[].input"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "Never convert a column to the type it already has: the pipeline goes to ref_error."
+      ],
+      "inputs": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./data.csv",
+          "help": "The file to upload."
+        },
+        "fill_column": {
+          "type": "string",
+          "required": true,
+          "example": "region",
+          "help": "The column whose blanks are filled (display name)."
+        },
+        "type_column": {
+          "type": "string",
+          "required": false,
+          "default": null,
+          "example": "amount",
+          "help": "A column to convert; skipped when empty."
+        },
+        "type_to": {
+          "type": "string",
+          "required": false,
+          "default": "NUMERIC",
+          "example": "NUMERIC",
+          "help": "NUMERIC, TEXT or DATE."
+        }
+      },
+      "run": [
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ]
+        },
+        {
+          "name": "convert",
+          "cmd": "view transform convert-type",
+          "when": {
+            "all": [
+              {
+                "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{inputs.type_column}}"
+              }
+            ]
+          },
+          "args": [
+            "{{steps.upload.data.datasets[0].view.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{steps.upload.data.dataset_id}}",
+            "conversions": [
+              {
+                "column": "{{inputs.type_column}}",
+                "to": "{{inputs.type_to}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "clean",
+          "cmd": "view transform batch",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
+          "args": [
+            "{{steps.upload.data.datasets[0].view.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{steps.upload.data.dataset_id}}",
+            "steps": [
+              {
+                "op": "discard-duplicates",
+                "input": {}
+              },
+              {
+                "op": "fill-missing",
+                "input": {
+                  "column": "{{inputs.fill_column}}",
+                  "direction": "FIRST_VALUE"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "when": {
+            "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+          },
+          "args": [
+            "{{steps.upload.data.datasets[0].view.view_id}}",
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "present": "{{steps.upload.data.datasets[0].view.view_id}}"
+            }
+          },
+          "args": [
+            "{{steps.upload.data.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "join-files",
+      "title": "Upload two files and join them on a shared key",
+      "goals": [
+        "upload two files and join them",
+        "join two csv files on a key",
+        "merge two uploaded files by a shared column",
+        "combine two spreadsheets on a column"
+      ],
+      "keywords": [
+        "join",
+        "merge",
+        "blend",
+        "combine",
+        "two",
+        "files",
+        "upload",
+        "key",
+        "match",
+        "spreadsheets",
+        "csv",
+        "vlookup"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the left file; the result names its dataset and view.",
+          "example": "mammoth file upload ./left.csv",
+          "key_flags": []
+        },
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the right file the same way.",
+          "example": "mammoth file upload ./right.csv",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.join",
+          "purpose": "Join the right view into the left on the key columns.",
+          "example": "mammoth view transform join VIEW_ID --input '{\"foreign_view\": OTHER_VIEW_ID, \"join_type\": \"LEFT\", \"on\": [{\"left\": \"id\", \"right\": \"id\"}], \"select\": [\"Region\"], \"dataset_id\": DATASET_ID, \"foreign_dataset_id\": OTHER_DATASET_ID}'",
+          "key_flags": [
+            "--input join_type",
+            "--input on[].left / on[].right",
+            "--input select"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Only when an upload came back without a view (status needs_view): shows the dataset, which then needs 'mammoth view create DATASET_ID' before the steps above can run.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "Use 'lookup-column' instead when the right side repeats keys and you need one value per key."
+      ],
+      "inputs": {
+        "left_file": {
+          "type": "string",
+          "required": true,
+          "example": "./left.csv",
+          "help": "The file that keeps all its rows."
+        },
+        "right_file": {
+          "type": "string",
+          "required": true,
+          "example": "./right.csv",
+          "help": "The file to join in."
+        },
+        "left_key": {
+          "type": "string",
+          "required": true,
+          "example": "id",
+          "help": "The key column in the left file."
+        },
+        "right_key": {
+          "type": "string",
+          "required": true,
+          "example": "id",
+          "help": "The key column in the right file."
+        },
+        "select": {
+          "type": "array",
+          "required": true,
+          "example": [
+            "Region"
+          ],
+          "help": "The right-file columns to bring in."
+        },
+        "join_type": {
+          "type": "string",
+          "required": false,
+          "default": "LEFT",
+          "example": "LEFT",
+          "help": "INNER, LEFT, RIGHT or FULL."
+        }
+      },
+      "run": [
+        {
+          "name": "left",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.left_file}}"
+          ]
+        },
+        {
+          "name": "right",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.right_file}}"
+          ]
+        },
+        {
+          "name": "join",
+          "cmd": "view transform join",
+          "when": {
+            "all": [
+              {
+                "present": "{{steps.left.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{steps.right.data.datasets[0].view.view_id}}"
+              }
+            ]
+          },
+          "args": [
+            "{{steps.left.data.datasets[0].view.view_id}}"
+          ],
+          "input": {
+            "foreign_view": "{{steps.right.data.datasets[0].view.view_id}}",
+            "join_type": "{{inputs.join_type}}",
+            "on": [
+              {
+                "left": "{{inputs.left_key}}",
+                "right": "{{inputs.right_key}}"
+              }
+            ],
+            "select": "{{inputs.select}}",
+            "dataset_id": "{{steps.left.data.dataset_id}}",
+            "foreign_dataset_id": "{{steps.right.data.dataset_id}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "when": {
+            "all": [
+              {
+                "present": "{{steps.left.data.datasets[0].view.view_id}}"
+              },
+              {
+                "present": "{{steps.right.data.datasets[0].view.view_id}}"
+              }
+            ]
+          },
+          "args": [
+            "{{steps.left.data.datasets[0].view.view_id}}",
+            "{{steps.left.data.dataset_id}}"
+          ]
+        },
+        {
+          "name": "not_ready",
+          "cmd": "dataset get",
+          "when": {
+            "not": {
+              "all": [
+                {
+                  "present": "{{steps.left.data.datasets[0].view.view_id}}"
+                },
+                {
+                  "present": "{{steps.right.data.datasets[0].view.view_id}}"
+                }
+              ]
+            }
+          },
+          "args": [
+            "{{steps.left.data.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lookup-column",
+      "title": "Look up one value from another view and add it as a column",
+      "goals": [
+        "look up a value from another dataset",
+        "vlookup a column from another view",
+        "add a column by lookup",
+        "bring one value across by key"
+      ],
+      "keywords": [
+        "lookup",
+        "vlookup",
+        "value",
+        "key",
+        "column",
+        "another",
+        "view",
+        "match",
+        "add"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.lookup",
+          "purpose": "Add one value per key from the other view as a new column.",
+          "example": "mammoth view transform lookup VIEW_ID --input '{\"source\": \"Customer ID\", \"lookup_view_id\": OTHER_VIEW_ID, \"key\": \"Customer ID\", \"value\": \"Region\", \"new_column\": \"Region\", \"dataset_id\": DATASET_ID, \"lookup_dataset_id\": OTHER_DATASET_ID}'",
+          "key_flags": [
+            "--input source / key / value"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "lookup_view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "The view that holds the value."
+        },
+        "lookup_dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "The lookup view's dataset."
+        },
+        "source": {
+          "type": "string",
+          "required": true,
+          "example": "Customer ID",
+          "help": "The column in this view to match on."
+        },
+        "key": {
+          "type": "string",
+          "required": true,
+          "example": "Customer ID",
+          "help": "The matching column in the lookup view."
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "example": "Region",
+          "help": "The lookup view's column to bring across."
+        },
+        "new_column": {
+          "type": "string",
+          "required": true,
+          "example": "Region",
+          "help": "The name of the new column."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform lookup",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "source": "{{inputs.source}}",
+            "lookup_view_id": "{{inputs.lookup_view_id}}",
+            "key": "{{inputs.key}}",
+            "value": "{{inputs.value}}",
+            "new_column": "{{inputs.new_column}}",
+            "lookup_dataset_id": "{{inputs.lookup_dataset_id}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "add-calculated-column",
+      "title": "Add a calculated column (price * quantity)",
+      "goals": [
+        "add a calculated column",
+        "add a column that multiplies two columns",
+        "calculate revenue from price and quantity",
+        "create a formula column"
+      ],
+      "keywords": [
+        "calculate",
+        "calculated",
+        "formula",
+        "math",
+        "expression",
+        "multiply",
+        "sum",
+        "total",
+        "revenue",
+        "column",
+        "add"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.math",
+          "purpose": "Add a column computed from an expression over display-name columns.",
+          "example": "mammoth view transform math VIEW_ID --input '{\"expression\": \"price * quantity\", \"new_column\": \"Revenue\", \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'.",
+        "A column that uploaded as TEXT needs 'convert-type' to NUMERIC first."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "expression": {
+          "type": "string",
+          "required": true,
+          "example": "price * quantity",
+          "help": "The formula over NUMERIC columns."
+        },
+        "new_column": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue",
+          "help": "The name of the new column."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform math",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "expression": "{{inputs.expression}}",
+            "new_column": "{{inputs.new_column}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "extract-date-part",
+      "title": "Pull the year, month or weekday out of a date column",
+      "goals": [
+        "extract the year from a date",
+        "get the month from a date column",
+        "split a date into year and month",
+        "add a weekday column"
+      ],
+      "keywords": [
+        "date",
+        "year",
+        "month",
+        "weekday",
+        "quarter",
+        "extract",
+        "component",
+        "day",
+        "week"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.extract-date",
+          "purpose": "Add a column with one part of a DATE column.",
+          "example": "mammoth view transform extract-date VIEW_ID --input '{\"column\": \"Order date\", \"component\": \"year\", \"new_column\": \"Order year\", \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'.",
+        "A date that uploaded as TEXT needs 'convert-type' to DATE first."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Order date",
+          "help": "The DATE column (display name)."
+        },
+        "component": {
+          "type": "string",
+          "required": true,
+          "example": "year",
+          "help": "year, month, day, week, quarter, weekday, ..."
+        },
+        "new_column": {
+          "type": "string",
+          "required": true,
+          "example": "Order year",
+          "help": "The name of the new column."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform extract-date",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "column": "{{inputs.column}}",
+            "component": "{{inputs.component}}",
+            "new_column": "{{inputs.new_column}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "split-column",
+      "title": "Split one column into several on a delimiter",
+      "goals": [
+        "split a column into two",
+        "split full name into first and last",
+        "separate a column on a comma",
+        "break a column apart"
+      ],
+      "keywords": [
+        "split",
+        "separate",
+        "delimiter",
+        "comma",
+        "column",
+        "name",
+        "first",
+        "last",
+        "parts"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.split",
+          "purpose": "Split the column on the delimiter into the named new columns.",
+          "example": "mammoth view transform split VIEW_ID --input '{\"column\": \"Full name\", \"delimiter\": \" \", \"new_columns\": [{\"name\": \"First\"}, {\"name\": \"Last\"}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Full name",
+          "help": "The TEXT column to split (display name)."
+        },
+        "delimiter": {
+          "type": "string",
+          "required": true,
+          "example": " ",
+          "help": "The text to split on."
+        },
+        "new_columns": {
+          "type": "array",
+          "required": true,
+          "example": [
+            {
+              "name": "First"
+            },
+            {
+              "name": "Last"
+            }
+          ],
+          "help": "One {\"name\": ...} object per new column."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform split",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "column": "{{inputs.column}}",
+            "delimiter": "{{inputs.delimiter}}",
+            "new_columns": "{{inputs.new_columns}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "find-replace",
+      "title": "Find and replace text in one or more columns",
+      "goals": [
+        "find and replace text",
+        "replace N/A with Unknown",
+        "replace a value in a column",
+        "fix a typo across a column"
+      ],
+      "keywords": [
+        "find",
+        "replace",
+        "substitute",
+        "text",
+        "value",
+        "values",
+        "typo",
+        "unknown",
+        "swap"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.replace",
+          "purpose": "Replace the text in the named TEXT columns.",
+          "example": "mammoth view transform replace VIEW_ID --input '{\"columns\": [\"Status\"], \"find\": \"N/A\", \"replace\": \"Unknown\", \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "columns": {
+          "type": "array",
+          "required": true,
+          "example": [
+            "Status"
+          ],
+          "help": "The TEXT columns to change (display names)."
+        },
+        "find": {
+          "type": "string",
+          "required": true,
+          "example": "N/A",
+          "help": "The text to find."
+        },
+        "replace": {
+          "type": "string",
+          "required": true,
+          "example": "Unknown",
+          "help": "The text to put in its place."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform replace",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "columns": "{{inputs.columns}}",
+            "find": "{{inputs.find}}",
+            "replace": "{{inputs.replace}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fill-blanks-with-value",
+      "title": "Fill the blanks in a column with a fixed value",
+      "goals": [
+        "fill blanks with a value",
+        "replace empty cells with zero",
+        "set missing values to a default",
+        "fill empty values with unknown"
+      ],
+      "keywords": [
+        "fill",
+        "blank",
+        "blanks",
+        "empty",
+        "missing",
+        "null",
+        "default",
+        "zero",
+        "constant"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.set-values",
+          "purpose": "Write the value into every row where the column is empty.",
+          "example": "mammoth view transform set-values VIEW_ID --input '{\"values\": [{\"value\": \"Unknown\"}], \"existing_column\": \"Status\", \"condition\": {\"column\": \"Status\", \"operator\": \"IS_EMPTY\"}, \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'.",
+        "To copy the value from the row above instead, use 'clean-data'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Status",
+          "help": "The column with blanks (display name)."
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "example": "Unknown",
+          "help": "The value to write into the blanks."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform set-values",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "values": [
+              {
+                "value": "{{inputs.value}}"
+              }
+            ],
+            "existing_column": "{{inputs.column}}",
+            "condition": {
+              "column": "{{inputs.column}}",
+              "operator": "IS_EMPTY"
+            }
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rename-columns",
+      "title": "Rename columns to clean display names",
+      "goals": [
+        "rename a column",
+        "rename columns",
+        "clean up column names",
+        "change a column header"
+      ],
+      "keywords": [
+        "rename",
+        "column",
+        "columns",
+        "header",
+        "name",
+        "names",
+        "label",
+        "display"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.rename-columns",
+          "purpose": "Rename columns: a map of old display name to new display name.",
+          "example": "mammoth view transform rename-columns VIEW_ID --input '{\"renames\": {\"cust_id\": \"Customer ID\"}, \"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "A rename is not a pipeline task, so 'history undo' does not revert it: rename back with the same recipe."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "renames": {
+          "type": "object",
+          "required": true,
+          "example": {
+            "cust_id": "Customer ID"
+          },
+          "help": "Old display name to new name."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform rename-columns",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "renames": "{{inputs.renames}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "remove-duplicates",
+      "title": "Remove duplicate rows from a view",
+      "goals": [
+        "deduplicate a dataset",
+        "remove duplicate rows from a view",
+        "drop repeated rows",
+        "keep only unique rows"
+      ],
+      "keywords": [
+        "duplicate",
+        "duplicates",
+        "dedupe",
+        "deduplicate",
+        "unique",
+        "repeated",
+        "remove",
+        "drop"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.discard-duplicates",
+          "purpose": "Discard rows that repeat an earlier row.",
+          "example": "mammoth view transform discard-duplicates VIEW_ID --input '{\"dataset_id\": DATASET_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        }
+      },
+      "run": [
+        {
+          "name": "edit",
+          "cmd": "view transform discard-duplicates",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pivot-summary",
+      "title": "Summarise a view into totals per group (pivot) on a copy",
+      "goals": [
+        "pivot a view by region",
+        "summarize revenue by region",
+        "total sales per category",
+        "group by a column and sum another"
+      ],
+      "keywords": [
+        "pivot",
+        "summarize",
+        "summarise",
+        "summary",
+        "group",
+        "total",
+        "totals",
+        "sum",
+        "count",
+        "average",
+        "aggregate",
+        "by",
+        "per"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.create",
+          "purpose": "Copy the view first so the source keeps its rows. The result names the new view.",
+          "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
+          "key_flags": [
+            "--input clone_from"
+          ]
+        },
+        {
+          "command_id": "view.transform.pivot",
+          "purpose": "Group the copy and aggregate; a pivot replaces the view's columns.",
+          "example": "mammoth view transform pivot NEW_VIEW_ID --input '{\"group_by\": [\"Region\"], \"aggregations\": [{\"column\": \"Revenue\", \"function\": \"SUM\"}], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input group_by",
+            "--input aggregations[].function"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the result back from the working copy.",
+          "example": "mammoth view data get NEW_VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "The work happens on a copy of the view; the source view is unchanged. The result's 'copy' step names the new view_id."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "group_by": {
+          "type": "string",
+          "required": true,
+          "example": "Region",
+          "help": "The column to group by (display name)."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue",
+          "help": "The NUMERIC column to aggregate."
+        },
+        "function": {
+          "type": "string",
+          "required": false,
+          "default": "SUM",
+          "example": "SUM",
+          "help": "SUM, AVG, COUNT, MIN or MAX."
+        }
+      },
+      "run": [
+        {
+          "name": "copy",
+          "cmd": "view create",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "clone_from": "{{inputs.view_id}}"
+          }
+        },
+        {
+          "name": "pivot",
+          "cmd": "view transform pivot",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "group_by": [
+              "{{inputs.group_by}}"
+            ],
+            "aggregations": [
+              {
+                "column": "{{inputs.column}}",
+                "function": "{{inputs.function}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{steps.copy.data.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "top-n",
+      "title": "Keep the top N rows by a column, on a copy of the view",
+      "goals": [
+        "top 10 customers by revenue",
+        "keep the top n rows",
+        "show the highest values of a column",
+        "bottom 5 by amount"
+      ],
+      "keywords": [
+        "top",
+        "bottom",
+        "highest",
+        "lowest",
+        "largest",
+        "smallest",
+        "best",
+        "worst",
+        "limit",
+        "rank",
+        "ranking",
+        "first",
+        "rows",
+        "n"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.create",
+          "purpose": "Copy the view first so the source keeps its rows. The result names the new view.",
+          "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
+          "key_flags": [
+            "--input clone_from"
+          ]
+        },
+        {
+          "command_id": "view.transform.limit-rows",
+          "purpose": "Sort the copy by the column and keep the first N rows.",
+          "example": "mammoth view transform limit-rows NEW_VIEW_ID --input '{\"n\": 10, \"order_by\": [[\"Revenue\", \"DESC\"]], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input n",
+            "--input order_by"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the result back from the working copy.",
+          "example": "mammoth view data get NEW_VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "The work happens on a copy of the view; the source view is unchanged. The result's 'copy' step names the new view_id.",
+        "Use direction ASC for the lowest N."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue",
+          "help": "The column to rank by (display name)."
+        },
+        "n": {
+          "type": "integer",
+          "required": true,
+          "example": 10,
+          "help": "How many rows to keep."
+        },
+        "direction": {
+          "type": "string",
+          "required": false,
+          "default": "DESC",
+          "example": "DESC",
+          "help": "DESC for the highest, ASC for the lowest."
+        }
+      },
+      "run": [
+        {
+          "name": "copy",
+          "cmd": "view create",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "clone_from": "{{inputs.view_id}}"
+          }
+        },
+        {
+          "name": "top",
+          "cmd": "view transform limit-rows",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "n": "{{inputs.n}}",
+            "order_by": [
+              [
+                "{{inputs.column}}",
+                "{{inputs.direction}}"
+              ]
+            ]
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{steps.copy.data.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filter-export-csv",
+      "title": "Filter a view to some rows and download them as a CSV",
+      "goals": [
+        "export only some rows to csv",
+        "filter a view and download it as csv",
+        "download the rows where status is active",
+        "export filtered data"
+      ],
+      "keywords": [
+        "filter",
+        "export",
+        "download",
+        "csv",
+        "only",
+        "rows",
+        "where",
+        "subset",
+        "slice",
+        "condition",
+        "file"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.create",
+          "purpose": "Copy the view first so the source keeps its rows. The result names the new view.",
+          "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
+          "key_flags": [
+            "--input clone_from"
+          ]
+        },
+        {
+          "command_id": "view.transform.filter",
+          "purpose": "Keep the rows that match, on the copy.",
+          "example": "mammoth view transform filter NEW_VIEW_ID --input '{\"condition\": {\"column\": \"Status\", \"operator\": \"EQ\", \"value\": \"Active\"}, \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input condition.operator"
+          ]
+        },
+        {
+          "command_id": "view.export.csv",
+          "purpose": "Download the copy as a CSV file.",
+          "example": "mammoth view export csv NEW_VIEW_ID",
+          "key_flags": [
+            "--overwrite"
+          ]
+        }
+      ],
+      "notes": [
+        "The work happens on a copy of the view; the source view is unchanged. The result's 'copy' step names the new view_id."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Status",
+          "help": "The column to filter on (display name)."
+        },
+        "operator": {
+          "type": "string",
+          "required": false,
+          "default": "EQ",
+          "example": "EQ",
+          "help": "EQ, NEQ, GT, GTE, LT, LTE, CONTAINS, ..."
+        },
+        "value": {
+          "type": "any",
+          "required": true,
+          "example": "Active",
+          "help": "The value to compare with: text or a number, or a list for the IN_LIST and IN_RANGE operators."
+        }
+      },
+      "run": [
+        {
+          "name": "copy",
+          "cmd": "view create",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "clone_from": "{{inputs.view_id}}"
+          }
+        },
+        {
+          "name": "filter",
+          "cmd": "view transform filter",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "condition": {
+              "column": "{{inputs.column}}",
+              "operator": "{{inputs.operator}}",
+              "value": "{{inputs.value}}"
+            }
+          }
+        },
+        {
+          "name": "export",
+          "cmd": "view export csv",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "export-xlsx",
+      "title": "Download a view as an Excel (xlsx) file",
+      "goals": [
+        "export to excel",
+        "download a view as xlsx",
+        "save my data as an excel file",
+        "get a spreadsheet of this view"
+      ],
+      "keywords": [
+        "export",
+        "excel",
+        "xlsx",
+        "download",
+        "spreadsheet",
+        "file",
+        "view"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.export.download",
+          "purpose": "Download the view in the chosen format (csv, xlsx, json, parquet, ...).",
+          "example": "mammoth view export download VIEW_ID --input '{\"file_type\": \"xlsx\"}'",
+          "key_flags": [
+            "--input file_type",
+            "--input output_path"
+          ]
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "file_type": {
+          "type": "string",
+          "required": false,
+          "default": "xlsx",
+          "example": "xlsx",
+          "help": "csv, xlsx, json, ndjson, xml, yaml or parquet."
+        }
+      },
+      "run": [
+        {
+          "name": "export",
+          "cmd": "view export download",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "file_type": "{{inputs.file_type}}",
+            "dataset_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "export-to-s3",
+      "title": "Send a view to Mammoth-managed S3 storage as a file",
+      "goals": [
+        "export a view to s3",
+        "put my data in cloud storage",
+        "write the view to managed s3 as a csv",
+        "publish a view to a bucket"
+      ],
+      "keywords": [
+        "export",
+        "s3",
+        "bucket",
+        "cloud",
+        "storage",
+        "managed",
+        "publish",
+        "file",
+        "csv",
+        "view"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.export.managed-s3",
+          "purpose": "Write the view to managed S3 as a file.",
+          "example": "mammoth view export managed-s3 VIEW_ID DATASET_ID --input '{\"file_name\": \"report.csv\"}' --yes",
+          "key_flags": [
+            "--yes",
+            "--input file_name"
+          ]
+        },
+        {
+          "command_id": "view.export.list",
+          "purpose": "List the view's exports and check the new one ran.",
+          "example": "mammoth view export list VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "For your own bucket or a database use 'view export create' with a connector; run 'mammoth schema find \"export to postgres\"'."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "file_name": {
+          "type": "string",
+          "required": true,
+          "example": "report.csv",
+          "help": "The file name to write."
+        }
+      },
+      "run": [
+        {
+          "name": "export",
+          "cmd": "view export managed-s3",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "file_name": "{{inputs.file_name}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view export list",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "email-view",
+      "title": "Email a view's data to people",
+      "goals": [
+        "email this view",
+        "send the data by email",
+        "mail a report to my team",
+        "email a csv of this view"
+      ],
+      "keywords": [
+        "email",
+        "mail",
+        "send",
+        "report",
+        "recipients",
+        "attachment",
+        "view"
+      ],
+      "doc": "references/recipes/exports.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.export.email",
+          "purpose": "Send the view to the addresses.",
+          "example": "mammoth view export email VIEW_ID DATASET_ID --input '{\"emails\": [\"recipient@example.com\"]}' --yes",
+          "key_flags": [
+            "--yes",
+            "--input emails"
+          ]
+        },
+        {
+          "command_id": "view.export.list",
+          "purpose": "List the view's exports and check the send ran.",
+          "example": "mammoth view export list VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "emails": {
+          "type": "array",
+          "required": true,
+          "example": [
+            "recipient@example.com"
+          ],
+          "help": "The addresses to send to."
+        },
+        "subject": {
+          "type": "string",
+          "required": false,
+          "default": "Report",
+          "example": "Report",
+          "help": "The email subject."
+        }
+      },
+      "run": [
+        {
+          "name": "export",
+          "cmd": "view export email",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "emails": "{{inputs.emails}}",
+            "subject": "{{inputs.subject}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view export list",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dashboard-from-view",
+      "title": "Build a dashboard from an existing view",
+      "goals": [
+        "build a dashboard from a view",
+        "make a dashboard from my dataset",
+        "create charts from this view",
+        "dashboard for an existing view"
+      ],
+      "keywords": [
+        "dashboard",
+        "chart",
+        "charts",
+        "view",
+        "build",
+        "create",
+        "visualize",
+        "visualise",
+        "graph",
+        "existing",
+        "kpi"
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "steps": [
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dashboard.v3.generate",
+          "purpose": "Generate the dashboard from your intent.",
+          "example": "mammoth dashboard v3 generate --input '{\"body\": {\"params\": {\"intent\": \"Revenue by region\", \"dataview_id\": VIEW_ID}}}'",
+          "key_flags": [
+            "--input body.params.intent",
+            "--input body.params.dataview_id"
+          ]
+        },
+        {
+          "command_id": "dashboard.get",
+          "purpose": "Read the dashboard back.",
+          "example": "mammoth dashboard get DASHBOARD_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "intent": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue by region over time",
+          "help": "What the dashboard should show."
+        }
+      },
+      "run": [
+        {
+          "name": "dashboard",
+          "cmd": "dashboard v3 generate",
+          "input": {
+            "body": {
+              "params": {
+                "intent": "{{inputs.intent}}",
+                "dataview_id": "{{inputs.view_id}}"
+              }
+            }
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "dashboard get",
+          "args": [
+            "{{steps.dashboard.data.id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "summarize-by",
+      "title": "Total, count or average a column per group (read only)",
+      "goals": [
+        "total revenue by region",
+        "count rows per status",
+        "average amount per customer",
+        "summarize a view without changing it"
+      ],
+      "keywords": [
+        "total",
+        "count",
+        "average",
+        "sum",
+        "group",
+        "by",
+        "per",
+        "aggregate",
+        "summarize",
+        "summarise",
+        "read",
+        "only"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read the view's columns (display names) and row count before changing it.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.aggregate",
+          "purpose": "Aggregate on the server; nothing is changed.",
+          "example": "mammoth view data aggregate VIEW_ID DATASET_ID --input '{\"group_by\": [\"Region\"], \"aggregations\": [{\"column\": \"Revenue\", \"function\": \"SUM\", \"as_name\": \"Total\"}]}'",
+          "key_flags": [
+            "--input group_by",
+            "--input aggregations[].function"
+          ]
+        }
+      ],
+      "notes": [
+        "Use 'pivot-summary' when the totals should become a view."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "group_by": {
+          "type": "string",
+          "required": true,
+          "example": "Region",
+          "help": "The column to group by (display name)."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Revenue",
+          "help": "The column to aggregate."
+        },
+        "function": {
+          "type": "string",
+          "required": false,
+          "default": "SUM",
+          "example": "SUM",
+          "help": "SUM, AVG, COUNT, MIN or MAX."
+        }
+      },
+      "run": [
+        {
+          "name": "summary",
+          "cmd": "view data aggregate",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "group_by": [
+              "{{inputs.group_by}}"
+            ],
+            "aggregations": [
+              {
+                "column": "{{inputs.column}}",
+                "function": "{{inputs.function}}",
+                "as_name": "Result"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "compare-views",
+      "title": "Compare two views group by group",
+      "goals": [
+        "compare two views",
+        "compare this month with last month",
+        "difference between two datasets by region",
+        "diff two views"
+      ],
+      "keywords": [
+        "compare",
+        "comparison",
+        "difference",
+        "diff",
+        "versus",
+        "two",
+        "views",
+        "month",
+        "before",
+        "after",
+        "change"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.get",
+          "purpose": "Read view A's columns.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.get",
+          "purpose": "Read view B's columns.",
+          "example": "mammoth view get OTHER_VIEW_ID OTHER_DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.compare",
+          "purpose": "Aggregate both views by the group and line them up.",
+          "example": "mammoth view data compare VIEW_ID OTHER_VIEW_ID --input '{\"group_by\": [\"Campaign\"], \"aggregations\": [{\"column\": \"Spend\", \"function\": \"SUM\", \"as_name\": \"Spend\"}]}'",
+          "key_flags": [
+            "--input group_by",
+            "--input aggregations[].function"
+          ]
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "view_id_a": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The first view."
+        },
+        "view_id_b": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "The second view."
+        },
+        "group_by": {
+          "type": "string",
+          "required": true,
+          "example": "Campaign",
+          "help": "The column to group by (in both views)."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Spend",
+          "help": "The NUMERIC column to aggregate."
+        },
+        "function": {
+          "type": "string",
+          "required": false,
+          "default": "SUM",
+          "example": "SUM",
+          "help": "SUM, AVG, COUNT, MIN or MAX."
+        }
+      },
+      "run": [
+        {
+          "name": "compare",
+          "cmd": "view data compare",
+          "args": [
+            "{{inputs.view_id_a}}",
+            "{{inputs.view_id_b}}"
+          ],
+          "input": {
+            "group_by": [
+              "{{inputs.group_by}}"
+            ],
+            "aggregations": [
+              {
+                "column": "{{inputs.column}}",
+                "function": "{{inputs.function}}",
+                "as_name": "{{inputs.column}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "refresh-now",
+      "title": "Refresh a cloud or database dataset now and check the result",
+      "goals": [
+        "refresh a dataset now",
+        "pull the latest data right now",
+        "update my dataset immediately",
+        "re-sync a connector dataset"
+      ],
+      "keywords": [
+        "refresh",
+        "now",
+        "immediately",
+        "update",
+        "sync",
+        "latest",
+        "pull",
+        "reload",
+        "dataset"
+      ],
+      "doc": "references/recipes/scheduling.md",
+      "steps": [
+        {
+          "command_id": "dataset.get",
+          "purpose": "Check the source: only a cloud or database dataset refreshes.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.refresh",
+          "purpose": "Start the refresh.",
+          "example": "mammoth dataset refresh DATASET_ID --yes",
+          "key_flags": [
+            "--yes"
+          ]
+        },
+        {
+          "command_id": "dataset.get",
+          "purpose": "Read the dataset again: status and row count.",
+          "example": "mammoth dataset get DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "For a refresh on a schedule use 'refresh-daily'."
+      ],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The cloud or database dataset to refresh."
+        }
+      },
+      "run": [
+        {
+          "name": "source",
+          "cmd": "dataset get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "refresh",
+          "cmd": "dataset refresh",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "readback",
+          "cmd": "dataset get",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "undo-last-change",
+      "title": "Undo a change the CLI made (from the run's history id)",
+      "goals": [
+        "undo my last change",
+        "revert what I just did",
+        "roll back the last edit",
+        "undo a transform"
+      ],
+      "keywords": [
+        "undo",
+        "revert",
+        "rollback",
+        "roll",
+        "back",
+        "last",
+        "change",
+        "mistake",
+        "history",
+        "restore"
+      ],
+      "doc": "references/recipes/cleanup.md",
+      "steps": [
+        {
+          "command_id": "history.show",
+          "purpose": "Read what the run did and what undoing it would do.",
+          "example": "mammoth history show HISTORY_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "history.undo",
+          "purpose": "Undo it: each write's compensation runs, newest first.",
+          "example": "mammoth history undo HISTORY_ID --yes",
+          "key_flags": [
+            "--yes"
+          ]
+        }
+      ],
+      "notes": [
+        "'mammoth history list --input {\"undoable_only\": true}' finds the id."
+      ],
+      "inputs": {
+        "history_id": {
+          "type": "string",
+          "required": true,
+          "example": "97b9ee41d15d",
+          "help": "The id from 'history list'."
+        }
+      },
+      "run": [
+        {
+          "name": "show",
+          "cmd": "history show",
+          "args": [
+            "{{inputs.history_id}}"
+          ]
+        },
+        {
+          "name": "undo",
+          "cmd": "history undo",
+          "args": [
+            "{{inputs.history_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "revert-view-version",
+      "title": "Put a view back to an earlier pipeline version",
+      "goals": [
+        "restore an earlier version of a view",
+        "go back to the previous pipeline version",
+        "revert a view to version",
+        "roll a view back"
+      ],
+      "keywords": [
+        "version",
+        "versions",
+        "restore",
+        "revert",
+        "rollback",
+        "earlier",
+        "previous",
+        "pipeline",
+        "view",
+        "back"
+      ],
+      "doc": "references/recipes/cleanup.md",
+      "steps": [
+        {
+          "command_id": "view.version.list",
+          "purpose": "List the view's versions and pick the one to return to.",
+          "example": "mammoth view version list VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.version.get",
+          "purpose": "Read the version to confirm its steps.",
+          "example": "mammoth view version get VIEW_ID VERSION_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.version.apply",
+          "purpose": "Apply that version to the view.",
+          "example": "mammoth view version apply VIEW_ID VERSION_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "version_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The version to return to ('view version list')."
+        }
+      },
+      "run": [
+        {
+          "name": "version",
+          "cmd": "view version get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.version_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "apply",
+          "cmd": "view version apply",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.version_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
       ]
     }
   ]

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _ANALYSIS_SYMBOL,
     _COLS_INPUT_KEY,
@@ -14,7 +15,6 @@ from mammoth_cli.commands.view._common import (
     _EXPLORE_PANEL_GET_SYMBOL,
     _PIPELINE_ITEMS_ALL_SYMBOL,
     _ROWS_INPUT_KEY,
-    HandlerResult,
     _forward_optional,
     _meta,
     _read_meta,

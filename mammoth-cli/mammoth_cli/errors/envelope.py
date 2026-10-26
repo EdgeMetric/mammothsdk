@@ -137,7 +137,23 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_too_deep": _S_BAD_INPUT,
     "input_too_large": "The information provided was too large.",
     "invalid_run_line": "One line of the list of commands couldn't be used, so it wasn't run.",
+    "unresolved_reference": (
+        "A line used a result from an earlier line that wasn't there, so it wasn't run."
+    ),
     "run_command_refused": "That command can't be run from a list of commands.",
+    "history_not_found": "No recorded change has that id.",
+    "journal_off": "Change history is switched off, so there is nothing to show or undo.",
+    "nothing_to_resume": "Every line of that run finished.",
+    "resume_outcome_unknown": "A write's outcome is unknown, so the run wasn't resumed.",
+    "resume_secret_needed": (
+        "A line needs a secret the history doesn't keep, so the run wasn't resumed."
+    ),
+    "undo_in_progress": "Another undo of the same change is running.",
+    "view_changed_since_edit": "The view changed after that edit, so it wasn't undone.",
+    "undo_needs_token": "That change was made with another API token, so it wasn't undone.",
+    "resume_result_too_large": "A result the run needs again was too large to keep.",
+    "recipe_not_found": "No runnable recipe has that name.",
+    "recipe_input_invalid": "The recipe's inputs weren't valid.",
     "run_global_flag_refused": (
         "Confirmation has to be given on each command in the list, not for the whole list."
     ),

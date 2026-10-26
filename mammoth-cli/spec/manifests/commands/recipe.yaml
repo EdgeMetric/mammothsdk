@@ -1,0 +1,88 @@
+manifest_schema_version: 1
+commands:
+- command_id: recipe.list
+  output_schema:
+    ref: RecipeList
+  command_path: recipe list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.recipe.recipe_list
+  sdk_conversion: Call mammoth_cli.commands.recipe.recipe_list with validated request fields.
+  request_model: RecipeListRequest
+  result_model: RecipeListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Lists recipes shipped in the package.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth recipe list --help
+  agent_example: mammoth recipe list
+  unit_tests:
+  - UT-RECIPE-LIST
+  contract_tests:
+  - CT-RECIPE-LIST-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: recipe.run
+  output_schema:
+    allOf:
+    - {$ref: '#/$defs/Run'}
+    - type: object
+      required: [recipe, inputs]
+      properties:
+        recipe: {type: string}
+        inputs: {type: object}
+  command_path: recipe run
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: id
+    type: str
+    required: true
+    metavar: ID
+    falls_back_to_field: null
+    help: The recipe to run (from 'recipe list').
+  options: []
+  sdk_symbol: mammoth_cli.commands.recipe.recipe_run
+  sdk_conversion: Call mammoth_cli.commands.recipe.recipe_run with validated request fields.
+  request_model: RecipeRunRequest
+  result_model: RecipeRunResult
+  mutation_class: high_impact
+  edits_target: false
+  undo:
+    strategy: "irreversible"
+    reason: "Runs the recipe's commands; each of them is journaled and undone by its own entry, not as one step."
+  no_readback: each step verifies itself through its own command, and the recipes end with a read-back
+    step
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Each step is a typed command with its own live evidence; the recipes were run
+    end to end on a dev server.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth recipe run ID --help
+  agent_example: 'mammoth recipe run export-csv --input ''{"inputs": {"view_id": 1, "dataset_id": 2}}'' --yes'
+  unit_tests:
+  - UT-RECIPE-RUN
+  contract_tests:
+  - CT-RECIPE-RUN-JSON
+  draft_test: null
+  undo_test: null
+  known_restrictions: Runs only the recipes 'recipe list' shows. Stops at the first failed step; 'mammoth
+    history undo' with the run's group reverses the writes. Not available embedded.
+  reviewed_by: primary

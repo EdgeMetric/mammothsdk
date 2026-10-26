@@ -100,7 +100,7 @@ def test_a_profile_chosen_by_default_is_not_written_into_examples() -> None:
 
 
 def test_a_goal_no_recipe_covers_falls_back_to_schema_find_and_says_so() -> None:
-    result = _how("rename a column")
+    result = _how("rename a dataset")
     assert result["matched"] is False
     assert "recipe" not in result
     assert "schema find" in str(result["hint"])

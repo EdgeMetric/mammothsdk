@@ -24,6 +24,7 @@ from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import cache_dir
 from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.switches import switched_on
 from mammoth_cli.runtime.token_scope import _fingerprint
 
 #: Set to 0, false, no or off to ask the server on every command.
@@ -35,8 +36,7 @@ MAX_ENTRIES = 5000
 
 def cache_enabled() -> bool:
     """False when ``MAMMOTH_CLI_VIEW_DATASET_CACHE`` switches the cache off."""
-    value = os.environ.get(VIEW_DATASET_CACHE_ENV, "1")
-    return value.strip().lower() not in {"0", "false", "no", "off"}
+    return switched_on(VIEW_DATASET_CACHE_ENV)
 
 
 def _is_id(value: object) -> bool:

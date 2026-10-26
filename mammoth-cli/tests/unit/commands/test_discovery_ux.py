@@ -7,12 +7,9 @@ import json
 import pytest
 
 from mammoth_cli.commands.registry import _schema_find
-from mammoth_cli.commands.schema import (
-    _COMMAND_DISCOVERY_PURPOSES,
-    find_schemas,
-    schema_entries,
-    trim_find_result,
-)
+from mammoth_cli.commands.schema import schema_entries
+from mammoth_cli.commands.schema.find import find_schemas, trim_find_result
+from mammoth_cli.discovery.purposes import COMMAND_DISCOVERY_PURPOSES
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
@@ -234,7 +231,7 @@ def test_every_view_transform_has_a_plain_language_discovery_purpose() -> None:
     }
 
     assert transforms
-    assert transforms <= set(_COMMAND_DISCOVERY_PURPOSES)
+    assert transforms <= set(COMMAND_DISCOVERY_PURPOSES)
 
 
 def test_schema_find_without_a_full_match_suggests_near_misses_and_the_menu() -> None:
@@ -538,6 +535,15 @@ def test_schema_get_returns_one_schema_per_comma_joined_id_in_a_single_call() ->
     assert [entry["command_id"] for entry in combined["schemas"]] == ids
     for entry in combined["schemas"]:
         assert entry == _get(entry["command_id"])["data"]
+
+
+def test_schema_get_takes_space_separated_ids_like_comma_joined_ones() -> None:
+    """P4 of the 10-26 speed pass: an agent told the comma form sent two ids with a space,
+    got ``unexpected_argument`` and spent a round on the retry."""
+    ids = ["view.list", "view.analyze"]
+
+    assert _get(*ids)["data"] == _get(",".join(ids))["data"]
+    assert _get(*ids)["data"]["requested"] == 2
 
 
 def test_schema_get_unknown_id_is_an_entry_in_errors_not_a_failed_call() -> None:

@@ -27,7 +27,8 @@ from mammoth_cli.services.input_fields import (
     is_closed_zero_input,
 )
 from mammoth_cli.services.openapi_types import openapi_body_schema_for
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positional_spec import PositionalSpec
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema
 
 
@@ -282,6 +283,19 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("command_id", required=False, annotation=str | None, default=None),
         FieldSpec("run_id", required=False, annotation=str | None, default=None),
     ),
+    "history.list": (
+        FieldSpec("limit", required=False, annotation=int, default=20),
+        FieldSpec("undoable_only", required=False, annotation=bool, default=False),
+    ),
+    "history.show": (),
+    "history.undo": (FieldSpec("force", required=False, annotation=bool, default=False),),
+    "history.resume": (
+        FieldSpec("from_line", required=False, annotation=int | None, default=None),
+    ),
+    "recipe.list": (),
+    "recipe.run": (
+        FieldSpec("inputs", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     "skill.list": (),
     "skill.show": (FieldSpec("file", required=False, annotation=str | None, default=None),),
     "skill.agents-md.install": (
@@ -477,6 +491,12 @@ _LOCAL_COMMANDS = frozenset(
         "folder.find",
         "how",
         "link",
+        "history.list",
+        "history.show",
+        "history.undo",
+        "history.resume",
+        "recipe.list",
+        "recipe.run",
         "log.path",
         "log.tail",
         "schema.find",

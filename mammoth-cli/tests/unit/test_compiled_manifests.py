@@ -19,7 +19,13 @@ def _fresh() -> Iterator[None]:
 
 
 @pytest.mark.parametrize(
-    "name", [loader.COMPILED_COMMANDS, loader.COMPILED_OPERATIONS, loader.COMPILED_SDK_METHODS]
+    "name",
+    [
+        loader.COMPILED_COMMANDS,
+        loader.COMPILED_OPERATIONS,
+        loader.COMPILED_SDK_METHODS,
+        loader.COMPILED_OUTPUT_SCHEMAS,
+    ],
 )
 def test_compiled_manifest_matches_the_yaml(name: str) -> None:
     compiled = json.loads((loader.COMPILED_DIR / f"{name}.json").read_text(encoding="utf-8"))

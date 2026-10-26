@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DRAFT_OPERATIONS,
     _WAIT_FOR_PIPELINE_SYMBOL,
-    HandlerResult,
     _forward_optional,
     _int_positional_at,
     _meta,

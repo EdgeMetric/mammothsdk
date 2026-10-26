@@ -1,184 +1,63 @@
 manifest_schema_version: 1
 commands:
 - command_id: auth.connected-apps.list
-  command_path: auth connected-apps list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnectedApps
-  positionals: []
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.connected_apps
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.connected_apps with validated request fields.
-  request_model: AuthConnectedAppsListRequest
-  result_model: AuthConnectedAppsListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema: openapi
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Read-only; checked live on the koyal profile, not in the automated live suite.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth auth connected-apps list --help
-  agent_example: mammoth auth connected-apps list
   unit_tests:
   - test_connected_apps_lists_the_signed_in_users_grants
   contract_tests:
   - test_the_command_is_registered_and_reachable_from_the_cli
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. The apps the signed-in user has authorised; each id is the grant id that auth connected-apps revoke takes.
-  reviewed_by: primary
+  known_restrictions: Read-only. The apps the signed-in user has authorised; each id is the grant id that
+    auth connected-apps revoke takes.
+  unset:
+  - options
 - command_id: auth.connected-apps.revoke
-  command_path: auth connected-apps revoke
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - RevokeConnectedApp
-  positionals:
-  - name: oauth_grant_id
-    type: int
-    required: true
-    metavar: OAUTH_GRANT_ID
-    falls_back_to_field: null
-    help: ID of the oauth grant.
-  sdk_symbol: mammoth.api.user_profile.UserProfileAPI.revoke_connected_app
-  sdk_conversion: Call mammoth.api.user_profile.UserProfileAPI.revoke_connected_app with validated request fields.
-  request_model: AuthConnectedAppsRevokeRequest
-  result_model: AuthConnectedAppsRevokeResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
+  output_schema: {ref: WriteResult}
   live_exemption_reason: High-impact access change without a disposable fixture; checked by dry-run only.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth auth connected-apps revoke OAUTH_GRANT_ID --help
-  agent_example: mammoth auth connected-apps revoke 123 --yes --confirm 123
   unit_tests:
   - test_revoke_connected_app_deletes_that_grant_on_an_empty_204
   contract_tests:
   - test_the_command_is_registered_and_reachable_from_the_cli
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Exact grant-ID confirmation (--yes --confirm ID). Disconnects the app: its tokens stop working for this user."
-  reviewed_by: primary
+  known_restrictions: 'Exact grant-ID confirmation (--yes --confirm ID). Disconnects the app: its tokens
+    stop working for this user.'
   readback:
     command: auth.connected-apps.list
     ids: {}
     kind: object
+  unset:
+  - options
 - command_id: auth.login
-  command_path: auth login
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth_cli.context.auth.login
-  sdk_conversion: Call mammoth_cli.context.auth.login with validated request fields.
-  request_model: AuthLoginRequest
-  result_model: AuthLoginResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: null
-  live_exemption_reason: Local credential storage; no mutating server call.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth auth login --help
+  output_schema:
+    type: object
+    required: [profile, workspace_id, base_url, storage, credential]
+    properties:
+      profile: {type: string}
+      workspace_id:
+        type: [integer, 'null']
+      base_url: {type: string}
+      storage: {type: string}
+      credential: {type: string}
+      workspace_name: {type: string}
   agent_example: mammoth auth login
-  unit_tests:
-  - UT-AUTH-LOGIN
-  contract_tests:
-  - CT-AUTH-LOGIN-HUMAN
-  - CT-AUTH-LOGIN-JSON
-  - CT-AUTH-LOGIN-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
   readback:
     command: auth.status
     ids: {}
     kind: object
 - command_id: auth.logout
-  command_path: auth logout
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth_cli.context.auth.logout
-  sdk_conversion: Call mammoth_cli.context.auth.logout with validated request fields.
-  request_model: AuthLogoutRequest
-  result_model: AuthLogoutResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: null
-  live_exemption_reason: Local credential removal.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth auth logout --help
-  agent_example: mammoth auth logout
-  unit_tests:
-  - UT-AUTH-LOGOUT
-  contract_tests:
-  - CT-AUTH-LOGOUT-HUMAN
-  - CT-AUTH-LOGOUT-JSON
-  - CT-AUTH-LOGOUT-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    type: object
+    required: [all, removed_profiles]
+    properties:
+      all: {type: boolean}
+      removed_profiles:
+        type: array
+        items: {type: string}
   readback:
     command: auth.status
     ids: {}
     kind: object
 - command_id: auth.status
-  command_path: auth status
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals: []
-  options: []
-  sdk_symbol: mammoth_cli.context.auth.status
-  sdk_conversion: Call mammoth_cli.context.auth.status with validated request fields.
-  request_model: AuthStatusRequest
-  result_model: AuthStatusResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: null
-  live_exemption_reason: Local credential status.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth auth status --help
-  agent_example: mammoth auth status
-  unit_tests:
-  - UT-AUTH-STATUS
-  contract_tests:
-  - CT-AUTH-STATUS-HUMAN
-  - CT-AUTH-STATUS-JSON
-  - CT-AUTH-STATUS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: AuthStatus

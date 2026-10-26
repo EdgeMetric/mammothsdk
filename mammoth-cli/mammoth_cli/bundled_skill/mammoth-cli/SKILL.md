@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.2.100
+version: 2.3.0
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -47,7 +47,7 @@ MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
 ## Running inside the Mammoth app
 
 Use the project you are given; never `project ensure`. No `doctor`, auth,
-profiles, `config set`, `upgrade`, `skill install`, env vars, local files,
+profiles, `config set`, `upgrade`, `skill install`, `history`, env vars, local files,
 stdin, `--input FILE` or `output_path` (they fail `not_available_embedded`);
 downloads return `download_url`. Ask for a reload on `authentication_failed` only; on a 403 check ids and scope.
 
@@ -63,13 +63,12 @@ downloads return `download_url`. Ask for a reload on `authentication_failed` onl
 
 ## Find the command for a goal
 
-State the goal in plain words;
-`view transform --help` is the Transform menu with one line per task:
+State the goal in plain words; run the `run_command` `how` returns (1 call):
 
 ```bash
 mammoth how "blend two files by day"       # ordered steps, multi-step goal
 mammoth schema find "merge two datasets"   # -> view.transform.join
-mammoth view transform --help              # every data transformation
+mammoth view transform --help              # Transform menu, 1 line per task
 mammoth schema find "join two datasets; remove duplicates; build a dashboard"   # 1 call, 1 result per goal
 ```
 

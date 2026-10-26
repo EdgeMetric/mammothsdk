@@ -33,17 +33,17 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 ## Command surface
 
-- Canonical + convenience commands: `845`
+- Canonical + convenience commands: `851`
 
 ### Mutation classes
 
 | Mutation class | Count |
 |---|---:|
-| read | 343 |
+| read | 346 |
 | benign_mutation | 231 |
 | reversible_pipeline | 40 |
 | destructive | 68 |
-| high_impact | 121 |
+| high_impact | 124 |
 | external_effect | 42 |
 
 ### Acceptance evidence
@@ -53,7 +53,7 @@ Generated from the reviewed manifests. Do not edit by hand.
 | contract_only_high_impact | 218 |
 | contract_only_no_disposable_fixture | 151 |
 | live_disposable_project | 203 |
-| live_read_only | 273 |
+| live_read_only | 279 |
 
 ## Protocol-only operations
 

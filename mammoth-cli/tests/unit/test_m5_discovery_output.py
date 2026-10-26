@@ -20,7 +20,8 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands.capability import find_capabilities
-from mammoth_cli.commands.schema import find_schemas, get_schema, schema_entries
+from mammoth_cli.commands.schema import get_schema, schema_entries
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize

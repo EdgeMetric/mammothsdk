@@ -15,7 +15,8 @@ import pytest
 import typer
 
 from mammoth_cli.errors.envelope import ERROR_SUMMARIES, EXIT_USAGE, CliError
-from mammoth_cli.runtime.executor import _profile_scope_recovery, run
+from mammoth_cli.runtime.dispatch import _profile_scope_recovery
+from mammoth_cli.runtime.executor import run
 from mammoth_cli.testing import make_runner
 
 _JSON_NO_INPUT = ["--output", "json", "--no-input"]

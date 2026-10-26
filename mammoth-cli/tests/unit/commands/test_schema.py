@@ -16,7 +16,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from mammoth_cli.commands.schema import brief_schema, find_schemas, get_schema, runnable_example
+from mammoth_cli.commands.schema import brief_schema, get_schema
+from mammoth_cli.commands.schema.examples import runnable_example
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.services.positionals import positionals_for
 
 _BULK_REPLACE = "view.transform.bulk-replace"
@@ -817,7 +819,7 @@ def test_build_time_example_uses_explicit_operation_ids_not_generated_manifest(
         lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
     )
     monkeypatch.setattr(
-        "mammoth_cli.commands.schema.resolve_positionals",
+        "mammoth_cli.commands.schema.examples.resolve_positionals",
         lambda _command_id: (_ for _ in ()).throw(AssertionError("manifest lookup")),
     )
     record = {
@@ -1000,7 +1002,7 @@ def test_open_explore_cards_ranks_the_panel_command_first(query: str) -> None:
 
 
 def _find_ids(query: str) -> list[str]:
-    from mammoth_cli.commands.schema import find_schemas
+    from mammoth_cli.commands.schema.find import find_schemas
 
     return [m["command_id"] for m in find_schemas(query)["matches"]]
 
@@ -1012,9 +1014,9 @@ def test_managed_postgres_finds_the_mammoth_hosted_export_first() -> None:
 
 
 def test_the_customer_postgres_export_points_to_publish_db() -> None:
-    from mammoth_cli.commands.schema import _COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
+    from mammoth_cli.discovery.purposes import COMMAND_DISCOVERY_PURPOSES  # noqa: PLC0415
 
-    assert "publish-db" in _COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
+    assert "publish-db" in COMMAND_DISCOVERY_PURPOSES["view.export.postgres"]
 
 
 def test_find_inlines_the_positionals_in_order() -> None:
@@ -1070,3 +1072,38 @@ def test_project_members_find_workspace_user_list() -> None:
     # #256: no search reached the command that lists a project's members.
     found = [item["command_id"] for item in find_schemas("project members role")["matches"]]
     assert found[0] == "workspace.user.list"
+
+
+@pytest.mark.parametrize(
+    ("command_id", "required"),
+    [
+        ("version", ["version", "schema_version"]),  # a named schema
+        ("dashboard.get", ["id"]),  # a named schema over an object the API leaves open
+        ("project.update", ["verify"]),  # the shared write result
+    ],
+)
+def test_schema_get_returns_the_declared_output_schema(
+    command_id: str, required: list[str]
+) -> None:
+    schema = get_schema(command_id)
+    assert schema is not None
+    assert schema["output_schema"]["required"] == required
+
+
+def test_schema_get_returns_an_api_body_schema_for_an_openapi_declaration() -> None:
+    schema = get_schema("project.list")
+    assert schema is not None
+    assert "$defs" in schema["output_schema"]
+
+
+def test_schema_get_returns_the_real_result_and_the_dry_run_report_of_a_write() -> None:
+    write = get_schema("client-app.delete")
+    assert write is not None
+    assert write["output_schema"] is not None
+    assert {"dry_run", "ran", "would_call"} <= set(write["dry_run_output_schema"]["required"])
+
+
+def test_schema_get_returns_no_dry_run_report_for_a_read() -> None:
+    read = get_schema("project.list")
+    assert read is not None
+    assert read["dry_run_output_schema"] is None

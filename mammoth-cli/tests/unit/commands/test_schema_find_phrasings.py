@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 
 #: (what a user says, the command that must be among the first three matches)
 PHRASINGS = [

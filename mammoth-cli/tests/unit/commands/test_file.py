@@ -624,7 +624,47 @@ def test_append_upload_reports_the_target_dataset_not_the_staging_one(
     assert not any(kw.get("dataset_id") == 313583 for _sym, kw in fake_service.call_log)
 
 
+def test_append_upload_waits_for_the_target_to_take_the_rows(
+    isolated_cli_config: object,
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Found live by recipe run: the rows reach the target after the upload job ends."""
+    monkeypatch.setattr(file_cmd.time, "sleep", lambda _s: None)
+    csv = tmp_path / "more.csv"
+    csv.write_text("day,events\n2026-10-11,3\n")
+    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [313583], "errors": {}}
+    # Read 1 is the count before; then the target is busy twice, then ready with the rows.
+    states = iter([("ready", 30), ("processing", 30), ("unknown", 30), ("ready", 33)])
+
+    def _get(log: list[Any]) -> dict[str, Any]:
+        status, rows = next(states, ("ready", 33))
+        return {"id": 9, "name": "events", "status": status, "stats": {"row_count": rows}}
+
+    fake_service.responses[_DATASET_GET] = _get
+    data, _ = file_cmd.file_upload(
+        _inv(
+            "file.upload",
+            extra_args=[str(csv)],
+            input_file=str(_input_doc(tmp_path, {"append_to_ds_id": 9})),
+        )
+    )
+    assert data["status"] == "ready"
+    assert data["rows_added"] == 3
+
+
 def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(document))
     return doc
+
+
+def test_an_append_wait_that_runs_out_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(file_cmd, "_APPEND_WAIT_S", 0.3)
+    monkeypatch.setattr(file_cmd.time, "sleep", lambda _s: None)
+    status = ["processing"]
+    monkeypatch.setattr(file_cmd, "_dataset_status", lambda _s, _d: (status[0], None, None))
+    assert file_cmd._wait_until_ready(object(), 5) is False
+    status[0] = "ready"
+    assert file_cmd._wait_until_ready(object(), 5) is True

@@ -1862,6 +1862,8 @@ def test_version_apply_passes_ids(fake_service: FakeMammothService) -> None:
     assert _without_meta(fake_service.call_log) == [
         (_VER_APPLY, {"dataset_id": 9, "dataview_id": 7, "version_id": 3, "project_id": 180})
     ]
+    # Applying rebuilds the pipeline in a job: the handler returns once it finished.
+    assert "wait_if_job" in fake_service.calls
 
 
 def test_version_delete_blocked_without_confirmation(fake_service: FakeMammothService) -> None:

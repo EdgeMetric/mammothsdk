@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: run
+  output_schema:
+    ref: Run
   command_path: run
   disposition: command
   alias_of: null
@@ -23,7 +25,8 @@ commands:
   pagination_policy: none
   acceptance_evidence: live_read_only
   live_test: null
-  live_exemption_reason: Runs the commands on its lines in one process; each line carries the manifest policy of its own command, so a mutating line needs its own yes/confirm flags.
+  live_exemption_reason: Runs the commands on its lines in one process; each line carries the manifest
+    policy of its own command, so a mutating line needs its own yes/confirm flags.
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
@@ -35,5 +38,6 @@ commands:
   - CT-RUN-S1-LOCAL
   draft_test: null
   undo_test: null
-  known_restrictions: run has no global --yes or --confirm; a mutating line carries its own in flags. Not available embedded.
+  known_restrictions: run has no global --yes or --confirm; a mutating line carries its own in flags.
+    Not available embedded.
   reviewed_by: primary

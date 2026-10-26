@@ -7,7 +7,9 @@ workstream.
 
 from __future__ import annotations
 
+import importlib
 import json
+import pkgutil
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -15,6 +17,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import batch, dashboard, dataset, view, view_ops
+from mammoth_cli.commands.view_ops import crud as view_crud
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -22,18 +25,18 @@ from mammoth_cli.runtime.invocation import Invocation
 def _set_open_service(monkeypatch: pytest.MonkeyPatch, module: Any, replacement: Any) -> None:
     """Patch ``open_service`` in every module that looks it up.
 
-    The ``view`` package spreads its handlers over submodules, each importing
-    ``open_service`` itself, so the patch must land on each of them.
+    The ``view`` and ``view_ops`` packages spread their handlers over submodules, each
+    importing ``open_service`` itself, so the patch must land on each of them.
     """
-    import importlib
-
-    if module.__name__ != "mammoth_cli.commands.view":
-        monkeypatch.setattr(module, "open_service", replacement)
-        return
-    for name in module._SUBMODULES:
-        submodule = importlib.import_module(f"{module.__name__}.{name}")
-        if "open_service" in vars(submodule):
-            monkeypatch.setattr(submodule, "open_service", replacement)
+    modules = [module]
+    if hasattr(module, "__path__"):
+        modules += [
+            importlib.import_module(f"{module.__name__}.{info.name}")
+            for info in pkgutil.iter_modules(module.__path__)
+        ]
+    for each in modules:
+        if "open_service" in vars(each):
+            monkeypatch.setattr(each, "open_service", replacement)
 
 
 PROJECT, DATASET, VIEW, BATCH, CHECKPOINT, DATA_CHECK, VERSION = 3, 731, 278, 12, 7, 8, 9
@@ -186,7 +189,7 @@ def test_rel198_view_get_honors_explicit_parent(
     payload = tmp_path / "view-get.json"
     payload.write_text(json.dumps({"dataset_id": DATASET}), encoding="utf-8")
     with _bind(monkeypatch, view_ops, service):
-        view_ops.view_get(_inv("view.get", [str(VIEW)], str(payload)))
+        view_crud.view_get(_inv("view.get", [str(VIEW)], str(payload)))
     # The view read goes straight to the explicit parent -- the SDK no longer
     # resolves a pipeline sequence first -- and the workspace-level dashboards
     # read names boards built on it.  No discovery probe escapes.
@@ -205,7 +208,7 @@ def test_rel198_view_get_rejects_nonpositive_explicit_parent_without_request(
     payload.write_text(json.dumps({"dataset_id": 0}), encoding="utf-8")
     with _bind(monkeypatch, view_ops, service):
         with pytest.raises(CliError):
-            view_ops.view_get(_inv("view.get", [str(VIEW)], str(payload)))
+            view_crud.view_get(_inv("view.get", [str(VIEW)], str(payload)))
     assert api.requests == []
 
 

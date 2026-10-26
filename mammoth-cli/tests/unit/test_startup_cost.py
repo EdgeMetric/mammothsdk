@@ -15,6 +15,7 @@ import pytest
 import typer
 
 from mammoth_cli import app as app_module
+from mammoth_cli.app import help_text
 from mammoth_cli.testing import make_runner
 
 
@@ -172,10 +173,10 @@ def test_root_leaf_help_table_matches_the_handler_docstrings() -> None:
     """``--help`` prints a pinned string for top-level leaves; it must equal the real one."""
     from mammoth_cli.manifest.loader import command_by_id
 
-    assert set(app_module._ROOT_LEAF_HELP) == set(app_module._LAZY_LEAF_IDS)
+    assert set(help_text._ROOT_LEAF_HELP) == set(app_module._LAZY_LEAF_IDS)
     for name, command_id in app_module._LAZY_LEAF_IDS.items():
-        real = app_module._command_help(command_id, command_by_id(command_id))
-        assert app_module._ROOT_LEAF_HELP[name] == real, name
+        real = help_text._command_help(command_id, command_by_id(command_id))
+        assert help_text._ROOT_LEAF_HELP[name] == real, name
 
 
 def test_group_command_help_is_read_from_the_handler_when_printed() -> None:

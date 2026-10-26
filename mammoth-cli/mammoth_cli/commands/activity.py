@@ -16,6 +16,7 @@ import shlex
 from datetime import UTC, datetime
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_SDK_SYMBOL_UNRESOLVED,
@@ -27,8 +28,6 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.local_time import local_time
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _LIST_OPTIONAL = (
     "limit",

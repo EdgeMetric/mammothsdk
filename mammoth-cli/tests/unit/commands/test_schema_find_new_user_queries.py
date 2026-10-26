@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 
 QUERIES: list[tuple[str, str | tuple[str, ...]]] = [
     # reading rows

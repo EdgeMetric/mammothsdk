@@ -16,9 +16,13 @@ from typing import Any
 SPEC_ROOT = Path(__file__).resolve().parent.parent.parent / "spec"
 MANIFEST_DIR = SPEC_ROOT / "manifests"
 COMMANDS_DIR = MANIFEST_DIR / "commands"
+GENERATED_COMMANDS_PATH = MANIFEST_DIR / "commands.generated.yaml"
+#: The override key that drops generated fields from a command record.
+UNSET_KEY = "unset"
 SCHEMA_PATH = MANIFEST_DIR / "schema-v1.json"
 OPENAPI_OPERATIONS_PATH = MANIFEST_DIR / "openapi-operations.yaml"
 SDK_METHODS_PATH = MANIFEST_DIR / "sdk-methods.yaml"
+OUTPUT_SCHEMAS_PATH = MANIFEST_DIR / "output-schemas.yaml"
 
 SERVER_STATUS_PATH = MANIFEST_DIR / "server-status.json"
 
@@ -26,6 +30,10 @@ COMPILED_DIR = MANIFEST_DIR / "compiled"
 COMPILED_COMMANDS = "commands"
 COMPILED_OPERATIONS = "openapi-operations"
 COMPILED_SDK_METHODS = "sdk-methods"
+COMPILED_OUTPUT_SCHEMAS = "output-schemas"
+#: ``kind`` of an ``output-schemas`` record: a shared definition or a command's named schema.
+OUTPUT_SCHEMA_DEF = "def"
+OUTPUT_SCHEMA_NAMED = "schema"
 
 MANIFEST_SCHEMA_VERSION = 1
 _CLEANED_MARKER = ".manifest-cache-cleaned"
@@ -97,13 +105,55 @@ def _server_statuses() -> dict[str, str]:
     return {cid: str(item["server_status"]) for cid, item in data.get("commands", {}).items()}
 
 
-def _parse_yaml_commands() -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
+def merge_command_record(
+    generated: dict[str, Any] | None, written: dict[str, Any]
+) -> dict[str, Any]:
+    """One command record: the generated record with a hand-written one laid over it.
+
+    A hand-written record for a command the generator also makes holds only the fields
+    that differ, plus ``unset``: the generated fields it drops. A command the generator
+    does not make is hand-written in full.
+
+    Args:
+        generated: The record ``scripts/build_manifests.py`` made, or None.
+        written: The record in ``commands/<group>.yaml``.
+
+    Returns:
+        The full command record.
+    """
+    if generated is None:
+        return dict(written)
+    unset = set(written.get(UNSET_KEY, ()))
+    merged = {key: value for key, value in generated.items() if key not in unset}
+    merged.update((key, value) for key, value in written.items() if key != UNSET_KEY)
+    return merged
+
+
+def command_records() -> list[dict[str, Any]]:
+    """Every command record parsed from the YAML: generated and hand-written, merged.
+
+    Build scripts and manifest tests read this; the CLI reads the compiled JSON.
+
+    Returns:
+        The full records without the derived ``server_status``: the hand-written ones in
+        file order, then the generated ones no file overrides, by command id.
+    """
+    data = _read_yaml(GENERATED_COMMANDS_PATH)
+    generated = {record["command_id"]: record for record in (data or {}).get("commands", [])}
+    written: dict[str, dict[str, Any]] = {}
     for path in sorted(COMMANDS_DIR.glob("*.yaml")):
         data = _read_yaml(path)
         if data:
-            records.extend(data.get("commands", []))
-    records.sort(key=lambda record: record["command_id"])
+            written.update((record["command_id"], record) for record in data.get("commands", []))
+    order = [*written, *sorted(set(generated) - set(written))]
+    return [
+        merge_command_record(generated.get(command_id), written.get(command_id, {}))
+        for command_id in order
+    ]
+
+
+def _parse_yaml_commands() -> list[dict[str, Any]]:
+    records = sorted(command_records(), key=lambda record: record["command_id"])
     statuses = _server_statuses()
     for record in records:
         # ``served`` is the default and is not stored, so a regenerated manifest only
@@ -118,12 +168,23 @@ def _parse_yaml_list(path: Path, root_key: str) -> list[dict[str, Any]]:
     return list(data.get(root_key, [])) if data else []
 
 
+def _parse_output_schemas() -> list[dict[str, Any]]:
+    """The records of ``output-schemas.yaml``: shared ``defs`` first, then named ``schemas``."""
+    data = _read_yaml(OUTPUT_SCHEMAS_PATH) or {}
+    return [
+        {"name": name, "kind": kind, "schema": schema}
+        for key, kind in (("defs", OUTPUT_SCHEMA_DEF), ("schemas", OUTPUT_SCHEMA_NAMED))
+        for name, schema in (data.get(key) or {}).items()
+    ]
+
+
 def parse_yaml_manifests() -> dict[str, list[dict[str, Any]]]:
     """Parse the authoring YAML into the records stored under ``compiled/`` (name -> records)."""
     return {
         COMPILED_COMMANDS: _parse_yaml_commands(),
         COMPILED_OPERATIONS: _parse_yaml_list(OPENAPI_OPERATIONS_PATH, "operations"),
         COMPILED_SDK_METHODS: _parse_yaml_list(SDK_METHODS_PATH, "methods"),
+        COMPILED_OUTPUT_SCHEMAS: _parse_output_schemas(),
     }
 
 
@@ -181,6 +242,25 @@ def load_commands() -> list[dict[str, Any]]:
     return _parse_yaml_commands() if COMMANDS_DIR.exists() else []
 
 
+@functools.lru_cache(maxsize=1)
+def load_output_schemas() -> dict[str, dict[str, dict[str, Any]]]:
+    """The named output schemas commands refer to (``output_schema: {ref: NAME}``).
+
+    Returns:
+        ``{"defs": {...}, "schemas": {...}}``: ``defs`` are JSON Schema fragments shared
+        between schemas (referenced as ``#/$defs/NAME``), ``schemas`` the named ones.
+    """
+    _tidy_legacy_caches()
+    records = _read_compiled(COMPILED_OUTPUT_SCHEMAS)
+    if records is None:
+        records = _parse_output_schemas()
+    loaded: dict[str, dict[str, dict[str, Any]]] = {"defs": {}, "schemas": {}}
+    for record in records:
+        key = "defs" if record["kind"] == OUTPUT_SCHEMA_DEF else "schemas"
+        loaded[key][record["name"]] = record["schema"]
+    return loaded
+
+
 @dataclass(frozen=True)
 class ManifestSet:
     operations: list[dict[str, Any]]
@@ -220,5 +300,11 @@ def is_pending_server_release(command_id: str) -> bool:
 
 def clear_cache() -> None:
     """Reset cached manifests (used in tests that rewrite manifest files)."""
-    for func in (load_schema, load_operations, load_sdk_methods, load_commands):
+    for func in (
+        load_schema,
+        load_operations,
+        load_sdk_methods,
+        load_commands,
+        load_output_schemas,
+    ):
         func.cache_clear()

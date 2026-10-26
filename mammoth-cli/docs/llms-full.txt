@@ -795,7 +795,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dashboard update` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.update
   example: mammoth dashboard update 123 --input '{"patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]}'
 - `mammoth dashboard v3 generate` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.v3_generate
-  example: mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'
+  example: mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Weekly sales by region", "dataview_id": 1}}}'
 - `mammoth dashboard video export` [benign_mutation/none] -> mammoth.api.dashboards.DashboardsAPI.video_export
   example: mammoth dashboard video export 123
 - `mammoth dashboard video-state` [read/none] -> mammoth.api.dashboards.DashboardsAPI.video_state
@@ -933,6 +933,17 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth folder update` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.update
   example: mammoth folder update 123 --input '{"name": "Revenue report"}'
 
+## history
+
+- `mammoth history list` [read/none] -> mammoth_cli.commands.history.history_list
+  example: mammoth history list --input '{"undoable_only": true}'
+- `mammoth history resume` [high_impact/prompt_or_yes] -> mammoth_cli.commands.history.history_resume
+  example: mammoth history resume 97b9ee41d15d --yes
+- `mammoth history show` [read/none] -> mammoth_cli.commands.history.history_show
+  example: mammoth history show 97b9ee41d15d
+- `mammoth history undo` [high_impact/prompt_or_yes] -> mammoth_cli.commands.history.history_undo
+  example: mammoth history undo 97b9ee41d15d --yes
+
 ## how
 
 - `mammoth how` [read/none] -> mammoth_cli.commands.how.how
@@ -1057,6 +1068,13 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth project user remove 123 --input '{"user_ids": ["resource-123"]}' --yes --confirm 123
 - `mammoth project user update` [high_impact/yes_always] -> mammoth.api.projects.ProjectsAPI.user_update
   example: mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes
+
+## recipe
+
+- `mammoth recipe list` [read/none] -> mammoth_cli.commands.recipe.recipe_list
+  example: mammoth recipe list
+- `mammoth recipe run` [high_impact/prompt_or_yes] -> mammoth_cli.commands.recipe.recipe_run
+  example: mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes
 
 ## report
 

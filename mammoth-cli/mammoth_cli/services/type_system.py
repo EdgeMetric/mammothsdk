@@ -31,11 +31,13 @@ _CONDITION_TYPES = (
 def _is_resource_domain(annotation: Any) -> bool:
     """Whether an annotation is an SDK domain object referenced by id."""
     # ``mammoth.view`` drags in every transform model. A ``View`` annotation can
-    # only exist once that module is loaded, so never import it just to ask.
-    view_module = sys.modules.get("mammoth.view")
-    if view_module is None:
+    # only exist once that module is loaded, so never import it just to ask. Another
+    # thread may be importing it right now: the module is then in ``sys.modules``
+    # before ``View`` is defined, and no annotation can name ``View`` yet.
+    view_class = getattr(sys.modules.get("mammoth.view"), "View", None)
+    if view_class is None:
         return False
-    return isinstance(annotation, type) and issubclass(annotation, view_module.View)
+    return isinstance(annotation, type) and issubclass(annotation, view_class)
 
 
 def _is_resource_reference(annotation: Any) -> bool:

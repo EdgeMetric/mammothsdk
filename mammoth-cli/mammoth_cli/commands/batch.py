@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -29,9 +30,6 @@ from mammoth_cli.services.append_blank_columns import (
     BLANK_COLUMNS_FIELD,
     acknowledged_blank_columns,
 )
-
-HandlerResult = tuple[Any, dict[str, Any]]
-
 
 CHANGE_MAP_IGNORED = (
     "`change_map` has no effect: the batches route has no change-tracking map and drops it, "

@@ -1,28 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: workflow.archive
-  command_path: workflow archive
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SetArchived
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.set_archived with validated request fields.
-  request_model: WorkflowArchiveRequest
-  result_model: WorkflowArchiveResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -31,51 +11,11 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow archive WORKFLOW_ID --help
-  agent_example: 'mammoth workflow archive 123 --input ''{"archived": true}'''
-  unit_tests:
-  - UT-WORKFLOW-ARCHIVE
-  contract_tests:
-  - CT-WORKFLOW-ARCHIVE-HUMAN
-  - CT-WORKFLOW-ARCHIVE-JSON
-  - CT-WORKFLOW-ARCHIVE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Input: {archived: true|false, dataset_ids?: [int]}. The dataset ids are the workflow''s
     datasets now; it reads as active once it has others.'
-  reviewed_by: primary
 - command_id: workflow.attach-dataset
-  command_path: workflow attach-dataset
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AttachDataset
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: datasource_id
-    type: int
-    required: true
-    metavar: DATASOURCE_ID
-    falls_back_to_field: null
-    help: ID of the datasource.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.attach_dataset with validated request fields.
-  request_model: WorkflowAttachDatasetRequest
-  result_model: WorkflowAttachDatasetResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -84,617 +24,87 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow attach-dataset WORKFLOW_ID DATASOURCE_ID --help
-  agent_example: mammoth workflow attach-dataset 123 456
-  unit_tests:
-  - UT-WORKFLOW-ATTACH-DATASET
-  contract_tests:
-  - CT-WORKFLOW-ATTACH-DATASET-HUMAN
-  - CT-WORKFLOW-ATTACH-DATASET-JSON
-  - CT-WORKFLOW-ATTACH-DATASET-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Takes the dataset to attach as the second positional, DATASOURCE_ID. No input document.
-  reviewed_by: primary
 - command_id: workflow.block.add
-  command_path: workflow block add
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - AddSkeletonBlock
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_add
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_add with validated request fields.
-  request_model: WorkflowBlockAddRequest
-  result_model: WorkflowBlockAddResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-BLOCK-ADD
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow block add WORKFLOW_ID --help
-  agent_example: 'mammoth workflow block add 123 --input ''{"block_type": "source"}'''
-  unit_tests:
-  - UT-WORKFLOW-BLOCK-ADD
-  contract_tests:
-  - CT-WORKFLOW-BLOCK-ADD-HUMAN
-  - CT-WORKFLOW-BLOCK-ADD-JSON
-  - CT-WORKFLOW-BLOCK-ADD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.auth
-  command_path: workflow block auth
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PatchBlockAuth
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: block_id
-    type: int
-    required: true
-    metavar: BLOCK_ID
-    falls_back_to_field: null
-    help: ID of the block.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_auth
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_auth with validated request fields.
-  request_model: WorkflowBlockAuthRequest
-  result_model: WorkflowBlockAuthResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-BLOCK-AUTH
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow block auth WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block auth 123 456 --input ''{"auth_data": {"name": "Status"}}'' --yes
-    --confirm 123'
-  unit_tests:
-  - UT-WORKFLOW-BLOCK-AUTH
-  contract_tests:
-  - CT-WORKFLOW-BLOCK-AUTH-HUMAN
-  - CT-WORKFLOW-BLOCK-AUTH-JSON
-  - CT-WORKFLOW-BLOCK-AUTH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.config
-  command_path: workflow block config
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PromoteSkeletonBlock
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: block_id
-    type: int
-    required: true
-    metavar: BLOCK_ID
-    falls_back_to_field: null
-    help: ID of the block.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_config
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_config with validated request fields.
-  request_model: WorkflowBlockConfigRequest
-  result_model: WorkflowBlockConfigResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-BLOCK-CONFIG
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow block config WORKFLOW_ID BLOCK_ID --help
-  agent_example: mammoth workflow block config 123 456
-  unit_tests:
-  - UT-WORKFLOW-BLOCK-CONFIG
-  contract_tests:
-  - CT-WORKFLOW-BLOCK-CONFIG-HUMAN
-  - CT-WORKFLOW-BLOCK-CONFIG-JSON
-  - CT-WORKFLOW-BLOCK-CONFIG-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.block.type
-  command_path: workflow block type
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PatchBlockType
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: block_id
-    type: int
-    required: true
-    metavar: BLOCK_ID
-    falls_back_to_field: null
-    help: ID of the block.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.block_type
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.block_type with validated request fields.
-  request_model: WorkflowBlockTypeRequest
-  result_model: WorkflowBlockTypeResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-BLOCK-TYPE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow block type WORKFLOW_ID BLOCK_ID --help
-  agent_example: 'mammoth workflow block type 123 456 --input ''{"connection_type": "postgres"}'''
-  unit_tests:
-  - UT-WORKFLOW-BLOCK-TYPE
-  contract_tests:
-  - CT-WORKFLOW-BLOCK-TYPE-HUMAN
-  - CT-WORKFLOW-BLOCK-TYPE-JSON
-  - CT-WORKFLOW-BLOCK-TYPE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.canvas
-  command_path: workflow canvas
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateCanvasState
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.canvas
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.canvas with validated request fields.
-  request_model: WorkflowCanvasRequest
-  result_model: WorkflowCanvasResult
-  mutation_class: benign_mutation
-  edits_target: true
-  proposal_input: canvas_state.proposed_changes
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-CANVAS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow canvas WORKFLOW_ID --help
-  agent_example: 'mammoth workflow canvas 12 --input ''{"canvas_state": {"proposed_changes": [{"op": "add_view",
-    "dataset_id": 415, "name": "Urgent tickets", "ref": "urgent"}, {"op": "add_step", "view_ref": "urgent",
-    "transform": "filter", "params": {"condition": {"column": "Priority", "operator": "EQ", "value": "Urgent"}},
-    "label": "Keep urgent tickets"}, {"op": "send_to_new_dataset", "dataset_id": 415, "view_ref": "urgent",
-    "name": "Urgent tickets by team"}]}}'''
-  unit_tests:
-  - UT-WORKFLOW-CANVAS
-  contract_tests:
-  - CT-WORKFLOW-CANVAS-HUMAN
-  - CT-WORKFLOW-CANVAS-JSON
-  - CT-WORKFLOW-CANVAS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Proposes changes to a workflow for the user to review and Save on the Workflows
-    canvas; nothing is built until they Save, and Save builds every change in flow order. Use it when
-    the user asks to suggest, sketch or draft a workflow, or wants to review first. Steps inside a view
-    are changes too: propose the filters, calculations and other tasks a proposed or existing view needs
-    as add_step changes in the same call, never as view commands run afterwards. WORKFLOW_ID is the workflow''s
-    record id (URL id w12 is record 12); an unnamed workflow has none, so name it first with workflow
-    create --seed_datasource_id. Input: {"canvas_state": {"proposed_changes": [...]}}, each change one
-    of (integer ids from workflow graph): {op: add_view, dataset_id, name, ref?}; {op: rename_view, dataset_id,
-    view_id, name}; {op: trash_view, dataset_id, view_id}; {op: rename_dataset, dataset_id, name}; {op:
-    trash_dataset, dataset_id}; {op: send_to_new_dataset, dataset_id, view_id, name, ref?}; {op: send_to_dataset,
-    dataset_id, view_id, target_dataset_id}; {op: join, dataset_id, view_id, with_dataset_id, with_view_id,
-    join_type?, on?, select?, column_prefix?} (with join_type INNER|LEFT|RIGHT|OUTER, on [{left, right}]
-    and select [columns], Save builds the join); {op: export, dataset_id, view_id, connector?, destination?,
-    connection_id?, settings?} (an existing connection and the destination''s settings, never a credential);
-    {op: add_source, name, dataset_name, ref?, kind?, url?, connector?, connection_id?, settings?} (kind
-    url with a link, or connection with an existing connection; with neither it waits for the user''s
-    data); {op: lookup, view_id, lookup_view_id, key, source, value, new_column?, label?, ref?}; {op:
-    add_step, view_id, transform, params, label, after_ref?, ref?} (transform is a view transform kind
-    such as filter, discard-duplicates or sort, and params is exactly that command''s --input: schema
-    get view.transform.<kind>; after_ref names an earlier add_step on the same view); {op: update_step,
-    view_id, task_id, params, label?}; {op: remove_step, view_id, task_id}. A later change in the same
-    call can point at something an earlier one proposes: give the earlier change a ref, then use view_ref,
-    dataset_ref or target_dataset_ref in place of the id (an add_step on a proposed view uses view_ref)
-    (a new dataset''s ref also names its first view), so a whole shape is proposed in one call. A step
-    is checked when proposed; a refused one says how to fix it. Join, export and complex steps (join,
-    lookup, ai, add-sql, generate-sql, pivot, crosstab, window, unnest) arrive needing setup in the Data
-    Editor. Tell the user the changes wait on the canvas for their review.'
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.cleanup
-  command_path: workflow cleanup
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CleanupGhostWorkflows
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cleanup
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.cleanup with validated request fields.
-  request_model: WorkflowCleanupRequest
-  result_model: WorkflowCleanupResult
-  mutation_class: destructive
-  edits_target: false
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-CLEANUP
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow cleanup --help
-  agent_example: mammoth workflow cleanup --yes
-  unit_tests:
-  - UT-WORKFLOW-CLEANUP
-  contract_tests:
-  - CT-WORKFLOW-CLEANUP-HUMAN
-  - CT-WORKFLOW-CLEANUP-JSON
-  - CT-WORKFLOW-CLEANUP-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema:
+    ref: WriteResult
   known_restrictions: Deletes the active project's ghost (orphaned, half-created) workflows for good;
     real workflows are untouched. Needs --project or an active project, and a prompt or --yes.
-  reviewed_by: primary
   readback:
     command: workflow.list
     ids: {}
     kind: object
 - command_id: workflow.create
-  command_path: workflow create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateWorkflow
-  positionals:
-  - name: name
-    type: str
-    required: false
-    metavar: NAME
-    falls_back_to_field: name
-    help: Name of the new workflow; or pass it via the 'name' input field.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.create
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.create with validated request fields.
-  request_model: WorkflowCreateRequest
-  result_model: WorkflowCreateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow create --help
-  agent_example: mammoth workflow create 'Revenue report'
-  unit_tests:
-  - UT-WORKFLOW-CREATE
-  contract_tests:
-  - CT-WORKFLOW-CREATE-HUMAN
-  - CT-WORKFLOW-CREATE-JSON
-  - CT-WORKFLOW-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: With seed_datasource_id set to a workflow's root dataset id (workflow graph lists
-    each workflow's datasets), names that existing unnamed workflow and returns its record id; without
-    it, starts a new empty workflow.
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: result.id
     kind: object
 - command_id: workflow.delete
-  command_path: workflow delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteWorkflow
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.delete with validated request fields.
-  request_model: WorkflowDeleteRequest
-  result_model: WorkflowDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow delete WORKFLOW_ID --help
-  agent_example: mammoth workflow delete 123 --yes
-  unit_tests:
-  - UT-WORKFLOW-DELETE
-  contract_tests:
-  - CT-WORKFLOW-DELETE-HUMAN
-  - CT-WORKFLOW-DELETE-JSON
-  - CT-WORKFLOW-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.list
     ids: {}
     kind: object
 - command_id: workflow.from-template
-  command_path: workflow from-template
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - InstantiateFromTemplate
-  positionals:
-  - name: template_id
-    type: int
-    required: true
-    metavar: TEMPLATE_ID
-    falls_back_to_field: null
-    help: ID of the template.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.from_template
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.from_template with validated request fields.
-  request_model: WorkflowFromTemplateRequest
-  result_model: WorkflowFromTemplateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-FROM-TEMPLATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow from-template TEMPLATE_ID --help
-  agent_example: 'mammoth workflow from-template 123 --input ''{"workflow_name": "Revenue report"}'''
-  unit_tests:
-  - UT-WORKFLOW-FROM-TEMPLATE
-  contract_tests:
-  - CT-WORKFLOW-FROM-TEMPLATE-HUMAN
-  - CT-WORKFLOW-FROM-TEMPLATE-JSON
-  - CT-WORKFLOW-FROM-TEMPLATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: workflow.get
     ids:
       workflow_id: result.id
     kind: object
 - command_id: workflow.get
-  command_path: workflow get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetWorkflow
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.get
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.get with validated request fields.
-  request_model: WorkflowGetRequest
-  result_model: WorkflowGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow get WORKFLOW_ID --help
-  agent_example: mammoth workflow get 123
-  unit_tests:
-  - UT-WORKFLOW-GET
-  contract_tests:
-  - CT-WORKFLOW-GET-HUMAN
-  - CT-WORKFLOW-GET-JSON
-  - CT-WORKFLOW-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.graph
-  command_path: workflow graph
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetProjectWorkflowGraph
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.graph
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.graph with validated request fields.
-  request_model: WorkflowGraphRequest
-  result_model: WorkflowGraphResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-GRAPH
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow graph --help
-  agent_example: mammoth workflow graph
-  unit_tests:
-  - UT-WORKFLOW-GRAPH
-  contract_tests:
-  - CT-WORKFLOW-GRAPH-HUMAN
-  - CT-WORKFLOW-GRAPH-JSON
-  - CT-WORKFLOW-GRAPH-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.list
-  command_path: workflow list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListWorkflows
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.list
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.list with validated request fields.
-  request_model: WorkflowListRequest
-  result_model: WorkflowListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow list --help
-  agent_example: mammoth workflow list
-  unit_tests:
-  - UT-WORKFLOW-LIST
-  contract_tests:
-  - CT-WORKFLOW-LIST-HUMAN
-  - CT-WORKFLOW-LIST-JSON
-  - CT-WORKFLOW-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.resolve-held
-  command_path: workflow resolve-held
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ResolveHeldChange
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: key
-    type: str
-    required: true
-    metavar: KEY
-    falls_back_to_field: null
-    help: Key identifying the resource.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.resolve_held with validated request fields.
-  request_model: WorkflowResolveHeldRequest
-  result_model: WorkflowResolveHeldResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -703,46 +113,15 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow resolve-held WORKFLOW_ID KEY --help
-  agent_example: 'mammoth workflow resolve-held 123 Status --input ''{"built": true}'''
-  unit_tests:
-  - UT-WORKFLOW-RESOLVE-HELD
-  contract_tests:
-  - CT-WORKFLOW-RESOLVE-HELD-HUMAN
-  - CT-WORKFLOW-RESOLVE-HELD-JSON
-  - CT-WORKFLOW-RESOLVE-HELD-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Takes the change''s key as the second positional, KEY. Input: {built: true|false
     (true: already in Mammoth, not built again; false: lift the hold so the next Save builds it), expected_version?:
     int}.'
-  reviewed_by: primary
 - command_id: workflow.save
-  command_path: workflow save
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SaveWorkflow
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.save
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.save with validated request fields.
-  request_model: WorkflowSaveRequest
-  result_model: WorkflowSaveResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: workflow.save-undo
   acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
@@ -751,325 +130,63 @@ commands:
     kind: object
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow save WORKFLOW_ID --help
-  agent_example: mammoth workflow save 123
-  unit_tests:
-  - UT-WORKFLOW-SAVE
-  contract_tests:
-  - CT-WORKFLOW-SAVE-HUMAN
-  - CT-WORKFLOW-SAVE-JSON
-  - CT-WORKFLOW-SAVE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Input (optional): {keys?: [change keys to save], expected_version?: int}. Omitted
     keys save every unsaved change; a stale expected_version fails with 409.'
-  reviewed_by: primary
 - command_id: workflow.update
-  command_path: workflow update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateWorkflow
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.update
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.update with validated request fields.
-  request_model: WorkflowUpdateRequest
-  result_model: WorkflowUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-WORKFLOW-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow update WORKFLOW_ID --help
-  agent_example: mammoth workflow update 123
-  unit_tests:
-  - UT-WORKFLOW-UPDATE
-  contract_tests:
-  - CT-WORKFLOW-UPDATE-HUMAN
-  - CT-WORKFLOW-UPDATE-JSON
-  - CT-WORKFLOW-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'WORKFLOW_ID is the workflow''s record id: URL id w12 is record 12. An unnamed workflow
-    (base64 URL id) has no record; name it with workflow create --seed_datasource_id <its root dataset
-    id> instead.'
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
 - command_id: workflow.workspace-datasets
-  command_path: workflow workspace-datasets
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListWorkspaceDatasets
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.workspace_datasets
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.workspace_datasets with validated request fields.
-  request_model: WorkflowWorkspaceDatasetsRequest
-  result_model: WorkflowWorkspaceDatasetsResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-WORKSPACE-DATASETS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow workspace-datasets --help
-  agent_example: mammoth workflow workspace-datasets
-  unit_tests:
-  - UT-WORKFLOW-WORKSPACE-DATASETS
-  contract_tests:
-  - CT-WORKFLOW-WORKSPACE-DATASETS-HUMAN
-  - CT-WORKFLOW-WORKSPACE-DATASETS-JSON
-  - CT-WORKFLOW-WORKSPACE-DATASETS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.workspace-exports
-  command_path: workflow workspace-exports
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListWorkspaceExports
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.workspace_exports
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.workspace_exports with validated request fields.
-  request_model: WorkflowWorkspaceExportsRequest
-  result_model: WorkflowWorkspaceExportsResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-WORKSPACE-EXPORTS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow workspace-exports --help
-  agent_example: mammoth workflow workspace-exports
-  unit_tests:
-  - UT-WORKFLOW-WORKSPACE-EXPORTS
-  contract_tests:
-  - CT-WORKFLOW-WORKSPACE-EXPORTS-HUMAN
-  - CT-WORKFLOW-WORKSPACE-EXPORTS-JSON
-  - CT-WORKFLOW-WORKSPACE-EXPORTS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.workspace-sources
-  command_path: workflow workspace-sources
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListWorkspaceSources
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.workspace_sources
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.workspace_sources with validated request fields.
-  request_model: WorkflowWorkspaceSourcesRequest
-  result_model: WorkflowWorkspaceSourcesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-WORKFLOW-WORKSPACE-SOURCES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow workspace-sources --help
-  agent_example: mammoth workflow workspace-sources
-  unit_tests:
-  - UT-WORKFLOW-WORKSPACE-SOURCES
-  contract_tests:
-  - CT-WORKFLOW-WORKSPACE-SOURCES-HUMAN
-  - CT-WORKFLOW-WORKSPACE-SOURCES-JSON
-  - CT-WORKFLOW-WORKSPACE-SOURCES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: workflow.save-undo
-  command_path: workflow save-undo
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UndoWorkflowSave
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the run.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.undo_save
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.undo_save with validated request fields.
-  request_model: WorkflowSaveUndoRequest
-  result_model: WorkflowSaveUndoResult
-  mutation_class: "destructive"
-  edits_target: false
-  confirmation: "prompt_or_yes"
-  wait_policy: "always_wait"
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: workflow.save
+    note: 'Run it with the same WORKFLOW_ID and the settings you want (--input); the undo did not keep what it reverted.'
+  mutation_class: destructive
+  confirmation: prompt_or_yes
+  wait_policy: always_wait
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
-  live_test: LT-WORKFLOW-SAVE-UNDO
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow save-undo WORKFLOW_ID RUN_ID --help
-  agent_example: "mammoth workflow save-undo 123 resource-123 --yes"
-  unit_tests:
-  - UT-WORKFLOW-SAVE-UNDO
-  contract_tests:
-  - CT-WORKFLOW-SAVE-UNDO-HUMAN
-  - CT-WORKFLOW-SAVE-UNDO-JSON
-  - CT-WORKFLOW-SAVE-UNDO-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Removes what the Save built (datasets, views, steps). Prompts, or pass --yes. Waits for the undo run."
-  reviewed_by: primary
+  agent_example: mammoth workflow save-undo 123 resource-123 --yes
+  known_restrictions: Removes what the Save built (datasets, views, steps). Prompts, or pass --yes. Waits
+    for the undo run.
 - command_id: workflow.duplicate
-  command_path: workflow duplicate
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DuplicateWorkflow
-  positionals:
-  - name: source_workflow_id
-    type: int
-    required: false
-    metavar: SOURCE_WORKFLOW_ID
-    falls_back_to_field: source_workflow_id
-    help: ID of the workflow to copy; or pass 'source_workflow_id' in --input.
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.duplicate with validated request fields.
-  request_model: WorkflowDuplicateRequest
-  result_model: WorkflowDuplicateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: "always_wait"
-  pagination_policy: none
-  acceptance_evidence: "contract_only_no_disposable_fixture"
+  output_schema:
+    ref: WriteResult
+  wait_policy: always_wait
+  acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
     ids:
       workflow_id: result.workflow_id
     kind: object
   live_test: None
-  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow duplicate --help
-  agent_example: "mammoth workflow duplicate 123 --input '{\"name\": \"Revenue report\", \"dataset_ids\": [1]}'"
-  unit_tests:
-  - UT-WORKFLOW-DUPLICATE
-  contract_tests:
-  - CT-WORKFLOW-DUPLICATE-HUMAN
-  - CT-WORKFLOW-DUPLICATE-JSON
-  - CT-WORKFLOW-DUPLICATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Copies the chosen datasets, with their rows, views and steps, into a new workflow. Automations and outside exports are not copied."
-  reviewed_by: primary
+  live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
+  known_restrictions: Copies the chosen datasets, with their rows, views and steps, into a new workflow.
+    Automations and outside exports are not copied.
 - command_id: workflow.save-cancel-step
-  command_path: workflow save-cancel-step
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CancelWorkflowSaveStep
-  positionals:
-  - name: workflow_id
-    type: int
-    required: true
-    metavar: WORKFLOW_ID
-    falls_back_to_field: null
-    help: ID of the workflow.
-  - name: run_id
-    type: str
-    required: true
-    metavar: RUN_ID
-    falls_back_to_field: null
-    help: ID of the Save run (from 'workflow save' or 'workflow get').
-  - name: step
-    type: int
-    required: true
-    metavar: STEP
-    falls_back_to_field: null
-    help: Number of the step to cancel (0 or more).
-  options: []
-  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.cancel_save_step
-  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.cancel_save_step with validated request fields.
-  request_model: WorkflowSaveCancelStepRequest
-  result_model: WorkflowSaveCancelStepResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: "contract_only_no_disposable_fixture"
+  output_schema:
+    ref: WriteResult
+  acceptance_evidence: contract_only_no_disposable_fixture
   readback:
     command: workflow.get
     ids:
       workflow_id: positional.0
     kind: object
   live_test: None
-  live_exemption_reason: "No disposable fixture covers this write; contract and unit tests cover it."
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow save-cancel-step WORKFLOW_ID RUN_ID STEP --help
-  agent_example: "mammoth workflow save-cancel-step 123 resource-123 456"
-  unit_tests:
-  - UT-WORKFLOW-SAVE-CANCEL-STEP
-  contract_tests:
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-HUMAN
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-JSON
-  - CT-WORKFLOW-SAVE-CANCEL-STEP-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Cancels one step of a running Save; steps that need it are skipped. Best effort: a job already started may still finish."
-  reviewed_by: primary
+  live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
+  known_restrictions: 'Cancels one step of a running Save; steps that need it are skipped. Best effort:
+    a job already started may still finish.'
