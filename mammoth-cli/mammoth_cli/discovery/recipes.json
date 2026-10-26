@@ -8,7 +8,7 @@
         "refresh daily",
         "schedule a refresh",
         "refresh data every day",
-        "run every week automatically",
+        "refresh every week automatically",
         "automate the refresh",
         "keep my data refreshed automatically"
       ],
@@ -49,8 +49,7 @@
           "update",
           "sync",
           "dataset",
-          "data",
-          "run"
+          "data"
         ]
       ],
       "doc": "references/recipes/scheduling.md",
@@ -261,12 +260,12 @@
       "id": "blend-by-key",
       "title": "Blend (join) two files on a shared key, such as the day",
       "goals": [
-        "blend two files by day",
+        "blend two datasets by day",
         "join two datasets",
-        "combine two files on a key",
-        "merge two csv files by date",
+        "combine two datasets on a key",
+        "merge two datasets by date",
         "match rows from two tables",
-        "vlookup between two files"
+        "vlookup between two datasets"
       ],
       "keywords": [
         "blend",
@@ -283,7 +282,9 @@
         "tables",
         "vlookup",
         "lookup",
-        "together"
+        "together",
+        "view",
+        "views"
       ],
       "intent": [
         [
@@ -309,8 +310,20 @@
           "spreadsheets",
           "day",
           "date",
-          "id"
+          "id",
+          "view",
+          "views"
         ]
+      ],
+      "reject": [
+        "csv",
+        "xlsx",
+        "upload",
+        "uploaded",
+        "files",
+        "file",
+        "spreadsheet",
+        "spreadsheets"
       ],
       "doc": "references/recipes/transforms.md",
       "steps": [
@@ -1498,16 +1511,14 @@
         ],
         [
           "upload",
-          "import"
-        ],
-        [
+          "uploaded",
+          "import",
           "files",
           "file",
           "csv",
-          "spreadsheets",
+          "xlsx",
           "spreadsheet",
-          "key",
-          "shared"
+          "spreadsheets"
         ]
       ],
       "doc": "references/recipes/transforms.md",
@@ -1849,7 +1860,9 @@
           "divide",
           "expression",
           "compute",
-          "math"
+          "math",
+          "times",
+          "multiplied"
         ],
         [
           "column",
@@ -2325,7 +2338,8 @@
         [
           "fill",
           "set",
-          "replace"
+          "replace",
+          "put"
         ],
         [
           "blank",
@@ -2550,6 +2564,10 @@
           "repeated"
         ]
       ],
+      "reject": [
+        "column",
+        "columns"
+      ],
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -2644,6 +2662,14 @@
           "totals",
           "total",
           "sum"
+        ],
+        [
+          "by",
+          "per",
+          "group",
+          "grouped",
+          "pivot",
+          "each"
         ]
       ],
       "doc": "references/recipes/transforms.md",
@@ -3262,6 +3288,19 @@
           "attachment"
         ]
       ],
+      "reject": [
+        "weekly",
+        "daily",
+        "monthly",
+        "hourly",
+        "nightly",
+        "every",
+        "schedule",
+        "scheduled",
+        "recurring",
+        "automatically",
+        "automate"
+      ],
       "doc": "references/recipes/exports.md",
       "steps": [
         {
@@ -3450,7 +3489,7 @@
         "total revenue by region",
         "count rows per status",
         "average amount per customer",
-        "summarize a view without changing it"
+        "summarize a view by group without changing it"
       ],
       "keywords": [
         "total",
@@ -3475,6 +3514,13 @@
           "summarize",
           "summarise",
           "aggregate"
+        ],
+        [
+          "by",
+          "per",
+          "group",
+          "grouped",
+          "each"
         ]
       ],
       "reject": [

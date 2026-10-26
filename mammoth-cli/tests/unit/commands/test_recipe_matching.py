@@ -14,7 +14,12 @@ import pytest
 from mammoth_cli.commands import how as how_cmd
 from mammoth_cli.discovery import load_recipes
 from mammoth_cli.runtime.invocation import Invocation
-from tests.unit.commands.recipe_goals import NEGATIVES, POSITIVES
+from tests.unit.commands.recipe_goals import (
+    BLIND_NEGATIVES,
+    BLIND_POSITIVES,
+    NEGATIVES,
+    POSITIVES,
+)
 
 
 def _how(goal: str) -> str | None:
@@ -39,13 +44,13 @@ def test_every_recipe_has_three_phrasings_and_the_set_has_twenty_near_misses() -
 
 @_MATCHERS
 def test_a_goal_no_recipe_covers_matches_nothing(match) -> None:  # type: ignore[no-untyped-def]
-    wrong = {goal: match(goal) for goal in NEGATIVES if match(goal) is not None}
+    wrong = {goal: match(goal) for goal in NEGATIVES + BLIND_NEGATIVES if match(goal) is not None}
     assert wrong == {}
 
 
 @_MATCHERS
 def test_a_goal_finds_its_own_recipe_and_never_another(match) -> None:  # type: ignore[no-untyped-def]
-    got = {goal: (recipe, match(goal)) for goal, recipe in POSITIVES}
+    got = {goal: (recipe, match(goal)) for goal, recipe in POSITIVES + BLIND_POSITIVES}
     wrong = {goal: pair for goal, pair in got.items() if pair[1] != pair[0]}
     assert wrong == {}
 
@@ -91,3 +96,19 @@ def test_two_recipes_that_fit_equally_well_match_neither() -> None:
     # fits both equally, and file order must not pick the one that writes the file.
     assert _how("download a spreadsheet") is None
     assert _find("download a spreadsheet") is None
+
+
+@pytest.mark.parametrize(
+    ("goal", "recipe"),
+    [
+        ("combine left.csv and right.csv on a shared key column", "join-files"),
+        ("combine two datasets on a shared key", "blend-by-key"),
+        ("count the rows in my dataset", None),
+        ("remove the duplicate column", None),
+        ("send a weekly email report to my team every Monday", None),
+        ("email this view to my team", "email-view"),
+    ],
+)
+def test_the_rule_behind_each_blind_miss(goal: str, recipe: str | None) -> None:
+    assert _how(goal) == recipe
+    assert _find(goal) == recipe

@@ -100,8 +100,23 @@ def _intent_met(
     object elsewhere ("upload sales.csv, then make a dashboard").
     """
     first, *others = recipe["intent"]
-    return any(form & frozenset(first) for form in action) and all(
-        any(form & frozenset(group) for form in rest) for group in others
+    return any(form & frozenset(first) and _distinct(others, rest, {form}) for form in action)
+
+
+def _distinct(
+    groups: list[list[str]], forms: list[frozenset[str]], used: set[frozenset[str]]
+) -> bool:
+    """Whether each group can be met by a different goal word.
+
+    One word that a synonym turns into two ("weekly" is also "refresh") must not meet the
+    action and the object of a recipe by itself.
+    """
+    if not groups:
+        return True
+    head, *tail = groups
+    return any(
+        form not in used and form & frozenset(head) and _distinct(tail, forms, used | {form})
+        for form in forms
     )
 
 
@@ -114,13 +129,11 @@ def _rejected(
 
 
 def _forms(terms: tuple[str, ...], compounds: dict[str, frozenset[str]]) -> list[frozenset[str]]:
-    """Each word with its stems, compounds and ``how`` synonyms, but not the ``schema find``
-    aliases: those widen a word ("download" also means "csv"), which is right for finding
-    a command and wrong for deciding what the user asked to have done to their data."""
-    return [
-        frozenset({term, *_HOW_SYNONYMS.get(term, ()), *compounds.get(term, ())}) | _stems(term)
-        for term in terms
-    ]
+    """Each word with its stems and compounds, but not the ``how`` synonyms or the
+    ``schema find`` aliases: those widen a word ("download" also means "csv", "weekly" also
+    means "refresh"), which is right for finding a recipe and wrong for deciding what the
+    user asked to have done to their data. Intent groups list the words they accept."""
+    return [frozenset({term, *compounds.get(term, ())}) | _stems(term) for term in terms]
 
 
 #: Where a goal with several parts splits: "join X and Y, then build a dashboard".
@@ -221,18 +234,21 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
         return []
     compounds = _adjacent_compound_forms(terms)
     folded = " ".join(goal.casefold().split())
-    forms = _forms(terms, compounds)
+    # Intent also reads the small words the search drops ("by", "per"): they say what is grouped.
+    every_word = tuple(_tokens(goal))
+    forms = _forms(every_word, _adjacent_compound_forms(every_word))
     ranked: list[tuple[float, int, int, int, dict[str, Any]]] = []
     for order, recipe in enumerate(load_recipes()):
-        if _rejected(recipe, terms, compounds) or not _intent_met(recipe, forms, forms):
+        if _rejected(recipe, every_word, {}) or not _intent_met(recipe, forms, forms):
             continue
         vocabulary = _recipe_vocabulary(recipe["id"])
         matched = sum(
             1 for term in terms if _term_forms(term, compounds.get(term, frozenset())) & vocabulary
         )
-        # More than half the words, or half of them when that is at least two
-        # (the rest are usually the caller's own data words: "customer id").
-        if not (matched * 2 > len(terms) or (matched * 2 == len(terms) and matched >= 2)):
+        # The goal states the recipe's intent (above); two of its words in the recipe's
+        # vocabulary then suffice, since the rest are the caller's own data words
+        # ("Salesforce", "customer id").
+        if matched < 2:
             continue
         # A word the recipe itself uses outranks one reached only through a synonym.
         literal = sum(1 for term in terms if term in vocabulary)

@@ -37,7 +37,7 @@ def _how(goal: str, **invocation: object) -> dict[str, object]:
     ("goal", "recipe"),
     [
         ("refresh daily", "refresh-daily"),
-        ("blend two files by day", "blend-by-key"),
+        ("blend two datasets by day", "blend-by-key"),
         ("upload and build a dashboard", "upload-dashboard"),
         ("fix a stuck upload", "stuck-upload"),
         ("export to power bi", "export-powerbi"),
