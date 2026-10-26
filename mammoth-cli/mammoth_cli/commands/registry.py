@@ -171,12 +171,20 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     )
     # 'schema get A,B,C' (or 'A;B;C'): several ids in one call, like the
     # ';'-separated goals of 'schema find'. Command ids never contain either.
+    rest = [str(arg) for arg in invocation.extra_args or [] if str(arg) not in flags]
+    # Dotted ids separated by spaces are several ids too ('view transform math' is one command).
+    spaced = (
+        [command_id, *rest]
+        if rest and all("." in token for token in [command_id, *rest])
+        else [command_id]
+    )
     ids = list(
-        dict.fromkeys(part.strip() for part in re.split(r"[,;]", command_id) if part.strip())
+        dict.fromkeys(
+            part.strip() for token in spaced for part in re.split(r"[,;]", token) if part.strip()
+        )
     )
     if len(ids) > 1:
         return _schema_get_many(ids, full), {}
-    rest = [str(arg) for arg in invocation.extra_args or [] if str(arg) not in flags]
     command_id, entry = _resolve_schema(ids[0] if ids else command_id, rest)
     if entry is None:
         raise _schema_not_found(command_id)
