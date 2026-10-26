@@ -24,7 +24,7 @@ from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.registry import HandlerResult
-from mammoth_cli.context.resolver import env_token_in_use
+from mammoth_cli.context.resolver import env_token_in_use, env_token_key
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     EXIT_API,
@@ -242,16 +242,26 @@ def _undo_entry(
 
 
 def _account_missing(entry: journal.Entry, invocation: Invocation) -> dict[str, Any] | None:
-    """The failure to report when the write used ``MAMMOTH_API_TOKEN`` and none is set now."""
-    if entry.auth != journal.AUTH_ENV or env_token_in_use(invocation):
+    """The failure to report when the write used a ``MAMMOTH_API_TOKEN`` that is not set now.
+
+    A write made with the variable records a digest of the token, so an undo under a
+    different token is refused as well as one with none.
+    """
+    if entry.auth != journal.AUTH_ENV:
         return None
+    if env_token_in_use(invocation):
+        if entry.auth_key is None or entry.auth_key == env_token_key():
+            return None
+        problem = "a different token is set now"
+    else:
+        problem = "none is set now"
     return {
         "inv": entry.inv,
         "cmd": entry.command.replace(".", " "),
         "exit": EXIT_USAGE,
         "code": CODE_UNDO_NEEDS_TOKEN,
         "message": (
-            f"{entry.inv} was made with MAMMOTH_API_TOKEN, and none is set now, so the undo"
+            f"{entry.inv} was made with MAMMOTH_API_TOKEN, and {problem}, so the undo"
             " would run as another account."
         ),
         "hint": "Set MAMMOTH_API_TOKEN to the token the write used, then run the undo again.",

@@ -56,7 +56,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
-from mammoth_cli.context.resolver import env_token_in_use
+from mammoth_cli.context.resolver import env_token_in_use, env_token_key
 from mammoth_cli.errors.envelope import CODE_ABORTED, EXIT_PARTIAL, EXIT_USAGE
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.normalize import REDACTED, normalize
@@ -163,16 +163,30 @@ def _unlock(fd: int) -> None:
 
 @contextlib.contextmanager
 def _locked_file(path: Path, *, blocking: bool) -> Iterator[None]:
-    """Hold the advisory lock on the file at ``path`` (made when missing) for the block."""
+    """Hold the advisory lock on the file at ``path`` (made when missing) for the block.
+
+    A lock taken on a file another process has since unlinked guards nothing; it is
+    reported as held (``BlockingIOError``), so the caller treats the claim as busy.
+    """
     fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     try:
         _lock(fd, blocking=blocking)
         try:
+            if not _still_linked(fd, path):
+                raise BlockingIOError(f"{path} was removed while it was being locked")
             yield
         finally:
             _unlock(fd)
     finally:
         os.close(fd)
+
+
+def _still_linked(fd: int, path: Path) -> bool:
+    """Whether ``fd`` is still the file at ``path`` (not one unlinked meanwhile)."""
+    try:
+        return os.path.samestat(os.fstat(fd), os.stat(path))
+    except OSError:
+        return False
 
 
 def _write_all(path: Path, data: bytes) -> None:
@@ -363,6 +377,7 @@ class Entry:
     started: str
     profile: str | None = None
     auth: str | None = None
+    auth_key: str | None = None
     project_id: int | None = None
     exit: int | None = None
     opens: list[dict[str, Any]] = field(default_factory=list)
@@ -468,6 +483,7 @@ def entries(store: JournalStore) -> list[Entry]:
                 started=str(record.get("ts") or ""),
                 profile=record.get("profile"),
                 auth=record.get("auth"),
+                auth_key=record.get("auth_key"),
                 project_id=record.get("project_id"),
             )
             continue
@@ -802,6 +818,7 @@ def journal_writes(
                 "command": request.command_id,
                 "profile": request.profile,
                 "auth": AUTH_ENV if env_token_in_use(invocation) else AUTH_PROFILE,
+                "auth_key": env_token_key() if env_token_in_use(invocation) else None,
                 "project_id": invocation.project,
             }
         )

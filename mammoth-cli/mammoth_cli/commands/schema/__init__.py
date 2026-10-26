@@ -750,7 +750,9 @@ def output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
     A command declares it in its manifest record as ``output_schema``: ``openapi`` (its
     ``data`` is the API's own ``200`` body), ``{ref: NAME}`` (a named schema in
     ``spec/manifests/output-schemas.yaml``, shared between commands) or an inline JSON
-    Schema object.
+    Schema object. The API document's ``oneOf`` is served as ``anyOf``: its branches overlap
+    (an IP address matches both ``ipv4`` and ``ipv6`` strings when formats are not checked),
+    so a strict validator would refuse a valid response.
 
     Args:
         record: The command's manifest record.
@@ -760,12 +762,24 @@ def output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
     """
     declared = record.get("output_schema")
     if declared == OUTPUT_SCHEMA_OPENAPI:
-        return openapi_response_schema_for(tuple(record.get("operation_ids") or ()))
+        schema = openapi_response_schema_for(tuple(record.get("operation_ids") or ()))
+        return None if schema is None else _any_of(schema)
     if isinstance(declared, dict):
         if set(declared) == {OUTPUT_SCHEMA_REF}:
             declared = load_output_schemas()["schemas"][declared[OUTPUT_SCHEMA_REF]]
         return self_contained_schema(declared)
     return None
+
+
+def _any_of(schema: Any) -> Any:
+    """``schema`` with every ``oneOf`` read as ``anyOf``."""
+    if isinstance(schema, dict):
+        return {
+            ("anyOf" if key == "oneOf" else key): _any_of(value) for key, value in schema.items()
+        }
+    if isinstance(schema, list):
+        return [_any_of(item) for item in schema]
+    return schema
 
 
 def dry_run_output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
@@ -779,9 +793,10 @@ def dry_run_output_schema(record: dict[str, Any]) -> dict[str, Any] | None:
         record: The command's manifest record.
 
     Returns:
-        The report's schema with its ``$defs``, or None for a read.
+        The report's schema with its ``$defs``, or None for a read or a local command.
     """
-    if record.get("mutation_class") == "read":
+    # A write that names no API operation sends nothing, so its dry run is the real run.
+    if record.get("mutation_class") == "read" or not record.get("operation_ids"):
         return None
     return self_contained_schema({"$ref": f"#/$defs/{DRY_RUN_REPORT}"})
 

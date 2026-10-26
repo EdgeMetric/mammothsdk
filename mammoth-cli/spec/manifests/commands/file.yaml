@@ -78,7 +78,7 @@ commands:
     delete_file_after_extract) - the extraction setting a dataset's saved recipe replays for PDFs an automation
     receives.
 - command_id: file.upload
-  output_schema: {ref: WriteResult}
+  output_schema: {ref: UploadResult}
   no_readback: the upload result already carries each ready dataset's post-processing view (columns, row_count,
     sample rows) from a real read
   known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic webp
@@ -91,7 +91,7 @@ commands:
     IDs, read them back, and verify owned cleanup; do not assume other upload variants are qualified.
     Each sheet of an Excel file becomes its own dataset.'
 - command_id: file.upload-folder
-  output_schema: {ref: WriteResultOrNull}
+  output_schema: {ref: FolderUploadResult}
   readback:
     command: file.list
     ids: {}

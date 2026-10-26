@@ -12,6 +12,7 @@ overrides no project at all.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
 from collections.abc import Callable, Mapping
@@ -173,6 +174,18 @@ def _env_token_login() -> ExplicitLogin | None:
         return None
     prefix = os.environ.get(SERVER_PREFIX_ENV, "").strip() or None
     return ExplicitLogin(api_key=None, api_secret=None, server_prefix=prefix, api_token=token)
+
+
+def env_token_key() -> str | None:
+    """A short digest that tells one ``MAMMOTH_API_TOKEN`` from another, never the token.
+
+    Returns:
+        The first 16 hex digits of the token's SHA-256, or None when the variable is unset.
+    """
+    login = _env_token_login()
+    if login is None or login.api_token is None:
+        return None
+    return hashlib.sha256(login.api_token.encode()).hexdigest()[:16]
 
 
 def env_token_in_use(invocation: Invocation) -> bool:

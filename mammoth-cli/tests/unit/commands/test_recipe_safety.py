@@ -116,6 +116,12 @@ def test_a_destructive_line_is_confirmed_only_by_the_callers_yes() -> None:
     assert recipe_cmd._confirmed(benign, False)["flags"] == {"yes": True}
 
 
+@pytest.mark.parametrize("name", ["dry-run", "dry_run", "--dry-run"])
+def test_a_destructive_line_under_dry_run_is_not_a_real_delete(name: str) -> None:
+    recipe = {"run": [{**_DELETE_LINE, "flags": {name: True}}]}
+    assert recipe_cmd._destructive_lines(recipe) == []
+
+
 def test_a_recipe_with_a_destructive_line_needs_yes_and_names_the_line(
     service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
 ) -> None:

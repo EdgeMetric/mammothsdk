@@ -44,6 +44,8 @@ _RESULT_KINDS = ("view", "dashboard")
 MAKES_DATASET = frozenset(
     {"view.export.dataset", "file.upload", "file.upload-folder", "dataset.create-from-pdf"}
 )
+#: The upload whose bare result is the ids of the datasets it made, once it has waited.
+FOLDER_UPLOAD = "file.upload-folder"
 #: Writes that list every view they made as ``view_ids`` (their readback names the first).
 MAKES_VIEWS = frozenset({"view.variants.create"})
 #: Writes that return the object made by an earlier call, with no job, when it exists: a
@@ -82,20 +84,23 @@ def with_opens(invocation: Invocation, data: Any, meta: dict[str, Any]) -> dict[
 def _as_result(invocation: Invocation, data: Any) -> dict[str, Any]:
     """The command's result as a mapping.
 
-    ``file upload-folder`` returns the dataset ids it made as a bare id or list of ids
-    (the SDK's own return); they are read as ``dataset_ids``.
+    ``file upload-folder`` that waited returns the dataset ids it made as a bare id or
+    list of ids (the SDK's own return); they are read as ``dataset_ids``. Any other bare
+    value, such as the job id an upload returns with ``wait_for_completion: false``, names
+    no object.
 
     Args:
         invocation: The call.
         data: What the handler returned.
 
     Returns:
-        The result when it is a mapping, the ids of a command that makes datasets as
+        The result when it is a mapping, the dataset ids of a folder upload that waited as
         ``{"dataset_ids": [...]}``, else an empty mapping.
     """
     if isinstance(data, dict):
         return data
-    if invocation.command_id in MAKES_DATASET:
+    waited = (invocation.load_input() or {}).get("wait_for_completion", True) is not False
+    if invocation.command_id == FOLDER_UPLOAD and waited:
         ids = data if isinstance(data, list) else [data]
         return {"dataset_ids": [item for item in ids if isinstance(item, int)]}
     return {}

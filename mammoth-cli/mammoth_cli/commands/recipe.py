@@ -107,9 +107,18 @@ def _destructive_lines(recipe: dict[str, Any]) -> list[str]:
     return [
         line["cmd"]
         for line in recipe["run"]
-        if line_record(line).get("mutation_class") == "destructive"
-        and not line.get("flags", {}).get("dry-run")
+        if line_record(line).get("mutation_class") == "destructive" and not _dry_run(line)
     ]
+
+
+def _dry_run(line: dict[str, Any]) -> bool:
+    """Whether the line sets ``--dry-run``, under any spelling ``mammoth run`` accepts."""
+    flags = line.get("flags", {})
+    return any(
+        value is True
+        for name, value in flags.items()
+        if str(name).lstrip("-").replace("_", "-") == "dry-run"
+    )
 
 
 def _confirmed(line: dict[str, Any], explicit_yes: bool) -> dict[str, Any]:

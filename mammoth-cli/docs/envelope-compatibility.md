@@ -77,8 +77,16 @@ a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `em
   `WriteResult` for a write: the `verify` and `state` blocks plus the API's own body).
   `output_schema` describes the real run's `data` only. A `--dry-run` of an API-backed write
   returns a report instead (`ran: false`, `would_call`, `targets`; no `verify`), and `schema
-  get --full` returns its schema as `dry_run_output_schema` (`null` for a read). A local
-  command has no dry run; it runs for real and returns its `output_schema` data.
+  get --full` returns its schema as `dry_run_output_schema` (`null` for a read and for a
+  local command, which has no dry run: it runs for real and returns its `output_schema`
+  data).
+- How firm a declared schema is depends on where it comes from. A command declared
+  `openapi` returns the API's own body, so its schema follows the API's OpenAPI document and
+  changes when the API does (its `oneOf` is served as `anyOf`). The named and inline schemas
+  were derived from the handlers and from responses built from that document, not from
+  recorded server output, so many leave the API's own fields open. Treat a declared schema as
+  the shape the CLI promises for the fields it lists; the major-release rule above applies to
+  those fields, and a field the schema leaves open may change in a minor release.
 - `mammoth run` lines take `name`, `when` and `for_each`.
 - `history` commands and the `history_not_found`, `journal_off` and
   `unresolved_reference` error codes.

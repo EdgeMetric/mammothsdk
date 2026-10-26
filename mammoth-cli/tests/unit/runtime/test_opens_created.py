@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Any
+
+import pytest
+
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import journal, opens
 from mammoth_cli.runtime.dispatch import Outcome, Request
@@ -60,3 +64,28 @@ def test_the_undo_of_a_repeated_live_chart_trashes_nothing() -> None:
         request, Outcome(data={}, meta={"opens": existing}), journal._Before()
     )
     assert lines == [] and reason is not None
+
+
+def _as_result(
+    monkeypatch: pytest.MonkeyPatch, command_id: str, data: Any, document: dict[str, Any]
+) -> dict[str, Any]:
+    invocation = Invocation(command_id=command_id, output="json", project=9)
+    monkeypatch.setattr(Invocation, "load_input", lambda _self: document)
+    return opens._as_result(invocation, data)
+
+
+def test_the_job_id_of_an_upload_that_did_not_wait_names_no_dataset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # The bare id is a job, not a dataset: undo must never trash a dataset with that number.
+    document = {"files": ["a.csv"], "wait_for_completion": False}
+    assert _as_result(monkeypatch, "file.upload", 987654, document) == {}
+    assert (
+        _as_result(monkeypatch, "file.upload-folder", 987654, {"wait_for_completion": False}) == {}
+    )
+
+
+def test_a_folder_upload_that_waited_names_the_datasets_it_made(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert _as_result(monkeypatch, "file.upload-folder", [12, 13], {}) == {"dataset_ids": [12, 13]}

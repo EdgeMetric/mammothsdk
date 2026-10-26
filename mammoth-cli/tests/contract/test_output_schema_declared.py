@@ -69,6 +69,20 @@ def test_a_write_exposes_the_dry_run_report_a_read_has_none() -> None:
     assert {"dry_run", "ran", "would_call"} <= set(report["required"])
 
 
+def test_a_local_write_has_no_dry_run_report() -> None:
+    # A local command runs for real under --dry-run.
+    record = next(r for r in _RECORDS if r["command_id"] == "config.set")
+    assert record["mutation_class"] != "read"
+    assert dry_run_output_schema(record) is None
+
+
+def test_an_openapi_schema_is_served_without_one_of() -> None:
+    record = next(r for r in _RECORDS if r["command_id"] == "support.workspace.list")
+    schema = output_schema(record)
+    assert schema is not None
+    assert "oneOf" not in json.dumps(schema)
+
+
 def _refs(value: object) -> set[str]:
     text = json.dumps(value)
     found: set[str] = set()

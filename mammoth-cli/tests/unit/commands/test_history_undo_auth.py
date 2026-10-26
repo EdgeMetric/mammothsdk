@@ -10,7 +10,7 @@ import pytest
 
 from mammoth_cli.app import app
 from mammoth_cli.commands import run as run_cmd
-from mammoth_cli.context.resolver import API_TOKEN_ENV
+from mammoth_cli.context.resolver import API_TOKEN_ENV, env_token_key
 from mammoth_cli.runtime import journal
 from mammoth_cli.runtime.dispatch import Outcome, Request
 from mammoth_cli.runtime.invocation import Invocation
@@ -37,7 +37,7 @@ def ran(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
     return calls
 
 
-def _write(*, profile: str | None, auth: str | None) -> None:
+def _write(*, profile: str | None, auth: str | None, auth_key: str | None = None) -> None:
     store = journal.FileJournal(journal.journal_dir())
     begin: dict[str, Any] = {
         "event": "begin",
@@ -49,6 +49,8 @@ def _write(*, profile: str | None, auth: str | None) -> None:
     }
     if auth is not None:
         begin["auth"] = auth
+    if auth_key is not None:
+        begin["auth_key"] = auth_key
     store.append(begin)
     store.append({"event": "end", "inv": "a", "exit": 0, "undo": _UNDO})
 
@@ -119,3 +121,25 @@ def test_the_begin_record_says_which_account_signed_in(monkeypatch: pytest.Monke
         journal.AUTH_PROFILE,
         journal.AUTH_ENV,
     ]
+
+
+def test_a_write_by_one_env_token_is_refused_under_another(
+    ran: list[list[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(API_TOKEN_ENV, "mm_first")
+    _write(profile="default", auth=journal.AUTH_ENV, auth_key=env_token_key())
+    monkeypatch.setenv(API_TOKEN_ENV, "mm_second")
+    code, envelope = _undo()
+    assert code != 0 and ran == []
+    assert envelope["data"]["failed"]["code"] == "undo_needs_token"
+    assert "a different token" in envelope["data"]["failed"]["message"]
+
+
+def test_a_write_by_the_same_env_token_is_undone(
+    ran: list[list[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(API_TOKEN_ENV, "mm_first")
+    _write(profile="default", auth=journal.AUTH_ENV, auth_key=env_token_key())
+    code, envelope = _undo()
+    assert code == 0, envelope
+    assert ran

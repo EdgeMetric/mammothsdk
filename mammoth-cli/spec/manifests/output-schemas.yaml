@@ -902,6 +902,23 @@ schemas:
     anyOf:
       - type: 'null'
       - $ref: '#/$defs/WriteResult'
+  UploadResult:
+    description: >-
+      A file upload: the `WriteResult` of the upload once it has waited, or the bare job id
+      it returns with `wait_for_completion: false`.
+    anyOf:
+      - $ref: '#/$defs/WriteResult'
+      - type: integer
+  FolderUploadResult:
+    description: >-
+      A folder upload: the ids of the datasets it made (one id or a list) once it has
+      waited, the bare job id without waiting, or `null` when nothing was uploaded.
+    anyOf:
+      - type: 'null'
+      - type: integer
+      - type: array
+        items: {type: integer}
+      - $ref: '#/$defs/WriteResult'
   TransformResult:
     description: >-
       A `view transform` step: the pipeline task's response plus `status` (`done`, `staged` for

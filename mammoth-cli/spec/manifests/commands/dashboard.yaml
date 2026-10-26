@@ -755,7 +755,7 @@ commands:
     kind: object
 - command_id: dashboard.tags.delete
   output_schema:
-    ref: WriteResult
+    ref: WriteResultOrNull
   readback:
     command: dashboard.tags.list
     ids: {}

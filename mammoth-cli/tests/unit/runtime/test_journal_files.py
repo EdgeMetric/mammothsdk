@@ -40,6 +40,22 @@ def test_a_finished_claim_leaves_no_lock_file(tmp_path: Path) -> None:
         pass
 
 
+def test_a_claim_on_a_lock_file_removed_meanwhile_is_busy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Another process finished its claim and unlinked the file between our open and lock.
+    store = journal.FileJournal(tmp_path)
+    real_lock = journal._lock
+
+    def lock(fd: int, *, blocking: bool) -> None:
+        (tmp_path / "undo-a.lock").unlink()
+        real_lock(fd, blocking=blocking)
+
+    monkeypatch.setattr(journal, "_lock", lock)
+    with pytest.raises(journal.JournalBusy), store.claim("undo-a"):
+        pass
+
+
 @pytest.fixture
 def ran(monkeypatch: pytest.MonkeyPatch, isolated_cli_config: Path) -> list[list[str]]:
     login_default_profile()
