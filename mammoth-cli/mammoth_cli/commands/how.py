@@ -60,6 +60,11 @@ _NOT_HERE_HINT = (
     "The recipe for this goal needs the user's machine (a local file or the run history), "
     "which the app does not have. Use the app's own tools for that part."
 )
+_TIED_HINT = (
+    "More than one recipe fits this goal equally well, and running the wrong one changes "
+    "data. Pick one from 'alternatives' (mammoth how \"...\" shows its steps), or say more "
+    "about what the goal changes."
+)
 _NOTHING_HINT = (
     "No recipe and no command matched this goal. Try other words, or run "
     "'mammoth schema list' for every command."
@@ -95,12 +100,23 @@ def _intent_met(
     A recipe declares ``intent``: groups of words, the action first and then its object.
     Each group needs one goal word (or a stem or synonym of one). Generic words
     ("column", "view", "convert") sit in the vocabulary of many recipes, so overlap on
-    them proves nothing. ``action`` is checked against the first group and ``rest``
-    against the others; they differ for one clause of a longer goal, which may name its
-    object elsewhere ("upload sales.csv, then make a dashboard").
+    them proves nothing. A recipe marked ``bare_ok`` is also met by its action word alone
+    ("undo", "pivot this"): a goal with no other word names no other object. ``action``
+    is checked against the first group and ``rest`` against the others; they differ for
+    one clause of a longer goal, which may name its object elsewhere ("upload sales.csv,
+    then make a dashboard").
     """
     first, *others = recipe["intent"]
+    if recipe.get("bare_ok") and not _names_object(first, action):
+        return any(form & frozenset(first) for form in action)
     return any(form & frozenset(first) and _distinct(others, rest, {form}) for form in action)
+
+
+def _names_object(first: list[str], forms: list[frozenset[str]]) -> bool:
+    """Whether the goal has a content word besides the recipe's action words."""
+    from mammoth_cli.commands.schema.find import _DISCOVERY_STOPWORDS
+
+    return any(not form & (frozenset(first) | _DISCOVERY_STOPWORDS) for form in forms)
 
 
 def _distinct(
@@ -155,7 +171,7 @@ def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> di
     whole = _query_tokens(goal) or tuple(_tokens(goal))
     whole_compounds = _adjacent_compound_forms(whole)
     clause_forms, whole_forms = _forms(terms, compounds), _forms(whole, whole_compounds)
-    best: tuple[int, int, int, int, dict[str, Any]] | None = None
+    fits: list[tuple[tuple[int, int, int, int], dict[str, Any]]] = []
     for order, recipe in enumerate(load_recipes()):
         # The recipe that fits the whole goal is judged on all of it: "upload a csv" alone
         # does not say "clean", and a "merge" anywhere in the goal rules out a split.
@@ -169,11 +185,15 @@ def _clause_recipe(clause: str, prefer: str | None = None, goal: str = "") -> di
         if not (len(hits) >= 2 or (len(terms) <= 2 and literal >= 1)):
             continue
         # The recipe that fits the whole goal wins any clause it also fits.
-        candidate = (int(recipe["id"] == prefer), len(hits), literal, -order, recipe)
-        if best is None or candidate[:4] > best[:4]:
-            best = candidate
-    return best[4] if best else None
+        fits.append(((int(recipe["id"] == prefer), len(hits), literal, -order), recipe))
+    fits.sort(key=lambda fit: fit[0], reverse=True)
+    if len(fits) > 1 and fits[0][0][:3] == fits[1][0][:3]:
+        return None  # two recipes fit the clause equally: file order must not pick one
+    return fits[0][1] if fits else None
 
+
+#: How well a recipe fits a goal: share of words matched, whole-phrase match, literal words.
+_Key = tuple[float, int, int]
 
 #: Where each recipe sits in a pipeline; a composed goal runs them in this order.
 _STAGE = {
@@ -225,8 +245,8 @@ def _compose(goal: str, prefer: str | None = None) -> list[tuple[str, dict[str, 
     return sorted(found, key=lambda item: _STAGE.get(item[1]["id"], 3))
 
 
-def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
-    """Recipes that fit ``goal``, best first, each with how many goal words it matched."""
+def _rank(goal: str) -> list[tuple[_Key, dict[str, Any]]]:
+    """Recipes that fit ``goal``, best first, each with the key it was ranked by."""
     from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
 
     terms = _query_tokens(goal) or tuple(_tokens(goal))
@@ -246,20 +266,26 @@ def _rank(goal: str) -> list[tuple[int, dict[str, Any]]]:
             1 for term in terms if _term_forms(term, compounds.get(term, frozenset())) & vocabulary
         )
         # The goal states the recipe's intent (above); two of its words in the recipe's
-        # vocabulary then suffice, since the rest are the caller's own data words
-        # ("Salesforce", "customer id").
-        if matched < 2:
+        # vocabulary then suffice (one, for a one-word goal), since the rest are the
+        # caller's own data words ("Salesforce", "customer id").
+        if matched < min(2, len(terms)):
             continue
         # A word the recipe itself uses outranks one reached only through a synonym.
         literal = sum(1 for term in terms if term in vocabulary)
         phrase = int(any(folded == goal_text.casefold() for goal_text in recipe["goals"]))
         ranked.append((matched / len(terms), phrase, literal, -order, recipe))
     ranked.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
-    if len(ranked) > 1 and ranked[0][:3] == ranked[1][:3]:
-        # Two recipes fit equally well and only file order separates them. A recipe run
-        # changes data, so an arbitrary pick is worse than none.
-        return []
-    return [(literal, recipe) for _, _, literal, _, recipe in ranked]
+    return [((fit, phrase, literal), recipe) for fit, phrase, literal, _, recipe in ranked]
+
+
+def _tied(ranked: list[tuple[_Key, dict[str, Any]]]) -> list[tuple[_Key, dict[str, Any]]]:
+    """The leading recipes that fit exactly as well as the best one; only file order separates them.
+
+    Two or more of them means the goal does not say which recipe is meant. A recipe run
+    changes data, so the caller must choose rather than take the first.
+    """
+    tied = [item for item in ranked if ranked and item[0] == ranked[0][0]]
+    return tied if len(tied) > 1 else []
 
 
 def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
@@ -272,6 +298,7 @@ def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
     Returns:
         Each recipe's id, title and ``run_command``.
     """
+    # Recipes that fit equally well are all returned: the caller chooses between them.
     return [
         {
             "id": recipe["id"],
@@ -381,9 +408,10 @@ def how(invocation: Invocation) -> HandlerResult:
     # weaker recipe that only shares a word with it; the parts it can do still are.
     best_unavailable = bool(ranked) and recipe_hidden_embedded(ranked[0][1])
     ranked = [item for item in ranked if not recipe_hidden_embedded(item[1])]
+    tied = _tied(ranked)
     composed = [
         part
-        for part in _compose(goal, ranked[0][1]["id"] if ranked else None)
+        for part in _compose(goal, ranked[0][1]["id"] if ranked and not tied else None)
         if not recipe_hidden_embedded(part[1])
     ]
     if len(composed) >= 2 or (composed and not ranked):
@@ -398,6 +426,16 @@ def how(invocation: Invocation) -> HandlerResult:
             "notes": [],
             "alternatives": _alternatives(ranked),
             "hint": _NOT_HERE_HINT,
+        }, {}
+    if tied:
+        return {
+            "goal": goal,
+            "matched": False,
+            "context": context,
+            "steps": [],
+            "notes": [],
+            "alternatives": _alternatives(tied),
+            "hint": _TIED_HINT,
         }, {}
     if not ranked:
         steps = _fallback_steps(goal, context)
@@ -427,7 +465,7 @@ def how(invocation: Invocation) -> HandlerResult:
     return result, {}
 
 
-def _alternatives(ranked: list[tuple[int, dict[str, Any]]]) -> list[dict[str, Any]]:
+def _alternatives(ranked: list[tuple[_Key, dict[str, Any]]]) -> list[dict[str, Any]]:
     """The first few recipes of ``ranked``, each with the ``how`` command that shows it.
 
     Args:

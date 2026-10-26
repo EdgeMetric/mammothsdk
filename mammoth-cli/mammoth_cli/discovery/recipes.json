@@ -2672,6 +2672,7 @@
           "each"
         ]
       ],
+      "bare_ok": true,
       "doc": "references/recipes/transforms.md",
       "steps": [
         {
@@ -3854,6 +3855,7 @@
           "history"
         ]
       ],
+      "bare_ok": true,
       "doc": "references/recipes/cleanup.md",
       "steps": [
         {
@@ -3939,6 +3941,7 @@
           "pipeline"
         ]
       ],
+      "bare_ok": true,
       "doc": "references/recipes/cleanup.md",
       "steps": [
         {

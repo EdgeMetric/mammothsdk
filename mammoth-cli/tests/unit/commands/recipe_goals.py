@@ -211,3 +211,42 @@ BLIND_NEGATIVES: tuple[str, ...] = (
     "export my dashboard as a PDF",
     "connect to Google Sheets",
 )
+
+
+# One- and two-word goals: a bare action names its recipe only when no other recipe shares
+# that action and the recipe is marked ``bare_ok`` or has a single intent group.
+SHORT_POSITIVES: tuple[tuple[str, str], ...] = (
+    ("pivot", "pivot-summary"),
+    ("pivot this", "pivot-summary"),
+    ("undo", "undo-last-change"),
+    ("undo that", "undo-last-change"),
+    ("deduplicate", "remove-duplicates"),
+    ("dedupe", "remove-duplicates"),
+    ("compare", "compare-views"),
+    ("top", "top-n"),
+)
+
+# Short goals that must match nothing: the action alone does not say what to change, or
+# the goal names a different object.
+SHORT_NEGATIVES: tuple[str, ...] = (
+    "share",
+    "revoke",
+    "export",
+    "merge",
+    "rename",
+    "refresh",
+    "join",
+    "blend",
+    "split",
+    "fill",
+    "email",
+    "dashboard",
+    "pivot the dashboard",
+    "undo my dashboard",
+)
+
+# Short goals that fit two recipes equally: no match, both listed as alternatives.
+SHORT_TIED: tuple[tuple[str, frozenset[str]], ...] = (
+    ("rollback", frozenset({"undo-last-change", "revert-view-version"})),
+    ("revert", frozenset({"undo-last-change", "revert-view-version"})),
+)
