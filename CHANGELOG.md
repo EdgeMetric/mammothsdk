@@ -70,6 +70,15 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 - CLI `mammoth doctor` has a `server` check: a GET of `<api>/health` (public, so it needs no login or project) that reports `status_code` and `latency_ms` (`healthy in 84 ms`), and `version`/`commit` when the backend returns them. It fails (and doctor exits non-zero) on a non-2xx answer, a timeout or an unreachable server, and still runs when auth fails, so an expired login and a down server read differently (#304).
 
+### Changed (mammoth-io 0.8.51)
+
+- SDK: waiting on a job polls every 0.5 s by default (`DEFAULT_JOB_POLL_SECONDS` was 2), so a short job returns sooner.
+
+### Changed (mammoth-cli 2.2.100)
+
+- CLI: `schema find` returns a compact result (the keys `full_schema_command`, `known_restrictions` and `matched_on` are left out; `schema get` has them). `schema find --full` returns the whole result, as before.
+- CLI: `dashboard canvas get` leaves out null fields.
+
 ## mammoth-cli 2.2.99 (2026-10-22)
 
 ### Fixed (mammoth-cli 2.2.99)

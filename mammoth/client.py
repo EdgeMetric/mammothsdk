@@ -72,9 +72,10 @@ def _is_loopback_host(hostname: str | None) -> bool:
 # ── Configurable defaults ─────────────────────────────────────
 DEFAULT_TIMEOUT = 30  # seconds — max time for any single API call
 DEFAULT_JOB_TIMEOUT = 60  # seconds — max time to poll a job to completion
-# seconds between polls of a running job. Two suits a script that started a long
-# build; a caller answering a person wants a fraction of it.
-DEFAULT_JOB_POLL_SECONDS = 2
+# seconds between polls of a running job (the cap on the growing gap). Half a
+# second keeps a caller answering a person responsive; a job still running
+# after a minute is checked every few seconds (see ``mammoth.api.jobs``).
+DEFAULT_JOB_POLL_SECONDS = 0.5
 DEFAULT_PIPELINE_TIMEOUT = 3600  # seconds — max time to wait for pipeline readiness
 
 _list = list  # Alias to avoid shadowing by method name

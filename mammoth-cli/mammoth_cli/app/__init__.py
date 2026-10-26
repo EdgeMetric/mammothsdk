@@ -347,12 +347,12 @@ def _execute(invocation: Invocation) -> None:
     # resolving the mutable selected-profile pointer after an interrupt.
     from mammoth_cli.context import profiles
     from mammoth_cli.runtime import executor, leaf
-    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+    from mammoth_cli.runtime.compact import FULL_FLAG, FULL_FLAG_COMMANDS
     from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
 
     if invocation.profile is None:
         invocation = replace(invocation, profile=profiles.get_selected(), profile_is_default=True)
-    if invocation.command_id in COMPACT_COMMANDS and FULL_FLAG in invocation.extra_args:
+    if invocation.command_id in FULL_FLAG_COMMANDS and FULL_FLAG in invocation.extra_args:
         invocation = replace(
             invocation,
             extra_args=[arg for arg in invocation.extra_args if arg != FULL_FLAG],

@@ -196,6 +196,10 @@ _NO_MATCH_HINT_WITH_SUGGESTIONS = (
     "No single command matched every word, but 'suggestions' lists the closest candidates "
     "-- each with its own matched_terms. Try one of those before rephrasing."
 )
+_NO_MATCH_HINT_PARTIAL = (
+    "No single command matched every word; 'matches' lists the closest candidates "
+    "(partial: true) -- each with its own matched_terms. Try one of those before rephrasing."
+)
 
 
 _NO_MATCH_HINT_NO_SUGGESTIONS = (
@@ -539,6 +543,50 @@ def find_schemas(
         )
     result["browse"] = _browse(page or result.get("suggestions", []))
     return result
+
+
+#: Keys of an inlined accepted field that a caller needs to fill it in; its
+#: nested JSON Schema is what ``schema get`` is for.
+_FIND_FIELD_KEYS = ("name", "type", "required", "enum")
+#: Entry keys a find leaves out unless ``--full``: ``schema get`` has them.
+_FIND_DROPPED_KEYS = ("full_schema_command", "known_restrictions", "matched_on")
+
+
+def _trim_find_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    """One match cut to what picks and calls it: id, summary, safety class, example.
+
+    The command id is the key ``schema get`` takes for the rest.
+    """
+    from mammoth_cli.app.help_text import _indexed_summary
+
+    trimmed = {key: value for key, value in entry.items() if key not in _FIND_DROPPED_KEYS}
+    summary = _indexed_summary(entry["command_id"])
+    if summary:
+        trimmed["summary"] = summary
+    if trimmed.get("server_status") == "served":
+        del trimmed["server_status"]
+    if "accepted_fields" in trimmed:
+        trimmed["accepted_fields"] = [
+            {key: field[key] for key in _FIND_FIELD_KEYS if field.get(key) is not None}
+            for field in trimmed["accepted_fields"]
+        ]
+    return trimmed
+
+
+def trim_find_result(result: dict[str, Any]) -> dict[str, Any]:
+    """The default ``schema find`` shape: trimmed entries, near misses listed once.
+
+    ``suggestions`` repeated the partial ``matches`` entry for entry, so only
+    ``matches`` stays. ``--full`` returns the whole shape.
+    """
+    trimmed = dict(result)
+    trimmed["matches"] = [_trim_find_entry(entry) for entry in result["matches"]]
+    if "suggestions" in trimmed:
+        del trimmed["suggestions"]
+        trimmed["hint"] = (
+            _NO_MATCH_HINT_PARTIAL if trimmed["matches"] else _NO_MATCH_HINT_NO_SUGGESTIONS
+        )
+    return trimmed
 
 
 def _browse(entries: list[dict[str, Any]]) -> dict[str, Any]:

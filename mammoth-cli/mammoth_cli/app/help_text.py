@@ -503,8 +503,12 @@ def _command_help(command_id: str, record: dict[str, Any] | None) -> str | None:
     nested = nested_choices_help(command_id)
     if nested:
         parts.append(nested)
-    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+    from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, TRIMMED_READ_COMMANDS
 
+    if command_id in TRIMMED_READ_COMMANDS:
+        parts.append(
+            f"The result leaves out detail you rarely need. Pass {FULL_FLAG} for all of it."
+        )
     if command_id in COMPACT_COMMANDS:
         parts.append(
             "The result is compact: ids, checks, verify and a canvas summary. "

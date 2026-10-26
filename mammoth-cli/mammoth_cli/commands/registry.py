@@ -208,11 +208,19 @@ def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
             entry.pop("agent_example", None)
 
 
+def _find_output(result: dict[str, Any], invocation: Invocation) -> dict[str, Any]:
+    """*result* cut to what picks and calls a command, unless ``--full``."""
+    from mammoth_cli.commands.schema.find import trim_find_result
+
+    return result if invocation.full_output else trim_find_result(result)
+
+
 def _schema_find(invocation: Invocation) -> HandlerResult:
     from mammoth_cli.commands.schema.find import find_schemas
+    from mammoth_cli.runtime.compact import FULL_FLAG
     from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
-    flags = COMMAND_FLAGS["schema.find"]
+    flags = COMMAND_FLAGS["schema.find"] - {FULL_FLAG}
     words = [str(invocation.bound_input().get("query") or ""), *map(str, invocation.extra_args)]
     if any(word in flags for word in words):
         # 'schema find --unsupported [WORDS]': what the CLI cannot do yet.
@@ -224,7 +232,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
     if not query.strip():
         raise _EMPTY_QUERY_ERROR
     if ";" not in query:
-        return find_schemas(query), {}
+        return _find_output(find_schemas(query), invocation), {}
     # Several goals in one call ("join customers onto orders; remove
     # duplicate rows; build a dashboard"): run the existing single-goal
     # search per goal instead of round-tripping once per goal.
@@ -248,6 +256,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
         # several candidates.
         for result in results:
             _cap_inline_detail(result, 1)
+    results = [_find_output(result, invocation) for result in results]
     return {
         "goals": [{"goal": goal, **result} for goal, result in zip(goals, results, strict=True)]
     }, {}

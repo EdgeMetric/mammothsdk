@@ -38,7 +38,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+from mammoth_cli.runtime.compact import FULL_FLAG, FULL_FLAG_COMMANDS
 from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import (
@@ -57,11 +57,11 @@ NEGATIVE_NUMBER = re.compile(r"^-(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
 #: Flags a few commands take in place of the ``--input`` field of the same name.
 COMMAND_FLAGS: dict[str, frozenset[str]] = {
     "schema.get": frozenset({"--full"}),
-    "schema.find": frozenset({"--unsupported"}),
     # Keep going after a failed line instead of stopping at the first.
     "run": frozenset({"--continue"}),
     # The compacted dashboard writes: --full returns the whole response.
-    **{command_id: frozenset({FULL_FLAG}) for command_id in COMPACT_COMMANDS},
+    **{command_id: frozenset({FULL_FLAG}) for command_id in FULL_FLAG_COMMANDS},
+    "schema.find": frozenset({"--unsupported", FULL_FLAG}),
     # A once-shown credential is masked unless --reveal asks for it.
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
 }
@@ -393,7 +393,7 @@ def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: lis
             f"mammoth {command_id.replace('.', ' ')} ... --project {document['project_id']} "
             "(or omit it to use the active project)."
         )
-    return f"Accepted fields: {', '.join(accepted) or '(none)' }."
+    return f"Accepted fields: {', '.join(accepted) or '(none)'}."
 
 
 def _sort_entry(entry: Any) -> Any:
