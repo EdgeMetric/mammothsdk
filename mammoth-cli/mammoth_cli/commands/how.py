@@ -98,9 +98,7 @@ def _stems(term: str) -> frozenset[str]:
     return frozenset(stem for stem in stems if len(stem) >= 3)
 
 
-def _intent_met(
-    recipe: dict[str, Any], action: list[frozenset[str]], rest: list[frozenset[str]]
-) -> bool:
+def _intent_met(recipe: dict[str, Any], action: list[_Form], rest: list[_Form]) -> bool:
     """Whether the goal says what the recipe does, not only words it shares with it.
 
     A recipe declares ``intent``: groups of words, the action first and then its object.
@@ -114,21 +112,22 @@ def _intent_met(
     """
     first, *others = recipe["intent"]
     if recipe.get("bare_ok") and not _names_object(first, action):
-        return any(form & frozenset(first) for form in action)
-    return any(form & frozenset(first) and _distinct(others, rest, {form}) for form in action)
+        return any(form & frozenset(first) for _, form in action)
+    return any(form & frozenset(first) and _distinct(others, rest, {word}) for word, form in action)
 
 
-def _names_object(first: list[str], forms: list[frozenset[str]]) -> bool:
+def _names_object(first: list[str], forms: list[_Form]) -> bool:
     """Whether the goal has a content word besides the recipe's action words."""
     from mammoth_cli.commands.schema.find import _DISCOVERY_STOPWORDS
 
-    return any(not form & (frozenset(first) | _DISCOVERY_STOPWORDS) for form in forms)
+    return any(not form & (frozenset(first) | _DISCOVERY_STOPWORDS) for _, form in forms)
 
 
-def _distinct(
-    groups: list[list[str]], forms: list[frozenset[str]], used: set[frozenset[str]]
-) -> bool:
+def _distinct(groups: list[list[str]], forms: list[_Form], used: set[str]) -> bool:
     """Whether each group can be met by a different goal word.
+
+    Words are told apart by the word itself: the same word read in a clause and in the whole
+    goal has different compounds, so its form sets differ, but it is still one word.
 
     One word that a synonym turns into two ("weekly" is also "refresh") must not meet the
     action and the object of a recipe by itself.
@@ -137,8 +136,8 @@ def _distinct(
         return True
     head, *tail = groups
     return any(
-        form not in used and form & frozenset(head) and _distinct(tail, forms, used | {form})
-        for form in forms
+        word not in used and form & frozenset(head) and _distinct(tail, forms, used | {word})
+        for word, form in forms
     )
 
 
@@ -147,15 +146,19 @@ def _rejected(
 ) -> bool:
     """Whether the goal has a word for the opposite job ("merge" for a split)."""
     reject = frozenset(recipe.get("reject", ()))
-    return any(form & reject for form in _forms(terms, compounds))
+    return any(form & reject for _, form in _forms(terms, compounds))
 
 
-def _forms(terms: tuple[str, ...], compounds: dict[str, frozenset[str]]) -> list[frozenset[str]]:
+#: A goal word and its forms.
+_Form = tuple[str, frozenset[str]]
+
+
+def _forms(terms: tuple[str, ...], compounds: dict[str, frozenset[str]]) -> list[_Form]:
     """Each word with its stems and compounds, but not the ``how`` synonyms or the
     ``schema find`` aliases: those widen a word ("download" also means "csv", "weekly" also
     means "refresh"), which is right for finding a recipe and wrong for deciding what the
     user asked to have done to their data. Intent groups list the words they accept."""
-    return [frozenset({term, *compounds.get(term, ())}) | _stems(term) for term in terms]
+    return [(term, frozenset({term, *compounds.get(term, ())}) | _stems(term)) for term in terms]
 
 
 #: Where a goal with several parts splits: "join X and Y, then build a dashboard".
@@ -170,15 +173,22 @@ def _clause_fits(clause: str, prefer: str | None = None, goal: str = "") -> list
     Two or more of its words match the recipe, or, in a clause of one or two
     words, one word the recipe itself uses ("join orders", "refresh daily").
     """
-    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import (
+        _adjacent_compound_forms,
+        _ordered_tokens,
+        _query_tokens,
+    )
 
-    terms = _query_tokens(clause) or tuple(_tokens(clause))
+    terms = _query_tokens(clause) or _ordered_tokens(clause)
     if not terms:
         return []
     compounds = _adjacent_compound_forms(terms)
-    whole = _query_tokens(goal) or tuple(_tokens(goal))
+    whole = _query_tokens(goal) or _ordered_tokens(goal)
     whole_compounds = _adjacent_compound_forms(whole)
-    clause_forms, whole_forms = _forms(terms, compounds), _forms(whole, whole_compounds)
+    # Intent reads every word, the small ones too ("by", "per"), as in _rank.
+    clause_words, whole_words = _ordered_tokens(clause), _ordered_tokens(goal)
+    clause_forms = _forms(clause_words, _adjacent_compound_forms(clause_words))
+    whole_forms = _forms(whole_words, _adjacent_compound_forms(whole_words))
     fits: list[tuple[tuple[int, int, int, int], dict[str, Any]]] = []
     for order, recipe in enumerate(load_recipes()):
         # The recipe that fits the whole goal is judged on all of it: "upload a csv" alone
@@ -196,7 +206,7 @@ def _clause_fits(clause: str, prefer: str | None = None, goal: str = "") -> list
         fits.append(((int(recipe["id"] == prefer), len(hits), literal, -order), recipe))
     fits.sort(key=lambda fit: fit[0], reverse=True)
     # Recipes that fit equally well: file order must not pick one.
-    return [recipe for key, recipe in fits if fits and key[:3] == fits[0][0][:3]]
+    return [recipe for key, recipe in fits if key[:3] == fits[0][0][:3]]
 
 
 #: How well a recipe fits a goal: share of words matched, whole-phrase match, literal words.
@@ -263,15 +273,19 @@ def _compose(
 
 def _rank(goal: str) -> list[tuple[_Key, dict[str, Any]]]:
     """Recipes that fit ``goal``, best first, each with the key it was ranked by."""
-    from mammoth_cli.commands.schema.find import _adjacent_compound_forms, _query_tokens, _tokens
+    from mammoth_cli.commands.schema.find import (
+        _adjacent_compound_forms,
+        _ordered_tokens,
+        _query_tokens,
+    )
 
-    terms = _query_tokens(goal) or tuple(_tokens(goal))
+    terms = _query_tokens(goal) or _ordered_tokens(goal)
     if not terms:
         return []
     compounds = _adjacent_compound_forms(terms)
     folded = " ".join(goal.casefold().split())
     # Intent also reads the small words the search drops ("by", "per"): they say what is grouped.
-    every_word = tuple(_tokens(goal))
+    every_word = _ordered_tokens(goal)
     forms = _forms(every_word, _adjacent_compound_forms(every_word))
     ranked: list[tuple[float, int, int, int, dict[str, Any]]] = []
     for order, recipe in enumerate(load_recipes()):
@@ -434,8 +448,7 @@ def how(invocation: Invocation) -> HandlerResult:
     best_unavailable = bool(ranked) and recipe_hidden_embedded(ranked[0][1])
     ranked = [item for item in ranked if not recipe_hidden_embedded(item[1])]
     tied = _tied(ranked)
-    found, unresolved = _compose(goal, ranked[0][1]["id"] if ranked and not tied else None)
-    composed = [part for part in found if not recipe_hidden_embedded(part[1])]
+    composed, unresolved = _compose(goal, ranked[0][1]["id"] if ranked and not tied else None)
     if unresolved:
         # A part of the goal fits several recipes equally: the whole goal is not run on a guess.
         return _unresolved_result(goal, composed, unresolved, context), {}
@@ -449,7 +462,7 @@ def how(invocation: Invocation) -> HandlerResult:
             "context": context,
             "steps": [],
             "notes": [],
-            "alternatives": _alternatives(ranked),
+            "alternatives": _alternatives([r for _, r in ranked]),
             "hint": _NOT_HERE_HINT,
         }, {}
     if tied:
@@ -459,7 +472,7 @@ def how(invocation: Invocation) -> HandlerResult:
             "context": context,
             "steps": [],
             "notes": [],
-            "alternatives": _alternatives(tied),
+            "alternatives": _alternatives([r for _, r in tied]),
             "hint": _TIED_HINT,
         }, {}
     if not ranked:
@@ -481,7 +494,7 @@ def how(invocation: Invocation) -> HandlerResult:
         "context": context,
         "steps": _recipe_steps(best, context),
         "notes": list(best.get("notes", [])),
-        "alternatives": _alternatives(ranked[1:]),
+        "alternatives": _alternatives([r for _, r in ranked[1:]]),
     }
     if best.get("run"):
         # The steps as one command: an agent runs it instead of chaining them by hand.
@@ -490,11 +503,11 @@ def how(invocation: Invocation) -> HandlerResult:
     return result, {}
 
 
-def _alternatives(ranked: list[tuple[Any, dict[str, Any]]]) -> list[dict[str, Any]]:
-    """The first few recipes of ``ranked``, each with the ``how`` command that shows it.
+def _alternatives(recipes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The first few ``recipes``, each with the ``how`` command that shows it.
 
     Args:
-        ranked: Recipes from :func:`_rank`, best first.
+        recipes: Recipes, best first.
 
     Returns:
         At most ``_MAX_ALTERNATIVES`` records of id, title and command.
@@ -505,7 +518,7 @@ def _alternatives(ranked: list[tuple[Any, dict[str, Any]]]) -> list[dict[str, An
             "title": recipe["title"],
             "command": f'mammoth how "{recipe["goals"][0]}"',
         }
-        for _, recipe in ranked[:_MAX_ALTERNATIVES]
+        for recipe in recipes[:_MAX_ALTERNATIVES]
     ]
 
 
@@ -530,13 +543,12 @@ def _unresolved_result(
             for clause, recipe in composed
         ],
         "unresolved": [
-            {"for": clause, "alternatives": _alternatives([(None, r) for r in fits])}
-            for clause, fits in unresolved
+            {"for": clause, "alternatives": _alternatives(fits)} for clause, fits in unresolved
         ],
         "context": context,
         "steps": [],
         "notes": [],
-        "alternatives": _alternatives([(None, r) for _, fits in unresolved for r in fits]),
+        "alternatives": _alternatives([r for _, fits in unresolved for r in fits]),
         "hint": _UNRESOLVED_HINT,
     }
 

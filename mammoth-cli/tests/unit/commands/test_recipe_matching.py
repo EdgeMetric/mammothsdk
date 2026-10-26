@@ -7,7 +7,11 @@ ones shipped in the package (no stand-ins).
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from collections import Counter
+from pathlib import Path
 
 import pytest
 
@@ -168,3 +172,33 @@ def test_the_limit_never_cuts_a_tie_group() -> None:
     goal = "remove duplicates, then download a spreadsheet"
     ids = [r["id"] for r in how_cmd.runnable_for(goal, limit=2)]
     assert set(ids) == {"export-csv", "remove-duplicates", "export-xlsx"}
+
+
+_HASH_SEEDS = (0, 5, 12, 19)
+_PROBE = (
+    "import json, sys\n"
+    "from mammoth_cli.commands import how\n"
+    "from mammoth_cli.runtime.invocation import Invocation\n"
+    "data, _ = how.how(Invocation(command_id='how', positionals={'goal': sys.argv[1]}))\n"
+    "print(json.dumps([data['matched'], [r['id'] for r in data.get('recipes', [])]]))\n"
+)
+
+
+def test_a_composed_goal_gives_the_same_answer_under_every_hash_seed() -> None:
+    # Words were once paired in set order, so which clause matched depended on the seed
+    # (seeds 12 and 19 matched nothing). Real subprocesses: the seed is fixed at start-up.
+    root = str(Path(how_cmd.__file__).resolve().parents[2])
+    goal = "remove duplicates then pivot by region"
+    answers = {
+        seed: (
+            subprocess.run(
+                [sys.executable, "-c", _PROBE, goal],
+                env={**os.environ, "PYTHONHASHSEED": str(seed), "PYTHONPATH": root},
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        )
+        for seed in _HASH_SEEDS
+    }
+    assert set(answers.values()) == {'[true, ["remove-duplicates", "pivot-summary"]]'}, answers
