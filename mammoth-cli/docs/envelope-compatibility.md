@@ -92,6 +92,8 @@ a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `em
   `unresolved_reference` error codes.
 - `recipe list` and `recipe run`, the `recipe_not_found` and `recipe_input_invalid` error
   codes, and `recipes` in `schema find` and `run_command` in `how`.
+- `lines_run` on an embedded `recipe run` (`mammoth_cli.embed.invoke`): the one envelope a
+  host gets carries each step's envelope, in order.
 - `meta.run_id` on the `mammoth run` summary envelope.
 - `history resume` and the `nothing_to_resume` and `resume_outcome_unknown` error codes;
   `partial_lines` in the `recipe run` and `history resume` summaries.

@@ -69,8 +69,6 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "history.show",
         "history.undo",
         "history.resume",
-        # Streams JSON Lines to stdout and reads files on the host, like ``run``.
-        "recipe.run",
         "skill.list",
         "skill.path",
         # Write a path on the host's filesystem. The commands that read one are not

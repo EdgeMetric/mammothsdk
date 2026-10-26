@@ -12,12 +12,15 @@ each line that needs it. A recipe with a destructive line needs ``--yes`` (no pr
 only that ``--yes`` confirms the destructive line. ``--dry-run`` previews every line. It stops
 at the first failed line, but not at a partial one (exit 3: the step made its object, with a
 warning); the run then exits 3 and lists it in ``partial_lines``. Output is the ``mammoth run``
-stream: one envelope per line, then a summary naming the recipe.
+stream: one envelope per line, then a summary naming the recipe. Embedded in a host
+(:mod:`mammoth_cli.embed`), each line runs as a step of the host's call and the recipe
+returns one envelope: the summary, with each line's envelope in ``lines_run``.
 """
 
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
@@ -26,6 +29,7 @@ from mammoth_cli.discovery import line_record, run_command, runnable_recipes, wr
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.confirm import (
     POLICY_PROMPT_OR_YES,
     POLICY_YES_ALWAYS,
@@ -85,18 +89,22 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
         (number, json.dumps(_confirmed(line, invocation.yes), ensure_ascii=False))
         for number, line in enumerate(recipe["run"], start=1)
     ]
-    summary = run_cmd.run_lines(
-        numbered,
-        run_cmd.global_defaults(invocation),
-        keep_going=False,
-        dry_run=invocation.dry_run,
-        scope={"inputs": inputs},
-        # A partial step made what it reports (a dashboard with a warning): the read-back
-        # after it still shows the caller the result.
-        past_partial=True,
-    )
+    with run_cmd.collecting() if embedded.active() else nullcontext() as lines_run:
+        summary = run_cmd.run_lines(
+            numbered,
+            run_cmd.global_defaults(invocation),
+            keep_going=False,
+            dry_run=invocation.dry_run,
+            scope={"inputs": inputs},
+            # A partial step made what it reports (a dashboard with a warning): the read-back
+            # after it still shows the caller the result.
+            past_partial=True,
+        )
     run_exit = summary["exit"]
     data = {"recipe": recipe["id"], "inputs": inputs, **summary}
+    if lines_run is not None:
+        # A host gets one envelope: the summary, carrying each line's envelope.
+        return Outcome(data={**data, "lines_run": lines_run}, exit_status=run_exit)
     meta = Meta(command="recipe run", profile=invocation.profile, exit=run_exit, run_id=run_id())
     run_cmd.write_envelope(Result(data=data, meta=meta).to_envelope())
     return Outcome(streamed=True, exit_status=run_exit)

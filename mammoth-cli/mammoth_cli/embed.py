@@ -200,6 +200,28 @@ def invoke_many(
     return envelopes
 
 
+def invoke_step(argv: Sequence[str]) -> dict[str, Any]:
+    """Run ``mammoth <argv>`` as one step of the embedded call in progress.
+
+    A command that runs other commands (``recipe run``) calls this for each one: the
+    step gets the same login, connection pool and pending rule as the call, and its own
+    envelope, as if the host had called :func:`invoke` for it.
+
+    Args:
+        argv: The command line after ``mammoth``, with its ``--project`` and other flags.
+
+    Returns:
+        The step's envelope, success or error.
+
+    Raises:
+        RuntimeError: No embedded call is in progress.
+    """
+    call = embedded.current()
+    if call is None:
+        raise RuntimeError("invoke_step runs only inside an embedded call.")
+    return _invoke_one(list(argv), call.login, hide_pending=call.hide_pending, runtime=call.runtime)
+
+
 def _invoke_one(
     argv: list[str],
     login: ExplicitLogin,

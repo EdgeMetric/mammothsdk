@@ -50,12 +50,14 @@ import io
 import json
 import re
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 from typing import Any
 
+from mammoth_cli import embed
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     EXIT_API,
@@ -67,7 +69,7 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
-from mammoth_cli.runtime import bindings, journal, linecapture
+from mammoth_cli.runtime import bindings, embedded, journal, linecapture
 from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.input_loader import MAX_INPUT_BYTES
 from mammoth_cli.runtime.invocation import Invocation
@@ -124,6 +126,9 @@ INHERITED_FLAGS: tuple[tuple[str, str], ...] = (
 
 #: A line that changes these changes who the next line is: the credential memo is dropped.
 _CREDENTIAL_GROUPS = frozenset({"auth", "config", "context"})
+#: Where :func:`write_envelope` puts each envelope while :func:`collecting` is open,
+#: instead of stdout; per context, so concurrent embedded calls never share one.
+_SINK: ContextVar[list[dict[str, Any]] | None] = ContextVar("mammoth_cli_run_sink", default=None)
 
 
 @dataclass
@@ -392,6 +397,12 @@ def _click_root() -> Any:
 
 def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str, Any]]:
     """Run ``argv`` as a command in this process; return its exit status and envelope."""
+    if embedded.active():
+        # Inside a host's call, a line runs as one more embedded call with the same
+        # login: no process-wide stdout swap, which other threads would write into.
+        envelope = embed.invoke_step(argv)
+        body = envelope.get("error") or envelope.get("meta") or {}
+        return int(body.get("exit") or 0), envelope
     from mammoth_cli.app.usage import _ABORT_ERRORS, _USAGE_ERRORS
 
     root = _click_root()
@@ -445,12 +456,32 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
     return exit_status, silent.to_envelope()
 
 
+@contextlib.contextmanager
+def collecting() -> Iterator[list[dict[str, Any]]]:
+    """Keep the envelopes :func:`write_envelope` would print, in order, instead of printing.
+
+    Yields:
+        The list the envelopes go into.
+    """
+    kept: list[dict[str, Any]] = []
+    token = _SINK.set(kept)
+    try:
+        yield kept
+    finally:
+        _SINK.reset(token)
+
+
 def write_envelope(envelope: dict[str, Any]) -> None:
     """Write one envelope as one compact line on stdout and flush it.
+
+    Inside :func:`collecting`, the envelope goes into its list instead.
 
     Args:
         envelope: The envelope to write.
     """
+    if (sink := _SINK.get()) is not None:
+        sink.append(envelope)
+        return
     sys.stdout.write(
         json.dumps(
             envelope,
