@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-cli)
 
+- CLI: `dataset refresh` on a dataset made from an uploaded file returns `dataset_not_refreshable` with the ways forward (append the new file, or connect a cloud source), as `automation create` already did. Before, it was a generic `api_error` ("Invalid source type [4DSET048]").
 - CLI: `numbers_stored_as_text` (and `dates_stored_as_text`) now catch a column whose missing values are written as a placeholder. Values like `N/A`, `NA`, `#N/A`, `-`, `--`, `null`, `none`, `nil`, `?` and `nan` no longer count against the column's share of numbers. Before, `100, 250, 75, N/A` (3 of 4, under the 80% bar) uploaded as TEXT with no warning. The finding still lists the placeholders, which the conversion makes empty.
 - CLI: the `dashboard v3 generate` agent example now includes the required `intent`. Without it the backend refused the example with 4GENR007 ("intent must not be empty").
 - CLI: `view version apply` waits for the pipeline to be rebuilt before it returns, so the view shows the applied steps. Before, it returned the job handle and a read straight after it still showed the old steps.

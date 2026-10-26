@@ -3377,13 +3377,13 @@
         {
           "command_id": "view.version.get",
           "purpose": "Read the version to confirm its steps.",
-          "example": "mammoth view version get VIEW_ID DATASET_ID VERSION_ID",
+          "example": "mammoth view version get VIEW_ID VERSION_ID DATASET_ID",
           "key_flags": []
         },
         {
           "command_id": "view.version.apply",
           "purpose": "Apply that version to the view.",
-          "example": "mammoth view version apply VIEW_ID DATASET_ID VERSION_ID",
+          "example": "mammoth view version apply VIEW_ID VERSION_ID DATASET_ID",
           "key_flags": []
         },
         {
@@ -3420,8 +3420,8 @@
           "cmd": "view version get",
           "args": [
             "{{inputs.view_id}}",
-            "{{inputs.dataset_id}}",
-            "{{inputs.version_id}}"
+            "{{inputs.version_id}}",
+            "{{inputs.dataset_id}}"
           ]
         },
         {
@@ -3429,8 +3429,8 @@
           "cmd": "view version apply",
           "args": [
             "{{inputs.view_id}}",
-            "{{inputs.dataset_id}}",
-            "{{inputs.version_id}}"
+            "{{inputs.version_id}}",
+            "{{inputs.dataset_id}}"
           ]
         },
         {
