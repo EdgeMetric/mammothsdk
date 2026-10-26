@@ -41,6 +41,7 @@ core-metadata-version = "2.4"
 [dependency-groups]
 dev = [
     "pytest (>=9.1,<10)",
+    "pytest-xdist (>=3.8,<4)",
     "mypy (>=1.11)",
     "ruff (>=0.6)",
     "black (>=24)",
