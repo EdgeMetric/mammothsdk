@@ -12,6 +12,7 @@ from importlib import resources
 from typing import Any
 
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime.embed_scope import recipe_hidden_embedded
 
 
 @cache
@@ -34,6 +35,24 @@ def runnable_recipes() -> tuple[dict[str, Any], ...]:
     return tuple(recipe for recipe in load_recipes() if recipe.get("run"))
 
 
+def visible_recipes() -> tuple[dict[str, Any], ...]:
+    """The recipes this call can follow: an embedded call drops those that need a local file.
+
+    Returns:
+        The recipes discovery may offer, in file order.
+    """
+    return tuple(recipe for recipe in load_recipes() if not recipe_hidden_embedded(recipe))
+
+
+def offered_recipes() -> tuple[dict[str, Any], ...]:
+    """The runnable recipes this call can run.
+
+    Returns:
+        The executable recipes among :func:`visible_recipes`, in file order.
+    """
+    return tuple(recipe for recipe in visible_recipes() if recipe.get("run"))
+
+
 def task_summaries() -> list[dict[str, Any]]:
     """The executable recipes as one short record each, for the index commands.
 
@@ -50,7 +69,7 @@ def task_summaries() -> list[dict[str, Any]]:
             "writes": writes(recipe),
             "run_command": run_command(recipe),
         }
-        for recipe in runnable_recipes()
+        for recipe in offered_recipes()
     ]
 
 

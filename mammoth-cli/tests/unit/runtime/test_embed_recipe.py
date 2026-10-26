@@ -90,13 +90,11 @@ def test_concurrent_embedded_recipes_keep_their_own_lines(
         assert len(envelope["data"]["lines_run"]) == 2
 
 
-def test_a_line_that_reads_a_local_file_fails_on_its_own() -> None:
+def test_a_recipe_that_reads_a_local_file_is_refused_before_any_line_runs() -> None:
     envelope = invoke(
         ["recipe", "run", "append-rows", "--input"]
         + ['{"inputs": {"dataset_id": 7, "file": "/etc/passwd"}}', "--yes"],
         login=_login(),
         project_id=9,
     )
-    lines = envelope["data"]["lines_run"]
-    assert lines[0]["error"]["code"] == "not_available_embedded"
-    assert envelope["data"]["failed"] == 1
+    assert envelope["error"]["code"] == "not_available_embedded"

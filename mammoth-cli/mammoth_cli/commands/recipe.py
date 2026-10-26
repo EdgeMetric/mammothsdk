@@ -25,8 +25,14 @@ from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.registry import HandlerResult
-from mammoth_cli.discovery import line_record, run_command, runnable_recipes, writes
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.discovery import (
+    line_record,
+    offered_recipes,
+    run_command,
+    runnable_recipes,
+    writes,
+)
+from mammoth_cli.errors.envelope import EXIT_USAGE, CliError, not_available_embedded_error
 from mammoth_cli.output.emit import run_id
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.runtime import embedded
@@ -36,6 +42,7 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.dispatch import Outcome
+from mammoth_cli.runtime.embed_scope import recipe_hidden_embedded
 from mammoth_cli.runtime.invocation import Invocation
 
 CODE_RECIPE_NOT_FOUND = "recipe_not_found"
@@ -64,7 +71,7 @@ def recipe_list(invocation: Invocation) -> HandlerResult:
             "steps": [line["cmd"] for line in recipe["run"]],
             "run_command": run_command(recipe),
         }
-        for recipe in runnable_recipes()
+        for recipe in offered_recipes()
     ]
     return {"recipes": recipes, "count": len(recipes)}, {}
 
@@ -154,6 +161,8 @@ def _recipe(recipe_id: Any) -> dict[str, Any]:
     known = runnable_recipes()
     for recipe in known:
         if recipe["id"] == recipe_id:
+            if recipe_hidden_embedded(recipe):
+                raise not_available_embedded_error(f"recipe run {recipe_id}")
             return recipe
     raise CliError(
         code=CODE_RECIPE_NOT_FOUND,

@@ -14,7 +14,7 @@ from mammoth_cli.commands.how import runnable_for
 from mammoth_cli.commands.schema import command_scope
 from mammoth_cli.errors.envelope import is_feature_unavailable
 from mammoth_cli.manifest.loader import command_by_id, load_operations
-from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.embed_scope import hidden_embedded
 from mammoth_cli.services.command_contract import resolve_command_contract
 
 _MAX_FIND_RESULTS = 20
@@ -75,9 +75,9 @@ def capability_entries() -> list[dict[str, Any]]:
     return sorted(entries, key=lambda entry: entry["operation_id"])
 
 
-def hidden_pending(entry: dict[str, Any]) -> bool:
-    """Whether an embedded call that opted out of pending commands must not see ``entry``."""
-    return embedded.hides_pending() and entry.get("server_status") == "pending"
+def hidden_from_call(entry: dict[str, Any]) -> bool:
+    """Whether this embedded call must not see ``entry``: refused, or pending and hidden."""
+    return hidden_embedded(entry.get("canonical_command"), entry.get("server_status"))
 
 
 def get_capability(operation_id: str) -> dict[str, Any] | None:
@@ -164,7 +164,7 @@ def find_capabilities(
                 "sdk_symbol",
             )
         )
-        if entry.get("unavailable") or hidden_pending(entry):
+        if entry.get("unavailable") or hidden_from_call(entry):
             continue
         candidates = _tokens(text)
         command_id = entry.get("canonical_command")

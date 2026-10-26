@@ -56,7 +56,7 @@ def _capability_list(_: Invocation) -> HandlerResult:
     from mammoth_cli.commands import capability as capability_cmd
 
     entries = capability_cmd.capability_entries()
-    return [entry for entry in entries if not capability_cmd.hidden_pending(entry)], {}
+    return [entry for entry in entries if not capability_cmd.hidden_from_call(entry)], {}
 
 
 def _capability_get(invocation: Invocation) -> HandlerResult:

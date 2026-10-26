@@ -11,7 +11,7 @@ from mammoth_cli.commands.schema import (
     _IN_PLACE_KEYWORDS,
     _INLINE_NOTES_MAX_CHARS,
     _compact_accepted_fields,
-    _hidden_pending,
+    _hidden_from_call,
     _operation_hints_by_command,
     edits_view_in_place,
 )
@@ -390,7 +390,7 @@ def find_schemas(
     for record in load_commands():
         if record.get("disposition") == "alias":
             continue
-        if is_feature_unavailable(str(record["command_id"])) or _hidden_pending(record):
+        if is_feature_unavailable(str(record["command_id"])) or _hidden_from_call(record):
             continue
         command_id = str(record["command_id"])
         command_path = str(record["command_path"])

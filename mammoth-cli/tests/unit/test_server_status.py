@@ -200,8 +200,8 @@ def test_hide_pending_hides_pending_commands_from_discovery(
         assert all(row["command_id"] != PENDING for row in family)
         found = schema_find.find_schemas("automation runs")
         assert all(row["command_id"] != PENDING for row in found["matches"])
-        assert capability.hidden_pending({"server_status": "pending"})
-        assert not capability.hidden_pending({"server_status": "served"})
+        assert capability.hidden_from_call({"server_status": "pending"})
+        assert not capability.hidden_from_call({"server_status": "served"})
     finally:
         embedded.leave(token)
     # Outside an opted-in call nothing is hidden.

@@ -37,47 +37,11 @@ from mammoth_cli.manifest.loader import is_pending_server_release
 from mammoth_cli.output.policy import VALID_OUTPUTS
 from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.dryrun import refuse_unsupported_dry_run
+from mammoth_cli.runtime.embed_scope import refused_embedded
 from mammoth_cli.runtime.intent_only import refuse_hand_crafted_write
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.local_paths import local_path_commands
 from mammoth_cli.runtime.shared import shared_services
 from mammoth_cli.services.mapping import map_sdk_exception, running_handle
-
-# Commands that act on the host machine (login, config, installs, upgrade); an
-# embedded call has no profile, keyring or shell to act on.
-EMBEDDED_UNAVAILABLE = frozenset(
-    {
-        "auth.login",
-        "auth.logout",
-        "config.set",
-        "upgrade",
-        "skill.install",
-        "skill.uninstall",
-        "skill.update",
-        "skill.agents-md.install",
-        "completion.install",
-        # Reads a JSON Lines file or the host's stdin.
-        "run",
-        # Read or write the host's profile, run log or install state.
-        "auth.status",
-        "config.get",
-        "config.list",
-        "config.path",
-        "log.path",
-        "log.tail",
-        "history.list",
-        "history.show",
-        "history.undo",
-        "history.resume",
-        "skill.list",
-        "skill.path",
-        # Write a path on the host's filesystem. The commands that read one are not
-        # listed: ``local_path_commands`` derives them from the manifest.
-        "view.explore-panel.export-image",
-        "support.template.export",
-        "support.template.export-dashboard",
-    }
-)
 
 
 def _refuse_if_removed(command_id: str) -> None:
@@ -89,9 +53,7 @@ def _refuse_if_embedded(command_id: str) -> None:
     # A hand-crafting dashboard write that also reads a local file keeps its own, more
     # useful refusal (it names the intent commands to use instead).
     refuse_hand_crafted_write(command_id)
-    if embedded.active() and (
-        command_id in EMBEDDED_UNAVAILABLE or command_id in local_path_commands()
-    ):
+    if refused_embedded(command_id):
         raise not_available_embedded_error(command_id.replace(".", " "))
 
 

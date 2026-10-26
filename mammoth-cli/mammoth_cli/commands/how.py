@@ -19,6 +19,7 @@ from typing import Any
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.discovery import load_recipes, run_command
 from mammoth_cli.errors.envelope import CODE_MISSING_ARGUMENT, EXIT_USAGE, CliError
+from mammoth_cli.runtime.embed_scope import recipe_hidden_embedded
 from mammoth_cli.runtime.invocation import Invocation
 
 #: Goal words that mean the same as words the recipes use. Added to the
@@ -54,6 +55,10 @@ _NO_RECIPE_HINT = (
     "No recipe matched this goal, so these steps are the closest single commands from "
     "'mammoth schema find'. Run 'mammoth schema get COMMAND_ID' for a command's inputs, "
     "or describe the goal in other words."
+)
+_NOT_HERE_HINT = (
+    "The recipe for this goal needs the user's machine (a local file or the run history), "
+    "which the app does not have. Use the app's own tools for that part."
 )
 _NOTHING_HINT = (
     "No recipe and no command matched this goal. Try other words, or run "
@@ -206,7 +211,7 @@ def runnable_for(goal: str, limit: int = 2) -> list[dict[str, Any]]:
             "full_detail_command": f"mammoth how \"{recipe['goals'][0]}\"",
         }
         for _, recipe in _rank(goal)
-        if recipe.get("run")
+        if recipe.get("run") and not recipe_hidden_embedded(recipe)
     ][:limit]
 
 
@@ -303,10 +308,28 @@ def how(invocation: Invocation) -> HandlerResult:
         )
     context = _context(invocation)
     ranked = _rank(goal)
-    composed = _compose(goal, ranked[0][1]["id"] if ranked else None)
+    # Ranked over every recipe, so a goal this call cannot do is not answered with a
+    # weaker recipe that only shares a word with it; the parts it can do still are.
+    best_unavailable = bool(ranked) and recipe_hidden_embedded(ranked[0][1])
+    ranked = [item for item in ranked if not recipe_hidden_embedded(item[1])]
+    composed = [
+        part
+        for part in _compose(goal, ranked[0][1]["id"] if ranked else None)
+        if not recipe_hidden_embedded(part[1])
+    ]
     if len(composed) >= 2 or (composed and not ranked):
         # A goal with several parts gets every part's steps, not only the best one's.
         return _composed_result(goal, composed, context), {}
+    if best_unavailable:
+        return {
+            "goal": goal,
+            "matched": False,
+            "context": context,
+            "steps": [],
+            "notes": [],
+            "alternatives": _alternatives(ranked),
+            "hint": _NOT_HERE_HINT,
+        }, {}
     if not ranked:
         steps = _fallback_steps(goal, context)
         return {
@@ -326,20 +349,32 @@ def how(invocation: Invocation) -> HandlerResult:
         "context": context,
         "steps": _recipe_steps(best, context),
         "notes": list(best.get("notes", [])),
-        "alternatives": [
-            {
-                "id": recipe["id"],
-                "title": recipe["title"],
-                "command": f'mammoth how "{recipe["goals"][0]}"',
-            }
-            for _, recipe in ranked[1 : 1 + _MAX_ALTERNATIVES]
-        ],
+        "alternatives": _alternatives(ranked[1:]),
     }
     if best.get("run"):
         # The steps as one command: an agent runs it instead of chaining them by hand.
         result["run_command"] = run_command(best)
         result["inputs"] = best.get("inputs", {})
     return result, {}
+
+
+def _alternatives(ranked: list[tuple[int, dict[str, Any]]]) -> list[dict[str, Any]]:
+    """The first few recipes of ``ranked``, each with the ``how`` command that shows it.
+
+    Args:
+        ranked: Recipes from :func:`_rank`, best first.
+
+    Returns:
+        At most ``_MAX_ALTERNATIVES`` records of id, title and command.
+    """
+    return [
+        {
+            "id": recipe["id"],
+            "title": recipe["title"],
+            "command": f'mammoth how "{recipe["goals"][0]}"',
+        }
+        for _, recipe in ranked[:_MAX_ALTERNATIVES]
+    ]
 
 
 #: Steps that set up the data a recipe works on; a composed recipe keeps the first of each.

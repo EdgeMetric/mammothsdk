@@ -29,7 +29,7 @@ from mammoth_cli.manifest.loader import (
     load_output_schemas,
 )
 from mammoth_cli.output.normalize import trusted_json_schema
-from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.embed_scope import hidden_embedded
 from mammoth_cli.runtime.local_paths import local_path_fields
 from mammoth_cli.services.command_contract import LOCAL_COMMANDS, resolve_command_contract
 from mammoth_cli.services.field_enums import field_enum, with_enum
@@ -553,15 +553,15 @@ def _schema_common(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _hidden_pending(record: dict[str, Any]) -> bool:
-    """Whether an embedded call that opted out of pending commands must not see ``record``."""
-    return embedded.hides_pending() and record.get("server_status") == "pending"
+def _hidden_from_call(record: dict[str, Any]) -> bool:
+    """Whether this embedded call must not see ``record``: refused, or pending and hidden."""
+    return hidden_embedded(record.get("command_id"), record.get("server_status"))
 
 
 def schema_entries() -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for record in load_commands():
-        if record.get("disposition") == "alias" or _hidden_pending(record):
+        if record.get("disposition") == "alias" or _hidden_from_call(record):
             continue
         entries.append(
             {
