@@ -3916,12 +3916,12 @@ Total commands: 862.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.follow_link`
 - Agent example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`
 
-### `mammoth dataset from-url list`
+### `mammoth dataset from-url links`
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.links`
-- Agent example: `mammoth dataset from-url list`
+- Agent example: `mammoth dataset from-url links`
 
 ### `mammoth dataset from-url preview`
 

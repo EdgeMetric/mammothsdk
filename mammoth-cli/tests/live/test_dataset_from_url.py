@@ -25,7 +25,7 @@ CSV_URL = os.environ.get(
 
 
 def _linked(cli: LiveCli, project: int) -> list[int]:
-    listed, _ = cli.ok("dataset", "from-url", "list", project=project)
+    listed, _ = cli.ok("dataset", "from-url", "links", project=project)
     return [row["id"] for row in listed["datasets"] if row["url"] == CSV_URL]
 
 

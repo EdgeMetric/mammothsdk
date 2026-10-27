@@ -549,7 +549,7 @@ class DatasetsAPI:
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """List the project's datasets that follow a link.
+        """Show which of the project's datasets follow a link, with their last fetch.
 
         Copies (datasets that stopped following their link), JSON sketches and Mammoth's
         sample datasets are left out.

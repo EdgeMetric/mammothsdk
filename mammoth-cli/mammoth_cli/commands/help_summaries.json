@@ -387,7 +387,7 @@
   "dataset.file-settings.update": "Update a dataset's file settings. Required fields come from '--input'.",
   "dataset.find": "Search dataset names for a substring across every visible project.",
   "dataset.from-url.follow": "Make a dataset made from a link follow it again, or turn it into a copy.",
-  "dataset.from-url.list": "List the project's datasets that follow a link.",
+  "dataset.from-url.links": "Show which of the project's datasets follow a link, with their last fetch.",
   "dataset.from-url.preview": "Read the CSV, Excel or JSON file at a link and show its tables, keeping nothing.",
   "dataset.get": "Get one dataset by id in the active project.",
   "dataset.interpretation.confirm": "Preview or confirm how a file that can be read several ways is interpreted.",

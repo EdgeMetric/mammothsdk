@@ -394,16 +394,15 @@ commands:
     ref: WriteResult
   undo:
     strategy: manual
-    command: dataset.from-url.follow
-    note: 'Run it again with the opposite follow value in --input; a dataset that stopped following keeps its data.'
+    command: dataset.from-url.links
+    note: 'Find the dataset with the links command, then run it again with the opposite follow value in --input; a dataset that stopped following keeps its data.'
   readback:
-    command: dataset.from-url.list
+    command: dataset.from-url.links
     ids: {}
     kind: object
-- command_id: dataset.from-url.list
+- command_id: dataset.from-url.links
   output_schema:
     type: object
-    required: [datasets]
     properties:
       datasets:
         type: array
@@ -412,7 +411,6 @@ commands:
 - command_id: dataset.from-url.preview
   output_schema:
     type: object
-    required: [tables]
     properties:
       tables:
         type: array
@@ -431,7 +429,6 @@ commands:
 - command_id: dataset.download-plan
   output_schema:
     type: object
-    required: [datasets, stacked_files, skipped]
     properties:
       datasets: {type: integer}
       stacked_files: {type: integer}

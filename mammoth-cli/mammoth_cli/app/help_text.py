@@ -182,6 +182,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "dashboard video": "Export a dashboard as a video.",
     "dataset broken-rows": "List and resolve rows that failed to load.",
     "dataset definition": "List, save and remove what terms mean for a dataset.",
+    "dataset from-url": "Preview a link, follow or copy a dataset made from a link, and show them.",
     "dataset file-settings": "Read, update and undo a dataset's file settings.",
     "dataset interpretation": "Preview and confirm how a file is interpreted.",
     "dataset tool-claim": "Read an emailed Open tables link and add its tables to a project.",
@@ -196,6 +197,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "support connector": "Create, list, update and delete connectors.",
     "support connector-profile": "Manage connector profiles and their connectors.",
     "support deal": "Create, read and update deals, and move them to partners.",
+    "support project-move": (
+        "Follow a project move between workspaces, and purge its source copies."
+    ),
     "support entitlement": "Read the entitlement registry.",
     "support feature": "Create, list, update and delete features.",
     "support feature-profile": "Manage feature profiles and their features.",
@@ -211,6 +215,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "support user": "List, register and update users.",
     "support workspace": "Manage workspaces: create, suspend, restore and delete.",
     "support workspace invite": "Cancel or resend a workspace invite.",
+    "support workspace project": (
+        "List a workspace's projects, check and start moving one to another workspace."
+    ),
     "support workspace user": "Add, list, remove and transfer workspace users.",
     "user avatar": "Upload or delete the avatar.",
     "user preference": "Read and update user preferences.",

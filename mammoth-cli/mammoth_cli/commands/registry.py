@@ -1230,7 +1230,7 @@ _TARGETS: dict[str, str] = {
     # From URL: preview a link, follow or copy a link dataset, list the linked datasets.
     "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
-    "dataset.from-url.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.links": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     # Download several datasets as one file, and what that would hold.
     "dataset.download": "mammoth_cli.commands.dataset.download:dataset_download",
     "dataset.download-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",

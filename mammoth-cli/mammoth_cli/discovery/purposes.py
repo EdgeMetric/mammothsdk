@@ -837,8 +837,8 @@ COMMAND_DISCOVERY_PURPOSES = {
         "follow link, stop following a link, make a dataset a copy, refresh from URL again, "
         "keep a url dataset updated from its link"
     ),
-    "dataset.from-url.list": (
-        "list datasets that follow a link, from url datasets, last fetched, fetch failed, "
+    "dataset.from-url.links": (
+        "which url link datasets follow a link, last fetched, fetch failed, "
         "refresh from link schedules, which links update"
     ),
     # Bulk download (several datasets, views or folders as one file).

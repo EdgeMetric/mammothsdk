@@ -2701,7 +2701,8 @@ methods:
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
   implementation_origin: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
   signature: 'link_preview(self, url: ''str'') -> ''dict[str, Any]'''
-  openapi_operation_ids: []
+  openapi_operation_ids:
+  - PreviewLinkFile
   canonical_command: dataset.from-url.preview
   alias_of: null
   no_command_reason: null
@@ -5665,7 +5666,8 @@ methods:
   implementation_origin: mammoth.api.datasets.DatasetsAPI.follow_link
   signature: 'follow_link(self, dataset_id: ''int'', follow: ''bool'' = True, workspace_id: ''int | None''
     = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
-  openapi_operation_ids: []
+  openapi_operation_ids:
+  - UpdateDataset
   canonical_command: dataset.from-url.follow
   alias_of: null
   no_command_reason: null
@@ -5788,8 +5790,9 @@ methods:
   implementation_origin: mammoth.api.datasets.DatasetsAPI.links
   signature: 'links(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str,
     Any]'''
-  openapi_operation_ids: []
-  canonical_command: dataset.from-url.list
+  openapi_operation_ids:
+  - GetProjectLinks
+  canonical_command: dataset.from-url.links
   alias_of: null
   no_command_reason: null
   mutation_class: read
@@ -6488,7 +6491,8 @@ methods:
   signature: 'bulk_download(self, resource_ids: ''_list[int]'', name: ''str'', output_path: ''str | Path
     | None'' = None, file_type: "Literal[''csv'', ''xlsx'']" = ''csv'', stack: ''bool'' = False, numbered:
     ''bool'' = False, views: ''dict[int, int] | None'' = None, timeout: ''int'' = 300) -> ''Path'''
-  openapi_operation_ids: []
+  openapi_operation_ids:
+  - CreateDownload
   canonical_command: dataset.download
   alias_of: null
   no_command_reason: null
@@ -6501,7 +6505,8 @@ methods:
   implementation_origin: mammoth.api.exports.ExportsAPI.bulk_download_plan
   signature: 'bulk_download_plan(self, resource_ids: ''_list[int]'', views: ''dict[int, int] | None''
     = None) -> ''dict[str, Any]'''
-  openapi_operation_ids: []
+  openapi_operation_ids:
+  - PlanDownload
   canonical_command: dataset.download-plan
   alias_of: null
   no_command_reason: null

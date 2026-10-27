@@ -847,8 +847,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset find sales
 - `mammoth dataset from-url follow` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.follow_link
   example: mammoth dataset from-url follow 123 --input '{"follow": false}'
-- `mammoth dataset from-url list` [read/none] -> mammoth.api.datasets.DatasetsAPI.links
-  example: mammoth dataset from-url list
+- `mammoth dataset from-url links` [read/none] -> mammoth.api.datasets.DatasetsAPI.links
+  example: mammoth dataset from-url links
 - `mammoth dataset from-url preview` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
   example: mammoth dataset from-url preview https://example.com/data.csv
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get

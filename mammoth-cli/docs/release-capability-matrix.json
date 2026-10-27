@@ -64,7 +64,7 @@
         "mammoth.api.datasets.DatasetsAPI.links"
       ],
       "commands": [
-        "dataset.from-url.list"
+        "dataset.from-url.links"
       ]
     },
     {

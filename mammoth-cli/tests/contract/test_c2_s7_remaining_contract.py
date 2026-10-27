@@ -216,6 +216,11 @@ S7_ROUTE_INVENTORY = frozenset(
         "support.workspace.invite.cancel",
         "support.workspace.invite.resend",
         "support.workspace.list",
+        "support.project-move.get",
+        "support.project-move.purge",
+        "support.workspace.project.list",
+        "support.workspace.project.move-check",
+        "support.workspace.project.move-start",
         "support.workspace.restore-access",
         "support.workspace.restore-archive",
         "support.workspace.suspend-access",
@@ -302,7 +307,7 @@ def fake_family_service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
 def test_s7_inventory_and_ledger_are_exact() -> None:
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     assert S7_COMMANDS == S7_ROUTE_INVENTORY
-    assert ledger["route_count"] == 222
+    assert ledger["route_count"] == 227
     assert ledger["families"] == {
         "activity": 2,
         "agent": 44,
@@ -311,7 +316,7 @@ def test_s7_inventory_and_ledger_are_exact() -> None:
         "billing": 27,
         "client-app": 5,
         "schedule": 5,
-        "support": 112,
+        "support": 117,
         "token": 3,
         "user": 7,
     }

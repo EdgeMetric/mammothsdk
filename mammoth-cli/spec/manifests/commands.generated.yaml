@@ -15892,7 +15892,8 @@ commands:
   command_path: dataset download
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - CreateDownload
   positionals: []
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
@@ -15931,7 +15932,8 @@ commands:
   command_path: dataset download-plan
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - PlanDownload
   positionals: []
   options: []
   sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_plan
@@ -16095,7 +16097,8 @@ commands:
   command_path: dataset from-url follow
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - UpdateDataset
   positionals:
   - name: dataset_id
     type: int
@@ -16135,35 +16138,36 @@ commands:
   known_restrictions: Follow true keeps the dataset refreshing from its link; follow false makes it a
     copy.
   reviewed_by: primary
-- command_id: dataset.from-url.list
-  command_path: dataset from-url list
+- command_id: dataset.from-url.links
+  command_path: dataset from-url links
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - GetProjectLinks
   positionals: []
   options: []
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.links
   sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.links with validated request fields.
-  request_model: DatasetFromUrlListRequest
-  result_model: DatasetFromUrlListResult
+  request_model: DatasetFromUrlLinksRequest
+  result_model: DatasetFromUrlLinksResult
   mutation_class: read
   confirmation: none
   wait_policy: not_async
   pagination_policy: none
   acceptance_evidence: live_read_only
-  live_test: LT-DATASET-FROM-URL-LIST
+  live_test: LT-DATASET-FROM-URL-LINKS
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth dataset from-url list --help
-  agent_example: mammoth dataset from-url list
+  human_example: mammoth dataset from-url links --help
+  agent_example: mammoth dataset from-url links
   unit_tests:
-  - UT-DATASET-FROM-URL-LIST
+  - UT-DATASET-FROM-URL-LINKS
   contract_tests:
-  - CT-DATASET-FROM-URL-LIST-HUMAN
-  - CT-DATASET-FROM-URL-LIST-JSON
-  - CT-DATASET-FROM-URL-LIST-ERROR
+  - CT-DATASET-FROM-URL-LINKS-HUMAN
+  - CT-DATASET-FROM-URL-LINKS-JSON
+  - CT-DATASET-FROM-URL-LINKS-ERROR
   draft_test: null
   undo_test: null
   known_restrictions: null
@@ -16172,7 +16176,8 @@ commands:
   command_path: dataset from-url preview
   disposition: command
   alias_of: null
-  operation_ids: []
+  operation_ids:
+  - PreviewLinkFile
   positionals:
   - name: url
     type: str
