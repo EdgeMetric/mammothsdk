@@ -253,7 +253,7 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
 
 def _is_placeholder(name: str, value: Any) -> bool:
     """Whether ``value`` is the ``<name>`` placeholder ``run_command`` printed for this input."""
-    return value == f"<{name}>"
+    return bool(value == f"<{name}>")
 
 
 def _input_error(message: str, usage: str, **details: Any) -> CliError:
