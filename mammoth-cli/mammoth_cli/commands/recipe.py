@@ -20,8 +20,6 @@ returns one envelope: the summary, with each line's envelope in ``lines_run``.
 from __future__ import annotations
 
 import json
-import re
-from contextlib import nullcontext
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
@@ -48,8 +46,6 @@ from mammoth_cli.runtime.invocation import Invocation
 
 CODE_RECIPE_NOT_FOUND = "recipe_not_found"
 CODE_RECIPE_INPUT_INVALID = "recipe_input_invalid"
-
-_PLACEHOLDER = re.compile(r"<[A-Za-z_][A-Za-z0-9_]*>")
 
 #: The JSON types a recipe input may declare, and the Python types that satisfy each.
 _INPUT_TYPES: dict[str, tuple[type, ...]] = {
@@ -100,10 +96,8 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
         (number, json.dumps(_confirmed(line, invocation.yes), ensure_ascii=False))
         for number, line in enumerate(recipe["run"], start=1)
     ]
-    with (
-        run_cmd.collecting() if embedded.active() else nullcontext() as lines_run,
-        run_cmd.observing() as seen,
-    ):
+    # A host gets the envelopes in one; a terminal still gets them as they stream.
+    with run_cmd.collecting(echo=not embedded.active()) as seen:
         summary = run_cmd.run_lines(
             numbered,
             run_cmd.global_defaults(invocation),
@@ -118,9 +112,9 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
     data = {"recipe": recipe["id"], "version": recipe_version(recipe), "inputs": inputs, **summary}
     if invocation.dry_run:
         data["predicted_impact"] = _impact_markers(seen)
-    if lines_run is not None:
+    if embedded.active():
         # A host gets one envelope: the summary, carrying each line's envelope.
-        return Outcome(data={**data, "lines_run": lines_run}, exit_status=run_exit)
+        return Outcome(data={**data, "lines_run": seen}, exit_status=run_exit)
     meta = Meta(command="recipe run", profile=invocation.profile, exit=run_exit, run_id=run_id())
     run_cmd.write_envelope(Result(data=data, meta=meta).to_envelope())
     return Outcome(streamed=True, exit_status=run_exit)
@@ -221,7 +215,7 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
         given = {}
     if not isinstance(given, dict):
         raise _input_error("'inputs' must be an object.", usage)
-    unfilled = sorted(name for name, value in given.items() if _has_placeholder(value))
+    unfilled = sorted(name for name, value in given.items() if _is_placeholder(name, value))
     if unfilled:
         raise _input_error(
             f"Fill in the placeholder inputs before running: {', '.join(unfilled)}.",
@@ -247,6 +241,8 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
             values[name] = spec.get("default")
             continue
         value = given[name]
+        if spec.get("also_string") and isinstance(value, str):
+            value = [value]  # version 1 took one name
         allowed = _INPUT_TYPES[spec["type"]]
         # A boolean is an int in Python, but only an 'any' input means it as a value.
         if not isinstance(value, allowed) or (isinstance(value, bool) and spec["type"] != "any"):
@@ -255,15 +251,9 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
     return values
 
 
-def _has_placeholder(value: Any) -> bool:
-    """Whether the value is, or holds, a ``<name>`` placeholder copied from ``run_command``."""
-    if isinstance(value, str):
-        return _PLACEHOLDER.fullmatch(value) is not None
-    if isinstance(value, list):
-        return any(_has_placeholder(item) for item in value)
-    if isinstance(value, dict):
-        return any(_has_placeholder(item) for item in value.values())
-    return False
+def _is_placeholder(name: str, value: Any) -> bool:
+    """Whether ``value`` is the ``<name>`` placeholder ``run_command`` printed for this input."""
+    return value == f"<{name}>"
 
 
 def _input_error(message: str, usage: str, **details: Any) -> CliError:

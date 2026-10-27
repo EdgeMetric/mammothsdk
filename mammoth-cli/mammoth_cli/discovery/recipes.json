@@ -2671,7 +2671,7 @@
         }
       ],
       "notes": [
-        "key_columns are the columns that make a row a duplicate (every other column is ignored). The count in the preview is exact unless it says otherwise; zero duplicates stops the recipe before any copy is made.",
+        "key_columns are the columns that make a row a duplicate (every other column is ignored); without them whole rows are compared. The count in the preview is exact unless it says otherwise; zero duplicates stops the recipe before any copy is made.",
         "By default the work happens on a copy of the view (the original is unchanged; trash the copy to undo). Pass in_place true to edit the named view itself (undo with 'mammoth view task delete' or 'mammoth view version apply')."
       ],
       "inputs": {
@@ -2689,11 +2689,11 @@
         },
         "key_columns": {
           "type": "array",
-          "required": true,
+          "required": false,
           "example": [
             "Order ID"
           ],
-          "help": "The columns that make a row a duplicate (display names)."
+          "help": "The columns that make a row a duplicate (display names). Leave out to compare whole rows."
         },
         "in_place": {
           "type": "any",
@@ -3769,7 +3769,8 @@
           "example": [
             "Region"
           ],
-          "help": "The columns to group by (display names); one or several."
+          "help": "The columns to group by (display names); one or several.",
+          "also_string": true
         },
         "column": {
           "type": "string",
