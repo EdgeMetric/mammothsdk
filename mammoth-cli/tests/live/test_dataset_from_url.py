@@ -54,7 +54,8 @@ def test_follow_false_makes_a_copy_and_follow_true_links_it_again(
         "--yes",
         project=scratch_project,
     )
-    assert off == {"follow_link": False}
+    # The server answers {"follow_link": x}; the write envelope adds "state" and "verify".
+    assert off["follow_link"] is False
     assert dataset not in _linked(live_cli, scratch_project)
 
     on, _ = live_cli.ok(
@@ -62,5 +63,5 @@ def test_follow_false_makes_a_copy_and_follow_true_links_it_again(
         "--yes",
         project=scratch_project,
     )
-    assert on == {"follow_link": True}
+    assert on["follow_link"] is True
     assert dataset in _linked(live_cli, scratch_project)

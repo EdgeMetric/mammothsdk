@@ -23,8 +23,12 @@ def _resource_id(sales_data: SalesData) -> int:
         listed = service.call(
             "mammoth.api.browse.BrowseAPI.resources_list", project_id=sales_data.project, limit=100
         )
+    # A dataset is a "datasource" resource whose ``object_id`` is the dataset id; ``id`` is the
+    # resource's own row id, and ``resource_id`` is what the downloads routes take.
     return next(
-        row["resource_id"] for row in listed["resources"] if row["id"] == sales_data.dataset
+        row["resource_id"]
+        for row in listed["resources"]
+        if row["resource_type"] == "datasource" and row["object_id"] == sales_data.dataset
     )
 
 
