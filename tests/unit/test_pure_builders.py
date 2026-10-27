@@ -890,6 +890,9 @@ class TestRepeatRows:
     def test_times(self) -> None:
         assert b.build_repeat_params(COLS, INTERNALS, times=2) == {"REPEAT": {"TIMES": 2}}
 
+    def test_times_bounds_pass(self) -> None:
+        assert b.build_repeat_params(COLS, INTERNALS, times=10_000) == {"REPEAT": {"TIMES": 10_000}}
+
     @pytest.mark.parametrize("times", [1, 10_001, True])
     def test_times_out_of_range(self, times: int) -> None:
         with pytest.raises(MammothValidationError, match="times must be a whole number"):
