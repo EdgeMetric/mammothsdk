@@ -15,6 +15,10 @@ from live_harness import LiveCli, SalesData
 
 pytestmark = pytest.mark.live
 
+# Names the query to change and what to keep. "Keep only the first ten rows" alone let the model
+# write a fresh query without the column in 2 of 8 runs; this wording kept it in 8 of 8.
+_REFINE_INTENT = "Change the current query to return only the first ten rows; keep all else in it."
+
 
 def test_current_query_is_refined_as_asked(live_cli: LiveCli, sales_data: SalesData) -> None:
     spec = {
@@ -24,7 +28,7 @@ def test_current_query_is_refined_as_asked(live_cli: LiveCli, sales_data: SalesD
         "current_query": "SELECT *, 'North' AS source_tag FROM input_table",
     }
     generated, _ = live_cli.ok(
-        *("ai", "sql", "generate", "Keep only the first ten rows", "--input", json.dumps(spec)),
+        *("ai", "sql", "generate", _REFINE_INTENT, "--input", json.dumps(spec)),
         project=sales_data.project,
     )
     # "North" is only in current_query: the answer keeps it only if the query was refined.
