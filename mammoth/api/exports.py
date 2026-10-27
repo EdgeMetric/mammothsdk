@@ -769,7 +769,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = self._require_project_id()
+        self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -843,7 +843,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = self._require_project_id()
+        self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
