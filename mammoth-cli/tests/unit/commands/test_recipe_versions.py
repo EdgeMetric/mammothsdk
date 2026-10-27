@@ -75,9 +75,14 @@ def test_discard_duplicates_takes_key_columns() -> None:
     validate_input_fields("view.transform.discard-duplicates", {"key_columns": ["Order ID"]})
 
 
-def test_remove_duplicates_runs_on_a_copy_unless_in_place() -> None:
+def test_remove_duplicates_edits_the_named_view_unless_a_copy_is_asked_for() -> None:
     recipe = next(r for r in runnable_recipes() if r["id"] == "remove-duplicates")
-    assert recipe["inputs"]["in_place"]["default"] is False
+    assert recipe["inputs"]["copy"]["default"] is False
+    by_name = {line["name"]: line for line in recipe["run"]}
+    assert by_name["edit"]["args"] == ["{{inputs.view_id}}"]  # the named view, no copy step
+    assert by_name["edit"]["when"] == {"not": "{{inputs.copy}}"}
+    assert by_name["copy"]["when"] == "{{inputs.copy}}"
+    assert by_name["edit_copy"]["args"] == ["{{steps.copy.data.view_id}}"]
     previews = [line for line in recipe["run"] if line["name"] == "preview"]
     assert previews and previews[0]["flags"] == {"dry-run": True}
     assert all("when" in line for line in recipe["run"] if line["name"] != "preview")
@@ -122,4 +127,4 @@ def test_summarize_by_still_takes_one_group_name_as_a_string() -> None:
 def test_remove_duplicates_without_key_columns_compares_whole_rows() -> None:
     recipe = _recipe_named("remove-duplicates")
     values = recipe_cmd._inputs(recipe, {"view_id": 1, "dataset_id": 2})
-    assert values["key_columns"] is None and values["in_place"] is False
+    assert values["key_columns"] is None and values["copy"] is False

@@ -99,7 +99,7 @@ def _rows(cli: LiveCli, project: int, dataset: int, view: int) -> list[dict[str,
     return rows
 
 
-def test_remove_duplicates_by_key_previews_then_edits_a_copy(
+def test_remove_duplicates_by_key_previews_then_edits_the_named_view(
     live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
     dataset, view = upload(_ORDERS)
@@ -109,36 +109,33 @@ def test_remove_duplicates_by_key_previews_then_edits_a_copy(
     assert dry["data"]["version"] >= 2
     counted = [m for m in dry["data"]["predicted_impact"] if m["impact"] == "counted"]
     assert counted, dry["data"]["predicted_impact"]
-    impact = dry_lines[0]["data"]["predicted_impact"]  # the preview line, on the original view
+    impact = dry_lines[0]["data"]["predicted_impact"]  # the preview line
     assert (impact["rows_removed"], impact["row_count"], impact["exact"]) == (2, 6, True)
-    assert _row_count(live_cli, scratch_project, dataset, view) == 6
+    assert _row_count(live_cli, scratch_project, dataset, view) == 6  # a dry run changes nothing
 
+    lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
+    assert summary["data"]["failed"] == 0, lines
+    kept = _rows(live_cli, scratch_project, dataset, view)
+    assert sorted(row["Order ID"] for row in kept) == ["o1", "o2", "o3", "o4"]
+    listed, _ = live_cli.ok("view", "list", str(dataset), project=scratch_project)
+    assert len(listed["dataviews"]) == 1  # no copy was made
+
+
+def test_remove_duplicates_with_copy_leaves_the_original_unchanged(
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
+) -> None:
+    dataset, view = upload(_ORDERS)
+    inputs = {
+        "view_id": view,
+        "dataset_id": dataset,
+        "key_columns": ["Order ID", "Customer", "Amount"],
+        "copy": True,
+    }
     lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
     assert summary["data"]["failed"] == 0, lines
     assert _row_count(live_cli, scratch_project, dataset, view) == 6  # the original is untouched
     copy = next(e for e in lines if e["data"].get("view_id") not in (None, view))
     kept = _rows(live_cli, scratch_project, dataset, int(copy["data"]["view_id"]))
-    assert sorted(row["Order ID"] for row in kept) == ["o1", "o2", "o3", "o4"]
-
-
-def test_remove_duplicates_in_place_edits_the_named_view(
-    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
-) -> None:
-    dataset, view = upload(_ORDERS)
-    working, _ = live_cli.ok(
-        "view", "create", str(dataset), "--input", json.dumps({"clone_from": view}),
-        project=scratch_project,
-    )  # fmt: skip
-    mine = int(working["view_id"])
-    inputs = {
-        "view_id": mine,
-        "dataset_id": dataset,
-        "key_columns": ["Order ID", "Customer", "Amount"],
-        "in_place": True,
-    }
-    _, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
-    assert summary["data"]["failed"] == 0
-    kept = _rows(live_cli, scratch_project, dataset, mine)
     assert sorted((row["Order ID"], row["Amount"]) for row in kept) == [
         ("o1", "10"),
         ("o2", "20"),
@@ -146,7 +143,6 @@ def test_remove_duplicates_in_place_edits_the_named_view(
         ("o3", "30"),
         ("o4", "40"),
     ]
-    assert _row_count(live_cli, scratch_project, dataset, view) == 6  # the other view is untouched
 
 
 def test_discard_duplicates_refuses_key_columns_with_ignore_columns_or_in_a_batch(
@@ -171,7 +167,7 @@ def test_discard_duplicates_refuses_key_columns_with_ignore_columns_or_in_a_batc
     assert _row_count(live_cli, scratch_project, dataset, view) == 6
 
 
-def test_remove_duplicates_without_key_columns_compares_whole_rows(
+def test_remove_duplicates_without_key_columns_compares_whole_rows_in_place(
     live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
     dataset, view = upload(_ORDERS)
@@ -179,8 +175,7 @@ def test_remove_duplicates_without_key_columns_compares_whole_rows(
         live_cli, scratch_project, "remove-duplicates", {"view_id": view, "dataset_id": dataset}
     )
     assert summary["data"]["failed"] == 0, lines
-    copy = next(e for e in lines if e["data"].get("view_id") not in (None, view))
-    assert _row_count(live_cli, scratch_project, dataset, int(copy["data"]["view_id"])) == 5
+    assert _row_count(live_cli, scratch_project, dataset, view) == 5
 
 
 def test_remove_duplicates_with_an_unknown_key_fails_loud(

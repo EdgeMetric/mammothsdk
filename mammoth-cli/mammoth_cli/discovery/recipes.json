@@ -2651,7 +2651,7 @@
         },
         {
           "command_id": "view.create",
-          "purpose": "Make a copy to work on (skipped when in_place is true).",
+          "purpose": "Only when copy is true: make a copy to work on, so the original stays as it is.",
           "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
           "key_flags": []
         },
@@ -2672,7 +2672,7 @@
       ],
       "notes": [
         "key_columns are the columns that make a row a duplicate (every other column is ignored); without them whole rows are compared. The count in the preview is exact unless it says otherwise; zero duplicates stops the recipe before any copy is made.",
-        "By default the work happens on a copy of the view (the original is unchanged; trash the copy to undo). Pass in_place true to edit the named view itself (undo with 'mammoth view task delete' or 'mammoth view version apply')."
+        "The named view is edited in place (undo with 'mammoth view task delete' or 'mammoth view version apply'). Pass copy true to work on a copy instead (the original is unchanged; trash the copy to undo)."
       ],
       "inputs": {
         "view_id": {
@@ -2695,11 +2695,11 @@
           ],
           "help": "The columns that make a row a duplicate (display names). Leave out to compare whole rows."
         },
-        "in_place": {
+        "copy": {
           "type": "any",
           "required": false,
           "example": false,
-          "help": "true edits the view itself; false (default) works on a copy.",
+          "help": "true works on a copy of the view and leaves the original as it is; false (default) edits the view itself.",
           "default": false
         }
       },
@@ -2721,9 +2721,7 @@
         {
           "name": "copy",
           "cmd": "view create",
-          "when": {
-            "not": "{{inputs.in_place}}"
-          },
+          "when": "{{inputs.copy}}",
           "args": [
             "{{inputs.dataset_id}}"
           ],
@@ -2734,9 +2732,7 @@
         {
           "name": "edit_copy",
           "cmd": "view transform discard-duplicates",
-          "when": {
-            "not": "{{inputs.in_place}}"
-          },
+          "when": "{{inputs.copy}}",
           "args": [
             "{{steps.copy.data.view_id}}"
           ],
@@ -2748,7 +2744,9 @@
         {
           "name": "edit",
           "cmd": "view transform discard-duplicates",
-          "when": "{{inputs.in_place}}",
+          "when": {
+            "not": "{{inputs.copy}}"
+          },
           "args": [
             "{{inputs.view_id}}"
           ],
@@ -2760,9 +2758,7 @@
         {
           "name": "readback_copy",
           "cmd": "view data get",
-          "when": {
-            "not": "{{inputs.in_place}}"
-          },
+          "when": "{{inputs.copy}}",
           "args": [
             "{{steps.copy.data.view_id}}",
             "{{inputs.dataset_id}}"
@@ -2771,7 +2767,9 @@
         {
           "name": "readback",
           "cmd": "view data get",
-          "when": "{{inputs.in_place}}",
+          "when": {
+            "not": "{{inputs.copy}}"
+          },
           "args": [
             "{{inputs.view_id}}",
             "{{inputs.dataset_id}}"
