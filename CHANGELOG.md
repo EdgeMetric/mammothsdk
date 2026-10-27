@@ -27,6 +27,27 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
+## mammoth-io 0.8.53, mammoth-cli 2.4.0 (2026-10-27)
+
+### Added (mammoth-io 0.8.53)
+
+- SDK: Repeat Rows. `view.repeat_rows(...)` adds a REPEAT step that repeats each row.
+- SDK: `view.math()` takes `{name}` in an expression to use a workspace or project parameter.
+- SDK: `json_extract` takes a key that is a path of keys and array indexes, not only a single key.
+- SDK: From URL. `ConnectorDraftsAPI.link_preview` previews a link, `DatasetsAPI.follow_link` follows or copies a link dataset, and `DatasetsAPI.links` lists the linked datasets.
+- SDK: bulk download. `ExportsAPI.bulk_download_plan`, `bulk_download_url` and `bulk_download`.
+- SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
+- SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
+
+### Added (mammoth-cli 2.4.0)
+
+- CLI: `view transform repeat-rows` (Repeat Rows).
+- CLI: `view transform math` takes `{name}` in an expression for a workspace or project parameter; `view transform json-extract` takes a key path (keys and array indexes).
+- CLI: From URL: `dataset from-url preview`, `follow` and `links`.
+- CLI: bulk download: `dataset download` and `dataset download-plan`.
+- CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
+- CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI requires `mammoth-io` >=0.8.53.
+
 ## mammoth-cli 2.3.1 (2026-10-26)
 
 ### Fixed (mammoth-cli 2.3.1)
