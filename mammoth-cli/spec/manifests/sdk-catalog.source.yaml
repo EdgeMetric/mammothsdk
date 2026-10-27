@@ -6379,6 +6379,7 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids:
   - GetProjectLinks
+  agent_example: mammoth dataset from-url links
 - sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
   canonical_command: dataset.download
   alias_of: null
