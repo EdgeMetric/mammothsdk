@@ -216,6 +216,9 @@ _EXAMPLES: dict[str, str] = {
         "mammoth view transform math 123 --input"
         ' \'{"expression": "price * quantity", "new_column": "Total", "dataset_id": 456}\''
     ),
+    "view.transform.repeat-rows": (
+        "mammoth view transform repeat-rows 123 --input" ' \'{"times": 2, "dataset_id": 456}\''
+    ),
     "view.transform.small-large": (
         "mammoth view transform small-large 123 --input"
         ' \'{"function": "SMALL", "columns": ["Q1", "Q2"], "new_column": "Low",'
