@@ -122,6 +122,19 @@ _DISCOVERY_SYNONYMS: dict[str, tuple[str, ...]] = {
     "standardise": ("standardize",),
     "normalise": ("normalize",),
     "categorise": ("categorize",),
+    # Purpose words the agent writes where the command text says something else: a ranking
+    # within a group is a window task, disabling an automation is an update, and so on.
+    "ranking": ("rank", "window"),
+    "rank": ("window", "partition"),
+    "partition": ("window", "group"),
+    "dedupe": ("duplicate", "duplicates", "distinct"),
+    "unique": ("distinct", "duplicates"),
+    "ranked": ("rank", "window"),
+    "bq": ("bigquery",),
+    "calculate": ("math", "formula", "expression"),
+    "formula": ("math", "expression"),
+    "disable": ("pause", "update"),
+    "regex": ("pattern", "contains", "replace"),
 }
 
 
@@ -550,9 +563,10 @@ def find_schemas(
     return result
 
 
-#: Keys of an inlined accepted field that a caller needs to fill it in; its
-#: nested JSON Schema is what ``schema get`` is for.
-_FIND_FIELD_KEYS = ("name", "type", "required", "enum")
+#: Keys of an inlined accepted field that a caller needs to fill it in. ``schema`` is the nested
+#: shape of an object-typed field (``GenerateDashboardV3Spec``), set only when it is small enough
+#: to inline; without it the caller sees a bare type name and needs a ``schema get``.
+_FIND_FIELD_KEYS = ("name", "type", "required", "enum", "schema")
 #: Entry keys a find leaves out unless ``--full``: ``schema get`` has them.
 _FIND_DROPPED_KEYS = ("full_schema_command", "known_restrictions", "matched_on")
 

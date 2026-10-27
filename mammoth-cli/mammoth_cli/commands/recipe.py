@@ -20,7 +20,6 @@ returns one envelope: the summary, with each line's envelope in ``lines_run``.
 from __future__ import annotations
 
 import json
-from contextlib import nullcontext
 from typing import Any
 
 from mammoth_cli.commands import run as run_cmd
@@ -66,6 +65,7 @@ def recipe_list(invocation: Invocation) -> HandlerResult:
         {
             "id": recipe["id"],
             "title": recipe["title"],
+            "version": recipe_version(recipe),
             "inputs": recipe.get("inputs", {}),
             "writes": writes(recipe),
             "steps": [line["cmd"] for line in recipe["run"]],
@@ -96,7 +96,8 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
         (number, json.dumps(_confirmed(line, invocation.yes), ensure_ascii=False))
         for number, line in enumerate(recipe["run"], start=1)
     ]
-    with run_cmd.collecting() if embedded.active() else nullcontext() as lines_run:
+    # A host gets the envelopes in one; a terminal still gets them as they stream.
+    with run_cmd.collecting(echo=not embedded.active()) as seen:
         summary = run_cmd.run_lines(
             numbered,
             run_cmd.global_defaults(invocation),
@@ -108,13 +109,46 @@ def recipe_run(invocation: Invocation) -> HandlerResult | Outcome:
             past_partial=True,
         )
     run_exit = summary["exit"]
-    data = {"recipe": recipe["id"], "inputs": inputs, **summary}
-    if lines_run is not None:
+    data = {"recipe": recipe["id"], "version": recipe_version(recipe), "inputs": inputs, **summary}
+    if invocation.dry_run:
+        data["predicted_impact"] = _impact_markers(seen)
+    if embedded.active():
         # A host gets one envelope: the summary, carrying each line's envelope.
-        return Outcome(data={**data, "lines_run": lines_run}, exit_status=run_exit)
+        return Outcome(data={**data, "lines_run": seen}, exit_status=run_exit)
     meta = Meta(command="recipe run", profile=invocation.profile, exit=run_exit, run_id=run_id())
     run_cmd.write_envelope(Result(data=data, meta=meta).to_envelope())
     return Outcome(streamed=True, exit_status=run_exit)
+
+
+def recipe_version(recipe: dict[str, Any]) -> int:
+    """The recipe's version: it goes up when its steps change what a run does."""
+    return int(recipe.get("version", 1))
+
+
+def _impact_markers(envelopes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """For each previewed write, whether its impact is counted, an upper bound or not measured."""
+    markers = []
+    for envelope in envelopes:
+        data = envelope.get("data")
+        if envelope.get("exit") != 0 or not isinstance(data, dict) or "would_call" not in data:
+            continue
+        markers.append(
+            {
+                "line": envelope.get("line"),
+                "cmd": envelope.get("cmd"),
+                "impact": _impact_marker(data.get("predicted_impact")),
+            }
+        )
+    return markers
+
+
+def _impact_marker(impact: Any) -> str:
+    """``counted``, ``upper_bound`` or ``not_measured`` for one step's ``predicted_impact``."""
+    if not isinstance(impact, dict) or impact.get("checked") is False:
+        return "not_measured"
+    if impact.get("exact") is True:
+        return "counted"
+    return "upper_bound"
 
 
 def _destructive_lines(recipe: dict[str, Any]) -> list[str]:
@@ -181,6 +215,13 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
         given = {}
     if not isinstance(given, dict):
         raise _input_error("'inputs' must be an object.", usage)
+    unfilled = sorted(name for name, value in given.items() if _is_placeholder(name, value))
+    if unfilled:
+        raise _input_error(
+            f"Fill in the placeholder inputs before running: {', '.join(unfilled)}.",
+            usage,
+            unfilled=unfilled,
+        )
     unknown = sorted(set(given) - set(declared))
     if unknown:
         raise _input_error(
@@ -200,12 +241,19 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
             values[name] = spec.get("default")
             continue
         value = given[name]
+        if spec.get("also_string") and isinstance(value, str):
+            value = [value]  # version 1 took one name
         allowed = _INPUT_TYPES[spec["type"]]
         # A boolean is an int in Python, but only an 'any' input means it as a value.
         if not isinstance(value, allowed) or (isinstance(value, bool) and spec["type"] != "any"):
             raise _input_error(f"'{name}' must be {spec['type']}.", usage, field=name)
         values[name] = value
     return values
+
+
+def _is_placeholder(name: str, value: Any) -> bool:
+    """Whether ``value`` is the ``<name>`` placeholder ``run_command`` printed for this input."""
+    return bool(value == f"<{name}>")
 
 
 def _input_error(message: str, usage: str, **details: Any) -> CliError:

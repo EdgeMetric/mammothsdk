@@ -13,16 +13,16 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 |------|:------:|-----------------:|-------------:|-------------:|------------:|-------------:|
 | `refresh-daily` | yes | 3 | 4 | 8 | 1 | 2 |
 | `append-rows` | yes | 1 | 3 | 6 | 1 | 2 |
-| `blend-by-key` | yes | 2 | 6 | 12 | 1 | 2 |
-| `upload-dashboard` | yes | 5 | 6 | 12 | 1 | 2 |
+| `blend-by-key` | yes | 4 | 7 | 14 | 1 | 2 |
+| `upload-dashboard` | yes | 2 | 6 | 12 | 1 | 2 |
 | `stuck-upload` | no | 2 | 6 | 12 | 1 | 1 |
 | `export-powerbi` | no | 2 | 3 | 6 | 1 | 1 |
 | `export-csv` | yes | 1 | 2 | 4 | 1 | 2 |
-| `clean-data` | yes | 3 | 4 | 7 | 1 | 2 |
+| `clean-data` | yes | 2 | 4 | 7 | 1 | 2 |
 | `share-dashboard` | yes | 2 | 3 | 6 | 1 | 2 |
 | `cleanup-mine` | yes | 4 | 5 | 9 | 1 | 2 |
-| `upload-clean` | yes | 5 | 5 | 10 | 1 | 2 |
-| `join-files` | yes | 5 | 5 | 9 | 1 | 2 |
+| `upload-clean` | yes | 2 | 5 | 10 | 1 | 2 |
+| `join-files` | yes | 3 | 5 | 9 | 1 | 2 |
 | `lookup-column` | yes | 2 | 3 | 6 | 1 | 2 |
 | `add-calculated-column` | yes | 2 | 3 | 6 | 1 | 2 |
 | `extract-date-part` | yes | 2 | 3 | 6 | 1 | 2 |
@@ -30,19 +30,21 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 | `find-replace` | yes | 2 | 3 | 6 | 1 | 2 |
 | `fill-blanks-with-value` | yes | 2 | 3 | 6 | 1 | 2 |
 | `rename-columns` | yes | 2 | 3 | 6 | 1 | 2 |
-| `remove-duplicates` | yes | 2 | 3 | 6 | 1 | 2 |
+| `remove-duplicates` | yes | 3 | 4 | 8 | 1 | 2 |
 | `pivot-summary` | yes | 3 | 4 | 8 | 1 | 2 |
 | `top-n` | yes | 3 | 4 | 8 | 1 | 2 |
 | `filter-export-csv` | yes | 3 | 4 | 8 | 1 | 2 |
 | `export-xlsx` | yes | 1 | 2 | 4 | 1 | 2 |
-| `export-to-s3` | yes | 2 | 3 | 6 | 1 | 2 |
-| `email-view` | yes | 2 | 3 | 6 | 1 | 2 |
-| `dashboard-from-view` | yes | 2 | 3 | 6 | 1 | 2 |
+| `export-to-s3` | yes | 3 | 4 | 8 | 1 | 2 |
+| `email-view` | yes | 3 | 4 | 8 | 1 | 2 |
+| `dashboard-from-view` | yes | 3 | 3 | 6 | 1 | 2 |
 | `summarize-by` | no | 1 | 2 | 4 | 1 | 1 |
 | `compare-views` | no | 1 | 3 | 5 | 1 | 1 |
 | `refresh-now` | yes | 3 | 3 | 5 | 1 | 2 |
 | `undo-last-change` | yes | 2 | 2 | 4 | 1 | 2 |
 | `revert-view-version` | yes | 3 | 4 | 8 | 1 | 2 |
-| **32 tasks** | | 77 | **113** | **221** | **32** | **60** |
+| `filter-copy` | yes | 4 | 3 | 6 | 1 | 2 |
+| `create-projects` | yes | 1 | 2 | 4 | 1 | 2 |
+| **34 tasks** | | 79 | **122** | **239** | **34** | **64** |
 
-With the recipe and a preview the 32 tasks take 60 calls. Step by step they take 113 (221 with lookups). 29 tasks need fewer calls and 3 the same.
+With the recipe and a preview the 34 tasks take 64 calls. Step by step they take 122 (239 with lookups). 30 tasks need fewer calls and 4 the same.

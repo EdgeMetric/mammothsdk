@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from mammoth_cli.discovery import runnable_recipes, writes
+from mammoth_cli.runtime import bindings
 
 DOC = Path(__file__).resolve().parents[1] / "docs" / "task-call-eval.md"
 
@@ -69,6 +70,33 @@ class TaskCalls:
     recipe_preview: int
 
 
+def _runs(when: Any, scope: dict[str, Any]) -> bool:
+    """Whether a line's ``when`` holds with the default inputs (true when it reads a step)."""
+    try:
+        return bindings.evaluate(when, scope, plan=True) is not False
+    except bindings.BindingError:
+        return True
+
+
+def default_lines(recipe: dict[str, Any]) -> int:
+    """The run lines that run when the caller gives only the required inputs.
+
+    A line gated on an opt-in input (``when: "{{inputs.copy}}"``) is not counted; a line
+    gated on a step not run yet is, since the plan cannot tell.
+
+    Args:
+        recipe: An executable recipe from ``recipes.json``.
+
+    Returns:
+        How many of its run lines run by default.
+    """
+    scope = {
+        "inputs": {name: spec.get("default") for name, spec in recipe.get("inputs", {}).items()},
+        "steps": {},
+    }
+    return sum(1 for line in recipe["run"] if "when" not in line or _runs(line["when"], scope))
+
+
 def count(recipe: dict[str, Any]) -> TaskCalls:
     """The call counts for one executable recipe.
 
@@ -84,7 +112,7 @@ def count(recipe: dict[str, Any]) -> TaskCalls:
     return TaskCalls(
         task=recipe["id"],
         writes=changes,
-        lines=len(recipe["run"]),
+        lines=default_lines(recipe),
         manual=len(steps),
         manual_lookups=len(steps) + len(distinct),
         recipe=1,

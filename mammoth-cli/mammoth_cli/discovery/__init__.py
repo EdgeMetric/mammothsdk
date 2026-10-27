@@ -74,7 +74,10 @@ def task_summaries() -> list[dict[str, Any]]:
 
 
 def run_command(recipe: dict[str, Any]) -> str:
-    """The ``recipe run`` command for a recipe, with each input's example value.
+    """The ``recipe run`` command for a recipe, with each input as a ``<name>`` placeholder.
+
+    A placeholder cannot be mistaken for a real id, and ``recipe run`` rejects one left in.
+    The command carries no ``--yes``: the caller decides about confirmation.
 
     Args:
         recipe: An executable recipe.
@@ -82,10 +85,9 @@ def run_command(recipe: dict[str, Any]) -> str:
     Returns:
         A command line an agent can adapt.
     """
-    example = {name: spec.get("example") for name, spec in recipe.get("inputs", {}).items()}
-    document = json.dumps({"inputs": example}, separators=(", ", ": "))
-    confirm = " --yes" if writes(recipe) else ""
-    return f"mammoth recipe run {recipe['id']} --input '{document}'{confirm}"
+    placeholders = {name: f"<{name}>" for name in recipe.get("inputs", {})}
+    document = json.dumps({"inputs": placeholders}, separators=(", ", ": "))
+    return f"mammoth recipe run {recipe['id']} --input '{document}'"
 
 
 def writes(recipe: dict[str, Any]) -> bool:

@@ -27,6 +27,11 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
+### Changed (next mammoth-cli)
+
+- CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.
+- CLI: `view transform discard-duplicates` takes `key_columns` (the columns that make a row a duplicate; every other column is ignored). `recipe run` refuses an input only when it still holds that input's own `<name>` placeholder.
+
 ## mammoth-cli 2.3.1 (2026-10-26)
 
 ### Fixed (mammoth-cli 2.3.1)

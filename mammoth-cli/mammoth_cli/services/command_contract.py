@@ -764,6 +764,10 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("top", required=False, annotation=int | None, default=None),
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
     ),
+    # ``key_columns`` is turned into ``ignore_columns`` (every other column) by the handler.
+    "view.transform.discard-duplicates": (
+        FieldSpec("key_columns", required=False, annotation=list[str] | None, default=None),
+    ),
     # ``range`` adds the exact earliest and latest value of the explored column.
     "view.data.explore": (
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),

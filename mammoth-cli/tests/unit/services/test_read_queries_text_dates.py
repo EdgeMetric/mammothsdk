@@ -8,6 +8,7 @@ function's docstring in ``mammoth_cli/services/read_queries.py``.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pytest
@@ -389,6 +390,25 @@ def test_the_assumptions_a_read_made_are_attached_as_text_dates() -> None:
     assert assumed["column"] == "Day"
     assert assumed["assumed_format"] == ctx.column_days("Day")[0].label
     assert rq.with_assumptions(ctx, ["x"]) == ["x"]
+
+
+def test_a_text_date_can_be_grouped_by_the_day_of_the_month() -> None:
+    # Recorded: group_by [{"column": "Order Date", "part": "day"}] was refused: weekday, month, ...
+    levels = rq.text_date_group_levels(
+        [{"column": "Order Date", "part": "day"}], {"Order Date": "TEXT"}
+    )
+    assert levels == {0: "part:day"}
+
+    rows = [
+        {"g": "2026-01-10", "n": 2},
+        {"g": "2026-02-10", "n": 3},
+        {"g": "2026-02-03", "n": 4},
+    ]
+    days = {row["g"]: date.fromisoformat(row["g"]) for row in rows}
+    out = text_dates.rebucket(
+        rows, date_key="g", other_keys=[], functions={"n": "SUM"}, days=days, level=levels[0]
+    )
+    assert out == [{"g": 3, "n": 4}, {"g": 10, "n": 5}]
 
 
 # ── bucketing a TEXT date in a pivot ──
