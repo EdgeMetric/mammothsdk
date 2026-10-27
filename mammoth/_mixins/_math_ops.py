@@ -16,6 +16,9 @@ else:
     ViewHost = object
 
 
+_PARAMETER_PAGE = 100
+
+
 class MathOpsMixin(ViewHost):
     """Mixin for arithmetic operations on a View."""
 
@@ -77,19 +80,29 @@ class MathOpsMixin(ViewHost):
 
     async def _parameter_ids(self, names: list[str]) -> dict[str, int]:
         """The id of each named parameter: the client's project's first, then the workspace's."""
-        project_id = getattr(self._client, "project_id", None)
-        scopes = [project_id, None] if project_id is not None else [None]
+        if not names:
+            return {}
+        known = await self._scope_parameter_ids(None)
+        if self._client.project_id is not None:
+            known.update(await self._scope_parameter_ids(self._client.project_id))
+        missing = [name for name in names if name not in known]
+        if missing:
+            raise MammothValidationError(f"math: no parameter named {missing[0]!r}")
+        return {name: known[name] for name in names}
+
+    async def _scope_parameter_ids(self, project_id: int | None) -> dict[str, int]:
+        """Every parameter of one scope (a project, or the workspace) as name -> id."""
         ids: dict[str, int] = {}
-        for name in names:
-            for scope in scopes:
-                found = await self._client.parameters.list(search=name, project_id=scope, limit=100)
-                match = next((p for p in found.get("items", []) if p.get("name") == name), None)
-                if match is not None:
-                    ids[name] = match["id"]
-                    break
-            else:
-                raise MammothValidationError(f"math: no parameter named {name!r}")
-        return ids
+        offset = 0
+        while True:
+            page = await self._client.parameters.list(
+                limit=_PARAMETER_PAGE, offset=offset, project_id=project_id
+            )
+            items = page["items"]
+            ids.update({item["name"]: item["id"] for item in items})
+            offset += len(items)
+            if not items or offset >= page["total_count"]:
+                return ids
 
     async def small_large(
         self,
