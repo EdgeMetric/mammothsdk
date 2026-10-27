@@ -3425,12 +3425,20 @@ class TestAIAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/data/generate")
 
     async def test_generate_sql(self, client: MammothClient):
-        # The route requires the dataset_id query parameter.
-        await client.ai.generate_sql(intent="count employees", dataset_id=48)
+        # The route requires both query parameters; without dataview_id the server writes
+        # against its default view 4, so the call is refused before it is sent.
+        await client.ai.generate_sql(intent="count employees", dataset_id=48, dataview_id=7)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/sql_generation")
-        assert client._request_json.call_args.kwargs["params"] == {"dataset_id": 48}
+        assert client._request_json.call_args.kwargs["params"] == {
+            "dataset_id": 48,
+            "dataview_id": 7,
+        }
         with pytest.raises(MammothValidationError, match="dataset_id"):
-            await client.ai.generate_sql(intent="count employees")
+            await client.ai.generate_sql(intent="count employees", dataview_id=7)
+        client._request_json.reset_mock()
+        with pytest.raises(MammothValidationError, match="dataview_id"):
+            await client.ai.generate_sql(intent="count employees", dataset_id=48)
+        client._request_json.assert_not_called()
 
     async def test_generate_profile_sends_action(self, client: MammothClient):
         await client.ai.generate_profile(dataview_id=42, dataset_id=500, action="data_quality")

@@ -18,12 +18,13 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
 async def test_refining_a_query_changes_it_as_asked(
-    client: MammothClient, uploaded_dataset_id: int
+    client: MammothClient, uploaded_dataset_id: int, base_view_id: int
 ) -> None:
     """Asked only to cap the rows, the answer's SQL still carries the current query's filter."""
     generated = await client.ai.generate_sql(
         "Keep only the first ten rows",
         dataset_id=uploaded_dataset_id,
+        dataview_id=base_view_id,
         current_query="SELECT *, 'North' AS source_tag FROM input_table",
     )
 
