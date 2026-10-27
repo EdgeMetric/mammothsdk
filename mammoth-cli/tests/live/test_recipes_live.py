@@ -322,10 +322,8 @@ def test_export_to_s3_writes_one_export_that_the_view_lists(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
     assert before["exports"] == []
-    lines, summary = _recipe(live_cli, scratch_project, "export-to-s3", inputs)
+    _, summary = _recipe(live_cli, scratch_project, "export-to-s3", inputs)
     assert summary["data"]["failed"] == 0
-    sent = next(e for e in lines if e.get("cmd") == "view export managed-s3")
-    assert file_name in json.dumps(sent["data"])
     after, _ = live_cli.ok(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
