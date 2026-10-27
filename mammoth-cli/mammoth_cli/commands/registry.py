@@ -1137,6 +1137,9 @@ _TARGETS: dict[str, str] = {
     "view.transform.lookup": "mammoth_cli.commands.view_ops.transforms:view_transform_lookup",
     "view.transform.math": "mammoth_cli.commands.view_ops.transforms:view_transform_math",
     "view.transform.pivot": "mammoth_cli.commands.view_ops.transforms:view_transform_pivot",
+    "view.transform.repeat-rows": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_repeat_rows"
+    ),
     "view.transform.rename-columns": (
         "mammoth_cli.commands.view_ops.transforms:view_transform_rename_columns"
     ),
@@ -1224,6 +1227,25 @@ _TARGETS: dict[str, str] = {
     "connector.draft.source.preview": (
         "mammoth_cli.commands.dashboard.generated:generated_dashboard"
     ),
+    # From URL: preview a link, follow or copy a link dataset, list the linked datasets.
+    "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.links": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Download several datasets as one file, and what that would hold.
+    "dataset.download": "mammoth_cli.commands.dataset.download:dataset_download",
+    "dataset.download-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Project moves between workspaces (tech admin).
+    "support.workspace.project.list": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-check": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-start": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.project-move.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "support.project-move.purge": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

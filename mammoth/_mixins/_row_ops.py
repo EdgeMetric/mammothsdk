@@ -1,4 +1,4 @@
-"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows."""
+"""Row operation mixins: fill_missing, limit_rows, discard_duplicates, repeat_rows, unnest, sort."""
 
 from __future__ import annotations
 
@@ -8,9 +8,16 @@ from mammoth._pure.builders import (
     build_discard_duplicates_params,
     build_fill_params,
     build_limit_params,
+    build_repeat_params,
     build_unnest_params,
 )
-from mammoth.models.pipeline import FillDirection, SortDirection
+from mammoth.models.pipeline import (
+    ColumnType,
+    FillDirection,
+    RepeatOrder,
+    RepeatSeries,
+    SortDirection,
+)
 
 if TYPE_CHECKING:
     from mammoth._mixins._host import ViewHost
@@ -121,6 +128,75 @@ class RowOpsMixin(ViewHost):
         """
         return await self._add_task(
             build_discard_duplicates_params(self.columns, self._internal_names, ignore_columns)
+        )
+
+    async def repeat_rows(
+        self,
+        times: int | None = None,
+        values: list[str | int | float] | None = None,
+        series: RepeatSeries | None = None,
+        new_column: str | None = None,
+        new_column_type: ColumnType | None = None,
+        existing_column: str | None = None,
+        keep_original: bool | None = None,
+        order: RepeatOrder | None = None,
+    ) -> dict[str, Any]:
+        """Repeat every row (REPEAT task).
+
+        Give exactly one of *times*, *values* or *series*.
+
+        Args:
+            times: Copies of each row, 2 to 10000. Writes no column.
+            values: 1 to 1000 unique values; each row is copied once per value
+                and the value is written into the column below.
+            series: A :class:`RepeatSeries`: each row is copied once per value of
+                a date or number range.
+            new_column: Display name of a new column for the value (with *values*
+                or *series*). Give this or *existing_column*.
+            new_column_type: Type of the new column for *values* (TEXT or
+                NUMERIC). A *series* implies its own (DATE or NUMERIC).
+            existing_column: Display name of an existing TEXT or NUMERIC (DATE
+                for a date series) column to write the value into.
+            keep_original: With *values* into *existing_column*, also keep the
+                rows as they were.
+            order: ``RepeatOrder.GROUPED`` (all rows per value, one value after
+                the other) or ``INTERLEAVED`` (each row followed by its copies).
+                Not with *times*.
+
+        Returns:
+            API response dict.
+
+        Examples::
+
+            from mammoth import DateDelta, RepeatSeries
+
+            # Every row twice
+            await view.repeat_rows(times=2)
+
+            # One row per region
+            await view.repeat_rows(values=["North", "South"], new_column="Region",
+                                   new_column_type=ColumnType.TEXT)
+
+            # One row per month of 2026
+            await view.repeat_rows(
+                series=RepeatSeries("2026-01-01", "2026-12-31", delta=DateDelta(months=1)),
+                new_column="Month",
+            )
+        """
+        return await self._add_task(
+            build_repeat_params(
+                self.columns,
+                self._internal_names,
+                times=times,
+                values=values,
+                series=series,
+                new_column=new_column,
+                new_column_type=new_column_type,
+                existing_column=existing_column,
+                keep_original=keep_original,
+                order=order,
+                name_gen=self._next_internal_name,
+            )
         )
 
     async def unnest(

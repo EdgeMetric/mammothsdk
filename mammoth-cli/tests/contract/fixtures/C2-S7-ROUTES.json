@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 222,
+  "route_count": 227,
   "families": {
     "activity": 2,
     "agent": 44,
@@ -10,7 +10,7 @@
     "billing": 27,
     "client-app": 5,
     "schedule": 5,
-    "support": 112,
+    "support": 117,
     "token": 3,
     "user": 7
   },
@@ -5285,6 +5285,194 @@
         "method": "GET",
         "path": "/support/workspaces",
         "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.project-move.get",
+      "operation_id": "GetProjectMove",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_get",
+      "field_destinations": {
+        "move_id": {
+          "source": "positional",
+          "destination": "move_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/support/project-moves/{move_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.project-move.purge",
+      "operation_id": "PurgeProjectMove",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_purge",
+      "field_destinations": {
+        "move_id": {
+          "source": "positional",
+          "destination": "move_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/support/project-moves/{move_id}/purge",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.workspace.project.list",
+      "operation_id": "ListProjects",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.workspace_project_list",
+      "field_destinations": {
+        "workspace_id": {
+          "source": "positional",
+          "destination": "workspace_id"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/support/workspaces/{workspace_id}/projects",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.workspace.project.move-check",
+      "operation_id": "CheckProjectMove",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_check",
+      "field_destinations": {
+        "workspace_id": {
+          "source": "positional",
+          "destination": "workspace_id"
+        },
+        "project_id": {
+          "source": "positional",
+          "destination": "project_id"
+        },
+        "target_workspace_id": {
+          "source": "input",
+          "destination": "target_workspace_id",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/support/workspaces/{workspace_id}/projects/{project_id}/move",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "support.workspace.project.move-start",
+      "operation_id": "StartProjectMove",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_start",
+      "field_destinations": {
+        "workspace_id": {
+          "source": "positional",
+          "destination": "workspace_id"
+        },
+        "project_id": {
+          "source": "positional",
+          "destination": "project_id"
+        },
+        "target_workspace_id": {
+          "source": "input",
+          "destination": "target_workspace_id",
+          "wire": "sdk_argument"
+        },
+        "acknowledged_warnings": {
+          "source": "input",
+          "destination": "acknowledged_warnings",
+          "wire": "sdk_argument"
+        }
+      },
+      "context_destinations": {},
+      "wire": {
+        "method": "POST",
+        "path": "/support/workspaces/{workspace_id}/projects/{project_id}/move",
+        "body": "json:StartMoveRequest",
         "checks": [
           "method",
           "path",

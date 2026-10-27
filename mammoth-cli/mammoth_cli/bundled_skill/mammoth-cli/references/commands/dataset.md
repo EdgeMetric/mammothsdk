@@ -132,6 +132,26 @@ Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_y
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted dataset 85 (main fixture.csv/view 106) after get-back confirmed id/name. Single invocation only.
 
+### `dataset.download`
+
+Run: `mammoth dataset download`. Exact input fields: `mammoth schema get dataset.download`.
+
+Example: `mammoth dataset download --input '{"resource_ids": [12, 13], "name": "sales", "file_type": "csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDownloadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.download-plan`
+
+Run: `mammoth dataset download-plan`. Exact input fields: `mammoth schema get dataset.download-plan`.
+
+Example: `mammoth dataset download-plan --input '{"resource_ids": [12, 13]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDownloadPlanResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.file-settings.get`
 
 Run: `mammoth dataset file-settings get`. Exact input fields: `mammoth schema get dataset.file-settings.get`.
@@ -169,6 +189,36 @@ Run: `mammoth dataset find`. Exact input fields: `mammoth schema get dataset.fin
 Example: `mammoth dataset find sales`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.follow`
+
+Run: `mammoth dataset from-url follow`. Exact input fields: `mammoth schema get dataset.from-url.follow`.
+
+Example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlFollowResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.links`
+
+Run: `mammoth dataset from-url links`. Exact input fields: `mammoth schema get dataset.from-url.links`.
+
+Example: `mammoth dataset from-url links`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlLinksResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.preview`
+
+Run: `mammoth dataset from-url preview`. Exact input fields: `mammoth schema get dataset.from-url.preview`.
+
+Example: `mammoth dataset from-url preview https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

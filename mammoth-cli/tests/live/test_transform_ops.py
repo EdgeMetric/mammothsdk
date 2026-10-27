@@ -15,6 +15,7 @@ import csv
 import io
 import json
 import time
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
@@ -258,6 +259,72 @@ def test_first_name_needs_exactly_one_destination(items: Table) -> None:
     error = items.err("first-name", column="Name")
 
     assert "new_column or existing_column" in json.dumps(error)
+    assert items.steps() == before
+
+
+def test_math_uses_a_parameter_written_in_braces(source: Source, items: Table) -> None:
+    name = f"live_factor_{uuid.uuid4().hex[:8]}"
+    created, _ = source.cli.ok(
+        *("parameter", "create"),
+        *("--input", json.dumps({"name": name, "param_type": "NUMERIC", "value": 2})),
+        project=source.project,
+    )
+    try:
+        items.ok("math", expression=f"Cost * {{{name}}}", new_column="Scaled")
+
+        assert items.total("Scaled") == 200
+    finally:
+        source.cli.run(
+            *("parameter", "delete", str(created["id"]), "--yes"), project=source.project
+        )
+
+
+def test_json_extract_takes_a_key_path_into_nested_objects(items: Table) -> None:
+    doc = '{"company": {"location": {"country": "Peru"}}, "tags": ["x", "y"]}'
+    items.ok("set-values", new_column="Doc", values=[{"value": doc}])
+
+    items.ok(
+        "json-extract",
+        column="Doc",
+        extractions=[
+            {"key": ["company", "location", "country"], "as_name": "Country"},
+            {"key": ["tags", 1], "as_name": "Second tag"},
+        ],
+    )
+
+    assert items.values("Country") == ["Peru"] * 4
+    assert items.values("Second tag") == ["y"] * 4
+
+
+# -- repeat-rows ----------------------------------------------------------------
+
+
+def test_repeat_rows_values_make_one_copy_of_each_row_per_value(items: Table) -> None:
+    data = items.ok("repeat-rows", values=["a", "b"], new_column="Tag", new_column_type="TEXT")
+
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 8}
+    assert items.values("Tag") == ["a"] * 4 + ["b"] * 4
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_times_doubles_the_rows(items: Table) -> None:
+    items.ok("repeat-rows", times=2)
+
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_number_series_names_its_values(items: Table) -> None:
+    items.ok("repeat-rows", series={"start": 1, "end": 3, "step": 1}, new_column="N")
+
+    assert sorted(set(items.values("N"))) == [1, 2, 3]
+
+
+def test_repeat_rows_needs_exactly_one_mode(items: Table) -> None:
+    before = items.steps()
+
+    error = items.err("repeat-rows")
+
+    assert "exactly one of times, values or series" in json.dumps(error)
     assert items.steps() == before
 
 

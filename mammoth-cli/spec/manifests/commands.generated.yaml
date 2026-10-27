@@ -15888,6 +15888,81 @@ commands:
   undo_test: null
   known_restrictions: Immutable dataset-ID confirmation.
   reviewed_by: primary
+- command_id: dataset.download
+  command_path: dataset download
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CreateDownload
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.bulk_download with validated request fields.
+  request_model: DatasetDownloadRequest
+  result_model: DatasetDownloadResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dataset outside Mammoth; the produced file cannot be recalled.
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-DOWNLOAD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset download --help
+  agent_example: 'mammoth dataset download --input ''{"resource_ids": [12, 13], "name": "sales", "file_type":
+    "csv"}'''
+  unit_tests:
+  - UT-DATASET-DOWNLOAD
+  contract_tests:
+  - CT-DATASET-DOWNLOAD-HUMAN
+  - CT-DATASET-DOWNLOAD-JSON
+  - CT-DATASET-DOWNLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Queues one file (csv, a zip of csvs, or one xlsx workbook) of the given datasets,
+    views and folders, waits, and writes it locally; refuses an existing file unless --overwrite.
+  reviewed_by: primary
+- command_id: dataset.download-plan
+  command_path: dataset download-plan
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PlanDownload
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_plan
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.bulk_download_plan with validated request fields.
+  request_model: DatasetDownloadPlanRequest
+  result_model: DatasetDownloadPlanResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-DOWNLOAD-PLAN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset download-plan --help
+  agent_example: 'mammoth dataset download-plan --input ''{"resource_ids": [12, 13]}'''
+  unit_tests:
+  - UT-DATASET-DOWNLOAD-PLAN
+  contract_tests:
+  - CT-DATASET-DOWNLOAD-PLAN-HUMAN
+  - CT-DATASET-DOWNLOAD-PLAN-JSON
+  - CT-DATASET-DOWNLOAD-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Reads headers only: how many datasets a download holds and how many files it is
+    with same-column datasets stacked.'
+  reviewed_by: primary
 - command_id: dataset.file-settings.get
   command_path: dataset file-settings get
   disposition: command
@@ -16017,6 +16092,127 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.from-url.follow
+  command_path: dataset from-url follow
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDataset
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.follow_link
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.follow_link with validated request fields.
+  request_model: DatasetFromUrlFollowRequest
+  result_model: DatasetFromUrlFollowResult
+  mutation_class: benign_mutation
+  edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset from url; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-FROM-URL-FOLLOW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url follow DATASET_ID --help
+  agent_example: 'mammoth dataset from-url follow 123 --input ''{"follow": false}'''
+  unit_tests:
+  - UT-DATASET-FROM-URL-FOLLOW
+  contract_tests:
+  - CT-DATASET-FROM-URL-FOLLOW-HUMAN
+  - CT-DATASET-FROM-URL-FOLLOW-JSON
+  - CT-DATASET-FROM-URL-FOLLOW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Follow true keeps the dataset refreshing from its link; follow false makes it a
+    copy.
+  reviewed_by: primary
+- command_id: dataset.from-url.links
+  command_path: dataset from-url links
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetProjectLinks
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.links
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.links with validated request fields.
+  request_model: DatasetFromUrlLinksRequest
+  result_model: DatasetFromUrlLinksResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-FROM-URL-LINKS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url links --help
+  agent_example: mammoth dataset from-url links
+  unit_tests:
+  - UT-DATASET-FROM-URL-LINKS
+  contract_tests:
+  - CT-DATASET-FROM-URL-LINKS-HUMAN
+  - CT-DATASET-FROM-URL-LINKS-JSON
+  - CT-DATASET-FROM-URL-LINKS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.from-url.preview
+  command_path: dataset from-url preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewLinkFile
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: URL slug identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview with validated request
+    fields.
+  request_model: DatasetFromUrlPreviewRequest
+  result_model: DatasetFromUrlPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-FROM-URL-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url preview URL --help
+  agent_example: mammoth dataset from-url preview https://example.com/data.csv
+  unit_tests:
+  - UT-DATASET-FROM-URL-PREVIEW
+  contract_tests:
+  - CT-DATASET-FROM-URL-PREVIEW-HUMAN
+  - CT-DATASET-FROM-URL-PREVIEW-JSON
+  - CT-DATASET-FROM-URL-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reads the file at the link and keeps nothing; use it before creating a dataset from
+    a URL.
   reviewed_by: primary
 - command_id: dataset.get
   command_path: dataset get
@@ -23228,6 +23424,91 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: support.project-move.get
+  command_path: support project-move get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetProjectMove
+  positionals:
+  - name: move_id
+    type: int
+    required: true
+    metavar: MOVE_ID
+    falls_back_to_field: null
+    help: ID of the move.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_get with validated request fields.
+  request_model: SupportProjectMoveGetRequest
+  result_model: SupportProjectMoveGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support project-move get MOVE_ID --help
+  agent_example: mammoth support project-move get 123
+  unit_tests:
+  - UT-SUPPORT-PROJECT-MOVE-GET
+  contract_tests:
+  - CT-SUPPORT-PROJECT-MOVE-GET-HUMAN
+  - CT-SUPPORT-PROJECT-MOVE-GET-JSON
+  - CT-SUPPORT-PROJECT-MOVE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Status, error and progress of a project move.
+  reviewed_by: primary
+- command_id: support.project-move.purge
+  command_path: support project-move purge
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PurgeProjectMove
+  positionals:
+  - name: move_id
+    type: int
+    required: true
+    metavar: MOVE_ID
+    falls_back_to_field: null
+    help: ID of the move.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_purge
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_purge with validated request fields.
+  request_model: SupportProjectMovePurgeRequest
+  result_model: SupportProjectMovePurgeResult
+  mutation_class: high_impact
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support project move; the earlier value is not kept, so it cannot be restored.
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support project-move purge MOVE_ID --help
+  agent_example: mammoth support project-move purge 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PROJECT-MOVE-PURGE
+  contract_tests:
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-HUMAN
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-JSON
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Deletes the source copies a finished move left behind; files not
+    safe in the target are skipped.
+  reviewed_by: primary
 - command_id: support.search
   command_path: support search
   disposition: command
@@ -24792,6 +25073,146 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.project.list
+  command_path: support workspace project list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListProjects
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_project_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_project_list with validated request fields.
+  request_model: SupportWorkspaceProjectListRequest
+  result_model: SupportWorkspaceProjectListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project list WORKSPACE_ID --help
+  agent_example: mammoth support workspace project list 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-LIST
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Lists the workspace's projects, each with its unfinished move.
+  reviewed_by: primary
+- command_id: support.workspace.project.move-check
+  command_path: support workspace project move-check
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CheckProjectMove
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_check
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_check with validated request fields.
+  request_model: SupportWorkspaceProjectMoveCheckRequest
+  result_model: SupportWorkspaceProjectMoveCheckResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project move-check WORKSPACE_ID PROJECT_ID --help
+  agent_example: 'mammoth support workspace project move-check 123 456 --input ''{"target_workspace_id":
+    1}'''
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Tech admin only. Read-only: blockers refuse the move, warnings must be acknowledged
+    to start it.'
+  reviewed_by: primary
+- command_id: support.workspace.project.move-start
+  command_path: support workspace project move-start
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - StartProjectMove
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_start
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_start with validated request fields.
+  request_model: SupportWorkspaceProjectMoveStartRequest
+  result_model: SupportWorkspaceProjectMoveStartResult
+  mutation_class: high_impact
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace project; the earlier value is not kept, so it cannot be restored.
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project move-start WORKSPACE_ID PROJECT_ID --help
+  agent_example: 'mammoth support workspace project move-start 123 456 --input ''{"target_workspace_id":
+    1}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-MOVE-START
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Queues the move of a project to another workspace, or resumes its
+    unfinished move; follow it with support project-move get.
   reviewed_by: primary
 - command_id: support.workspace.restore-access
   command_path: support workspace restore-access
@@ -31239,7 +31660,10 @@ commands:
   known_restrictions: json_type=LIST (JSON_LIST_TO_ROWS) gives one row per list element, landing in an
     Item column (plus an Index column for its original position); with no keys/extractions this is the
     default. An object element does not get columns from this call -- run a second json-extract (json_type=OBJECT)
-    on Item to turn its keys into columns.
+    on Item to turn its keys into columns. An extraction key is one object key (a string) or a path to
+    a nested value, a non-empty JSON list of keys (strings) and array indexes (integers from 0), for example
+    "key" ["company", "location", "country"] or ["orders", 0, "total"]. A path with no as_name names its
+    column company.location.country.
   reviewed_by: primary
 - command_id: view.transform.limit-rows
   command_path: view transform limit-rows
@@ -31460,6 +31884,49 @@ commands:
   - CT-VIEW-TRANSFORM-RENAME-COLUMNS-ERROR
   draft_test: LT-VIEW-TRANSFORM-RENAME-COLUMNS-DRAFT
   undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.transform.repeat-rows
+  command_path: view transform repeat-rows
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.repeat_rows with validated request fields.
+  request_model: ViewTransformRepeatRowsRequest
+  result_model: ViewTransformRepeatRowsResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  undo:
+    strategy: pipeline_version
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-REPEAT-ROWS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform repeat-rows VIEW_ID --help
+  agent_example: 'mammoth view transform repeat-rows 123 --input ''{"dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-REPEAT-ROWS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-HUMAN
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-JSON
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-REPEAT-ROWS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-REPEAT-ROWS-UNDO
   known_restrictions: null
   reviewed_by: primary
 - command_id: view.transform.replace

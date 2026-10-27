@@ -63,7 +63,8 @@ CODE_BATCH_STEP_FAILED = "batch_step_failed"
 CODE_UNKNOWN_COLUMN = "unknown_column"
 _BATCH_COLUMN_HINT = (
     "A batch is built against the view's columns plus the ones the earlier steps of the batch "
-    "add (split, copy-columns, and any new_column of substring, extract-date, increment-date). "
+    "add (split, copy-columns, and any new_column of substring, extract-date, increment-date, "
+    "repeat-rows). "
     "A column in neither is unknown: check its name, or run the step that creates it first."
 )
 
@@ -164,8 +165,8 @@ def _step_error(index: int, op: str, error: CliError) -> CliError:
 def _created_columns(task_spec: dict[str, Any]) -> list[dict[str, str]]:
     """The ``{COLUMN, TYPE, INTERNAL_NAME}`` columns a built task adds, from its ``AS`` outputs.
 
-    ``AS`` is one column (substring, extract-date, increment-date), a list of them (split) or
-    sits on each item of the task's list (copy-columns).
+    ``AS`` is one column (substring, extract-date, increment-date, repeat-rows), a list of them
+    (split) or sits on each item of the task's list (copy-columns).
     """
     columns: list[dict[str, str]] = []
     for body in task_spec.values():

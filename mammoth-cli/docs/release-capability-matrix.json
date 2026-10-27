@@ -27,8 +27,8 @@
   },
   "mapping_counts": {
     "alias": 2,
-    "cli_and_sdk_mapped": 700,
-    "internal_only": 43,
+    "cli_and_sdk_mapped": 705,
+    "internal_only": 38,
     "protocol_only": 11,
     "removed_on_server": 13
   },
@@ -42,6 +42,52 @@
         "mammoth.api.agents.AgentsAPI._run_action"
       ],
       "commands": []
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/connector-drafts/link-preview",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7166)",
+      "sdk_symbols": [
+        "mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview"
+      ],
+      "commands": [
+        "dataset.from-url.preview"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/links",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7169)",
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.links"
+      ],
+      "commands": [
+        "dataset.from-url.links"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/downloads",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7203)",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.bulk_download_url"
+      ],
+      "commands": []
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/downloads/plan",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7203)",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.bulk_download_plan"
+      ],
+      "commands": [
+        "dataset.download-plan"
+      ]
     }
   ],
   "commands_without_route": [
@@ -49,6 +95,7 @@
     "calc",
     "capabilities",
     "connector.connection.query",
+    "dataset.download",
     "dataset.find",
     "dataset.schema-diff",
     "folder.find",
@@ -7463,6 +7510,7 @@
       "schema_id": "dataset.update",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.update",
       "bound_commands": [
+        "dataset.from-url.follow",
         "dataset.refresh",
         "dataset.rename",
         "dataset.update"
@@ -11609,6 +11657,7 @@
         "view.transform.lookup",
         "view.transform.math",
         "view.transform.pivot",
+        "view.transform.repeat-rows",
         "view.transform.replace",
         "view.transform.set-values",
         "view.transform.small-large",
@@ -16568,12 +16617,14 @@
       "operation_id": "GetProjectMove",
       "method": "GET",
       "path": "/support/project-moves/{move_id}",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Staff-only support route: status of a project move.",
+      "canonical_command": "support.project-move.get",
+      "schema_id": "support.project-move.get",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_get",
+      "bound_commands": [
+        "support.project-move.get"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -16586,12 +16637,14 @@
       "operation_id": "PurgeProjectMove",
       "method": "POST",
       "path": "/support/project-moves/{move_id}/purge",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Staff-only support route: purges the source of a finished project move.",
+      "canonical_command": "support.project-move.purge",
+      "schema_id": "support.project-move.purge",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_purge",
+      "bound_commands": [
+        "support.project-move.purge"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -16784,12 +16837,14 @@
       "operation_id": "ListProjects",
       "method": "GET",
       "path": "/support/workspaces/{workspace_id}/projects",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Staff-only support route: lists a workspace's projects.",
+      "canonical_command": "support.workspace.project.list",
+      "schema_id": "support.workspace.project.list",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.workspace_project_list",
+      "bound_commands": [
+        "support.workspace.project.list"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -16802,12 +16857,14 @@
       "operation_id": "CheckProjectMove",
       "method": "GET",
       "path": "/support/workspaces/{workspace_id}/projects/{project_id}/move",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Staff-only support route: dry run of a cross-workspace project move.",
+      "canonical_command": "support.workspace.project.move-check",
+      "schema_id": "support.workspace.project.move-check",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_check",
+      "bound_commands": [
+        "support.workspace.project.move-check"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -16820,12 +16877,14 @@
       "operation_id": "StartProjectMove",
       "method": "POST",
       "path": "/support/workspaces/{workspace_id}/projects/{project_id}/move",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Staff-only support route: starts a cross-workspace project move.",
+      "canonical_command": "support.workspace.project.move-start",
+      "schema_id": "support.workspace.project.move-start",
+      "sdk_symbol": "mammoth.api.support.SupportAPI.project_move_start",
+      "bound_commands": [
+        "support.workspace.project.move-start"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },

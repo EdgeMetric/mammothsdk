@@ -316,6 +316,24 @@ def increment_date_params(
     return _attach_metadata(params, dataview_id, sequence_number)
 
 
+def repeat_params(
+    repeat: dict[str, Any],
+    dataview_id: int | None = None,
+    sequence_number: int | None = None,
+) -> dict[str, Any]:
+    """Build a REPEAT task payload.
+
+    Args:
+        repeat: Exactly one of {"TIMES": 2..10000}, {"VALUES": [...], ...} or
+            {"SERIES": {"START", "END", "DELTA" | "STEP"}, ...}. VALUES and SERIES
+            take one of "DESTINATION" (existing internal column) or "AS" (new
+            column); optional "KEEP_ORIGINAL" (VALUES into DESTINATION only) and
+            "ORDER" ("GROUPED" | "INTERLEAVED", not with TIMES). No condition.
+    """
+    params: dict[str, Any] = {"REPEAT": repeat}
+    return _attach_metadata(params, dataview_id, sequence_number)
+
+
 def join_params(
     join_id: str,
     foreign_dataview_id: int,

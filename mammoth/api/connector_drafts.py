@@ -142,6 +142,22 @@ class ConnectorDraftsAPI:
         """
         return await self._client._request_json("GET", f"{self._base()}/known-sources")
 
+    async def link_preview(self, url: str) -> dict[str, Any]:
+        """Read the CSV, Excel or JSON file at a link and show its tables, keeping nothing.
+
+        This is the New dataset window's From URL step; it needs no draft.
+
+        Args:
+            url: The link to the file (at most 2000 characters).
+
+        Returns:
+            Dict with ``tables``: one for a text or JSON file, one per tab for a workbook,
+            each ``{name, columns, row_count, has_more, sample_rows}``.
+        """
+        return await self._client._request_json(
+            "POST", f"{self._base()}/link-preview", json={"url": url}
+        )
+
     async def get(self, draft_id: int) -> dict[str, Any]:
         """Get one draft, with its target columns, sources and thread.
 

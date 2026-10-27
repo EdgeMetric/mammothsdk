@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 851.
+Total commands: 862.
 
 ## activity
 
@@ -3847,6 +3847,20 @@ Total commands: 851.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
 - Agent example: `mammoth dataset delete 123 --yes`
 
+### `mammoth dataset download`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download`
+- Agent example: `mammoth dataset download --input '{"resource_ids": [12, 13], "name": "sales", "file_type": "csv"}'`
+
+### `mammoth dataset download-plan`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download_plan`
+- Agent example: `mammoth dataset download-plan --input '{"resource_ids": [12, 13]}'`
+
 ### `mammoth dataset file-settings get`
 
 **Arguments**
@@ -3890,6 +3904,35 @@ Total commands: 851.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.dataset.find`
 - Agent example: `mammoth dataset find sales`
+
+### `mammoth dataset from-url follow`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.follow_link`
+- Agent example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`
+
+### `mammoth dataset from-url links`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.links`
+- Agent example: `mammoth dataset from-url links`
+
+### `mammoth dataset from-url preview`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview`
+- Agent example: `mammoth dataset from-url preview https://example.com/data.csv`
 
 ### `mammoth dataset get`
 
@@ -5834,6 +5877,28 @@ Total commands: 851.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
 - Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`
 
+### `mammoth support project-move get`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_get`
+- Agent example: `mammoth support project-move get 123`
+
+### `mammoth support project-move purge`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_purge`
+- Agent example: `mammoth support project-move purge 123 --yes --confirm 123`
+
 ### `mammoth support search`
 
 **Arguments**
@@ -6217,6 +6282,41 @@ Total commands: 851.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_list`
 - Agent example: `mammoth support workspace list`
+
+### `mammoth support workspace project list`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_project_list`
+- Agent example: `mammoth support workspace project list 123`
+
+### `mammoth support workspace project move-check`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_check`
+- Agent example: `mammoth support workspace project move-check 123 456 --input '{"target_workspace_id": 1}'`
+
+### `mammoth support workspace project move-start`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_start`
+- Agent example: `mammoth support workspace project move-start 123 456 --input '{"target_workspace_id": 1}' --yes --confirm 123`
 
 ### `mammoth support workspace restore-access`
 
@@ -7991,6 +8091,17 @@ Total commands: 851.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.rename_columns`
 - Agent example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'`
+
+### `mammoth view transform repeat-rows`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.repeat_rows`
+- Agent example: `mammoth view transform repeat-rows 123 --input '{"dataset_id": 456}'`
 
 ### `mammoth view transform replace`
 

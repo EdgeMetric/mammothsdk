@@ -176,6 +176,7 @@ BATCH_OPS: tuple[str, ...] = (
     "substring",
     "extract-date",
     "increment-date",
+    "repeat-rows",
     "copy-columns",
     "split",
     "unnest",

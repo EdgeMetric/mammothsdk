@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 851; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 862; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -29,7 +29,7 @@ Load only the applicable domain file:
 - [dashboard-style](commands/dashboard-style.md) — 10 published commands
 - [dashboard-embed](commands/dashboard-embed.md) — 9 published commands
 - [dashboard](commands/dashboard.md) — 112 published commands
-- [dataset](commands/dataset.md) — 30 published commands
+- [dataset](commands/dataset.md) — 35 published commands
 - [doctor](commands/doctor.md) — 1 published commands
 - [external-key](commands/external-key.md) — 4 published commands
 - [file](commands/file.md) — 11 published commands
@@ -50,14 +50,14 @@ Load only the applicable domain file:
 - [schema](commands/schema.md) — 3 published commands
 - [skill](commands/skill.md) — 7 published commands
 - [snippet](commands/snippet.md) — 8 published commands
-- [support](commands/support.md) — 112 published commands
+- [support](commands/support.md) — 117 published commands
 - [template](commands/template.md) — 5 published commands
 - [token](commands/token.md) — 3 published commands
 - [trash](commands/trash.md) — 3 published commands
 - [upgrade](commands/upgrade.md) — 1 published commands
 - [user](commands/user.md) — 7 published commands
 - [version](commands/version.md) — 1 published commands
-- [view-transform](commands/view-transform.md) — 35 published commands
+- [view-transform](commands/view-transform.md) — 36 published commands
 - [view](commands/view.md) — 110 published commands
 - [webhook](commands/webhook.md) — 7 published commands
 - [workflow](commands/workflow.md) — 23 published commands

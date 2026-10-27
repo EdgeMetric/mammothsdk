@@ -253,11 +253,16 @@ COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.math": (
         "math arithmetic multiply multiplication divide add subtract formula "
         "expression amount calculate compute ratio percentage round new column "
-        "conditional threshold greater than if text times"
+        "conditional threshold greater than if text times parameter {name} variable"
     ),
     "view.transform.pivot": (
         "pivot table group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
+    ),
+    "view.transform.repeat-rows": (
+        "repeat rows duplicate each row n times copies one row per value listed values "
+        "date series one row per month day week explode into a series number range "
+        "sequence generate dates"
     ),
     "view.transform.rename-columns": (
         "rename column columns header headers relabel change column name names title"
@@ -823,4 +828,43 @@ COMMAND_DISCOVERY_PURPOSES = {
     ),
     "workflow.update": "rename name describe a workflow pipeline purpose notes summary",
     "workflow.create": "name an unnamed workflow pipeline from the root dataset new workflow",
+    # From URL: a dataset made from a web link (CSV, Excel or JSON file).
+    "dataset.from-url.preview": (
+        "preview a URL link before importing, see the columns and first rows of a CSV Excel "
+        "or JSON file at a web address, from url, nothing is kept"
+    ),
+    "dataset.from-url.follow": (
+        "follow link, stop following a link, make a dataset a copy, refresh from URL again, "
+        "keep a url dataset updated from its link"
+    ),
+    "dataset.from-url.links": (
+        "which url link datasets follow a link, last fetched, fetch failed, "
+        "refresh from link schedules, which links update"
+    ),
+    # Bulk download (several datasets, views or folders as one file).
+    "dataset.download": (
+        "download all datasets as zip, export several datasets to one file, bulk download "
+        "many tables CSV zip of CSVs or one Excel xlsx workbook with a sheet per dataset, "
+        "stack same columns, save to computer"
+    ),
+    "dataset.download-plan": (
+        "how big is a bulk download, how many datasets and files a download of several "
+        "datasets would hold before downloading all as zip, stacked files, skipped empty"
+    ),
+    # Move a project to another workspace (tech admin).
+    "support.workspace.project.list": (
+        "list a workspace's projects and which have a move to another workspace unfinished"
+    ),
+    "support.workspace.project.move-check": (
+        "check move project to another workspace, blockers and warnings before the move"
+    ),
+    "support.workspace.project.move-start": (
+        "move project to another workspace, transfer a project, resume a stalled project move"
+    ),
+    "support.project-move.get": (
+        "project move status progress error stalled, is the move to another workspace done"
+    ),
+    "support.project-move.purge": (
+        "purge delete the source copies left in the old workspace after a project move"
+    ),
 }

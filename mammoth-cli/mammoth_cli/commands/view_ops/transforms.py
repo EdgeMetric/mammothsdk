@@ -684,6 +684,14 @@ def view_transform_limit_rows(invocation: Invocation) -> HandlerResult:
     return _dispatch_view(invocation, view_id, "limit_rows", **kwargs)
 
 
+def view_transform_repeat_rows(invocation: Invocation) -> HandlerResult:
+    """Repeat every row. Exactly one of ``times``, ``values`` or ``series`` is required."""
+    view_id = _view_id(invocation)
+    document = invocation.load_input() or {}
+    kwargs = _bind_transform_inputs(invocation, document)
+    return _dispatch_view(invocation, view_id, "repeat_rows", **kwargs)
+
+
 def view_transform_rename_columns(invocation: Invocation) -> HandlerResult:
     """Rename columns (a view display setting, not a task). ``renames`` is required."""
     view_id = _view_id(invocation)

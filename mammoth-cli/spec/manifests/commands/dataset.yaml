@@ -389,3 +389,47 @@ commands:
   known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing
     and returns where the tables already are.
   no_readback: returns the workspace, project and new folder ids; the folder is the new state
+- command_id: dataset.from-url.follow
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: dataset.from-url.links
+    note: 'Find the dataset with the links command, then run it again with the opposite follow value in --input; a dataset that stopped following keeps its data.'
+  readback:
+    command: dataset.from-url.links
+    ids: {}
+    kind: object
+- command_id: dataset.from-url.links
+  output_schema:
+    type: object
+    properties:
+      datasets:
+        type: array
+        items:
+          type: object
+- command_id: dataset.from-url.preview
+  output_schema:
+    type: object
+    properties:
+      tables:
+        type: array
+        items:
+          type: object
+- command_id: dataset.download
+  output_schema:
+    type: object
+    properties:
+      output_path:
+        type: string
+      download_url:
+        type: string
+  no_readback: writes a local file; the file is the result and nothing in the workspace changed
+  known_restrictions: 'Input: resource_ids (dataset, view and folder ids, in file order) and name (the file name without extension) are required; file_type is csv (a zip of CSVs when there are several) or xlsx (one workbook, a sheet per dataset); stack, numbered, views ({dataset id: view id}), output_path and timeout are optional. An existing output file is refused with file_exists unless --overwrite is given. Check the size first with dataset download-plan.'
+- command_id: dataset.download-plan
+  output_schema:
+    type: object
+    properties:
+      datasets: {type: integer}
+      stacked_files: {type: integer}
+      skipped: {type: integer}

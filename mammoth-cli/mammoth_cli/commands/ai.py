@@ -233,7 +233,8 @@ def ai_sql_generate(invocation: Invocation) -> HandlerResult:
     """Generate SQL from a natural language intent.
 
     ``intent`` comes from the first positional argument or an ``intent``
-    ``--input`` field; ``sequence_number`` is forwarded when present. The
+    ``--input`` field; ``sequence_number`` and ``current_query`` (the SQL to refine instead of
+    writing a new query) are forwarded when present. The
     backing SDK method has no ``project_id`` parameter — it resolves the
     project bound on the client — so an active project is required but not
     forwarded as a keyword argument.
@@ -255,7 +256,7 @@ def ai_sql_generate(invocation: Invocation) -> HandlerResult:
             hint="Pass the intent as a positional argument or an 'intent' input field.",
         )
     kwargs: dict[str, Any] = {"intent": intent}
-    _forward_optional(document, kwargs, ("sequence_number",))
+    _forward_optional(document, kwargs, ("sequence_number", "current_query"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

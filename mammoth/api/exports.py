@@ -10,6 +10,7 @@ import tempfile
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, get_args
+from urllib.parse import urlparse
 
 import httpx
 
@@ -36,6 +37,10 @@ ERR_DATAVIEW_ID_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 ERR_EXPORT_ID_POSITIVE = "`export_id` must be a positive integer, got {0}."
 ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
 ERR_RUNS_LIMIT = "`limit` must be between 1 and 50, got {0}."
+ERR_RESOURCE_IDS = "`resource_ids` must hold at least one dataset, view or folder id."
+ERR_BULK_FILE_TYPE = "`file_type` must be one of {0}; got {1!r}."
+ERR_BULK_NAME = "`name` must be 1 to 200 characters, got {0} characters."
+BULK_DOWNLOAD_FILE_TYPES = ("csv", "xlsx")
 ERR_DOCS_URL = "`docs_url` must be a non-empty string."
 ERR_NOTES_LENGTH = "`notes` must be at most 2000 characters, got {0}."
 ERR_HOSTS_COUNT = "`hosts` must hold at most 100 hosts, got {0}."
@@ -118,9 +123,7 @@ class ExportsAPI:
             PipelineExportsPaginated with paginated list of exports.
         """
         workspace_id = self._client.workspace_id
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is not None and dataset_id <= 0:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
@@ -636,9 +639,7 @@ class ExportsAPI:
         """
         from ..models.exports import S3TargetProperties
 
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -716,9 +717,7 @@ class ExportsAPI:
         Returns:
             PipelineExportsModificationResp or JobResponse.
         """
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
@@ -770,9 +769,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -799,15 +796,12 @@ class ExportsAPI:
 
         if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
             job_id = export_result.job.id
-            completed_job = await self._jobs_api.wait_for_job(job_id, timeout)
-            response = completed_job.get("response", {})
-            if response.get("url"):
-                return {
-                    "url": response["url"],
-                    "trigger_id": response.get("trigger_id"),
-                    "job_id": job_id,
-                }
-            raise ValueError(f"No download URL found in completed job {job_id}")
+            response = await self._job_download_response(job_id, timeout)
+            return {
+                "url": response["url"],
+                "trigger_id": response.get("trigger_id"),
+                "job_id": job_id,
+            }
         raise ValueError("No job ID found in export result")
 
     async def to_csv_url(
@@ -849,9 +843,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -878,6 +870,134 @@ class ExportsAPI:
         Same as :meth:`to_file` with ``file_type="csv"``.
         """
         return await self.to_file(dataview_id, output_path, "csv", timeout, dataset_id)
+
+    async def _job_download_response(self, job_id: int, timeout: int) -> dict[str, Any]:
+        """Wait for an export job and return its ``response``; raises if it holds no URL."""
+        completed_job = await self._jobs_api.wait_for_job(job_id, timeout)
+        response: dict[str, Any] = completed_job.get("response", {})
+        if not response.get("url"):
+            raise ValueError(f"No download URL found in completed job {job_id}")
+        return response
+
+    def _require_project_id(self) -> int:
+        """The client's project id; raises if ``client.set_project_id()`` was not called."""
+        project_id = self._client.project_id
+        if project_id is None:
+            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        return project_id
+
+    def _downloads_path(self, tail: str = "") -> str:
+        """The project's several-datasets download route (``tail`` is ``/plan`` or empty)."""
+        project_id = self._require_project_id()
+        return f"/workspaces/{self._client.workspace_id}/projects/{project_id}/downloads{tail}"
+
+    @staticmethod
+    def _download_selection(
+        resource_ids: _list[int], views: dict[int, int] | None
+    ) -> dict[str, Any]:
+        """The ``resource_ids`` (and ``views``) body both download routes take."""
+        if not resource_ids:
+            raise MammothValidationError(ERR_RESOURCE_IDS)
+        body: dict[str, Any] = {"resource_ids": _list(resource_ids)}
+        if views:
+            body["views"] = {str(dataset): view for dataset, view in views.items()}
+        return body
+
+    async def bulk_download_plan(
+        self, resource_ids: _list[int], views: dict[int, int] | None = None
+    ) -> dict[str, Any]:
+        """Say what downloading several datasets, views and folders would hold.
+
+        Reads headers only; nothing is queued.
+
+        Args:
+            resource_ids: The datasets, views and folders, in the order their files should come
+                (folders download everything inside them).
+            views: For a dataset id, the view to download; a dataset without one downloads
+                its first view.
+
+        Returns:
+            Dict with ``datasets`` (how many), ``stacked_files`` (files when same-column
+            datasets are stacked) and ``skipped`` (selected things with no rows).
+        """
+        return await self._client._request_json(
+            "POST",
+            self._downloads_path("/plan"),
+            json=self._download_selection(resource_ids, views),
+        )
+
+    async def bulk_download_url(
+        self,
+        resource_ids: _list[int],
+        name: str,
+        file_type: Literal["csv", "xlsx"] = "csv",
+        stack: bool = False,
+        numbered: bool = False,
+        views: dict[int, int] | None = None,
+        timeout: int = 300,
+    ) -> dict[str, Any]:
+        """Queue one file of several datasets, wait for it and return its signed URL, undownloaded.
+
+        Args:
+            resource_ids: The datasets, views and folders, in the order their files should come.
+            name: The file's name, without the extension (1 to 200 characters).
+            file_type: ``"csv"`` (a zip of CSVs when there are several) or ``"xlsx"`` (one
+                workbook, a sheet per dataset).
+            stack: Put datasets with the same columns into one file, with a last column naming
+                the table each row came from.
+            numbered: Start each file's name with its position, so the files sort as given.
+            views: For a dataset id, the view to download.
+            timeout: Seconds to wait for the job (default 300).
+
+        Returns:
+            Dict with ``url`` (the signed download URL) and ``job_id``.
+
+        Raises:
+            MammothValidationError: ``resource_ids`` is empty, ``name`` is not 1 to 200
+                characters or ``file_type`` is not ``csv`` or ``xlsx``.
+        """
+        if file_type not in BULK_DOWNLOAD_FILE_TYPES:
+            raise MammothValidationError(
+                ERR_BULK_FILE_TYPE.format(", ".join(BULK_DOWNLOAD_FILE_TYPES), file_type)
+            )
+        if not 1 <= len(name) <= 200:
+            raise MammothValidationError(ERR_BULK_NAME.format(len(name)))
+        body = self._download_selection(resource_ids, views)
+        body.update(file_type=file_type, stack=stack, name=name, numbered=numbered)
+        queued = await self._client._request_json("POST", self._downloads_path(), json=body)
+        job_id = queued["job"]["id"]
+        response = await self._job_download_response(job_id, timeout)
+        return {"url": response["url"], "job_id": job_id}
+
+    async def bulk_download(
+        self,
+        resource_ids: _list[int],
+        name: str,
+        output_path: str | Path | None = None,
+        file_type: Literal["csv", "xlsx"] = "csv",
+        stack: bool = False,
+        numbered: bool = False,
+        views: dict[int, int] | None = None,
+        timeout: int = 300,
+    ) -> Path:
+        """Download several datasets, views and folders as one file.
+
+        Same arguments as :meth:`bulk_download_url`, plus ``output_path``: where to write the
+        file (``<name>.<extension>`` in the current directory if not given; the extension is
+        the one the server's file has, ``.zip`` for several CSVs).
+
+        Returns:
+            Path to the downloaded file.
+        """
+        result = await self.bulk_download_url(
+            resource_ids, name, file_type, stack, numbered, views, timeout
+        )
+        if output_path is None:
+            suffix = Path(urlparse(result["url"]).path).suffix or f".{file_type}"
+            output_path = f"{name}{suffix}"
+        return await self._download_file(
+            result["url"], Path(output_path), job_handle=result["job_id"]
+        )
 
     async def _download_file(
         self, url: str, output_path: Path, *, job_handle: int | None = None

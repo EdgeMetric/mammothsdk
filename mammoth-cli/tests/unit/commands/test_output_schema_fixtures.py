@@ -65,6 +65,7 @@ _EXEMPT: dict[str, str] = {
     "view.draft.auto-run": "the sampled pipeline stays in a reference error after the toggle",
     "history.undo": "needs a journaled write to undo; test_history.py runs it",
     "history.resume": "needs a journaled run to resume; test_history.py runs it",
+    "dataset.download": "queues a server file job and writes a local file the sample never serves",
 }
 
 #: Commands left out of the dry-run check: they wait on a background job the sample never ends.
@@ -214,6 +215,9 @@ _EXAMPLES: dict[str, str] = {
     "view.transform.math": (
         "mammoth view transform math 123 --input"
         ' \'{"expression": "price * quantity", "new_column": "Total", "dataset_id": 456}\''
+    ),
+    "view.transform.repeat-rows": (
+        "mammoth view transform repeat-rows 123 --input" ' \'{"times": 2, "dataset_id": 456}\''
     ),
     "view.transform.small-large": (
         "mammoth view transform small-large 123 --input"
@@ -815,6 +819,7 @@ _VERIFY = {
     "outcome": "settled",
 }
 _EXEMPT_RESULTS: dict[str, dict[str, Any]] = {
+    "dataset.download": {"output_path": "orders.csv"},
     "dataset.update": {"verify": _VERIFY},
     "schedule.create": {"id": 3, "verify": _VERIFY},
     "view.export.dataset": {"dataset_id": 9, "verify": _VERIFY},

@@ -27,6 +27,25 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
+### Added (next mammoth-io)
+
+- SDK: Repeat Rows. `view.repeat_rows(...)` adds a REPEAT step that repeats each row.
+- SDK: `view.math()` takes `{name}` in an expression to use a workspace or project parameter.
+- SDK: `json_extract` takes a key that is a path of keys and array indexes, not only a single key.
+- SDK: From URL. `ConnectorDraftsAPI.link_preview` previews a link, `DatasetsAPI.follow_link` follows or copies a link dataset, and `DatasetsAPI.links` lists the linked datasets.
+- SDK: bulk download. `ExportsAPI.bulk_download_plan`, `bulk_download_url` and `bulk_download`.
+- SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
+- SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
+
+### Added (next mammoth-cli)
+
+- CLI: `view transform repeat-rows` (Repeat Rows).
+- CLI: `view transform math` takes `{name}` in an expression for a workspace or project parameter; `view transform json-extract` takes a key path (keys and array indexes).
+- CLI: From URL: `dataset from-url preview`, `follow` and `links`.
+- CLI: bulk download: `dataset download` and `dataset download-plan`.
+- CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
+- CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs the next mammoth-io (the release raises the floor).
+
 ### Changed (next mammoth-cli)
 
 - CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.

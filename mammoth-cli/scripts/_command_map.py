@@ -82,11 +82,6 @@ INTERNAL_ONLY: dict[str, str] = {
     "UploadAgentChatDocument": "Web chat panel: uploads a document into a chat.",
     "UploadAgentChatImage": "Web chat panel: uploads an image into a chat.",
     # Mammoth staff tooling: not for customers.
-    "CheckProjectMove": "Staff-only support route: dry run of a cross-workspace project move.",
-    "StartProjectMove": "Staff-only support route: starts a cross-workspace project move.",
-    "ListProjects": "Staff-only support route: lists a workspace's projects.",
-    "GetProjectMove": "Staff-only support route: status of a project move.",
-    "PurgeProjectMove": "Staff-only support route: purges the source of a finished project move.",
     "CollectionsReach": "Web library page: the Live pill counting a collection's readers.",
     "GetChatAttachment": (
         "Web editor chat panel: bytes of a file attached to a dashboard's AI chat "
@@ -113,6 +108,11 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # The SDK posts every run verb through one helper whose last path segment is a
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
     "POST /agents/sessions/{}/runs/{}/{}": "origin/master@29fe5d1ab8",
+    # mvc-service From URL (#7166, #7169): on origin/release, not on the pinned master.
+    "POST /workspaces/{}/projects/{}/connector-drafts/link-preview": "origin/release (#7166)",
+    "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
+    "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
+    "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
 }
 
 # --- Operations that alias another command (identical behavior) ------------
@@ -898,6 +898,12 @@ OVERRIDES: dict[str, str] = {
     "CancelTaskPreview": "view.task.preview-cancel",
     "GetToolClaim": "dataset.tool-claim.get",
     "RedeemToolClaim": "dataset.tool-claim.redeem",
+    # Moving a project to another workspace (tech admin).
+    "ListProjects": "support.workspace.project.list",
+    "CheckProjectMove": "support.workspace.project.move-check",
+    "StartProjectMove": "support.workspace.project.move-start",
+    "GetProjectMove": "support.project-move.get",
+    "PurgeProjectMove": "support.project-move.purge",
 }
 
 

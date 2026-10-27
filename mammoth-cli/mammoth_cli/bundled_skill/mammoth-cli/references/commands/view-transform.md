@@ -252,6 +252,16 @@ Result: `ViewTransformRenameColumnsResult`; mutation `benign_mutation`, confirma
 
 Status on release: ran once on CLI 2.0.40 through `view.task.add` and was read back with `view data get`; other inputs for this transform are untried.
 
+### `view.transform.repeat-rows`
+
+Run: `mammoth view transform repeat-rows`. Exact input fields: `mammoth schema get view.transform.repeat-rows`.
+
+Example: `mammoth view transform repeat-rows 123 --input '{"dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTransformRepeatRowsResult`; mutation `reversible_pipeline`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; it submits through `view.task.add`, but this transform was not among those run.
+
 ### `view.transform.replace`
 
 Run: `mammoth view transform replace`. Exact input fields: `mammoth schema get view.transform.replace`.

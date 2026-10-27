@@ -41,7 +41,10 @@ sdk_methods:
   notes: json_type=LIST (JSON_LIST_TO_ROWS) gives one row per list element, landing in an Item column
     (plus an Index column for its original position); with no keys/extractions this is the default. An
     object element does not get columns from this call -- run a second json-extract (json_type=OBJECT)
-    on Item to turn its keys into columns.
+    on Item to turn its keys into columns. An extraction key is one object key (a
+    string) or a path to a nested value, a non-empty JSON list of keys (strings) and array indexes
+    (integers from 0), for example "key" ["company", "location", "country"] or ["orders", 0, "total"]. A
+    path with no as_name names its column company.location.country.
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.lookup
   canonical_command: view.transform.lookup
   alias_of: null
@@ -206,6 +209,13 @@ sdk_methods:
   openapi_operation_ids: []
 - sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.limit_rows
   canonical_command: view.transform.limit-rows
+  alias_of: null
+  mutation_class: reversible_pipeline
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  canonical_command: view.transform.repeat-rows
   alias_of: null
   mutation_class: reversible_pipeline
   wait_policy: always_wait
@@ -6343,6 +6353,96 @@ sdk_methods:
   openapi_operation_ids:
   - PreviewConnectorDraftSource
   notes: "Reads up to `limit` (1-100) rows through the connection and records what came back on the source."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
+  canonical_command: dataset.from-url.preview
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PreviewLinkFile
+  notes: "Reads the file at the link and keeps nothing; use it before creating a dataset from a URL."
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.follow_link
+  canonical_command: dataset.from-url.follow
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - UpdateDataset
+  notes: "Follow true keeps the dataset refreshing from its link; follow false makes it a copy."
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.links
+  canonical_command: dataset.from-url.links
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetProjectLinks
+  agent_example: mammoth dataset from-url links
+- sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
+  canonical_command: dataset.download
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids:
+  - CreateDownload
+  notes: "Queues one file (csv, a zip of csvs, or one xlsx workbook) of the given datasets, views and folders, waits, and writes it locally; refuses an existing file unless --overwrite."
+- sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_plan
+  canonical_command: dataset.download-plan
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PlanDownload
+  notes: "Reads headers only: how many datasets a download holds and how many files it is with same-column datasets stacked."
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_project_list
+  canonical_command: support.workspace.project.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListProjects
+  notes: "Tech admin only. Lists the workspace's projects, each with its unfinished move."
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_check
+  canonical_command: support.workspace.project.move-check
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CheckProjectMove
+  notes: "Tech admin only. Read-only: blockers refuse the move, warnings must be acknowledged to start it."
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_start
+  canonical_command: support.workspace.project.move-start
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - StartProjectMove
+  notes: "Tech admin only. Queues the move of a project to another workspace, or resumes its unfinished move; follow it with support project-move get."
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_get
+  canonical_command: support.project-move.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetProjectMove
+  notes: "Tech admin only. Status, error and progress of a project move."
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_purge
+  canonical_command: support.project-move.purge
+  alias_of: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PurgeProjectMove
+  notes: "Tech admin only. Deletes the source copies a finished move left behind; files not safe in the target are skipped."
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states

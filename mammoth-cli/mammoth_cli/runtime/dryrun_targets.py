@@ -453,6 +453,8 @@ CREATES_ONLY: frozenset[str] = frozenset(
         "dataset.create-from-pdf",
         # Redeeming an Open tables link adds a new folder of tables.
         "dataset.tool-claim.redeem",
+        # A bulk download writes one local file and changes no dataset.
+        "dataset.download",
     }
 )
 

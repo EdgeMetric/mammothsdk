@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth._expression_parser import parameter_names
 from mammoth._pure.builders import build_math_params, build_small_large_params
+from mammoth.exceptions import MammothValidationError
 from mammoth.models.pipeline import ColumnType, SmallLargeFunction
 
 if TYPE_CHECKING:
@@ -12,6 +14,9 @@ if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
 else:
     ViewHost = object
+
+
+_PARAMETER_PAGE = 100
 
 
 class MathOpsMixin(ViewHost):
@@ -29,7 +34,9 @@ class MathOpsMixin(ViewHost):
 
         Args:
             expression: A string expression (e.g. ``"Price * Quantity"``)
-                that will be parsed automatically.
+                that will be parsed automatically. ``{name}`` uses the
+                workspace or project parameter of that name; the step re-runs
+                when the parameter's value changes.
             new_column: Name for result column (creates new).
             column_type: Type for new column (default ColumnType.NUMERIC).
             existing_column: Existing column to overwrite.
@@ -42,6 +49,7 @@ class MathOpsMixin(ViewHost):
 
             await view.math("Price * Quantity", new_column="Total")
             await view.math("(Price + Tax) * 1.1", new_column="Grand Total")
+            await view.math("Price * {tax_rate}", new_column="Gross")
         """
         # The parser consumes a scoped display-name map. Add exact internal
         # identities as aliases so callers can use either form without any
@@ -66,8 +74,35 @@ class MathOpsMixin(ViewHost):
                 condition=condition,
                 column_types=self.column_types,
                 name_gen=self._next_internal_name,
+                parameter_ids=await self._parameter_ids(parameter_names(expression)),
             )
         )
+
+    async def _parameter_ids(self, names: list[str]) -> dict[str, int]:
+        """The id of each named parameter: the client's project's first, then the workspace's."""
+        if not names:
+            return {}
+        known = await self._scope_parameter_ids(None)
+        if self._client.project_id is not None:
+            known.update(await self._scope_parameter_ids(self._client.project_id))
+        missing = [name for name in names if name not in known]
+        if missing:
+            raise MammothValidationError(f"math: no parameter named {missing[0]!r}")
+        return {name: known[name] for name in names}
+
+    async def _scope_parameter_ids(self, project_id: int | None) -> dict[str, int]:
+        """Every parameter of one scope (a project, or the workspace) as name -> id."""
+        ids: dict[str, int] = {}
+        offset = 0
+        while True:
+            page = await self._client.parameters.list(
+                limit=_PARAMETER_PAGE, offset=offset, project_id=project_id
+            )
+            items = page["items"]
+            ids.update({item["name"]: item["id"] for item in items})
+            offset += len(items)
+            if not items or offset >= page["total_count"]:
+                return ids
 
     async def small_large(
         self,

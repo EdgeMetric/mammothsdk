@@ -113,6 +113,7 @@ edits_target_commands:
 - dataset.delete
 - dataset.file-settings.undo
 - dataset.file-settings.update
+- dataset.from-url.follow
 - dataset.interpretation.confirm
 - dataset.refresh
 - dataset.rename
@@ -272,6 +273,7 @@ edits_target_commands:
 - view.transform.math
 - view.transform.pivot
 - view.transform.rename-columns
+- view.transform.repeat-rows
 - view.transform.replace
 - view.transform.set-values
 - view.transform.small-large
