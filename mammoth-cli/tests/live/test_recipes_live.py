@@ -12,6 +12,7 @@ different amount (o2), so 4 rows survive a dedupe on ``Order ID`` and 5 a whole-
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any
 
 import pytest
@@ -184,23 +185,33 @@ def test_summarize_by_groups_by_several_columns_and_orders_them(
     inputs = {"view_id": view, "dataset_id": dataset, "group_by": ["Region"], "column": "Revenue"}
     lines, summary = _recipe(live_cli, scratch_project, "summarize-by", inputs)
     assert summary["data"]["failed"] == 0, lines
-    rows = lines[0]["data"]["rows"]
-    assert [row["Region"] for row in rows][0] == "North"  # 30 ties South; North is first by sum
-    assert sorted(float(row["Result"]) for row in rows) == [5.0, 30.0, 30.0]
+    rows = next(e for e in lines if e.get("cmd") == "view data aggregate")["data"]["data"]
+    totals = [float(row["Result"]) for row in rows]
+    assert totals == sorted(totals, reverse=True) == [30.0, 30.0, 5.0]  # ordered, largest first
+    assert rows[-1]["Region"] == "East"
     assert _row_count(live_cli, scratch_project, dataset, view) == 4  # read only
 
 
 def test_create_projects_twice_makes_each_project_once(
     live_cli: LiveCli, scratch_project: int
 ) -> None:
-    names = ["recipe-live-a", "recipe-live-b"]
-    for _ in range(2):
-        _, summary = _recipe(live_cli, scratch_project, "create-projects", {"names": names})
-        assert summary["data"]["failed"] == 0
-    listed, _ = live_cli.ok("project", "list", project=scratch_project)
-    projects = listed.get("projects") or listed
-    found = [p["name"] for p in projects if p["name"] in names]
-    assert sorted(found) == sorted(names)
+    suffix = uuid.uuid4().hex[:8]
+    names = [f"recipe-live-{suffix}-a", f"recipe-live-{suffix}-b"]
+    made: list[int] = []
+    try:
+        first_lines, first = _recipe(live_cli, scratch_project, "create-projects", {"names": names})
+        assert first["data"]["failed"] == 0
+        made = [int(e["data"]["project_id"]) for e in first_lines]
+        assert [e["data"]["created"] for e in first_lines] == [True, True]
+        again_lines, again = _recipe(live_cli, scratch_project, "create-projects", {"names": names})
+        assert again["data"]["failed"] == 0
+        assert [e["data"]["created"] for e in again_lines] == [False, False]
+        assert [int(e["data"]["project_id"]) for e in again_lines] == made
+    finally:
+        for project_id in made:
+            live_cli.run(
+                "project", "delete", str(project_id), "--yes", "--confirm", str(project_id)
+            )
 
 
 def test_blend_by_key_reads_both_key_counts_then_joins_in_place(

@@ -4288,7 +4288,7 @@
         },
         {
           "command_id": "view.transform.filter",
-          "purpose": "Keep the matching rows; the dry run counts what it would remove, and no match fails with empties_view.",
+          "purpose": "Preview the filter on the original (dry run, counts the rows removed), then keep the matching rows on the copy.",
           "example": "mammoth view transform filter VIEW_ID --input '{\"condition\": {\"column\": \"Status\", \"operator\": \"EQ\", \"value\": \"Active\"}, \"dataset_id\": DATASET_ID}'",
           "key_flags": [
             "--input condition"
@@ -4302,7 +4302,7 @@
         }
       ],
       "notes": [
-        "The work happens on a copy; trash the copy to undo. A TEXT date column compares as text: convert it to DATE first ('view transform convert-type') or filter with the text form it holds. A filter nothing matches fails with empties_view and leaves the copy unfiltered."
+        "The work happens on a copy; trash the copy to undo. A TEXT date column compares as text: convert it to DATE first ('view transform convert-type') or filter with the text form it holds. The first line previews the filter on the original and counts what it would remove; a filter nothing matches fails there (empties_view) and no copy is made."
       ],
       "inputs": {
         "view_id": {
@@ -4338,6 +4338,24 @@
         }
       },
       "run": [
+        {
+          "name": "preview",
+          "cmd": "view transform filter",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "condition": {
+              "column": "{{inputs.column}}",
+              "operator": "{{inputs.operator}}",
+              "value": "{{inputs.value}}"
+            }
+          },
+          "flags": {
+            "dry-run": true
+          }
+        },
         {
           "name": "copy",
           "cmd": "view create",
