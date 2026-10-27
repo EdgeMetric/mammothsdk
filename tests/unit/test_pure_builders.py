@@ -890,6 +890,20 @@ class TestRepeatRows:
     def test_times(self) -> None:
         assert b.build_repeat_params(COLS, INTERNALS, times=2) == {"REPEAT": {"TIMES": 2}}
 
+    def test_new_column_type_with_times_is_refused(self) -> None:
+        with pytest.raises(MammothValidationError, match="new_column_type is for"):
+            b.build_repeat_params(COLS, INTERNALS, times=2, new_column_type=ColumnType.TEXT)
+
+    def test_new_column_type_with_existing_column_is_refused(self) -> None:
+        with pytest.raises(MammothValidationError, match="new_column_type is for"):
+            b.build_repeat_params(
+                COLS,
+                INTERNALS,
+                values=["x"],
+                existing_column="Notes",
+                new_column_type=ColumnType.TEXT,
+            )
+
     def test_times_bounds_pass(self) -> None:
         assert b.build_repeat_params(COLS, INTERNALS, times=10_000) == {"REPEAT": {"TIMES": 10_000}}
 

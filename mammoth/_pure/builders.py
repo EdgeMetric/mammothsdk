@@ -706,8 +706,7 @@ def _build_repeat_series(
     }
     if series.delta is not None:
         spec["DELTA"] = _repeat_delta(series.delta)
-    else:
-        assert series.step is not None
+    elif series.step is not None:
         if series.step <= 0:
             raise MammothValidationError("repeat_rows series step must be greater than 0")
         spec["STEP"] = series.step
@@ -732,11 +731,10 @@ def _repeat_new_column_type(series: RepeatSeries | None, requested: ColumnType |
                 f"repeat_rows series writes {implied.value}; drop new_column_type or set it so"
             )
         return implied.value
-    if requested not in (ColumnType.TEXT, ColumnType.NUMERIC):
+    if requested is None or requested not in (ColumnType.TEXT, ColumnType.NUMERIC):
         raise MammothValidationError(
             "repeat_rows values into new_column need new_column_type TEXT or NUMERIC"
         )
-    assert requested is not None
     return requested.value
 
 
@@ -785,6 +783,10 @@ def build_repeat_params(
         MammothValidationError: a combination or value the backend would refuse.
     """
     mode = _repeat_mode(times, values, series)
+    if new_column_type is not None and (times is not None or existing_column):
+        raise MammothValidationError(
+            "repeat_rows new_column_type is for values or a series into new_column only"
+        )
     if times is not None:
         return {
             "REPEAT": _build_repeat_times(times, new_column, existing_column, keep_original, order)
@@ -804,14 +806,12 @@ def build_repeat_params(
                 f"repeat_rows values must list 1 to {_REPEAT_MAX_VALUES} values"
             )
         spec["VALUES"] = list(values)
-    else:
-        assert series is not None
+    elif series is not None:
         spec["SERIES"] = _build_repeat_series(series, col_map, internal_names)
     if new_column:
         column_type = _repeat_new_column_type(series, new_column_type)
         spec["AS"] = build_as_column(new_column, column_type, name_gen=name_gen)
-    else:
-        assert existing_column is not None
+    elif existing_column:
         spec["DESTINATION"] = resolve_column(existing_column, col_map, internal_names)
     if keep_original is not None:
         spec["KEEP_ORIGINAL"] = keep_original
