@@ -27,7 +27,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
-## mammoth-io 0.8.53, mammoth-cli 2.5.0 (2026-10-27)
+## mammoth-io 0.8.53, mammoth-cli 2.3.3 (2026-10-27)
 
 ### Added (mammoth-io 0.8.53)
 
@@ -39,7 +39,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
 - SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
 
-### Added (mammoth-cli 2.5.0)
+### Added (mammoth-cli 2.3.3)
 
 - CLI: `view transform repeat-rows` (Repeat Rows).
 - CLI: `view transform math` takes `{name}` in an expression for a workspace or project parameter; `view transform json-extract` takes a key path (keys and array indexes).
