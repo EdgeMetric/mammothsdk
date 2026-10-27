@@ -1573,6 +1573,36 @@ class TestAdvanced:
             {"COLUMN": "Age", "KEY": "age", "TYPE": "NUMERIC", "INTERNAL_NAME": "gen2"},
         ]
 
+    def test_json_extract_nested_key_paths(self) -> None:
+        extractions = [
+            JsonExtractionSpec(key=["company", "location", "country"]),
+            JsonExtractionSpec(key=["orders", 0, "total"], as_name="First total"),
+        ]
+        spec = b.build_json_extract_params(
+            "Notes", COLS, INTERNALS, extractions=extractions, name_gen=gen()
+        )
+        assert spec["JSON_HANDLE"]["JSON_EXTRACT"] == [
+            {
+                "COLUMN": "company.location.country",
+                "KEY": ["company", "location", "country"],
+                "TYPE": "TEXT",
+                "INTERNAL_NAME": "gen1",
+            },
+            {
+                "COLUMN": "First total",
+                "KEY": ["orders", 0, "total"],
+                "TYPE": "TEXT",
+                "INTERNAL_NAME": "gen2",
+            },
+        ]
+
+    @pytest.mark.parametrize("key", [[], ["a", -1], ["a", True], ["a", 1.5], ["a", None]])
+    def test_json_extract_invalid_key_path_is_refused(self, key: list) -> None:
+        with pytest.raises(MammothValidationError, match="key path"):
+            b.build_json_extract_params(
+                "Notes", COLS, INTERNALS, extractions=[JsonExtractionSpec(key=key)]
+            )
+
     def test_json_extract_keys_list_op_override_wrong_count_raises(self) -> None:
         """DBAdapter's json_handle asserts ``len(column_spec) == 2`` for
         JSON_LIST_TO_ROWS; a single key used to sail through and reach the

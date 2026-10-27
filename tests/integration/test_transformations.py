@@ -25,6 +25,7 @@ from mammoth import (
     DateDelta,
     DateDiffUnit,
     FillDirection,
+    JsonExtractionSpec,
     MammothValidationError,
     Operator,
     SetValue,
@@ -442,3 +443,28 @@ class TestMathWithParameter:
     async def test_an_unknown_parameter_name_is_refused_before_any_task(self, view):
         with pytest.raises(MammothValidationError, match="no parameter named"):
             await view.math("base_salary * {no_such_parameter_xyz}", new_column="scaled")
+
+
+class TestJsonExtractNestedKey:
+    """A key path reaches a value inside nested objects and arrays."""
+
+    async def test_path_extracts_the_nested_value(self, view):
+        await view.set_values(
+            new_column="doc",
+            column_type=ColumnType.TEXT,
+            values=[
+                SetValue('{"company":{"location":{"country":"Peru"}},"orders":[{"total":"7"}]}')
+            ],
+        )
+
+        await view.json_extract(
+            "doc",
+            extractions=[
+                JsonExtractionSpec(key=["company", "location", "country"], as_name="Country"),
+                JsonExtractionSpec(key=["orders", 0, "total"], as_name="First total"),
+            ],
+        )
+
+        rows = (await view.data(columns=["Country", "First total"], limit=50))["data"]
+        pairs = {tuple(v for k, v in row.items() if k != "hash") for row in rows}
+        assert pairs == {("Peru", "7")}

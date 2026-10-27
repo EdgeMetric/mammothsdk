@@ -670,10 +670,16 @@ class JsonExtractionSpec:
         await view.json_extract("data", extractions=[
             JsonExtractionSpec(key="name", as_name="Name", type="TEXT"),
             JsonExtractionSpec(key="age", as_name="Age", type="NUMERIC"),
+            JsonExtractionSpec(key=["company", "location", "country"], as_name="Country"),
+            JsonExtractionSpec(key=["orders", 0, "total"], as_name="First total"),
         ])
+
+    *key* is one object key, or a path to a nested value: a non-empty list of
+    object keys (str) and array indexes (int >= 0). A path without *as_name*
+    names its column with the parts joined by ``.``.
     """
 
-    key: str
+    key: str | list[str | int]
     as_name: str | None = None
     type: ColumnType = ColumnType.TEXT
 

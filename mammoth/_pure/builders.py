@@ -1442,6 +1442,19 @@ _JSON_TYPE_MAP: dict[JsonType, tuple[str, JsonOpType, str]] = {
 }
 
 
+def _json_extract_item(spec: JsonExtractionSpec, internal_name: str) -> dict[str, Any]:
+    """One JSON_EXTRACT item of a key or a key path."""
+    key = spec.key
+    if isinstance(key, list) and (
+        not key or not all(isinstance(p, str) or (type(p) is int and p >= 0) for p in key)
+    ):
+        raise MammothValidationError(
+            "json_extract key path must be a non-empty list of keys (str) and indexes (int >= 0)"
+        )
+    column = spec.as_name or (key if isinstance(key, str) else ".".join(map(str, key)))
+    return {"COLUMN": column, "KEY": key, "TYPE": spec.type.value, "INTERNAL_NAME": internal_name}
+
+
 def build_json_extract_params(
     column: str,
     col_map: dict[str, str],
@@ -1471,14 +1484,7 @@ def build_json_extract_params(
     extract_specs: list[dict[str, Any]] = []
     if extractions:
         for e in extractions:
-            extract_specs.append(
-                {
-                    "COLUMN": e.as_name or e.key,
-                    "KEY": e.key,
-                    "TYPE": e.type.value,
-                    "INTERNAL_NAME": next_internal_name(name_gen),
-                }
-            )
+            extract_specs.append(_json_extract_item(e, next_internal_name(name_gen)))
     elif keys:
         for k in keys:
             extract_specs.append(

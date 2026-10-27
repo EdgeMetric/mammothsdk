@@ -279,6 +279,23 @@ def test_math_uses_a_parameter_written_in_braces(source: Source, items: Table) -
         )
 
 
+def test_json_extract_takes_a_key_path_into_nested_objects(items: Table) -> None:
+    doc = '{"company": {"location": {"country": "Peru"}}, "tags": ["x", "y"]}'
+    items.ok("set-values", new_column="Doc", values=[{"value": doc}])
+
+    items.ok(
+        "json-extract",
+        column="Doc",
+        extractions=[
+            {"key": ["company", "location", "country"], "as_name": "Country"},
+            {"key": ["tags", 1], "as_name": "Second tag"},
+        ],
+    )
+
+    assert items.values("Country") == ["Peru"] * 4
+    assert items.values("Second tag") == ["y"] * 4
+
+
 # -- repeat-rows ----------------------------------------------------------------
 
 
