@@ -266,7 +266,7 @@ def test_math_uses_a_parameter_written_in_braces(source: Source, items: Table) -
     name = f"live_factor_{uuid.uuid4().hex[:8]}"
     created, _ = source.cli.ok(
         *("parameter", "create"),
-        *("--input", json.dumps({"name": name, "param_type": "NUMERIC", "value": "2"})),
+        *("--input", json.dumps({"name": name, "param_type": "NUMERIC", "value": 2})),
         project=source.project,
     )
     try:
@@ -302,7 +302,7 @@ def test_json_extract_takes_a_key_path_into_nested_objects(items: Table) -> None
 def test_repeat_rows_values_make_one_copy_of_each_row_per_value(items: Table) -> None:
     data = items.ok("repeat-rows", values=["a", "b"], new_column="Tag", new_column_type="TEXT")
 
-    assert data["run"]["transform_status"] == "DONE"
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 8}
     assert items.values("Tag") == ["a"] * 4 + ["b"] * 4
     assert items.total("Cost") == 200
 
@@ -316,7 +316,7 @@ def test_repeat_rows_times_doubles_the_rows(items: Table) -> None:
 def test_repeat_rows_number_series_names_its_values(items: Table) -> None:
     items.ok("repeat-rows", series={"start": 1, "end": 3, "step": 1}, new_column="N")
 
-    assert sorted(set(items.values("N"))) == ["1", "2", "3"]
+    assert sorted(set(items.values("N"))) == [1, 2, 3]
 
 
 def test_repeat_rows_needs_exactly_one_mode(items: Table) -> None:
