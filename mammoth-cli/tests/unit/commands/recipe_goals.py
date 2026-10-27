@@ -105,6 +105,12 @@ POSITIVES: tuple[tuple[str, str], ...] = (
     ("go back to the previous pipeline version", "revert-view-version"),
     ("roll a view back to version 3", "revert-view-version"),
     ("add a column with the first name from Name", "split-column"),
+    ("filter rows where status is active", "filter-copy"),
+    ("keep only rows where revenue is greater than 1000", "filter-copy"),
+    ("make a filtered copy of the orders view", "filter-copy"),
+    ("create a new project", "create-projects"),
+    ("set up projects for each of my teams", "create-projects"),
+    ("make several projects from a list of names", "create-projects"),
 )
 
 NEGATIVES: tuple[str, ...] = (
@@ -117,7 +123,6 @@ NEGATIVES: tuple[str, ...] = (
     "convert text in Name to uppercase",
     "subtract 10 from Quantity",
     "round the Cost column to two decimals",
-    "filter rows where status is active",
     "unpivot the month columns into rows",
     "sort the view by date descending",
     "color the cells red when a value is negative",
@@ -135,7 +140,6 @@ NEGATIVES: tuple[str, ...] = (
     "export the view as json",
     "download the dashboard as a pdf",
     "list my datasets",
-    "create a new project",
     "copy this dataset",
     "show me the column types",
 )
@@ -180,8 +184,6 @@ BLIND_NEGATIVES: tuple[str, ...] = (
     "convert the amount column to numbers",
     "convert the date column to text",
     "round the revenue column to 2 decimals",
-    "filter rows where status is Active",
-    "keep only rows where revenue is greater than 1000",
     "highlight the rows where amount is negative",
     "sort my view by revenue descending",
     "publish my view to a Postgres database",

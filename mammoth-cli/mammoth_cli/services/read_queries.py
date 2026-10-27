@@ -358,7 +358,11 @@ def pivot_with_text_dates(
     and regroups by ``level``.
     """
     if len(levels) != 1:
-        raise _fail("Bucket at most one TEXT date column per query.")
+        raise _fail(
+            "Bucket at most one TEXT date column per query.",
+            "Group by one part or truncation of the date, or run 'view transform convert-type' "
+            "to make it a DATE column first.",
+        )
     ((position, level),) = levels.items()
     entry = group_by[position]
     internal = entry["column"] if isinstance(entry, dict) else entry
@@ -429,6 +433,13 @@ def _sort_entry(item: Any, labels: dict[str, str]) -> tuple[str, str]:
     return labels[label], direction
 
 
+def _first_measure(as_map: dict[str, str]) -> str:
+    """The result label of the first aggregation, or a stand-in when the read has none."""
+    return next(
+        (label for internal, label in as_map.items() if internal.startswith("agg_")), "Total"
+    )
+
+
 def parse_order(
     document: dict[str, Any], as_map: dict[str, str]
 ) -> tuple[list[list[str]] | None, int | None]:
@@ -442,7 +453,10 @@ def parse_order(
     if top is not None and limit is not None:
         raise _fail("Pass either 'top' or 'limit', not both.", "'top' is 'limit' after 'order_by'.")
     if top is not None and not order_by:
-        raise _fail("'top' needs 'order_by': the top N of what?", 'Add "order_by": ["Total desc"].')
+        raise _fail(
+            "'top' needs 'order_by': the top N of what?",
+            f'Add "order_by": ["{_first_measure(as_map)} desc"] to rank by your first aggregation.',
+        )
     sort: list[list[str]] | None = None
     if order_by:
         entries = order_by if isinstance(order_by, list) else [order_by]
@@ -570,7 +584,7 @@ _ADDITIVE = ("SUM", "COUNT")
 def _number(value: Any) -> float | None:
     try:
         return None if value is None or isinstance(value, bool) else float(value)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

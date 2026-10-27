@@ -302,7 +302,7 @@ commands:
     order (settle it with text_date_format) or an unreadable value fails loud, and a range condition (GT,
     GTE, LT, LTE, IN_RANGE with a YYYY-MM-DD value) on such a column works the same way. A truncate on
     a NUMERIC column, or a resolution on a non-NUMERIC one, is refused. To group by the part of a date,
-    give {"column": C, "part": weekday|month|quarter|year} on a DATE or TEXT-date column: the groups are
+    give {"column": C, "part": weekday|day|month|quarter|year} on a DATE or TEXT-date column: the groups are
     named (Monday, January, Q1) and in calendar order. This is the read-only way to answer by-weekday
     and by-month questions. An empty result carries observed_range: the min and max of the filtered or
     date column.'
@@ -1265,7 +1265,10 @@ commands:
       view_id: positional.0
     kind: data
   known_restrictions: 'Observe first: `view data profile VIEW_ID` (or `view data aggregate` counting rows
-    grouped by the key columns) to count the duplicate rows this will drop.'
+    grouped by the key columns) to count the duplicate rows this will drop. Edits the view in place: to keep
+    the original, `view create` a copy first. Input: "key_columns" (only these columns decide a duplicate;
+    every other column is ignored) or "ignore_columns" (these columns are left out of the comparison),
+    not both. A batch step takes ignore_columns only.'
 - command_id: view.transform.extract-date
   output_schema: {ref: TransformResult}
   readback:

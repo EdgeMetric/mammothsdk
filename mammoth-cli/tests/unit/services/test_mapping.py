@@ -555,6 +555,45 @@ def test_an_ordinary_400_stays_an_api_error() -> None:
     assert map_sdk_exception(error).code == "api_error"
 
 
+def test_a_400_whose_reason_sits_in_name_says_it() -> None:
+    # Recorded (workspace create): the message was generic, the missing field was in "name".
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "details": None,
+            "error_code": "4WKSP005",
+            "message": "Workspace Creation Failed",
+            "name": "INVALID_API_USAGE: Missing required field: user_email (Code: 4GENR014)",
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.message == (
+        "Workspace Creation Failed: INVALID_API_USAGE: Missing required field: user_email "
+        "(Code: 4GENR014) [4WKSP005]"
+    )
+
+
+def test_a_bare_error_name_is_not_added_to_the_message() -> None:
+    error = MammothAPIError(
+        "Bad request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "error_code": "4DSET030",
+            "message": "Invalid columns to get data",
+            "name": "INVALID_COLUMNS",
+        },
+    )
+
+    assert map_sdk_exception(error).message == "Invalid columns to get data [4DSET030]"
+
+
 def test_a_read_timeout_hint_names_no_delay_the_server_never_gave() -> None:
     # FB-07: "Retry after the indicated delay" with no delay indicated.
     error = MammothAPIError(

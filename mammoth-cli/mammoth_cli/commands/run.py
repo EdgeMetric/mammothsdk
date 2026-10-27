@@ -129,6 +129,7 @@ _CREDENTIAL_GROUPS = frozenset({"auth", "config", "context"})
 #: Where :func:`write_envelope` puts each envelope while :func:`collecting` is open,
 #: instead of stdout; per context, so concurrent embedded calls never share one.
 _SINK: ContextVar[list[dict[str, Any]] | None] = ContextVar("mammoth_cli_run_sink", default=None)
+_SEEN: ContextVar[list[dict[str, Any]] | None] = ContextVar("mammoth_cli_run_seen", default=None)
 
 
 @dataclass
@@ -471,6 +472,21 @@ def collecting() -> Iterator[list[dict[str, Any]]]:
         _SINK.reset(token)
 
 
+@contextlib.contextmanager
+def observing() -> Iterator[list[dict[str, Any]]]:
+    """Note each envelope :func:`write_envelope` handles, in order, and still write it.
+
+    Yields:
+        The list the envelopes are noted in.
+    """
+    seen: list[dict[str, Any]] = []
+    token = _SEEN.set(seen)
+    try:
+        yield seen
+    finally:
+        _SEEN.reset(token)
+
+
 def write_envelope(envelope: dict[str, Any]) -> None:
     """Write one envelope as one compact line on stdout and flush it.
 
@@ -479,6 +495,8 @@ def write_envelope(envelope: dict[str, Any]) -> None:
     Args:
         envelope: The envelope to write.
     """
+    if (seen := _SEEN.get()) is not None:
+        seen.append(envelope)
     if (sink := _SINK.get()) is not None:
         sink.append(envelope)
         return
@@ -519,7 +537,7 @@ def _read_source(source: str) -> str:
                 exit_status=EXIT_USAGE,
                 hint="Check the path, or pass '-' to read from standard input.",
             ) from None
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             raise CliError(
                 code="input_unreadable",
                 message=f"Could not read '{source}' as UTF-8 text.",

@@ -305,6 +305,10 @@ def _plan_limit_reason(body: Any, status: int | None) -> str | None:
     return message if isinstance(message, str) and message else str(backend_code)
 
 
+#: A bare error name such as ``PERMISSION_ERROR``: a label, not a reason.
+_ERROR_NAME_ONLY = re.compile(r"[A-Z][A-Z0-9_]*")
+
+
 def _backend_message(body: Any, status: int | None) -> str | None:
     """The backend's own words for a 4xx: message, reason under it, field errors, then code."""
     if status is None or not 400 <= status < 500 or not isinstance(body, dict):
@@ -319,6 +323,10 @@ def _backend_message(body: Any, status: int | None) -> str | None:
         # A generic backend message ("Invalid arguments passed") carries the real
         # reason one level down.
         text = f"{text}: {reason}"
+    name = body.get("name")
+    if isinstance(name, str) and name and name not in text and not _ERROR_NAME_ONLY.fullmatch(name):
+        # The reason can sit in ``name`` ("Workspace Creation Failed" over a missing field).
+        text = f"{text}: {name}"
     extra = details.get("extra")
     if isinstance(extra, list) and extra:
         text = "\n".join([text, *(_field_error_line(item) for item in extra)])

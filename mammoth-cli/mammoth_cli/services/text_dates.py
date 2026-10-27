@@ -28,7 +28,7 @@ LEVELS = ("DAY", "WEEK", "MONTH", "QUARTER", "YEAR", "DECADE")
 #: Aggregate functions that can be recombined from per-day groups.
 ADDITIVE_FUNCTIONS = frozenset({"SUM", "COUNT", "MIN", "MAX"})
 #: Date parts a group_by ``part`` can name: the part of the date, not a period start.
-PARTS = ("weekday", "month", "quarter", "year")
+PARTS = ("weekday", "day", "month", "quarter", "year")
 #: Prefix that marks a date part (rather than a truncation level) in a bucket level.
 PART_PREFIX = "part:"
 _WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -269,9 +269,11 @@ def require_part(part: Any) -> str:
 
 
 def part_bucket(day: date, part: str) -> tuple[int, str | int]:
-    """``(sort order, value)`` of ``part`` for ``day``: weekday and month by name."""
+    """``(sort order, value)`` of ``part`` for ``day``: weekday and month by name, day as 1-31."""
     if part == "weekday":
         return day.weekday(), _WEEKDAY_NAMES[day.weekday()]
+    if part == "day":
+        return day.day, day.day
     if part == "month":
         return day.month, _MONTH_NAMES[day.month - 1]
     if part == "quarter":

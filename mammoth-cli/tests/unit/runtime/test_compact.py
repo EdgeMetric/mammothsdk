@@ -14,7 +14,9 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import embedded
 from mammoth_cli.runtime.compact import (
     COMPACT_COMMANDS,
     FULL_FLAG,
@@ -188,3 +190,48 @@ def test_canvas_get_full_returns_the_payload_unchanged() -> None:
 def test_canvas_get_accepts_full() -> None:
     assert "dashboard.canvas.get" in FULL_FLAG_COMMANDS
     validate_extra_args("dashboard.canvas.get", [FULL_FLAG])
+
+
+# --- job wait: compact only for an embedded (agent) caller ----------------
+
+
+def _job_wait_result() -> dict[str, Any]:
+    return {
+        "status": "success",
+        "job_id": 41,
+        "operation": "generate_dashboard_v3",
+        "result": _figure_add_result(),
+    }
+
+
+def _job_wait_inv(**overrides: Any) -> Invocation:
+    return Invocation(command_id="job.wait", positionals={"job_id": 41}, **overrides)
+
+
+def test_job_wait_returns_the_whole_response_in_a_terminal_run() -> None:
+    full = _job_wait_result()
+    assert with_compact(_job_wait_inv(), full) is full
+
+
+def test_job_wait_is_compact_for_an_embedded_caller() -> None:
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, api_token="jwt", server_prefix="box", workspace_id=5
+    )
+    token = embedded.enter(embedded.EmbeddedCall(login=login))
+    try:
+        full = _job_wait_result()
+        data = with_compact(_job_wait_inv(), full)
+        assert with_compact(_job_wait_inv(full_output=True), full) is full
+    finally:
+        embedded.leave(token)
+    assert len(json.dumps(full)) > 15_000 and len(json.dumps(data)) < 3_000
+    assert data["status"] == "success" and data["job_id"] == 41
+    assert data["result"]["canvas_summary"]["pages"] == 2
+    assert data["result"]["verify"] == full["result"]["verify"]
+    assert data["compact"]["read_with"] == "mammoth job get 41"
+    assert data["compact"]["omitted"] == ["result.canvas", "result.plan", "result.specs"]
+
+
+def test_job_wait_accepts_full() -> None:
+    assert "job.wait" in FULL_FLAG_COMMANDS
+    validate_extra_args("job.wait", [FULL_FLAG])

@@ -26,6 +26,9 @@ _BASE = ["--output", "json", "--project", "9"]
 _RUNNABLE = runnable_recipes()
 
 
+_STOPS_ON_NO_DUPLICATES = {"remove-duplicates"}
+
+
 @pytest.fixture(autouse=True)
 def _env_auth(isolated_cli_config: Path) -> None:
     login_default_profile()
@@ -35,6 +38,13 @@ def _env_auth(isolated_cli_config: Path) -> None:
 def service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
     fake = FakeMammothService()
     fake.responses[_FIND_DATASET] = 5
+    # remove-duplicates reads the view's columns to turn key_columns into ignore_columns.
+    fake.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "metadata": (
+            [{"display_name": "Order ID", "internal_name": "c1"}]
+            + [{"display_name": "Other", "internal_name": "c2"}]
+        )
+    }
     store = journal.FileJournal(journal.journal_dir())
     store.append(
         {"event": "begin", "inv": _HISTORY_ID, "group": "g1", "command": "dataset.trash", "ts": "t"}
@@ -71,6 +81,12 @@ def test_a_dry_run_plans_every_line(
     service: FakeMammothService, recipe: dict[str, Any], tmp_path: Path
 ) -> None:
     code, lines = _dry_run(recipe, tmp_path)
+    if recipe["id"] in _STOPS_ON_NO_DUPLICATES:
+        # The fake view holds no rows: the preview counts zero duplicates and stops the recipe
+        # before any copy is made (the live test covers the run with duplicates).
+        assert lines[-1]["data"]["failed_lines"] == [1], lines
+        assert lines[0]["error"]["code"] == "no_op", lines
+        return
     assert code == 0, lines
     summary = lines[-1]["data"]
     assert summary["recipe"] == recipe["id"]

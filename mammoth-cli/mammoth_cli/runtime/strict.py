@@ -32,6 +32,7 @@ or not-yet-backed commands.
 
 from __future__ import annotations
 
+import difflib
 import math
 import re
 from collections.abc import Iterable, Mapping
@@ -78,6 +79,7 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 INPUT_ALIASES: dict[str, dict[str, str]] = {
     "view.transform.sort": {"sort_by": "order_by"},
     "view.transform.limit-rows": {"limit": "n"},
+    "view.data.query": {"filter": "condition"},
     "view.export.download": {"format": "file_type"},
 }
 _SORT_COMMAND = "view.transform.sort"
@@ -228,6 +230,7 @@ def _invalid_field_type_error(
                 "accepted": list(accepted),
                 "did_you_mean": did_you_mean,
             },
+            recovery_commands=[_schema_command(command_id)],
         )
     if expected == "a required field":
         message = f"Input field '{field}' for '{command}' is required."
@@ -244,6 +247,7 @@ def _invalid_field_type_error(
         exit_status=EXIT_USAGE,
         hint=hint,
         details={"field": field, "expected_type": expected},
+        recovery_commands=[_schema_command(command_id)],
     )
 
 
@@ -385,6 +389,17 @@ _UNKNOWN_FIELD_HINTS: dict[str, str] = {
 }
 
 
+def _schema_command(command_id: str) -> str:
+    """The command that lists every field of ``command_id``."""
+    return f"mammoth schema get {command_id}"
+
+
+def _nearest_fields(unknown: list[str], accepted: list[str]) -> dict[str, str]:
+    """For each unknown key, the closest accepted field; a key with none close is left out."""
+    nearest = {key: difflib.get_close_matches(key, accepted, n=1) for key in unknown}
+    return {key: close[0] for key, close in nearest.items() if close}
+
+
 def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: list[str]) -> str:
     """Name the fix for an unknown ``--input`` key, with the caller's own value."""
     if command_id in _UNKNOWN_FIELD_HINTS:
@@ -400,7 +415,10 @@ def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: lis
 
 
 def _sort_entry(entry: Any) -> Any:
-    """``"col"`` / ``"col asc"`` / ``"col desc"`` as ``[col, DIR]``; any other entry as it is."""
+    """``"col"``, ``"col desc"`` or ``{"column", "order"}`` as ``[col, DIR]``; else unchanged."""
+    if isinstance(entry, dict) and isinstance(entry.get("column"), str):
+        direction = str(entry.get("order") or entry.get("direction") or "asc").upper()
+        return [entry["column"], direction]
     if not isinstance(entry, str):
         return entry
     words = entry.split()
@@ -412,11 +430,11 @@ def _sort_entry(entry: Any) -> Any:
 #: ``dashboard v3 generate`` wants ``{"body": {"params": {...}}}``; these are the params an
 #: agent writes at the top level instead.
 _GENERATE_COMMAND = "dashboard.v3.generate"
-_GENERATE_PARAMS = ("intent", "dataview_id", "title")
+_GENERATE_PARAMS = ("intent", "dataview_id", "title", "format")
 
 
 def _nest_generate_params(document: dict[str, Any]) -> None:
-    """Move top-level ``intent``/``dataview_id``/``title`` into ``body.params``, in place."""
+    """Move top-level ``intent``/``dataview_id``/``title``/``format`` into ``body.params``."""
     flat = [key for key in _GENERATE_PARAMS if key in document]
     if not flat or "body" in document:
         return
@@ -508,7 +526,12 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
             ),
             exit_status=EXIT_USAGE,
             hint=_unknown_field_hint(command_id, document, sorted(fields_by_name)),
-            details={"unknown": unknown, "accepted": sorted(fields_by_name)},
+            details={
+                "unknown": unknown,
+                "accepted": sorted(fields_by_name),
+                "did_you_mean": _nearest_fields(unknown, sorted(fields_by_name)),
+            },
+            recovery_commands=[_schema_command(command_id)],
         )
     if is_closed_zero_input(command_id) and document == {}:
         raise CliError(

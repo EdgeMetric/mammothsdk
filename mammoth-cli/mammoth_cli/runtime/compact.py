@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from mammoth_cli.runtime import embedded
+
 if TYPE_CHECKING:
     from mammoth_cli.runtime.invocation import Invocation
 
@@ -35,8 +37,12 @@ COMPACT_COMMANDS = frozenset(
 #: Reads trimmed by default; ``--full`` returns the old shape. ``schema find`` cuts
 #: each match to what picks and calls it; ``canvas get`` leaves out null and empty fields.
 TRIMMED_READ_COMMANDS = frozenset({"schema.find", "dashboard.canvas.get"})
+#: Commands compacted only in an embedded (agent) call: a dashboard build's ``job wait`` result
+#: carries the whole canvas, which a model reading it pays for in every later round. A terminal
+#: run gets the response whole.
+EMBEDDED_COMPACT_COMMANDS = frozenset({"job.wait"})
 #: Every command that takes ``--full``.
-FULL_FLAG_COMMANDS = COMPACT_COMMANDS | TRIMMED_READ_COMMANDS
+FULL_FLAG_COMMANDS = COMPACT_COMMANDS | TRIMMED_READ_COMMANDS | EMBEDDED_COMPACT_COMMANDS
 
 #: Keys left out in compact mode: the planner's working state, not a result.
 _OMITTED_KEYS = ("plan", "specs")
@@ -121,10 +127,32 @@ def _dashboard_id(invocation: Invocation, data: dict[str, Any]) -> Any:
     return "DASHBOARD_ID"
 
 
+def _compact_job_wait(invocation: Invocation, data: dict[str, Any]) -> dict[str, Any]:
+    """A finished job's ``result`` compacted, with the read that returns the whole of it."""
+    omitted: list[str] = []
+    result = _compact(data.get("result"), "result", omitted)
+    if not omitted:
+        return data
+    job_id = data.get("job_id", invocation.positionals.get("job_id"))
+    return {
+        **data,
+        "result": result,
+        "compact": {
+            "omitted": omitted,
+            "read_with": f"mammoth job get {job_id}",
+            "full": f"Pass {FULL_FLAG} on a later run of the command for the complete response.",
+        },
+    }
+
+
 def with_compact(invocation: Invocation, data: Any) -> Any:
     """``data`` compacted for a command in :data:`COMPACT_COMMANDS`, unless ``--full``."""
     if invocation.command_id == "dashboard.canvas.get":
         return data if invocation.full_output else _drop_nulls(data)
+    if invocation.command_id in EMBEDDED_COMPACT_COMMANDS:
+        if embedded.active() and not invocation.full_output and isinstance(data, dict):
+            return _compact_job_wait(invocation, data)
+        return data
     if (
         invocation.command_id not in COMPACT_COMMANDS
         or invocation.full_output
