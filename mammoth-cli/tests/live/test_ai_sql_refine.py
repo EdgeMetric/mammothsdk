@@ -19,7 +19,7 @@ pytestmark = pytest.mark.live
 def test_current_query_is_refined_as_asked(live_cli: LiveCli, sales_data: SalesData) -> None:
     spec = {
         "dataset_id": sales_data.dataset,
-        "current_query": "SELECT * FROM input_table WHERE region = 'North'",
+        "current_query": "SELECT *, 'North' AS source_tag FROM input_table",
     }
     generated, _ = live_cli.ok(
         *("ai", "sql", "generate", "Keep only the first ten rows", "--input", json.dumps(spec)),

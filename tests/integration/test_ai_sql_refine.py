@@ -24,7 +24,7 @@ async def test_refining_a_query_changes_it_as_asked(
     generated = await client.ai.generate_sql(
         "Keep only the first ten rows",
         dataset_id=uploaded_dataset_id,
-        current_query="SELECT * FROM input_table WHERE region = 'North'",
+        current_query="SELECT *, 'North' AS source_tag FROM input_table",
     )
 
     assert "North" in json.dumps(generated)
