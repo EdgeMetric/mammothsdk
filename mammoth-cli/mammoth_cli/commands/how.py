@@ -222,6 +222,8 @@ _STAGE = {
     "lookup-column": 1,
     "clean-data": 2,
     "remove-duplicates": 2,
+    "filter-copy": 2,
+    "create-projects": 0,
     "fill-blanks-with-value": 2,
     "rename-columns": 2,
     "find-replace": 2,

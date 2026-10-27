@@ -15,6 +15,7 @@ from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.context import resolver
 from mammoth_cli.errors.envelope import EXIT_PARTIAL
+from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
@@ -134,9 +135,35 @@ def test_list_shows_inputs_and_a_ready_command(service: FakeMammothService) -> N
     assert recipes["two-reads"]["writes"] is False
     assert recipes["one-delete"]["writes"] is True
     assert recipes["one-delete"]["run_command"] == (
-        'mammoth recipe run one-delete --input \'{"inputs": {"dataset_id": 1, "note": null}}\''
-        " --yes"
+        'mammoth recipe run one-delete --input \'{"inputs": {"dataset_id": "<dataset_id>",'
+        ' "note": "<note>"}}\''
     )
+
+
+def test_a_suggested_command_has_no_real_looking_id_and_no_yes() -> None:
+    for recipe in discovery.runnable_recipes():
+        command = discovery.run_command(recipe)
+        assert "--yes" not in command, command
+        document = json.loads(command.split("--input '", 1)[1].rsplit("'", 1)[0])
+        assert document["inputs"] == {name: f"<{name}>" for name in recipe.get("inputs", {})}
+
+
+def test_how_and_schema_find_suggest_the_placeholder_command() -> None:
+    data, _ = how_cmd.how(Invocation(command_id="how", extra_args=["export to csv"]))
+    assert "--yes" not in data["run_command"] and '"<view_id>"' in data["run_command"]
+    found = find_schemas("export a view to csv")
+    assert all("--yes" not in task["run_command"] for task in found["recipes"])
+    assert '"<view_id>"' in found["recipes"][0]["run_command"]
+
+
+def test_run_refuses_inputs_still_holding_placeholders(service: FakeMammothService) -> None:
+    code, lines = _recipe("run", "two-reads", *_inputs({"dataset_id": "<dataset_id>"}))
+    assert code != 0
+    error = lines[-1]["error"]
+    assert error["code"] == "recipe_input_invalid"
+    assert error["details"]["unfilled"] == ["dataset_id"]
+    assert "dataset_id" in error["message"]
+    assert service.call_log == []
 
 
 def test_run_lines_goes_past_a_partial_line_when_asked(

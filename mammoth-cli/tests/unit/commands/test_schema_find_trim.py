@@ -37,7 +37,15 @@ def test_a_match_leaves_out_what_schema_get_returns() -> None:
         for key in ("full_schema_command", "known_restrictions", "matched_on"):
             assert key not in match
         for field in match.get("accepted_fields", []):
-            assert set(field) <= {"name", "type", "required", "enum"}
+            assert set(field) <= {"name", "type", "required", "enum", "schema"}
+
+
+def test_an_object_field_keeps_its_nested_shape() -> None:
+    match = _find("generate a dashboard from a view")["matches"][0]
+    assert match["command_id"] == "dashboard.v3.generate"
+    (body,) = [field for field in match["accepted_fields"] if field["name"] == "body"]
+    assert body["type"] == "GenerateDashboardV3Spec"
+    assert "dataview_id" in body["schema"]["$defs"]["GenerateDashboardV3Params"]["properties"]
 
 
 def test_near_misses_are_listed_once_as_partial_matches() -> None:
@@ -51,7 +59,7 @@ def test_near_misses_are_listed_once_as_partial_matches() -> None:
 def test_the_default_result_is_far_smaller_than_full() -> None:
     lean = json.dumps(_find(_PARTIAL_QUERY))
     full = json.dumps(_find("--full", _PARTIAL_QUERY))
-    assert len(lean) < len(full) / 3
+    assert len(lean) < len(full) / 2
 
 
 def test_full_returns_the_complete_shape() -> None:
@@ -67,3 +75,10 @@ def test_several_goals_are_trimmed_too() -> None:
     assert len(goals) == 2
     assert all("full_schema_command" not in m for goal in goals for m in goal["matches"])
     assert "suggestions" not in goals[1]
+
+
+def test_a_purpose_word_the_command_text_lacks_still_finds_it() -> None:
+    # No automation command says "disable"; it is an update of the automation.
+    data = _find("disable an automation")
+    assert data["total_matches"] > 0
+    assert data["matches"][0]["command_id"] == "automation.update"

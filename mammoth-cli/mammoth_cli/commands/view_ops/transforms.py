@@ -37,7 +37,9 @@ from mammoth_cli.commands.view_ops import (
     _view_id,
 )
 from mammoth_cli.errors.envelope import (
+    CODE_INVALID_ARGUMENT,
     EXIT_API,
+    EXIT_USAGE,
     CliError,
 )
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
@@ -382,18 +384,58 @@ def view_transform_delete_columns(invocation: Invocation) -> HandlerResult:
 
 
 def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
-    """Discard duplicate rows. ``ignore_columns`` is optional.
+    """Discard duplicate rows. ``ignore_columns`` or ``key_columns`` is optional.
 
-    ``--dry-run`` counts the duplicates first: it reports ``predicted_impact``,
-    or fails with ``no_op`` when there are none (nothing to discard).
+    ``key_columns`` names the columns that make a row a duplicate (a duplicate
+    order id, say); every other column is ignored. ``--dry-run`` counts the
+    duplicates first: it reports ``predicted_impact``, or fails with ``no_op``
+    when there are none (nothing to discard).
     """
     view_id = _view_id(invocation)
-    document = invocation.load_input() or {}
+    document = dict(invocation.load_input() or {})
+    key_columns = document.pop("key_columns", None)
+    if key_columns is not None and document.get("ignore_columns"):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Give key_columns or ignore_columns, not both.",
+            exit_status=EXIT_USAGE,
+        )
     kwargs = _bind_transform_inputs(invocation, document)
-    prepare = _impact_check(invocation, view_id, measure_duplicates)
+    measure_impact = _impact_check(invocation, view_id, measure_duplicates)
+
+    def prepare(service: Any, dataset_id: int, call_kwargs: dict[str, Any]) -> Any:
+        if key_columns is not None:
+            call_kwargs["ignore_columns"] = _all_but_keys(
+                service, invocation, dataset_id, view_id, key_columns
+            )
+        return measure_impact(service, dataset_id, call_kwargs)
+
     return _dispatch_view(
         invocation, view_id, "discard_duplicates", prepare=prepare, reduces_rows=True, **kwargs
     )
+
+
+def _all_but_keys(
+    service: Any, invocation: Invocation, dataset_id: int, view_id: int, key_columns: list[str]
+) -> list[str]:
+    """The view's other column names, so only ``key_columns`` decide what a duplicate is."""
+    keys = list(key_columns)
+    info = service.call(
+        _DATAVIEW_GET_SYMBOL,
+        dataset_id=dataset_id,
+        dataview_id=view_id,
+        project_id=resolved_project(invocation),
+    )
+    names = [str(c["display_name"]) for c in apply_column_renames(info).get("metadata") or []]
+    unknown = [key for key in keys if key not in names]
+    if not keys or unknown:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"key_columns must be existing column names; not found: {unknown or keys}.",
+            hint=f"The view's columns are: {', '.join(names)}.",
+            exit_status=EXIT_USAGE,
+        )
+    return [name for name in names if name not in keys]
 
 
 def _stage_standing(invocation: Invocation, measured: Measured) -> None:

@@ -73,6 +73,8 @@ def test_inputs_are_declared_typed_and_used(recipe: dict[str, Any]) -> None:
             if root == "inputs":
                 assert name in declared, (recipe["id"], reference)
                 used.add(str(name))
+            elif root in ("item", "index"):
+                assert "for_each" in line, (recipe["id"], reference)
             else:
                 assert root == "steps" and name in earlier, (recipe["id"], reference)
         if "name" in line:
@@ -91,8 +93,9 @@ def test_run_lines_build_with_example_inputs(recipe: dict[str, Any]) -> None:
     scope = {"inputs": inputs, "steps": {}, "pending": pending}
     for number, line in enumerate(recipe["run"], start=1):
         # Earlier lines' results are not known here: plan=True stands a placeholder in.
+        line_scope = {**scope, "item": "x", "index": 0} if "for_each" in line else scope
         bound = {
-            key: _as_id(bindings.resolve(line[key], scope, plan=True))
+            key: _as_id(bindings.resolve(line[key], line_scope, plan=True))
             for key in run_cmd.BOUND_KEYS
             if key in line
         }

@@ -373,6 +373,65 @@ def test_a_single_string_sort_is_a_one_entry_list(key: str) -> None:
     assert document == {"order_by": [["Revenue", "DESC"]]}
 
 
+def test_sort_by_takes_column_and_order_objects() -> None:
+    # Recorded: {"sort_by":[{"column":"Total Revenue","order":"DESC"}]} (twice, one turn).
+    document = {"sort_by": [{"column": "Total Revenue", "order": "DESC"}, {"column": "Region"}]}
+
+    validate_input_fields(_SORT, document)
+
+    assert document == {"order_by": [["Total Revenue", "DESC"], ["Region", "ASC"]]}
+
+
+def test_filter_is_the_alias_of_condition_for_a_view_query() -> None:
+    # Recorded: view data query with {"filter": {"column", "operator", "value"}, "limit": 100}.
+    condition = {"value": "App store code", "column": "Item Title", "operator": "EQ"}
+    document = {"limit": 100, "filter": condition}
+
+    validate_input_fields("view.data.query", document)
+
+    assert document == {"limit": 100, "condition": condition}
+
+
+def test_a_dashboard_generate_format_moves_into_the_params_with_the_other_flat_keys() -> None:
+    # Recorded: dashboard v3 generate with flat dataview_id, format and intent.
+    document = {"format": "dashboard", "intent": "Rank summaries", "dataview_id": 312477}
+
+    validate_input_fields("dashboard.v3.generate", document)
+
+    assert document == {
+        "body": {
+            "params": {"format": "dashboard", "intent": "Rank summaries", "dataview_id": 312477}
+        }
+    }
+
+
+def test_an_unknown_field_names_the_nearest_field_and_the_command_to_read() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(_LIMIT_ROWS, {"bottm": True})
+
+    error = excinfo.value
+    assert error.details["did_you_mean"] == {"bottm": "bottom"}
+    assert error.recovery_commands == [f"mammoth schema get {_LIMIT_ROWS}"]
+
+
+def test_an_unknown_field_with_nothing_close_has_no_suggestion_but_still_a_recovery_command() -> (
+    None
+):
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(_LIMIT_ROWS, {"zzzzzz": 1})
+
+    assert excinfo.value.details["did_you_mean"] == {}
+    assert excinfo.value.recovery_commands == [f"mammoth schema get {_LIMIT_ROWS}"]
+
+
+def test_a_mistyped_field_names_the_command_to_read() -> None:
+    with pytest.raises(CliError) as excinfo:
+        validate_input_fields(_LIMIT_ROWS, {"n": "many"})
+
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert excinfo.value.recovery_commands == [f"mammoth schema get {_LIMIT_ROWS}"]
+
+
 @pytest.mark.parametrize("field", ["wait", "timeout"])
 def test_rest_fill_refuses_the_wait_switches_it_would_ignore(field: str) -> None:
     # #279: wait/timeout were accepted, then replaced by wait=True and --job-timeout.

@@ -759,7 +759,7 @@
   "view.transform.crosstab": "Build a crosstab into a new dataset. 'rows'/'pivot_column'/'select'/",
   "view.transform.date-diff": "Compute the difference between two dates. 'component'/'start'/'end' required.",
   "view.transform.delete-columns": "Delete columns. 'columns' is required. Prompt or '--yes' required.",
-  "view.transform.discard-duplicates": "Discard duplicate rows. 'ignore_columns' is optional.",
+  "view.transform.discard-duplicates": "Discard duplicate rows. 'ignore_columns' or 'key_columns' is optional.",
   "view.transform.extract-date": "Extract a date component into a column. 'column'/'component' required.",
   "view.transform.fill-missing": "Fill missing values. 'column'/'direction' required.",
   "view.transform.filter": "Filter rows. 'condition' is required.",

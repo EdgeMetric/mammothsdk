@@ -88,9 +88,9 @@ commands:
     command: dataset.list
     ids: {}
     kind: object
-  known_restrictions: 'Add exactly one of table_list (table indices to extract) or is_preview_needed (true
-    to preview the tables first) to the input: {"file_name": "report.pdf", "is_preview_needed": true}.
-    The API refuses neither and refuses both. user_instruction cannot be combined with table_list.'
+  known_restrictions: 'Add table_list (table indices to extract) to the input: {"file_name": "report.pdf",
+    "table_list": [0]}. The API refuses a call with no table_list. user_instruction cannot be combined with
+    table_list.'
 - command_id: dataset.data
   output_schema: openapi
 - command_id: dataset.delete

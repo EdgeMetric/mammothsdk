@@ -196,6 +196,12 @@ def _build_batch(
             # The batch's own --input was admitted whole; check each step's input as
             # its own command would (types, conditions) so the error names the step.
             validate_input_fields(command_id, _without_resource_context(step["input"]))
+            if "key_columns" in step["input"]:
+                raise CliError(
+                    code=CODE_INVALID_ARGUMENT,
+                    message="key_columns is not supported in a batch step; use ignore_columns.",
+                    exit_status=EXIT_USAGE,
+                )
             kwargs = _bind_transform_inputs(invocation, step["input"], command_id)
         except CliError as exc:
             raise _step_error(index, op, exc) from exc

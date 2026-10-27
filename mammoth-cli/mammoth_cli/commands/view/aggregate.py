@@ -230,7 +230,7 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     by the returned rows); a ``limit`` without ``order_by`` is flagged unordered.
     A ``truncate`` on a TEXT column of dates is bucketed here from the detected
     format, stated in ``text_dates``.
-    A group_by ``{"column": ..., "part": weekday|month|quarter|year}`` on a DATE (or
+    A group_by ``{"column": ..., "part": weekday|day|month|quarter|year}`` on a DATE (or
     TEXT-date) column groups by the named part of the date -- ``Monday``..``Sunday``,
     ``January``..``December``, ``Q1``..``Q4``, the year -- in calendar order: the
     read-only way to answer by-weekday and by-month questions.

@@ -3,6 +3,7 @@
   "recipes": [
     {
       "id": "refresh-daily",
+      "version": 1,
       "title": "Refresh a dataset on a schedule (daily, weekly, hourly)",
       "goals": [
         "refresh daily",
@@ -164,6 +165,7 @@
     },
     {
       "id": "append-rows",
+      "version": 1,
       "title": "Add the rows of a new file to an existing dataset",
       "goals": [
         "append a new file to a dataset",
@@ -258,6 +260,7 @@
     },
     {
       "id": "blend-by-key",
+      "version": 2,
       "title": "Blend (join) two files on a shared key, such as the day",
       "goals": [
         "blend two datasets by day",
@@ -346,6 +349,12 @@
           "key_flags": []
         },
         {
+          "command_id": "view.data.aggregate",
+          "purpose": "Count the key column's rows and distinct values on each side: a repeated key on the right multiplies left rows.",
+          "example": "mammoth view data aggregate VIEW_ID DATASET_ID --input '{\"aggregations\": [{\"column\": \"day\", \"function\": \"COUNT\", \"as_name\": \"rows\"}, {\"column\": \"day\", \"function\": \"DISTINCT_COUNT\", \"as_name\": \"distinct_keys\"}]}'",
+          "key_flags": []
+        },
+        {
           "command_id": "view.transform.convert-type",
           "purpose": "Only if the key types differ: convert one side's key to the other's type.",
           "example": "mammoth view transform convert-type VIEW_ID --input '{\"conversions\": [{\"column\": \"day\", \"to\": \"DATE\"}], \"dataset_id\": DATASET_ID}'",
@@ -371,7 +380,8 @@
         }
       ],
       "notes": [
-        "Use 'view transform lookup' instead when you need one value per key and the other side repeats keys."
+        "The join is added to the left view IN PLACE (undo with 'mammoth view task delete' or 'mammoth view version apply'); copy the view first with 'view create' if the original must stay.",
+        "Read the key counts first: if distinct_keys is lower than rows on the right, the join repeats left rows - use 'view transform lookup' then. The match rate is in the join answer; the row count after the join is not predicted."
       ],
       "inputs": {
         "view_id": {
@@ -428,6 +438,50 @@
       },
       "run": [
         {
+          "name": "left_keys",
+          "cmd": "view data aggregate",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "aggregations": [
+              {
+                "column": "{{inputs.left_key}}",
+                "function": "COUNT",
+                "as_name": "rows"
+              },
+              {
+                "column": "{{inputs.left_key}}",
+                "function": "DISTINCT_COUNT",
+                "as_name": "distinct_keys"
+              }
+            ]
+          }
+        },
+        {
+          "name": "right_keys",
+          "cmd": "view data aggregate",
+          "args": [
+            "{{inputs.foreign_view_id}}",
+            "{{inputs.foreign_dataset_id}}"
+          ],
+          "input": {
+            "aggregations": [
+              {
+                "column": "{{inputs.right_key}}",
+                "function": "COUNT",
+                "as_name": "rows"
+              },
+              {
+                "column": "{{inputs.right_key}}",
+                "function": "DISTINCT_COUNT",
+                "as_name": "distinct_keys"
+              }
+            ]
+          }
+        },
+        {
           "name": "join",
           "cmd": "view transform join",
           "args": [
@@ -459,6 +513,7 @@
     },
     {
       "id": "upload-dashboard",
+      "version": 1,
       "title": "Upload a file and build a dashboard from it",
       "goals": [
         "upload and build a dashboard",
@@ -623,6 +678,7 @@
     },
     {
       "id": "stuck-upload",
+      "version": 1,
       "title": "Fix an upload that is stuck (need_action, or no view)",
       "goals": [
         "fix a stuck upload",
@@ -735,6 +791,7 @@
     },
     {
       "id": "export-powerbi",
+      "version": 1,
       "title": "Send a view or a dashboard to Power BI",
       "goals": [
         "export to power bi",
@@ -829,6 +886,7 @@
     },
     {
       "id": "export-csv",
+      "version": 1,
       "title": "Download a view as a CSV file",
       "goals": [
         "download as csv",
@@ -906,6 +964,7 @@
     },
     {
       "id": "clean-data",
+      "version": 1,
       "title": "Clean a view: remove duplicate rows and fill blanks (optionally convert one column's type)",
       "goals": [
         "clean my data",
@@ -1059,6 +1118,7 @@
     },
     {
       "id": "share-dashboard",
+      "version": 1,
       "title": "Share a dashboard",
       "goals": [
         "share a dashboard",
@@ -1141,6 +1201,7 @@
     },
     {
       "id": "cleanup-mine",
+      "version": 1,
       "title": "Clean up what you created, safely: trash one id at a time",
       "goals": [
         "delete everything i made",
@@ -1280,6 +1341,7 @@
     },
     {
       "id": "upload-clean",
+      "version": 1,
       "title": "Upload a file and clean it: convert types, fill blanks, drop duplicates",
       "goals": [
         "upload and clean a file",
@@ -1480,6 +1542,7 @@
     },
     {
       "id": "join-files",
+      "version": 1,
       "title": "Upload two files and join them on a shared key",
       "goals": [
         "upload two files and join them",
@@ -1688,6 +1751,7 @@
     },
     {
       "id": "lookup-column",
+      "version": 1,
       "title": "Look up one value from another view and add it as a column",
       "goals": [
         "look up a value from another dataset",
@@ -1829,6 +1893,7 @@
     },
     {
       "id": "add-calculated-column",
+      "version": 1,
       "title": "Add a calculated column (price * quantity)",
       "goals": [
         "add a calculated column",
@@ -1950,6 +2015,7 @@
     },
     {
       "id": "extract-date-part",
+      "version": 1,
       "title": "Pull the year, month or weekday out of a date column",
       "goals": [
         "extract the year from a date",
@@ -2072,6 +2138,7 @@
     },
     {
       "id": "split-column",
+      "version": 1,
       "title": "Split one column into several on a delimiter",
       "goals": [
         "split a column into two",
@@ -2205,6 +2272,7 @@
     },
     {
       "id": "find-replace",
+      "version": 1,
       "title": "Find and replace text in one or more columns",
       "goals": [
         "find and replace text",
@@ -2316,6 +2384,7 @@
     },
     {
       "id": "fill-blanks-with-value",
+      "version": 1,
       "title": "Fill the blanks in a column with a fixed value",
       "goals": [
         "fill blanks with a value",
@@ -2434,6 +2503,7 @@
     },
     {
       "id": "rename-columns",
+      "version": 1,
       "title": "Rename columns to clean display names",
       "goals": [
         "rename a column",
@@ -2537,12 +2607,15 @@
     },
     {
       "id": "remove-duplicates",
-      "title": "Remove duplicate rows from a view",
+      "version": 2,
+      "title": "Remove duplicate rows from a view, by key columns",
       "goals": [
         "deduplicate a dataset",
         "remove duplicate rows from a view",
         "drop repeated rows",
-        "keep only unique rows"
+        "keep only unique rows",
+        "remove duplicate orders by order id",
+        "dedupe orders by their key"
       ],
       "keywords": [
         "duplicate",
@@ -2577,20 +2650,29 @@
           "key_flags": []
         },
         {
-          "command_id": "view.transform.discard-duplicates",
-          "purpose": "Discard rows that repeat an earlier row.",
-          "example": "mammoth view transform discard-duplicates VIEW_ID --input '{\"dataset_id\": DATASET_ID}'",
+          "command_id": "view.create",
+          "purpose": "Only when copy is true: make a copy to work on, so the original stays as it is.",
+          "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
           "key_flags": []
         },
         {
+          "command_id": "view.transform.discard-duplicates",
+          "purpose": "Count the duplicates on the original (dry run), then discard rows whose key_columns repeat an earlier row.",
+          "example": "mammoth view transform discard-duplicates VIEW_ID --input '{\"key_columns\": [\"Order ID\"], \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input key_columns"
+          ]
+        },
+        {
           "command_id": "view.data.get",
-          "purpose": "Read the view back: the new column or rows, and the row count.",
+          "purpose": "Read the view back: the new rows and the row count.",
           "example": "mammoth view data get VIEW_ID DATASET_ID",
           "key_flags": []
         }
       ],
       "notes": [
-        "This edits the view in place (undo with 'mammoth history undo'). To keep the original, copy it first: 'mammoth view create DATASET_ID --input {\"clone_from\": VIEW_ID}'."
+        "key_columns are the columns that make a row a duplicate (every other column is ignored); without them whole rows are compared. The count in the preview is exact unless it says otherwise; zero duplicates stops the recipe before any copy is made.",
+        "The named view is edited in place (undo with 'mammoth view task delete' or 'mammoth view version apply'). Pass copy true to work on a copy instead (the original is unchanged; trash the copy to undo)."
       ],
       "inputs": {
         "view_id": {
@@ -2604,22 +2686,90 @@
           "required": true,
           "example": 1,
           "help": "The dataset the view belongs to."
+        },
+        "key_columns": {
+          "type": "array",
+          "required": false,
+          "example": [
+            "Order ID"
+          ],
+          "help": "The columns that make a row a duplicate (display names). Leave out to compare whole rows."
+        },
+        "copy": {
+          "type": "any",
+          "required": false,
+          "example": false,
+          "help": "true works on a copy of the view and leaves the original as it is; false (default) edits the view itself.",
+          "default": false
         }
       },
       "run": [
         {
-          "name": "edit",
+          "name": "preview",
           "cmd": "view transform discard-duplicates",
           "args": [
             "{{inputs.view_id}}"
           ],
           "input": {
+            "key_columns": "{{inputs.key_columns}}",
+            "dataset_id": "{{inputs.dataset_id}}"
+          },
+          "flags": {
+            "dry-run": true
+          }
+        },
+        {
+          "name": "copy",
+          "cmd": "view create",
+          "when": "{{inputs.copy}}",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "clone_from": "{{inputs.view_id}}"
+          }
+        },
+        {
+          "name": "edit_copy",
+          "cmd": "view transform discard-duplicates",
+          "when": "{{inputs.copy}}",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "key_columns": "{{inputs.key_columns}}",
             "dataset_id": "{{inputs.dataset_id}}"
           }
         },
         {
+          "name": "edit",
+          "cmd": "view transform discard-duplicates",
+          "when": {
+            "not": "{{inputs.copy}}"
+          },
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "key_columns": "{{inputs.key_columns}}",
+            "dataset_id": "{{inputs.dataset_id}}"
+          }
+        },
+        {
+          "name": "readback_copy",
+          "cmd": "view data get",
+          "when": "{{inputs.copy}}",
+          "args": [
+            "{{steps.copy.data.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
           "name": "readback",
           "cmd": "view data get",
+          "when": {
+            "not": "{{inputs.copy}}"
+          },
           "args": [
             "{{inputs.view_id}}",
             "{{inputs.dataset_id}}"
@@ -2629,6 +2779,7 @@
     },
     {
       "id": "pivot-summary",
+      "version": 1,
       "title": "Summarise a view into totals per group (pivot) on a copy",
       "goals": [
         "pivot a view by region",
@@ -2783,6 +2934,7 @@
     },
     {
       "id": "top-n",
+      "version": 1,
       "title": "Keep the top N rows by a column, on a copy of the view",
       "goals": [
         "top 10 customers by revenue",
@@ -2929,6 +3081,7 @@
     },
     {
       "id": "filter-export-csv",
+      "version": 1,
       "title": "Filter a view to some rows and download them as a CSV",
       "goals": [
         "export only some rows to csv",
@@ -3075,6 +3228,7 @@
     },
     {
       "id": "export-xlsx",
+      "version": 1,
       "title": "Download a view as an Excel (xlsx) file",
       "goals": [
         "export to excel",
@@ -3160,6 +3314,7 @@
     },
     {
       "id": "export-to-s3",
+      "version": 2,
       "title": "Send a view to Mammoth-managed S3 storage as a file",
       "goals": [
         "export a view to s3",
@@ -3190,6 +3345,12 @@
       "doc": "references/recipes/exports.md",
       "steps": [
         {
+          "command_id": "view.get",
+          "purpose": "Read the view's row count: it is what will be written.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
           "command_id": "view.data.get",
           "purpose": "Read the view back: the new column or rows, and the row count.",
           "example": "mammoth view data get VIEW_ID DATASET_ID",
@@ -3212,6 +3373,7 @@
         }
       ],
       "notes": [
+        "The file is written to Mammoth-managed storage under exactly 'file_name' and cannot be recalled; an existing file of that name may be replaced. ",
         "For your own bucket or a database use 'view export create' with a connector; run 'mammoth schema find \"export to postgres\"'."
       ],
       "inputs": {
@@ -3236,6 +3398,14 @@
       },
       "run": [
         {
+          "name": "view",
+          "cmd": "view get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
           "name": "export",
           "cmd": "view export managed-s3",
           "args": [
@@ -3258,6 +3428,7 @@
     },
     {
       "id": "email-view",
+      "version": 2,
       "title": "Email a view's data to people",
       "goals": [
         "email this view",
@@ -3305,6 +3476,12 @@
       "doc": "references/recipes/exports.md",
       "steps": [
         {
+          "command_id": "view.get",
+          "purpose": "Read the view's row count: it is what will be sent.",
+          "example": "mammoth view get VIEW_ID DATASET_ID",
+          "key_flags": []
+        },
+        {
           "command_id": "view.data.get",
           "purpose": "Read the view back: the new column or rows, and the row count.",
           "example": "mammoth view data get VIEW_ID DATASET_ID",
@@ -3326,7 +3503,9 @@
           "key_flags": []
         }
       ],
-      "notes": [],
+      "notes": [
+        "An email cannot be recalled. It goes to exactly the addresses in 'emails' and carries the view's rows as they are now; check the row count in the first step's answer. For a schedule, use an automation."
+      ],
       "inputs": {
         "view_id": {
           "type": "integer",
@@ -3358,6 +3537,14 @@
       },
       "run": [
         {
+          "name": "view",
+          "cmd": "view get",
+          "args": [
+            "{{inputs.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        },
+        {
           "name": "export",
           "cmd": "view export email",
           "args": [
@@ -3381,6 +3568,7 @@
     },
     {
       "id": "dashboard-from-view",
+      "version": 2,
       "title": "Build a dashboard from an existing view",
       "goals": [
         "build a dashboard from a view",
@@ -3425,9 +3613,9 @@
       "doc": "references/recipes/dashboards.md",
       "steps": [
         {
-          "command_id": "view.data.get",
-          "purpose": "Read the view back: the new column or rows, and the row count.",
-          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "command_id": "view.get",
+          "purpose": "Read the view's name and size: the dashboard is built from it.",
+          "example": "mammoth view get VIEW_ID",
           "key_flags": []
         },
         {
@@ -3446,7 +3634,9 @@
           "key_flags": []
         }
       ],
-      "notes": [],
+      "notes": [
+        "Creates one dashboard from the view; the view is not changed. Generate takes minutes and its answer can carry a warning (exit 3) - the dashboard is still readable. Make one dashboard per turn; undo with 'mammoth dashboard trash'."
+      ],
       "inputs": {
         "view_id": {
           "type": "integer",
@@ -3462,6 +3652,13 @@
         }
       },
       "run": [
+        {
+          "name": "view",
+          "cmd": "view get",
+          "args": [
+            "{{inputs.view_id}}"
+          ]
+        },
         {
           "name": "dashboard",
           "cmd": "dashboard v3 generate",
@@ -3485,7 +3682,8 @@
     },
     {
       "id": "summarize-by",
-      "title": "Total, count or average a column per group (read only)",
+      "version": 2,
+      "title": "Total, count or average a column per group, one or several groups (read only)",
       "goals": [
         "total revenue by region",
         "count rows per status",
@@ -3540,7 +3738,7 @@
         {
           "command_id": "view.data.aggregate",
           "purpose": "Aggregate on the server; nothing is changed.",
-          "example": "mammoth view data aggregate VIEW_ID DATASET_ID --input '{\"group_by\": [\"Region\"], \"aggregations\": [{\"column\": \"Revenue\", \"function\": \"SUM\", \"as_name\": \"Total\"}]}'",
+          "example": "mammoth view data aggregate VIEW_ID DATASET_ID --input '{\"group_by\": [\"Region\"], \"aggregations\": [{\"column\": \"Revenue\", \"function\": \"SUM\", \"as_name\": \"Result\"}], \"order_by\": [\"Result desc\"]}'",
           "key_flags": [
             "--input group_by",
             "--input aggregations[].function"
@@ -3548,7 +3746,7 @@
         }
       ],
       "notes": [
-        "Use 'pivot-summary' when the totals should become a view."
+        "Nothing is changed. The groups come back ordered by order_by (default: largest result first); for a top-N, add a limit in the aggregate call. Use 'pivot-summary' when the totals should become a view."
       ],
       "inputs": {
         "view_id": {
@@ -3564,10 +3762,13 @@
           "help": "The dataset the view belongs to."
         },
         "group_by": {
-          "type": "string",
+          "type": "array",
           "required": true,
-          "example": "Region",
-          "help": "The column to group by (display name)."
+          "example": [
+            "Region"
+          ],
+          "help": "The columns to group by (display names); one or several.",
+          "also_string": true
         },
         "column": {
           "type": "string",
@@ -3581,6 +3782,17 @@
           "default": "SUM",
           "example": "SUM",
           "help": "SUM, AVG, COUNT, MIN or MAX."
+        },
+        "order_by": {
+          "type": "array",
+          "required": false,
+          "example": [
+            "Result desc"
+          ],
+          "help": "How to order the groups: result labels with asc or desc.",
+          "default": [
+            "Result desc"
+          ]
         }
       },
       "run": [
@@ -3592,22 +3804,22 @@
             "{{inputs.dataset_id}}"
           ],
           "input": {
-            "group_by": [
-              "{{inputs.group_by}}"
-            ],
+            "group_by": "{{inputs.group_by}}",
             "aggregations": [
               {
                 "column": "{{inputs.column}}",
                 "function": "{{inputs.function}}",
                 "as_name": "Result"
               }
-            ]
+            ],
+            "order_by": "{{inputs.order_by}}"
           }
         }
       ]
     },
     {
       "id": "compare-views",
+      "version": 1,
       "title": "Compare two views group by group",
       "goals": [
         "compare two views",
@@ -3721,6 +3933,7 @@
     },
     {
       "id": "refresh-now",
+      "version": 1,
       "title": "Refresh a cloud or database dataset now and check the result",
       "goals": [
         "refresh a dataset now",
@@ -3817,6 +4030,7 @@
     },
     {
       "id": "undo-last-change",
+      "version": 1,
       "title": "Undo a change the CLI made (from the run's history id)",
       "goals": [
         "undo my last change",
@@ -3903,6 +4117,7 @@
     },
     {
       "id": "revert-view-version",
+      "version": 1,
       "title": "Put a view back to an earlier pipeline version",
       "goals": [
         "restore an earlier version of a view",
@@ -4015,6 +4230,236 @@
           "args": [
             "{{inputs.view_id}}",
             "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "filter-copy",
+      "version": 1,
+      "title": "Keep only the rows that match, on a copy of the view",
+      "goals": [
+        "filter a view into a copy",
+        "keep only rows where a column matches",
+        "make a filtered copy of my data"
+      ],
+      "keywords": [
+        "filter",
+        "filtered",
+        "copy",
+        "keep",
+        "only",
+        "rows",
+        "where",
+        "matching",
+        "subset"
+      ],
+      "intent": [
+        [
+          "filter",
+          "filtered",
+          "subset",
+          "keep",
+          "only"
+        ],
+        [
+          "copy",
+          "view",
+          "rows",
+          "data",
+          "dataset"
+        ]
+      ],
+      "reject": [
+        "export",
+        "csv",
+        "download",
+        "delete",
+        "remove"
+      ],
+      "doc": "references/recipes/transforms.md",
+      "steps": [
+        {
+          "command_id": "view.create",
+          "purpose": "Make a copy to filter (the original is unchanged).",
+          "example": "mammoth view create DATASET_ID --input '{\"clone_from\": VIEW_ID}'",
+          "key_flags": []
+        },
+        {
+          "command_id": "view.transform.filter",
+          "purpose": "Preview the filter on the original (dry run, counts the rows removed), then keep the matching rows on the copy.",
+          "example": "mammoth view transform filter VIEW_ID --input '{\"condition\": {\"column\": \"Status\", \"operator\": \"EQ\", \"value\": \"Active\"}, \"dataset_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input condition"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the copy back: the rows and the row count.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "The work happens on a copy; trash the copy to undo. A TEXT date column compares as text: convert it to DATE first ('view transform convert-type') or filter with the text form it holds. The first line previews the filter on the original and counts what it would remove; a filter nothing matches fails there (empties_view) and no copy is made."
+      ],
+      "inputs": {
+        "view_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The view to work on (its id)."
+        },
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset the view belongs to."
+        },
+        "column": {
+          "type": "string",
+          "required": true,
+          "example": "Status",
+          "help": "The column to filter on (display name)."
+        },
+        "operator": {
+          "type": "string",
+          "required": false,
+          "default": "EQ",
+          "example": "EQ",
+          "help": "EQ, NEQ, GT, GTE, LT, LTE, CONTAINS, ..."
+        },
+        "value": {
+          "type": "any",
+          "required": true,
+          "example": "Active",
+          "help": "The value to compare with: text or a number, or a list for the IN_LIST and IN_RANGE operators."
+        }
+      },
+      "run": [
+        {
+          "name": "preview",
+          "cmd": "view transform filter",
+          "args": [
+            "{{inputs.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "condition": {
+              "column": "{{inputs.column}}",
+              "operator": "{{inputs.operator}}",
+              "value": "{{inputs.value}}"
+            }
+          },
+          "flags": {
+            "dry-run": true
+          }
+        },
+        {
+          "name": "copy",
+          "cmd": "view create",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "clone_from": "{{inputs.view_id}}"
+          }
+        },
+        {
+          "name": "filter",
+          "cmd": "view transform filter",
+          "args": [
+            "{{steps.copy.data.view_id}}"
+          ],
+          "input": {
+            "dataset_id": "{{inputs.dataset_id}}",
+            "condition": {
+              "column": "{{inputs.column}}",
+              "operator": "{{inputs.operator}}",
+              "value": "{{inputs.value}}"
+            }
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "view data get",
+          "args": [
+            "{{steps.copy.data.view_id}}",
+            "{{inputs.dataset_id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "create-projects",
+      "version": 1,
+      "title": "Create projects by name, once each (a re-run makes no duplicates)",
+      "goals": [
+        "create several projects",
+        "set up projects for a list of names",
+        "make a project for each team"
+      ],
+      "keywords": [
+        "create",
+        "projects",
+        "project",
+        "set",
+        "setup",
+        "names",
+        "each",
+        "several",
+        "folders"
+      ],
+      "intent": [
+        [
+          "create",
+          "make",
+          "setup",
+          "set"
+        ],
+        [
+          "projects",
+          "project",
+          "folders",
+          "folder"
+        ]
+      ],
+      "doc": "references/recipes/resources.md",
+      "steps": [
+        {
+          "command_id": "project.list",
+          "purpose": "See which of the names already exist; ensure also does this check, so the list is optional.",
+          "example": "mammoth project list",
+          "key_flags": []
+        },
+        {
+          "command_id": "project.ensure",
+          "purpose": "Find the project by its exact name, or create it; one call per name.",
+          "example": "mammoth project ensure 'Revenue report'",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "Matching is exact and case-sensitive, so a re-run finds the projects it made and creates nothing twice. Nothing is deleted; to remove one, trash it by hand."
+      ],
+      "inputs": {
+        "names": {
+          "type": "array",
+          "required": true,
+          "example": [
+            "Sales",
+            "Marketing"
+          ],
+          "help": "The project names to create (exact)."
+        }
+      },
+      "run": [
+        {
+          "name": "projects",
+          "cmd": "project ensure",
+          "for_each": "{{inputs.names}}",
+          "args": [
+            "{{item}}"
           ]
         }
       ]

@@ -41,6 +41,12 @@ def test_top_without_an_order_fails_loud() -> None:
     assert "order_by" in caught.value.message
 
 
+def test_top_without_an_order_names_the_first_aggregation_to_order_by() -> None:
+    with pytest.raises(CliError) as caught:
+        read_queries.parse_order({"top": 3}, _AS_MAP)
+    assert "Total Sales desc" in (caught.value.hint or "")
+
+
 def test_top_and_limit_together_are_ambiguous() -> None:
     with pytest.raises(CliError):
         read_queries.parse_order({"order_by": ["Region"], "top": 3, "limit": 9}, _AS_MAP)
