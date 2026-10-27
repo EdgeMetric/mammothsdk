@@ -17,9 +17,13 @@ pytestmark = pytest.mark.live
 
 
 def test_current_query_is_refined_as_asked(live_cli: LiveCli, sales_data: SalesData) -> None:
-    spec = {"dataset_id": sales_data.dataset, "current_query": "SELECT * FROM input_table"}
+    spec = {
+        "dataset_id": sales_data.dataset,
+        "current_query": "SELECT * FROM input_table WHERE region = 'North'",
+    }
     generated, _ = live_cli.ok(
-        *("ai", "sql", "generate", "Keep only the first 7 rows", "--input", json.dumps(spec)),
+        *("ai", "sql", "generate", "Keep only the first ten rows", "--input", json.dumps(spec)),
         project=sales_data.project,
     )
-    assert "7" in json.dumps(generated)
+    # "North" is only in current_query: the answer keeps it only if the query was refined.
+    assert "North" in json.dumps(generated)

@@ -20,11 +20,11 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 async def test_refining_a_query_changes_it_as_asked(
     client: MammothClient, uploaded_dataset_id: int
 ) -> None:
-    """Asked to keep only 7 rows of the current query, the answer's SQL carries that limit."""
+    """Asked only to cap the rows, the answer's SQL still carries the current query's filter."""
     generated = await client.ai.generate_sql(
-        "Keep only the first 7 rows",
+        "Keep only the first ten rows",
         dataset_id=uploaded_dataset_id,
-        current_query="SELECT * FROM input_table",
+        current_query="SELECT * FROM input_table WHERE region = 'North'",
     )
 
-    assert "7" in json.dumps(generated)
+    assert "North" in json.dumps(generated)
