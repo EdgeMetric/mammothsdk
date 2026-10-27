@@ -116,7 +116,7 @@ def test_remove_duplicates_by_key_previews_then_edits_the_named_view(
     lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
     assert summary["data"]["failed"] == 0, lines
     kept = _rows(live_cli, scratch_project, dataset, view)
-    assert sorted(row["Order ID"] for row in kept) == ["o1", "o2", "o3", "o4"]
+    assert sorted(row["Order ID"] for row in kept) == ["o1", "o2", "o3", "o4"], lines
     listed, _ = live_cli.ok("view", "list", str(dataset), project=scratch_project)
     assert len(listed["dataviews"]) == 1  # no copy was made
 
@@ -132,7 +132,7 @@ def test_remove_duplicates_with_copy_leaves_the_original_unchanged(
         "copy": True,
     }
     lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
-    assert summary["data"]["failed"] == 0, lines
+    assert summary.get("data", {}).get("failed") == 0, (lines, summary)
     assert _row_count(live_cli, scratch_project, dataset, view) == 6  # the original is untouched
     copy = next(e for e in lines if e["data"].get("view_id") not in (None, view))
     kept = _rows(live_cli, scratch_project, dataset, int(copy["data"]["view_id"]))
@@ -175,7 +175,7 @@ def test_remove_duplicates_without_key_columns_compares_whole_rows_in_place(
         live_cli, scratch_project, "remove-duplicates", {"view_id": view, "dataset_id": dataset}
     )
     assert summary["data"]["failed"] == 0, lines
-    assert _row_count(live_cli, scratch_project, dataset, view) == 5
+    assert _row_count(live_cli, scratch_project, dataset, view) == 5, lines
 
 
 def test_remove_duplicates_with_an_unknown_key_fails_loud(
