@@ -7,6 +7,7 @@ import pytest
 from mammoth_cli.commands import recipe as recipe_cmd
 from mammoth_cli.commands import run as run_cmd
 from mammoth_cli.discovery import load_recipes, runnable_recipes
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.strict import validate_input_fields
 
 
@@ -61,10 +62,10 @@ def test_only_previewed_writes_get_a_marker() -> None:
     ]
 
 
-def test_observing_notes_each_envelope_and_still_writes_it(
+def test_collecting_with_echo_keeps_each_envelope_and_still_writes_it(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    with run_cmd.observing() as seen:
+    with run_cmd.collecting(echo=True) as seen:
         run_cmd.write_envelope({"line": 1})
     assert seen == [{"line": 1}]
     assert capsys.readouterr().out.strip() == '{"line":1}'
@@ -86,3 +87,39 @@ def test_create_projects_makes_each_name_once() -> None:
     recipe = next(r for r in runnable_recipes() if r["id"] == "create-projects")
     (line,) = recipe["run"]
     assert line["cmd"] == "project ensure" and line["for_each"] == "{{inputs.names}}"
+
+
+def _recipe_named(recipe_id: str) -> dict:
+    return next(r for r in runnable_recipes() if r["id"] == recipe_id)
+
+
+def test_a_real_value_that_looks_like_a_tag_is_not_a_placeholder() -> None:
+    recipe = _recipe_named("find-replace")
+    given = {
+        "view_id": 1,
+        "dataset_id": 2,
+        "columns": ["Notes"],
+        "find": "<NA>",
+        "replace": "<br>",
+    }
+    assert recipe_cmd._inputs(recipe, given)["find"] == "<NA>"
+
+
+def test_only_the_inputs_own_placeholder_is_refused() -> None:
+    recipe = _recipe_named("find-replace")
+    given = {"view_id": 1, "dataset_id": 2, "columns": ["a"], "find": "<find>", "replace": "x"}
+    with pytest.raises(CliError) as caught:
+        recipe_cmd._inputs(recipe, given)
+    assert caught.value.details["unfilled"] == ["find"]
+
+
+def test_summarize_by_still_takes_one_group_name_as_a_string() -> None:
+    recipe = _recipe_named("summarize-by")
+    given = {"view_id": 1, "dataset_id": 2, "group_by": "Region", "column": "Revenue"}
+    assert recipe_cmd._inputs(recipe, given)["group_by"] == ["Region"]
+
+
+def test_remove_duplicates_without_key_columns_compares_whole_rows() -> None:
+    recipe = _recipe_named("remove-duplicates")
+    values = recipe_cmd._inputs(recipe, {"view_id": 1, "dataset_id": 2})
+    assert values["key_columns"] is None and values["in_place"] is False

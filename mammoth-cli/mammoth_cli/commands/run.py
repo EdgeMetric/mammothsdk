@@ -128,8 +128,10 @@ INHERITED_FLAGS: tuple[tuple[str, str], ...] = (
 _CREDENTIAL_GROUPS = frozenset({"auth", "config", "context"})
 #: Where :func:`write_envelope` puts each envelope while :func:`collecting` is open,
 #: instead of stdout; per context, so concurrent embedded calls never share one.
-_SINK: ContextVar[list[dict[str, Any]] | None] = ContextVar("mammoth_cli_run_sink", default=None)
-_SEEN: ContextVar[list[dict[str, Any]] | None] = ContextVar("mammoth_cli_run_seen", default=None)
+#: The envelopes kept so far, and whether each is still written to stdout as well.
+_SINK: ContextVar[tuple[list[dict[str, Any]], bool] | None] = ContextVar(
+    "mammoth_cli_run_sink", default=None
+)
 
 
 @dataclass
@@ -458,48 +460,36 @@ def execute_line(argv: Sequence[str], command: str = "") -> tuple[int, dict[str,
 
 
 @contextlib.contextmanager
-def collecting() -> Iterator[list[dict[str, Any]]]:
-    """Keep the envelopes :func:`write_envelope` would print, in order, instead of printing.
+def collecting(*, echo: bool = False) -> Iterator[list[dict[str, Any]]]:
+    """Keep the envelopes :func:`write_envelope` would print, in order.
+
+    Args:
+        echo: Also print each envelope; by default it is kept instead of printed.
 
     Yields:
         The list the envelopes go into.
     """
     kept: list[dict[str, Any]] = []
-    token = _SINK.set(kept)
+    token = _SINK.set((kept, echo))
     try:
         yield kept
     finally:
         _SINK.reset(token)
 
 
-@contextlib.contextmanager
-def observing() -> Iterator[list[dict[str, Any]]]:
-    """Note each envelope :func:`write_envelope` handles, in order, and still write it.
-
-    Yields:
-        The list the envelopes are noted in.
-    """
-    seen: list[dict[str, Any]] = []
-    token = _SEEN.set(seen)
-    try:
-        yield seen
-    finally:
-        _SEEN.reset(token)
-
-
 def write_envelope(envelope: dict[str, Any]) -> None:
     """Write one envelope as one compact line on stdout and flush it.
 
-    Inside :func:`collecting`, the envelope goes into its list instead.
+    Inside :func:`collecting`, the envelope goes into its list instead (and is still
+    written when ``echo`` is set).
 
     Args:
         envelope: The envelope to write.
     """
-    if (seen := _SEEN.get()) is not None:
-        seen.append(envelope)
     if (sink := _SINK.get()) is not None:
-        sink.append(envelope)
-        return
+        sink[0].append(envelope)
+        if not sink[1]:
+            return
     sys.stdout.write(
         json.dumps(
             envelope,
