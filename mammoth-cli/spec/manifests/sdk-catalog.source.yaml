@@ -6353,6 +6353,29 @@ sdk_methods:
   openapi_operation_ids:
   - PreviewConnectorDraftSource
   notes: "Reads up to `limit` (1-100) rows through the connection and records what came back on the source."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
+  canonical_command: dataset.from-url.preview
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Reads the file at the link and keeps nothing; use it before creating a dataset from a URL."
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.follow_link
+  canonical_command: dataset.from-url.follow
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Follow true keeps the dataset refreshing from its link; follow false makes it a copy."
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.links
+  canonical_command: dataset.from-url.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states

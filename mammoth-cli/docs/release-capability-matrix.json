@@ -42,6 +42,30 @@
         "mammoth.api.agents.AgentsAPI._run_action"
       ],
       "commands": []
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/connector-drafts/link-preview",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7166)",
+      "sdk_symbols": [
+        "mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview"
+      ],
+      "commands": [
+        "dataset.from-url.preview"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/links",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7169)",
+      "sdk_symbols": [
+        "mammoth.api.datasets.DatasetsAPI.links"
+      ],
+      "commands": [
+        "dataset.from-url.list"
+      ]
     }
   ],
   "commands_without_route": [
@@ -7463,6 +7487,7 @@
       "schema_id": "dataset.update",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.update",
       "bound_commands": [
+        "dataset.from-url.follow",
         "dataset.refresh",
         "dataset.rename",
         "dataset.update"
@@ -11609,6 +11634,7 @@
         "view.transform.lookup",
         "view.transform.math",
         "view.transform.pivot",
+        "view.transform.repeat-rows",
         "view.transform.replace",
         "view.transform.set-values",
         "view.transform.small-large",

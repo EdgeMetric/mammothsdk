@@ -292,6 +292,10 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.tags.set": {"operation_ids": ["SetDashboardTags"], "method": "PUT"},
     "dashboard.tags.delete": {"operation_ids": ["DeleteDashboardTag"], "method": "DELETE"},
     "dashboard.tags.merge": {"operation_ids": ["MergeDashboardTags"], "method": "POST"},
+    # Server release only (mvc-service #7166, #7169): not in any pinned snapshot yet.
+    "dataset.from-url.preview": {"operation_ids": [], "method": "POST"},
+    "dataset.from-url.follow": {"operation_ids": [], "method": "PATCH"},
+    "dataset.from-url.list": {"operation_ids": [], "method": "GET"},
 }
 
 # CLI-only commands: no OpenAPI operation and no Mammoth transport. They are

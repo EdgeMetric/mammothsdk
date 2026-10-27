@@ -389,3 +389,32 @@ commands:
   known_restrictions: The link must have been emailed to the signed-in user. Redeeming it again adds nothing
     and returns where the tables already are.
   no_readback: returns the workspace, project and new folder ids; the folder is the new state
+- command_id: dataset.from-url.follow
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: dataset.from-url.follow
+    note: 'Run it again with the opposite follow value in --input; a dataset that stopped following keeps its data.'
+  readback:
+    command: dataset.from-url.list
+    ids: {}
+    kind: object
+- command_id: dataset.from-url.list
+  output_schema:
+    type: object
+    required: [datasets]
+    properties:
+      datasets:
+        type: array
+        items:
+          type: object
+- command_id: dataset.from-url.preview
+  output_schema:
+    type: object
+    required: [tables]
+    properties:
+      tables:
+        type: array
+        items:
+          type: object

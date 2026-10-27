@@ -828,4 +828,17 @@ COMMAND_DISCOVERY_PURPOSES = {
     ),
     "workflow.update": "rename name describe a workflow pipeline purpose notes summary",
     "workflow.create": "name an unnamed workflow pipeline from the root dataset new workflow",
+    # From URL: a dataset made from a web link (CSV, Excel or JSON file).
+    "dataset.from-url.preview": (
+        "preview a URL link before importing, see the columns and first rows of a CSV Excel "
+        "or JSON file at a web address, from url, nothing is kept"
+    ),
+    "dataset.from-url.follow": (
+        "follow link, stop following a link, make a dataset a copy, refresh from URL again, "
+        "keep a url dataset updated from its link"
+    ),
+    "dataset.from-url.list": (
+        "list datasets that follow a link, from url datasets, last fetched, fetch failed, "
+        "refresh from link schedules, which links update"
+    ),
 }

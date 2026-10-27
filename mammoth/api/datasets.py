@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 _list = list  # Alias to avoid shadowing by method name
 
 ERR_DATASET_ID_POSITIVE = "`dataset_id` must be a positive integer, got {0}."
+ERR_FOLLOW_BOOL = "`follow` must be true or false, got {0!r}."
 ERR_FILE_OBJECT_ID_POSITIVE = "`file_object_id` must be a positive integer, got {0}."
 _INTERPRETATION_MODES = ("interpreted", "original")
 ERR_TOOL_CLAIM_TOKEN = "`token` must be 1 to 300 characters, got {0} characters."
@@ -504,6 +505,68 @@ class DatasetsAPI:
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
             json={"patch": patch},
+        )
+
+    async def follow_link(
+        self,
+        dataset_id: int,
+        follow: bool = True,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Make a dataset made from a link follow it again, or turn it into a copy.
+
+        Sends ``PATCH /datasets/{dataset_id}`` with ``{"op": "replace", "path":
+        "follow_link", "value": follow}``. A copy no longer refreshes from its link.
+
+        Args:
+            dataset_id: ID of the dataset.
+            follow: ``True`` to follow the link (refresh from it), ``False`` for a copy.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``follow_link``, the setting after the change.
+
+        Raises:
+            MammothValidationError: If *dataset_id* <= 0 or *follow* is not a bool.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        if not isinstance(follow, bool):
+            raise MammothValidationError(ERR_FOLLOW_BOOL.format(follow))
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        patch = {"op": "replace", "path": "follow_link", "value": follow}
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": patch},
+        )
+
+    async def links(
+        self,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """List the project's datasets that follow a link.
+
+        Copies (datasets that stopped following their link), JSON sketches and Mammoth's
+        sample datasets are left out.
+
+        Args:
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            Dict with ``datasets``, oldest first: ``{id, name, url, last_fetched_at,
+            failure, refresh_automation_ids}``. ``failure`` (``at``, ``status``, ``reason``,
+            ``unreachable``) is set while the last fetch failed.
+        """
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/datasets/links"
         )
 
     async def delete(

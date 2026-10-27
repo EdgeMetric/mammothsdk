@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 852.
+Total commands: 855.
 
 ## activity
 
@@ -3890,6 +3890,35 @@ Total commands: 852.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.dataset.find`
 - Agent example: `mammoth dataset find sales`
+
+### `mammoth dataset from-url follow`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.follow_link`
+- Agent example: `mammoth dataset from-url follow 123`
+
+### `mammoth dataset from-url list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.links`
+- Agent example: `mammoth dataset from-url list`
+
+### `mammoth dataset from-url preview`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview`
+- Agent example: `mammoth dataset from-url preview https://example.com/data.csv`
 
 ### `mammoth dataset get`
 

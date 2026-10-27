@@ -1227,6 +1227,10 @@ _TARGETS: dict[str, str] = {
     "connector.draft.source.preview": (
         "mammoth_cli.commands.dashboard.generated:generated_dashboard"
     ),
+    # From URL: preview a link, follow or copy a link dataset, list the linked datasets.
+    "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

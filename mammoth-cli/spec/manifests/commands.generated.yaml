@@ -16018,6 +16018,124 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: dataset.from-url.follow
+  command_path: dataset from-url follow
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.follow_link
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.follow_link with validated request fields.
+  request_model: DatasetFromUrlFollowRequest
+  result_model: DatasetFromUrlFollowResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset from url; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-FROM-URL-FOLLOW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url follow DATASET_ID --help
+  agent_example: mammoth dataset from-url follow 123
+  unit_tests:
+  - UT-DATASET-FROM-URL-FOLLOW
+  contract_tests:
+  - CT-DATASET-FROM-URL-FOLLOW-HUMAN
+  - CT-DATASET-FROM-URL-FOLLOW-JSON
+  - CT-DATASET-FROM-URL-FOLLOW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Follow true keeps the dataset refreshing from its link; follow false makes it a
+    copy.
+  reviewed_by: primary
+- command_id: dataset.from-url.list
+  command_path: dataset from-url list
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.links
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.links with validated request fields.
+  request_model: DatasetFromUrlListRequest
+  result_model: DatasetFromUrlListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-FROM-URL-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url list --help
+  agent_example: mammoth dataset from-url list
+  unit_tests:
+  - UT-DATASET-FROM-URL-LIST
+  contract_tests:
+  - CT-DATASET-FROM-URL-LIST-HUMAN
+  - CT-DATASET-FROM-URL-LIST-JSON
+  - CT-DATASET-FROM-URL-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.from-url.preview
+  command_path: dataset from-url preview
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: url
+    type: str
+    required: true
+    metavar: URL
+    falls_back_to_field: null
+    help: URL slug identifying the resource.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview with validated request
+    fields.
+  request_model: DatasetFromUrlPreviewRequest
+  result_model: DatasetFromUrlPreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-FROM-URL-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset from-url preview URL --help
+  agent_example: mammoth dataset from-url preview https://example.com/data.csv
+  unit_tests:
+  - UT-DATASET-FROM-URL-PREVIEW
+  contract_tests:
+  - CT-DATASET-FROM-URL-PREVIEW-HUMAN
+  - CT-DATASET-FROM-URL-PREVIEW-JSON
+  - CT-DATASET-FROM-URL-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reads the file at the link and keeps nothing; use it before creating a dataset from
+    a URL.
+  reviewed_by: primary
 - command_id: dataset.get
   command_path: dataset get
   disposition: command

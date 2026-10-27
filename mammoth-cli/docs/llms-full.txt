@@ -841,6 +841,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'
 - `mammoth dataset find` [read/none] -> mammoth_cli.commands.dataset.find
   example: mammoth dataset find sales
+- `mammoth dataset from-url follow` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.follow_link
+  example: mammoth dataset from-url follow 123
+- `mammoth dataset from-url list` [read/none] -> mammoth.api.datasets.DatasetsAPI.links
+  example: mammoth dataset from-url list
+- `mammoth dataset from-url preview` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview
+  example: mammoth dataset from-url preview https://example.com/data.csv
 - `mammoth dataset get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get
   example: mammoth dataset get 123
 - `mammoth dataset interpretation confirm` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.interpretation_confirm

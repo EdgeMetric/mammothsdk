@@ -113,6 +113,9 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # The SDK posts every run verb through one helper whose last path segment is a
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
     "POST /agents/sessions/{}/runs/{}/{}": "origin/master@29fe5d1ab8",
+    # mvc-service From URL (#7166, #7169): on origin/release, not on the pinned master.
+    "POST /workspaces/{}/projects/{}/connector-drafts/link-preview": "origin/release (#7166)",
+    "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
 }
 
 # --- Operations that alias another command (identical behavior) ------------
