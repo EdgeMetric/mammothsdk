@@ -82,11 +82,6 @@ INTERNAL_ONLY: dict[str, str] = {
     "UploadAgentChatDocument": "Web chat panel: uploads a document into a chat.",
     "UploadAgentChatImage": "Web chat panel: uploads an image into a chat.",
     # Mammoth staff tooling: not for customers.
-    "CheckProjectMove": "Staff-only support route: dry run of a cross-workspace project move.",
-    "StartProjectMove": "Staff-only support route: starts a cross-workspace project move.",
-    "ListProjects": "Staff-only support route: lists a workspace's projects.",
-    "GetProjectMove": "Staff-only support route: status of a project move.",
-    "PurgeProjectMove": "Staff-only support route: purges the source of a finished project move.",
     "CollectionsReach": "Web library page: the Live pill counting a collection's readers.",
     "GetChatAttachment": (
         "Web editor chat panel: bytes of a file attached to a dashboard's AI chat "
@@ -903,6 +898,12 @@ OVERRIDES: dict[str, str] = {
     "CancelTaskPreview": "view.task.preview-cancel",
     "GetToolClaim": "dataset.tool-claim.get",
     "RedeemToolClaim": "dataset.tool-claim.redeem",
+    # Moving a project to another workspace (tech admin).
+    "ListProjects": "support.workspace.project.list",
+    "CheckProjectMove": "support.workspace.project.move-check",
+    "StartProjectMove": "support.workspace.project.move-start",
+    "GetProjectMove": "support.project-move.get",
+    "PurgeProjectMove": "support.project-move.purge",
 }
 
 

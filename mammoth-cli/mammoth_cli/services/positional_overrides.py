@@ -140,6 +140,15 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     "workspace.invite.update-role": (),
     "agent.run.status": (),
     "agent.run.list": (),
+    # A project move names the workspace the project is in, then the project.
+    "support.workspace.project.move-check": (
+        PositionalSpec(name="workspace_id", type=int, required=True, help="ID of the workspace."),
+        PositionalSpec(name="project_id", type=int, required=True, help="ID of the project."),
+    ),
+    "support.workspace.project.move-start": (
+        PositionalSpec(name="workspace_id", type=int, required=True, help="ID of the workspace."),
+        PositionalSpec(name="project_id", type=int, required=True, help="ID of the project."),
+    ),
     "agent.access.askers": (
         PositionalSpec(
             name="project_id",

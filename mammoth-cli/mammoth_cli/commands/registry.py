@@ -1234,6 +1234,18 @@ _TARGETS: dict[str, str] = {
     # Download several datasets as one file, and what that would hold.
     "dataset.download": "mammoth_cli.commands.dataset.download:dataset_download",
     "dataset.download-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Project moves between workspaces (tech admin).
+    "support.workspace.project.list": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-check": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-start": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.project-move.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "support.project-move.purge": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

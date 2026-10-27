@@ -23419,6 +23419,91 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: support.project-move.get
+  command_path: support project-move get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetProjectMove
+  positionals:
+  - name: move_id
+    type: int
+    required: true
+    metavar: MOVE_ID
+    falls_back_to_field: null
+    help: ID of the move.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_get
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_get with validated request fields.
+  request_model: SupportProjectMoveGetRequest
+  result_model: SupportProjectMoveGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support project-move get MOVE_ID --help
+  agent_example: mammoth support project-move get 123
+  unit_tests:
+  - UT-SUPPORT-PROJECT-MOVE-GET
+  contract_tests:
+  - CT-SUPPORT-PROJECT-MOVE-GET-HUMAN
+  - CT-SUPPORT-PROJECT-MOVE-GET-JSON
+  - CT-SUPPORT-PROJECT-MOVE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Status, error and progress of a project move.
+  reviewed_by: primary
+- command_id: support.project-move.purge
+  command_path: support project-move purge
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PurgeProjectMove
+  positionals:
+  - name: move_id
+    type: int
+    required: true
+    metavar: MOVE_ID
+    falls_back_to_field: null
+    help: ID of the move.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_purge
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_purge with validated request fields.
+  request_model: SupportProjectMovePurgeRequest
+  result_model: SupportProjectMovePurgeResult
+  mutation_class: high_impact
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support project move; the earlier value is not kept, so it cannot be restored.
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support project-move purge MOVE_ID --help
+  agent_example: mammoth support project-move purge 123 --yes --confirm 123
+  unit_tests:
+  - UT-SUPPORT-PROJECT-MOVE-PURGE
+  contract_tests:
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-HUMAN
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-JSON
+  - CT-SUPPORT-PROJECT-MOVE-PURGE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Deletes the source copies a finished move left behind; files not
+    safe in the target are skipped.
+  reviewed_by: primary
 - command_id: support.search
   command_path: support search
   disposition: command
@@ -24983,6 +25068,146 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: support.workspace.project.list
+  command_path: support workspace project list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListProjects
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_project_list
+  sdk_conversion: Call mammoth.api.support.SupportAPI.workspace_project_list with validated request fields.
+  request_model: SupportWorkspaceProjectListRequest
+  result_model: SupportWorkspaceProjectListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project list WORKSPACE_ID --help
+  agent_example: mammoth support workspace project list 123
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-LIST
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Lists the workspace's projects, each with its unfinished move.
+  reviewed_by: primary
+- command_id: support.workspace.project.move-check
+  command_path: support workspace project move-check
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CheckProjectMove
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_check
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_check with validated request fields.
+  request_model: SupportWorkspaceProjectMoveCheckRequest
+  result_model: SupportWorkspaceProjectMoveCheckResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project move-check WORKSPACE_ID PROJECT_ID --help
+  agent_example: 'mammoth support workspace project move-check 123 456 --input ''{"target_workspace_id":
+    1}'''
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-CHECK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Tech admin only. Read-only: blockers refuse the move, warnings must be acknowledged
+    to start it.'
+  reviewed_by: primary
+- command_id: support.workspace.project.move-start
+  command_path: support workspace project move-start
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - StartProjectMove
+  positionals:
+  - name: workspace_id
+    type: int
+    required: true
+    metavar: WORKSPACE_ID
+    falls_back_to_field: null
+    help: ID of the workspace.
+  - name: project_id
+    type: int
+    required: true
+    metavar: PROJECT_ID
+    falls_back_to_field: null
+    help: ID of the project.
+  options: []
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_start
+  sdk_conversion: Call mammoth.api.support.SupportAPI.project_move_start with validated request fields.
+  request_model: SupportWorkspaceProjectMoveStartRequest
+  result_model: SupportWorkspaceProjectMoveStartResult
+  mutation_class: high_impact
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the support workspace project; the earlier value is not kept, so it cannot be restored.
+  confirmation: confirm_target
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth support workspace project move-start WORKSPACE_ID PROJECT_ID --help
+  agent_example: 'mammoth support workspace project move-start 123 456 --input ''{"target_workspace_id":
+    1}'' --yes --confirm 123'
+  unit_tests:
+  - UT-SUPPORT-WORKSPACE-PROJECT-MOVE-START
+  contract_tests:
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-HUMAN
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-JSON
+  - CT-SUPPORT-WORKSPACE-PROJECT-MOVE-START-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Tech admin only. Queues the move of a project to another workspace, or resumes its
+    unfinished move; follow it with support project-move get.
   reviewed_by: primary
 - command_id: support.workspace.restore-access
   command_path: support workspace restore-access

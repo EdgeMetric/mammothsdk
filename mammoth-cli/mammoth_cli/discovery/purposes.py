@@ -851,4 +851,20 @@ COMMAND_DISCOVERY_PURPOSES = {
         "how big is a bulk download, how many datasets and files a download of several "
         "datasets would hold before downloading all as zip, stacked files, skipped empty"
     ),
+    # Move a project to another workspace (tech admin).
+    "support.workspace.project.list": (
+        "list a workspace's projects and which have a move to another workspace unfinished"
+    ),
+    "support.workspace.project.move-check": (
+        "check move project to another workspace, blockers and warnings before the move"
+    ),
+    "support.workspace.project.move-start": (
+        "move project to another workspace, transfer a project, resume a stalled project move"
+    ),
+    "support.project-move.get": (
+        "project move status progress error stalled, is the move to another workspace done"
+    ),
+    "support.project-move.purge": (
+        "purge delete the source copies left in the old workspace after a project move"
+    ),
 }

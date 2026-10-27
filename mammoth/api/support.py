@@ -1406,6 +1406,126 @@ class SupportAPI:
             "POST", f"/support/workspaces/{workspace_id}/restore-access"
         )
 
+    # -- Project moves between workspaces (tech admin) -----------------------------
+
+    async def workspace_project_list(self, workspace_id: int) -> dict[str, Any]:
+        """List a workspace's projects with their unfinished project moves.
+
+        Also lists the projects of an unfinished move to or from the workspace.
+
+        Args:
+            workspace_id: ID of the workspace (must be a positive integer).
+
+        Returns:
+            Dict with ``projects``: ``{id, name, status, active_move, purgeable_move}``.
+            ``active_move`` is the project's unfinished move or ``None``; ``purgeable_move``
+            is the finished move that brought it here while its source copies are not purged.
+
+        Raises:
+            MammothValidationError: If *workspace_id* is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        return await self._client._request_json(
+            "GET", f"/support/workspaces/{workspace_id}/projects"
+        )
+
+    async def project_move_check(
+        self, workspace_id: int, project_id: int, target_workspace_id: int
+    ) -> dict[str, Any]:
+        """Check, read-only, moving a project to another workspace.
+
+        Args:
+            workspace_id: ID of the workspace the project is in.
+            project_id: ID of the project.
+            target_workspace_id: ID of the workspace it would move to.
+
+        Returns:
+            Dict with ``check`` (``blockers`` refuse the move, ``warnings`` must be acknowledged
+            to start it, ``summary`` of what moves) and ``active_move`` (the project's unfinished
+            move or ``None``). Each issue is ``{code, message, items}``.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        _check_id("project_id", project_id)
+        _check_id("target_workspace_id", target_workspace_id)
+        return await self._client._request_json(
+            "GET",
+            f"/support/workspaces/{workspace_id}/projects/{project_id}/move",
+            params={"target_workspace_id": target_workspace_id},
+        )
+
+    async def project_move_start(
+        self,
+        workspace_id: int,
+        project_id: int,
+        target_workspace_id: int,
+        acknowledged_warnings: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Start moving a project to another workspace, or resume its unfinished move.
+
+        Args:
+            workspace_id: ID of the workspace the project is in (for a resumed move, its source
+                or its target workspace).
+            project_id: ID of the project.
+            target_workspace_id: ID of the workspace it moves to.
+            acknowledged_warnings: The ``code`` of every warning of
+                :meth:`project_move_check`; not needed to resume.
+
+        Returns:
+            Dict with ``move`` (``id``, ``status``, ``error``, ``stalled``, ``progress``,
+            ``purge``); follow it with :meth:`project_move_get`.
+
+        Raises:
+            MammothValidationError: If an id is not a positive integer.
+        """
+        _check_id("workspace_id", workspace_id)
+        _check_id("project_id", project_id)
+        _check_id("target_workspace_id", target_workspace_id)
+        return await self._client._request_json(
+            "POST",
+            f"/support/workspaces/{workspace_id}/projects/{project_id}/move",
+            json={
+                "target_workspace_id": target_workspace_id,
+                "acknowledged_warnings": acknowledged_warnings or [],
+            },
+        )
+
+    async def project_move_get(self, move_id: int) -> dict[str, Any]:
+        """Get a project move's status, error and progress.
+
+        Args:
+            move_id: ID of the move (must be a positive integer).
+
+        Returns:
+            Dict with ``move``.
+
+        Raises:
+            MammothValidationError: If *move_id* is not a positive integer.
+        """
+        _check_id("move_id", move_id)
+        return await self._client._request_json("GET", f"/support/project-moves/{move_id}")
+
+    async def project_move_purge(self, move_id: int) -> dict[str, Any]:
+        """Queue deleting the source copies a finished project move left behind.
+
+        A file is deleted only when its copy is safe in the target workspace and the source
+        file is as the move found it; every other file is skipped with its reason. The move's
+        ``purge`` reports the outcome. Refused for a move that is not finished.
+
+        Args:
+            move_id: ID of the move (must be a positive integer).
+
+        Returns:
+            Dict with ``move``.
+
+        Raises:
+            MammothValidationError: If *move_id* is not a positive integer.
+        """
+        _check_id("move_id", move_id)
+        return await self._client._request_json("POST", f"/support/project-moves/{move_id}/purge")
+
     # -- Workspace users (support/admin) ------------------------------------------
 
     async def workspace_user_list(

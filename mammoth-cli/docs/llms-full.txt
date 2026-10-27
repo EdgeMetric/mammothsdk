@@ -1295,6 +1295,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support plan update-entitlements 123 --input '{"values": {"dashboardBranding": "no_branding"}}' --yes --confirm 123
 - `mammoth support plan update-storage-tiers` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.plan_update_storage_tiers
   example: mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123
+- `mammoth support project-move get` [read/none] -> mammoth.api.support.SupportAPI.project_move_get
+  example: mammoth support project-move get 123
+- `mammoth support project-move purge` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.project_move_purge
+  example: mammoth support project-move purge 123 --yes --confirm 123
 - `mammoth support search` [read/none] -> mammoth.api.support.SupportAPI.search
   example: mammoth support search acme
 - `mammoth support subscription create` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.subscription_create
@@ -1369,6 +1373,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth support workspace invite resend 123 456 --yes --confirm 123
 - `mammoth support workspace list` [read/none] -> mammoth.api.support.SupportAPI.workspace_list
   example: mammoth support workspace list
+- `mammoth support workspace project list` [read/none] -> mammoth.api.support.SupportAPI.workspace_project_list
+  example: mammoth support workspace project list 123
+- `mammoth support workspace project move-check` [read/none] -> mammoth.api.support.SupportAPI.project_move_check
+  example: mammoth support workspace project move-check 123 456 --input '{"target_workspace_id": 1}'
+- `mammoth support workspace project move-start` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.project_move_start
+  example: mammoth support workspace project move-start 123 456 --input '{"target_workspace_id": 1}' --yes --confirm 123
 - `mammoth support workspace restore-access` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_restore_access
   example: mammoth support workspace restore-access 123 --yes --confirm 123
 - `mammoth support workspace restore-archive` [high_impact/confirm_target] -> mammoth.api.support.SupportAPI.workspace_restore_archive

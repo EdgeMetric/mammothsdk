@@ -846,3 +846,31 @@ commands:
     ids:
       plan_id: positional.0
     kind: object
+- command_id: support.project-move.get
+  output_schema: openapi
+  known_restrictions: Tech admin only (Mammoth staff role); refused for every other user. Needs no workspace
+    header. A move that is stalled (its worker died) resumes when `support workspace project move-start` runs again.
+- command_id: support.project-move.purge
+  output_schema:
+    ref: WriteResult
+  no_readback: queues the purge; `support project-move get MOVE_ID` shows its `purge` outcome
+  known_restrictions: Tech admin only (Mammoth staff role); refused for every other user. Refused for a move
+    that is not finished.
+- command_id: support.workspace.project.list
+  output_schema: openapi
+  known_restrictions: Tech admin only (Mammoth staff role); refused for every other user.
+- command_id: support.workspace.project.move-check
+  output_schema: openapi
+  known_restrictions: Tech admin only (Mammoth staff role); refused for every other user. Pass the workspace
+    the project is in and the project id as positionals and target_workspace_id in --input.
+- command_id: support.workspace.project.move-start
+  output_schema:
+    ref: WriteResult
+  readback:
+    command: support.project-move.get
+    ids:
+      move_id: result.move.id
+    kind: object
+  known_restrictions: Tech admin only (Mammoth staff role); refused for every other user. Run
+    `support workspace project move-check` first; acknowledged_warnings must hold the code of every warning.
+    A project with an unfinished move resumes that move.

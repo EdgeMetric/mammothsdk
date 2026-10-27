@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 857.
+Total commands: 862.
 
 ## activity
 
@@ -5877,6 +5877,28 @@ Total commands: 857.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
 - Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`
 
+### `mammoth support project-move get`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_get`
+- Agent example: `mammoth support project-move get 123`
+
+### `mammoth support project-move purge`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_purge`
+- Agent example: `mammoth support project-move purge 123 --yes --confirm 123`
+
 ### `mammoth support search`
 
 **Arguments**
@@ -6260,6 +6282,41 @@ Total commands: 857.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_list`
 - Agent example: `mammoth support workspace list`
+
+### `mammoth support workspace project list`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_project_list`
+- Agent example: `mammoth support workspace project list 123`
+
+### `mammoth support workspace project move-check`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_check`
+- Agent example: `mammoth support workspace project move-check 123 456 --input '{"target_workspace_id": 1}'`
+
+### `mammoth support workspace project move-start`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_start`
+- Agent example: `mammoth support workspace project move-start 123 456 --input '{"target_workspace_id": 1}' --yes --confirm 123`
 
 ### `mammoth support workspace restore-access`
 

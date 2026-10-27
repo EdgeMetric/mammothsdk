@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 888
+method_count: 893
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -9216,6 +9216,60 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_check
+  implementation_origin: mammoth.api.support.SupportAPI.project_move_check
+  signature: 'project_move_check(self, workspace_id: ''int'', project_id: ''int'', target_workspace_id:
+    ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - CheckProjectMove
+  canonical_command: support.workspace.project.move-check
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_get
+  implementation_origin: mammoth.api.support.SupportAPI.project_move_get
+  signature: 'project_move_get(self, move_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetProjectMove
+  canonical_command: support.project-move.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_purge
+  implementation_origin: mammoth.api.support.SupportAPI.project_move_purge
+  signature: 'project_move_purge(self, move_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - PurgeProjectMove
+  canonical_command: support.project-move.purge
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.project_move_start
+  implementation_origin: mammoth.api.support.SupportAPI.project_move_start
+  signature: 'project_move_start(self, workspace_id: ''int'', project_id: ''int'', target_workspace_id:
+    ''int'', acknowledged_warnings: ''list[str] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - StartProjectMove
+  canonical_command: support.workspace.project.move-start
+  alias_of: null
+  no_command_reason: null
+  mutation_class: high_impact
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.search
   implementation_origin: mammoth.api.support.SupportAPI.search
   signature: 'search(self, q: ''str'' = '''') -> ''dict[str, Any]'''
@@ -9675,6 +9729,19 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.support.SupportAPI.workspace_project_list
+  implementation_origin: mammoth.api.support.SupportAPI.workspace_project_list
+  signature: 'workspace_project_list(self, workspace_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - ListProjects
+  canonical_command: support.workspace.project.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.support.SupportAPI.workspace_restore_access
