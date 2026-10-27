@@ -841,4 +841,14 @@ COMMAND_DISCOVERY_PURPOSES = {
         "list datasets that follow a link, from url datasets, last fetched, fetch failed, "
         "refresh from link schedules, which links update"
     ),
+    # Bulk download (several datasets, views or folders as one file).
+    "dataset.download": (
+        "download all datasets as zip, export several datasets to one file, bulk download "
+        "many tables CSV zip of CSVs or one Excel xlsx workbook with a sheet per dataset, "
+        "stack same columns, save to computer"
+    ),
+    "dataset.download-plan": (
+        "how big is a bulk download, how many datasets and files a download of several "
+        "datasets would hold before downloading all as zip, stacked files, skipped empty"
+    ),
 }

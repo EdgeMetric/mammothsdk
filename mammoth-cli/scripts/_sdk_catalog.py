@@ -296,6 +296,9 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dataset.from-url.preview": {"operation_ids": [], "method": "POST"},
     "dataset.from-url.follow": {"operation_ids": [], "method": "PATCH"},
     "dataset.from-url.list": {"operation_ids": [], "method": "GET"},
+    # mvc-service #7203.
+    "dataset.download": {"operation_ids": [], "method": "POST"},
+    "dataset.download-plan": {"operation_ids": [], "method": "POST"},
 }
 
 # CLI-only commands: no OpenAPI operation and no Mammoth transport. They are

@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 855.
+Total commands: 857.
 
 ## activity
 
@@ -3847,6 +3847,20 @@ Total commands: 855.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
 - Agent example: `mammoth dataset delete 123 --yes`
 
+### `mammoth dataset download`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download`
+- Agent example: `mammoth dataset download --input '{"resource_ids": [12, 13], "name": "sales", "file_type": "csv"}'`
+
+### `mammoth dataset download-plan`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download_plan`
+- Agent example: `mammoth dataset download-plan --input '{"resource_ids": [12, 13]}'`
+
 ### `mammoth dataset file-settings get`
 
 **Arguments**
@@ -3900,7 +3914,7 @@ Total commands: 855.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.follow_link`
-- Agent example: `mammoth dataset from-url follow 123`
+- Agent example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`
 
 ### `mammoth dataset from-url list`
 

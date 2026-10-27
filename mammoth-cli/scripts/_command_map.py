@@ -116,6 +116,8 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # mvc-service From URL (#7166, #7169): on origin/release, not on the pinned master.
     "POST /workspaces/{}/projects/{}/connector-drafts/link-preview": "origin/release (#7166)",
     "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
+    "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
+    "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
 }
 
 # --- Operations that alias another command (identical behavior) ------------

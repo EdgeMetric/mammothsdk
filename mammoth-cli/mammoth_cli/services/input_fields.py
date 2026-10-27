@@ -174,6 +174,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "agent.access.request.resolve": {"status": "done"},
     "agent.turn.rate": {"rating": "up"},
     "agent.session.set-visibility": {"visibility": "shared"},
+    "dataset.download": {"resource_ids": [12, 13], "name": "sales", "file_type": "csv"},
+    "dataset.download-plan": {"resource_ids": [12, 13]},
+    "dataset.from-url.follow": {"follow": False},
     "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
     "annotation.create": {
         "target_type": "dataview",

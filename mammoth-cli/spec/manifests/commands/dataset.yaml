@@ -418,3 +418,21 @@ commands:
         type: array
         items:
           type: object
+- command_id: dataset.download
+  output_schema:
+    type: object
+    properties:
+      output_path:
+        type: string
+      download_url:
+        type: string
+  no_readback: writes a local file; the file is the result and nothing in the workspace changed
+  known_restrictions: 'Input: resource_ids (dataset, view and folder ids, in file order) and name (the file name without extension) are required; file_type is csv (a zip of CSVs when there are several) or xlsx (one workbook, a sheet per dataset); stack, numbered, views ({dataset id: view id}), output_path and timeout are optional. An existing output file is refused with file_exists unless --overwrite is given. Check the size first with dataset download-plan.'
+- command_id: dataset.download-plan
+  output_schema:
+    type: object
+    required: [datasets, stacked_files, skipped]
+    properties:
+      datasets: {type: integer}
+      stacked_files: {type: integer}
+      skipped: {type: integer}

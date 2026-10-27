@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 885
+method_count: 888
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -6478,6 +6478,47 @@ methods:
   canonical_command: view.derivative.update
   alias_of: null
   no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
+  implementation_origin: mammoth.api.exports.ExportsAPI.bulk_download
+  signature: 'bulk_download(self, resource_ids: ''_list[int]'', name: ''str'', output_path: ''str | Path
+    | None'' = None, file_type: "Literal[''csv'', ''xlsx'']" = ''csv'', stack: ''bool'' = False, numbered:
+    ''bool'' = False, views: ''dict[int, int] | None'' = None, timeout: ''int'' = 300) -> ''Path'''
+  openapi_operation_ids: []
+  canonical_command: dataset.download
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_plan
+  implementation_origin: mammoth.api.exports.ExportsAPI.bulk_download_plan
+  signature: 'bulk_download_plan(self, resource_ids: ''_list[int]'', views: ''dict[int, int] | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.download-plan
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_url
+  implementation_origin: mammoth.api.exports.ExportsAPI.bulk_download_url
+  signature: 'bulk_download_url(self, resource_ids: ''_list[int]'', name: ''str'', file_type: "Literal[''csv'',
+    ''xlsx'']" = ''csv'', stack: ''bool'' = False, numbered: ''bool'' = False, views: ''dict[int, int]
+    | None'' = None, timeout: ''int'' = 300) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null

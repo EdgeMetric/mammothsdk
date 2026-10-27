@@ -1231,6 +1231,9 @@ _TARGETS: dict[str, str] = {
     "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dataset.from-url.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Download several datasets as one file, and what that would hold.
+    "dataset.download": "mammoth_cli.commands.dataset.download:dataset_download",
+    "dataset.download-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

@@ -66,6 +66,28 @@
       "commands": [
         "dataset.from-url.list"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/downloads",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7203)",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.bulk_download_url"
+      ],
+      "commands": []
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/downloads/plan",
+      "state": "pending_server_release",
+      "pending_in": "origin/release (#7203)",
+      "sdk_symbols": [
+        "mammoth.api.exports.ExportsAPI.bulk_download_plan"
+      ],
+      "commands": [
+        "dataset.download-plan"
+      ]
     }
   ],
   "commands_without_route": [
@@ -73,6 +95,7 @@
     "calc",
     "capabilities",
     "connector.connection.query",
+    "dataset.download",
     "dataset.find",
     "dataset.schema-diff",
     "folder.find",

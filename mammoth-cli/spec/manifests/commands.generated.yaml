@@ -15888,6 +15888,79 @@ commands:
   undo_test: null
   known_restrictions: Immutable dataset-ID confirmation.
   reviewed_by: primary
+- command_id: dataset.download
+  command_path: dataset download
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.bulk_download with validated request fields.
+  request_model: DatasetDownloadRequest
+  result_model: DatasetDownloadResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Writes a file or render of the dataset outside Mammoth; the produced file cannot be recalled.
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-DOWNLOAD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset download --help
+  agent_example: 'mammoth dataset download --input ''{"resource_ids": [12, 13], "name": "sales", "file_type":
+    "csv"}'''
+  unit_tests:
+  - UT-DATASET-DOWNLOAD
+  contract_tests:
+  - CT-DATASET-DOWNLOAD-HUMAN
+  - CT-DATASET-DOWNLOAD-JSON
+  - CT-DATASET-DOWNLOAD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Queues one file (csv, a zip of csvs, or one xlsx workbook) of the given datasets,
+    views and folders, waits, and writes it locally; refuses an existing file unless --overwrite.
+  reviewed_by: primary
+- command_id: dataset.download-plan
+  command_path: dataset download-plan
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.exports.ExportsAPI.bulk_download_plan
+  sdk_conversion: Call mammoth.api.exports.ExportsAPI.bulk_download_plan with validated request fields.
+  request_model: DatasetDownloadPlanRequest
+  result_model: DatasetDownloadPlanResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-DOWNLOAD-PLAN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset download-plan --help
+  agent_example: 'mammoth dataset download-plan --input ''{"resource_ids": [12, 13]}'''
+  unit_tests:
+  - UT-DATASET-DOWNLOAD-PLAN
+  contract_tests:
+  - CT-DATASET-DOWNLOAD-PLAN-HUMAN
+  - CT-DATASET-DOWNLOAD-PLAN-JSON
+  - CT-DATASET-DOWNLOAD-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Reads headers only: how many datasets a download holds and how many files it is
+    with same-column datasets stacked.'
+  reviewed_by: primary
 - command_id: dataset.file-settings.get
   command_path: dataset file-settings get
   disposition: command
@@ -16050,7 +16123,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset from-url follow DATASET_ID --help
-  agent_example: mammoth dataset from-url follow 123
+  agent_example: 'mammoth dataset from-url follow 123 --input ''{"follow": false}'''
   unit_tests:
   - UT-DATASET-FROM-URL-FOLLOW
   contract_tests:

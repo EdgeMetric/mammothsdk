@@ -380,6 +380,8 @@
   "dataset.definition.list": "List what terms mean for one dataset, as its users saved them.",
   "dataset.definition.remove": "Remove one definition from a dataset by its id. Prompt or '--yes' required.",
   "dataset.delete": "Permanently delete one dataset by id. Prompt or '--yes' required.",
+  "dataset.download": "Download several datasets, views and folders as one csv, zip of csvs or xlsx file.",
+  "dataset.download-plan": "Say what downloading several datasets, views and folders would hold.",
   "dataset.file-settings.get": "Get file settings (delimiter, header, dates, ...) for a dataset.",
   "dataset.file-settings.undo": "Undo the last file settings change for a dataset. Prompt or '--yes' required.",
   "dataset.file-settings.update": "Update a dataset's file settings. Required fields come from '--input'.",
