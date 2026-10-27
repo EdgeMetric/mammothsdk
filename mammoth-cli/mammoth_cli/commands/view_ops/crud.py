@@ -290,6 +290,9 @@ def view_delete(invocation: Invocation) -> HandlerResult:
     kwargs = bind_command_inputs(invocation.command_id, document, **context)
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        # The server answers 202 with the job that deletes the view; the view is still
+        # readable until that job finishes, so wait for it before reading the view back.
+        settled = service.wait_if_job(data)
         ensure_deleted(
             service,
             noun="view",
@@ -300,7 +303,7 @@ def view_delete(invocation: Invocation) -> HandlerResult:
                 "dataview_id": view_id,
                 "project_id": invocation.project,
             },
-            responses=(data,),
+            responses=(data, settled),
             recovery_commands=[f"mammoth view task list {view_id}"],
         )
     return data, _meta(invocation, auth.workspace_id)
