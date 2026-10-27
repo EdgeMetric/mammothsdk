@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -77,45 +79,52 @@ def _row_count(cli: LiveCli, project: int, dataset: int, view: int) -> int:
     return int(data["row_count"])
 
 
-@pytest.fixture(scope="module")
-def tables(
-    live_cli: LiveCli, scratch_project: int, tmp_path_factory: pytest.TempPathFactory
-) -> dict[str, tuple[int, int]]:
-    folder = tmp_path_factory.mktemp("recipes")
-    return {
-        name: upload_csv(live_cli, scratch_project, folder / f"{name}.csv", text)
-        for name, text in (
-            ("orders", _ORDERS),
-            ("events", _EVENTS),
-            ("sales", _SALES),
-            ("regions", _REGIONS),
+@pytest.fixture
+def upload(
+    live_cli: LiveCli, scratch_project: int, tmp_path: Path
+) -> Callable[[str], tuple[int, int]]:
+    """Upload CSV text as a new dataset of this test only; return (dataset id, view id)."""
+
+    def make(text: str) -> tuple[int, int]:
+        return upload_csv(
+            live_cli, scratch_project, tmp_path / f"{uuid.uuid4().hex[:10]}.csv", text
         )
-    }
+
+    return make
+
+
+def _rows(cli: LiveCli, project: int, dataset: int, view: int) -> list[dict[str, Any]]:
+    data, _ = cli.ok("view", "data", "get", str(view), str(dataset), project=project)
+    rows: list[dict[str, Any]] = data["data"]
+    return rows
 
 
 def test_remove_duplicates_by_key_previews_then_edits_a_copy(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["orders"]
+    dataset, view = upload(_ORDERS)
     inputs = {"view_id": view, "dataset_id": dataset, "key_columns": ["Order ID"]}
 
-    _, dry = _recipe(live_cli, scratch_project, "remove-duplicates", inputs, "--dry-run")
+    dry_lines, dry = _recipe(live_cli, scratch_project, "remove-duplicates", inputs, "--dry-run")
     assert dry["data"]["version"] >= 2
     counted = [m for m in dry["data"]["predicted_impact"] if m["impact"] == "counted"]
     assert counted, dry["data"]["predicted_impact"]
+    impact = dry_lines[0]["data"]["predicted_impact"]  # the preview line, on the original view
+    assert (impact["rows_removed"], impact["row_count"], impact["exact"]) == (2, 6, True)
     assert _row_count(live_cli, scratch_project, dataset, view) == 6
 
     lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
     assert summary["data"]["failed"] == 0, lines
     assert _row_count(live_cli, scratch_project, dataset, view) == 6  # the original is untouched
     copy = next(e for e in lines if e["data"].get("view_id") not in (None, view))
-    assert _row_count(live_cli, scratch_project, dataset, int(copy["data"]["view_id"])) == 4
+    kept = _rows(live_cli, scratch_project, dataset, int(copy["data"]["view_id"]))
+    assert sorted(row["Order ID"] for row in kept) == ["o1", "o2", "o3", "o4"]
 
 
 def test_remove_duplicates_in_place_edits_the_named_view(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["orders"]
+    dataset, view = upload(_ORDERS)
     working, _ = live_cli.ok(
         "view", "create", str(dataset), "--input", json.dumps({"clone_from": view}),
         project=scratch_project,
@@ -129,13 +138,67 @@ def test_remove_duplicates_in_place_edits_the_named_view(
     }
     _, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
     assert summary["data"]["failed"] == 0
-    assert _row_count(live_cli, scratch_project, dataset, mine) == 5
+    kept = _rows(live_cli, scratch_project, dataset, mine)
+    assert sorted((row["Order ID"], row["Amount"]) for row in kept) == [
+        ("o1", "10"),
+        ("o2", "20"),
+        ("o2", "25"),
+        ("o3", "30"),
+        ("o4", "40"),
+    ]
+    assert _row_count(live_cli, scratch_project, dataset, view) == 6  # the other view is untouched
+
+
+def test_discard_duplicates_refuses_key_columns_with_ignore_columns_or_in_a_batch(
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
+) -> None:
+    dataset, view = upload(_ORDERS)
+    both = json.dumps(
+        {"dataset_id": dataset, "key_columns": ["Order ID"], "ignore_columns": ["Amount"]}
+    )
+    error = live_cli.err(
+        "view", "transform", "discard-duplicates", str(view), "--input", both, "--dry-run",
+        project=scratch_project,
+    )  # fmt: skip
+    assert "not both" in error["message"]
+    step = {"op": "discard-duplicates", "input": {"key_columns": ["Order ID"]}}
+    error = live_cli.err(
+        "view", "transform", "batch", str(view), "--input",
+        json.dumps({"dataset_id": dataset, "steps": [step]}), "--dry-run",
+        project=scratch_project,
+    )  # fmt: skip
+    assert "key_columns" in json.dumps(error)
+    assert _row_count(live_cli, scratch_project, dataset, view) == 6
+
+
+def test_discard_duplicates_takes_one_key_column_as_a_string(
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
+) -> None:
+    dataset, view = upload(_ORDERS)
+    document = json.dumps({"dataset_id": dataset, "key_columns": "Order ID"})
+    data, _ = live_cli.ok(
+        "view", "transform", "discard-duplicates", str(view), "--input", document, "--dry-run",
+        project=scratch_project,
+    )  # fmt: skip
+    assert data["predicted_impact"]["rows_removed"] == 2
+
+
+def test_remove_duplicates_without_key_columns_compares_whole_rows(
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
+) -> None:
+    dataset, view = upload(_ORDERS)
+    lines, summary = _recipe(
+        live_cli, scratch_project, "remove-duplicates", {"view_id": view, "dataset_id": dataset}
+    )
+    assert summary["data"]["failed"] == 0, lines
+    copy = next(e for e in lines if e["data"].get("view_id") not in (None, view))
+    assert _row_count(live_cli, scratch_project, dataset, int(copy["data"]["view_id"])) == 5
 
 
 def test_remove_duplicates_with_an_unknown_key_fails_loud(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["orders"]
+    dataset, view = upload(_ORDERS)
     inputs = {"view_id": view, "dataset_id": dataset, "key_columns": ["Nope"]}
     lines, summary = _recipe(live_cli, scratch_project, "remove-duplicates", inputs)
     assert summary["data"]["failed"] == 1
@@ -143,9 +206,9 @@ def test_remove_duplicates_with_an_unknown_key_fails_loud(
 
 
 def test_filter_copy_keeps_matching_rows_on_a_copy_with_text_dates(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["events"]
+    dataset, view = upload(_EVENTS)
     inputs = {
         "view_id": view,
         "dataset_id": dataset,
@@ -163,9 +226,9 @@ def test_filter_copy_keeps_matching_rows_on_a_copy_with_text_dates(
 
 
 def test_filter_copy_that_matches_nothing_fails_and_keeps_the_source(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["events"]
+    dataset, view = upload(_EVENTS)
     inputs = {
         "view_id": view,
         "dataset_id": dataset,
@@ -179,9 +242,9 @@ def test_filter_copy_that_matches_nothing_fails_and_keeps_the_source(
 
 
 def test_summarize_by_groups_by_several_columns_and_orders_them(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["sales"]
+    dataset, view = upload(_SALES)
     inputs = {"view_id": view, "dataset_id": dataset, "group_by": ["Region"], "column": "Revenue"}
     lines, summary = _recipe(live_cli, scratch_project, "summarize-by", inputs)
     assert summary["data"]["failed"] == 0, lines
@@ -215,10 +278,10 @@ def test_create_projects_twice_makes_each_project_once(
 
 
 def test_blend_by_key_reads_both_key_counts_then_joins_in_place(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["sales"]
-    foreign_dataset, foreign_view = tables["regions"]
+    dataset, view = upload(_SALES)
+    foreign_dataset, foreign_view = upload(_REGIONS)
     inputs = {
         "view_id": view,
         "dataset_id": dataset,
@@ -232,15 +295,24 @@ def test_blend_by_key_reads_both_key_counts_then_joins_in_place(
     assert summary["data"]["dry_run"] is True
     keys = [e["data"] for e in lines if e.get("cmd") == "view data aggregate"]
     assert len(keys) == 2  # both sides' key counts are read before the join
+    assert _rows(live_cli, scratch_project, dataset, view)[0].get("Manager") is None
     _, real = _recipe(live_cli, scratch_project, "blend-by-key", inputs)
     assert real["data"]["failed"] == 0
-    assert _row_count(live_cli, scratch_project, dataset, view) == 4  # a LEFT join keeps the rows
+    joined = _rows(live_cli, scratch_project, dataset, view)
+    assert len(joined) == 4  # a LEFT join keeps every left row
+    managers = sorted((row["Region"], row.get("Manager")) for row in joined)
+    assert [m for m in managers if m[0] != "East"] == [
+        ("North", "Ann"),
+        ("North", "Ann"),
+        ("South", "Sam"),
+    ]
+    assert [m[1] for m in managers if m[0] == "East"] in ([None], [""])
 
 
 def test_email_view_dry_run_sends_nothing_and_marks_the_impact(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["sales"]
+    dataset, view = upload(_SALES)
     inputs = {
         "view_id": view,
         "dataset_id": dataset,
@@ -253,25 +325,28 @@ def test_email_view_dry_run_sends_nothing_and_marks_the_impact(
 
 
 def test_export_to_s3_writes_one_export_that_the_view_lists(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["sales"]
-    inputs = {"view_id": view, "dataset_id": dataset, "file_name": "recipe-live.csv"}
+    dataset, view = upload(_SALES)
+    file_name = f"recipe-live-{uuid.uuid4().hex[:8]}.csv"
+    inputs = {"view_id": view, "dataset_id": dataset, "file_name": file_name}
     before, _ = live_cli.ok(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
+    assert before["exports"] == []
     _, summary = _recipe(live_cli, scratch_project, "export-to-s3", inputs)
     assert summary["data"]["failed"] == 0
     after, _ = live_cli.ok(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
-    assert len(json.dumps(after)) > len(json.dumps(before))
+    assert len(after["exports"]) == 1
+    assert json.dumps(after["exports"]).count(file_name) >= 1
 
 
 def test_dashboard_from_view_makes_one_dashboard(
-    live_cli: LiveCli, scratch_project: int, tables: dict[str, tuple[int, int]]
+    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
-    dataset, view = tables["sales"]
+    dataset, view = upload(_SALES)
     inputs = {"view_id": view, "intent": "Revenue by region"}
     lines, summary = _recipe(live_cli, scratch_project, "dashboard-from-view", inputs)
     assert summary["data"]["failed"] == 0, lines

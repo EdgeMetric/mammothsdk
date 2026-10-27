@@ -86,6 +86,8 @@ def test_a_dry_run_plans_every_line(
         # before any copy is made (the live test covers the run with duplicates).
         assert lines[-1]["data"]["failed_lines"] == [1], lines
         assert lines[0]["error"]["code"] == "no_op", lines
+        # Nothing after the preview ran: no copy of the view was made.
+        assert not [c for c in service.call_log if c[0].endswith("create")], service.call_log
         return
     assert code == 0, lines
     summary = lines[-1]["data"]
