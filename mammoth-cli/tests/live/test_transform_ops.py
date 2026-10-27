@@ -15,6 +15,7 @@ import csv
 import io
 import json
 import time
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
@@ -259,6 +260,23 @@ def test_first_name_needs_exactly_one_destination(items: Table) -> None:
 
     assert "new_column or existing_column" in json.dumps(error)
     assert items.steps() == before
+
+
+def test_math_uses_a_parameter_written_in_braces(source: Source, items: Table) -> None:
+    name = f"live_factor_{uuid.uuid4().hex[:8]}"
+    created, _ = source.cli.ok(
+        *("parameter", "create"),
+        *("--input", json.dumps({"name": name, "param_type": "NUMERIC", "value": "2"})),
+        project=source.project,
+    )
+    try:
+        items.ok("math", expression=f"Cost * {{{name}}}", new_column="Scaled")
+
+        assert items.total("Scaled") == 200
+    finally:
+        source.cli.run(
+            *("parameter", "delete", str(created["id"]), "--yes"), project=source.project
+        )
 
 
 # -- repeat-rows ----------------------------------------------------------------

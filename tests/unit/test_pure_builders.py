@@ -17,6 +17,7 @@ from collections.abc import Callable
 
 import pytest
 
+from mammoth._expression_parser import parameter_names
 from mammoth._pure import builders as b
 from mammoth._pure.resolve import (
     build_as_column,
@@ -479,6 +480,33 @@ class TestMath:
     def test_math_neither(self) -> None:
         spec = b.build_math_params("Sales * 2", COLS)
         assert "AS" not in spec["MATH"] and "DESTINATION" not in spec["MATH"]
+
+    def test_math_parameter_token_becomes_a_parameter_atom(self) -> None:
+        spec = b.build_math_params("Sales * {tax rate}", COLS, parameter_ids={"tax rate": 7})
+        assert spec["MATH"]["EXPRESSION"] == [
+            {"TYPE": "COLUMN", "VALUE": "c1"},
+            {"TYPE": "OPERATOR", "VALUE": "*"},
+            {"TYPE": "NUMBER", "VALUE": {"type": "parameter", "parameter_id": 7}},
+        ]
+
+    def test_math_parameter_inside_parentheses(self) -> None:
+        spec = b.build_math_params("({a} + 1) * {b}", COLS, parameter_ids={"a": 1, "b": 2})
+        atom_a = {"TYPE": "NUMBER", "VALUE": {"type": "parameter", "parameter_id": 1}}
+        assert spec["MATH"]["EXPRESSION"][0] == [
+            atom_a,
+            {"TYPE": "OPERATOR", "VALUE": "+"},
+            {"TYPE": "NUMBER", "VALUE": 1},
+        ]
+
+    def test_math_unknown_or_unclosed_parameter_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="no parameter named 'nope'"):
+            b.build_math_params("Sales * {nope}", COLS, parameter_ids={"rate": 1})
+        with pytest.raises(ValueError, match="unclosed brace"):
+            b.build_math_params("Sales * {rate", COLS, parameter_ids={"rate": 1})
+
+    def test_parameter_names_lists_each_name_once(self) -> None:
+        assert parameter_names("Sales * { rate } + {rate} - {fee}") == ["rate", "fee"]
+        assert parameter_names("Sales * 2") == []
 
 
 # ===============================================================

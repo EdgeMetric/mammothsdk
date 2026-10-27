@@ -253,7 +253,7 @@ COMMAND_DISCOVERY_PURPOSES = {
     "view.transform.math": (
         "math arithmetic multiply multiplication divide add subtract formula "
         "expression amount calculate compute ratio percentage round new column "
-        "conditional threshold greater than if text times"
+        "conditional threshold greater than if text times parameter {name} variable"
     ),
     "view.transform.pivot": (
         "pivot table group by aggregate aggregation sum count average summary summarize "

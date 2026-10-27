@@ -1417,7 +1417,9 @@ commands:
     kind: data
   known_restrictions: 'Observe first: `view get VIEW_ID` for the types of the columns in the expression,
     and run it with `--dry-run` to validate the expression. Exactly one of new_column or existing_column
-    is required; both or neither is refused.'
+    is required; both or neither is refused. A parameter is written {name} in the expression (a project
+    or workspace parameter of that name; an unknown name is refused): the step uses its value and re-runs
+    when the value changes.'
 - command_id: view.transform.pivot
   output_schema: {ref: TransformResult}
   readback:

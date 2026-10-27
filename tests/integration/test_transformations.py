@@ -10,6 +10,8 @@ Run:
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 
 from mammoth import (
@@ -23,6 +25,7 @@ from mammoth import (
     DateDelta,
     DateDiffUnit,
     FillDirection,
+    MammothValidationError,
     Operator,
     SetValue,
     SortDirection,
@@ -414,3 +417,28 @@ class TestExport:
         content = path.read_text()
         assert "emp_id" in content
         assert len(content.splitlines()) > 1
+
+
+class TestMathWithParameter:
+    """A ``{name}`` in a math expression uses the parameter's value."""
+
+    async def test_math_multiplies_by_the_parameter_value(self, client, view):
+        name = f"pytest_factor_{uuid.uuid4().hex[:8]}"
+        created = await client.parameters.create(
+            name=name, param_type="NUMERIC", value="3", project_id=client.project_id
+        )
+        try:
+            await view.math(f"base_salary * {{{name}}}", new_column="scaled")
+
+            rows = (await view.data(columns=["base_salary", "scaled"], limit=50))["data"]
+            pairs = [[v for k, v in row.items() if k != "hash"] for row in rows]
+            assert pairs
+            for salary, scaled in pairs:
+                assert float(scaled) == pytest.approx(float(salary) * 3)
+        finally:
+            await client.views.delete(view.id)
+            await client.parameters.delete(created["id"])
+
+    async def test_an_unknown_parameter_name_is_refused_before_any_task(self, view):
+        with pytest.raises(MammothValidationError, match="no parameter named"):
+            await view.math("base_salary * {no_such_parameter_xyz}", new_column="scaled")

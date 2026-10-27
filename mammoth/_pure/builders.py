@@ -363,12 +363,17 @@ def build_math_params(
     condition: ConditionLike | None = None,
     column_types: dict[str, str] | None = None,
     name_gen: Callable[[], str] | None = None,
+    parameter_ids: Mapping[str, int] | None = None,
 ) -> dict[str, Any]:
-    """Build a MATH (arithmetic) task payload from a string expression."""
+    """Build a MATH (arithmetic) task payload from a string expression.
+
+    A ``{name}`` in the expression is a workspace parameter; *parameter_ids* maps each
+    name used to its id (the backend binds and re-runs the step when it changes).
+    """
     from mammoth._expression_parser import parse_expression
 
     _internal_names: list[str] = internal_names or []
-    math_spec: dict[str, Any] = {"EXPRESSION": parse_expression(expression, col_map)}
+    math_spec: dict[str, Any] = {"EXPRESSION": parse_expression(expression, col_map, parameter_ids)}
     if new_column:
         math_spec["AS"] = build_as_column(new_column, column_type, name_gen=name_gen)
     elif existing_column:
