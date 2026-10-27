@@ -16112,7 +16112,7 @@ commands:
   request_model: DatasetFromUrlFollowRequest
   result_model: DatasetFromUrlFollowResult
   mutation_class: benign_mutation
-  edits_target: false
+  edits_target: true
   undo:
     strategy: irreversible
     reason: Overwrites the dataset from url; the earlier value is not kept, so it cannot be restored.
