@@ -649,7 +649,9 @@ def build_increment_date_params(
     return spec
 
 
-# Repeat Rows limits, as the backend enforces them (CommonConstants.apiconst REPEAT_*).
+# Repeat Rows limits, as the backend enforces them: mvc-service
+# CommonConstants/CommonConstants/apiconst.py REPEAT_MIN_TIMES, REPEAT_MAX_TIMES and
+# REPEAT_MAX_VALUES (the 10M output-row cap, REPEAT_MAX_OUTPUT_ROWS, is checked server side).
 _REPEAT_MIN_TIMES = 2
 _REPEAT_MAX_TIMES = 10_000
 _REPEAT_MAX_VALUES = 1_000
