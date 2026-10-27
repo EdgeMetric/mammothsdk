@@ -416,7 +416,7 @@ def view_transform_discard_duplicates(invocation: Invocation) -> HandlerResult:
 
 
 def _all_but_keys(
-    service: Any, invocation: Invocation, dataset_id: int, view_id: int, key_columns: Any
+    service: Any, invocation: Invocation, dataset_id: int, view_id: int, key_columns: list[str]
 ) -> list[str]:
     """The view's other column names, so only ``key_columns`` decide what a duplicate is."""
     keys = list(key_columns)
