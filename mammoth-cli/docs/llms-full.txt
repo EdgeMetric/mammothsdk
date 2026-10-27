@@ -1693,6 +1693,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth view transform pivot 123 --input '{"group_by": ["Region"], "aggregations": [{"column": "Revenue", "function": "SUM"}], "dataset_id": 456}'
 - `mammoth view transform rename-columns` [benign_mutation/none] -> mammoth.View.rename_columns
   example: mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'
+- `mammoth view transform repeat-rows` [reversible_pipeline/none] -> mammoth.View.repeat_rows
+  example: mammoth view transform repeat-rows 123 --input '{"dataset_id": 456}'
 - `mammoth view transform replace` [reversible_pipeline/none] -> mammoth.View.replace_values
   example: mammoth view transform replace 123 --input '{"columns": ["Status"], "find": "N/A", "replace": "Unknown", "dataset_id": 456}'
 - `mammoth view transform set-values` [reversible_pipeline/none] -> mammoth.View.set_values

@@ -272,6 +272,7 @@ edits_target_commands:
 - view.transform.math
 - view.transform.pivot
 - view.transform.rename-columns
+- view.transform.repeat-rows
 - view.transform.replace
 - view.transform.set-values
 - view.transform.small-large

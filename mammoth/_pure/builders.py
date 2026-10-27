@@ -73,6 +73,10 @@ from mammoth.models.pipeline import (
     JsonExtractionSpec,
     JsonOpType,
     JsonType,
+    RepeatBound,
+    RepeatBoundKind,
+    RepeatOrder,
+    RepeatSeries,
     SaveAsDatasetMode,
     SetValue,
     SmallLargeFunction,
@@ -638,6 +642,175 @@ def build_increment_date_params(
     if built is not None:
         spec["CONDITION"] = built
     return spec
+
+
+# Repeat Rows limits, as the backend enforces them (CommonConstants.apiconst REPEAT_*).
+_REPEAT_MIN_TIMES = 2
+_REPEAT_MAX_TIMES = 10_000
+_REPEAT_MAX_VALUES = 1_000
+_REPEAT_DELTA_UNITS = ("YEAR", "MONTH", "WEEK", "DAY")
+_REPEAT_START_KINDS = (RepeatBoundKind.START_OF_YEAR, RepeatBoundKind.EARLIEST)
+_REPEAT_END_KINDS = (RepeatBoundKind.TODAY,)
+
+
+def _repeat_bound(
+    bound: str | int | float | RepeatBound,
+    kinds: tuple[RepeatBoundKind, ...],
+    col_map: dict[str, str],
+    internal_names: list[str],
+) -> str | int | float | dict[str, str]:
+    """One START/END of a REPEAT series: a literal, or a ``{KIND[, COLUMN]}`` bound."""
+    if not isinstance(bound, RepeatBound):
+        return bound
+    if bound.kind not in kinds:
+        raise MammothValidationError(
+            f"repeat_rows bound {bound.kind.value} is not valid here: a date series starts at "
+            "START_OF_YEAR or EARLIEST and ends at TODAY; a number series takes numbers"
+        )
+    if (bound.kind == RepeatBoundKind.EARLIEST) != (bound.column is not None):
+        raise MammothValidationError("repeat_rows takes a bound column with EARLIEST only")
+    spec = {"KIND": bound.kind.value}
+    if bound.column is not None:
+        spec["COLUMN"] = resolve_column(bound.column, col_map, internal_names)
+    return spec
+
+
+def _repeat_delta(delta: DateDelta) -> dict[str, int]:
+    """The DELTA of a REPEAT date series: one of years, months, weeks or days, >= 1."""
+    parts = delta.to_dict()
+    if len(parts) != 1 or next(iter(parts)) not in _REPEAT_DELTA_UNITS or min(parts.values()) < 1:
+        raise MammothValidationError(
+            "repeat_rows delta must set exactly one of years, months, weeks or days, to 1 or more"
+        )
+    return parts
+
+
+def _build_repeat_series(
+    series: RepeatSeries, col_map: dict[str, str], internal_names: list[str]
+) -> dict[str, Any]:
+    """The SERIES of a REPEAT task: a date range (delta) or a number range (step)."""
+    if (series.delta is None) == (series.step is None):
+        raise MammothValidationError("repeat_rows series takes exactly one of delta or step")
+    start_kinds = _REPEAT_START_KINDS if series.delta else ()
+    end_kinds = _REPEAT_END_KINDS if series.delta else ()
+    spec: dict[str, Any] = {
+        "START": _repeat_bound(series.start, start_kinds, col_map, internal_names),
+        "END": _repeat_bound(series.end, end_kinds, col_map, internal_names),
+    }
+    if series.delta is not None:
+        spec["DELTA"] = _repeat_delta(series.delta)
+    else:
+        assert series.step is not None
+        if series.step <= 0:
+            raise MammothValidationError("repeat_rows series step must be greater than 0")
+        spec["STEP"] = series.step
+    return spec
+
+
+def _repeat_mode(times: int | None, values: list[Any] | None, series: RepeatSeries | None) -> str:
+    """Which of TIMES, VALUES and SERIES the call sets; exactly one must be."""
+    modes = {"TIMES": times, "VALUES": values, "SERIES": series}
+    given = [name for name, value in modes.items() if value is not None]
+    if len(given) != 1:
+        raise MammothValidationError("repeat_rows takes exactly one of times, values or series")
+    return given[0]
+
+
+def _repeat_new_column_type(series: RepeatSeries | None, requested: ColumnType | None) -> str:
+    """The type of the column a VALUES or SERIES repeat adds (a series implies its own)."""
+    if series is not None:
+        implied = ColumnType.DATE if series.delta is not None else ColumnType.NUMERIC
+        if requested not in (None, implied):
+            raise MammothValidationError(
+                f"repeat_rows series writes {implied.value}; drop new_column_type or set it so"
+            )
+        return implied.value
+    if requested not in (ColumnType.TEXT, ColumnType.NUMERIC):
+        raise MammothValidationError(
+            "repeat_rows values into new_column need new_column_type TEXT or NUMERIC"
+        )
+    assert requested is not None
+    return requested.value
+
+
+def _build_repeat_times(
+    times: int,
+    new_column: str | None,
+    existing_column: str | None,
+    keep_original: bool | None,
+    order: RepeatOrder | None,
+) -> dict[str, Any]:
+    """The TIMES body of a REPEAT task: a count of copies, with no column or order."""
+    if isinstance(times, bool) or not _REPEAT_MIN_TIMES <= times <= _REPEAT_MAX_TIMES:
+        raise MammothValidationError(
+            f"repeat_rows times must be a whole number from {_REPEAT_MIN_TIMES} "
+            f"to {_REPEAT_MAX_TIMES}"
+        )
+    if new_column or existing_column or keep_original is not None or order is not None:
+        raise MammothValidationError("repeat_rows times takes no column, keep_original or order")
+    return {"TIMES": times}
+
+
+def build_repeat_params(
+    col_map: dict[str, str],
+    internal_names: list[str],
+    times: int | None = None,
+    values: list[str | int | float] | None = None,
+    series: RepeatSeries | None = None,
+    new_column: str | None = None,
+    new_column_type: ColumnType | None = None,
+    existing_column: str | None = None,
+    keep_original: bool | None = None,
+    order: RepeatOrder | None = None,
+    name_gen: Callable[[], str] | None = None,
+) -> dict[str, Any]:
+    """Build a REPEAT task payload.
+
+    Exactly one of *times* (2..10000 copies of each row, no column written),
+    *values* (1..1000 listed values, one copy of each row per value) or *series*
+    (one copy per value of a date or number range). *values* and *series* write
+    their value into exactly one of *new_column* or *existing_column*; a new
+    column's type is *new_column_type* for *values* (TEXT or NUMERIC) and implied by
+    *series*. *keep_original* (values into an existing column only) also keeps the
+    rows as they were. *order* is GROUPED or INTERLEAVED (not with *times*).
+
+    Raises:
+        MammothValidationError: a combination or value the backend would refuse.
+    """
+    mode = _repeat_mode(times, values, series)
+    if times is not None:
+        return {
+            "REPEAT": _build_repeat_times(times, new_column, existing_column, keep_original, order)
+        }
+    if bool(new_column) == bool(existing_column):
+        raise MammothValidationError(
+            "repeat_rows requires exactly one of new_column or existing_column"
+        )
+    if keep_original is not None and (mode != "VALUES" or not existing_column):
+        raise MammothValidationError(
+            "repeat_rows keep_original is for values into an existing_column only"
+        )
+    spec: dict[str, Any] = {}
+    if values is not None:
+        if not 1 <= len(values) <= _REPEAT_MAX_VALUES:
+            raise MammothValidationError(
+                f"repeat_rows values must list 1 to {_REPEAT_MAX_VALUES} values"
+            )
+        spec["VALUES"] = list(values)
+    else:
+        assert series is not None
+        spec["SERIES"] = _build_repeat_series(series, col_map, internal_names)
+    if new_column:
+        column_type = _repeat_new_column_type(series, new_column_type)
+        spec["AS"] = build_as_column(new_column, column_type, name_gen=name_gen)
+    else:
+        assert existing_column is not None
+        spec["DESTINATION"] = resolve_column(existing_column, col_map, internal_names)
+    if keep_original is not None:
+        spec["KEEP_ORIGINAL"] = keep_original
+    if order is not None:
+        spec["ORDER"] = order.value
+    return {"REPEAT": spec}
 
 
 # NumberFormat() defaults, emitted explicitly: the backend AsNewColumnLargeSmall

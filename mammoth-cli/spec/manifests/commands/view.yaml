@@ -1450,6 +1450,22 @@ commands:
   draft_test: null
   known_restrictions: 'A view display setting (the web grid''s column rename), not a pipeline task: it
     changes no data and adds no task.'
+- command_id: view.transform.repeat-rows
+  output_schema: {ref: TransformResult}
+  readback:
+    command: view.data.get
+    ids:
+      view_id: positional.0
+    kind: data
+  known_restrictions: 'Adds rows: the view ends with its row count times the copies. Give exactly one of
+    times (2 to 10000 copies, writes no column), values (1 to 1000 unique values; TEXT or NUMERIC) or
+    series (a date range: start, end, delta of one of years, months, weeks, days; or a number range:
+    start, end, step above 0). values and series need exactly one of new_column or existing_column
+    (new_column_type TEXT or NUMERIC for values; a series implies DATE or NUMERIC). keep_original is for
+    values into existing_column only. order (GROUPED or INTERLEAVED) is not for times. A series bound
+    may be {"kind": "START_OF_YEAR"} or {"kind": "EARLIEST", "column": "<date column>"} for start and
+    {"kind": "TODAY"} for end. No condition. Observe first: `view get VIEW_ID` for the row count, since the
+    result is limited to 10 million rows.'
 - command_id: view.transform.replace
   output_schema: {ref: TransformResult}
   readback:

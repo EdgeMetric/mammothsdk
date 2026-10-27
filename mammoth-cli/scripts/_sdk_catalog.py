@@ -254,6 +254,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
             "add-column delete-columns copy-columns combine-columns convert-type filter "
             "set-values math small-large text replace bulk-replace split substring "
             "extract-date date-diff increment-date fill-missing limit-rows discard-duplicates "
+            "repeat-rows "
             "unnest pivot window crosstab join lookup json-extract ai generate-sql add-sql"
         ).split()
     },

@@ -259,6 +259,11 @@ COMMAND_DISCOVERY_PURPOSES = {
         "pivot table group by aggregate aggregation sum count average summary summarize "
         "summarise per region total"
     ),
+    "view.transform.repeat-rows": (
+        "repeat rows duplicate each row n times copies one row per value listed values "
+        "date series one row per month day week year explode into a series number range "
+        "sequence generate dates"
+    ),
     "view.transform.rename-columns": (
         "rename column columns header headers relabel change column name names title"
     ),

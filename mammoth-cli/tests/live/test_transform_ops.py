@@ -261,6 +261,38 @@ def test_first_name_needs_exactly_one_destination(items: Table) -> None:
     assert items.steps() == before
 
 
+# -- repeat-rows ----------------------------------------------------------------
+
+
+def test_repeat_rows_values_make_one_copy_of_each_row_per_value(items: Table) -> None:
+    data = items.ok("repeat-rows", values=["a", "b"], new_column="Tag", new_column_type="TEXT")
+
+    assert data["run"]["transform_status"] == "DONE"
+    assert items.values("Tag") == ["a"] * 4 + ["b"] * 4
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_times_doubles_the_rows(items: Table) -> None:
+    items.ok("repeat-rows", times=2)
+
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_number_series_names_its_values(items: Table) -> None:
+    items.ok("repeat-rows", series={"start": 1, "end": 3, "step": 1}, new_column="N")
+
+    assert sorted(set(items.values("N"))) == ["1", "2", "3"]
+
+
+def test_repeat_rows_needs_exactly_one_mode(items: Table) -> None:
+    before = items.steps()
+
+    error = items.err("repeat-rows")
+
+    assert "exactly one of times, values or series" in json.dumps(error)
+    assert items.steps() == before
+
+
 # -- batch ---------------------------------------------------------------------
 
 _KEEP_FROM_20 = {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}

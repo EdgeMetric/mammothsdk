@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 881
+method_count: 882
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -364,6 +364,21 @@ methods:
     | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: view.transform.limit-rows
+  alias_of: null
+  no_command_reason: null
+  mutation_class: reversible_pipeline
+  wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  implementation_origin: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  signature: 'repeat_rows(self, times: ''int | None'' = None, values: ''list[str | int | float] | None''
+    = None, series: ''RepeatSeries | None'' = None, new_column: ''str | None'' = None, new_column_type:
+    ''ColumnType | None'' = None, existing_column: ''str | None'' = None, keep_original: ''bool | None''
+    = None, order: ''RepeatOrder | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.transform.repeat-rows
   alias_of: null
   no_command_reason: null
   mutation_class: reversible_pipeline

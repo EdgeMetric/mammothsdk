@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 851.
+Total commands: 852.
 
 ## activity
 
@@ -7991,6 +7991,17 @@ Total commands: 851.
 - Confirmation: `none`
 - Backing SDK: `mammoth.View.rename_columns`
 - Agent example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'`
+
+### `mammoth view transform repeat-rows`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.repeat_rows`
+- Agent example: `mammoth view transform repeat-rows 123 --input '{"dataset_id": 456}'`
 
 ### `mammoth view transform replace`
 

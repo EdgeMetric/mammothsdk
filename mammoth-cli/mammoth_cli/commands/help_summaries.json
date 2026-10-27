@@ -763,6 +763,7 @@
   "view.transform.math": "Evaluate a math expression into a column. 'expression' is required.",
   "view.transform.pivot": "Pivot with aggregations. 'group_by'/'aggregations' required.",
   "view.transform.rename-columns": "Rename columns (a view display setting, not a task). 'renames' is required.",
+  "view.transform.repeat-rows": "Repeat every row. Exactly one of 'times', 'values' or 'series' is required.",
   "view.transform.replace": "Find and replace values. 'columns'/'find'/'replace' required.",
   "view.transform.set-values": "Set values conditionally. 'values' is required.",
   "view.transform.small-large": "Compute a small/large-N function. 'function'/'columns' required.",

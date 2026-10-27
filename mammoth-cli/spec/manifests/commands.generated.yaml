@@ -31462,6 +31462,49 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: view.transform.repeat-rows
+  command_path: view transform repeat-rows
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: view_id
+    type: int
+    required: true
+    metavar: VIEW_ID
+    falls_back_to_field: null
+    help: ID of the view to act on.
+  options: []
+  sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  sdk_conversion: Call mammoth._mixins._row_ops.RowOpsMixin.repeat_rows with validated request fields.
+  request_model: ViewTransformRepeatRowsRequest
+  result_model: ViewTransformRepeatRowsResult
+  mutation_class: reversible_pipeline
+  edits_target: true
+  undo:
+    strategy: pipeline_version
+  confirmation: none
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TRANSFORM-REPEAT-ROWS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view transform repeat-rows VIEW_ID --help
+  agent_example: 'mammoth view transform repeat-rows 123 --input ''{"dataset_id": 456}'''
+  unit_tests:
+  - UT-VIEW-TRANSFORM-REPEAT-ROWS
+  contract_tests:
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-HUMAN
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-JSON
+  - CT-VIEW-TRANSFORM-REPEAT-ROWS-ERROR
+  draft_test: LT-VIEW-TRANSFORM-REPEAT-ROWS-DRAFT
+  undo_test: LT-VIEW-TRANSFORM-REPEAT-ROWS-UNDO
+  known_restrictions: null
+  reviewed_by: primary
 - command_id: view.transform.replace
   command_path: view transform replace
   disposition: command

@@ -211,6 +211,13 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.repeat_rows
+  canonical_command: view.transform.repeat-rows
+  alias_of: null
+  mutation_class: reversible_pipeline
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
 - sdk_symbol: mammoth._mixins._row_ops.RowOpsMixin.sort_rows
   canonical_command: view.transform.sort
   alias_of: null

@@ -339,6 +339,21 @@ class JsonOpType(str, Enum):
     JSON_LIST_TO_ROWS = "JSON_LIST_TO_ROWS"
 
 
+class RepeatOrder(str, Enum):
+    """Row order of :meth:`View.repeat_rows` with values or a series."""
+
+    GROUPED = "GROUPED"
+    INTERLEAVED = "INTERLEAVED"
+
+
+class RepeatBoundKind(str, Enum):
+    """A :class:`RepeatBound` that moves with the run instead of a fixed date."""
+
+    START_OF_YEAR = "START_OF_YEAR"
+    EARLIEST = "EARLIEST"
+    TODAY = "TODAY"
+
+
 class ExportFileType(str, Enum):
     """File types for S3 and file-based exports."""
 
@@ -371,6 +386,7 @@ class TaskType(str, Enum):
     EXTRACT_DATE = "EXTRACT_DATE"
     DATE_DIFF = "DATE_DIFF"
     INCREMENT_DATE = "INCREMENT_DATE"
+    REPEAT = "REPEAT"
     UNNEST = "UNNEST"
     CROSSTAB = "CROSSTAB"
     JSON_HANDLE = "JSON_HANDLE"
@@ -485,6 +501,42 @@ class DateDelta:
             "SECOND": self.seconds,
         }
         return {k: v for k, v in mapping.items() if v != 0}
+
+
+@dataclass
+class RepeatBound:
+    """A date bound of a :class:`RepeatSeries` that moves with the run.
+
+    ``START_OF_YEAR`` and ``EARLIEST`` (the earliest date of *column*) are start
+    bounds; ``TODAY`` is an end bound.
+
+    Example::
+
+        RepeatBound(RepeatBoundKind.EARLIEST, column="Order Date")
+    """
+
+    kind: RepeatBoundKind
+    column: str | None = None
+
+
+@dataclass
+class RepeatSeries:
+    """The range of :meth:`View.repeat_rows`: one copy of each row per value.
+
+    A date range takes *delta* (exactly one of years, months, weeks or days, at
+    least 1; a quarter is ``DateDelta(months=3)``) and bounds that are dates
+    (``"2026-01-31"``) or a :class:`RepeatBound`. A number range takes *step* (> 0).
+
+    Example::
+
+        RepeatSeries(start="2026-01-01", end="2026-12-31", delta=DateDelta(months=1))
+        RepeatSeries(start=0, end=1, step=0.1)
+    """
+
+    start: str | int | float | RepeatBound
+    end: str | int | float | RepeatBound
+    delta: DateDelta | None = None
+    step: int | float | None = None
 
 
 @dataclass

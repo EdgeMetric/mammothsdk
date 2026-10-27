@@ -28,6 +28,7 @@ Public API::
         build_extract_date_params,
         build_date_diff_params,
         build_increment_date_params,
+        build_repeat_params,
         build_pivot_params,
         build_window_params,
         build_crosstab_params,

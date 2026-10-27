@@ -1137,6 +1137,9 @@ _TARGETS: dict[str, str] = {
     "view.transform.lookup": "mammoth_cli.commands.view_ops.transforms:view_transform_lookup",
     "view.transform.math": "mammoth_cli.commands.view_ops.transforms:view_transform_math",
     "view.transform.pivot": "mammoth_cli.commands.view_ops.transforms:view_transform_pivot",
+    "view.transform.repeat-rows": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_repeat_rows"
+    ),
     "view.transform.rename-columns": (
         "mammoth_cli.commands.view_ops.transforms:view_transform_rename_columns"
     ),
