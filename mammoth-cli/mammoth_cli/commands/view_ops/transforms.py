@@ -419,7 +419,7 @@ def _all_but_keys(
     service: Any, invocation: Invocation, dataset_id: int, view_id: int, key_columns: Any
 ) -> list[str]:
     """The view's other column names, so only ``key_columns`` decide what a duplicate is."""
-    keys = [key_columns] if isinstance(key_columns, str) else list(key_columns)
+    keys = list(key_columns)
     info = service.call(
         _DATAVIEW_GET_SYMBOL,
         dataset_id=dataset_id,

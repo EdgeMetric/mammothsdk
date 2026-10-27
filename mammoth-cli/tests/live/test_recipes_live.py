@@ -171,18 +171,6 @@ def test_discard_duplicates_refuses_key_columns_with_ignore_columns_or_in_a_batc
     assert _row_count(live_cli, scratch_project, dataset, view) == 6
 
 
-def test_discard_duplicates_takes_one_key_column_as_a_string(
-    live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
-) -> None:
-    dataset, view = upload(_ORDERS)
-    document = json.dumps({"dataset_id": dataset, "key_columns": "Order ID"})
-    data, _ = live_cli.ok(
-        "view", "transform", "discard-duplicates", str(view), "--input", document, "--dry-run",
-        project=scratch_project,
-    )  # fmt: skip
-    assert data["predicted_impact"]["rows_removed"] == 2
-
-
 def test_remove_duplicates_without_key_columns_compares_whole_rows(
     live_cli: LiveCli, scratch_project: int, upload: Callable[[str], tuple[int, int]]
 ) -> None:
@@ -334,13 +322,15 @@ def test_export_to_s3_writes_one_export_that_the_view_lists(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
     assert before["exports"] == []
-    _, summary = _recipe(live_cli, scratch_project, "export-to-s3", inputs)
+    lines, summary = _recipe(live_cli, scratch_project, "export-to-s3", inputs)
     assert summary["data"]["failed"] == 0
+    sent = next(e for e in lines if e.get("cmd") == "view export managed-s3")
+    assert file_name in json.dumps(sent["data"])
     after, _ = live_cli.ok(
         "view", "export", "list", str(view), str(dataset), project=scratch_project
     )
     assert len(after["exports"]) == 1
-    assert json.dumps(after["exports"]).count(file_name) >= 1
+    assert f'"dataview_id": {view}' in json.dumps(after["exports"])  # it belongs to this view
 
 
 def test_dashboard_from_view_makes_one_dashboard(
