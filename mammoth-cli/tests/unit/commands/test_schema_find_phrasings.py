@@ -8,6 +8,9 @@ from mammoth_cli.commands.schema.find import find_schemas
 
 #: (what a user says, the command that must be among the first three matches)
 PHRASINGS = [
+    ("repeat each row 3 times", "view.transform.repeat-rows"),
+    ("one row per month from Jan 2024 to today for each product", "view.transform.repeat-rows"),
+    ("duplicate every row", "view.transform.repeat-rows"),
     ("check who i am signed in as", "auth.status"),
     ("put my view in a managed postgres database", "view.export.publish-db"),
     ("send this view to a postgres table", "view.export.publish-db"),

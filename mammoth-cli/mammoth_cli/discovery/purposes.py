@@ -261,7 +261,7 @@ COMMAND_DISCOVERY_PURPOSES = {
     ),
     "view.transform.repeat-rows": (
         "repeat rows duplicate each row n times copies one row per value listed values "
-        "date series one row per month day week year explode into a series number range "
+        "date series one row per month day week explode into a series number range "
         "sequence generate dates"
     ),
     "view.transform.rename-columns": (
