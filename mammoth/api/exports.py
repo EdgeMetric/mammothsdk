@@ -796,15 +796,12 @@ class ExportsAPI:
 
         if isinstance(export_result, JobResponse) and export_result.job and export_result.job.id:
             job_id = export_result.job.id
-            completed_job = await self._jobs_api.wait_for_job(job_id, timeout)
-            response = completed_job.get("response", {})
-            if response.get("url"):
-                return {
-                    "url": response["url"],
-                    "trigger_id": response.get("trigger_id"),
-                    "job_id": job_id,
-                }
-            raise ValueError(f"No download URL found in completed job {job_id}")
+            response = await self._job_download_response(job_id, timeout)
+            return {
+                "url": response["url"],
+                "trigger_id": response.get("trigger_id"),
+                "job_id": job_id,
+            }
         raise ValueError("No job ID found in export result")
 
     async def to_csv_url(
@@ -873,6 +870,14 @@ class ExportsAPI:
         Same as :meth:`to_file` with ``file_type="csv"``.
         """
         return await self.to_file(dataview_id, output_path, "csv", timeout, dataset_id)
+
+    async def _job_download_response(self, job_id: int, timeout: int) -> dict[str, Any]:
+        """Wait for an export job and return its ``response``; raises if it holds no URL."""
+        completed_job = await self._jobs_api.wait_for_job(job_id, timeout)
+        response: dict[str, Any] = completed_job.get("response", {})
+        if not response.get("url"):
+            raise ValueError(f"No download URL found in completed job {job_id}")
+        return response
 
     def _require_project_id(self) -> int:
         """The client's project id; raises if ``client.set_project_id()`` was not called."""
@@ -961,11 +966,8 @@ class ExportsAPI:
         body.update(file_type=file_type, stack=stack, name=name, numbered=numbered)
         queued = await self._client._request_json("POST", self._downloads_path(), json=body)
         job_id = queued["job"]["id"]
-        completed = await self._jobs_api.wait_for_job(job_id, timeout)
-        url = completed.get("response", {}).get("url")
-        if not url:
-            raise ValueError(f"No download URL found in completed job {job_id}")
-        return {"url": url, "job_id": job_id}
+        response = await self._job_download_response(job_id, timeout)
+        return {"url": response["url"], "job_id": job_id}
 
     async def bulk_download(
         self,
