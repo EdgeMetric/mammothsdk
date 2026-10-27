@@ -537,7 +537,7 @@ def _read_source(source: str) -> str:
                 exit_status=EXIT_USAGE,
                 hint="Check the path, or pass '-' to read from standard input.",
             ) from None
-        except OSError, UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError):
             raise CliError(
                 code="input_unreadable",
                 message=f"Could not read '{source}' as UTF-8 text.",

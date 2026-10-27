@@ -584,7 +584,7 @@ _ADDITIVE = ("SUM", "COUNT")
 def _number(value: Any) -> float | None:
     try:
         return None if value is None or isinstance(value, bool) else float(value)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return None
 
 
