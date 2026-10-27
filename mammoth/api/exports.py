@@ -123,9 +123,7 @@ class ExportsAPI:
             PipelineExportsPaginated with paginated list of exports.
         """
         workspace_id = self._client.workspace_id
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is not None and dataset_id <= 0:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
@@ -641,9 +639,7 @@ class ExportsAPI:
         """
         from ..models.exports import S3TargetProperties
 
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -721,9 +717,7 @@ class ExportsAPI:
         Returns:
             PipelineExportsModificationResp or JobResponse.
         """
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         dataset_id = await self._find_dataset_for_dataview(dataview_id)
 
@@ -775,9 +769,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -854,9 +846,7 @@ class ExportsAPI:
             MammothValidationError: ``file_type`` is not a download format.
         """
         file_type = _download_file_type(file_type)
-        project_id = getattr(self._client, "project_id", None)
-        if project_id is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
+        project_id = self._require_project_id()
 
         if dataset_id is None:
             dataset_id = await self._find_dataset_for_dataview(dataview_id)
@@ -884,11 +874,16 @@ class ExportsAPI:
         """
         return await self.to_file(dataview_id, output_path, "csv", timeout, dataset_id)
 
-    def _downloads_path(self, tail: str = "") -> str:
-        """The project's several-datasets download route (``tail`` is ``/plan`` or empty)."""
-        project_id = getattr(self._client, "project_id", None)
+    def _require_project_id(self) -> int:
+        """The client's project id; raises if ``client.set_project_id()`` was not called."""
+        project_id = self._client.project_id
         if project_id is None:
             raise ValueError("project_id must be set on the client using client.set_project_id()")
+        return project_id
+
+    def _downloads_path(self, tail: str = "") -> str:
+        """The project's several-datasets download route (``tail`` is ``/plan`` or empty)."""
+        project_id = self._require_project_id()
         return f"/workspaces/{self._client.workspace_id}/projects/{project_id}/downloads{tail}"
 
     @staticmethod
