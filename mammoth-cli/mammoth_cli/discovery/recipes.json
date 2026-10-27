@@ -4427,6 +4427,12 @@
       "doc": "references/recipes/resources.md",
       "steps": [
         {
+          "command_id": "project.list",
+          "purpose": "See which of the names already exist; ensure also does this check, so the list is optional.",
+          "example": "mammoth project list",
+          "key_flags": []
+        },
+        {
           "command_id": "project.ensure",
           "purpose": "Find the project by its exact name, or create it; one call per name.",
           "example": "mammoth project ensure 'Revenue report'",
