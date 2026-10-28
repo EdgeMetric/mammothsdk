@@ -502,6 +502,12 @@ class DashboardFields:
 
     ID = "id"
     DASHBOARDS = "dashboards"
+    TRASHED = "trashed"
+    NEXT_STEP = "next_step"
+    IN_THE_TRASH = (
+        'The dashboard is in the trash. To bring it back, call undo with what="trash";'
+        " list_trash shows it, with how long the trash keeps it."
+    )
     TITLE = "title"
     TAGS = "tags"
     BOARD = "dashboard"
