@@ -720,7 +720,7 @@ def _input_from_result(mapping: Any, data: Any) -> dict[str, Any]:
     return {field: data[source] for field, source in mapping.items() if source in data}
 
 
-def _batches_now(request: Request, dataset_id: int) -> list[int] | None:
+def _batches_now(request: Request, dataset_id: int) -> list[int] | str:
     """The ids of every batch a dataset has now.
 
     Args:
@@ -728,28 +728,28 @@ def _batches_now(request: Request, dataset_id: int) -> list[int] | None:
         dataset_id: The dataset the file was appended to.
 
     Returns:
-        The ids, or None when the listing could not be read.
+        The ids, or the reason the listing could not be read.
     """
     invocation = request.invocation
     if invocation is None:
-        return None
+        return "no command is running to read them with"
     try:
         with open_service(invocation) as (service, _auth):
             rows = service.call(_BATCH_LIST, dataset_id=dataset_id)
-    except Exception:  # noqa: BLE001 -- a failed read costs the undo, never the upload
-        return None
+    except Exception as failure:  # noqa: BLE001 -- a failed read costs the undo, never the upload
+        return str(failure).strip() or type(failure).__name__
     return [int(row["id"]) for row in rows if isinstance(row, dict) and "id" in row]
 
 
 def _append_undo(
-    data: Any, flags: dict[str, Any], read_batches: Callable[[int], list[int] | None]
+    data: Any, flags: dict[str, Any], read_batches: Callable[[int], list[int] | str]
 ) -> tuple[list[dict[str, Any]], str | None] | None:
     """The undo of an upload appended to an existing dataset: delete the batch it added.
 
     Args:
         data: The upload's result data.
         flags: The flags every undo line carries.
-        read_batches: Reads the ids of every batch the dataset has now, or None when it
+        read_batches: Reads the ids of every batch the dataset has now, or the reason it
             cannot; the undo is refused when the dataset's only batches would go.
 
     Returns:
@@ -781,9 +781,10 @@ def _append_undo(
         return None
     dataset = data["appended_to"]
     existing = read_batches(int(dataset))
-    if existing is None:
+    if isinstance(existing, str):
         return [], (
-            f"The batches of dataset {dataset} could not be read, so it cannot be shown that "
+            f"The batches of dataset {dataset} could not be read ({existing}), so it cannot be"
+            " shown that "
             "deleting the batch leaves the dataset another one; delete it by hand with "
             "'mammoth batch list' and 'mammoth batch delete' if it should go."
         )
