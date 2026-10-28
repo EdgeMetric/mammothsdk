@@ -46,6 +46,8 @@ from ..upload_wait import finish_upload
 from .folders import read_folders
 
 type DateFormat = Literal["US", "UK"]
+type Delimiter = Literal[",", "\t", "|", ";"]
+type QuoteChar = Literal['"', "'", ""]
 
 
 @mcp_server.tool(title="Upload file", annotations=CHANGES)
@@ -281,8 +283,9 @@ async def interpret_file(
 
     Call it with `apply` false first and show the user the rows it returns:
     only they can say whether the file now reads the way they meant. Then call
-    it again with the same instruction and `apply` true, and carry on with what
-    they originally asked for.
+    it again with the same instruction and `apply` true: that reads the whole
+    file the way the preview the user saw read it, with no new preview. Carry
+    on with what they originally asked for.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -294,9 +297,9 @@ async def interpret_file(
             false to see the first rows first.
 
     Returns:
-        `preview_rows`: the first rows as the dataset would hold them, the
-        header first. `total_row_count`: how many rows the whole file makes
-        this way. `applied`: whether the dataset was finished with it.
+        A preview: `preview_rows`, the first rows as the dataset would hold
+        them, the header first, and `total_row_count`, how many rows the whole
+        file makes this way. `applied`: whether the dataset was finished with it.
 
     Raises:
         ToolError: If Mammoth will not read the file that way, with its reason.
@@ -307,15 +310,15 @@ async def interpret_file(
         "project_id": project_id,
         "dataset_id": dataset_id,
     }
+    if apply:
+        # A new preview would save a new answer over the one the user approved.
+        await apply_interpretation(ids, instruction)
+        return {InterpretationFields.APPLIED: True}
     async with build_client(workspace_id) as client:
         preview = await read_sdk_errors(
             client.datasets.preview_interpretation(dataset_id, instruction, project_id=project_id)
         )
-    read = read_preview(preview)
-    if not apply:
-        return read
-    await apply_interpretation(ids, instruction)
-    return {**read, InterpretationFields.APPLIED: True}
+    return read_preview(preview)
 
 
 def read_preview(preview: dict[str, JsonValue]) -> dict[str, JsonValue]:
@@ -477,17 +480,26 @@ def read_unreadable_rows(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
     }
 
 
-@mcp_server.tool(title="Set date format", annotations=CHANGES)
-async def set_date_format(
+@mcp_server.tool(title="Set file settings and date format", annotations=CHANGES)
+async def set_file_settings(
     workspace_id: int,
     project_id: int,
     dataset_id: int,
     date_format: DateFormat | None = None,
     columns: dict[str, DateFormat] | None = None,
     for_the_whole_project: bool = False,
+    delimiter: Delimiter | None = None,
+    has_header: bool | None = None,
+    skip_rows: int | None = None,
+    quote_char: QuoteChar | None = None,
 ) -> dict[str, JsonValue]:
-    """Say which way round a file's dates read, and finish the dataset.
+    """Change how a file is read — delimiter, header, rows to skip, quotes — or its date format.
 
+    With nothing to change it reads the `settings` the file was read with, and
+    `date_columns`. A setting left out stays as it is. Mammoth reads the file
+    again with the new settings, so the dataset's rows change: tell the user.
+
+    The date format:
     For a dataset waiting on this: one `check_upload` reports as needing
     `ambiguous_date_format`, or one `get_dataset` shows with the status
     `need_action`. A date column whose every value fits both orders stops the
@@ -513,26 +525,36 @@ async def set_date_format(
         for_the_whole_project: Make this the project's own default too, so
             later uploads are never asked about it. Only with `date_format`,
             and only when the user says so: it outlives this file.
+        delimiter: What separates the columns: ",", "\\t", "|" or ";".
+        has_header: Whether the first row read is the header.
+        skip_rows: How many lines above the table to skip, such as a title.
+        quote_char: What quotes a value: '"', "'", or "" for none.
 
     Returns:
-        With no format, `date_columns` and `applied` false. Otherwise the
-        reread dataset, and `applied` true.
+        With nothing to change, `settings`, `date_columns` and `applied` false.
+        Otherwise the reread dataset, and `applied` true.
     """
     path = ApiPaths.FILE_SETTINGS.format(
         workspace_id=workspace_id, project_id=project_id, dataset_id=dataset_id
     )
     async with build_client(workspace_id, project_id) as client:
-        return await change_date_format(
+        return await change_file_settings(
             client,
             path,
             dataset_id,
             date_format=date_format,
             columns=columns,
             for_the_whole_project=for_the_whole_project,
+            reading={
+                FileSettingsFields.DELIMITER: delimiter,
+                FileSettingsFields.HAS_HEADER: has_header,
+                FileSettingsFields.SKIP_COUNT: skip_rows,
+                FileSettingsFields.QUOTE_CHAR: quote_char,
+            },
         )
 
 
-async def change_date_format(
+async def change_file_settings(
     client: MammothClient,
     path: str,
     dataset_id: int,
@@ -540,28 +562,49 @@ async def change_date_format(
     date_format: DateFormat | None,
     columns: dict[str, DateFormat] | None,
     for_the_whole_project: bool,
+    reading: dict[str, JsonValue],
 ) -> dict[str, JsonValue]:
-    """Report the date columns waiting to be told, or tell them and reread the file."""
+    """Report how the file is read, or change what was given and reread the file.
+
+    Args:
+        reading: The route's own settings to change, by its names; None for
+            one left as it is.
+    """
     settings = await read_file_settings(client, path, dataset_id)
     date_columns = find_date_columns(settings)
-    if date_format is None and not columns:
-        waiting: list[JsonValue] = [str(name) for name in sorted(date_columns)]
-        return {
-            FileSettingsFields.AMBIGUOUS_COLUMNS: waiting,
-            FileSettingsFields.APPLIED: False,
-        }
+    changed = {key: value for key, value in reading.items() if value is not None}
+    if date_format is None and not columns and not changed:
+        return report_file_settings(settings, date_columns)
     per_column: dict[str, JsonValue] = {
         **already_set(settings),
         **name_the_columns(columns, date_columns),
     }
     body: dict[str, JsonValue] = {key: settings.get(key) for key in FileSettingsFields.KEPT}
-    body[FileSettingsFields.DATE_FORMAT] = date_format
+    body.update(changed)
+    body[FileSettingsFields.DATE_FORMAT] = date_format or settings.get(
+        FileSettingsFields.DATE_FORMAT
+    )
     body[FileSettingsFields.DATE_FORMATS] = per_column or None
     body[FileSettingsFields.PROJECT_DEFAULT] = for_the_whole_project
     started = await request_api(client, "POST", path, body=body)
     return {
         **await wait_for_job(client.workspace_id, started),
         FileSettingsFields.APPLIED: True,
+    }
+
+
+def report_file_settings(
+    settings: dict[str, JsonValue], date_columns: dict[str, str]
+) -> dict[str, JsonValue]:
+    """How the file is read now, under the names the tool takes them by."""
+    waiting: list[JsonValue] = [str(name) for name in sorted(date_columns)]
+    shown: dict[str, JsonValue] = {
+        argument: settings.get(key) for argument, key in FileSettingsFields.SHOWN.items()
+    }
+    return {
+        FileSettingsFields.SETTINGS: shown,
+        FileSettingsFields.AMBIGUOUS_COLUMNS: waiting,
+        FileSettingsFields.APPLIED: False,
     }
 
 

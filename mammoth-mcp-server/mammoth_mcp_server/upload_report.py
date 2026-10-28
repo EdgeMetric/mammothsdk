@@ -81,7 +81,7 @@ NEXT_STEP = {
         f" extract_sheets with this file_id. {ASK_FIRST}"
     ),
     UserActions.AMBIGUOUS_DATE_FORMAT: (
-        "Call set_date_format with this dataset_id and no format, which changes"
+        "Call set_file_settings with this dataset_id and no format, which changes"
         " nothing and names the columns waiting to be told. Ask the user"
         " whether those are US (MM/DD/YYYY) or UK (DD/MM/YYYY) — naming them,"
         " because a file can hold one of each — and call it again with the"

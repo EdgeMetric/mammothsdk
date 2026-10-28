@@ -23,7 +23,7 @@ from mammoth_mcp_server.tools.files import (
     read_preview,
     read_unreadable_rows,
     review_unreadable_rows,
-    set_date_format,
+    set_file_settings,
     unlock_file,
 )
 
@@ -147,6 +147,8 @@ class TestApplyingWhatTheUserSaw:
         assert read[InterpretationFields.APPLIED] is True
         [confirmed] = api.sent("PATCH", CONFIRM)
         assert api.body(confirmed)["user_instruction"] == INSTRUCTION
+        # A second preview would save a second answer over the one approved.
+        assert api.sent("POST", PREVIEW) == []
 
 
 class TestTheRowsThatWouldNotGoIn:
@@ -335,7 +337,7 @@ class TestWhichWayRoundTheDatesRead:
             api.answer("POST", SETTINGS_PATH, {"job": {"id": 1}})
             a_finished_job(api, 1)
             answer = run(
-                set_date_format(
+                set_file_settings(
                     workspace_id=WORKSPACE, project_id=PROJECT, dataset_id=DATASET, **arguments
                 )
             )
@@ -351,6 +353,13 @@ class TestWhichWayRoundTheDatesRead:
             "shipped on",
         ]
         assert answer[FileSettingsFields.APPLIED] is False
+        assert answer["settings"] == {
+            "delimiter": ",",
+            "has_header": True,
+            "skip_rows": 0,
+            "quote_char": '"',
+            "date_format": None,
+        }
         assert called == []
 
     def test_one_format_is_sent_for_the_whole_file(self) -> None:
@@ -386,3 +395,48 @@ class TestWhichWayRoundTheDatesRead:
         _, called = self.read_then(date_format="UK")
 
         assert called[-1][FileSettingsFields.PROJECT_DEFAULT] is (False)
+
+
+class TestHowTheFileIsRead:
+    """One setting changes; every other is sent back as it was, or the route resets it."""
+
+    SETTINGS = {
+        "info": {
+            **TestWhichWayRoundTheDatesRead.SETTINGS["info"],
+            FileSettingsFields.DATE_FORMAT: "UK",
+        }
+    }
+
+    @classmethod
+    def change(cls, **arguments: Any) -> dict:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", SETTINGS_PATH, cls.SETTINGS)
+            api.answer("POST", SETTINGS_PATH, {"job": {"id": 1}})
+            a_finished_job(api, 1)
+            answer = run(
+                set_file_settings(
+                    workspace_id=WORKSPACE, project_id=PROJECT, dataset_id=DATASET, **arguments
+                )
+            )
+        assert answer[FileSettingsFields.APPLIED] is True
+        [sent] = api.sent("POST", SETTINGS_PATH)
+        return dict(api.body(sent))
+
+    def test_only_the_header_changes(self) -> None:
+        sent = self.change(has_header=False)
+
+        assert sent["has_header"] is False
+        assert sent["delimiter"] == ","
+        assert sent["initial_skip_count"] == 0
+        assert sent["quotechar"] == '"'
+        # The date choices made before stay made.
+        assert sent[FileSettingsFields.DATE_FORMAT] == "UK"
+        assert sent[FileSettingsFields.DATE_FORMATS] == {"column_4": "UK"}
+
+    def test_the_delimiter_and_the_rows_above_the_header(self) -> None:
+        sent = self.change(delimiter=";", skip_rows=2, quote_char="")
+
+        assert sent["delimiter"] == ";"
+        assert sent["initial_skip_count"] == 2
+        assert sent["quotechar"] == ""
+        assert sent["has_header"] is True

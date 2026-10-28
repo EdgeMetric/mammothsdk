@@ -61,7 +61,7 @@ TOOLS = {
     "request_upload",
     "review_unreadable_rows",
     "run_pipeline",
-    "set_date_format",
+    "set_file_settings",
     "undo",
     "unlock_file",
     "update_automation",
@@ -198,6 +198,7 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
 # that loads tools by searching their words, and a model picking from a list,
 # find the rest only in the title and the description's first line.
 FOLDED_JOBS = {
+    "set_file_settings": ("date format", "delimiter", "header"),
     "undo": ("trash", "roll back"),
     "get_pipeline": ("steps", "versions"),
     "get_schema": ("transformation", "export", "automation"),

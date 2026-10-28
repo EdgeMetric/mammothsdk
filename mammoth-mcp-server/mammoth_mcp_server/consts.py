@@ -273,7 +273,20 @@ class FileSettingsFields:
     DATE_COLUMNS = "editable_date_columns"
     AMBIGUOUS_COLUMNS = "date_columns"
     APPLIED = "applied"
-    KEPT = ("delimiter", "has_header", "initial_skip_count", "quotechar")
+    DELIMITER = "delimiter"
+    HAS_HEADER = "has_header"
+    SKIP_COUNT = "initial_skip_count"
+    QUOTE_CHAR = "quotechar"
+    KEPT = (DELIMITER, HAS_HEADER, SKIP_COUNT, QUOTE_CHAR)
+    SETTINGS = "settings"
+    # The settings as `set_file_settings` takes them, by the route's names.
+    SHOWN = {
+        "delimiter": DELIMITER,
+        "has_header": HAS_HEADER,
+        "skip_rows": SKIP_COUNT,
+        "quote_char": QUOTE_CHAR,
+        "date_format": DATE_FORMAT,
+    }
 
 
 class ApiPaths:
