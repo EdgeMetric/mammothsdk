@@ -64,13 +64,17 @@ class TestGetData:
             {"doc_count": 1, "key.task": "handle_file"},
             {"doc_count": 2, "key.task": "handle_file"},
         ]
+        # The offset counts rows to skip, from 0, as on every other paged tool;
+        # the API itself counts from 1.
         assert answer["paging"] == {
-            "offset": 1,
+            "offset": 0,
             "count": 2,
             "limit": 2,
             "total": 3,
-            "next_offset": 3,
+            "next_offset": 2,
         }
+        (sent,) = api.sent("POST", f"{VIEW_PATH}/data")
+        assert api.body(sent)["offset"] == 1
 
     def test_the_row_identity_mammoth_adds_to_every_row_is_not_shown(self) -> None:
         # It is no column of the user's, and a model read its values as duplicates.
@@ -98,9 +102,11 @@ class TestGetData:
         with a_fake_api() as api, as_caller():
             api.answer("POST", f"{VIEW_PATH}/data", rows(1))
             api.answer("GET", VIEW_PATH, RECORDED_VIEW)
-            answer = call_tool("get_data", view_id=VIEW, limit=2, offset=3, **IDS)
+            answer = call_tool("get_data", view_id=VIEW, limit=2, offset=2, **IDS)
 
-        assert answer["paging"] == {"offset": 3, "count": 1, "limit": 2, "total": 3}
+        assert answer["paging"] == {"offset": 2, "count": 1, "limit": 2, "total": 3}
+        (sent,) = api.sent("POST", f"{VIEW_PATH}/data")
+        assert api.body(sent)["offset"] == 3
 
     def test_a_missing_view_is_named_with_the_tool_that_lists_views(self) -> None:
         with a_fake_api() as api, as_caller():

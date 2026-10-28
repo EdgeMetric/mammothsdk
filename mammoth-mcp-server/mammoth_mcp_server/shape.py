@@ -169,7 +169,7 @@ def read_rows(
     narrows it. A filtered full page may have more behind it: `next_offset` says so.
     """
     rows = _shaped_rows(answer.get(PageFields.DATA), view)
-    seen = offset - 1 + len(rows)
+    seen = offset + len(rows)
     full = len(rows) >= limit
     known = view.get("row_count")
     total = None if (full and filtered) else (known if full else seen)
@@ -181,5 +181,5 @@ def read_rows(
     if isinstance(total, int):
         paging[PageFields.TOTAL] = total
     if full and (not isinstance(total, int) or seen < total):
-        paging[PageFields.NEXT_OFFSET] = seen + 1
+        paging[PageFields.NEXT_OFFSET] = seen
     return {**answer, PageFields.DATA: rows, PageFields.PAGING: paging}

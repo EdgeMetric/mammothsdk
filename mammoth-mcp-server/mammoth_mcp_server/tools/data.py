@@ -32,7 +32,7 @@ async def get_data(
     dataset_id: int,
     view_id: int,
     limit: int = DATA_LIMIT_DEFAULT,
-    offset: int = 1,
+    offset: int = 0,
     columns: list[str] | None = None,
     condition: dict[str, JsonValue] | None = None,
 ) -> dict[str, JsonValue]:
@@ -59,7 +59,7 @@ async def get_data(
         dataset_id: Which dataset the view belongs to.
         view_id: Which view to read.
         limit: How many rows to return. At most 400.
-        offset: The first row to return, counting from 1.
+        offset: How many rows to skip, for paging: `next_offset`.
         columns: Internal column names to return, as `get_view` reports them.
             Omit for every column.
         condition: Filter the rows. One test reads
@@ -79,7 +79,8 @@ async def get_data(
                 client.dataviews.query_data(
                     dataset_id,
                     view_id,
-                    offset=offset,
+                    # The route counts rows from 1.
+                    offset=offset + 1,
                     limit=page_size,
                     columns=columns,
                     condition=condition,
