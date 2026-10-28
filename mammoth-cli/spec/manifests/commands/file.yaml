@@ -93,9 +93,9 @@ commands:
     update method of the dataset the file is appended to: it needs append_to_ds_id and cannot be combined
     with wait_for_completion false (both are usage errors). An upload into a dataset whose columns do
     not match is not appended: the command fails with code schema_mismatch, rows_added 0 and
-    kept_dataset_ids (the file's own dataset stays in the project as a separate dataset; delete it
-    or fix the file and upload again). The input field override_target_schema (make the file's columns
-    the dataset's) is honoured by the server only when the dataset's update method is replace, which
+    kept_dataset_ids (the file''s own dataset stays in the project as a separate dataset; delete it
+    or fix the file and upload again). The input field override_target_schema (make the file''s columns
+    the dataset''s) is honoured by the server only when the dataset''s update method is replace, which
     deletes the rows it holds: the CLI refuses it under any other method before sending the file, and
     without append_to_ds_id or with wait_for_completion false.'
 - command_id: file.upload-folder

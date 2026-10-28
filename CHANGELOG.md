@@ -51,6 +51,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 ### Changed (next mammoth-io)
 
 - SDK: `DatasetsAPI.file_settings_update`: `delimiter`, `has_header`, `initial_skip_count` and `quotechar` are optional. A setting left out keeps the value the dataset stores, which the SDK reads first; if it cannot be read, the call raises `MammothValidationError`. Calls that pass all four are unchanged.
+- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
 
 
 ### Added (next mammoth-cli)
@@ -82,6 +83,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `file delete` reads the file back after the delete and says it is gone (`deleted` names it); `automation delete` and `dashboard delete` do the same. A dashboard's read-back answers 403 once it is deleted, so that counts as gone only when the dashboard could be read just before the delete; otherwise the result is `delete_unverified`.
 - CLI: the `file-dataset-refresh` limitation names both ways to load a new file into a dataset: add its rows (the default) or replace them.
 - CLI: `template list` (and the `template` group help) says it reads the legacy workspace templates and points to `workflow template list` for the catalog (#337).
+- CLI: with `-o json`, `ndjson` or `yaml` the error envelope goes to stdout, like a success, instead of stderr, so a script reading stdout no longer gets an empty reply; the exit status is unchanged and stderr keeps only human hints and progress.
 
 ### Deprecated (next mammoth-cli)
 
@@ -96,6 +98,8 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `jobs.wait_for_job` / `wait_for_jobs` re-label a poll that fails after the job id was returned as `outcome_unknown` (phase `polling`, `job_handle` set), not the read's `not_started`; a resubmit of an accepted write is no longer invited (#340).
 - SDK: `client.appends.append` / `finish` report a file the server held back for a schema mismatch as `append_failed` with `failure: "schema_mismatch"`, `reason`, `kept_dataset_ids` (its own dataset stays in the project) and `next_step`, read from the server's flag on the target's pending batches instead of reading as 0 rows added (#336).
 - SDK: `client.appends.append` refuses `override_target_schema` unless the dataset's update method is `replace`; the server ignores it otherwise (#336).
+- SDK: `view task update` (`PipelineAPI.update_task`), `add_task` and `preview_task` drop the server-written `EXECUTION_TIMESTAMP` and `TASK_NAMESPACE` keys, so a task read from `view task list` can be edited and written back; a refusal that says only 'must be of type' now lists the keys sent (#341).
+- SDK: `view.sort_rows` (`view transform sort`) sends each direction as lowercase `asc`/`desc`, the type the server's SORT model declares, so the server no longer logs serialization warnings for it (#344).
 
 ### Fixed (next mammoth-cli)
 
@@ -104,26 +108,16 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `file upload` into a dataset whose columns do not match fails with code `schema_mismatch` (exit 1, `rows_added` 0, `kept_dataset_ids`, a next step) instead of exiting 0 (#336).
 - CLI: `file upload` refuses `override_target_schema` without `append_to_ds_id`, with `wait_for_completion: false`, or under an update method other than `replace`, where the server ignores it (#336).
 - CLI: `view data get` says "every row of the view" for its duplicate check only when the rows read are the whole view; a longer view (the read holds 400 rows) reports "this page only" with the table-wide check (#335).
-- CLI: when `foreign_dataset_id` is missing, `view transform join` and `lookup` use the parent dataset from the cache.
+- CLI: when `foreign_dataset_id` is missing, `view transform join` and `lookup` use the parent dataset from the cache (#342).
 - CLI: a deleted automation or dashboard reads as `resource_not_found`.
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
-- `agent chat --wait` returns the reply its own turn wrote, never the previous turn's; when the server moves a long turn to the background it returns `reply: null`, `background: true` and `next`, the command that reads the answer (SDK `AgentsAPI.chat` too) (D5)
-- `connector draft create` with `request_text` sends it as the first agent turn (as the web app does) and returns `first_turn` and `next`, the command that follows it; before, nothing ran (D6)
-- `connector ai` help says it is the older connector chat that cannot save an AI connector and points to `connector draft create`; "build an AI connector" now finds the builder (D4)
-
-- CLI: with `-o json`, `ndjson` or `yaml` the error envelope goes to stdout, like a success, instead of stderr, so a script reading stdout no longer gets an empty reply; the exit status is unchanged and stderr keeps only human hints and progress.
+- CLI: `agent chat --wait` returns the reply its own turn wrote, never the previous turn's; when the server moves a long turn to the background it returns `reply: null`, `background: true` and `next`, the command that reads the answer (SDK `AgentsAPI.chat` too) (D5)
+- CLI: `connector draft create` with `request_text` sends it as the first agent turn (as the web app does) and returns `first_turn` and `next`, the command that follows it; before, nothing ran
+- CLI: `connector ai` help says it is the older connector chat that cannot save an AI connector and points to `connector draft create`; "build an AI connector" now finds the builder
 - CLI: every create-type result and a waited `job wait`/`job get` carries its resource id at the top level as `<resource>_id` (`dataset_id`, `connection_id`, ...); the older keys stay.
-### Changed (next mammoth-io)
-
-- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
-
-### Fixed (next mammoth-cli)
-
 - CLI: `view delete` waits for the delete job the server accepts (202) before it reads the view back, so a delete that takes a few seconds no longer reports `delete_not_applied` (#333).
-- SDK: `view task update` (`PipelineAPI.update_task`), `add_task` and `preview_task` drop the server-written `EXECUTION_TIMESTAMP` and `TASK_NAMESPACE` keys, so a task read from `view task list` can be edited and written back; a refusal that says only 'must be of type' now lists the keys sent (#341).
 - CLI: `view data compare` no longer refuses when a key is on one side only: it compares the shared keys and reports `only_in_first` / `only_in_second` with exact counts and the first 25 rows (#343).
-- SDK: `view.sort_rows` (`view transform sort`) sends each direction as lowercase `asc`/`desc`, the type the server's SORT model declares, so the server no longer logs serialization warnings for it (#344).
 
 ## mammoth-cli 2.3.1 (2026-10-26)
 

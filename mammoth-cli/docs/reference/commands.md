@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 864.
+Total commands: 872.
 
 ## activity
 
@@ -8607,6 +8607,90 @@ Total commands: 864.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.undo_save`
 - Agent example: `mammoth workflow save-undo 123 resource-123 --yes`
+
+### `mammoth workflow template build`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.build`
+- Agent example: `mammoth workflow template build bank-reconciliation --input '{"inputs": {"name": 1}, "matches": {"name": {"name": {"name": "Status"}}}, "destination_name": "Revenue report"}'`
+
+### `mammoth workflow template fit`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit`
+- Agent example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"name": 1}}'`
+
+### `mammoth workflow template get`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.get`
+- Agent example: `mammoth workflow template get bank-reconciliation`
+
+### `mammoth workflow template list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.list`
+- Agent example: `mammoth workflow template list`
+
+### `mammoth workflow template preview`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview`
+- Agent example: `mammoth workflow template preview bank-reconciliation --input '{"inputs": {"name": 1}, "matches": {"name": {"name": {"name": "Status"}}}}'`
+
+### `mammoth workflow template rank`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank`
+- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input": "<input>", "dataset_ids": [1]}'`
+
+### `mammoth workflow template sample-result`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result`
+- Agent example: `mammoth workflow template sample-result bank-reconciliation`
+
+### `mammoth workflow template samples`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples`
+- Agent example: `mammoth workflow template samples bank-reconciliation`
 
 ### `mammoth workflow update`
 

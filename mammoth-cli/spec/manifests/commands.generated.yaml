@@ -33959,6 +33959,342 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: workflow.template.build
+  command_path: workflow template build
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - BuildCatalogTemplate
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.build with validated request
+    fields.
+  request_model: WorkflowTemplateBuildRequest
+  result_model: WorkflowTemplateBuildResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow template; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-TEMPLATE-BUILD
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template build KEY --help
+  agent_example: 'mammoth workflow template build bank-reconciliation --input ''{"inputs": {"name": 1},
+    "matches": {"name": {"name": {"name": "Status"}}}, "destination_name": "Revenue report"}'''
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-BUILD
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-BUILD-HUMAN
+  - CT-WORKFLOW-TEMPLATE-BUILD-JSON
+  - CT-WORKFLOW-TEMPLATE-BUILD-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Adds the template's steps to a workflow and starts the Save that builds them (202);
+    follow it with `workflow get`.
+  reviewed_by: primary
+- command_id: workflow.template.fit
+  command_path: workflow template fit
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - FitCatalogTemplate
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit with validated request
+    fields.
+  request_model: WorkflowTemplateFitRequest
+  result_model: WorkflowTemplateFitResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-FIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template fit KEY --help
+  agent_example: 'mammoth workflow template fit bank-reconciliation --input ''{"inputs": {"name": 1}}'''
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-FIT
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-FIT-HUMAN
+  - CT-WORKFLOW-TEMPLATE-FIT-JSON
+  - CT-WORKFLOW-TEMPLATE-FIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: proposes the column for every role of the chosen tables.'
+  reviewed_by: primary
+- command_id: workflow.template.get
+  command_path: workflow template get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCatalogTemplate
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.get
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.get with validated request
+    fields.
+  request_model: WorkflowTemplateGetRequest
+  result_model: WorkflowTemplateGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template get KEY --help
+  agent_example: mammoth workflow template get bank-reconciliation
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-GET
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-GET-HUMAN
+  - CT-WORKFLOW-TEMPLATE-GET-JSON
+  - CT-WORKFLOW-TEMPLATE-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: the inputs, roles and settings the other template commands take.'
+  reviewed_by: primary
+- command_id: workflow.template.list
+  command_path: workflow template list
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListCatalog
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.list
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.list with validated request
+    fields.
+  request_model: WorkflowTemplateListRequest
+  result_model: WorkflowTemplateListResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-LIST
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template list --help
+  agent_example: mammoth workflow template list
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-LIST
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-LIST-HUMAN
+  - CT-WORKFLOW-TEMPLATE-LIST-JSON
+  - CT-WORKFLOW-TEMPLATE-LIST-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Reads the project's workflow-template catalog (`/workflow-templates`), not the workspace
+    templates of `template list`.
+  reviewed_by: primary
+- command_id: workflow.template.preview
+  command_path: workflow template preview
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PreviewCatalogTemplate
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview with validated request
+    fields.
+  request_model: WorkflowTemplatePreviewRequest
+  result_model: WorkflowTemplatePreviewResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-PREVIEW
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template preview KEY --help
+  agent_example: 'mammoth workflow template preview bank-reconciliation --input ''{"inputs": {"name":
+    1}, "matches": {"name": {"name": {"name": "Status"}}}}'''
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-PREVIEW
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-PREVIEW-HUMAN
+  - CT-WORKFLOW-TEMPLATE-PREVIEW-JSON
+  - CT-WORKFLOW-TEMPLATE-PREVIEW-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: runs the template on the first rows of your tables and runs its checks.'
+  reviewed_by: primary
+- command_id: workflow.template.rank
+  command_path: workflow template rank
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - RankCatalogTables
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank with validated request
+    fields.
+  request_model: WorkflowTemplateRankRequest
+  result_model: WorkflowTemplateRankResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-RANK
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template rank KEY --help
+  agent_example: 'mammoth workflow template rank bank-reconciliation --input ''{"input": "<input>", "dataset_ids":
+    [1]}'''
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-RANK
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-RANK-HUMAN
+  - CT-WORKFLOW-TEMPLATE-RANK-JSON
+  - CT-WORKFLOW-TEMPLATE-RANK-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only; judges each table from its column names and types alone.
+  reviewed_by: primary
+- command_id: workflow.template.sample-result
+  command_path: workflow template sample-result
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetCatalogSampleResult
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result with validated
+    request fields.
+  request_model: WorkflowTemplateSampleResultRequest
+  result_model: WorkflowTemplateSampleResultResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-TEMPLATE-SAMPLE-RESULT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template sample-result KEY --help
+  agent_example: mammoth workflow template sample-result bank-reconciliation
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-SAMPLE-RESULT
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-SAMPLE-RESULT-HUMAN
+  - CT-WORKFLOW-TEMPLATE-SAMPLE-RESULT-JSON
+  - CT-WORKFLOW-TEMPLATE-SAMPLE-RESULT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Computed in memory on the template's own sample rows; nothing is imported.
+  reviewed_by: primary
+- command_id: workflow.template.samples
+  command_path: workflow template samples
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ImportCatalogSamples
+  positionals:
+  - name: key
+    type: str
+    required: true
+    metavar: KEY
+    falls_back_to_field: null
+    help: Workflow template key, from 'workflow template list'.
+  options: []
+  sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples
+  sdk_conversion: Call mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples with validated
+    request fields.
+  request_model: WorkflowTemplateSamplesRequest
+  result_model: WorkflowTemplateSamplesResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow template; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-TEMPLATE-SAMPLES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow template samples KEY --help
+  agent_example: mammoth workflow template samples bank-reconciliation
+  unit_tests:
+  - UT-WORKFLOW-TEMPLATE-SAMPLES
+  contract_tests:
+  - CT-WORKFLOW-TEMPLATE-SAMPLES-HUMAN
+  - CT-WORKFLOW-TEMPLATE-SAMPLES-JSON
+  - CT-WORKFLOW-TEMPLATE-SAMPLES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Imports the template's sample tables into the project once; a second run finds them
+    again.
+  reviewed_by: primary
 - command_id: workflow.update
   command_path: workflow update
   disposition: command

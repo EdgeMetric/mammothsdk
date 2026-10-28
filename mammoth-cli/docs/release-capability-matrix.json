@@ -88,6 +88,102 @@
       "commands": [
         "dataset.download-plan"
       ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflow-templates",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.list"
+      ],
+      "commands": [
+        "workflow.template.list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.get"
+      ],
+      "commands": [
+        "workflow.template.get"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/build",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.build"
+      ],
+      "commands": [
+        "workflow.template.build"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/fit",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit"
+      ],
+      "commands": [
+        "workflow.template.fit"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/preview",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview"
+      ],
+      "commands": [
+        "workflow.template.preview"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/rank",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank"
+      ],
+      "commands": [
+        "workflow.template.rank"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/sample-result",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result"
+      ],
+      "commands": [
+        "workflow.template.sample-result"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflow-templates/{}/samples",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples"
+      ],
+      "commands": [
+        "workflow.template.samples"
+      ]
     }
   ],
   "commands_without_route": [

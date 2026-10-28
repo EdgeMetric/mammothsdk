@@ -172,7 +172,7 @@
   "connector.connection.test": "Run a health check on one connection now, and keep the result.",
   "connector.connection.update": "Update a connection's credentials. '--yes' is always required.",
   "connector.draft.browse": "List a folder of a files-shaped source (the top when 'folder' is omitted).",
-  "connector.draft.create": "Start a connector draft.",
+  "connector.draft.create": "Start an AI connector draft and send its request as the builder's first turn.",
   "connector.draft.discard": "Hide a draft from every list; its chat thread stays.",
   "connector.draft.fill": "Fill one target column by joining an uploaded file or a dataset onto the main source.",
   "connector.draft.get": "Get one draft, with its target columns, sources and thread.",
