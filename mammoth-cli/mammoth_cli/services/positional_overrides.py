@@ -1347,4 +1347,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             "view.export.tableau",
         )
     },
+    # A catalog template is addressed by its key (``workflow template list`` shows them),
+    # which the derived "Key identifying the resource." would not explain.
+    **{
+        f"workflow.template.{verb}": (
+            PositionalSpec(
+                name="key",
+                type=str,
+                required=True,
+                help="Workflow template key, from 'workflow template list'.",
+                example_value="bank-reconciliation",
+            ),
+        )
+        for verb in ("get", "sample-result", "rank", "fit", "preview", "samples", "build")
+    },
 }

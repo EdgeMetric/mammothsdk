@@ -69,7 +69,7 @@ _GROUP_DESCRIPTIONS = {
     "skill": "Install and manage the Mammoth agent skill.",
     "snippet": "Manage reusable snippets.",
     "support": "Manage support and administration resources.",
-    "template": "Manage templates.",
+    "template": "Manage legacy workspace templates (the project catalog is 'workflow template').",
     "trash": "Inspect, restore, and remove trashed resources.",
     "user": "Manage users and account settings.",
     "view": "Transform, query, and publish data views.",
@@ -243,6 +243,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "view variants": "Create view variants.",
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
+    "workflow template": (
+        "Browse the workflow template catalog, match it to your tables, preview and build it."
+    ),
     "workspace export-hosts": "Read and set the hosts exports may send data to.",
     "workspace invite": "List, resend, revoke and delete workspace invites.",
     "workspace oauth-client": "Register, list, delete and revoke OAuth client grants.",

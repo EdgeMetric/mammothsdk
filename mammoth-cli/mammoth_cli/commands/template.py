@@ -123,7 +123,12 @@ def template_get(invocation: Invocation) -> HandlerResult:
 
 
 def template_list(invocation: Invocation) -> HandlerResult:
-    """List templates."""
+    """List the legacy workspace templates (not the workflow template catalog).
+
+    This reads the older ``/workspaces/{ws}/templates`` API, which is empty for most
+    workspaces. The project catalog of ready-made workflows (reconciliations and
+    reports) is ``mammoth workflow template list``.
+    """
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)

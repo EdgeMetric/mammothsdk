@@ -882,4 +882,43 @@ COMMAND_DISCOVERY_PURPOSES = {
         "skip title rows header rows at the top change the delimiter separator quote character "
         "of an uploaded csv file parsing settings"
     ),
+    # The project workflow-template catalog (ready-made reconciliations and reports). The legacy
+    # workspace `template` group is a different, older API and says so.
+    "workflow.template.list": (
+        "list browse search the workflow template catalog, ready-made workflows to start from, "
+        "bank reconciliation three-way match payroll vendor statement intercompany inventory "
+        "reconciliation, which workflow templates exist"
+    ),
+    "workflow.template.get": (
+        "one workflow template's inputs roles settings, what tables and columns a catalog "
+        "template needs before you build it"
+    ),
+    "workflow.template.sample-result": (
+        "see what a workflow template produces on its own sample rows without importing or "
+        "building anything, example result of a catalog template"
+    ),
+    "workflow.template.rank": (
+        "which of my tables fit a workflow template input, find the dataset for a template, "
+        "rank datasets by how well their columns match"
+    ),
+    "workflow.template.fit": (
+        "match a workflow template's roles to my columns, which column plays each role, "
+        "map columns for a catalog template"
+    ),
+    "workflow.template.preview": (
+        "preview a workflow template on my rows before building, try a catalog template, "
+        "check its result and checks without saving"
+    ),
+    "workflow.template.samples": (
+        "import a workflow template's sample tables into the project to try the template "
+        "without my own data"
+    ),
+    "workflow.template.build": (
+        "build a workflow from a catalog template, use a workflow template on my tables, "
+        "create the reconciliation workflow and its result table"
+    ),
+    "template.list": (
+        "legacy workspace templates (older API), not the workflow template catalog; for "
+        "ready-made workflows use workflow template list"
+    ),
 }
