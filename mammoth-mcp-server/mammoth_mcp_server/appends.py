@@ -86,7 +86,12 @@ def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
             " later upload into it follows it too."
         )
     failed = bool(report.get(AppendFields.APPEND_FAILED))
-    if failed:
+    if failed and report.get(AppendFields.REASON):
+        notes.append(
+            f"The upload FAILED: {report[AppendFields.REASON]} Tell the user it did not work;"
+            " do not use the dataset as if the file were in it."
+        )
+    elif failed:
         notes.append(
             f"The upload FAILED: the dataset ended with the status"
             f" {report.get(AppendFields.STATUS)}, so rows_added says nothing about what is in"

@@ -305,6 +305,26 @@ def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
     assert fake_service.call_log == []
 
 
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"override_target_schema": True},
+        {"append_to_ds_id": 9, "override_target_schema": True, "wait_for_completion": False},
+    ],
+)
+def test_override_target_schema_needs_an_append_and_the_wait(
+    fake_service: FakeMammothService, tmp_path: Path, fields: dict[str, Any]
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps(fields), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"], input_file=str(doc)))
+    assert excinfo.value.code == "invalid_argument"
+    assert excinfo.value.details["field"] == "override_target_schema"
+    assert "replace" in (excinfo.value.hint or "")
+    assert fake_service.call_log == []
+
+
 def test_upload_reports_ready_dataset(fake_service: FakeMammothService) -> None:
     # The SDK waits and returns the new dataset id as a bare int; the handler
     # labels it and reports the status the platform holds for that dataset.

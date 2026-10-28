@@ -188,6 +188,7 @@ class AppendFields:
     APPEND_PENDING = "append_pending"
     APPEND_FAILED = "append_failed"
     STATUS = "status"
+    REASON = "reason"
     READ_ERROR = "read_error"
     NEXT_STEP = "next_step"
     NOTES = "notes"

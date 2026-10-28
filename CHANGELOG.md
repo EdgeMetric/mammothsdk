@@ -88,8 +88,19 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 - CLI: the `mcp-task-edit` entry is removed from the limitations list.
 
+### Fixed (next mammoth-io)
+
+- SDK: `jobs.wait_for_job` / `wait_for_jobs` re-label a poll that fails after the job id was returned as `outcome_unknown` (phase `polling`, `job_handle` set), not the read's `not_started`; a resubmit of an accepted write is no longer invited (#340).
+- SDK: `client.appends.append` / `finish` report a file the server held back for a schema mismatch as `append_failed` with `failure: "schema_mismatch"`, `reason`, `kept_dataset_ids` (its own dataset stays in the project) and `next_step`, read from the server's flag on the target's pending batches instead of reading as 0 rows added (#336).
+- SDK: `client.appends.append` refuses `override_target_schema` unless the dataset's update method is `replace`; the server ignores it otherwise (#336).
+
 ### Fixed (next mammoth-cli)
 
+- CLI: `dataset delete` is verified only when `dataset list` no longer shows the dataset (rechecked, then `delete_unverified` with `still_listed`); a dataset that still reads `deleting` is `delete_unverified`, not `delete_not_applied` (#345)
+- CLI: a job poll that fails after a write was accepted reports `outcome_unknown` with the job id and `mammoth job get ID`, instead of `retryable_error` / "changed nothing" (#340).
+- CLI: `file upload` into a dataset whose columns do not match fails with code `schema_mismatch` (exit 1, `rows_added` 0, `kept_dataset_ids`, a next step) instead of exiting 0 (#336).
+- CLI: `file upload` refuses `override_target_schema` without `append_to_ds_id`, with `wait_for_completion: false`, or under an update method other than `replace`, where the server ignores it (#336).
+- CLI: `view data get` says "every row of the view" for its duplicate check only when the rows read are the whole view; a longer view (the read holds 400 rows) reports "this page only" with the table-wide check (#335).
 - CLI: when `foreign_dataset_id` is missing, `view transform join` and `lookup` use the parent dataset from the cache.
 - CLI: a deleted automation or dashboard reads as `resource_not_found`.
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.

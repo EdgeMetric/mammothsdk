@@ -661,12 +661,21 @@ def map_sdk_exception(
                 details.setdefault("workspace_id", workspace_id)
             if project_id is not None:
                 details.setdefault("project_id", project_id)
+            polling = details.get("phase") == "polling" and job_id is not None
             return CliError(
                 code=CODE_OUTCOME_UNKNOWN,
-                message="The request may have committed, but its outcome was not confirmed.",
+                message=(
+                    f"Mammoth accepted the request as job {job_id}, but reading the job's "
+                    "state failed, so it is unknown whether it is still running or done."
+                    if polling
+                    else "The request may have committed, but its outcome was not confirmed."
+                ),
                 exit_status=EXIT_RETRYABLE,
                 hint=(
-                    "Do not replay this operation. Inspect the observed job/resource "
+                    f"Do not resubmit it. Read the job with 'mammoth job get {job_id}' "
+                    "until it is done, then check the result."
+                    if polling
+                    else "Do not replay this operation. Inspect the observed job/resource "
                     "and original request context before taking any further mutation."
                 ),
                 details=details,

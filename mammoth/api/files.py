@@ -191,7 +191,9 @@ class FilesAPI:
             files: File(s) to upload — file paths, Path objects, or file-like objects.
             folder_resource_id: Resource ID of target folder.
             append_to_ds_id: Dataset ID to append to (if appending).
-            override_target_schema: Override target schema when appending.
+            override_target_schema: Make the file's columns the dataset's. The server applies it
+                only when the dataset's update method is "replace" (which deletes its rows);
+                otherwise it is ignored and a column mismatch holds the file back.
             wait_for_completion: Wait for upload processing to complete.
             timeout: Timeout in seconds when waiting for completion.
 
@@ -264,7 +266,9 @@ class FilesAPI:
             files: File(s) to upload — file paths, Path objects, or file-like objects.
             folder_resource_id: Resource ID of target folder.
             append_to_ds_id: Dataset ID to append to (if appending).
-            override_target_schema: Override target schema when appending.
+            override_target_schema: Make the file's columns the dataset's. The server applies it
+                only when the dataset's update method is "replace" (which deletes its rows);
+                otherwise it is ignored and a column mismatch holds the file back.
             wait_for_completion: Wait for upload processing to complete.
             timeout: Timeout in seconds when waiting for completion.
 

@@ -17,7 +17,9 @@ from mammoth.appends import (
     match_batches,
     mode_word,
     refuse_batch_removal,
+    refuse_override,
     rows_of,
+    schema_mismatches,
     sent_names,
     status_of,
     stored_mode,
@@ -201,6 +203,71 @@ class TestWhatAnAppendReports:
         report["update_method"]["mode"] = "replace"
 
         assert plan["update_method"]["mode"] == "add"
+
+
+def a_held_back(dataset_id: int, target: int = 315779, name: str = "orders.csv") -> dict[str, Any]:
+    """A pending item as the server lists a file it held back for a schema mismatch."""
+    return {
+        "dataset_id": dataset_id,
+        "name": name,
+        "state": "pending",
+        "source": {"type": "file", "file_name": name},
+        "additional_data": {"schema_mismatch": True, "schema_mismatch_target_ds_id": target},
+    }
+
+
+class TestAFileTheServerHeldBack:
+    def test_a_flagged_pending_item_made_by_this_upload_is_a_mismatch(self) -> None:
+        found = schema_mismatches([a_held_back(900)], 315779, [], [900], ["orders.csv"])
+
+        assert found == [900]
+
+    def test_the_file_name_ties_it_when_the_staging_dataset_is_not_known(self) -> None:
+        assert schema_mismatches([a_held_back(900)], 315779, [], [], ["ORDERS.csv"]) == [900]
+
+    def test_an_item_listed_before_the_upload_is_not_this_ones(self) -> None:
+        assert schema_mismatches([a_held_back(900)], 315779, [900], [900], ["orders.csv"]) == []
+
+    def test_an_item_held_back_for_another_dataset_is_not_this_ones(self) -> None:
+        pending = [a_held_back(900, target=1)]
+
+        assert schema_mismatches(pending, 315779, [], [900], ["orders.csv"]) == []
+
+    def test_an_unflagged_pending_item_is_not_a_mismatch(self) -> None:
+        item = a_held_back(900)
+        item["additional_data"] = {"append_to_ds_id": 315779}
+
+        assert schema_mismatches([item], 315779, [], [900], ["orders.csv"]) == []
+
+    def test_the_report_is_a_failure_with_reason_kept_dataset_and_next_step(self) -> None:
+        report = describe_append(a_plan("add"), 6, [], [], settled=True, mismatched=[900])
+
+        assert report["append_failed"] is True
+        assert report["failure"] == "schema_mismatch"
+        assert report["kept_dataset_ids"] == [900]
+        assert "900" in report["reason"] and "Nothing was added" in report["reason"]
+        assert "Fix the file" in report["next_step"]
+        assert report["rows_added"] == 0
+        assert "append_pending" not in report
+
+    def test_a_report_without_a_mismatch_has_no_failure_field(self) -> None:
+        assert "failure" not in describe_append(a_plan("add"), 9, [7], [], settled=True)
+
+
+class TestTheOverrideTheServerIgnores:
+    @pytest.mark.parametrize("mode", ["add", None])
+    def test_it_is_refused_unless_the_update_method_is_replace(self, mode: str | None) -> None:
+        reason = refuse_override(True, mode)
+
+        assert reason is not None
+        assert "DELETES" in reason and "replace" in reason
+
+    def test_it_is_allowed_under_replace(self) -> None:
+        assert refuse_override(True, "replace") is None
+
+    @pytest.mark.parametrize("override", [None, False])
+    def test_it_is_not_checked_when_it_is_off(self, override: bool | None) -> None:
+        assert refuse_override(override, "add") is None
 
 
 class TestReadingADatasetAnswer:
