@@ -432,10 +432,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]
     },
     # Contracts observed on release (write sweep 2026-09-18): the SQL route
-    # requires dataset_id; conditional-format deletion is per rule; bulk
+    # requires dataset_id and dataview_id; conditional-format deletion is per rule; bulk
     # dataset deletion takes explicit ids; folder moves take integer resource
     # ids and a destination folder id or "root"; a project rename needs a field.
-    "ai.sql.generate": {"dataset_id": 456},
+    "ai.sql.generate": {"dataset_id": 456, "dataview_id": 123},
     # UnifiedPromptSpec: the params shape follows suggestion_type.
     "ai.suggestion.list": {
         "suggestion_type": "generate_task",

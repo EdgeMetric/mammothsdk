@@ -36,7 +36,7 @@ Status on release: observed blocker — permission: POST /workspaces/4/projects/
 
 Run: `mammoth ai sql generate`. Exact input fields: `mammoth schema get ai.sql.generate`.
 
-Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456, "dataview_id": 123}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AiSqlGenerateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 

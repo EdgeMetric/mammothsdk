@@ -537,7 +537,7 @@ Total commands: 864.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_sql`
-- Agent example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'`
+- Agent example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456, "dataview_id": 123}'`
 
 ### `mammoth ai suggestion list`
 

@@ -95,6 +95,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
 
+### Changed (next mammoth-io)
+
+- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
+
+### Fixed (next mammoth-cli)
+
+- CLI: `view delete` waits for the delete job the server accepts (202) before it reads the view back, so a delete that takes a few seconds no longer reports `delete_not_applied` (#333).
+
 ## mammoth-cli 2.3.1 (2026-10-26)
 
 ### Fixed (mammoth-cli 2.3.1)

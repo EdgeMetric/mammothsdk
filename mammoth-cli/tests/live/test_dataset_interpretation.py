@@ -13,12 +13,10 @@ removes its dataset and the project.
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
-from typing import Any
 
 import pytest
-from live_harness import LiveCli
+from live_harness import LiveCli, wait_for
 
 pytestmark = pytest.mark.live
 
@@ -37,15 +35,6 @@ _PREAMBLE = (
 _SETTLE_SECONDS = 180
 
 
-def _wait_for(read: Any, done: Any) -> Any:
-    deadline = time.monotonic() + _SETTLE_SECONDS
-    while True:
-        value = read()
-        if done(value) or time.monotonic() > deadline:
-            return value
-        time.sleep(5)
-
-
 def test_preamble_csv_is_held_then_read_by_the_stored_suggestion(
     live_cli: LiveCli, scratch_project: int, tmp_path: Path
 ) -> None:
@@ -56,9 +45,11 @@ def test_preamble_csv_is_held_then_read_by_the_stored_suggestion(
     uploaded, _ = live_cli.ok("file", "upload", str(source), "--yes", project=project)
     dataset = str(uploaded["dataset_id"])
     try:
-        record = _wait_for(
+        record = wait_for(
             lambda: live_cli.ok("dataset", "get", dataset, project=project)[0],
             lambda r: bool((r.get("additional_info") or {}).get("interpretation")),
+            timeout=_SETTLE_SECONDS,
+            interval=5,
         )
         stored = (record.get("additional_info") or {}).get("interpretation") or {}
         suggestions = stored.get("instruction_suggestions") or []
@@ -77,9 +68,11 @@ def test_preamble_csv_is_held_then_read_by_the_stored_suggestion(
             *("dataset", "interpretation", "confirm", dataset, "--input", instruction),
             project=project,
         )
-        views = _wait_for(
+        views = wait_for(
             lambda: live_cli.ok("view", "list", dataset, project=project)[0],
             lambda v: bool(v.get("dataviews")),
+            timeout=_SETTLE_SECONDS,
+            interval=5,
         )
         assert views["dataviews"], "confirm did not produce a view"
         data, _ = live_cli.ok(
