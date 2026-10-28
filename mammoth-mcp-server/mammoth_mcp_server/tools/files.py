@@ -10,6 +10,7 @@ link, and the browser sends it, so the bytes never enter the conversation.
 
 import asyncio
 import time
+from datetime import UTC, datetime
 from pathlib import PurePosixPath
 from typing import Literal
 
@@ -40,6 +41,7 @@ from ..store import Record
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..upload_report import report_upload
 from ..upload_tickets import read_ticket
+from ..upload_wait import finish_upload
 
 type DateFormat = Literal["US", "UK"]
 
@@ -66,8 +68,13 @@ async def upload_file(
         content: The file's content, for example "name,amount\\nfoo,1\\n".
 
     Returns:
-        What Mammoth made of the file, including the dataset it created.
+        As `check_upload` reports it: `status`, and `files`, the file and the
+        dataset it made. A dataset that is ready carries `view_id`; one that
+        waits on the user carries `needs`. `processing`, with `job_ids`, when
+        Mammoth was still reading the file as the call ended. `rejected`: what
+        Mammoth refused.
     """
+    since = datetime.now(UTC).isoformat()
     async with build_client(workspace_id, project_id) as client:
         started = await request_api(
             client,
@@ -75,7 +82,9 @@ async def upload_file(
             ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
             upload=[(file_name, content.encode(), find_media_type(file_name))],
         )
-    return await wait_for_job(workspace_id, started)
+    return await finish_upload(
+        workspace_id, project_id, since, await wait_for_job(workspace_id, started)
+    )
 
 
 async def wait_for_the_file(upload_id: str) -> Record:

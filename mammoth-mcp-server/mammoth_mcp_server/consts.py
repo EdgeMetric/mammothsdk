@@ -138,6 +138,8 @@ class UploadFields:
     PROJECT_ID = "project_id"
     CALLER = "caller"
     JOB_ID = "job_id"
+    # What the upload job returns: one job per file, under this key.
+    JOB_IDS = "job_ids"
     FILE_NAMES = "file_names"
     # When the files were sent: what the upload made is what was created since.
     UPLOADED_AT = "uploaded_at"
