@@ -301,7 +301,9 @@ class RowOpsMixin(ViewHost):
             if internal in seen:
                 raise ValueError(f"{name!r} is listed twice")
             seen.add(internal)
-            value.append([internal, direction])
+            # The dataview's display-property model types a SORT pair's order as the
+            # lowercase "asc"/"desc"; "ASC" saves but logs a serialization warning there.
+            value.append([internal, direction.lower()])
             shown.append([name, direction])
         if self._build_only:
             return {"status": "validated", "sort": shown}
