@@ -901,14 +901,14 @@ COMMAND_DISCOVERY_PURPOSES = {
     ),
     "workflow.template.rank": (
         "which of my tables fit a workflow template input, find the dataset for a template, "
-        "rank datasets by how well their columns match"
+        "score datasets by how well their columns match"
     ),
     "workflow.template.fit": (
         "match a workflow template's roles to my columns, which column plays each role, "
         "map columns for a catalog template"
     ),
     "workflow.template.preview": (
-        "preview a workflow template on my rows before building, try a catalog template, "
+        "try a workflow template on my tables before building, try a catalog template, "
         "check its result and checks without saving"
     ),
     "workflow.template.samples": (

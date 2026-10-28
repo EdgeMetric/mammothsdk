@@ -154,6 +154,25 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
             "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
         },
     ),
+    # The workflow-template calls name the template's own input and role keys, which the
+    # request model cannot sample: ``main`` is a template's main input, ``amount`` a role in it.
+    "workflow.template.rank": (
+        ("bank-reconciliation",),
+        {"input": "main", "dataset_ids": [101, 102]},
+    ),
+    "workflow.template.fit": (("bank-reconciliation",), {"inputs": {"main": 101}}),
+    "workflow.template.preview": (
+        ("bank-reconciliation",),
+        {"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}},
+    ),
+    "workflow.template.build": (
+        ("bank-reconciliation",),
+        {
+            "inputs": {"main": 101},
+            "matches": {"main": {"amount": {"column": "Amount"}}},
+            "destination_name": "Bank reconciliation",
+        },
+    ),
 }
 
 

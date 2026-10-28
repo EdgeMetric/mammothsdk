@@ -33993,8 +33993,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow template build KEY --help
-  agent_example: 'mammoth workflow template build bank-reconciliation --input ''{"inputs": {"name": 1},
-    "matches": {"name": {"name": {"name": "Status"}}}, "destination_name": "Revenue report"}'''
+  agent_example: 'mammoth workflow template build bank-reconciliation --input ''{"inputs": {"main": 101},
+    "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'''
   unit_tests:
   - UT-WORKFLOW-TEMPLATE-BUILD
   contract_tests:
@@ -34036,7 +34036,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow template fit KEY --help
-  agent_example: 'mammoth workflow template fit bank-reconciliation --input ''{"inputs": {"name": 1}}'''
+  agent_example: 'mammoth workflow template fit bank-reconciliation --input ''{"inputs": {"main": 101}}'''
   unit_tests:
   - UT-WORKFLOW-TEMPLATE-FIT
   contract_tests:
@@ -34154,8 +34154,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow template preview KEY --help
-  agent_example: 'mammoth workflow template preview bank-reconciliation --input ''{"inputs": {"name":
-    1}, "matches": {"name": {"name": {"name": "Status"}}}}'''
+  agent_example: 'mammoth workflow template preview bank-reconciliation --input ''{"inputs": {"main":
+    101}, "matches": {"main": {"amount": {"column": "Amount"}}}}'''
   unit_tests:
   - UT-WORKFLOW-TEMPLATE-PREVIEW
   contract_tests:
@@ -34196,8 +34196,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow template rank KEY --help
-  agent_example: 'mammoth workflow template rank bank-reconciliation --input ''{"input": "<input>", "dataset_ids":
-    [1]}'''
+  agent_example: 'mammoth workflow template rank bank-reconciliation --input ''{"input": "main", "dataset_ids":
+    [101, 102]}'''
   unit_tests:
   - UT-WORKFLOW-TEMPLATE-RANK
   contract_tests:

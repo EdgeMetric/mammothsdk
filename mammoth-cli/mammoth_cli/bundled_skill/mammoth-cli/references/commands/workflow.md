@@ -192,6 +192,86 @@ Result: `WorkflowSaveUndoResult`; mutation `destructive`, confirmation `prompt_o
 
 Status on release: untried; no live run recorded.
 
+### `workflow.template.build`
+
+Run: `mammoth workflow template build`. Exact input fields: `mammoth schema get workflow.template.build`.
+
+Example: `mammoth workflow template build bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateBuildResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.fit`
+
+Run: `mammoth workflow template fit`. Exact input fields: `mammoth schema get workflow.template.fit`.
+
+Example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"main": 101}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateFitResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.get`
+
+Run: `mammoth workflow template get`. Exact input fields: `mammoth schema get workflow.template.get`.
+
+Example: `mammoth workflow template get bank-reconciliation`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.list`
+
+Run: `mammoth workflow template list`. Exact input fields: `mammoth schema get workflow.template.list`.
+
+Example: `mammoth workflow template list`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.preview`
+
+Run: `mammoth workflow template preview`. Exact input fields: `mammoth schema get workflow.template.preview`.
+
+Example: `mammoth workflow template preview bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplatePreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.rank`
+
+Run: `mammoth workflow template rank`. Exact input fields: `mammoth schema get workflow.template.rank`.
+
+Example: `mammoth workflow template rank bank-reconciliation --input '{"input": "main", "dataset_ids": [101, 102]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateRankResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.sample-result`
+
+Run: `mammoth workflow template sample-result`. Exact input fields: `mammoth schema get workflow.template.sample-result`.
+
+Example: `mammoth workflow template sample-result bank-reconciliation`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateSampleResultResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.template.samples`
+
+Run: `mammoth workflow template samples`. Exact input fields: `mammoth schema get workflow.template.samples`.
+
+Example: `mammoth workflow template samples bank-reconciliation`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowTemplateSamplesResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.update`
 
 Run: `mammoth workflow update`. Exact input fields: `mammoth schema get workflow.update`.

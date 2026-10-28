@@ -8617,7 +8617,7 @@ Total commands: 872.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.build`
-- Agent example: `mammoth workflow template build bank-reconciliation --input '{"inputs": {"name": 1}, "matches": {"name": {"name": {"name": "Status"}}}, "destination_name": "Revenue report"}'`
+- Agent example: `mammoth workflow template build bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'`
 
 ### `mammoth workflow template fit`
 
@@ -8628,7 +8628,7 @@ Total commands: 872.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit`
-- Agent example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"name": 1}}'`
+- Agent example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"main": 101}}'`
 
 ### `mammoth workflow template get`
 
@@ -8657,7 +8657,7 @@ Total commands: 872.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview`
-- Agent example: `mammoth workflow template preview bank-reconciliation --input '{"inputs": {"name": 1}, "matches": {"name": {"name": {"name": "Status"}}}}'`
+- Agent example: `mammoth workflow template preview bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}}'`
 
 ### `mammoth workflow template rank`
 
@@ -8668,7 +8668,7 @@ Total commands: 872.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank`
-- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input": "<input>", "dataset_ids": [1]}'`
+- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input": "main", "dataset_ids": [101, 102]}'`
 
 ### `mammoth workflow template sample-result`
 

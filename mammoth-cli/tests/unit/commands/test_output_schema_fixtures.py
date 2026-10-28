@@ -709,6 +709,26 @@ def _with_renames(method: str, path: str, sample: Any) -> Any:
     return {**sample, "display_properties": properties}
 
 
+def _single_page(method: str, path: str, params: Any, sample: Any) -> Any:
+    """Make a sampled datasets list one page long, so a walk over every page ends.
+
+    Args:
+        method: HTTP method.
+        path: Request path.
+        params: The request's query parameters.
+        sample: The sampled response.
+
+    Returns:
+        ``sample`` with no continuation (and no records past the first page) for a datasets
+        list; any other response unchanged.
+    """
+    if method.upper() != "GET" or not path.endswith("/datasets") or not isinstance(sample, dict):
+        return sample
+    past_first = int((params or {}).get("offset") or 0) > 0
+    records = [] if past_first else sample.get("datasets", [])
+    return {**sample, "datasets": records, "next": None}
+
+
 def sampled_server(monkeypatch: pytest.MonkeyPatch, workdir: Path) -> None:
     """Replace the HTTP layer with spec-built responses, in a signed-in, isolated CLI.
 
@@ -734,6 +754,7 @@ def sampled_server(monkeypatch: pytest.MonkeyPatch, workdir: Path) -> None:
         elif method.upper() == "PATCH":
             _RENAMED.update(_renames(kwargs.get("json")))
         sample = _without_deleted(path, _spec_sample(method, endpoint), _DELETED)
+        sample = _single_page(method, path, kwargs.get("params"), sample)
         return _with_renames(method, path, _with_added_export(method, path, sample))
 
     async def fake_download(self: Any, url: str, output_path: Path, **_kwargs: Any) -> Path:

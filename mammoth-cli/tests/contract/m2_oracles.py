@@ -18,7 +18,6 @@ UPLOAD_POSITIONAL_ORACLE = {
         "files": ["./pilot-positional.csv"],
         "folder_resource_id": "folder-sentinel",
         "append_to_ds_id": 731,
-        "override_target_schema": True,
         "wait_for_completion": False,
         "timeout": 47,
     },

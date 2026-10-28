@@ -415,19 +415,20 @@ def test_undo_dashboard_intent_reaches_chat_history() -> None:
 
 
 def test_matched_purpose_text_is_returned_so_the_caller_knows_why_it_matched() -> None:
-    """Live-eval evidence (T1-I-07): 'custom internal API sources' ranked
-    connector.ai.chat first via its hidden purpose text ("connect our own
-    internal custom api build a connector for an unsupported source"), but
-    schema find never handed that text back -- only command_id/command_path/
-    agent_example/matched_terms -- so the model read it as "ask the AI a
-    question" and never explained the generic/custom-connector route. Every
-    match must now carry why it matched.
+    """Live-eval evidence (T1-I-07): 'custom internal API sources' ranked a connector
+    command first via its hidden purpose text, but schema find never handed that text
+    back -- only command_id/command_path/agent_example/matched_terms -- so the model read
+    it as "ask the AI a question" and never explained the custom-connector route. Every
+    match must now carry why it matched. The command is now ``connector.draft.create`` (the
+    draft builder), no longer the older ``connector.ai.chat``.
     """
     result = find_schemas("custom internal API sources")
     by_id = {item["command_id"]: item for item in result["suggestions"]}
-    assert "connector.ai.chat" in by_id, result["suggestions"]
-    matched_on = by_id["connector.ai.chat"]["matched_on"]
-    assert "build a connector for an unsupported source" in matched_on, matched_on
+    assert "connector.draft.create" in by_id, result["suggestions"]
+    matched_on = by_id["connector.draft.create"]["matched_on"]
+    assert (
+        "custom connector for our own internal api or an unsupported source" in matched_on
+    ), matched_on
 
 
 def test_hint_presents_suggestions_as_candidates_when_present() -> None:
