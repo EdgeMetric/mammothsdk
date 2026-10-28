@@ -50,6 +50,20 @@ refresh (`login_expired`, exit 4) needs a new `mammoth auth login`. `auth status
 token); a name is left out when its lookup fails, and the ids are always present. A sign-in limited
 to several projects adds `project_ids` to `auth login` and `token_projects` to `auth status --check`.
 
+## Resource ids in results
+
+One id key per resource, at the top level of `data`: `<resource>_id`. Every create-type command
+(`create`, `create-*`, `duplicate`, `copy`) names the resource it made that way: `dataset create`
+gives `dataset_id`, `project create` `project_id`, `connector connection create` `connection_id`
+(the value `identity_key` / `connection_key` holds, which is the CONNECTION_KEY other commands
+take), `dashboard create-blank` `dashboard_id`. A write that made a dataset, view or dashboard
+(`file upload`, `view export dataset`, `dashboard v3 generate`, ...) also gives that
+`<kind>_id`, and `job wait` / `job get` lift the `dataset_id`, `view_id` or `dashboard_id` their
+`response` or `result` holds, so a script never reads `response.dataset_id`. The older keys
+(`id`, `identity_key`, nested `response`) stay for compatibility; save `data.<resource>_id`, never
+the whole reply. A result that carries no id (a job still running) has no such key: wait on its
+`job_id`, then read the id from `job wait`.
+
 ## Representative result keys
 
 These are compact shapes, not substitutes for `schema get`. IDs and field
