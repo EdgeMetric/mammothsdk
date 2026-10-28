@@ -411,6 +411,28 @@ class ViewFields:
     IMPACT_ITEM_FIELDS = ("id", "name", "handler_type", "destination", "project_id")
 
 
+class RenameFields:
+    """What `create_project` and `rename` take and report."""
+
+    PROJECT = "project"
+    DATASET = "dataset"
+    PROJECT_ID = "project_id"
+    DATASET_ID = "dataset_id"
+    VIEW_ID = "view_id"
+    RENAMED = "renamed"
+
+
+class DeletedFileFields:
+    """What `delete_file` reports, and where Mammoth names the dataset a file made."""
+
+    DELETED_FILE = "deleted_file"
+    DATASET_KEPT = "dataset_kept"
+    NEXT_STEP = "next_step"
+    FILE = "file"
+    ADDITIONAL_INFO = "additional_info"
+    FINAL_DATASET_ID = "final_ds_id"
+
+
 class TrashFields:
     """The trash of a project, as its route lists it and this server reports it."""
 

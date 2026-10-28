@@ -15,6 +15,7 @@ TOOLS = {
     "connect_source",
     "create_automation",
     "create_dashboard",
+    "create_project",
     "create_view",
     "delete_automation",
     "delete_dashboard",
@@ -56,6 +57,7 @@ TOOLS = {
     "preview_query",
     "preview_transformation",
     "publish_dashboard",
+    "rename",
     "request_upload",
     "review_unreadable_rows",
     "run_pipeline",
@@ -195,6 +197,8 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
 # that loads tools by searching their words, and a model picking from a list,
 # find the rest only in the title and the description's first line.
 FOLDED_JOBS = {
+    "delete_views": ("views", "dataset"),
+    "rename": ("project", "dataset", "view"),
     "undo": ("trash", "roll back"),
     "get_pipeline": ("steps", "versions"),
     "get_schema": ("transformation", "export", "automation"),
