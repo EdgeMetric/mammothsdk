@@ -48,7 +48,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
-from mammoth_cli.services.delete_check import ensure_deleted, find_dependents
+from mammoth_cli.services.delete_check import ensure_deleted, ensure_unlisted, find_dependents
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     NAMES_DATA_BUDGET,
@@ -870,6 +870,16 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
             read_kwargs={"dataset_id": dataset_id, "project_id": project_id},
             responses=(ack, settled),
             recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
+        )
+        # The get can say gone while ``dataset list`` still shows the dataset: verified only
+        # when the list the caller reads next agrees.
+        ensure_unlisted(
+            service,
+            noun="dataset",
+            resource_id=dataset_id,
+            list_symbol="mammoth.api.datasets.DatasetsAPI.list_all",
+            list_kwargs={"project_id": project_id, "fields": "id,name"},
+            collection="datasets",
         )
     if isinstance(data, dict):
         # ``ensure_deleted`` read the dataset and found it gone; say so rather than

@@ -96,6 +96,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Fixed (next mammoth-cli)
 
+- CLI: `dataset delete` is verified only when `dataset list` no longer shows the dataset (rechecked, then `delete_unverified` with `still_listed`); a dataset that still reads `deleting` is `delete_unverified`, not `delete_not_applied` (#345)
 - CLI: a job poll that fails after a write was accepted reports `outcome_unknown` with the job id and `mammoth job get ID`, instead of `retryable_error` / "changed nothing" (#340).
 - CLI: `file upload` into a dataset whose columns do not match fails with code `schema_mismatch` (exit 1, `rows_added` 0, `kept_dataset_ids`, a next step) instead of exiting 0 (#336).
 - CLI: `file upload` refuses `override_target_schema` without `append_to_ds_id`, with `wait_for_completion: false`, or under an update method other than `replace`, where the server ignores it (#336).
