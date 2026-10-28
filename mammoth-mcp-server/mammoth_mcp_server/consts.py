@@ -52,6 +52,13 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
+# How long an upload into an existing dataset waits for its rows to land: the
+# upload's job ends when the staging dataset is made, and the rows reach the
+# target after that, while it reads "processing".
+APPEND_WAIT_SECONDS = 20.0
+APPEND_POLL_SECONDS = 1.0
+# The batch listing is paged this many rows at a time.
+BATCH_PAGE = 100
 # Connecting a source takes the user two or three minutes in Mammoth, so the
 # watch for the new connection runs for five. One tool call cannot hold that
 # long: Claude gives up on a call well inside a minute (a 40-second hold was cut
@@ -151,6 +158,47 @@ class UploadFields:
     REJECTED = "rejected"
     # Where the upload job lists the files Mammoth refused.
     ERRORS = "errors"
+    # The dataset an upload adds to, how to (the tool's `mode`), and what was
+    # read of it just before the files were sent.
+    APPEND_TO = "append_to_dataset_id"
+    APPEND = "append"
+    MODE = "mode"
+
+
+class AppendFields:
+    """Adding a file to an existing dataset: the API's names and what is reported."""
+
+    # The query parameter the upload route takes the target dataset in.
+    TARGET_QUERY = "append_to_ds_id"
+    # The route's batch list, and what a batch is told apart by.
+    BATCHES = "batches"
+    BATCH_FIELDS = ("id", "name", "status", "created_at", "created_by", "source")
+    SOURCE = "source"
+    SOURCE_NAMES = ("file_name", "name", "ds_name")
+    # The stored settings and the dataset's counts.
+    DATA_ADDITION_MODE = "data_addition_mode"
+    SCHEMA_MAPPING = "schema_mapping"
+    STATS = "stats"
+    ROW_COUNT = "row_count"
+    # What the plan taken before the files were sent holds.
+    TARGET = "target"
+    PREVIOUS_MODE = "previous_mode"
+    ROWS_BEFORE = "rows_before"
+    BATCH_IDS_BEFORE = "batch_ids_before"
+    # What an upload into a dataset, and `get_dataset`, report.
+    APPENDED_TO = "appended_to"
+    UPDATE_METHOD = "update_method"
+    EFFECT = "effect"
+    MODE_CHANGED = "mode_changed"
+    ROWS_AFTER = "rows_after"
+    ROWS_ADDED = "rows_added"
+    BATCH_ID = "batch_id"
+    BATCH_IDS = "batch_ids"
+    UNMATCHED_BATCH_IDS = "unmatched_batch_ids"
+    APPEND_PENDING = "append_pending"
+    NEXT_STEP = "next_step"
+    NOTES = "notes"
+    REMOVED = "removed"
 
 
 class UploadReportFields:

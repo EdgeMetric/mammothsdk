@@ -16,6 +16,7 @@ from typing import Literal
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
+from ..appends import NOT_AN_APPEND, Mode, finish_append, prepare_append, restore_mode
 from ..consts import (
     DISCARD_READS,
     LIST_LIMIT_DEFAULT,
@@ -25,6 +26,7 @@ from ..consts import (
     UPLOAD_WAIT_SECONDS,
     ApiFields,
     ApiPaths,
+    AppendFields,
     ColumnFields,
     FilePatchFields,
     FileSettingsFields,
@@ -33,7 +35,7 @@ from ..consts import (
     UnstructuredFields,
     UploadFields,
 )
-from ..jobs import find_job_id, wait_for_job
+from ..jobs import JobStillRunning, find_job_id, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
@@ -46,13 +48,27 @@ type DateFormat = Literal["US", "UK"]
 
 @mcp_server.tool(title="Upload file", annotations=CHANGES)
 async def upload_file(
-    workspace_id: int, project_id: int, file_name: str, content: str
+    workspace_id: int,
+    project_id: int,
+    file_name: str,
+    content: str,
+    append_to_dataset_id: int | None = None,
+    mode: Mode | None = None,
 ) -> dict[str, JsonValue]:
-    """Create a dataset in a project from text you have.
+    """Create a dataset in a project from text you have, or add the text to one it already has.
 
     Use this to bring a table into Mammoth: write the rows as CSV and upload
     them. Waits for Mammoth to read the file, so the dataset exists when this
     returns. To read an existing dataset instead, use `list_datasets`.
+
+    With `append_to_dataset_id` the file goes into that dataset instead of
+    making a new one, and the dataset's update method decides what happens to
+    its rows: "add" puts the file's rows under the ones it holds, "replace"
+    throws the old rows away and keeps the file's. Without `mode` the dataset
+    keeps the method it has (`get_dataset` with `include_batches` reads it).
+    Setting `mode` changes the dataset's method for good, so every later upload
+    and folder automation into it follows it too: say so to the user, and ask
+    before a "replace", which cannot be taken back.
 
     Only for text you already hold, and only up to a few megabytes of it: the
     content travels through this conversation, so every row costs tokens twice.
@@ -64,18 +80,47 @@ async def upload_file(
         project_id: Which project to upload into.
         file_name: Name of the file, ending in .csv, .tsv, .json or .txt.
         content: The file's content, for example "name,amount\\nfoo,1\\n".
+        append_to_dataset_id: An existing dataset to put the file into, from
+            `list_datasets`. Leave out to make a new dataset.
+        mode: "add" or "replace", only together with `append_to_dataset_id`:
+            the dataset's update method, set before the file goes in. If the
+            upload fails the previous method is put back.
 
     Returns:
-        What Mammoth made of the file, including the dataset it created.
+        What Mammoth made of the file, including the dataset it created. For an
+        upload into a dataset: `appended_to`, the `update_method` it ran under,
+        `rows_before`, `rows_after` and `rows_added`, and for "add" the
+        `batch_ids` (`batch_id` when there is one) that `undo` with
+        what="batch" removes. A "replace" has no batch to remove.
     """
-    async with build_client(workspace_id, project_id) as client:
-        started = await request_api(
-            client,
-            "POST",
-            ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
-            upload=[(file_name, content.encode(), find_media_type(file_name))],
-        )
-    return await wait_for_job(workspace_id, started)
+    if mode is not None and append_to_dataset_id is None:
+        raise ToolError(NOT_AN_APPEND)
+    plan = None
+    if append_to_dataset_id is not None:
+        plan = await prepare_append(workspace_id, project_id, append_to_dataset_id, mode)
+    try:
+        async with build_client(workspace_id, project_id) as client:
+            started = await request_api(
+                client,
+                "POST",
+                ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
+                query=(
+                    {AppendFields.TARGET_QUERY: append_to_dataset_id}
+                    if append_to_dataset_id is not None
+                    else None
+                ),
+                upload=[(file_name, content.encode(), find_media_type(file_name))],
+            )
+        made = await wait_for_job(workspace_id, started)
+    except JobStillRunning:
+        # The job is still reading the file, and reads the mode when it lands.
+        raise
+    except ToolError as failed:
+        kept = await restore_mode(workspace_id, project_id, plan) if plan else None
+        raise ToolError(f"{failed} {kept}" if kept else str(failed)) from failed
+    if plan is None:
+        return made
+    return {**made, **await finish_append(workspace_id, project_id, plan, [file_name])}
 
 
 async def wait_for_the_file(upload_id: str) -> Record:
@@ -124,7 +169,12 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     Returns:
         `status`: `waiting` (nothing uploaded yet), `processing` (Mammoth is
         still reading them) or `done`. With the last two, `files`: every file
-        and dataset the upload made. A dataset that is ready carries `view_id`:
+        and dataset the upload made. An upload into an existing dataset
+        (`request_upload` with `append_to_dataset_id`) also reports
+        `appended_to`, the `update_method` it ran under, `rows_before`,
+        `rows_after` and `rows_added`, and for "add" the `batch_ids` that
+        `undo` with what="batch" removes; a "replace" has none to remove.
+        `append_pending` means the rows had not all landed yet: call again. A dataset that is ready carries `view_id`:
         read, transform and build dashboards on that view. An item Mammoth cannot finish without the
         user carries `needs`: the `action`, the `next_step` to take, and
         whatever that step needs — the `sheets` to choose from, or the
@@ -148,6 +198,16 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     report = await report_upload(ticket)
     if started.get(UploadFields.ERRORS):
         report[UploadFields.REJECTED] = started[UploadFields.ERRORS]
+    plan = ticket.get(UploadFields.APPEND)
+    if plan:
+        report.update(
+            await finish_append(
+                int(ticket[UploadFields.WORKSPACE_ID]),
+                int(ticket[UploadFields.PROJECT_ID]),
+                plan,
+                ticket[UploadFields.FILE_NAMES],
+            )
+        )
     return report
 
 
@@ -448,7 +508,7 @@ def read_unreadable_rows(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
     """
     rows = found.get(UnstructuredFields.ROWS)
     return {
-        UnstructuredFields.ROWS: (rows[:PREVIEW_ROWS_DEFAULT] if isinstance(rows, list) else rows),
+        UnstructuredFields.ROWS: rows[:PREVIEW_ROWS_DEFAULT] if isinstance(rows, list) else rows,
         UnstructuredFields.ROW_COUNT: found.get(UnstructuredFields.ROW_COUNT),
         UnstructuredFields.DISCARDED: False,
     }

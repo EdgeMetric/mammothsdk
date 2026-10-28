@@ -27,13 +27,22 @@ from .consts import UPLOAD_SECONDS, UploadFields
 from .store import Record, recall, remember, seal, unseal
 
 
-async def mint_ticket(caller: AccessToken, workspace_id: int, project_id: int) -> str:
+async def mint_ticket(
+    caller: AccessToken,
+    workspace_id: int,
+    project_id: int,
+    append_to_dataset_id: int | None = None,
+    mode: str | None = None,
+) -> str:
     """Remember who is uploading where, and return the ticket that stands for it.
 
     Args:
         caller: The MCP caller, whose permissions the upload runs with.
         workspace_id: Which workspace the file lands in.
         project_id: Which project the file lands in.
+        append_to_dataset_id: The existing dataset the file is added to, if any.
+        mode: "add" or "replace", the update method to set on that dataset
+            when the file is sent.
 
     Returns:
         The upload id, which is both the ticket in the link and what
@@ -48,6 +57,11 @@ async def mint_ticket(caller: AccessToken, workspace_id: int, project_id: int) -
             UploadFields.PROJECT_ID: project_id,
             UploadFields.STATUS: UploadFields.WAITING,
             UploadFields.CALLER: seal(caller.model_dump(mode="json")),
+            **(
+                {UploadFields.APPEND_TO: append_to_dataset_id, UploadFields.MODE: mode}
+                if append_to_dataset_id is not None
+                else {}
+            ),
         },
         UPLOAD_SECONDS,
     )
@@ -78,11 +92,16 @@ async def spend_ticket(
     file_names: list[str],
     *,
     uploaded_at: str,
+    append: Record | None = None,
 ) -> None:
     """Note what the user uploaded, and leave the ticket good for nothing else.
 
     `uploaded_at` is when the files were sent: what the upload made is what the
     project gained since (`upload_report`).
+
+    `append` is what was read of the target dataset just before the files were
+    sent (`appends.prepare_append`), kept so `check_upload` can say what the
+    upload added to it.
 
     The caller's token is dropped with the same write: the link has been used,
     so nothing may act as the user through it again.
@@ -96,6 +115,7 @@ async def spend_ticket(
             UploadFields.JOB_ID: job_id,
             UploadFields.FILE_NAMES: file_names,
             UploadFields.UPLOADED_AT: uploaded_at,
+            **({UploadFields.APPEND: append} if append else {}),
         },
         UPLOAD_SECONDS,
     )

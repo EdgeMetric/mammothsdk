@@ -125,6 +125,12 @@ ERR_INTENT_VALUE_NOT_STR = "Patch value for `intent` must be a string."
 ERR_TITLE_VALUE_NOT_STR = "Patch value for `title` must be a string."
 ERR_THEME_VALUE_NOT_STR = "Patch value for `theme` must be a string."
 ERR_SHARE_USER_EMAIL_EMPTY = "Each shared user must have a non-empty `email`."
+ERR_SHARE_PASSWORD_LENGTH = (
+    "The share `password` must be {min} to {max} characters long, got {length}."
+)
+ERR_SHARE_PASSWORD_AUTH = "A `password` is sent only with type_of_auth `password`, not `{0}`."
+SHARE_PASSWORD_MIN_LENGTH = 8
+SHARE_PASSWORD_MAX_LENGTH = 128
 ERR_AUTO_SYNC_NEEDS_ENABLED = "`auto-sync` action requires `params_enabled` (bool)."
 ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled` (bool)."
 ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
@@ -759,6 +765,7 @@ class DashboardsAPI:
         dashboard_id: int,
         type_of_auth: DashboardAuthType,
         users: _list[DashboardShareUser] | None = None,
+        password: str | None = None,
     ) -> dict[str, Any]:
         """Share a dashboard.
 
@@ -770,13 +777,18 @@ class DashboardsAPI:
                 :attr:`~mammoth.models.dashboards.DashboardAuthType.MAMMOTH`;
                 ignored for ``public`` / ``password``.  Each user must have a
                 non-empty ``email``.
+            password: The password viewers enter to open the link, 8 to 128
+                characters.  Only valid with *type_of_auth*
+                :attr:`~mammoth.models.dashboards.DashboardAuthType.PASSWORD`.
+                Omit it when re-sharing as ``password`` to keep the current one.
 
         Returns:
             Dict with sharing result.
 
         Raises:
-            MammothValidationError: If *dashboard_id* ≤ 0 or any user has an
-                empty ``email``.
+            MammothValidationError: If *dashboard_id* ≤ 0, any user has an
+                empty ``email``, *password* is not 8 to 128 characters, or
+                *password* is given with another *type_of_auth*.
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
@@ -784,6 +796,17 @@ class DashboardsAPI:
             for user in users:
                 if not user.email:
                     raise MammothValidationError(ERR_SHARE_USER_EMAIL_EMPTY)
+        if password is not None:
+            if type_of_auth is not DashboardAuthType.PASSWORD:
+                raise MammothValidationError(ERR_SHARE_PASSWORD_AUTH.format(type_of_auth.value))
+            if not SHARE_PASSWORD_MIN_LENGTH <= len(password) <= SHARE_PASSWORD_MAX_LENGTH:
+                raise MammothValidationError(
+                    ERR_SHARE_PASSWORD_LENGTH.format(
+                        min=SHARE_PASSWORD_MIN_LENGTH,
+                        max=SHARE_PASSWORD_MAX_LENGTH,
+                        length=len(password),
+                    )
+                )
 
         auth_dict: dict[str, Any] = {"type_of_auth": type_of_auth.value}
         if users is not None and type_of_auth is DashboardAuthType.MAMMOTH:
@@ -792,6 +815,8 @@ class DashboardsAPI:
                     {"email": u.email, "role": u.role.value, "shared": u.shared} for u in users
                 ]
             }
+        if password is not None:
+            auth_dict["options"] = {"password": password}
 
         body: dict[str, Any] = {"params": {"auth": auth_dict}}
         # Like ``archive``, the share route declares no response body schema;

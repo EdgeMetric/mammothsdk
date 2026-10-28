@@ -123,28 +123,6 @@
         "twbx",
         "pbix"
       ]
-    },
-    {
-      "id": "dashboard-password-share",
-      "area": "dashboard sharing",
-      "limitation": "A dashboard cannot be shared behind a password from the CLI: the share route takes the kind of sharing and the people, but no password to set.",
-      "instead": "Share the dashboard with each person by email, or set the password in the Mammoth app.",
-      "workarounds": [
-        {
-          "command_id": "dashboard.share",
-          "example": "mammoth dashboard share DASHBOARD_ID --input '{\"type_of_auth\": \"mammoth\", \"users\": [{\"email\": \"colleague@example.com\"}]}' --yes"
-        }
-      ],
-      "doc": "references/recipes/dashboards.md",
-      "keywords": [
-        "password",
-        "protected",
-        "share",
-        "dashboard",
-        "link",
-        "secret",
-        "lock"
-      ]
     }
   ]
 }

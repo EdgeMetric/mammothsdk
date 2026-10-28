@@ -148,6 +148,32 @@ def _read_view_methods() -> frozenset[str]:
     )
 
 
+#: Argument names whose values never appear in a dry-run report: the report is printed and
+#: journaled, and a share or export password in it would be a leak.
+SECRET_ARGUMENT_KEYS = frozenset({"password", "password_file"})
+REDACTED_ARGUMENT = "***REDACTED***"
+
+
+def redact_arguments(value: Any) -> Any:
+    """Replace the value of every secret argument in plain data, at any depth.
+
+    Args:
+        value: Plain data such as :func:`jsonable` returns (mappings, lists, scalars).
+
+    Returns:
+        A copy with the value under each :data:`SECRET_ARGUMENT_KEYS` key replaced by
+        :data:`REDACTED_ARGUMENT`; the input is not changed.
+    """
+    if isinstance(value, Mapping):
+        return {
+            key: REDACTED_ARGUMENT if key in SECRET_ARGUMENT_KEYS else redact_arguments(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [redact_arguments(item) for item in value]
+    return value
+
+
 def jsonable(value: Any) -> Any:
     """Render resolved SDK arguments for the report without leaking objects."""
     if isinstance(value, Enum):
@@ -208,7 +234,9 @@ def plan_call(service: Any, symbol: str, arguments: dict[str, Any]) -> None:
     """
     gate = getattr(service, "gate", None)
     if isinstance(gate, DryRunGate):
-        gate.planned.append({"sdk_symbol": symbol, "arguments": jsonable(arguments)})
+        gate.planned.append(
+            {"sdk_symbol": symbol, "arguments": redact_arguments(jsonable(arguments))}
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -298,7 +326,7 @@ def make_gate(command_id: str) -> DryRunGate:
                 "would_call": {
                     "sdk_symbol": symbol,
                     **{key: value for key, value in scope.items() if value is not None},
-                    "arguments": jsonable(shown),
+                    "arguments": redact_arguments(jsonable(shown)),
                 },
                 "note": NOTE_OWN if own else NOTE_UNDECLARED,
                 **earlier,

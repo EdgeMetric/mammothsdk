@@ -189,6 +189,14 @@ the user to use Download PDF in the app; never retry with `{"data": {}}`.
 not publish: `was_published` stays false until you also run
 `dashboard action DASHBOARD_ID --input '{"action":"publish-presentation"}'`.
 `share` returns `data: null`; read the url slug back with `dashboard get`.
+
+To put the link behind a password, write it (8 to 128 characters) to a file and
+pass the path, never the password itself:
+`mammoth dashboard share ID --input '{"type_of_auth": "password", "password_file": "./pw.txt"}' --yes`.
+The trailing newline is stripped and the password is never printed or logged.
+Sharing as `password` again without `password_file` keeps the old password;
+`dashboard get` shows `options.has_password: true`, never the password. To undo,
+share as `mammoth` or `public` again. Viewers enter the password on the link.
 `dashboard action` with `publish-data` on a board that was never published
 publishes the presentation instead and says so. `share` and `action` print the
 deliverable check in their confirmation text.

@@ -14,12 +14,14 @@ import json
 from datetime import UTC, datetime
 
 from mammoth.exceptions import MammothAPIError, MammothError
+from mcp.server.mcpserver.exceptions import ToolError
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
+from .appends import Plan, prepare_append, restore_mode
 from .config import MCP_UPLOAD_URL
-from .consts import UPLOAD_FIELD, ApiPaths, ErrorFields, UploadFields
+from .consts import UPLOAD_FIELD, ApiPaths, AppendFields, ErrorFields, UploadFields
 from .jobs import find_job_id
 from .sdk import FileUpload, FileUploads, JsonValue, build_client
 from .store import Record
@@ -190,7 +192,10 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
         return JSONResponse({ErrorFields.MESSAGE: NO_FILE}, status_code=400)
     uploaded_at = datetime.now(UTC).isoformat()
     try:
-        started = await send_to_mammoth(ticket, files)
+        started, plan = await send_to_mammoth(ticket, files)
+    except ToolError as refused:
+        # The target dataset could not be read or its update method set: nothing was sent.
+        return JSONResponse({ErrorFields.MESSAGE: str(refused).strip() or REFUSED}, status_code=400)
     except MammothError as refused:
         # Mammoth's own words: "not authorized", a project pin, a size limit.
         # Unhandled, this leaves as a 500 and the page can only say the upload
@@ -205,6 +210,7 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
         find_job_id(started),
         [name for name, _, _ in files],
         uploaded_at=uploaded_at,
+        append=plan,
     )
     return JSONResponse({UploadFields.STATUS: UploadFields.PROCESSING})
 
@@ -215,25 +221,51 @@ def refused_status(refused: MammothError) -> int:
     return status if isinstance(status, int) and 400 <= status <= 599 else RELAYED_STATUS
 
 
-async def send_to_mammoth(ticket: Record, files: FileUploads) -> dict[str, JsonValue]:
+async def send_to_mammoth(
+    ticket: Record, files: FileUploads
+) -> tuple[dict[str, JsonValue], Plan | None]:
     """Upload the files to the ticket's project, as the user who asked for it.
 
     The same route the web app uploads through, so every check, limit and
-    audit trail is the user's own.
+    audit trail is the user's own. For a ticket that names a dataset, the
+    dataset's update method is set first (the backend reads it when the file
+    lands) and put back if Mammoth refuses the files.
+
+    Returns:
+        The route's answer, and what was read of the target dataset before the
+        files went (None when the files make a new dataset).
+
+    Raises:
+        ToolError: If the target dataset cannot be read or set up.
+        MammothError: If Mammoth refuses the files.
     """
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
+    target = ticket.get(UploadFields.APPEND_TO)
     with as_the_caller(read_caller(ticket)):
-        async with build_client(workspace_id, project_id) as client:
-            # Not `request_api`: that turns a refusal into the ToolError a
-            # model reads. This answer goes to a browser, which needs what
-            # Mammoth actually said and the status it said it with.
-            payload: dict[str, JsonValue] = await client.request_json(
-                "POST",
-                ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
-                files=[(UPLOAD_FIELD, one) for one in files],
+        plan = (
+            await prepare_append(
+                workspace_id, project_id, int(target), ticket.get(UploadFields.MODE)
             )
-    return payload
+            if target is not None
+            else None
+        )
+        try:
+            async with build_client(workspace_id, project_id) as client:
+                # Not `request_api`: that turns a refusal into the ToolError a
+                # model reads. This answer goes to a browser, which needs what
+                # Mammoth actually said and the status it said it with.
+                payload: dict[str, JsonValue] = await client.request_json(
+                    "POST",
+                    ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
+                    params={AppendFields.TARGET_QUERY: target} if target is not None else None,
+                    files=[(UPLOAD_FIELD, one) for one in files],
+                )
+        except MammothError:
+            if plan is not None:
+                await restore_mode(workspace_id, project_id, plan)
+            raise
+    return payload, plan
 
 
 async def read_upload(one: UploadFile) -> FileUpload:

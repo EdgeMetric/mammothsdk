@@ -64,6 +64,7 @@ from mammoth_cli.services.dashboard_review import (
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
 from mammoth_cli.services.delete_check import ensure_deleted
+from mammoth_cli.services.secret_files import read_secret_file
 
 
 def dashboard_list(invocation: Invocation) -> HandlerResult:
@@ -427,6 +428,16 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "type_of_auth": type_of_auth}
     assert document is not None
     _forward_optional(document, kwargs, ("users",))
+    password_file = document.get("password_file")
+    if password_file is not None:
+        if type_of_auth != "password":
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"password_file needs type_of_auth password, not {type_of_auth}.",
+                exit_status=EXIT_USAGE,
+                hint='Use {"type_of_auth": "password", "password_file": "./pw.txt"}.',
+            )
+        kwargs["password"] = read_secret_file(password_file)
     with open_service(invocation) as (service, auth):
         was_published = _was_published(service, dashboard_id)
         if not was_published:

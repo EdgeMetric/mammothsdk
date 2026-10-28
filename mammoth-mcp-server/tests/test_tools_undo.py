@@ -287,3 +287,14 @@ class TestThePipelinesVersions:
 
         assert "versions" not in answer
         assert not api.sent("GET", VERSIONS)
+
+
+class TestRemovingABatchNamesWhatItRemoves:
+    """The arguments are checked before anything is sent: removal cannot be undone."""
+
+    @pytest.mark.parametrize("arguments", [{}, {"batch_ids": [7]}, {"dataset_id": DATASET}])
+    def test_a_batch_needs_its_dataset_and_its_ids(self, arguments: dict[str, Any]) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="batch_ids"):
+            call_tool("undo", what="batch", **IDS, **arguments)
+
+        assert api.requests == []

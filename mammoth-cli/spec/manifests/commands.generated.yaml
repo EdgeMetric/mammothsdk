@@ -13462,8 +13462,7 @@ commands:
   - CT-DASHBOARD-SHARE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B14 DASHBOARD_PASSWORD_MISSING: password sharing is an enum value but the SDK signature
-    has no password input; type_of_auth=password blocked pending contract/repair.'
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.signature.create
   command_path: dashboard signature create

@@ -82,6 +82,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.update": frozenset({"patch_data"}),
     # The endpoint names the target page as ``page``; the handler maps it onto these two.
     "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
+    # The password comes from ``password_file``, never from the command line.
+    "dashboard.share": frozenset({"password"}),
     # The handler builds the panel from ``edits`` and the figure from ``card``.
     "view.explore-panel.edit": frozenset({"panel"}),
     "view.explore-panel.add-to-dashboard": frozenset(

@@ -2483,8 +2483,6 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: 'B14 DASHBOARD_PASSWORD_MISSING: password sharing is an enum value but the SDK signature has
-    no password input; type_of_auth=password blocked pending contract/repair.'
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.signature_create
   canonical_command: dashboard.signature.create
   alias_of: null
