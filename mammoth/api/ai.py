@@ -161,22 +161,23 @@ class AIAPI:
         self,
         intent: str,
         sequence_number: int = 0,
-        dataset_id: int | None = None,
-        dataview_id: int | None = None,
+        *,
+        dataset_id: int,
+        dataview_id: int,
         current_query: str | None = None,
     ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
         Uses the project-level sql_generation endpoint. Both ``dataset_id`` and ``dataview_id``
-        are required: the server reads the table to write against from the view, and answers
-        a request without ``dataview_id`` with its default view 4, which is not the caller's.
+        are required keyword arguments: the server reads the table to write against from the
+        view, and answers a request without ``dataview_id`` with its default view 4, which is
+        not the caller's.
 
         Args:
             intent: Natural language description of the query.
             sequence_number: Sequence number for the SQL generation request.
-            dataset_id: Dataset the SQL is generated against (required).
-            dataview_id: Dataview within that dataset whose table the SQL is written against
-                (required).
+            dataset_id: Dataset the SQL is generated against.
+            dataview_id: Dataview within that dataset whose table the SQL is written against.
             current_query: The SQL the rule holds now. When given, the intent asks to change
                 this query rather than write a new one; its ``{param}`` and ``{{snippet}}``
                 tokens are kept.
@@ -184,10 +185,6 @@ class AIAPI:
         Returns:
             Dict with generated SQL and metadata.
         """
-        if dataset_id is None:
-            raise MammothValidationError("generate_sql requires `dataset_id`.")
-        if dataview_id is None:
-            raise MammothValidationError("generate_sql requires `dataview_id`.")
         ws = self._ws()
         proj = self._proj()
         params: dict[str, Any] = {"dataset_id": dataset_id, "dataview_id": dataview_id}

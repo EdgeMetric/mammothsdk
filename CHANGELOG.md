@@ -53,7 +53,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Changed (next mammoth-io)
 
-- SDK: `AIAPI.generate_sql` requires `dataview_id`, as it requires `dataset_id`. Without it the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. The call is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
+- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
 
 ### Fixed (next mammoth-cli)
 

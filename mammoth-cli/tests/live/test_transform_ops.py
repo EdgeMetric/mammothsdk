@@ -14,14 +14,13 @@ from __future__ import annotations
 import csv
 import io
 import json
-import time
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from live_harness import LiveCli, open_live_service, upload_csv
+from live_harness import LiveCli, open_live_service, upload_csv, wait_for
 
 pytestmark = pytest.mark.live
 
@@ -98,15 +97,6 @@ class Table:
             project=self.project,
         )
         return float(data["data"][0]["total"])
-
-    def total_settles_to(self, column: str, expected: float, timeout: float = 30.0) -> float:
-        """``total`` read until it is ``expected`` or ``timeout`` seconds have passed."""
-        deadline = time.monotonic() + timeout
-        found = self.total(column)
-        while found != expected and time.monotonic() < deadline:
-            time.sleep(1.0)
-            found = self.total(column)
-        return found
 
     def values(self, column: str) -> list[Any]:
         document = {"group_by": [column], "aggregations": [{"function": "COUNT", "as_name": "n"}]}
@@ -411,7 +401,8 @@ def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items:
     assert items.steps() == before
     # The rollback queues the view's re-run: the pipeline reads ready and idle, and the data is
     # the batch's (a SUM of 60) for a few seconds before it is the original's.
-    assert items.total_settles_to("Cost", 100) == 100
+    settled = wait_for(lambda: items.total("Cost"), lambda v: v == 100, timeout=30, interval=1)
+    assert settled == 100
 
 
 def test_a_batch_step_can_use_a_column_an_earlier_copy_step_creates(items: Table) -> None:
@@ -502,10 +493,9 @@ def test_the_service_turns_a_raw_json_mapping_into_the_bulk_replace_task(items: 
             items.view, "bulk_replace", dataset_id=items.dataset, columns=["Item"], mapping=mapping
         )
 
-    deadline = time.monotonic() + 90
-    while items.values("Item") != ["TOOL", "TOOL", "gizmo", "widget"]:
-        assert time.monotonic() < deadline, items.values("Item")
-        time.sleep(3)
+    expected = ["TOOL", "TOOL", "gizmo", "widget"]
+    found = wait_for(lambda: items.values("Item"), lambda v: v == expected, timeout=90, interval=3)
+    assert found == expected
 
 
 # -- display-name resolution ----------------------------------------------

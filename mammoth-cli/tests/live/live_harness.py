@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,6 +59,18 @@ class LiveCli:
         assert "error" in envelope, f"`{' '.join(args)}` should have failed: {envelope}"
         error: dict[str, Any] = envelope["error"]
         return error
+
+
+def wait_for(
+    read: Callable[[], Any], done: Callable[[Any], bool], *, timeout: float, interval: float
+) -> Any:
+    """Call ``read`` until ``done(value)`` holds or ``timeout`` seconds pass; return the last."""
+    deadline = time.monotonic() + timeout
+    while True:
+        value = read()
+        if done(value) or time.monotonic() > deadline:
+            return value
+        time.sleep(interval)
 
 
 def upload_csv(cli: LiveCli, project: int, path: Path, text: str) -> tuple[int, int]:
