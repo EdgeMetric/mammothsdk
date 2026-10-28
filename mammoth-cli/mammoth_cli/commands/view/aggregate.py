@@ -368,40 +368,43 @@ def _run_aggregate_for_compare(
     return (rows if isinstance(rows, list) else []), meta
 
 
+#: How many one-sided rows ``view data compare`` lists per view; the count is always exact.
+COMPARE_UNMATCHED_CAP = 25
+
+
 def _index_by_key(
     rows: list[dict[str, Any]], key_columns: list[str]
 ) -> dict[tuple[Any, ...], dict[str, Any]]:
     return {tuple(row.get(column) for column in key_columns): row for row in rows}
 
 
-def _require_matched_keys(
-    keyed_a: dict[tuple[Any, ...], dict[str, Any]],
-    keyed_b: dict[tuple[Any, ...], dict[str, Any]],
+def _unmatched(
+    keyed: dict[tuple[Any, ...], dict[str, Any]],
+    other: dict[tuple[Any, ...], dict[str, Any]],
     key_columns: list[str],
-    view_id_a: int,
-    view_id_b: int,
-) -> None:
-    """Fail loud -- never silently drop -- when a key is on only one side."""
-    only_a = sorted(keyed_a.keys() - keyed_b.keys(), key=str)
-    only_b = sorted(keyed_b.keys() - keyed_a.keys(), key=str)
-    if not only_a and not only_b:
-        return
+    value_columns: list[str],
+) -> dict[str, Any]:
+    """Describe the rows of one view whose key the other view lacks.
 
-    def _describe(keys: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
-        return [dict(zip(key_columns, key, strict=True)) for key in keys[:10]]
+    Args:
+        keyed: One view's aggregate rows, by group-by key.
+        other: The other view's aggregate rows, by group-by key.
+        key_columns: The group-by display names.
+        value_columns: The aggregate display names.
 
-    raise CliError(
-        code=CODE_INVALID_ARGUMENTS,
-        message=(
-            f"view {view_id_a} and view {view_id_b} do not share the same "
-            f"{'/'.join(key_columns) or 'rows'}: {len(only_a)} only in view {view_id_a}, "
-            f"{len(only_b)} only in view {view_id_b}."
-        ),
-        exit_status=EXIT_USAGE,
-        hint="compare only reports a row where both views have the key; reconcile or "
-        "narrow with 'condition' before comparing.",
-        details={"only_in_first": _describe(only_a), "only_in_second": _describe(only_b)},
-    )
+    Returns:
+        ``count`` of such keys, and ``rows`` with the first ``COMPARE_UNMATCHED_CAP`` of them
+        (key and values, in key order); ``truncated`` is set when the list was cut.
+    """
+    keys = sorted(keyed.keys() - other.keys(), key=str)
+    shown = [
+        {column: keyed[key].get(column) for column in [*key_columns, *value_columns]}
+        for key in keys[:COMPARE_UNMATCHED_CAP]
+    ]
+    result: dict[str, Any] = {"count": len(keys), "rows": shown}
+    if len(keys) > len(shown):
+        result["truncated"] = True
+    return result
 
 
 def _decimal_or_raise(value: Any, column: str) -> Decimal:
@@ -444,8 +447,9 @@ def view_data_compare(invocation: Invocation) -> HandlerResult:
     (``aggregations``/``group_by``, or ``metric``) and runs it against both
     views, joining the rows on the group-by key (or as a single row for a bare
     metric) and returning an exact Decimal delta per key -- never ask the
-    caller to subtract. A key present on only one side fails loud instead of
-    silently reporting a partial diff.
+    caller to subtract. A key present on only one side is not an error (that is when
+    a comparison is most useful): ``only_in_first``/``only_in_second`` report its
+    count and the first rows, and ``rows`` holds the keys both views have.
     """
     require_project(invocation)
     view_id_a = _require_int_positional_at(invocation, 0, "first view id")
@@ -456,6 +460,11 @@ def view_data_compare(invocation: Invocation) -> HandlerResult:
     rows_b, _meta_b = _run_aggregate_for_compare(invocation, view_id_b)
     keyed_a = _index_by_key(rows_a, key_columns)
     keyed_b = _index_by_key(rows_b, key_columns)
-    _require_matched_keys(keyed_a, keyed_b, key_columns, view_id_a, view_id_b)
-    compared = _compare_rows(keyed_a, keyed_b, key_columns, value_columns)
-    return {_ROWS_KEY: compared}, meta
+    shared = {key: keyed_a[key] for key in keyed_a.keys() & keyed_b.keys()}
+    compared = _compare_rows(shared, keyed_b, key_columns, value_columns)
+    return {
+        _ROWS_KEY: compared,
+        "matched": len(compared),
+        "only_in_first": _unmatched(keyed_a, keyed_b, key_columns, value_columns),
+        "only_in_second": _unmatched(keyed_b, keyed_a, key_columns, value_columns),
+    }, meta
