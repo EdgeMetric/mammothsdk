@@ -37,7 +37,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
 - SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
 - SDK: update method. `DatasetsAPI.get_update_method(dataset_id)` reads whether a new file replaces a dataset's rows or adds to them (the web app's "Update Method"). `DatasetsAPI.set_update_method(dataset_id, mode, schema_mapping=None)` sets it to `DataAdditionMode.REPLACE` or `DataAdditionMode.COMBINE`. Set reads the dataset's stored schema settings first and writes them back with only the mode (and `schema_mapping`) changed, so the other settings are kept.
-- SDK: `FilesAPI.upload_result` returns `files`: the uploads that made no dataset, each with `action_needed`, either `sheet_selection_required` (with `sheets_info`) for a workbook or `password_required`.
+- SDK: `FilesAPI.upload_result` returns `files`: the uploads that made no dataset, each with `action_needed`, either `sheet_selection_required` (with `sheets_info`) for a workbook or `password_required`. A file is matched to the upload by name among the project's newest files; when that list cannot be read, `files` is empty and `files_error` says why.
 - SDK: `mammoth.api.automations.build_automation_create_body` and `build_automation_patch_ops` are public. They validate and build the request body that `AutomationsAPI.create` and `update` send; the CLI's dry run uses them.
 
 ### Changed (next mammoth-io)
@@ -54,7 +54,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
 - CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs the next mammoth-io (the release raises the floor).
 - CLI: `dataset update-method get DATASET_ID` and `dataset update-method set DATASET_ID --input '{"mode": "replace"}'` (`mode` is `replace` or `add`; `schema_mapping` is optional). The setting stays on the dataset, and so does every later upload into it. A set reports `previous_mode`, and `history undo` sets the previous mode back.
-- CLI: `file upload` takes `mode` (`replace` or `add`) with `append_to_ds_id`, which sets the target's update method before the upload, and `sheets`, the sheet names to extract from a workbook that waits for a choice. An append reports `batch_ids`, the batches it added.
+- CLI: `file upload` takes `mode` (`replace` or `add`) with `append_to_ds_id`, which sets the target's update method before the upload, and `sheets`, the sheet names to extract from a workbook that waits for a choice. If the upload then fails, the previous mode is set back. An append reports `update_method` (the mode it ran under, read from the dataset when no `mode` was given) and `batch_ids`, the new batches whose source is the uploaded file; a new batch that can't be tied to it is listed in `unmatched_batch_ids`. `--dry-run` with `mode` lists the mode change under `earlier_calls` beside the upload.
 - CLI: an upload that waits on a person says so. A workbook with several sheets returns `needs_sheet_choice` with a runnable `file extract-sheets` command; a password-protected file returns `needs_password` with a `file set-password` command. Each file that made no dataset is listed in `files`, and `verify.needs_user` is set for these uploads.
 - CLI: `batch list` marks batches whose source was deleted: `source_deleted: true` and `display_name`, the name without the " (Deleted)" suffix.
 - CLI: `dataset file-settings update` takes any one of its fields; the fields left out keep their stored values.
@@ -68,14 +68,17 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 - CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.
 - CLI: `view transform discard-duplicates` takes `key_columns` (the columns that make a row a duplicate; every other column is ignored). `recipe run` refuses an input only when it still holds that input's own `<name>` placeholder.
-- CLI: `history undo` of an append deletes the batch that upload added, and so its rows.
+- CLI: `history undo` of an append deletes the batch that upload added, and so its rows. It deletes nothing when the dataset's update method was replace (the old rows are gone) or could not be read, or when no new batch could be tied to the upload.
 - CLI: a `need_action` hint points at `dataset interpretation preview` for a header or title-row problem; other cases still point at `dataset file-settings get`.
-- CLI: `file delete` reads the file back after the delete and says it is gone (`deleted` names it); `automation delete` does the same.
+- CLI: `file delete` reads the file back after the delete and says it is gone (`deleted` names it); `automation delete` and `dashboard delete` do the same. A dashboard's read-back answers 403 once it is deleted, so that counts as gone only when the dashboard could be read just before the delete; otherwise the result is `delete_unverified`.
 - CLI: the `file-dataset-refresh` limitation names both ways to load a new file into a dataset: add its rows (the default) or replace them.
+
+### Deprecated (next mammoth-cli)
+
+- CLI: `file upload`'s `staging_dataset_ids` (the temporary dataset an append makes, which the backend deletes) will be removed in the next release. Read `appended_to` and `batch_ids` instead.
 
 ### Removed (next mammoth-cli)
 
-- CLI: `file upload` no longer returns `staging_dataset_ids`. An append reports `appended_to` and `batch_ids` instead.
 - CLI: the `mcp-task-edit` entry is removed from the limitations list.
 
 ### Fixed (next mammoth-cli)

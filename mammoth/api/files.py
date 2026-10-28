@@ -236,12 +236,21 @@ class FilesAPI:
         """Upload files and report the created datasets AND any server refusals.
 
         Like :meth:`upload`, but returns ``{"job_id", "dataset_ids", "errors", "nested_job_ids",
-        "files"}``. ``errors`` is the upload job's own ``errors`` map (for example
+        "files"}`` (plus ``files_error`` when the project's file list could not be read).
+        ``errors`` is the upload job's own ``errors`` map (for example
         ``{"unsupported_files": ["X.pbix"]}``), empty when nothing was refused. ``files``
         lists each uploaded file that made no dataset and what it waits on:
         ``{"file_id", "name", "status", "action_needed"}``, where ``action_needed`` is
         Mammoth's own ``user_action_required`` type (``sheet_selection_required`` with
         ``sheets_info`` for a workbook, ``password_required``, ...) or ``None``.
+
+        A file is matched to this upload by its name
+        among the project's 50 newest files, made no earlier than 5 minutes before the
+        upload was sent: the file listing carries no job or batch id (only ``created_by``,
+        a user name). A same-named file uploaded within those 5 minutes can be taken for
+        this one, and a file pushed out by more than 50 newer ones is not found. When the
+        listing could not be read, ``files`` stays empty and ``files_error`` holds the
+        message.
 
         Each file becomes a separate dataset. Folder structure is preserved.
 
@@ -344,9 +353,14 @@ class FilesAPI:
                 # A file that stops for the user (a workbook's sheets, a password)
                 # ends its job with no ``ds_id`` and no file id: the project's
                 # resource list is where it says what it waits on.
-                outcome["files"] = await self._waiting_files(
-                    [part[0] for _, part in file_data], sent_at, min(float(timeout), _SETTLE_S)
-                )
+                try:
+                    outcome["files"] = await self._waiting_files(
+                        [part[0] for _, part in file_data],
+                        sent_at,
+                        min(float(timeout), _SETTLE_S),
+                    )
+                except MammothAPIError as exc:
+                    outcome["files_error"] = str(exc)
 
         return outcome
 
@@ -385,18 +399,16 @@ class FilesAPI:
     async def _uploaded_files(self, names: _list[str], sent_at: datetime) -> _list[dict[str, Any]]:
         """The newest project file of each name in ``names`` made since ``sent_at``.
 
-        The upload itself went through, so a failed read here reports no files
-        rather than failing it.
+        Raises:
+            MammothAPIError: If the project's file list cannot be read; the caller
+                reports it, since the upload itself went through.
         """
-        try:
-            listed = await self._client.browse.resources_list(
-                resource_type=_FILE_RESOURCE,
-                sort="created_at:desc",
-                limit=_NEWEST_FILES,
-                fields="full",
-            )
-        except MammothAPIError:
-            return []
+        listed = await self._client.browse.resources_list(
+            resource_type=_FILE_RESOURCE,
+            sort="created_at:desc",
+            limit=_NEWEST_FILES,
+            fields="full",
+        )
         wanted = set(names)
         found: _list[dict[str, Any]] = []
         for item in listed.get("resources") or []:

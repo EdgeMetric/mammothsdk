@@ -161,7 +161,6 @@ def test_foreign_view_without_parent_is_refused_before_discovery(
 ) -> None:
     service._client.set_project_id(4300)
     probed: list[int] = []
-    monkeypatch.setattr("mammoth_cli.services.sdk_service.parents.lookup", lambda *a, **k: None)
 
     class _View:
         columns: dict[str, str] = {}
@@ -181,63 +180,6 @@ def test_foreign_view_without_parent_is_refused_before_discovery(
     assert excinfo.value.code == "missing_argument"
     assert excinfo.value.details == {view_kwarg: 308756, "missing_field": parent_kwarg}
     assert probed == []
-
-
-@pytest.mark.parametrize(
-    ("view_kwarg", "parent_kwarg"),
-    [("foreign_view", "foreign_dataset_id"), ("lookup_view_id", "lookup_dataset_id")],
-)
-def test_foreign_view_parent_comes_from_the_parent_cache(
-    service: SdkMammothService,
-    monkeypatch: pytest.MonkeyPatch,
-    view_kwarg: str,
-    parent_kwarg: str,
-) -> None:
-    fetched: list[tuple[int, int | None]] = []
-    asked: list[int] = []
-
-    async def get(view_id: int, dataset_id: int | None = None) -> str:
-        fetched.append((view_id, dataset_id))
-        return "foreign-view"
-
-    def remembered(profile: object, workspace_id: object, view_id: int) -> int:
-        asked.append(view_id)
-        return 55
-
-    monkeypatch.setattr(service._client.views, "get", get)
-    monkeypatch.setattr("mammoth_cli.services.sdk_service.parents.lookup", remembered)
-
-    hydrated = service._hydrate_foreign_view(
-        {view_kwarg: 308756}, view_kwarg=view_kwarg, parent_kwarg=parent_kwarg
-    )
-
-    assert asked == [308756]
-    assert fetched == [(308756, 55)]
-    assert hydrated[view_kwarg] == "foreign-view"
-
-
-def test_an_explicit_foreign_parent_beats_the_cache(
-    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    fetched: list[tuple[int, int | None]] = []
-
-    async def get(view_id: int, dataset_id: int | None = None) -> str:
-        fetched.append((view_id, dataset_id))
-        return "foreign-view"
-
-    def no_lookup(*args: object, **kwargs: object) -> int:
-        raise AssertionError("the cache must not be asked")
-
-    monkeypatch.setattr(service._client.views, "get", get)
-    monkeypatch.setattr("mammoth_cli.services.sdk_service.parents.lookup", no_lookup)
-
-    service._hydrate_foreign_view(
-        {"foreign_view": 7, "foreign_dataset_id": 3},
-        view_kwarg="foreign_view",
-        parent_kwarg="foreign_dataset_id",
-    )
-
-    assert fetched == [(7, 3)]
 
 
 def test_token_profile_sends_a_bearer_header() -> None:

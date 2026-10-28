@@ -20,6 +20,7 @@ from mammoth_cli.errors.envelope import (
 
 CODE_HAS_DEPENDENTS = "has_dependents"
 CODE_DELETE_NOT_APPLIED = "delete_not_applied"
+CODE_DELETE_UNVERIFIED = "delete_unverified"
 #: A removal can lag the acknowledgement a little; reread this often, this far apart.
 _RECHECK_ATTEMPTS = 4
 _RECHECK_DELAY_S = 1.0
@@ -59,18 +60,33 @@ GONE_BACKEND_CODES: dict[str, tuple[str, str]] = {
     "4AUTO005": ("automation", "automation list"),
     "4DASH001": ("dashboard", "dashboard list"),
 }
-#: Dashboard routes answer ``403`` (the permission check runs before the lookup), not a not-found,
-#: for a deleted dashboard. Only a read-back of a just-deleted id may treat that as gone.
-_GONE_STATUS_NOUNS = frozenset({"dashboard"})
+#: What a read-back that was refused with a permission denial looks like.
+_FORBIDDEN_STATUS = 403
+_FORBIDDEN_BACKEND_CODE = "4PERM002"
 
 
-def _is_gone(error: CliError, noun: str) -> bool:
-    """Whether a read-back error says the just-deleted ``noun`` is gone."""
+def _is_forbidden(error: CliError) -> bool:
+    """Whether ``error`` is a permission denial (HTTP 403 or the generic 4PERM002)."""
+    details = error.details or {}
+    return (
+        details.get("status_code") == _FORBIDDEN_STATUS
+        or details.get("backend_code") == _FORBIDDEN_BACKEND_CODE
+    )
+
+
+def _is_gone(error: CliError, *, forbidden_means_gone: bool = False) -> bool:
+    """Whether a read-back error says the just-deleted resource is gone.
+
+    A permission denial counts only when ``forbidden_means_gone`` is set: the dashboard routes
+    check permission before existence, so a deleted dashboard answers 403, but a real denial
+    looks the same. The caller sets the flag only when it read the resource with these
+    credentials before deleting it.
+    """
     details = error.details or {}
     return (
         error.code == CODE_RESOURCE_NOT_FOUND
         or details.get("backend_code") in GONE_BACKEND_CODES
-        or (noun in _GONE_STATUS_NOUNS and details.get("status_code") == 403)
+        or (forbidden_means_gone and _is_forbidden(error))
     )
 
 
@@ -105,6 +121,7 @@ def ensure_deleted(
     read_kwargs: dict[str, Any],
     responses: tuple[Any, ...],
     recovery_commands: list[str] | None = None,
+    forbidden_means_gone: bool = False,
 ) -> None:
     """Raise unless the resource is gone after a delete.
 
@@ -116,10 +133,15 @@ def ensure_deleted(
         read_kwargs: Its arguments.
         responses: What the delete (and its job) returned, searched for a dependency map.
         recovery_commands: Runnable commands that help clear the blockers.
+        forbidden_means_gone: Whether a 403 on the read-back proves the delete. Set it only
+            when the caller read the resource with the same credentials just before deleting
+            it and the delete call succeeded, so the access was there a moment ago.
 
     Raises:
         CliError: ``has_dependents`` when the server reported what depends on it,
             otherwise ``delete_not_applied``; the resource is still there either way.
+            ``delete_unverified`` when the read-back was refused with a 403 that
+            ``forbidden_means_gone`` does not vouch for: whether it is gone is not known.
     """
     dependents = next(
         (found for found in (find_dependents(r, resource_id) for r in responses) if found), None
@@ -131,8 +153,19 @@ def ensure_deleted(
         try:
             record = service.call(read_symbol, **read_kwargs)
         except CliError as error:
-            if _is_gone(error, noun):
+            if _is_gone(error, forbidden_means_gone=forbidden_means_gone):
                 return
+            if _is_forbidden(error):
+                raise CliError(
+                    code=CODE_DELETE_UNVERIFIED,
+                    message=(
+                        f"The {noun} {resource_id} delete was accepted, but reading it back "
+                        "was refused (403), so it is not known whether it is gone."
+                    ),
+                    exit_status=EXIT_API,
+                    hint=f"Check with the {noun} list command, or ask an admin to confirm.",
+                    details={f"{noun}_id": resource_id, "deleted": None, "read_back": 403},
+                ) from error
             raise
         if not _still_there(record, resource_id):
             return

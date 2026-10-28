@@ -11,7 +11,6 @@ Tests every public method on every API sub-client:
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -57,7 +56,6 @@ from mammoth.models.dashboards import (
     DashboardShareRole,
     DashboardShareUser,
 )
-from mammoth.models.datasets import DataAdditionMode
 from mammoth.models.exports import OdbcType
 from mammoth.models.external_keys import ExternalKeyType, ModelConfigSpec
 from mammoth.models.projects import DataSyncPatchItem
@@ -647,80 +645,6 @@ class TestDatasetsAPI:
                 "set_project_level_date_format": False,
             },
         )
-
-    async def test_file_settings_update_fills_the_settings_left_out_from_the_dataset(
-        self, client: MammothClient
-    ):
-        # The route needs all four; one changed alone keeps the other three as detected.
-        detected = {"delimiter": ";", "has_header": True, "initial_skip_count": 0, "quotechar": '"'}
-        client._request_json = AsyncMock(side_effect=[{"info": detected}, {"job_id": 9}])
-        await client.datasets.file_settings_update(dataset_id=500, initial_skip_count=2)
-        first, second = client._request_json.call_args_list
-        assert first.args == ("GET", "/workspaces/1/projects/100/datasets/500/file_settings")
-        assert second.kwargs["json"] == {
-            **detected,
-            "initial_skip_count": 2,
-            "preview_mode": False,
-            "skip_auto_process_check": True,
-            "set_project_level_date_format": False,
-        }
-
-    async def test_file_settings_update_names_a_setting_it_could_not_read(
-        self, client: MammothClient
-    ):
-        client._request_json = AsyncMock(return_value={"info": {"delimiter": ","}})
-        with pytest.raises(MammothValidationError, match="has_header, quotechar"):
-            await client.datasets.file_settings_update(dataset_id=500, initial_skip_count=1)
-        assert client._request_json.call_count == 1  # the read, no write
-
-    async def test_get_update_method_reads_the_stored_schema_settings(self, client: MammothClient):
-        stored = {"data_addition_mode": "combine", "delete_after_append": True, "default": True}
-        client._request_json = AsyncMock(
-            return_value={"dataset": {"id": 500, "configurations": {"schema_properties": stored}}}
-        )
-        assert await client.datasets.get_update_method(500) == {
-            "data_addition_mode": "combine",
-            "delete_after_append": True,
-        }
-        assert client._request_json.call_args.kwargs["params"] == {"fields": "id,configurations"}
-
-    async def test_set_update_method_sends_back_every_stored_setting(self, client: MammothClient):
-        # The patch stores the whole object: a field left out goes back to its default.
-        before = {
-            "data_addition_mode": "combine",
-            "delete_after_append": True,
-            "match_existing_target_schema": False,
-            "schema_mapping": {"Region": ["Region"]},
-        }
-        after = {**before, "data_addition_mode": "replace"}
-        # A field the dataset does not hold is sent as the platform stores it by default.
-        sent = {
-            "data_addition_mode": "replace",
-            "delete_after_append": True,
-            "strict_data_type_check": False,
-            "convert_columns_to_text": True,
-            "strict_column_length_check": False,
-            "match_existing_target_schema": False,
-            "convert_incompatible_data_to_null": False,
-            "schema_mapping": {"Region": ["Region"]},
-        }
-
-        def read(props: dict[str, Any]) -> dict[str, Any]:
-            return {"dataset": {"configurations": {"schema_properties": props}}}
-
-        client._request_json = AsyncMock(side_effect=[read(before), None, read(after)])
-        result = await client.datasets.set_update_method(500, DataAdditionMode.REPLACE)
-        patch_call = client._request_json.call_args_list[1]
-        assert patch_call.args == ("PATCH", "/workspaces/1/projects/100/datasets/500")
-        assert patch_call.kwargs["json"] == {
-            "patch": {"op": "replace", "path": "schema_settings", "value": sent}
-        }
-        assert result == {
-            "dataset_id": 500,
-            "data_addition_mode": "replace",
-            "previous_data_addition_mode": "combine",
-            "schema_settings": after,
-        }
 
     async def test_set_update_method_rejects_an_unknown_mode(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="'append'"):

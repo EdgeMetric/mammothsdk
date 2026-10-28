@@ -117,6 +117,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
     "has_dependents": "Other items still depend on this, so it was not deleted.",
     "delete_not_applied": "The delete was accepted but the item is still there.",
+    "delete_unverified": "The delete was accepted, but it could not be checked as gone.",
     "column_type_mismatch": "A column has the wrong type for this step, so nothing was changed.",
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
     "device_login_expired": "The sign-in code expired before it was approved.",

@@ -63,6 +63,7 @@ from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.delete_check import ensure_deleted
 
 
 def dashboard_list(invocation: Invocation) -> HandlerResult:
@@ -648,8 +649,27 @@ def dashboard_delete(invocation: Invocation) -> HandlerResult:
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete dashboard {dashboard_id}"
     )
     with open_service(invocation) as (service, auth):
+        # Read it first: the get route answers 403 for a deleted id, as it does for a real
+        # denial, so the read-back below may call a 403 "gone" only if this read had access.
+        try:
+            service.call(_DASHBOARD_GET, dashboard_id=dashboard_id)
+            had_access = True
+        except CliError:
+            had_access = False
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
-    return data, _meta(invocation, auth.workspace_id)
+        ensure_deleted(
+            service,
+            noun="dashboard",
+            resource_id=dashboard_id,
+            read_symbol=_DASHBOARD_GET,
+            read_kwargs={"dashboard_id": dashboard_id},
+            responses=(data,),
+            forbidden_means_gone=had_access,
+        )
+    result = {**data} if isinstance(data, dict) else {}
+    return {**result, "dashboard_id": dashboard_id, "deleted": [dashboard_id]}, _meta(
+        invocation, auth.workspace_id
+    )
 
 
 def dashboard_archive(invocation: Invocation) -> HandlerResult:

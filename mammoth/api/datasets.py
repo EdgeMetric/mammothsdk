@@ -42,15 +42,21 @@ _SCHEMA_SETTINGS_FIELDS = (
     "schema_mapping",
     "unique_sequence_column",
 )
-#: What the platform stores for a dataset that has no settings yet (mvc-service
-#: ``SchemaPropertiesDefaultValues``). The patch model's own defaults differ
-#: (``convert_columns_to_text`` is False there), so a field the dataset does not
-#: hold is sent as the platform would have stored it.
+#: What the platform stores for a dataset that has no settings yet: mvc-service
+#: ``api/api/ds/schema.py`` ``SchemaPropertiesDefaultValues`` (origin/release).
+#: The PATCH handler (``apiv2/apiv2/datasets/utils.py``
+#: ``update_schema_settings_for_dataset``) stores ``SchemaSettings.model_dump()``
+#: whole, and that model's own field defaults differ again (``data_addition_mode``
+#: defaults to "replace", ``apiv2/apiv2/datasets/schema.py``), so every field must
+#: be sent: one left out is stored as the model default, not as the dataset had it.
+#: ``ignored_source_columns`` and ``optional_destination_columns`` are deliberately
+#: not sent: the backend keeps the remembered choices when the request does not
+#: name them and the matching keys are unchanged (``_with_remembered_column_choices``).
 _STORED_DEFAULTS: dict[str, Any] = {
     "data_addition_mode": "combine",
     "delete_after_append": True,
-    "strict_data_type_check": False,
-    "convert_columns_to_text": True,
+    "strict_data_type_check": True,
+    "convert_columns_to_text": False,
     "strict_column_length_check": False,
     "match_existing_target_schema": True,
     "convert_incompatible_data_to_null": False,
@@ -549,7 +555,12 @@ class DatasetsAPI:
         field it is not sent goes back to its default. This reads the stored settings
         first and sends them back with only ``mode`` (and ``schema_mapping``) changed;
         a field the dataset does not hold yet is sent as the platform stores it by
-        default.
+        default (see ``_STORED_DEFAULTS``).
+
+        The read and the write are two requests and the backend has no partial update,
+        so an edit to the dataset's settings made by someone else between them is
+        overwritten.
+
         The mode stays on the dataset: every later upload into it and every folder
         automation feeding it follows it.
 

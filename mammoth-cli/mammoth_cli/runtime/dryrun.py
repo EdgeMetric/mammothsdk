@@ -179,6 +179,38 @@ def jsonable(value: Any) -> Any:
     return repr(value)
 
 
+class DryRunGate:
+    """The callable the service runs before each SDK call, plus the calls a handler skipped.
+
+    A handler that makes a write before its main call (``file upload`` sets the update
+    method, then uploads) skips that write under ``--dry-run`` and records it with
+    :func:`plan_call`; the report then lists it beside the call the gate stops at.
+
+    Attributes:
+        planned: The would-be calls recorded so far, in order.
+    """
+
+    def __init__(self, check: Callable[..., None], planned: list[dict[str, Any]]) -> None:
+        self._check = check
+        self.planned = planned
+
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        self._check(*args, **kwargs)
+
+
+def plan_call(service: Any, symbol: str, arguments: dict[str, Any]) -> None:
+    """Record a write this command would make first, without making it, under a dry run.
+
+    Args:
+        service: The SDK service; one without a dry-run gate ignores the call.
+        symbol: The SDK symbol the write would call.
+        arguments: The arguments it would receive.
+    """
+    gate = getattr(service, "gate", None)
+    if isinstance(gate, DryRunGate):
+        gate.planned.append({"sdk_symbol": symbol, "arguments": jsonable(arguments)})
+
+
 @dataclasses.dataclass(frozen=True)
 class SdkPreview:
     """What a dry run does at the SDK call a command exists for, beyond naming it.
@@ -232,7 +264,7 @@ SDK_PREVIEWS: dict[str, SdkPreview] = {
 }
 
 
-def make_gate(command_id: str) -> Gate:
+def make_gate(command_id: str) -> DryRunGate:
     """Return the gate for ``command_id`` (see the module docstring)."""
     record = command_by_id(command_id) or {}
     own_symbol = str(record.get("sdk_symbol") or "")
@@ -244,6 +276,7 @@ def make_gate(command_id: str) -> Gate:
     # The target-name read is a read whichever command asked for it.
     reads = _read_symbols() | {DATAVIEW_GET}
     view_reads = _read_view_methods()
+    planned: list[dict[str, Any]] = []
 
     def stop(symbol: str, arguments: dict[str, Any], *, own: bool, **scope: Any) -> None:
         preview = SDK_PREVIEWS.get(symbol)
@@ -252,6 +285,7 @@ def make_gate(command_id: str) -> Gate:
             preview.check(arguments)  # the refusals a real run raises inside the SDK method
             if preview.body is not None:
                 shown = {"body": preview.body(arguments)}
+        earlier = {"earlier_calls": list(planned)} if planned else {}
         raise DryRunStop(
             {
                 "dry_run": True,
@@ -267,6 +301,7 @@ def make_gate(command_id: str) -> Gate:
                     "arguments": jsonable(shown),
                 },
                 "note": NOTE_OWN if own else NOTE_UNDECLARED,
+                **earlier,
             }
         )
 
@@ -290,4 +325,4 @@ def make_gate(command_id: str) -> Gate:
             return
         stop(symbol, arguments, own=composed)
 
-    return gate
+    return DryRunGate(gate, planned)

@@ -5,7 +5,7 @@
       "id": "file-dataset-refresh",
       "area": "schedules and automations",
       "limitation": "A dataset made from an uploaded file (or a URL) has no source to pull from, so an automation's run_data_retrieval or a schedule cannot refresh it.",
-      "instead": "There are two ways to load a new file into the same dataset: add its rows (the default), or replace them after 'mammoth dataset update-method set DATASET_ID --input '{\"mode\": \"replace\"}''. Its views re-run either way. To make that automatic, connect the files' cloud storage and let an automation pull them.",
+      "instead": "There are two ways to load a new file into the same dataset: add its rows (the default), or replace them by setting the dataset's update method to replace first (the command is 'mammoth dataset update-method set', with the mode in --input; 'mammoth file upload' also takes a mode field). Its views re-run either way. To make that automatic, connect the files' cloud storage and let an automation pull them.",
       "workarounds": [
         {
           "command_id": "file.upload",

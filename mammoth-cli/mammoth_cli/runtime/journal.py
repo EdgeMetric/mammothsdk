@@ -717,6 +717,10 @@ def _input_from_result(mapping: Any, data: Any) -> dict[str, Any]:
     return {field: data[source] for field, source in mapping.items() if source in data}
 
 
+#: The ``update_method.mode`` words under which an upload adds a batch instead of replacing.
+_ADDING_MODES = frozenset({"add", "combine"})
+
+
 def _append_undo(
     data: Any, flags: dict[str, Any]
 ) -> tuple[list[dict[str, Any]], str | None] | None:
@@ -733,8 +737,23 @@ def _append_undo(
     if not isinstance(data, dict) or data.get("appended_to") is None:
         return None
     method = data.get("update_method")
-    if isinstance(method, dict) and method.get("mode") == "replace":
+    mode = method.get("mode") if isinstance(method, dict) else None
+    if mode == "replace":
         return [], "It replaced the dataset's rows; the rows it replaced are not kept."
+    if mode not in _ADDING_MODES:
+        # The upload records the mode in effect for every append; a result without it (an
+        # older record, or a failed read of the dataset's mode) cannot show that the upload
+        # only added a batch, and deleting that batch could empty a replace-mode dataset.
+        return [], (
+            "The dataset's update method was not known when the file was uploaded, so it "
+            "cannot be shown that the upload only added a batch; delete it by hand with "
+            "'mammoth batch list' and 'mammoth batch delete' if it did."
+        )
+    if not data.get("batch_ids") and data.get("unmatched_batch_ids"):
+        return [], (
+            "New batches appeared in the dataset but none could be tied to this upload by "
+            "file name, so none is deleted for you."
+        )
     batches = data.get("batch_ids")
     if not isinstance(batches, list) or not batches:
         return None
