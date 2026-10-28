@@ -24,9 +24,10 @@ share a tool, and every tool more is one more for a model to choose between.
 
 from typing import Literal, TypedDict
 
+from mammoth.appends import refuse_batch_removal
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..appends import forget_batch_modes, recall_batch_modes, refuse_batch_removal
+from ..appends import forget_batch_modes, recall_batch_modes
 from ..consts import AppendFields, PageFields, PipelineFields, TrashFields, VersionFields
 from ..jobs import JobStillRunning, job_id_of, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors

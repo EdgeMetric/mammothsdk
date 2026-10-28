@@ -203,3 +203,91 @@ async def test_file_settings_update_with_one_setting_keeps_the_others(
     finally:
         with contextlib.suppress(Exception):
             await client.datasets.delete(dataset_id)
+
+
+async def _make_dataset(client: MammothClient, tmp_path: Path, name: str, rows: int) -> int:
+    """Upload a ``name,salary`` CSV of ``rows`` rows as a new dataset and return its id."""
+    path = tmp_path / name
+    path.write_text("name,salary\n" + "".join(f"person{i},{100 + i}\n" for i in range(rows)))
+    dataset_id = await client.files.upload(str(path))
+    assert isinstance(dataset_id, int)
+    return dataset_id
+
+
+def _csv_of(tmp_path: Path, name: str, rows: int) -> Path:
+    """Write a ``name,salary`` CSV of ``rows`` rows and return its path."""
+    path = tmp_path / name
+    path.write_text("name,salary\n" + "".join(f"extra{i},{200 + i}\n" for i in range(rows)))
+    return path
+
+
+async def test_append_under_add_reports_its_own_batches_and_rows(
+    client: MammothClient, tmp_path: Path
+) -> None:
+    """An upload under ``add`` reports the batch it made and the rows it added."""
+    dataset_id = await _make_dataset(client, tmp_path, "append_add_base.csv", rows=2)
+    try:
+        extra = _csv_of(tmp_path, "append_add_more.csv", rows=3)
+
+        report = await client.appends.append(str(extra), dataset_id, mode="add")
+
+        assert report["appended_to"] == dataset_id
+        assert report["update_method"]["mode"] == "add"
+        assert "append_failed" not in report
+        assert "append_pending" not in report
+        assert report["rows_before"] == 2
+        assert report["rows_added"] == 3
+        listed = {row["id"] for row in await client.appends.list_batches(dataset_id)}
+        assert report["batch_ids"]
+        assert set(report["batch_ids"]) <= listed
+    finally:
+        with contextlib.suppress(Exception):
+            await client.datasets.delete(dataset_id)
+
+
+async def test_append_under_replace_sets_the_mode_and_reports_it(
+    client: MammothClient, tmp_path: Path
+) -> None:
+    """An upload under ``replace`` leaves the dataset's update method as replace."""
+    dataset_id = await _make_dataset(client, tmp_path, "append_replace_base.csv", rows=3)
+    try:
+        extra = _csv_of(tmp_path, "append_replace_new.csv", rows=1)
+
+        report = await client.appends.append(str(extra), dataset_id, mode="replace")
+
+        assert report["update_method"]["mode"] == "replace"
+        assert report["update_method"]["previous_mode"] == "add"
+        assert "append_failed" not in report
+        assert report["rows_after"] == 1
+        stored = await client.datasets.get_update_method(dataset_id)
+        assert stored["data_addition_mode"] == "replace"
+    finally:
+        with contextlib.suppress(Exception):
+            await client.datasets.delete(dataset_id)
+
+
+async def test_restore_mode_puts_back_the_mode_a_prepare_changed(
+    client: MammothClient, tmp_path: Path
+) -> None:
+    """``restore_mode`` undoes a change ``prepare`` made, and does nothing when none was."""
+    dataset_id = await _make_dataset(client, tmp_path, "restore_mode_base.csv", rows=2)
+    try:
+        unchanged = await client.appends.prepare(dataset_id, "add")
+        assert unchanged["mode_changed"] is False
+        assert await client.appends.restore_mode(unchanged) is None
+
+        plan = await client.appends.prepare(dataset_id, "replace")
+        assert plan["mode_changed"] is True
+        assert plan["update_method"]["previous_mode"] == "add"
+        assert (await client.datasets.get_update_method(dataset_id))["data_addition_mode"] == (
+            "replace"
+        )
+
+        assert await client.appends.restore_mode(plan) is None
+
+        assert (await client.datasets.get_update_method(dataset_id))["data_addition_mode"] == (
+            "combine"
+        )
+    finally:
+        with contextlib.suppress(Exception):
+            await client.datasets.delete(dataset_id)

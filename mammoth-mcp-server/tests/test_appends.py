@@ -7,15 +7,13 @@ the batch is for a live run.
 
 from typing import Any
 
+from mammoth.appends import NO_RECORD, NOT_ADDED, WOULD_EMPTY, refuse_batch_removal
+
 from mammoth_mcp_server.appends import (
-    NO_RECORD,
-    NOT_ADDED,
     NOTHING_TO_REMOVE,
     UNDO_WITH,
-    WOULD_EMPTY,
     batch_mode_key,
     present_append,
-    refuse_batch_removal,
 )
 from mammoth_mcp_server.consts import AppendFields
 

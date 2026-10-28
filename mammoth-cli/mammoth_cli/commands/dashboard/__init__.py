@@ -479,6 +479,10 @@ def _require_stored_password(
     A Mammoth without PRD-656 stores only the kind of sharing and ignores the password, so
     the share reports success on a board that is now type ``password`` with no password.
 
+    ``options.has_password`` is the key the PRD-656 backend defines (EdgeMetric/mvc-service#7262,
+    ``common/datatypes.py``: ``HAS_PASSWORD_KEY = "has_password"``). If that key is renamed
+    there, change it here in the same step, or every password share is refused and rolled back.
+
     Args:
         service: The open SDK service.
         invocation: The running ``dashboard share`` command.

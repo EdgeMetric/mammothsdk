@@ -43,6 +43,9 @@ core-metadata-version = "2.4"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "live: runs against a real Mammoth server and Redis (needs the MCP_LIVE_* env vars)",
+]
 
 [tool.black]
 line-length = 100

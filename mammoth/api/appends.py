@@ -41,6 +41,8 @@ _list = list  # Alias to avoid shadowing by method name
 
 #: How many batches the listing is read per page.
 BATCH_PAGE = 100
+#: The most pages of batches read, so a server that ignores ``offset`` cannot loop forever.
+BATCH_PAGES = 10
 #: How long :meth:`AppendsAPI.finish` waits for the target to take the rows in, and the gap
 #: between its reads.
 APPEND_WAIT_S = 120.0
@@ -96,27 +98,31 @@ class AppendsAPI:
             project_id: ID of the project (uses client default if not provided).
 
         Returns:
-            The batch rows, each with an int ``id``, without repeats.
+            The batch rows, each with an int ``id``, without repeats. Reading stops at a
+            short page, at a full page that adds no new id, or after :data:`BATCH_PAGES`
+            pages.
         """
         found: _list[dict[str, Any]] = []
         offset = 0
-        while True:
+        for _ in range(BATCH_PAGES):
             page = await self._client.batches.list(
                 dataset_id, project_id=project_id, limit=BATCH_PAGE, offset=offset
             )
             rows = page.get("batches") if isinstance(page, dict) else page
             rows = rows if isinstance(rows, _list) else []
             seen = {row["id"] for row in found}
-            found.extend(
+            new = [
                 row
                 for row in rows
                 if isinstance(row, dict)
                 and isinstance(row.get("id"), int)
                 and row["id"] not in seen
-            )
-            if len(rows) < BATCH_PAGE:
-                return found
+            ]
+            found.extend(new)
+            if len(rows) < BATCH_PAGE or not new:
+                break
             offset += BATCH_PAGE
+        return found
 
     async def prepare(
         self, dataset_id: int, mode: str | None = None, project_id: int | None = None
@@ -200,19 +206,25 @@ class AppendsAPI:
             ``appended_to``, ``update_method``, ``rows_before``, ``rows_after``,
             ``rows_added``, ``batch_ids`` (the upload's own batches), ``unmatched_batch_ids``
             (new batches not tied to it), and ``append_pending`` when the dataset had not
-            taken the rows in by the end of the wait. What could not be read is left out;
-            ``batches_error`` says why the batches are missing.
+            taken the rows in by the end of the wait (``read_error`` says why when the dataset
+            could not be read), and ``append_failed`` with ``status`` when the dataset ended
+            in a failed status. What could not be read is left out; ``batches_error`` says
+            why the batches are missing.
         """
         dataset_id = int(plan["target"])
         give_up_at = time.monotonic() + max(0.0, wait_seconds)
         gap = min(0.5, poll_seconds)
         settled = False
         rows_after: int | None = None
+        status: str | None = None
+        read_error: str | None = None
         while True:
             try:
                 read = await self._read_dataset(dataset_id, project_id)
-            except MammothError:
+                read_error = None
+            except MammothError as failure:
                 read = {}
+                read_error = str(failure).strip() or type(failure).__name__
             status = status_of(read)
             settled = status in SETTLED_STATUSES or status in FAILED_STATUSES
             rows_after = rows_of(read)
@@ -223,14 +235,14 @@ class AppendsAPI:
         try:
             after = await self.list_batches(dataset_id, project_id)
         except MammothError as failure:
-            report = describe_append(plan, rows_after, [], [], settled)
+            report = describe_append(plan, rows_after, [], [], settled, status, read_error)
             report.pop("batch_ids")
             report["batches_error"] = str(failure).strip() or type(failure).__name__
             return report
         ours, unmatched = match_batches(
             plan.get("batch_ids_before") or [], after, file_names, staging_ids or []
         )
-        return describe_append(plan, rows_after, ours, unmatched, settled)
+        return describe_append(plan, rows_after, ours, unmatched, settled, status, read_error)
 
     async def restore_mode(self, plan: dict[str, Any], project_id: int | None = None) -> str | None:
         """Put the dataset's mode back after the upload that needed it failed (best effort).

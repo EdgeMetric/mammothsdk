@@ -186,6 +186,9 @@ class AppendFields:
     BATCH_IDS = "batch_ids"
     UNMATCHED_BATCH_IDS = "unmatched_batch_ids"
     APPEND_PENDING = "append_pending"
+    APPEND_FAILED = "append_failed"
+    STATUS = "status"
+    READ_ERROR = "read_error"
     NEXT_STEP = "next_step"
     NOTES = "notes"
     REMOVED = "removed"
@@ -385,6 +388,8 @@ class ErrorFields:
 
     NAME = "name"
     MESSAGE = "message"
+    # Set on a refusal that left a dataset in the update method this upload gave it.
+    UPDATE_METHOD_KEPT = "update_method_kept"
 
 
 class ListFields:

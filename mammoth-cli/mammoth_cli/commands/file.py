@@ -23,10 +23,12 @@ from mammoth_cli.commands.view.upload import upload_preview
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UPLOAD_REFUSED,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -277,6 +279,18 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             ),
             details={"field": "mode"},
         )
+    if mode is not None and document.get("wait_for_completion", True) is False:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'mode' cannot be used with 'wait_for_completion: false'.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "The update method is set before the upload and put back if it fails, which "
+                "needs the wait. Drop 'wait_for_completion: false', or set the mode first "
+                "with 'mammoth dataset update-method set'."
+            ),
+            details={"field": "mode"},
+        )
     wanted_mode = update_method.parse_mode(mode) if mode is not None else None
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
@@ -322,6 +336,8 @@ def file_upload(invocation: Invocation) -> HandlerResult:
                 )
             outcome = _append(service, kwargs, target, wanted_mode)
             appended = {key: outcome.pop(key) for key in _APPEND_REPORT_FIELDS if key in outcome}
+            if appended.get("append_failed"):
+                raise _append_failed_error(target, outcome.get("status"), appended)
             data = [target] if outcome["dataset_ids"] else []
         else:
             outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
@@ -396,6 +412,8 @@ _APPEND_REPORT_FIELDS = (
     "batch_ids",
     "unmatched_batch_ids",
     "append_pending",
+    "append_failed",
+    "read_error",
     "batches_error",
 )
 
@@ -439,6 +457,29 @@ def _append(
         if failure.details.get("update_method_kept"):
             refusal.details["update_method_kept"] = failure.details["update_method_kept"]
         raise refusal from failure
+
+
+def _append_failed_error(target: int, status: Any, appended: dict[str, Any]) -> CliError:
+    """The error for an append whose dataset ended in a failed status.
+
+    Args:
+        target: The dataset the files were added to.
+        status: The status the dataset ended in.
+        appended: The append report (``rows_before``, ``rows_after``, ...).
+
+    Returns:
+        A ``job_failed`` error that carries the report, so the caller sees what was read.
+    """
+    return CliError(
+        code=CODE_JOB_FAILED,
+        message=(
+            f"The upload reached dataset {target}, but the dataset ended with the status "
+            f"'{status}': the file did not load."
+        ),
+        exit_status=EXIT_API,
+        hint=f"Read why with 'mammoth dataset get {target}'; nothing was recorded to undo.",
+        details={"status": status, "append": appended},
+    )
 
 
 def _append_warnings(target: int, appended: dict[str, Any]) -> list[str]:

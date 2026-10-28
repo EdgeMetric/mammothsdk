@@ -200,10 +200,14 @@ async def take_the_upload(request: Request, ticket_id: str) -> Response:
         # Mammoth's own words: "not authorized", a project pin, a size limit.
         # Unhandled, this leaves as a 500 and the page can only say the upload
         # was refused, which tells the user nothing to act on.
-        return JSONResponse(
-            {ErrorFields.MESSAGE: str(refused).strip() or REFUSED},
-            status_code=refused_status(refused),
-        )
+        body: dict[str, JsonValue] = {ErrorFields.MESSAGE: str(refused).strip() or REFUSED}
+        kept = refused.details.get(ErrorFields.UPDATE_METHOD_KEPT)
+        if kept:
+            # The refusal left the dataset in the mode this upload gave it: say so, or nobody
+            # knows later uploads into it now follow that mode.
+            body[ErrorFields.MESSAGE] = f"{body[ErrorFields.MESSAGE]} {kept}"
+            body[ErrorFields.UPDATE_METHOD_KEPT] = kept
+        return JSONResponse(body, status_code=refused_status(refused))
     await spend_ticket(
         ticket_id,
         ticket,
@@ -237,7 +241,8 @@ async def send_to_mammoth(
 
     Raises:
         ToolError: If the target dataset cannot be read or set up.
-        MammothError: If Mammoth refuses the files.
+        MammothError: If Mammoth refuses the files; ``details["update_method_kept"]`` says
+            so when the mode this upload set could not be put back.
     """
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
@@ -261,9 +266,10 @@ async def send_to_mammoth(
                     params={AppendFields.TARGET_QUERY: target} if target is not None else None,
                     files=[(UPLOAD_FIELD, one) for one in files],
                 )
-        except MammothError:
-            if plan is not None:
-                await restore_mode(workspace_id, project_id, plan)
+        except MammothError as failure:
+            kept = await restore_mode(workspace_id, project_id, plan) if plan is not None else None
+            if kept:
+                failure.details[ErrorFields.UPDATE_METHOD_KEPT] = kept
             raise
     return payload, plan
 

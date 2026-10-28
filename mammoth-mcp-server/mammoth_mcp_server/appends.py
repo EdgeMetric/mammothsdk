@@ -19,7 +19,7 @@ import io
 from collections.abc import Mapping, Sequence
 from typing import Literal
 
-from mammoth.appends import ADDING_MODES
+from mammoth.appends import ADDING_MODES, refuse_batch_removal
 from mammoth.exceptions import MammothError, MammothJobTimeoutError
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -56,18 +56,6 @@ NO_MODE_NO_BATCH = (
     "The update method of the dataset could not be read ({0}), so no batch is offered for"
     " removal."
 )
-NO_RECORD = (
-    "Batch {0} was not added through this server, so what it was added under is not known:"
-    " it is not removed. Remove it in Mammoth."
-)
-NOT_ADDED = (
-    "Batch {0} was added under the update method {1}: the dataset's rows depend on it, so it"
-    " is not removed. To get the old rows back, upload the old file again."
-)
-WOULD_EMPTY = (
-    "Removing {0} would remove every batch the dataset has and leave it empty: it is not"
-    " removed. Delete the dataset instead, if that is what the user wants."
-)
 
 
 def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
@@ -97,12 +85,26 @@ def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
             f"The dataset's update method was {previous} and is now {mode}. It stays: every"
             " later upload into it follows it too."
         )
-    if report.get(AppendFields.APPEND_PENDING):
+    failed = bool(report.get(AppendFields.APPEND_FAILED))
+    if failed:
         notes.append(
-            "The dataset was still taking the rows in, so rows_added is what had landed. Call"
-            " check_upload again, or get_dataset, before using it."
+            f"The upload FAILED: the dataset ended with the status"
+            f" {report.get(AppendFields.STATUS)}, so rows_added says nothing about what is in"
+            " it. Tell the user it did not work; do not use the dataset as if the file were in"
+            " it. Read the reason with get_dataset."
         )
-    if mode in ADDING_MODES:
+    elif report.get(AppendFields.APPEND_PENDING):
+        reason = report.get(AppendFields.READ_ERROR)
+        notes.append(
+            "The dataset was still taking the rows in"
+            + (f" (reading it failed: {reason})" if reason else "")
+            + ", so rows_added is what had landed. Call check_upload again, or get_dataset,"
+            " before using it."
+        )
+    if failed:
+        # A failed upload leaves nothing to take back and nothing to say about batches.
+        shown.pop(AppendFields.BATCH_ID, None)
+    elif mode in ADDING_MODES:
         shown[AppendFields.BATCH_IDS] = list(batch_ids)
         if len(batch_ids) == 1:
             shown[AppendFields.BATCH_ID] = batch_ids[0]
@@ -126,37 +128,6 @@ def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
     if notes:
         shown[AppendFields.NOTES] = list(notes)
     return shown
-
-
-def refuse_batch_removal(
-    batch_ids: Sequence[int],
-    recorded: Mapping[int, str | None],
-    existing_ids: Sequence[int],
-) -> str | None:
-    """Say why batches may not be removed, or None when they may.
-
-    A batch is removed only when it was recorded, at upload time, as added under a mode that
-    adds. One with no record (added elsewhere, or the record expired) and one added under a
-    replace are refused: the dataset's current mode says nothing of how they were made.
-    Removing every batch a dataset has is refused too, as it would leave it empty.
-
-    Args:
-        batch_ids: The batches asked to be removed.
-        recorded: The mode recorded for each batch id; absent or None when none is.
-        existing_ids: The ids of every batch the dataset has now.
-
-    Returns:
-        The reason, for the user and the model, or None.
-    """
-    for batch_id in batch_ids:
-        mode = recorded.get(batch_id)
-        if mode is None:
-            return NO_RECORD.format(batch_id)
-        if mode not in ADDING_MODES:
-            return NOT_ADDED.format(batch_id, mode)
-    if set(existing_ids) <= set(batch_ids):
-        return WOULD_EMPTY.format(sorted(set(batch_ids)))
-    return None
 
 
 def batch_mode_key(workspace_id: int, dataset_id: int, batch_id: int) -> str:
@@ -320,10 +291,11 @@ async def read_append_history(
     batches: list[JsonValue] = []
     for row in rows:
         batch_id = int(str(row["id"]))
+        removable = refuse_batch_removal([batch_id], recorded, ids) is None
         batches.append(
             {
                 **{key: row[key] for key in AppendFields.BATCH_FIELDS if key in row},
-                AppendFields.REMOVABLE: recorded.get(batch_id) in ADDING_MODES,
+                AppendFields.REMOVABLE: removable,
             }
         )
     return {

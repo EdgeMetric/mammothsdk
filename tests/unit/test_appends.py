@@ -10,11 +10,13 @@ import pytest
 from mammoth.appends import (
     ADDING_MODES,
     EFFECTS,
+    WOULD_EMPTY,
     UnknownUpdateMethodError,
     describe_append,
     describe_update_method,
     match_batches,
     mode_word,
+    refuse_batch_removal,
     rows_of,
     sent_names,
     status_of,
@@ -167,6 +169,27 @@ class TestWhatAnAppendReports:
 
         assert report["append_pending"] is True
 
+    def test_a_dataset_that_could_not_be_read_says_why_while_pending(self) -> None:
+        report = describe_append(
+            a_plan("add"), None, [], [], settled=False, status=None, read_error="timed out"
+        )
+
+        assert report["append_pending"] is True
+        assert report["read_error"] == "timed out"
+
+    def test_a_failed_status_is_reported_as_a_failure_not_as_zero_rows_added(self) -> None:
+        report = describe_append(a_plan("add"), 6, [], [], settled=True, status="error")
+
+        assert report["append_failed"] is True
+        assert report["status"] == "error"
+        assert "append_pending" not in report
+
+    def test_a_ready_status_carries_no_failure_field(self) -> None:
+        report = describe_append(a_plan("add"), 9, [7], [], settled=True, status="ready")
+
+        assert "append_failed" not in report
+        assert "status" not in report
+
     def test_rows_that_could_not_be_read_are_left_out_rather_than_guessed(self) -> None:
         report = describe_append(a_plan("add", rows=None), None, [7], [], settled=True)
 
@@ -191,3 +214,11 @@ class TestReadingADatasetAnswer:
         assert rows_of({"dataset": {}}) is None
         assert status_of({"dataset": {}}) is None
         assert rows_of(None) is None
+
+
+class TestWhenBatchesMayBeRemoved:
+    def test_the_only_batch_is_never_removed(self) -> None:
+        assert refuse_batch_removal([7], {7: "add"}, [7]) == WOULD_EMPTY.format([7])
+
+    def test_one_of_two_batches_added_under_add_may_go(self) -> None:
+        assert refuse_batch_removal([7], {7: "add"}, [3, 7]) is None

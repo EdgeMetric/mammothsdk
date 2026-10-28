@@ -13,7 +13,7 @@ and after. ``mammoth.api.appends.AppendsAPI`` does the reading and calls these.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -29,6 +29,21 @@ EFFECTS: dict[str, str] = {
 }
 #: The modes under which a batch is added and can be removed again.
 ADDING_MODES = frozenset({"add"})
+#: Said when a batch is asked to be removed and nothing records how it was added.
+NO_RECORD = (
+    "Batch {0} was not added through this client, so what it was added under is not known:"
+    " it is not removed. Remove it in Mammoth."
+)
+#: Said when a batch was added under a mode that replaced the rows.
+NOT_ADDED = (
+    "Batch {0} was added under the update method {1}: the dataset's rows depend on it, so it"
+    " is not removed. To get the old rows back, upload the old file again."
+)
+#: Said when removing the batches would leave the dataset with none.
+WOULD_EMPTY = (
+    "Removing {0} would remove every batch the dataset has and leave it empty: it is not"
+    " removed. Delete the dataset instead, if that is what the user wants."
+)
 #: Said of an update method that could not be read.
 UNKNOWN_EFFECT = "Unknown: the dataset's update method could not be read."
 #: Dataset statuses in which the dataset is no longer taking rows in.
@@ -83,6 +98,38 @@ def stored_mode(word: Any) -> str:
     if resolved is None or resolved not in STORED_MODES:
         raise UnknownUpdateMethodError(f"'mode' must be 'replace' or 'add', got {word!r}.")
     return STORED_MODES[resolved]
+
+
+def refuse_batch_removal(
+    batch_ids: Sequence[int],
+    recorded: Mapping[int, str | None],
+    existing_ids: Sequence[int],
+) -> str | None:
+    """Say why batches may not be removed, or None when they may.
+
+    A batch is removed only when it was recorded, at upload time, as added under a mode that
+    adds (:data:`ADDING_MODES`). One with no record (added elsewhere, or the record expired)
+    and one added under a replace are refused: the dataset's current mode says nothing of how
+    they were made. Removing every batch a dataset has is refused too, as it would leave it
+    empty.
+
+    Args:
+        batch_ids: The batches asked to be removed.
+        recorded: The mode word recorded for each batch id; absent or None when none is.
+        existing_ids: The ids of every batch the dataset has now.
+
+    Returns:
+        The reason, for the user and the model, or None.
+    """
+    for batch_id in batch_ids:
+        mode = recorded.get(batch_id)
+        if mode is None:
+            return NO_RECORD.format(batch_id)
+        if mode not in ADDING_MODES:
+            return NOT_ADDED.format(batch_id, mode)
+    if set(existing_ids) <= set(batch_ids):
+        return WOULD_EMPTY.format(sorted(set(batch_ids)))
+    return None
 
 
 def describe_update_method(result: Any) -> dict[str, Any]:
@@ -203,6 +250,8 @@ def describe_append(
     ours: list[int],
     unmatched: list[int],
     settled: bool,
+    status: str | None = None,
+    read_error: str | None = None,
 ) -> dict[str, Any]:
     """Report what an upload into a dataset did.
 
@@ -212,13 +261,17 @@ def describe_append(
         ours: The batches this upload added.
         unmatched: New batches that could not be tied to this upload.
         settled: Whether the dataset had taken the rows in by the time it was read.
+        status: The dataset's status at the last read, or None when it was never read.
+        read_error: Why the dataset could not be read at the last try, if it could not.
 
     Returns:
         ``appended_to``, the ``update_method`` the upload ran under (``mode``,
         ``effect``, ``previous_mode`` when this upload changed it, ``error`` when it
         could not be read), the rows before and after with ``rows_added`` (negative
         when a replace shrank the dataset), ``batch_ids``, and when present
-        ``unmatched_batch_ids`` and ``append_pending``.
+        ``unmatched_batch_ids``, ``append_pending`` (with ``read_error`` when the last read of
+        the dataset failed) and, when the dataset ended in a failed status, ``append_failed``
+        with that ``status``.
     """
     entry = plan["update_method"]
     report: dict[str, Any] = {"appended_to": plan["target"], "update_method": dict(entry)}
@@ -228,6 +281,11 @@ def describe_append(
     report["batch_ids"] = list(ours)
     if unmatched:
         report["unmatched_batch_ids"] = list(unmatched)
-    if not settled:
+    if status in FAILED_STATUSES:
+        report["append_failed"] = True
+        report["status"] = status
+    elif not settled:
         report["append_pending"] = True
+        if read_error:
+            report["read_error"] = read_error
     return report
