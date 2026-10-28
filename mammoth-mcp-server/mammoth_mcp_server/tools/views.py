@@ -43,7 +43,7 @@ async def create_view(
 
     Returns:
         The new view's id, under the key `dataview_id`, and `mammoth_url`, the
-        page in Mammoth it opens on.
+        page in Mammoth it opens on. `next_step` when a copied step failed.
     """
     # The SDK waits for the creation job itself, so the new view's id is
     # what comes back.
@@ -56,8 +56,16 @@ async def create_view(
                 project_id=project_id,
             )
         )
+    # The answer is the run that built the view, down to the machine it ran
+    # on; the model needs the view.
     view_id = created.get(ListFields.VIEW_ID)
-    return {**created, ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id)}
+    view: dict[str, JsonValue] = {
+        ListFields.VIEW_ID: view_id,
+        ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
+    }
+    if created.get(ViewFields.HAS_ERROR):
+        view[ViewFields.NEXT_STEP] = ViewFields.COPY_FAILED
+    return view
 
 
 @mcp_server.tool(title="Delete views", annotations=DESTRUCTIVE)

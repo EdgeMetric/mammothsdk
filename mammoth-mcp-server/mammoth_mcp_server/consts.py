@@ -393,13 +393,18 @@ class JobFields:
 
 
 class ViewFields:
-    """What `delete_views` reports. The SDK names the fields it sends itself."""
+    """What `create_view` and `delete_views` report. The SDK names the fields it sends itself."""
 
     VIEW_ID = "view_id"
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
     NEXT_STEP = "next_step"
+    HAS_ERROR = "has_error"
+    COPY_FAILED = (
+        "The view was created, but a step copied into it failed to run. Call"
+        " get_pipeline on the new view to see which, and tell the user."
+    )
 
 
 class TrashFields:
