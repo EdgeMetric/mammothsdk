@@ -125,7 +125,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth ai retention condition` [benign_mutation/none] -> mammoth.api.ai.AIAPI.retention_condition
   example: mammoth ai retention condition 123 --input '{"mode": "generate", "intent": "completed payments older than 90 days"}' --project 456
 - `mammoth ai sql generate` [read/none] -> mammoth.api.ai.AIAPI.generate_sql
-  example: mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'
+  example: mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456, "dataview_id": 123}'
 - `mammoth ai suggestion list` [read/none] -> mammoth.api.ai.AIAPI.get_suggestions
   example: mammoth ai suggestion list --input '{"suggestion_type": "generate_task", "params": {"prompt": "Filter rows where Price > 100"}, "dataset_id": 456, "dataview_id": 123}'
 

@@ -26,7 +26,7 @@ class AIAPI:
 
     Access via client.ai:
         client.ai.generate_profile(dataview_id=1039)
-        client.ai.generate_sql(intent="total sales by region")
+        client.ai.generate_sql(intent="total sales by region", dataset_id=1, dataview_id=2)
         suggestions = client.ai.get_suggestions()
     """
 
@@ -161,20 +161,23 @@ class AIAPI:
         self,
         intent: str,
         sequence_number: int = 0,
-        dataset_id: int | None = None,
-        dataview_id: int | None = None,
+        *,
+        dataset_id: int,
+        dataview_id: int,
         current_query: str | None = None,
     ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
-        Uses the project-level sql_generation endpoint, which requires the
-        ``dataset_id`` query parameter (``dataview_id`` optional).
+        Uses the project-level sql_generation endpoint. Both ``dataset_id`` and ``dataview_id``
+        are required keyword arguments: the server reads the table to write against from the
+        view, and answers a request without ``dataview_id`` with its default view 4, which is
+        not the caller's.
 
         Args:
             intent: Natural language description of the query.
             sequence_number: Sequence number for the SQL generation request.
-            dataset_id: Dataset the SQL is generated against (required).
-            dataview_id: Optional dataview within that dataset.
+            dataset_id: Dataset the SQL is generated against.
+            dataview_id: Dataview within that dataset whose table the SQL is written against.
             current_query: The SQL the rule holds now. When given, the intent asks to change
                 this query rather than write a new one; its ``{param}`` and ``{{snippet}}``
                 tokens are kept.
@@ -182,13 +185,9 @@ class AIAPI:
         Returns:
             Dict with generated SQL and metadata.
         """
-        if dataset_id is None:
-            raise MammothValidationError("generate_sql requires `dataset_id`.")
         ws = self._ws()
         proj = self._proj()
-        params: dict[str, Any] = {"dataset_id": dataset_id}
-        if dataview_id is not None:
-            params["dataview_id"] = dataview_id
+        params: dict[str, Any] = {"dataset_id": dataset_id, "dataview_id": dataview_id}
         sql_params: dict[str, Any] = {"intent": intent, "sequence_number": sequence_number}
         if current_query is not None:
             sql_params["current_query"] = current_query

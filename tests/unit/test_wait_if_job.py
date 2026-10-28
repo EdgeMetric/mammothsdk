@@ -345,7 +345,7 @@ class TestAIJobWaiting:
 
     async def test_generate_sql_waits(self):
         self.client._request_json = AsyncMock(return_value={"id": 302, "status": "processing"})
-        await self.client.ai.generate_sql(intent="total sales", dataset_id=48)
+        await self.client.ai.generate_sql(intent="total sales", dataset_id=48, dataview_id=7)
         self.client.jobs.wait_for_job.assert_called_once()
 
     async def test_get_suggestions_waits(self):

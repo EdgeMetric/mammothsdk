@@ -1193,8 +1193,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.ai.AIAPI.generate_sql
   implementation_origin: mammoth.api.ai.AIAPI.generate_sql
-  signature: 'generate_sql(self, intent: ''str'', sequence_number: ''int'' = 0, dataset_id: ''int | None''
-    = None, dataview_id: ''int | None'' = None, current_query: ''str | None'' = None) -> ''dict[str, Any]'''
+  signature: 'generate_sql(self, intent: ''str'', sequence_number: ''int'' = 0, *, dataset_id: ''int'',
+    dataview_id: ''int'', current_query: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: ai.sql.generate
   alias_of: null
