@@ -6,7 +6,7 @@ import base64
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothAPIError, MammothValidationError
 
 if TYPE_CHECKING:
     from mammoth.client import MammothClient
@@ -19,6 +19,9 @@ LIST_STATUSES = ("live", "saved", "all")
 SAVE_REFRESH = ("daily", "manual")
 #: The server refuses a sample whose base64 text is longer than this.
 SAMPLE_MAX_BASE64 = 7_000_000
+
+#: The agent that builds connectors from a draft's chat, as the web app addresses it.
+DRAFT_AGENT_KEY = "mammoth_assistant"
 
 ERR_DRAFT_ID_POSITIVE = "`draft_id` must be a positive integer, got {0}."
 ERR_CHOICE = "`{0}` must be one of {1}, got {2!r}."
@@ -95,6 +98,7 @@ class ConnectorDraftsAPI:
         request_text: str | None = None,
         title: str | None = None,
         session_id: str | None = None,
+        start: bool = True,
     ) -> dict[str, Any]:
         """Start a connector draft.
 
@@ -102,6 +106,11 @@ class ConnectorDraftsAPI:
         draft with no ``connection_key`` needs the project admin role. When another
         live draft exists for the same connector or connection, the answer carries
         it as ``resume_candidate``.
+
+        The server only stores ``request_text``; nothing runs until a turn is sent with
+        the draft in its ``client_context``. As the web app does, this sends the request
+        as that first turn (a ``kind="url"`` draft is read, not chatted, and sends none).
+        Follow the turn with ``mammoth agent session messages SESSION_ID``.
 
         Args:
             origin: Where the draft was started: ``agent``, ``connections`` or ``modal``.
@@ -113,9 +122,13 @@ class ConnectorDraftsAPI:
             request_text: What the user asked for, in their words.
             title: The draft's title.
             session_id: An agent chat to attach the draft to.
+            start: Send ``request_text`` as the first agent turn. ``False`` only stores it.
 
         Returns:
-            The new draft.
+            The new draft. When the first turn was sent it also carries ``first_turn``
+            (``session_id``, ``turn_id``, ``request_key``) and ``next``, the command that
+            reads the agent's answer. A refused first turn leaves the draft and carries
+            ``first_turn_error`` with ``next`` for sending it again.
         """
         _choice("origin", origin, DRAFT_ORIGINS)
         _choice("kind", kind, DRAFT_KINDS)
@@ -131,7 +144,38 @@ class ConnectorDraftsAPI:
         ):
             if value is not None:
                 body[field] = value
-        return await self._client._request_json("POST", self._base(), json=body)
+        draft = await self._client._request_json("POST", self._base(), json=body)
+        if start and request_text and draft.get("kind") != "url" and draft.get("session_id"):
+            draft = await self._send_first_turn(draft, request_text)
+        return draft
+
+    async def _send_first_turn(self, draft: dict[str, Any], request_text: str) -> dict[str, Any]:
+        """Send *request_text* as the draft chat's first turn, keeping the draft on a refusal.
+
+        Args:
+            draft: The draft the server just made (``id``, ``session_id``).
+            request_text: The user's request.
+
+        Returns:
+            *draft* with ``first_turn`` and ``next``, or ``first_turn_error`` and ``next``.
+        """
+        session_id = draft["session_id"]
+        try:
+            started = await self._client.agents.chat(
+                request_text,
+                {"type": "workspace", "workspace_id": await self._client.resolve_workspace_id()},
+                agent_key=DRAFT_AGENT_KEY,
+                session_id=session_id,
+                client_context={"connector_draft": {"id": draft["id"]}},
+            )
+        except MammothAPIError as error:
+            retry = f"mammoth connector draft get {draft['id']}"
+            return {**draft, "first_turn_error": str(error), "next": retry}
+        return {
+            **draft,
+            "first_turn": started,
+            "next": f"mammoth agent session messages {session_id}",
+        }
 
     async def known_sources(self) -> dict[str, Any]:
         """List the sources with no built-in connector that a draft can still start on.
