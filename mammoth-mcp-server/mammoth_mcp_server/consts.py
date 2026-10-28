@@ -316,6 +316,8 @@ class ResourceTypes:
 
     FILE = "file_object"
     DATASET = "datasource"
+    # A folder is a label to the resources route: what it holds lists under it.
+    FOLDER = "label"
 
 
 class FileStatus:

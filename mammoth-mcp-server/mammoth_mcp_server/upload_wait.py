@@ -19,7 +19,11 @@ STILL_READING = (
 
 
 async def finish_upload(
-    workspace_id: int, project_id: int, since: str, started: dict[str, JsonValue]
+    workspace_id: int,
+    project_id: int,
+    since: str,
+    started: dict[str, JsonValue],
+    folder_resource_id: int | None = None,
 ) -> dict[str, JsonValue]:
     """What the upload made, once each file is read or the call's time is up.
 
@@ -29,12 +33,15 @@ async def finish_upload(
         since: When the files were sent: what the upload made is what the
             project gained since.
         started: What the upload job returned: its `job_ids` and `errors`.
+        folder_resource_id: The folder the files went to, if any.
     """
     ticket: dict[str, JsonValue] = {
         UploadFields.UPLOADED_AT: since,
         UploadFields.WORKSPACE_ID: workspace_id,
         UploadFields.PROJECT_ID: project_id,
     }
+    if folder_resource_id is not None:
+        ticket[UploadFields.FOLDER_RESOURCE_ID] = folder_resource_id
     jobs = _file_jobs(started)
     running = await _wait_for_each_file(workspace_id, jobs)
     read_once = running or not jobs

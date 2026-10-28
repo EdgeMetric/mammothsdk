@@ -99,7 +99,11 @@ async def upload_file(
             ),
         )
     return await finish_upload(
-        workspace_id, project_id, since, await wait_for_job(workspace_id, started)
+        workspace_id,
+        project_id,
+        since,
+        await wait_for_job(workspace_id, started),
+        folder_resource_id,
     )
 
 

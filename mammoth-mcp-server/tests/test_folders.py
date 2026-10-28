@@ -9,6 +9,7 @@ from typing import Any
 from mammoth_mcp_server.consts import UploadFields
 from mammoth_mcp_server.server import mcp_server, register_tools
 from mammoth_mcp_server.upload_app import request_upload
+from mammoth_mcp_server.upload_report import report_upload
 from mammoth_mcp_server.upload_tickets import read_ticket
 
 from .helpers import WORKSPACE, a_fake_api, a_fake_store, as_caller, call_tool, run
@@ -69,7 +70,7 @@ class TestFolders:
             api.answer("POST", FILES, {"job": {"id": 41}})
             api.answer("GET", "/jobs/41", {"job": {"id": 41, "status": "success", "response": {}}})
             api.answer("GET", f"{PROJECT_PATH}/resources", {"resources": []})
-            call_tool(
+            answer = call_tool(
                 "upload_file",
                 file_name="sales.csv",
                 content="a,b\n1,2\n",
@@ -79,6 +80,26 @@ class TestFolders:
 
         [upload] = api.sent("POST", FILES)
         assert upload.url.params["folder_resource_id"] == "77"
+        [listed] = api.sent("GET", f"{PROJECT_PATH}/resources")
+        assert listed.url.params["parent_id"] == "77"
+        assert answer["status"] == "done"
+
+    def test_what_landed_in_a_folder_is_looked_for_in_that_folder(self) -> None:
+        # Seen live: Mammoth lists only the project's own items unless asked for a
+        # folder's, so the upload was never found and the call ran out of time.
+        ticket = {
+            UploadFields.UPLOADED_AT: "2026-10-28T10:00:00+00:00",
+            UploadFields.WORKSPACE_ID: WORKSPACE,
+            UploadFields.PROJECT_ID: PROJECT,
+            UploadFields.FOLDER_RESOURCE_ID: 77,
+        }
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", f"{PROJECT_PATH}/resources", {"resources": []})
+            run(report_upload(ticket))
+
+        [listed] = api.sent("GET", f"{PROJECT_PATH}/resources")
+        assert listed.url.params["parent_type"] == "label"
+        assert listed.url.params["parent_id"] == "77"
 
     def test_a_link_for_a_folder_remembers_the_folder(self) -> None:
         with a_fake_store(), as_caller():

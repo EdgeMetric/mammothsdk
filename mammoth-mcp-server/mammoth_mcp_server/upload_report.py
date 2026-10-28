@@ -154,7 +154,9 @@ async def report_upload(ticket: Record, only_mine: bool = False) -> dict[str, Js
     since = read_time(ticket[UploadFields.UPLOADED_AT])
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
-    made = find_made_since(await list_newest(workspace_id, project_id), since)
+    folder = ticket.get(UploadFields.FOLDER_RESOURCE_ID)
+    listed = await list_newest(workspace_id, project_id, None if folder is None else int(folder))
+    made = find_made_since(listed, since)
     if only_mine and made:
         made = await made_by_the_caller(workspace_id, project_id, made)
     described = [describe(item, ticket) for item in made]
@@ -238,8 +240,19 @@ async def read_first_view(workspace_id: int, project_id: int, dataset_id: int) -
     return min(ids, default=None)
 
 
-async def list_newest(workspace_id: int, project_id: int) -> list[Item]:
-    """List the project's newest files and datasets, with what each waits on."""
+async def list_newest(
+    workspace_id: int, project_id: int, folder_resource_id: int | None = None
+) -> list[Item]:
+    """List the project's newest files and datasets, with what each waits on.
+
+    Mammoth lists only what sits in the project itself unless asked for one
+    folder, so an upload into a folder is looked for in that folder.
+    """
+    in_folder: dict[str, str | int] = (
+        {}
+        if folder_resource_id is None
+        else {"parent_type": ResourceTypes.FOLDER, "parent_id": folder_resource_id}
+    )
     async with build_client(workspace_id, project_id) as client:
         listed = await request_api(
             client,
@@ -250,6 +263,7 @@ async def list_newest(workspace_id: int, project_id: int) -> list[Item]:
                 "sort": "created_at:desc",
                 "limit": NEWEST_ITEMS,
                 "fields": "full",
+                **in_folder,
             },
         )
     resources = listed.get("resources")
