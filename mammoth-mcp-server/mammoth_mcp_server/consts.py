@@ -400,6 +400,15 @@ class ViewFields:
     DELETED = "deleted"
     FAILED = "failed"
     NEXT_STEP = "next_step"
+    GOES_WITH = "goes_with_them"
+    TRASHED_DATASET = "trashed_dataset"
+    DATASET = "dataset"
+    VIEWS = "views"
+    # What deleting a view takes with it, as Mammoth's impact route lists it,
+    # and what of each item tells the user what it is.
+    IMPACT_SCOPE = "view"
+    IMPACT_KINDS = ("exports", "dashboards", "views", "automations")
+    IMPACT_ITEM_FIELDS = ("id", "name", "handler_type", "destination", "project_id")
 
 
 class TrashFields:

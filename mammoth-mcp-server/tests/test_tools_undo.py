@@ -17,6 +17,20 @@ VERSIONS = f"{VIEW_PATH}/pipeline/versions"
 JOB = "/jobs/41"
 IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
 VIEW_IDS = {**IDS, "dataset_id": DATASET, "view_id": VIEW}
+DATASET_PATH = f"{PROJECT_PATH}/datasets/{DATASET}"
+VIEWS = f"{DATASET_PATH}/dataviews"
+NO_IMPACT = {"dashboards": [], "exports": [], "views": [], "automations": [], "dependencies": {}}
+# What deleting a view takes with it, as Mammoth lists it (a dev server, 28 Oct 2026).
+SENDS_TO_A_DATASET = {
+    "id": 398,
+    "name": "Monthly totals",
+    "handler_type": "internal_dataset",
+    "connector": "internal_dataset",
+    "has_transform": False,
+    "destination": "Monthly totals",
+    "data_pass_through": True,
+    "moves_to_end": False,
+}
 
 STARTED = {"job": {"id": 41}}
 RUNNING = {"job": {"id": 41, "status": "processing", "response": None}}
@@ -81,7 +95,15 @@ PIPELINE_STATE = {"draft_mode": "off", "auto_run": True, "execution_state": "idl
 TASKS = {"tasks": [{"id": 77, "sequence": 1, "status": "ready", "params": {}}]}
 
 
-def a_view(api: FakeApi, job: dict[str, Any] | None = None) -> None:
+def a_view(
+    api: FakeApi,
+    job: dict[str, Any] | None = None,
+    views: tuple[int, ...] = (VIEW, 10, 11),
+    impact: dict[str, Any] = NO_IMPACT,
+) -> None:
+    api.answer("GET", VIEWS, {"dataviews": [{"id": view} for view in views]})
+    for view in views:
+        api.answer("GET", f"{VIEWS}/{view}/impact", impact if view == VIEW else NO_IMPACT)
     api.answer("POST", f"{VIEW_PATH}/trash", STARTED)
     api.answer("GET", TRASH, TRASH_LIST)
     api.answer("POST", RESTORE, STARTED)
@@ -114,6 +136,74 @@ class TestDeletingViews:
         [failed] = answer["failed"]
         assert failed["view_id"] == 10
         assert "depend" in failed["error"]
+
+    def test_a_datasets_last_view_is_refused_since_the_dataset_would_go_with_it(self) -> None:
+        # Seen live: Mammoth moves a dataset to the trash with its last view.
+        with a_fake_api() as api, as_caller():
+            a_view(api, views=(VIEW,))
+            with pytest.raises(ToolError, match="whole_dataset"):
+                call_tool("delete_views", dataset_id=DATASET, view_ids=[VIEW], **IDS)
+
+        assert not api.sent("POST", f"{VIEW_PATH}/trash")
+
+    def test_what_goes_with_a_view_is_listed_and_nothing_is_deleted_yet(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, impact={**NO_IMPACT, "exports": [SENDS_TO_A_DATASET]})
+            answer = call_tool("delete_views", dataset_id=DATASET, view_ids=[VIEW], **IDS)
+
+        assert not api.sent("POST", f"{VIEW_PATH}/trash")
+        assert api.sent("GET", f"{VIEW_PATH}/impact")[0].url.params["scope"] == "view"
+        assert answer["deleted"] == []
+        assert answer["goes_with_them"] == {
+            "exports": [
+                {
+                    "view_id": VIEW,
+                    "id": 398,
+                    "name": "Monthly totals",
+                    "handler_type": "internal_dataset",
+                    "destination": "Monthly totals",
+                }
+            ]
+        }
+        assert "confirmed=true" in answer["next_step"]
+
+    def test_once_the_user_agrees_the_view_and_what_goes_with_it_are_deleted(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, impact={**NO_IMPACT, "exports": [SENDS_TO_A_DATASET]})
+            answer = call_tool(
+                "delete_views", dataset_id=DATASET, view_ids=[VIEW], confirmed=True, **IDS
+            )
+
+        assert api.sent("POST", f"{VIEW_PATH}/trash")
+        assert answer["deleted"] == [VIEW]
+
+    def test_a_whole_dataset_is_listed_with_its_views_before_it_goes(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, views=(VIEW,))
+            api.answer("POST", f"{DATASET_PATH}/trash", STARTED)
+            answer = call_tool("delete_views", dataset_id=DATASET, whole_dataset=True, **IDS)
+
+        assert not api.sent("POST", f"{DATASET_PATH}/trash")
+        assert answer["goes_with_them"] == {"dataset": DATASET, "views": [VIEW]}
+
+    def test_a_whole_dataset_goes_to_the_trash_once_the_user_agrees(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api, views=(VIEW,))
+            api.answer("POST", f"{DATASET_PATH}/trash", STARTED)
+            answer = call_tool(
+                "delete_views", dataset_id=DATASET, whole_dataset=True, confirmed=True, **IDS
+            )
+
+        assert api.sent("POST", f"{DATASET_PATH}/trash")
+        assert not api.sent("POST", f"{VIEW_PATH}/trash")
+        assert answer["trashed_dataset"] == DATASET
+        assert "undo" in answer["next_step"]
+
+    def test_no_views_and_no_whole_dataset_is_refused(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            with pytest.raises(ToolError, match="view_ids"):
+                call_tool("delete_views", dataset_id=DATASET, **IDS)
 
 
 class TestListingTheTrash:
