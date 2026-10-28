@@ -46,6 +46,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `DatasetsAPI.get_update_method` also returns the dataset's remembered column choices, `ignored_source_columns` and `optional_destination_columns`, and `set_update_method` sends them back unchanged.
 - SDK: `DashboardsAPI.share` takes `password` with `DashboardAuthType.PASSWORD` (8 to 128 characters); Mammoth stores only its hash and reports `options.has_password`. A Mammoth without password sharing (PRD-656) ignores the password, so check `options.has_password` after the share.
 - SDK: `mammoth.api.automations.build_automation_create_body` and `build_automation_patch_ops` are public. They validate and build the request body that `AutomationsAPI.create` and `update` send; the CLI's dry run uses them.
+- SDK: the project workflow-template catalog. New sub-client `client.workflow_templates` (`list`, `get`, `sample_result`, `rank`, `fit`, `preview`, `import_samples`, `build`) over `/workflow-templates` (#337).
 
 ### Changed (next mammoth-io)
 
@@ -69,6 +70,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `dataset interpretation confirm` returns the dataset's `columns` (name and type) and `row_count`.
 - CLI: `how` recipes for replacing a dataset's data (`replace-data`), undoing an append (`undo-append`), choosing sheets (`pick-sheet`) and fixing a heading row (`fix-heading-row`).
 - CLI: `dashboard share` shares a board with anyone who has its link and password: `--input '{"type_of_auth": "password", "password_file": "./pw.txt"}'`. The password is read from the file (8 to 128 characters) and never printed, shown in a dry run or kept in the history. Re-sharing as password without a file keeps the current password. It needs a Mammoth with password sharing (PRD-656). A Mammoth without it ignores the password: the CLI reads the share back, and when no password was stored it puts the earlier share back and fails with `unsupported_by_server` (exit 1, `details.share_restored` says whether the restore took). Until then `limitations` lists `dashboard-password-share`.
+- CLI: the project workflow-template catalog: `workflow template list`, `get`, `sample-result`, `rank`, `fit`, `preview`, `samples` and `build`; `schema find "workflow template"` finds them (#337).
 
 
 ### Changed (next mammoth-cli)
@@ -79,6 +81,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: a `need_action` hint points at `dataset interpretation preview` for a header or title-row problem; other cases still point at `dataset file-settings get`.
 - CLI: `file delete` reads the file back after the delete and says it is gone (`deleted` names it); `automation delete` and `dashboard delete` do the same. A dashboard's read-back answers 403 once it is deleted, so that counts as gone only when the dashboard could be read just before the delete; otherwise the result is `delete_unverified`.
 - CLI: the `file-dataset-refresh` limitation names both ways to load a new file into a dataset: add its rows (the default) or replace them.
+- CLI: `template list` (and the `template` group help) says it reads the legacy workspace templates and points to `workflow template list` for the catalog (#337).
 
 ### Deprecated (next mammoth-cli)
 
@@ -105,6 +108,9 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: a deleted automation or dashboard reads as `resource_not_found`.
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
+- `agent chat --wait` returns the reply its own turn wrote, never the previous turn's; when the server moves a long turn to the background it returns `reply: null`, `background: true` and `next`, the command that reads the answer (SDK `AgentsAPI.chat` too) (D5)
+- `connector draft create` with `request_text` sends it as the first agent turn (as the web app does) and returns `first_turn` and `next`, the command that follows it; before, nothing ran (D6)
+- `connector ai` help says it is the older connector chat that cannot save an AI connector and points to `connector draft create`; "build an AI connector" now finds the builder (D4)
 
 - CLI: with `-o json`, `ndjson` or `yaml` the error envelope goes to stdout, like a success, instead of stderr, so a script reading stdout no longer gets an empty reply; the exit status is unchanged and stderr keeps only human hints and progress.
 - CLI: every create-type result and a waited `job wait`/`job get` carries its resource id at the top level as `<resource>_id` (`dataset_id`, `connection_id`, ...); the older keys stay.

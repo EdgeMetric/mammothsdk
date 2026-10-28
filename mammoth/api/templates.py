@@ -15,7 +15,9 @@ ERR_TEMPLATE_ID_POSITIVE = "`template_id` must be a positive integer, got {0}."
 class TemplatesAPI:
     """Client for workspace template operations.
 
-    Templates are workspace-scoped, reusable pipeline/project blueprints.
+    Templates are workspace-scoped, reusable pipeline/project blueprints. This is the
+    older ``/workspaces/{ws}/templates`` API; the project catalog of ready-made workflows
+    is ``client.workflow_templates``.
 
     Access via ``client.templates``::
 

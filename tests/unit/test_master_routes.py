@@ -329,3 +329,48 @@ async def test_bad_arguments_are_refused_before_sending(
     with pytest.raises(MammothValidationError, match=message):
         await call(client)
     assert server.requests == []
+
+
+_DRAFT = {"id": 9, "session_id": "sess-1", "kind": "rest", "request_text": "pull deals"}
+
+
+async def test_a_draft_with_request_text_sends_it_as_the_first_agent_turn(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers[f"POST {DRAFTS}"] = (201, _DRAFT)
+    server.answers["POST /agents/chat"] = (202, {"session_id": "sess-1", "turn_id": "t1"})
+
+    draft = await client.connector_drafts.create(request_text="pull deals")
+
+    create, chat = server.requests
+    assert chat["path"] == "/agents/chat"
+    assert chat["body"]["message"] == "pull deals"
+    assert chat["body"]["session_id"] == "sess-1"
+    assert chat["body"]["agent_key"] == "mammoth_assistant"
+    assert chat["body"]["client_context"] == {"connector_draft": {"id": 9}}
+    assert draft["first_turn"]["turn_id"] == "t1"
+    assert draft["next"] == "mammoth agent session messages sess-1"
+    assert create["body"]["request_text"] == "pull deals"
+
+
+async def test_a_draft_sends_no_turn_without_request_text_or_when_told_not_to(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers[f"POST {DRAFTS}"] = (201, _DRAFT)
+
+    await client.connector_drafts.create(connector_key="hubspot")
+    await client.connector_drafts.create(request_text="pull deals", start=False)
+
+    assert [r["path"] for r in server.requests] == [DRAFTS, DRAFTS]
+
+
+async def test_a_refused_first_turn_keeps_the_draft_and_says_so(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers[f"POST {DRAFTS}"] = (201, _DRAFT)
+    server.answers["POST /agents/chat"] = (403, {"message": "no agent access"})
+
+    draft = await client.connector_drafts.create(request_text="pull deals")
+
+    assert draft["id"] == 9 and "first_turn" not in draft
+    assert "first_turn_error" in draft and draft["next"] == "mammoth connector draft get 9"

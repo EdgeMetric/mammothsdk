@@ -190,3 +190,70 @@ commands:
   live_exemption_reason: No disposable fixture covers this write; contract and unit tests cover it.
   known_restrictions: 'Cancels one step of a running Save; steps that need it are skipped. Best effort:
     a job already started may still finish.'
+- command_id: workflow.template.list
+  output_schema:
+    type: object
+    required: [templates]
+    properties:
+      templates:
+        type: array
+        items:
+          type: object
+  known_restrictions: Lists the project workflow-template catalog (ready-made reconciliations and reports),
+    not the workspace templates of 'template list'. Pick a key, then run workflow template get KEY.
+- command_id: workflow.template.get
+  output_schema:
+    type: object
+- command_id: workflow.template.sample-result
+  output_schema:
+    type: object
+- command_id: workflow.template.rank
+  output_schema:
+    type: object
+    required: [tables]
+    properties:
+      tables:
+        type: array
+        items:
+          type: object
+  known_restrictions: 'Input: {input: INPUT_KEY, dataset_ids: [1 to 200 dataset ids]}. Judges each table
+    from its column names and types alone, so it reads no rows.'
+- command_id: workflow.template.fit
+  output_schema:
+    type: object
+  known_restrictions: 'Input: {inputs: {INPUT_KEY: DATASET_ID}}. Read-only; the matches it proposes go
+    into the preview and build inputs.'
+- command_id: workflow.template.preview
+  output_schema:
+    type: object
+  known_restrictions: 'Input: {inputs: {INPUT_KEY: DATASET_ID}, matches: {INPUT_KEY: {ROLE_KEY: {column:
+    NAME}}}, settings?: {}}. Read-only: runs the template on the first rows of your tables.'
+- command_id: workflow.template.samples
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: dataset.delete
+    note: Delete each imported sample dataset (the result's inputs map names them); a second run finds
+      the same tables again.
+  readback:
+    command: dataset.list
+    ids: {}
+    kind: object
+  known_restrictions: Imports the template's sample tables into the project, once, so the template can be
+    tried without your own data.
+- command_id: workflow.template.build
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: workflow.delete
+    note: Delete the workflow the build created, or undo its Save with workflow save-undo.
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: result.workflow.id
+    kind: object
+  known_restrictions: 'Input: {inputs, matches, destination_name, settings?, destination_emails?} as in
+    workflow template preview; the server refuses a build whose own preview could not run. Answers while
+    the Save runs: follow it with workflow get WORKFLOW_ID (canvas_state.save_run).'

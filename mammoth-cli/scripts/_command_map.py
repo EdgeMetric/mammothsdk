@@ -99,6 +99,19 @@ INTERNAL_ONLY: dict[str, str] = {
     ),
 }
 
+# The project workflow-template catalog (list, get, sample-result, rank, fit, preview, samples,
+# build): served by origin/release, in no pinned snapshot yet.
+_WORKFLOW_CATALOG_ROUTES = (
+    ("GET", ""),
+    ("GET", "/{}"),
+    ("GET", "/{}/sample-result"),
+    ("POST", "/{}/rank"),
+    ("POST", "/{}/fit"),
+    ("POST", "/{}/preview"),
+    ("POST", "/{}/samples"),
+    ("POST", "/{}/build"),
+)
+
 # --- Routes the SDK calls that the server on master does not serve yet ------
 # Keyed by ``METHOD /normalised/path`` (placeholders as ``{}``); value names the
 # unmerged server branch that adds the route. An entry stops mattering once the
@@ -113,6 +126,10 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
     "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
     "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
+    **{
+        f"{method} /workspaces/{{}}/projects/{{}}/workflow-templates{tail}": "origin/release"
+        for method, tail in _WORKFLOW_CATALOG_ROUTES
+    },
 }
 
 # --- Operations that alias another command (identical behavior) ------------

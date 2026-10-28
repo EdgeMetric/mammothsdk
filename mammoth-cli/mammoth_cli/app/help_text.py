@@ -69,7 +69,7 @@ _GROUP_DESCRIPTIONS = {
     "skill": "Install and manage the Mammoth agent skill.",
     "snippet": "Manage reusable snippets.",
     "support": "Manage support and administration resources.",
-    "template": "Manage templates.",
+    "template": "Manage legacy workspace templates (the project catalog is 'workflow template').",
     "trash": "Inspect, restore, and remove trashed resources.",
     "user": "Manage users and account settings.",
     "view": "Transform, query, and publish data views.",
@@ -119,8 +119,11 @@ _SUBGROUP_DESCRIPTIONS = {
     "collection members": "Remove members from a collection.",
     "automation route": "Preview and set which automation a watched folder's file goes to.",
     "automation run-file": "Act on a file an automation run held back.",
-    "connector ai": "Chat with the connector assistant to set up a connection.",
-    "connector ai session": "List connector assistant sessions and their messages.",
+    "connector ai": (
+        "The older connector chat for one connection; it cannot save an AI connector. "
+        "To build one, use 'connector draft create'."
+    ),
+    "connector ai session": "List older connector chat sessions and their messages.",
     "connector connection": "Create, read, update and delete connector connections.",
     "connector draft": "Build a connector step by step: sources, gaps, sample, then save.",
     "connector draft source": "List a draft's sources, preview them and find join keys.",
@@ -243,6 +246,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "view variants": "Create view variants.",
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
+    "workflow template": (
+        "Browse the workflow template catalog, match it to your tables, preview and build it."
+    ),
     "workspace export-hosts": "Read and set the hosts exports may send data to.",
     "workspace invite": "List, resend, revoke and delete workspace invites.",
     "workspace oauth-client": "Register, list, delete and revoke OAuth client grants.",
