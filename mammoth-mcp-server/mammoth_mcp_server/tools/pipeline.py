@@ -21,12 +21,14 @@ from ..consts import (
     PipelineFields,
     StepFields,
     VersionFields,
+    ViewShape,
 )
 from ..jobs import JobStillRunning, still_running, wait_for_job
-from ..join_check import MATCHING_OPERATIONS, measure, read_before
+from ..join_check import MATCHING_OPERATIONS, measure, read_before, read_view
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import view_url
+from ..step_names import with_display_names
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
@@ -90,7 +92,7 @@ async def get_pipeline(
     Returns:
         `pipeline`: the state (`draft_mode` is off, clean or dirty; `auto_run`;
         `execution_state`). `steps`: each step's `id`, `sequence`, `status`
-        and `params` (columns there are internal names). `mammoth_url`: the
+        and `params`, with columns named as the user sees them. `mammoth_url`: the
         page in Mammoth the view opens on. When a step is in error, or changes
         are staged and not run: `problems` (each step in error, with why) and
         `next_step`, what to tell the user and do. With `include_versions`,
@@ -106,17 +108,23 @@ async def get_pipeline(
         state = await read_sdk_errors(
             client.pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
+        # The steps' last added columns are named only by the view itself.
+        view = await read_view(client, ids)
         versions = (
             {VersionFields.VERSIONS: await read_versions(client.pipeline_versions, ids)}
             if include_versions
             else {}
         )
     steps = tasks[PipelineFields.TASKS]
+    listed = steps if isinstance(steps, list) else []
+    columns = view.get(ViewShape.METADATA)
     return {
         PipelineFields.PIPELINE: state,
-        PipelineFields.STEPS: steps,
+        PipelineFields.STEPS: with_display_names(
+            listed, columns if isinstance(columns, list) else []
+        ),
         ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
-        **what_needs_doing(state, steps if isinstance(steps, list) else []),
+        **what_needs_doing(state, listed),
         **versions,
     }
 

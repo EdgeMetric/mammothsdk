@@ -89,6 +89,7 @@ def a_view(api: FakeApi, job: dict[str, Any] | None = None) -> None:
     api.answer("POST", f"{VERSIONS}/201", STARTED)
     api.answer("GET", f"{VIEW_PATH}/pipeline", PIPELINE_STATE)
     api.answer("GET", f"{VIEW_PATH}/pipeline/tasks", TASKS)
+    api.answer("GET", VIEW_PATH, {"id": VIEW, "metadata": []})
     api.answer("GET", JOB, job or done({}))
 
 

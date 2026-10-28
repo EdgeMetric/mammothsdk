@@ -863,6 +863,8 @@ class StepFields:
     PARAMS = "params"
     # The columns a step reads: the ones the steps before it leave.
     COLUMNS_READ = "prev_metadata"
+    # For the web app: a join's key analysis, with the other view's columns it uses.
+    DISPLAY_INFO = "display_info"
     RUN_STATE = "transform_status"
     FAILED_STATES = frozenset({"ERROR", "REFERROR", "EXCEPTION"})
     REFERENCE_ERRORS = "reference_errors"
