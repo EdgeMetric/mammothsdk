@@ -457,10 +457,11 @@ def test_data_get_relabels_and_drops_system_columns(
     # Data rows come back keyed by internal ids plus the system ``hash`` column;
     # the handler relabels to display names and drops ``hash``.
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "row_count": 1,
         "metadata": [
             {"internal_name": "column_1", "display_name": "store"},
             {"internal_name": "column_2", "display_name": "revenue"},
-        ]
+        ],
     }
     fake_service.responses[_DATA_GET] = {
         "data": [{"column_1": "A", "column_2": "10", "hash": "deadbeef"}]
@@ -541,9 +542,12 @@ def test_data_get_adds_column_warnings(fake_service: FakeMammothService) -> None
     assert "convert-type 7" in data["column_warnings"][0]["fix"]
 
 
-def _duplicates_read(fake_service: FakeMammothService, rows: list[dict[str, Any]]) -> None:
+def _duplicates_read(
+    fake_service: FakeMammothService, rows: list[dict[str, Any]], view_rows: int | None = None
+) -> None:
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
-        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}]
+        "row_count": len(rows) if view_rows is None else view_rows,
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}],
     }
     fake_service.responses[_DATA_GET] = {"data": rows}
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.query_data"] = {"data": rows}
@@ -570,6 +574,17 @@ def test_data_get_counts_exact_duplicates_over_the_whole_view(
     data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
     assert data["duplicates"]["exact_duplicate_rows"] == 6
     assert data["duplicates"]["row_count"] == 10
+
+
+def test_a_page_shorter_than_the_view_is_not_called_every_row(
+    fake_service: FakeMammothService,
+) -> None:
+    # 410 rows in the view, the route's first page holds 400: no "every row" claim (#335).
+    _duplicates_read(fake_service, [{"column_1": n} for n in range(400)], view_rows=410)
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    facts = data["duplicates"]
+    assert facts["scope"] == "this page only" and "row_count" not in facts
+    assert "discard-duplicates 7" in facts["table_wide_check"]
 
 
 def test_a_later_page_names_the_table_wide_duplicate_check(

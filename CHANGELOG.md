@@ -90,6 +90,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Fixed (next mammoth-cli)
 
+- CLI: `view data get` says "every row of the view" for its duplicate check only when the rows read are the whole view; a longer view (the read holds 400 rows) reports "this page only" with the table-wide check (#335).
 - CLI: when `foreign_dataset_id` is missing, `view transform join` and `lookup` use the parent dataset from the cache.
 - CLI: a deleted automation or dashboard reads as `resource_not_found`.
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
