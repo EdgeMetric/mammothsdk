@@ -121,13 +121,13 @@ async def add_export(
     async with build_client(workspace_id, project_id) as client:
         if handler is HandlerType.INTERNAL_DATASET:
             check_dataset_settings(settings)
-            named = settings.get(DatasetExportFields.TARGET_NAME)
-            if named is not None:
-                matches = await datasets_named(client, ids, str(named))
+            target = None
+            if settings.get(DatasetExportFields.DATASET_NAME) is None:
+                matches = await target_datasets(client, ids, settings)
                 if len(matches) > 1:
                     return which_dataset(ids, matches)
-                settings = target_by_id(settings, matches[0])
-            settings = dataset_target(settings)
+                target = matches[0]
+            settings = dataset_target(settings, target)
         before = {export.get(ExportFields.ID) for export in await read_view_exports(client, ids)}
         started = await read_sdk_errors(
             client.exports.create(
@@ -160,15 +160,34 @@ async def first_run(
     return await wait_for_first_run(client, ids, int(str(export.get(ExportFields.ID))))
 
 
-async def datasets_named(
-    client: MammothClient, ids: dict[str, int], name: str
+async def target_datasets(
+    client: MammothClient, ids: dict[str, int], settings: dict[str, JsonValue]
 ) -> list[dict[str, JsonValue]]:
-    """The project's datasets with this name, ignoring case.
+    """The project's datasets the settings name: by `target_ds_id`, or by
+    `target_dataset_name`, ignoring case.
 
     Raises:
-        ToolError: If no dataset has the name.
+        ToolError: If no dataset in the project is the one named.
     """
-    wanted = name.strip().casefold()
+    named = settings.get(DatasetExportFields.TARGET_NAME)
+    target_id = settings.get(DatasetExportFields.TARGET_ID)
+    datasets = await read_datasets(client, ids)
+    if named is None:
+        found = [row for row in datasets if str(row.get(ListFields.ID)) == str(target_id)]
+        missing = f"No dataset {target_id} is in project {ids['project_id']}."
+    else:
+        wanted = str(named).strip().casefold()
+        found = [row for row in datasets if str(row.get(ListFields.NAME)).casefold() == wanted]
+        missing = f"No dataset named {named!r} is in project {ids['project_id']}."
+    if not found:
+        raise ToolError(
+            f"{missing} Call list_datasets to see them, or use dataset_name to make a new one."
+        )
+    return found
+
+
+async def read_datasets(client: MammothClient, ids: dict[str, int]) -> list[dict[str, JsonValue]]:
+    """Every dataset in the view's project, by `id` and `name`."""
     found: list[dict[str, JsonValue]] = []
     offset = 0
     while True:
@@ -182,16 +201,10 @@ async def datasets_named(
             )
         )
         rows = [row for row in page.get(ListFields.DATASETS) or [] if isinstance(row, dict)]
-        found += [row for row in rows if str(row.get(ListFields.NAME)).casefold() == wanted]
+        found += rows
         if not page.get(PageFields.NEXT) or len(rows) < DATASETS_PER_READ:
-            break
+            return found
         offset += DATASETS_PER_READ
-    if not found:
-        raise ToolError(
-            f"No dataset named {name!r} is in project {ids['project_id']}. Call"
-            " list_datasets to see them, or use dataset_name to make a new one."
-        )
-    return found
 
 
 def which_dataset(ids: dict[str, int], matches: list[dict[str, JsonValue]]) -> dict[str, JsonValue]:
@@ -210,16 +223,6 @@ def which_dataset(ids: dict[str, int], matches: list[dict[str, JsonValue]]) -> d
         **outcome(ids, ExportFields.WHICH_DATASET, WHICH_DATASET_NOTE, None, None),
         ExportFields.DATASETS: listed,
     }
-
-
-def target_by_id(
-    settings: dict[str, JsonValue], dataset: dict[str, JsonValue]
-) -> dict[str, JsonValue]:
-    """The settings, with the dataset found by its name named by its id."""
-    kept = {
-        name: value for name, value in settings.items() if name != DatasetExportFields.TARGET_NAME
-    }
-    return {**kept, DatasetExportFields.TARGET_ID: dataset.get(ListFields.ID)}
 
 
 def check_dataset_settings(settings: dict[str, JsonValue]) -> None:
@@ -247,8 +250,15 @@ def check_dataset_settings(settings: dict[str, JsonValue]) -> None:
         raise ToolError(f'save_as_mode is "append" or "replace", not {mode!r}.')
 
 
-def dataset_target(settings: dict[str, JsonValue]) -> dict[str, JsonValue]:
+def dataset_target(
+    settings: dict[str, JsonValue], target: dict[str, JsonValue] | None
+) -> dict[str, JsonValue]:
     """The settings of an export into a dataset, named as the API names them.
+
+    Args:
+        settings: The settings as a model passes them.
+        target: The dataset the rows go into, or None for a new one. Its name
+            goes too, or Mammoth records the run as written to "Result Dataset".
 
     Raises:
         ToolError: If the settings cannot work, as `check_dataset_settings` says.
@@ -256,12 +266,12 @@ def dataset_target(settings: dict[str, JsonValue]) -> dict[str, JsonValue]:
     check_dataset_settings(settings)
     fields = DatasetExportFields
     mode = str(settings.get(fields.MODE) or fields.REPLACE)
-    target = settings.get(fields.TARGET_ID)
+    name = settings.get(fields.DATASET_NAME) if target is None else target.get(ListFields.NAME)
     mapping = settings.get(fields.COLUMN_MAPPING)
     try:
         return build_branch_out_params(
-            dataset_name=_text(settings.get(fields.DATASET_NAME)),
-            target_ds_id=int(str(target)) if target is not None else None,
+            dataset_name=_text(name),
+            target_ds_id=None if target is None else int(str(target.get(ListFields.ID))),
             save_as_mode=SAVE_AS[mode],
             column_mapping=(
                 {str(k): str(v) for k, v in mapping.items()} if isinstance(mapping, dict) else None

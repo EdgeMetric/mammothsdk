@@ -168,6 +168,36 @@ class TestSendingToADataset:
         sent = what_was_sent(api)["target_properties"]
         assert sent["TARGET_DS_ID"] == 44
         assert sent["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
+        # Seen live: without the name, the run said it wrote to "Result Dataset".
+        assert sent["DS_NAME"] == "Orders"
+
+    def test_a_dataset_named_by_id_is_sent_with_its_own_name(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", DATASETS, datasets_named((DATASET, "Sales"), (44, "Orders")))
+            a_view(api, [], [an_export(NEW_ID, "added", "internal_dataset")])
+            call_tool(
+                "add_export",
+                destination="internal_dataset",
+                settings={"target_ds_id": 44},
+                run_now=False,
+                **IDS,
+            )
+
+        sent = what_was_sent(api)["target_properties"]
+        assert (sent["TARGET_DS_ID"], sent["DS_NAME"]) == (44, "Orders")
+
+    def test_a_dataset_id_not_in_the_project_is_refused(self) -> None:
+        with (
+            a_fake_api() as api,
+            as_caller(),
+            pytest.raises(ToolError, match="No dataset 44"),
+        ):
+            api.answer("GET", DATASETS, datasets_named((DATASET, "Sales")))
+            call_tool(
+                "add_export", destination="internal_dataset", settings={"target_ds_id": 44}, **IDS
+            )
+
+        assert not api.sent("POST", EXPORTS)
 
     def test_two_datasets_of_that_name_are_named_and_nothing_is_added(self) -> None:
         with a_fake_api() as api, as_caller():
