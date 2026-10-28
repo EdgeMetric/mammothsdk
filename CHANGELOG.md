@@ -102,6 +102,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 ### Fixed (next mammoth-cli)
 
 - CLI: `view delete` waits for the delete job the server accepts (202) before it reads the view back, so a delete that takes a few seconds no longer reports `delete_not_applied` (#333).
+- SDK: `view task update` (`PipelineAPI.update_task`), `add_task` and `preview_task` drop the server-written `EXECUTION_TIMESTAMP` and `TASK_NAMESPACE` keys, so a task read from `view task list` can be edited and written back; a refusal that says only 'must be of type' now lists the keys sent (#341).
 
 ## mammoth-cli 2.3.1 (2026-10-26)
 

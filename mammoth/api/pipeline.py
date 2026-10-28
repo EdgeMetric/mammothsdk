@@ -31,6 +31,48 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def strip_read_only_task_keys(task_spec: Any) -> Any:
+    """Drop the server-written keys from a task spec, or from each spec of a list.
+
+    Args:
+        task_spec: A task spec dict, a list of them, or anything else (returned as is).
+
+    Returns:
+        A copy without the keys in ``READ_ONLY_TASK_KEYS``; other values are untouched.
+    """
+    if isinstance(task_spec, list):
+        return [strip_read_only_task_keys(item) for item in task_spec]
+    if isinstance(task_spec, dict):
+        return {k: v for k, v in task_spec.items() if k not in READ_ONLY_TASK_KEYS}
+    return task_spec
+
+
+def _task_params_rejection(error: MammothAPIError, task_spec: Any) -> MammothAPIError:
+    """Name the keys sent when the server refuses params with its type message.
+
+    Args:
+        error: The API error the server returned.
+        task_spec: The params that were sent.
+
+    Returns:
+        An error that names the keys sent, or ``error`` when it is not that refusal.
+    """
+    if not isinstance(task_spec, dict) or "must be of type" not in str(error):
+        return error
+    keys = sorted(set(task_spec) - _TASK_ENVELOPE_KEYS)
+    message = f"{error} " + ERR_TASK_PARAMS_REJECTED.format(
+        envelope=", ".join(sorted(_TASK_ENVELOPE_KEYS - {"task_key"})), keys=keys
+    )
+    return MammothAPIError(
+        message,
+        status_code=error.status_code,
+        response_body=error.response_body,
+        details=error.details,
+        method=error.method,
+        request_id=error.request_id,
+    )
+
+
 class DataviewDatasetStore(Protocol):
     """Where a client keeps dataview -> dataset resolutions between processes.
 
@@ -60,6 +102,35 @@ PIPELINE_RUNNING_STATES = frozenset({"modifying", "modified", "running"})
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 ERR_SAMPLE_SIZE_RANGE = "`sample_size` must be an integer from 1 through 500, got {0!r}."
 PREVIEW_SAMPLE_SIZE_MAX = 500
+# Keys the server writes into a task's params; ``list_tasks`` returns them, and an
+# older server counts each as a second transform param and refuses the edit. They are
+# dropped before any task spec is sent, so a read -> edit -> write round-trips.
+READ_ONLY_TASK_KEYS = frozenset({"EXECUTION_TIMESTAMP", "TASK_NAMESPACE"})
+# Keys a task spec may carry beside its one transform key (the server's
+# ``ADD_TASK_SPEC_KEYS`` plus the keys it ignores).
+_TASK_ENVELOPE_KEYS = frozenset(
+    {
+        "DATAVIEW_ID",
+        "SEQUENCE_NUMBER",
+        "ORDER_BY",
+        "ORDER",
+        "CONDITION",
+        "VERSION",
+        "PRESET",
+        "PARAMETER_BINDINGS",
+        "SNIPPET_BINDINGS",
+        "skip_validation",
+        "SUMMARY",
+        "task_key",
+        "TASK_KEY",
+        "IGNORE_COLUMNS",
+        "USE_COLUMNS",
+    }
+)
+ERR_TASK_PARAMS_REJECTED = (
+    "The task params were rejected. A task spec holds exactly one transform key beside "
+    "{envelope}; keys sent beyond those: {keys}."
+)
 ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0!r}."
 
 # Pipeline-item keys used to resolve the latest task sequence. Reads (data,
@@ -313,6 +384,7 @@ class PipelineAPI:
             Dict with created task info or job info.
         """
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        task_spec = strip_read_only_task_keys(task_spec)
         payload: dict[str, Any] | list[dict[str, Any]] = (
             [{"DATAVIEW_ID": dv, **spec} for spec in task_spec]
             if isinstance(task_spec, list)
@@ -373,19 +445,35 @@ class PipelineAPI:
         Returns:
             Updated task dict.
         """
-        operations = list(patches or [])
+        operations = [
+            (
+                {**patch, "value": strip_read_only_task_keys(patch.get("value"))}
+                if patch.get("path") == "params"
+                else patch
+            )
+            for patch in patches or []
+        ]
         if task_spec is not None:
-            operations.append({"op": "replace", "path": "params", "value": task_spec})
+            operations.append(
+                {"op": "replace", "path": "params", "value": strip_read_only_task_keys(task_spec)}
+            )
         if not operations:
             raise MammothValidationError("Provide `task_spec` or `patches` to update a task.")
         ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         params = {"skip_validation": skip_validation} if skip_validation is not None else None
-        response = await self._client._request_json(
-            "PATCH",
-            f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
-            params=params,
-            json={"patches": operations},
-        )
+        try:
+            response = await self._client._request_json(
+                "PATCH",
+                f"{self._base_url(ws, proj, ds, dv)}/tasks/{task_id}",
+                params=params,
+                json={"patches": operations},
+            )
+        except MammothAPIError as exc:
+            sent = next((op.get("value") for op in operations if op.get("path") == "params"), None)
+            rejection = _task_params_rejection(exc, sent)
+            if rejection is exc:
+                raise
+            raise rejection from exc
         return await self._client._wait_if_job(response)
 
     async def delete_task(
@@ -439,7 +527,7 @@ class PipelineAPI:
         response = await self._client._request_json(
             "POST",
             f"{self._base_url(ws, proj, ds, dv)}/task_preview",
-            json=task_spec,
+            json=strip_read_only_task_keys(task_spec),
             params={"sample_size": sample_size} if sample_size is not None else None,
         )
         return await self._client._wait_if_job(response)
