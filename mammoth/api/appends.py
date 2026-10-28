@@ -191,7 +191,8 @@ class AppendsAPI:
         """Wait for the rows to land in the dataset, then report what the upload did.
 
         The upload job ends when its staging dataset is made; the rows reach the target
-        after that, while it reads ``processing``.
+        after that, and the target can still read ready before it starts on them. So the
+        rows count as landed once the target is ready and lists a batch it did not have.
 
         Args:
             plan: What :meth:`prepare` returned before the files were sent.
@@ -212,12 +213,15 @@ class AppendsAPI:
             why the batches are missing.
         """
         dataset_id = int(plan["target"])
+        before = set(plan.get("batch_ids_before") or [])
         give_up_at = time.monotonic() + max(0.0, wait_seconds)
         gap = min(0.5, poll_seconds)
         settled = False
         rows_after: int | None = None
         status: str | None = None
         read_error: str | None = None
+        after: _list[dict[str, Any]] = []
+        batches_error: str | None = None
         while True:
             try:
                 read = await self._read_dataset(dataset_id, project_id)
@@ -226,22 +230,28 @@ class AppendsAPI:
                 read = {}
                 read_error = str(failure).strip() or type(failure).__name__
             status = status_of(read)
-            settled = status in SETTLED_STATUSES or status in FAILED_STATUSES
             rows_after = rows_of(read)
+            if status in FAILED_STATUSES:
+                settled = True
+            elif status in SETTLED_STATUSES:
+                # The upload job ends before the target starts taking the rows in, so a
+                # ready target may not have them yet: it has them once their batch is listed.
+                try:
+                    after = await self.list_batches(dataset_id, project_id)
+                    batches_error = None
+                except MammothError as failure:
+                    batches_error = str(failure).strip() or type(failure).__name__
+                settled = any(row["id"] not in before for row in after)
             if settled or time.monotonic() >= give_up_at:
                 break
             await asyncio.sleep(gap)
             gap = min(gap * 2, poll_seconds)
-        try:
-            after = await self.list_batches(dataset_id, project_id)
-        except MammothError as failure:
+        if batches_error is not None:
             report = describe_append(plan, rows_after, [], [], settled, status, read_error)
             report.pop("batch_ids")
-            report["batches_error"] = str(failure).strip() or type(failure).__name__
+            report["batches_error"] = batches_error
             return report
-        ours, unmatched = match_batches(
-            plan.get("batch_ids_before") or [], after, file_names, staging_ids or []
-        )
+        ours, unmatched = match_batches(list(before), after, file_names, staging_ids or [])
         return describe_append(plan, rows_after, ours, unmatched, settled, status, read_error)
 
     async def restore_mode(self, plan: dict[str, Any], project_id: int | None = None) -> str | None:

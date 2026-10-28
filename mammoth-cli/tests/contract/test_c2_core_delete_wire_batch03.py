@@ -112,9 +112,10 @@ def test_delete_batch03_emits_exact_method_path_query_and_no_body(
             )
 
     run(dashboard, "dashboard.delete", [str(DASHBOARD)])
-    assert (_path(api), api.last().method, api.last().query, api.last().json_body) == (
+    # The delete is read back afterwards (a GET), so check the DELETE itself.
+    (sent,) = [request for request in api.requests if request.method == "DELETE"]
+    assert (sent.path.removeprefix("/api/v2"), sent.query, sent.json_body) == (
         f"/dashboards/{DASHBOARD}",
-        "DELETE",
         {},
         None,
     )

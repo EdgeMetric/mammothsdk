@@ -127,9 +127,7 @@ async def list_trash(
     }
 
 
-@mcp_server.tool(
-    title="Undo: restore trash, roll back pipeline, remove batch", annotations=DESTRUCTIVE
-)
+@mcp_server.tool(title="Undo: trash, pipeline or batch", annotations=DESTRUCTIVE)
 async def undo(
     workspace_id: int,
     project_id: int,

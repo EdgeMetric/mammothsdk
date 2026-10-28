@@ -91,7 +91,13 @@ class Env:
         return [int(row["id"]) for row in await self.client.appends.list_batches(dataset_id)]
 
     async def append(self, dataset_id: int, mode: str, rows: int) -> list[int]:
-        """Append `rows` rows through the server's `append_file` and return the batch ids."""
+        """Append `rows` rows through the server's `append_file` and return the new batch ids.
+
+        The new batches are the ones the dataset lists after the upload and not before. An
+        add upload reports exactly those as `batch_ids`; a replace upload offers none for
+        removal, so its report leaves `batch_ids` out.
+        """
+        before = set(await self.batch_ids(dataset_id))
         report = await append_file(
             self.workspace_id,
             self.project_id,
@@ -100,10 +106,14 @@ class Env:
             _csv(rows, "extra"),
             "add" if mode == "add" else "replace",
         )
-        ids = report["batch_ids"]
-        assert isinstance(ids, list) and ids, report
-        batches = [batch for batch in ids if isinstance(batch, int)]
-        assert len(batches) == len(ids), report
+        batches = sorted(set(await self.batch_ids(dataset_id)) - before)
+        assert batches, report
+        if mode == "add":
+            reported = report["batch_ids"]
+            assert isinstance(reported, list), report
+            assert sorted(batch for batch in reported if isinstance(batch, int)) == batches, report
+        else:
+            assert "batch_ids" not in report, report
         self.batches.extend((dataset_id, batch) for batch in batches)
         return batches
 
