@@ -3,14 +3,13 @@
 No mocks: each test uploads real files, reads the stored state back through the API and
 deletes what it created, even when an assertion fails.
 
-Required env vars: MAMMOTH_BASE_URL, MAMMOTH_API_KEY, MAMMOTH_API_SECRET,
-MAMMOTH_WORKSPACE_ID, MAMMOTH_PROJECT_ID.
+Credentials: the ``MAMMOTH_*`` group of ``conftest.py`` (``adv_client``), a token or a
+key and secret; the tests skip when it is not set.
 """
 
 from __future__ import annotations
 
 import contextlib
-import os
 from pathlib import Path
 from typing import Any
 
@@ -20,18 +19,7 @@ from openpyxl import Workbook
 from mammoth import MammothClient
 from mammoth.models.datasets import DataAdditionMode
 
-_REQUIRED_ENV = (
-    "MAMMOTH_BASE_URL",
-    "MAMMOTH_API_KEY",
-    "MAMMOTH_API_SECRET",
-    "MAMMOTH_WORKSPACE_ID",
-    "MAMMOTH_PROJECT_ID",
-)
-_missing = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
-pytestmark = [
-    pytest.mark.skipif(bool(_missing), reason=f"Missing env vars: {', '.join(_missing)}"),
-    pytest.mark.asyncio(loop_scope="session"),
-]
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 #: What the backend stores for a dataset with no settings of its own
 #: (mvc-service ``SchemaPropertiesDefaultValues``).
@@ -48,15 +36,9 @@ _SHEETS = ("Jan", "Feb", "Mar")
 
 
 @pytest.fixture(scope="module")
-def client() -> MammothClient:
-    c = MammothClient(
-        api_key=os.environ["MAMMOTH_API_KEY"],
-        api_secret=os.environ["MAMMOTH_API_SECRET"],
-        workspace_id=int(os.environ["MAMMOTH_WORKSPACE_ID"]),
-        base_url=os.environ["MAMMOTH_BASE_URL"],
-    )
-    c.set_project_id(int(os.environ["MAMMOTH_PROJECT_ID"]))
-    return c
+def client(adv_client: MammothClient) -> MammothClient:
+    """The suite's ``MAMMOTH_*`` client, under the name these tests use."""
+    return adv_client
 
 
 async def _stored_schema_properties(client: MammothClient, dataset_id: int) -> dict[str, Any]:
@@ -82,7 +64,7 @@ async def test_set_update_method_changes_only_the_mode(
         read = await client.datasets.get_update_method(dataset_id)
         before = _settings_subset(await _stored_schema_properties(client, dataset_id))
         assert read == {
-            k: v for k, v in read.items() if k in _RELEASE_DEFAULTS | {"schema_mapping"}
+            k: v for k, v in read.items() if k in {*_RELEASE_DEFAULTS, "schema_mapping"}
         }
         expected = {**_RELEASE_DEFAULTS, **before, "data_addition_mode": "replace"}
 
