@@ -112,7 +112,8 @@ class TestWhatAModelIsToldWhenTheApiRefuses:
             run(read_sdk_errors(refused()))
 
         message = str(error.value)
-        assert "Invalid source type" in message
+        # Mammoth's sentence has no full stop; the hint is a sentence of its own.
+        assert "Invalid source type. A dataset made" in message
         assert "uploaded file has no source to pull from" in message
         assert "add_dataset_from_connection" in message
 

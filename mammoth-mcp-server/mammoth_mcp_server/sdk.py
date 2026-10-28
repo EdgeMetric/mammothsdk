@@ -273,10 +273,10 @@ async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T
             raise ToolError(f"{API_ERROR_PREFIX}: {not_found}") from refused
         body = getattr(refused, "response_body", None)
         code = body.get("error_code") if isinstance(body, dict) else None
-        hint = f" {REFUSAL_HINTS[code]}" if code in REFUSAL_HINTS else ""
-        raise ToolError(
-            f"{API_ERROR_PREFIX}: {str(refused).strip() or UNREADABLE_API_ERROR}{hint}"
-        ) from refused
+        said = str(refused).strip() or UNREADABLE_API_ERROR
+        if code in REFUSAL_HINTS:
+            said = f"{said.rstrip('.')}. {REFUSAL_HINTS[code]}"
+        raise ToolError(f"{API_ERROR_PREFIX}: {said}") from refused
 
 
 async def request_api(
