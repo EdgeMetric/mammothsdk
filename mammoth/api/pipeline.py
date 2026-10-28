@@ -8,6 +8,7 @@ Not intended for direct use — use client.views.get(id) to get a View object in
 from __future__ import annotations
 
 import asyncio
+import copy
 import logging
 import time
 from collections.abc import Mapping
@@ -63,14 +64,13 @@ def _task_params_rejection(error: MammothAPIError, task_spec: Any) -> MammothAPI
     message = f"{error} " + ERR_TASK_PARAMS_REJECTED.format(
         envelope=", ".join(sorted(_TASK_ENVELOPE_KEYS - {"task_key"})), keys=keys
     )
-    return MammothAPIError(
-        message,
-        status_code=error.status_code,
-        response_body=error.response_body,
-        details=error.details,
-        method=error.method,
-        request_id=error.request_id,
-    )
+    # A copy keeps the class and every attribute the request layer set
+    # (operation_state, phase, job_handle, retry_after, ...); only the text changes.
+    rejection = copy.copy(error)
+    rejection.message = message
+    rejection.args = (message,)
+    rejection.details = dict(error.details)
+    return rejection
 
 
 class DataviewDatasetStore(Protocol):
@@ -104,10 +104,16 @@ ERR_SAMPLE_SIZE_RANGE = "`sample_size` must be an integer from 1 through 500, go
 PREVIEW_SAMPLE_SIZE_MAX = 500
 # Keys the server writes into a task's params; ``list_tasks`` returns them, and an
 # older server counts each as a second transform param and refuses the edit. They are
-# dropped before any task spec is sent, so a read -> edit -> write round-trips.
+# dropped before any task spec is sent, so a read -> edit -> write round-trips. The
+# names are mvc-service ``CommonConstants/CommonConstants/dba_const.py``
+# ``KEYWORDS.EXECUTION_TIMESTAMP`` (line 10) and ``KEYWORDS.TASK_NAMESPACE`` (line 37).
 READ_ONLY_TASK_KEYS = frozenset({"EXECUTION_TIMESTAMP", "TASK_NAMESPACE"})
-# Keys a task spec may carry beside its one transform key (the server's
-# ``ADD_TASK_SPEC_KEYS`` plus the keys it ignores).
+# Keys a task spec may carry beside its one transform key. Mirrors mvc-service
+# ``apiv2/apiv2/dataview_pipeline/tasks/schema.py``: ``ADD_TASK_SPEC_KEYS`` (line 108) plus
+# the ``ignored_keys`` set in ``AddTaskSpec.ensure_task_param`` (line 129). Also mirrored
+# from there: the "must be of type" message (``tasks/schema.py:320``, built in
+# ``dataview_pipeline/schema.py:375``), which ``_task_params_rejection`` matches because
+# the server sends no error code for it. A change on the server is not noticed here.
 _TASK_ENVELOPE_KEYS = frozenset(
     {
         "DATAVIEW_ID",

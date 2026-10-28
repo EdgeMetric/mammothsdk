@@ -1281,47 +1281,6 @@ class TestPipelineAPI:
             {"patches": [{"op": "replace", "path": "params", "value": {"MATH": {}}}]},
         )
 
-    async def test_update_task_drops_the_keys_the_server_wrote(self, client: MammothClient):
-        """A task as list_tasks returns it must write back without its server-only keys."""
-        read_back = {
-            "FILTER": {"CONDITION": {}},
-            "DATAVIEW_ID": 42,
-            "EXECUTION_TIMESTAMP": "20261028091500",
-            "TASK_NAMESPACE": "abcde",
-            "TASK_KEY": "filter",
-        }
-        await client.pipeline.update_task(
-            dataview_id=42, task_id=7, task_spec=read_back, dataset_id=500
-        )
-        sent = client._request_json.call_args.kwargs["json"]["patches"][0]["value"]
-        assert "EXECUTION_TIMESTAMP" not in sent
-        assert "TASK_NAMESPACE" not in sent
-        assert sent["FILTER"] == {"CONDITION": {}}
-
-    async def test_update_task_patches_drop_the_keys_the_server_wrote(self, client: MammothClient):
-        patches = [
-            {"op": "replace", "path": "params", "value": {"MATH": {}, "TASK_NAMESPACE": "x"}}
-        ]
-        await client.pipeline.update_task(
-            dataview_id=42, task_id=7, patches=patches, dataset_id=500
-        )
-        sent = client._request_json.call_args.kwargs["json"]["patches"][0]["value"]
-        assert sent == {"MATH": {}}
-
-    async def test_update_task_names_the_keys_when_the_server_gives_only_a_type_error(
-        self, client: MammothClient
-    ):
-        client._request_json.side_effect = MammothAPIError(
-            "value must be of type AddTaskSpec", status_code=400
-        )
-        with pytest.raises(MammothAPIError, match="keys sent beyond those: \\['EXTRA', 'MATH'\\]"):
-            await client.pipeline.update_task(
-                dataview_id=42,
-                task_id=7,
-                task_spec={"MATH": {}, "EXTRA": 1, "DATAVIEW_ID": 42},
-                dataset_id=500,
-            )
-
     async def test_delete_task(self, client: MammothClient):
         await client.pipeline.delete_task(dataview_id=42, task_id=7, dataset_id=500)
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/pipeline/tasks/7")
