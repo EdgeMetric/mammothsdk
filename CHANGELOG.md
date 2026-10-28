@@ -97,6 +97,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: a deleted automation or dashboard reads as `resource_not_found`.
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
+- `agent chat --wait` returns the reply its own turn wrote, never the previous turn's; when the server moves a long turn to the background it returns `reply: null`, `background: true` and `next`, the command that reads the answer (SDK `AgentsAPI.chat` too) (D5)
 
 ### Changed (next mammoth-io)
 

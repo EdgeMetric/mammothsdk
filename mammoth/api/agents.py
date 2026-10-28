@@ -110,7 +110,10 @@ class AgentsAPI:
         Returns:
             Dict with ``session_id``, ``turn_id`` and ``request_key``. With
             *wait*, also ``working`` (still writing when the wait ran out) and
-            ``reply`` (the newest assistant message, or ``None``).
+            ``reply`` (the assistant message this turn wrote, or ``None``). When the
+            server moved the turn to a background run, ``reply`` is ``None`` and
+            ``background`` is true with ``next``, the command that reads the answer
+            once it lands; an earlier turn's reply is never returned in its place.
         """
         key = request_key or uuid.uuid4().hex
         body: dict[str, Any] = {"request_key": key, "message": message, "scope": scope}
@@ -272,8 +275,38 @@ class AgentsAPI:
             if not working or time.monotonic() >= deadline:
                 break
             await asyncio.sleep(CHAT_POLL_SECONDS)
-        replies = [m for m in page.get("messages", []) if m.get("role") == "assistant"]
-        return {**started, "working": working, "reply": replies[-1] if replies else None}
+        reply = self._reply_of_turn(page.get("messages", []), started["turn_id"])
+        result = {**started, "working": working, "reply": reply}
+        if reply is None and not working:
+            # The server moved the turn to a background run: its answer lands in the session
+            # later, and no earlier reply may stand in for it.
+            result["background"] = True
+            result["next"] = f"mammoth agent session messages {started['session_id']}"
+        return result
+
+    @staticmethod
+    def _reply_of_turn(messages: list[dict[str, Any]], turn_id: str) -> dict[str, Any] | None:
+        """The assistant message written by *turn_id*, never an earlier turn's reply.
+
+        Rows from before the server tagged messages with a turn fall back to the assistant
+        messages after the session's last user message.
+
+        Args:
+            messages: The session's messages, oldest first.
+            turn_id: The turn the send returned.
+
+        Returns:
+            The newest assistant message of that turn, or ``None`` when it has written none.
+        """
+        assistant = [m for m in messages if m.get("role") == "assistant"]
+        of_turn = [m for m in assistant if m.get("turn_id") == turn_id]
+        if of_turn:
+            return of_turn[-1]
+        if any(m.get("turn_id") for m in assistant):
+            return None
+        last_user = max((i for i, m in enumerate(messages) if m.get("role") == "user"), default=-1)
+        after = [m for m in messages[last_user + 1 :] if m.get("role") == "assistant"]
+        return after[-1] if after else None
 
     async def session_delete(self, session_id: str) -> dict[str, Any]:
         """Delete an agent chat session.
