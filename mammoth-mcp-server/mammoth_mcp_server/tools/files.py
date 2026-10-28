@@ -29,6 +29,7 @@ from ..consts import (
     ColumnFields,
     FilePatchFields,
     FileSettingsFields,
+    FolderFields,
     InterpretationFields,
     JobFields,
     UnstructuredFields,
@@ -42,13 +43,18 @@ from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..upload_report import report_upload
 from ..upload_tickets import read_ticket
 from ..upload_wait import finish_upload
+from .folders import read_folders
 
 type DateFormat = Literal["US", "UK"]
 
 
 @mcp_server.tool(title="Upload file", annotations=CHANGES)
 async def upload_file(
-    workspace_id: int, project_id: int, file_name: str, content: str
+    workspace_id: int,
+    project_id: int,
+    file_name: str,
+    content: str,
+    folder_resource_id: int | None = None,
 ) -> dict[str, JsonValue]:
     """Create a dataset in a project from text you have.
 
@@ -66,6 +72,9 @@ async def upload_file(
         project_id: Which project to upload into.
         file_name: Name of the file, ending in .csv, .tsv, .json or .txt.
         content: The file's content, for example "name,amount\\nfoo,1\\n".
+        folder_resource_id: A folder of the project to put the file in, as
+            `list_files` or `create_folder` names it. A folder automation
+            picks up what lands there. Leave out for the project itself.
 
     Returns:
         As `check_upload` reports it: `status`, and `files`, the file and the
@@ -81,6 +90,11 @@ async def upload_file(
             "POST",
             ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
             upload=[(file_name, content.encode(), find_media_type(file_name))],
+            query=(
+                {UploadFields.FOLDER_RESOURCE_ID: folder_resource_id}
+                if folder_resource_id is not None
+                else None
+            ),
         )
     return await finish_upload(
         workspace_id, project_id, since, await wait_for_job(workspace_id, started)
@@ -646,7 +660,7 @@ async def list_files(
     limit: int = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
-    """List the files uploaded to a project.
+    """List the files uploaded to a project, and its folders.
 
     A file is what was uploaded; the dataset is what Mammoth made of it.
 
@@ -655,9 +669,13 @@ async def list_files(
         project_id: Which project to look in.
         limit: How many files to return.
         offset: How many files to skip, for paging.
+
+    Returns:
+        `files`, and `folders`: each folder's `folder_id`, `name`, `parent_id`
+        and `folder_resource_id`, which uploads and folder automations take.
     """
     async with build_client(workspace_id, project_id) as client:
-        return await request_api(
+        listed = await request_api(
             client,
             "GET",
             ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
@@ -667,6 +685,8 @@ async def list_files(
                 "offset": offset,
             },
         )
+        folders = await read_folders(client, workspace_id, project_id)
+    return {**listed, FolderFields.FOLDERS: folders}
 
 
 @mcp_server.tool(title="Get file", annotations=READS)

@@ -223,6 +223,7 @@ async def send_to_mammoth(ticket: Record, files: FileUploads) -> dict[str, JsonV
     """
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
+    folder = ticket.get(UploadFields.FOLDER_RESOURCE_ID)
     with as_the_caller(read_caller(ticket)):
         async with build_client(workspace_id, project_id) as client:
             # Not `request_api`: that turns a refusal into the ToolError a
@@ -232,6 +233,7 @@ async def send_to_mammoth(ticket: Record, files: FileUploads) -> dict[str, JsonV
                 "POST",
                 ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
                 files=[(UPLOAD_FIELD, one) for one in files],
+                params={UploadFields.FOLDER_RESOURCE_ID: folder} if folder is not None else None,
             )
     return payload
 

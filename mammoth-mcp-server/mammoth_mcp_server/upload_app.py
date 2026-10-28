@@ -231,7 +231,9 @@ chat_apps.add_html_resource(
 
 
 @chat_apps.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
-async def request_upload(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
+async def request_upload(
+    workspace_id: int, project_id: int | None = None, folder_resource_id: int | None = None
+) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 
     Use this for any file you do not already hold as text: a spreadsheet, a
@@ -258,6 +260,9 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
         project_id: Which project the files land in. Leave it out when the
             user limited this connection to one project: that is the project
             the files land in. With several, name one of them.
+        folder_resource_id: A folder of the project to put the files in, as
+            `list_files` or `create_folder` names it. A folder automation
+            picks up what lands there. Leave out for the project itself.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
@@ -272,7 +277,7 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
         pinned = own_projects()
         may_use = f"{named_projects(pinned)}" if pinned else "any project in the workspace"
         raise ToolError(f"Name the project the files land in: this connection may use {may_use}.")
-    upload_id = await mint_ticket(caller, workspace_id, landing)
+    upload_id = await mint_ticket(caller, workspace_id, landing, folder_resource_id)
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",
         UploadFields.UPLOAD_ID: upload_id,

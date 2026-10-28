@@ -181,14 +181,27 @@ class TestWhoMayCallTheMcpEndpoint:
 
 class TestTheUploadPage:
     @staticmethod
-    def a_ticket() -> str:
+    def a_ticket(folder_resource_id: int | None = None) -> str:
         """A ticket minted as a signed-in caller, as `request_upload` mints one."""
         from mcp.server.auth.middleware.auth_context import get_access_token
 
         with as_caller(token=GOOD_TOKEN):
             caller = get_access_token()
             assert caller is not None
-            return run(mint_ticket(caller, WORKSPACE, PROJECT))
+            return run(mint_ticket(caller, WORKSPACE, PROJECT, folder_resource_id))
+
+    def test_a_file_for_a_folder_goes_into_that_folder(self, server: TestClient) -> None:
+        ticket = self.a_ticket(folder_resource_id=77)
+        with a_fake_api() as api:
+            api.answer("POST", FILES, {"id": 31, "status": "processing"})
+            server.post(
+                "/upload",
+                params={UploadFields.TICKET: ticket},
+                files={"data": ("sales.csv", b"a,b\n1,2\n", "text/csv")},
+            )
+
+        [upload] = api.sent("POST", FILES)
+        assert upload.url.params["folder_resource_id"] == "77"
 
     def test_mammoths_own_refusal_reaches_the_page(self, server: TestClient) -> None:
         # Unhandled this leaves as a 500, and the page can only say the upload

@@ -140,6 +140,7 @@ class UploadFields:
     JOB_ID = "job_id"
     # What the upload job returns: one job per file, under this key.
     JOB_IDS = "job_ids"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
     NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"
     # When the files were sent: what the upload made is what was created since.
@@ -405,6 +406,19 @@ class ViewFields:
     DELETED = "deleted"
     FAILED = "failed"
     NEXT_STEP = "next_step"
+
+
+class FolderFields:
+    """A project's folders, as the API lists them and this server reports them."""
+
+    FOLDERS = "folders"
+    FOLDER = "folder"
+    ID = "id"
+    RESOURCE_ID = "resource_id"
+    NAME = "name"
+    PARENT_ID = "parent_id"
+    FOLDER_ID = "folder_id"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
 
 
 class TrashFields:

@@ -35,8 +35,10 @@ async def finish_upload(
         UploadFields.WORKSPACE_ID: workspace_id,
         UploadFields.PROJECT_ID: project_id,
     }
-    running = await _wait_for_each_file(workspace_id, started)
-    report = await report_upload(ticket) if running else await _report_once_read(ticket)
+    jobs = _file_jobs(started)
+    running = await _wait_for_each_file(workspace_id, jobs)
+    read_once = running or not jobs
+    report = await report_upload(ticket) if read_once else await _report_once_read(ticket)
     if running:
         report[UploadFields.STATUS] = UploadFields.PROCESSING
         report[UploadFields.JOB_IDS] = list[JsonValue](running)
@@ -46,14 +48,19 @@ async def finish_upload(
     return report
 
 
-async def _wait_for_each_file(workspace_id: int, started: dict[str, JsonValue]) -> list[int]:
-    """Wait for each file's job, and return the ones still running when time ran out."""
+def _file_jobs(started: dict[str, JsonValue]) -> list[int]:
+    """The job of each file the upload took. None when Mammoth refused them all."""
     jobs = started.get(UploadFields.JOB_IDS)
+    found = (
+        [job_id_of(job) for job in jobs if isinstance(job, dict)] if isinstance(jobs, list) else []
+    )
+    return [job_id for job_id in found if job_id is not None]
+
+
+async def _wait_for_each_file(workspace_id: int, jobs: list[int]) -> list[int]:
+    """Wait for each file's job, and return the ones still running when time ran out."""
     running: list[int] = []
-    for job in jobs if isinstance(jobs, list) else []:
-        job_id = job_id_of(job) if isinstance(job, dict) else None
-        if job_id is None:
-            continue
+    for job_id in jobs:
         try:
             await wait_for_job(workspace_id, {UploadFields.JOB_ID: job_id})
         except JobStillRunning:

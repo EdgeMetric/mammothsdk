@@ -27,13 +27,16 @@ from .consts import UPLOAD_SECONDS, UploadFields
 from .store import Record, recall, remember, seal, unseal
 
 
-async def mint_ticket(caller: AccessToken, workspace_id: int, project_id: int) -> str:
+async def mint_ticket(
+    caller: AccessToken, workspace_id: int, project_id: int, folder_resource_id: int | None = None
+) -> str:
     """Remember who is uploading where, and return the ticket that stands for it.
 
     Args:
         caller: The MCP caller, whose permissions the upload runs with.
         workspace_id: Which workspace the file lands in.
         project_id: Which project the file lands in.
+        folder_resource_id: The folder the file lands in, if one was named.
 
     Returns:
         The upload id, which is both the ticket in the link and what
@@ -48,6 +51,11 @@ async def mint_ticket(caller: AccessToken, workspace_id: int, project_id: int) -
             UploadFields.PROJECT_ID: project_id,
             UploadFields.STATUS: UploadFields.WAITING,
             UploadFields.CALLER: seal(caller.model_dump(mode="json")),
+            **(
+                {UploadFields.FOLDER_RESOURCE_ID: folder_resource_id}
+                if folder_resource_id is not None
+                else {}
+            ),
         },
         UPLOAD_SECONDS,
     )

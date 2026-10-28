@@ -15,6 +15,7 @@ TOOLS = {
     "connect_source",
     "create_automation",
     "create_dashboard",
+    "create_folder",
     "create_view",
     "delete_automation",
     "delete_dashboard",
