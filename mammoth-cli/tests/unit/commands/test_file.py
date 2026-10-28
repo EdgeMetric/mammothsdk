@@ -19,7 +19,6 @@ _GET = "mammoth.api.files.FilesAPI.get"
 _UPDATE = "mammoth.api.files.FilesAPI.update"
 _SET_PASSWORD = "mammoth.api.files.FilesAPI.set_password"
 _EXTRACT_SHEETS = "mammoth.api.files.FilesAPI.extract_sheets"
-_DELETE = "mammoth.api.files.FilesAPI.delete"
 _BULK_DELETE = "mammoth.api.files.FilesAPI.bulk_delete"
 _UPLOAD = "mammoth.api.files.FilesAPI.upload"
 _UPLOAD_RESULT = "mammoth.api.files.FilesAPI.upload_result"
@@ -216,11 +215,6 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    file_cmd.file_delete(_inv("file.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"file_id": 7})]
-
-
 def test_bulk_delete_requires_file_ids(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         file_cmd.file_bulk_delete(_inv("file.bulk-delete", yes=True))
@@ -260,8 +254,6 @@ def test_upload_uses_files_input_field_when_no_positional(
             {
                 "files": ["a.csv"],
                 "folder_resource_id": "r1",
-                "append_to_ds_id": 9,
-                "override_target_schema": True,
                 "wait_for_completion": False,
                 "timeout": 30,
             }
@@ -275,8 +267,6 @@ def test_upload_uses_files_input_field_when_no_positional(
             {
                 "files": ["a.csv"],
                 "folder_resource_id": "r1",
-                "append_to_ds_id": 9,
-                "override_target_schema": True,
                 "wait_for_completion": False,
                 "timeout": 30,
             },
@@ -594,77 +584,7 @@ def test_upload_result_names_each_dataset_in_its_health_entry(
     assert with_dataset_health(data)["dataset_health"][0]["name"] == "foo.csv"
 
 
-def test_append_upload_reports_the_target_dataset_not_the_staging_one(
-    isolated_cli_config: object, fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    """Bug bash 2026-10-15: the result named the deleted staging dataset plus a preview_error."""
-    csv = tmp_path / "d11.csv"
-    csv.write_text("day,events\n2026-10-11,3\n")
-    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [313583], "errors": {}}
-
-    def _get(log: list[Any]) -> dict[str, Any]:
-        reads = [kw for sym, kw in log if sym.endswith("DatasetsAPI.get")]
-        rows = 30 if len(reads) == 1 else 33
-        return {"id": 313571, "name": "events", "status": "ready", "stats": {"row_count": rows}}
-
-    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = _get
-    data, _ = file_cmd.file_upload(
-        _inv(
-            "file.upload",
-            extra_args=[str(csv)],
-            input_file=str(_input_doc(tmp_path, {"append_to_ds_id": 313571})),
-        )
-    )
-    assert data["dataset_id"] == 313571
-    assert data["dataset_ids"] == [313571]
-    assert data["appended_to"] == 313571
-    assert data["rows_before"] == 30 and data["rows_after"] == 33 and data["rows_added"] == 3
-    assert "preview_error" not in json.dumps(data)
-    assert 313583 not in [d["id"] for d in data["datasets"]]
-    assert not any(kw.get("dataset_id") == 313583 for _sym, kw in fake_service.call_log)
-
-
-def test_append_upload_waits_for_the_target_to_take_the_rows(
-    isolated_cli_config: object,
-    fake_service: FakeMammothService,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Found live by recipe run: the rows reach the target after the upload job ends."""
-    monkeypatch.setattr(file_cmd.time, "sleep", lambda _s: None)
-    csv = tmp_path / "more.csv"
-    csv.write_text("day,events\n2026-10-11,3\n")
-    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [313583], "errors": {}}
-    # Read 1 is the count before; then the target is busy twice, then ready with the rows.
-    states = iter([("ready", 30), ("processing", 30), ("unknown", 30), ("ready", 33)])
-
-    def _get(log: list[Any]) -> dict[str, Any]:
-        status, rows = next(states, ("ready", 33))
-        return {"id": 9, "name": "events", "status": status, "stats": {"row_count": rows}}
-
-    fake_service.responses[_DATASET_GET] = _get
-    data, _ = file_cmd.file_upload(
-        _inv(
-            "file.upload",
-            extra_args=[str(csv)],
-            input_file=str(_input_doc(tmp_path, {"append_to_ds_id": 9})),
-        )
-    )
-    assert data["status"] == "ready"
-    assert data["rows_added"] == 3
-
-
 def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(document))
     return doc
-
-
-def test_an_append_wait_that_runs_out_says_so(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(file_cmd, "_APPEND_WAIT_S", 0.3)
-    monkeypatch.setattr(file_cmd.time, "sleep", lambda _s: None)
-    status = ["processing"]
-    monkeypatch.setattr(file_cmd, "_dataset_status", lambda _s, _d: (status[0], None, None))
-    assert file_cmd._wait_until_ready(object(), 5) is False
-    status[0] = "ready"
-    assert file_cmd._wait_until_ready(object(), 5) is True

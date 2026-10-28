@@ -235,3 +235,48 @@ def test_job_wait_is_compact_for_an_embedded_caller() -> None:
 def test_job_wait_accepts_full() -> None:
     assert "job.wait" in FULL_FLAG_COMMANDS
     validate_extra_args("job.wait", [FULL_FLAG])
+
+
+# --- no placeholder ids; a finished job keeps its payload ------------------
+
+
+def _generate_inv() -> Invocation:
+    return Invocation(command_id="dashboard.v3.generate")
+
+
+def test_no_known_dashboard_id_omits_read_with_instead_of_a_placeholder() -> None:
+    data = with_compact(_generate_inv(), _figure_add_result())
+    assert "read_with" not in data["compact"]
+    assert "DASHBOARD_ID" not in json.dumps(data)
+    assert data["compact"]["omitted"]
+
+
+def test_the_dashboard_id_comes_from_the_result_of_a_generate() -> None:
+    full = {**_figure_add_result(), "result": {"dashboard_id": 91}}
+    data = with_compact(_generate_inv(), full)
+    assert data["compact"]["read_with"] == "mammoth dashboard canvas get 91"
+
+
+def test_the_dashboard_id_comes_from_meta_opens() -> None:
+    meta = {"opens": [{"kind": "view", "id": 3}, {"kind": "dashboard", "id": 92}]}
+    data = with_compact(_generate_inv(), _figure_add_result(), meta)
+    assert data["compact"]["read_with"] == "mammoth dashboard canvas get 92"
+
+
+def test_a_job_wait_payload_that_compacts_to_nothing_is_kept_whole() -> None:
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, api_token="jwt", server_prefix="box", workspace_id=5
+    )
+    token = embedded.enter(embedded.EmbeddedCall(login=login))
+    try:
+        full = {
+            "status": "success",
+            "job_id": 41,
+            "result": {"plan": {"steps": 1}},
+            "response": {"dataset_id": 12, "plan": {"steps": 1}},
+        }
+        data = with_compact(_job_wait_inv(), full)
+    finally:
+        embedded.leave(token)
+    assert data["result"] == {"plan": {"steps": 1}}
+    assert data["response"] == {"dataset_id": 12}

@@ -89,7 +89,9 @@ commands:
     past a few MB and poll the returned job on timeout. Upload authorization is tenant- and scope-specific;
     a permission failure does not make this route universally unavailable. On success retain returned
     IDs, read them back, and verify owned cleanup; do not assume other upload variants are qualified.
-    Each sheet of an Excel file becomes its own dataset.'
+    Each sheet of an Excel file becomes its own dataset. The input field mode (replace or add) sets the
+    update method of the dataset the file is appended to: it needs append_to_ds_id and cannot be combined
+    with wait_for_completion false (both are usage errors).'
 - command_id: file.upload-folder
   output_schema: {ref: FolderUploadResult}
   readback:

@@ -82,6 +82,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.update": frozenset({"patch_data"}),
     # The endpoint names the target page as ``page``; the handler maps it onto these two.
     "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
+    # The password comes from ``password_file``, never from the command line.
+    "dashboard.share": frozenset({"password"}),
     # The handler builds the panel from ``edits`` and the figure from ``card``.
     "view.explore-panel.edit": frozenset({"panel"}),
     "view.explore-panel.add-to-dashboard": frozenset(
@@ -148,6 +150,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             }
         }
     },
+    # The four reading settings are optional (the SDK keeps the stored ones); one
+    # changed alone is the call this command exists for.
+    "dataset.file-settings.update": {"initial_skip_count": 2},
+    "dataset.update-method.set": {"mode": "replace"},
     "automation.route.order": {"automation_ids": [12, 11]},
     "automation.route.preview": {"names": ["sales_2026-10.csv"]},
     "automation.runs": {"limit": 10},

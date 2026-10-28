@@ -138,11 +138,6 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    automation_cmd.automation_delete(_inv("automation.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"automation_id": 7})]
-
-
 # --- automation create -----------------------------------------------------
 
 

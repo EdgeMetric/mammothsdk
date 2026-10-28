@@ -15,6 +15,7 @@ from mammoth.exceptions import (
     MammothDeletionVerificationError,
     MammothValidationError,
 )
+from mammoth.models.datasets import DataAdditionMode
 
 if TYPE_CHECKING:
     from ..client import MammothClient
@@ -26,6 +27,44 @@ ERR_FOLLOW_BOOL = "`follow` must be true or false, got {0!r}."
 ERR_FILE_OBJECT_ID_POSITIVE = "`file_object_id` must be a positive integer, got {0}."
 _INTERPRETATION_MODES = ("interpreted", "original")
 ERR_TOOL_CLAIM_TOKEN = "`token` must be 1 to 300 characters, got {0} characters."
+ERR_FILE_SETTINGS_UNKNOWN = "The dataset's current {0} could not be read; pass it explicitly."
+ERR_DATA_ADDITION_MODE = "`mode` must be 'replace' or 'combine', got {0!r}."
+#: The fields of the backend's ``SchemaSettings`` (mvc-service apiv2 datasets schema),
+#: which the ``replace schema_settings`` patch stores whole.
+_SCHEMA_SETTINGS_FIELDS = (
+    "data_addition_mode",
+    "strict_data_type_check",
+    "strict_column_length_check",
+    "convert_columns_to_text",
+    "convert_incompatible_data_to_null",
+    "delete_after_append",
+    "match_existing_target_schema",
+    "schema_mapping",
+    "unique_sequence_column",
+    "ignored_source_columns",
+    "optional_destination_columns",
+)
+#: What the platform stores for a dataset that has no settings yet: mvc-service
+#: ``api/api/ds/schema.py`` ``SchemaPropertiesDefaultValues`` (origin/release).
+#: The PATCH handler (``apiv2/apiv2/datasets/utils.py``
+#: ``update_schema_settings_for_dataset``) stores ``SchemaSettings.model_dump()``
+#: whole, and that model's own field defaults differ again (``data_addition_mode``
+#: defaults to "replace", ``apiv2/apiv2/datasets/schema.py``), so every field must
+#: be sent: one left out is stored as the model default, not as the dataset had it.
+#: ``ignored_source_columns`` and ``optional_destination_columns`` are not defaulted: they
+#: are read back with the other stored settings (``_SCHEMA_SETTINGS_FIELDS``), so
+#: ``set_update_method`` sends the dataset's own choices again and echoes them as stored.
+#: A dataset that holds none sends none, and the backend then keeps its remembered choices
+#: when the matching keys are unchanged (``_with_remembered_column_choices``).
+_STORED_DEFAULTS: dict[str, Any] = {
+    "data_addition_mode": "combine",
+    "delete_after_append": True,
+    "strict_data_type_check": True,
+    "convert_columns_to_text": False,
+    "strict_column_length_check": False,
+    "match_existing_target_schema": True,
+    "convert_incompatible_data_to_null": False,
+}
 #: The server's length limit on an Open tables link's token.
 TOOL_CLAIM_TOKEN_MAX = 300
 
@@ -467,6 +506,107 @@ class DatasetsAPI:
             json={"patch": {"op": "replace", "path": "name", "value": name}},
             **({"params": {"unique": "true"}} if unique else {}),
         )
+
+    async def get_update_method(
+        self,
+        dataset_id: int,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read what new rows do to a dataset, and how they are matched to its columns.
+
+        The settings live in the dataset's ``configurations.schema_properties``; the web
+        app calls ``data_addition_mode`` the dataset's "Update Method".
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            The stored settings, keyed as the ``schema_settings`` patch takes them
+            (``data_addition_mode``, ``schema_mapping``, ``delete_after_append``, ...).
+            Empty when the dataset has none stored yet; the platform then treats it as
+            ``combine`` (new rows are added).
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        response = await self.get(
+            dataset_id,
+            workspace_id=workspace_id,
+            project_id=project_id,
+            fields="id,configurations",
+        )
+        dataset = response.get("dataset", response) if isinstance(response, dict) else {}
+        configurations = dataset.get("configurations") if isinstance(dataset, dict) else None
+        stored = (configurations or {}).get("schema_properties") or {}
+        return {key: stored[key] for key in _SCHEMA_SETTINGS_FIELDS if key in stored}
+
+    async def set_update_method(
+        self,
+        dataset_id: int,
+        mode: str,
+        schema_mapping: dict[str, _list[str]] | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Set whether a new file or pull replaces a dataset's rows or adds to them.
+
+        The ``replace schema_settings`` patch stores the whole settings object, so a
+        field it is not sent goes back to its default. This reads the stored settings
+        first and sends them back with only ``mode`` (and ``schema_mapping``) changed;
+        a field the dataset does not hold yet is sent as the platform stores it by
+        default (see ``_STORED_DEFAULTS``).
+
+        The read and the write are two requests and the backend has no partial update,
+        so an edit to the dataset's settings made by someone else between them is
+        overwritten.
+
+        The mode stays on the dataset: every later upload into it and every folder
+        automation feeding it follows it.
+
+        Args:
+            dataset_id: ID of the dataset (must be > 0).
+            mode: ``replace`` or ``combine`` (add).
+            schema_mapping: Optional ``{"dataset column": ["file column", ...]}`` used to
+                match a new file's columns to the dataset's.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            ``{"dataset_id", "data_addition_mode", "previous_data_addition_mode",
+            "schema_settings"}``, read back after the change.
+
+        Raises:
+            MammothValidationError: If *dataset_id* ≤ 0 or *mode* is not a known mode.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        try:
+            new_mode = DataAdditionMode(mode)
+        except ValueError as exc:
+            raise MammothValidationError(ERR_DATA_ADDITION_MODE.format(mode)) from exc
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        current = await self.get_update_method(dataset_id, workspace_id=ws, project_id=proj)
+        settings = {**_STORED_DEFAULTS, **current, "data_addition_mode": new_mode.value}
+        if schema_mapping is not None:
+            settings["schema_mapping"] = schema_mapping
+        await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": {"op": "replace", "path": "schema_settings", "value": settings}},
+        )
+        stored = await self.get_update_method(dataset_id, workspace_id=ws, project_id=proj)
+        return {
+            "dataset_id": dataset_id,
+            "data_addition_mode": stored.get("data_addition_mode"),
+            "previous_data_addition_mode": current.get("data_addition_mode"),
+            "schema_settings": stored,
+        }
 
     async def refresh_from_url(
         self,
@@ -1012,10 +1152,10 @@ class DatasetsAPI:
     async def file_settings_update(
         self,
         dataset_id: int,
-        delimiter: str,
-        has_header: bool,
-        initial_skip_count: int,
-        quotechar: str,
+        delimiter: str | None = None,
+        has_header: bool | None = None,
+        initial_skip_count: int | None = None,
+        quotechar: str | None = None,
         date_format: str | None = None,
         preview_mode: bool = False,
         skip_auto_process_check: bool = True,
@@ -1026,12 +1166,20 @@ class DatasetsAPI:
     ) -> dict[str, Any]:
         """Update file data settings for a dataset (delimiter, header, dates, ...).
 
+        The route needs all four of ``delimiter``, ``has_header``, ``initial_skip_count``
+        and ``quotechar``. Any of them left out is taken from :meth:`get_file_settings`,
+        so one setting can be changed on its own.
+
         Args:
             dataset_id: ID of the dataset (must be > 0).
-            delimiter: Delimiter used in the file (one of ``,``, ``\\t``, ``|``, ``;``).
-            has_header: Whether the file has a header row.
-            initial_skip_count: Number of initial rows to skip in the file.
-            quotechar: Quote character used in the file (one of ``'``, ``"``, ``""``).
+            delimiter: Delimiter used in the file (one of ``,``, ``\\t``, ``|``, ``;``);
+                the current one if not provided.
+            has_header: Whether the file has a header row; the current setting if not
+                provided.
+            initial_skip_count: Number of initial rows to skip in the file; the current
+                count if not provided.
+            quotechar: Quote character used in the file (one of ``'``, ``"``, ``""``);
+                the current one if not provided.
             date_format: Default date format used in the source file, e.g. "US"
                 or "UK" (optional).
             preview_mode: Whether to preview the changes before applying (default False).
@@ -1048,18 +1196,31 @@ class DatasetsAPI:
             Dict with updated file settings.
 
         Raises:
-            MammothValidationError: If *dataset_id* ≤ 0.
+            MammothValidationError: If *dataset_id* ≤ 0, or a setting left out cannot be
+                read from the dataset.
         """
         if dataset_id <= 0:
             raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-
-        payload: dict[str, Any] = {
+        reading: dict[str, Any] = {
             "delimiter": delimiter,
             "has_header": has_header,
             "initial_skip_count": initial_skip_count,
             "quotechar": quotechar,
+        }
+        if any(value is None for value in reading.values()):
+            current = await self.get_file_settings(dataset_id, workspace_id=ws, project_id=proj)
+            detected = current.get("info", current) if isinstance(current, dict) else {}
+            for key, value in reading.items():
+                if value is None:
+                    reading[key] = detected.get(key) if isinstance(detected, dict) else None
+            missing = [key for key, value in reading.items() if value is None]
+            if missing:
+                raise MammothValidationError(ERR_FILE_SETTINGS_UNKNOWN.format(", ".join(missing)))
+
+        payload: dict[str, Any] = {
+            **reading,
             "preview_mode": preview_mode,
             "skip_auto_process_check": skip_auto_process_check,
             "set_project_level_date_format": set_project_level_date_format,

@@ -744,6 +744,17 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # The share password is read from this file by the handler (the SDK's own ``password``
+    # is never an input: a password on the command line lands in shell history).
+    "dashboard.share": (
+        FieldSpec("password_file", required=False, annotation=str | None, default=None),
+    ),
+    # ``file upload`` handler reads both and strips them before the SDK call:
+    # ``mode`` picks replace|add for an existing dataset, ``sheets`` the workbook sheets.
+    "file.upload": (
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+        FieldSpec("sheets", required=False, annotation=list[str] | None, default=None),
+    ),
     # Published-dashboard jobs are readable only through the URL-scoped job
     # route; ``job wait`` polls it when the dashboard URL slug is given.
     "job.wait": (FieldSpec("dashboard_url", required=False, annotation=str | None, default=None),),

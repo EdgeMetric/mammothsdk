@@ -414,6 +414,8 @@ _TARGETS: dict[str, str] = {
     "dataset.create-from-pdf": "mammoth_cli.commands.dataset.create:dataset_create_from_pdf",
     "dataset.refresh": "mammoth_cli.commands.dataset:dataset_refresh",
     "dataset.rename": "mammoth_cli.commands.dataset:dataset_rename",
+    "dataset.update-method.get": "mammoth_cli.commands.dataset:dataset_update_method_get",
+    "dataset.update-method.set": "mammoth_cli.commands.dataset:dataset_update_method_set",
     "dataset.trash": "mammoth_cli.commands.dataset:dataset_trash",
     "dataset.restore": "mammoth_cli.commands.dataset:dataset_restore",
     "dataset.delete": "mammoth_cli.commands.dataset:dataset_delete",

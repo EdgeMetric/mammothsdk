@@ -698,14 +698,6 @@ def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
     assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
-def test_file_settings_update_requires_delimiter(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_file_settings_update(
-            _inv("dataset.file-settings.update", project=180, extra_args=["7"])
-        )
-    assert excinfo.value.code == "missing_field"
-
-
 def test_file_settings_update_forwards_required_and_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -1156,6 +1148,7 @@ def test_update_rejects_raw_patch_even_with_confirmation(
     assert excinfo.value.details["blocker"] == "B07 DATASET_PATCH_UNTYPED"
     assert excinfo.value.details["typed_alternatives"] == [
         "dataset.rename",
+        "dataset.update-method.set",
         "dataset.file-settings.update",
     ]
     assert fake_service.call_log == []

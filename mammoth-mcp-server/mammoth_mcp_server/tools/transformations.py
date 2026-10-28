@@ -204,8 +204,9 @@ def problems_of(
             StepFields.SEQUENCE: step.get(StepFields.SEQUENCE),
             StepFields.TASK: operation_of(step),
             StepFields.RUN_STATE: step.get(StepFields.RUN_STATE),
-            StepFields.ERROR: step.get(StepFields.REFERENCE_ERRORS)
-            or errors.get(int(str(step[StepFields.ID]))),
+            StepFields.ERROR: (
+                step.get(StepFields.REFERENCE_ERRORS) or errors.get(int(str(step[StepFields.ID])))
+            ),
         }
         for step in steps
         if int(str(step[StepFields.ID])) in failing

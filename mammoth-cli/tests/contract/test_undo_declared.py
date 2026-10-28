@@ -62,7 +62,10 @@ def test_a_named_command_exists_and_is_not_the_write_itself() -> None:
         r["command_id"]
         for r in _writes()
         if r["undo"]["strategy"] in {"inverse", "manual"}
-        and (r["undo"]["command"] not in ids or r["undo"]["command"] == r["command_id"])
+        and (
+            r["undo"]["command"] not in ids
+            or (r["undo"]["command"] == r["command_id"] and not r["undo"].get("input_from_result"))
+        )
     ]
     assert not bad, bad
 

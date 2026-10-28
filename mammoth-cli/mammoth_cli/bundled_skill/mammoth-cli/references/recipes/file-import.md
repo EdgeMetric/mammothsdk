@@ -41,3 +41,30 @@ mammoth view list DATASET_ID                              # the new dataset must
 Report the dataset name and id. If the call returns an error envelope (a bad
 host, login or path shows up here), report it as is and stop; do not retry the
 create blindly.
+
+## Replace instead of add
+
+An upload into an existing dataset adds its rows by default. To replace them
+instead, set the dataset's update method once; every later upload then replaces:
+
+```bash
+mammoth dataset update-method get DATASET_ID              # the current mode: add or replace
+mammoth dataset update-method set DATASET_ID --input '{"mode": "replace"}'
+mammoth file upload ./new.csv --input '{"append_to_ds_id": DATASET_ID}'
+```
+
+Set it back with `{"mode": "add"}` before the next upload if the rows should be
+added again. The setting stays on the dataset, not on one file.
+
+## Undo an append
+
+To take back the rows one upload added, list the dataset's batches and delete
+the one to remove. Deleting a batch removes its rows (a write: confirm first):
+
+```bash
+mammoth batch list DATASET_ID                             # each batch: its id and row count
+mammoth batch delete DATASET_ID BATCH_ID --yes
+```
+
+`mammoth history undo` also reverts an append. Use `batch list` and
+`batch delete` when the batch is not the last change.

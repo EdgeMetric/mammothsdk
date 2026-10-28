@@ -58,6 +58,8 @@ from mammoth_cli.services.listing import (
     search_page,
 )
 from mammoth_cli.services.schema_diff import column_samples, schema_diff
+from mammoth_cli.services.update_method import describe as describe_update_method
+from mammoth_cli.services.update_method import parse_mode
 
 #: The server's limits on a dataset definition (``DefinitionSpec`` in mvc-service).
 _DEFINITION_LIMITS = {"term": 60, "definition": 300}
@@ -594,27 +596,23 @@ def _read_dataset(invocation: Invocation) -> HandlerResult:
 
 
 def dataset_file_settings_update(invocation: Invocation) -> HandlerResult:
-    """Update a dataset's file settings. Required fields come from ``--input``."""
+    """Update a dataset's file settings from ``--input``.
+
+    Each field is optional: the SDK keeps the stored value of any reading setting
+    (``delimiter``, ``has_header``, ``initial_skip_count``, ``quotechar``) left out.
+    """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
-    document = invocation.load_input()
-    delimiter = _require_field(document, "delimiter")
-    has_header = _require_field(document, "has_header")
-    initial_skip_count = _require_field(document, "initial_skip_count")
-    quotechar = _require_field(document, "quotechar")
-    kwargs: dict[str, Any] = {
-        "dataset_id": dataset_id,
-        "delimiter": delimiter,
-        "has_header": has_header,
-        "initial_skip_count": initial_skip_count,
-        "quotechar": quotechar,
-        "project_id": project_id,
-    }
-    assert document is not None
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "project_id": project_id}
     _forward_optional(
         document,
         kwargs,
         (
+            "delimiter",
+            "has_header",
+            "initial_skip_count",
+            "quotechar",
             "date_format",
             "preview_mode",
             "skip_auto_process_check",
@@ -633,6 +631,38 @@ def dataset_file_settings_update(invocation: Invocation) -> HandlerResult:
         if isinstance(settled, dict) and not settled.get("name"):
             settled = _with_dataset_name(service, settled, dataset_id, project_id)
     return settled, _meta(invocation, auth.workspace_id, project_id)
+
+
+def dataset_update_method_get(invocation: Invocation) -> HandlerResult:
+    """Say whether a new file replaces this dataset's rows or adds to them."""
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+    return describe_update_method(data, dataset_id), _meta(
+        invocation, auth.workspace_id, project_id
+    )
+
+
+def dataset_update_method_set(invocation: Invocation) -> HandlerResult:
+    """Set whether a new file replaces this dataset's rows (``replace``) or adds to them.
+
+    The setting stays on the dataset: every later upload into it and every folder
+    automation feeding it follows it. ``schema_mapping`` optionally says which file
+    column feeds which dataset column.
+    """
+    project_id = require_project(invocation)
+    dataset_id = _require_int_positional(invocation, "dataset id")
+    document = invocation.load_input()
+    mode = parse_mode(_require_field(document, "mode"))
+    kwargs: dict[str, Any] = {"dataset_id": dataset_id, "mode": mode, "project_id": project_id}
+    assert document is not None
+    _forward_optional(document, kwargs, ("schema_mapping",))
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), **kwargs)
+    return describe_update_method(data, dataset_id), _meta(
+        invocation, auth.workspace_id, project_id
+    )
 
 
 def _with_dataset_name(
@@ -693,7 +723,45 @@ def dataset_interpretation(invocation: Invocation) -> HandlerResult:
         )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+        if confirming and isinstance(data, dict):
+            data = {**data, **_confirmed_shape(service, dataset_id, project_id)}
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _confirmed_shape(service: Any, dataset_id: int, project_id: int) -> dict[str, Any]:
+    """The dataset's ``columns`` (display name and type) and ``row_count`` after a confirm.
+
+    Best effort: the confirm already ran, so an unreadable dataset adds nothing and never fails
+    the command.
+
+    Args:
+        service: The open service.
+        dataset_id: The confirmed dataset.
+        project_id: Its project.
+
+    Returns:
+        ``{"columns": [{"name", "type"}], "row_count": N}`` with the parts that could be read.
+    """
+    try:
+        response = service.call(
+            "mammoth.api.datasets.DatasetsAPI.get", dataset_id=dataset_id, project_id=project_id
+        )
+    except CliError:
+        return {}
+    dataset = response.get("dataset", response) if isinstance(response, dict) else None
+    if not isinstance(dataset, dict):
+        return {}
+    shape: dict[str, Any] = {}
+    schema = dataset.get("data_schema") or dataset.get("columns")
+    if isinstance(schema, list):
+        shape["columns"] = [
+            {"name": col.get("c_name", col.get("name")), "type": col.get("c_type", col.get("type"))}
+            for col in schema
+            if isinstance(col, dict)
+        ]
+    if isinstance(dataset.get("row_count"), int):
+        shape["row_count"] = dataset["row_count"]
+    return shape
 
 
 def dataset_rename(invocation: Invocation) -> HandlerResult:
@@ -974,16 +1042,23 @@ def dataset_update(invocation: Invocation) -> HandlerResult:
         message="Raw dataset patch operations are not available through the CLI.",
         exit_status=EXIT_USAGE,
         hint=(
-            "Use 'dataset rename DATASET_ID' for a name change or 'dataset file-settings "
-            "update DATASET_ID' for file settings; other update variants need a typed contract."
+            "Use 'dataset rename DATASET_ID' for a name change, 'dataset update-method set "
+            "DATASET_ID' for whether a new file replaces or adds rows, or 'dataset "
+            "file-settings update DATASET_ID' for how the file is read; other update variants "
+            "need a typed contract."
         ),
         details={
             "command_id": invocation.command_id,
             "blocker": "B07 DATASET_PATCH_UNTYPED",
-            "typed_alternatives": ["dataset.rename", "dataset.file-settings.update"],
+            "typed_alternatives": [
+                "dataset.rename",
+                "dataset.update-method.set",
+                "dataset.file-settings.update",
+            ],
         },
         recovery_commands=[
             "mammoth schema get dataset.rename",
+            "mammoth schema get dataset.update-method.set",
             "mammoth schema get dataset.file-settings.update",
         ],
     )

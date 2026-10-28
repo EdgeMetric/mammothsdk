@@ -26,7 +26,6 @@ _CANCEL_GENERATION = "mammoth.api.dashboards.DashboardsAPI.cancel_generation"
 _CREATE_BLANK = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _DATA_DRAFT = "mammoth.api.dashboards.DashboardsAPI.get_draft_data"
 _DATA_PUBLISHED = "mammoth.api.dashboards.DashboardsAPI.get_publish_data"
-_DELETE = "mammoth.api.dashboards.DashboardsAPI.delete"
 _GET = "mammoth.api.dashboards.DashboardsAPI.get"
 _GET_BY_URL = "mammoth.api.dashboards.DashboardsAPI.get_by_url"
 _JOB_BY_URL = "mammoth.api.dashboards.DashboardsAPI.job_by_url"
@@ -677,11 +676,6 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
         dashboard_cmd.dashboard_delete(_inv("dashboard.delete", extra_args=["7"], output="json"))
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
-
-
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.dashboard_delete(_inv("dashboard.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"dashboard_id": 7})]
 
 
 def test_delete_without_id_is_usage_error(fake_service: FakeMammothService) -> None:

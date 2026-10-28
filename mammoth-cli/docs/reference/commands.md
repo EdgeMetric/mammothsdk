@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 862.
+Total commands: 864.
 
 ## activity
 
@@ -3892,7 +3892,7 @@ Total commands: 862.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_update`
-- Agent example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'`
+- Agent example: `mammoth dataset file-settings update 123 --input '{"initial_skip_count": 2}'`
 
 ### `mammoth dataset find`
 
@@ -4066,6 +4066,28 @@ Total commands: 862.
   backend grammar is not a typed CLI contract. Do not infer an `op`,
   `path`, or `value` from examples; use a separately typed command or
   stop with the structured unsupported-contract result.
+
+### `mammoth dataset update-method get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_update_method`
+- Agent example: `mammoth dataset update-method get 123`
+
+### `mammoth dataset update-method set`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.set_update_method`
+- Agent example: `mammoth dataset update-method set 123 --input '{"mode": "replace"}'`
 
 ## doctor
 

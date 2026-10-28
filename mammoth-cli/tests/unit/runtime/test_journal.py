@@ -55,6 +55,22 @@ def test_a_trash_is_undone_by_a_restore() -> None:
     ]
 
 
+def test_a_setting_is_undone_by_setting_the_earlier_value_back() -> None:
+    outcome = Outcome(data={"previous_mode": "add", "mode": "replace"}, meta={})
+    lines, reason = journal.compensation(
+        _request("dataset.update-method.set", dataset_id=5), outcome, journal._Before()
+    )
+    assert reason is None
+    assert lines == [
+        {
+            "cmd": "dataset update-method set",
+            "args": [5],
+            "flags": {"profile": "p", "project": 9},
+            "input": {"mode": "add"},
+        }
+    ]
+
+
 def test_created_objects_go_to_the_trash_newest_first() -> None:
     opens = [
         {"kind": "dataset", "id": 1, "created": True},

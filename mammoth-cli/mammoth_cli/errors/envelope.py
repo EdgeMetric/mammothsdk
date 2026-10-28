@@ -60,6 +60,7 @@ CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
 CODE_AUTHORIZATION_REQUIRED = "authorization_required"
 CODE_PLAN_LIMIT = "plan_limit"
+CODE_FEATURE_DISABLED = "feature_disabled"
 CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
@@ -67,6 +68,7 @@ CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_ABORTED = "aborted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
+CODE_UNSUPPORTED_BY_SERVER = "unsupported_by_server"
 CODE_NO_OP = "no_op"
 CODE_WOULD_FAIL = "would_fail"
 CODE_EMPTIES_VIEW = "empties_view"
@@ -116,6 +118,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
     "has_dependents": "Other items still depend on this, so it was not deleted.",
     "delete_not_applied": "The delete was accepted but the item is still there.",
+    "delete_unverified": "The delete was accepted, but it could not be checked as gone.",
     "column_type_mismatch": "A column has the wrong type for this step, so nothing was changed.",
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
     "device_login_expired": "The sign-in code expired before it was approved.",
@@ -201,6 +204,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "missing_argument": _S_MISSING_INFO,
     "missing_field": _S_MISSING_INFO,
     "network_error": "Mammoth couldn't be reached over the network.",
+    "feature_disabled": "This feature is switched off for your account.",
     "no_op": "There is nothing to change, so this step isn't needed.",
     "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",
@@ -245,6 +249,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "unknown_input_field": _S_BAD_REQUEST,
     "unknown_option": _S_BAD_REQUEST,
     "unknown_scope": _S_SETUP,
+    "unsupported_by_server": "This Mammoth does not support that yet, so it was not applied.",
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
     "unsupported_shell": _S_UNAVAILABLE,

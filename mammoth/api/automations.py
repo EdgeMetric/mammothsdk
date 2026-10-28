@@ -282,6 +282,82 @@ def _validate_automation_patch_item(item: AutomationPatchItem) -> None:
             raise MammothValidationError(ERR_PATCH_DETAILS_EMPTY)
 
 
+def build_automation_create_body(
+    name: str,
+    description: str,
+    tasks: _list[AutomationTaskSpec],
+    conditions: _list[AutomationConditionSpec] | None = None,
+    condition_mode: AutomationConditionMode = AutomationConditionMode.AND,
+) -> dict[str, Any]:
+    """Validate an automation and build the body ``AutomationsAPI.create`` posts.
+
+    Shared by AutomationsAPI.create and the CLI's dry run, so a preview refuses what the
+    real call refuses and shows the body the server receives.
+
+    Args:
+        name: Automation name (non-empty).
+        description: Human-readable description (may be empty string).
+        tasks: Non-empty list of :class:`AutomationTaskSpec`.
+        conditions: Optional list of :class:`AutomationConditionSpec`.
+        condition_mode: How multiple conditions are combined.
+
+    Returns:
+        The POST body: only the task and condition fields that were set.
+
+    Raises:
+        MammothValidationError: If *name* or *tasks* is empty, or a task or condition is
+            missing fields its type requires.
+    """
+    if not name:
+        raise MammothValidationError(ERR_AUTOMATION_NAME_EMPTY)
+    if not tasks:
+        raise MammothValidationError(ERR_AUTOMATION_TASKS_EMPTY)
+    for task in tasks:
+        _validate_task(task)
+    for cond in conditions or []:
+        _validate_condition(cond)
+    return {
+        "name": name,
+        "description": description,
+        "tasks": [_task_to_dict(t) for t in tasks],
+        "conditions": [_condition_to_dict(c) for c in conditions or []],
+        "condition_mode": AutomationConditionMode(condition_mode).value,
+    }
+
+
+def build_automation_patch_ops(patch: _list[AutomationPatchItem]) -> _list[dict[str, Any]]:
+    """Validate automation patch items and serialize them to wire ops.
+
+    Shared by AutomationsAPI.update and the CLI's dry run.
+
+    Args:
+        patch: Non-empty list of :class:`AutomationPatchItem`.
+
+    Returns:
+        List of wire-format op dicts for the automation PATCH body.
+
+    Raises:
+        MammothValidationError: If *patch* is empty or an op+path+value combination is
+            invalid.
+    """
+    if not patch:
+        raise MammothValidationError(ERR_AUTOMATION_PATCH_EMPTY)
+    for item in patch:
+        _validate_automation_patch_item(item)
+    ops: _list[dict[str, Any]] = []
+    for item in patch:
+        op_dict: dict[str, Any] = {"op": item.op.value, "path": item.path.value}
+        if item.op is AutomationPatchOp.COMMAND:
+            op_dict["value"] = {}
+        elif item.path is AutomationPatchPath.STATUS:
+            op_dict["value"] = _AUTOMATION_STATUS_WIRE_VALUE.get(item.value, item.value)
+        else:
+            assert isinstance(item.value, PatchAutomationDetails)
+            op_dict["value"] = item.value.model_dump(mode="json", exclude_unset=True)
+        ops.append(op_dict)
+    return ops
+
+
 def build_schedule_patch_ops(patch: _list[SchedulePatchItem]) -> _list[dict[str, Any]]:
     """Validate and serialize a list of SchedulePatchItems to wire ops.
 
@@ -408,22 +484,7 @@ class AutomationsAPI:
                 a task is missing required fields for its type, or a condition
                 is missing required fields for its type.
         """
-        if not name:
-            raise MammothValidationError(ERR_AUTOMATION_NAME_EMPTY)
-        if not tasks:
-            raise MammothValidationError(ERR_AUTOMATION_TASKS_EMPTY)
-        for task in tasks:
-            _validate_task(task)
-        for cond in conditions or []:
-            _validate_condition(cond)
-
-        body: dict[str, Any] = {
-            "name": name,
-            "description": description,
-            "tasks": [_task_to_dict(t) for t in tasks],
-            "conditions": [_condition_to_dict(c) for c in conditions or []],
-            "condition_mode": condition_mode.value,
-        }
+        body = build_automation_create_body(name, description, tasks, conditions, condition_mode)
         return await self._client._request_json(
             "POST", f"/workspaces/{self._ws()}/projects/{self._proj()}/automations", json=body
         )
@@ -471,24 +532,7 @@ class AutomationsAPI:
         """
         if automation_id <= 0:
             raise MammothValidationError(ERR_AUTOMATION_ID_POSITIVE.format(automation_id))
-        if not patch:
-            raise MammothValidationError(ERR_AUTOMATION_PATCH_EMPTY)
-        for item in patch:
-            _validate_automation_patch_item(item)
-
-        ops: _list[dict[str, Any]] = []
-        for item in patch:
-            op_dict: dict[str, Any] = {"op": item.op.value, "path": item.path.value}
-            if item.op is AutomationPatchOp.COMMAND:
-                op_dict["value"] = {}
-            elif item.path is AutomationPatchPath.STATUS:
-                op_dict["value"] = _AUTOMATION_STATUS_WIRE_VALUE.get(item.value, item.value)
-            else:
-                assert isinstance(item.value, PatchAutomationDetails)
-                op_dict["value"] = item.value.model_dump(mode="json", exclude_unset=True)
-            ops.append(op_dict)
-
-        body: dict[str, Any] = {"patch": ops}
+        body: dict[str, Any] = {"patch": build_automation_patch_ops(patch)}
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{self._ws()}/projects/{self._proj()}/automations/{automation_id}",

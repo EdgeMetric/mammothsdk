@@ -56,6 +56,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
+from mammoth.appends import ADDING_MODES, refuse_batch_removal
+
 from mammoth_cli.context.resolver import env_token_in_use, env_token_key
 from mammoth_cli.errors.envelope import CODE_ABORTED, EXIT_PARTIAL, EXIT_USAGE
 from mammoth_cli.manifest.loader import command_by_id
@@ -108,6 +110,7 @@ _MANUAL = "manual"
 _IRREVERSIBLE = "irreversible"
 _VERSION_LIST = "mammoth.api.pipeline_versions.PipelineVersionsAPI.list"
 _TASK_LIST = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+_BATCH_LIST = "mammoth.api.appends.AppendsAPI.list_batches"
 _FIND_DATASET = "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
 #: The API lists versions oldest first unless asked otherwise.
 _NEWEST_FIRST = "(id:desc)"
@@ -669,6 +672,9 @@ def compensation(
         document = request.invocation.bound_input() if request.invocation else None
         if command_id.startswith("trash.") and document:
             line["input"] = document
+        carried = _input_from_result(undo.get("input_from_result"), outcome.data)
+        if carried:
+            line["input"] = carried
         return [line], None
     if strategy == _PIPELINE_VERSION:
         return _pipeline_undo(before, flags)
@@ -680,6 +686,9 @@ def compensation(
         ]
         if created:
             return list(reversed(created)), None
+        appended = _append_undo(outcome.data, flags, lambda target: _batches_now(request, target))
+        if appended is not None:
+            return appended
         if any(o.get("kind") == "dataset" for o in outcome.meta.get("opens") or []):
             return [], "It added to a dataset that already existed; rows cannot be taken out again."
         return [], "It made nothing the trash can take back."
@@ -694,6 +703,100 @@ def compensation(
     if strategy == _IRREVERSIBLE:
         return [], str(undo["reason"])
     return [], "No undo is declared for it."
+
+
+def _input_from_result(mapping: Any, data: Any) -> dict[str, Any]:
+    """The input of a set-it-back inverse, read from the write's result.
+
+    Args:
+        mapping: The undo's ``input_from_result``: input field -> result field.
+        data: The write's result data.
+
+    Returns:
+        The input document; empty when nothing is declared or the result lacks a field.
+    """
+    if not isinstance(mapping, dict) or not isinstance(data, dict):
+        return {}
+    return {field: data[source] for field, source in mapping.items() if source in data}
+
+
+def _batches_now(request: Request, dataset_id: int) -> list[int] | str:
+    """The ids of every batch a dataset has now.
+
+    Args:
+        request: The upload that is being undone; its profile and project are used.
+        dataset_id: The dataset the file was appended to.
+
+    Returns:
+        The ids, or the reason the listing could not be read.
+    """
+    invocation = request.invocation
+    if invocation is None:
+        return "no command is running to read them with"
+    try:
+        with open_service(invocation) as (service, _auth):
+            rows = service.call(_BATCH_LIST, dataset_id=dataset_id)
+    except Exception as failure:  # noqa: BLE001 -- a failed read costs the undo, never the upload
+        return str(failure).strip() or type(failure).__name__
+    return [int(row["id"]) for row in rows if isinstance(row, dict) and "id" in row]
+
+
+def _append_undo(
+    data: Any, flags: dict[str, Any], read_batches: Callable[[int], list[int] | str]
+) -> tuple[list[dict[str, Any]], str | None] | None:
+    """The undo of an upload appended to an existing dataset: delete the batch it added.
+
+    Args:
+        data: The upload's result data.
+        flags: The flags every undo line carries.
+        read_batches: Reads the ids of every batch the dataset has now, or the reason it
+            cannot; the undo is refused when the dataset's only batches would go.
+
+    Returns:
+        The lines (one per batch, newest first) and the reason when there are none, or
+        None when ``data`` is not an append that reports its batches.
+    """
+    if not isinstance(data, dict) or data.get("appended_to") is None:
+        return None
+    method = data.get("update_method")
+    mode = method.get("mode") if isinstance(method, dict) else None
+    if mode == "replace":
+        return [], "It replaced the dataset's rows; the rows it replaced are not kept."
+    if mode not in ADDING_MODES:
+        # The upload records the mode in effect for every append; a result without it (an
+        # older record, or a failed read of the dataset's mode) cannot show that the upload
+        # only added a batch, and deleting that batch could empty a replace-mode dataset.
+        return [], (
+            "The dataset's update method was not known when the file was uploaded, so it "
+            "cannot be shown that the upload only added a batch; delete it by hand with "
+            "'mammoth batch list' and 'mammoth batch delete' if it did."
+        )
+    if not data.get("batch_ids") and data.get("unmatched_batch_ids"):
+        return [], (
+            "New batches appeared in the dataset but none could be tied to this upload by "
+            "file name, so none is deleted for you."
+        )
+    batches = data.get("batch_ids")
+    if not isinstance(batches, list) or not batches:
+        return None
+    dataset = data["appended_to"]
+    existing = read_batches(int(dataset))
+    if isinstance(existing, str):
+        return [], (
+            f"The batches of dataset {dataset} could not be read ({existing}), so it cannot be"
+            " shown that "
+            "deleting the batch leaves the dataset another one; delete it by hand with "
+            "'mammoth batch list' and 'mammoth batch delete' if it should go."
+        )
+    # ``mode`` is the SDK's word for the mode the upload ran under (``mode_word``): the one
+    # recorded for every batch this upload added.
+    refusal = refuse_batch_removal(batches, {int(batch): mode for batch in batches}, existing)
+    if refusal:
+        return [], refusal
+    return [
+        {"cmd": "batch delete", "args": [dataset, batch], "flags": {**flags, "yes": True}}
+        for batch in reversed(batches)
+    ], None
 
 
 def _pipeline_undo(

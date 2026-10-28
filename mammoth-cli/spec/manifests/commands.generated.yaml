@@ -13463,8 +13463,7 @@ commands:
   - CT-DASHBOARD-SHARE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'B14 DASHBOARD_PASSWORD_MISSING: password sharing is an enum value but the SDK signature
-    has no password input; type_of_auth=password blocked pending contract/repair.'
+  known_restrictions: null
   reviewed_by: primary
 - command_id: dashboard.signature.create
   command_path: dashboard signature create
@@ -16082,8 +16081,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset file-settings update DATASET_ID --help
-  agent_example: 'mammoth dataset file-settings update 123 --input ''{"delimiter": ",", "has_header":
-    true, "initial_skip_count": 0, "quotechar": "\""}'''
+  agent_example: 'mammoth dataset file-settings update 123 --input ''{"initial_skip_count": 2}'''
   unit_tests:
   - UT-DATASET-FILE-SETTINGS-UPDATE
   contract_tests:
@@ -16710,6 +16708,90 @@ commands:
     changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update
     for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route,
     so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.'
+  reviewed_by: primary
+- command_id: dataset.update-method.get
+  command_path: dataset update-method get
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetDataset
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_update_method
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.get_update_method with validated request fields.
+  request_model: DatasetUpdateMethodGetRequest
+  result_model: DatasetUpdateMethodGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-DATASET-UPDATE-METHOD-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset update-method get DATASET_ID --help
+  agent_example: mammoth dataset update-method get 123
+  unit_tests:
+  - UT-DATASET-UPDATE-METHOD-GET
+  contract_tests:
+  - CT-DATASET-UPDATE-METHOD-GET-HUMAN
+  - CT-DATASET-UPDATE-METHOD-GET-JSON
+  - CT-DATASET-UPDATE-METHOD-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: dataset.update-method.set
+  command_path: dataset update-method set
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - UpdateDataset
+  positionals:
+  - name: dataset_id
+    type: int
+    required: true
+    metavar: DATASET_ID
+    falls_back_to_field: null
+    help: ID of the dataset.
+  options: []
+  sdk_symbol: mammoth.api.datasets.DatasetsAPI.set_update_method
+  sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.set_update_method with validated request fields.
+  request_model: DatasetUpdateMethodSetRequest
+  result_model: DatasetUpdateMethodSetResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the dataset update method; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-DATASET-UPDATE-METHOD-SET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth dataset update-method set DATASET_ID --help
+  agent_example: 'mammoth dataset update-method set 123 --input ''{"mode": "replace"}'''
+  unit_tests:
+  - UT-DATASET-UPDATE-METHOD-SET
+  contract_tests:
+  - CT-DATASET-UPDATE-METHOD-SET-HUMAN
+  - CT-DATASET-UPDATE-METHOD-SET-JSON
+  - CT-DATASET-UPDATE-METHOD-SET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
   reviewed_by: primary
 - command_id: doctor
   command_path: doctor

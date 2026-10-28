@@ -116,7 +116,53 @@ def batch_list(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("limit", "offset"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+    return _mark_deleted_sources(data), _meta(invocation, auth.workspace_id, project_id)
+
+
+#: What the backend appends to a batch's source name once the staging dataset is deleted.
+_DELETED_SUFFIX = " (Deleted)"
+
+
+#: The source-property names the backend suffixes: the dataset's and the view's.
+_SOURCE_NAME_KEYS = ("ds_name", "view_name")
+
+
+def _deleted_name(node: Any, depth: int = 3) -> str | None:
+    """The ``ds_name`` or ``view_name`` under ``node`` that ends with the deleted suffix."""
+    if not isinstance(node, dict) or depth == 0:
+        return None
+    for key in _SOURCE_NAME_KEYS:
+        value = node.get(key)
+        if isinstance(value, str) and value.endswith(_DELETED_SUFFIX):
+            return value
+    for value in node.values():
+        found = _deleted_name(value, depth - 1)
+        if found is not None:
+            return found
+    return None
+
+
+def _mark_deleted_sources(data: Any) -> Any:
+    """Flag batches whose source is gone and show its name without the suffix.
+
+    After an append the backend renames the batch's source ``ds_name`` (or ``view_name``)
+    to "<name> (Deleted)" once that dataset or view is deleted. Each such batch gains
+    ``source_deleted: true`` and a ``display_name`` without the suffix; the original fields
+    stay.
+
+    Args:
+        data: The ``batch list`` response (a dict with ``batches``, or a bare list).
+
+    Returns:
+        The same structure with the extra fields on the matching batches.
+    """
+    rows = data.get("batches") if isinstance(data, dict) else data
+    for row in rows if isinstance(rows, list) else []:
+        name = _deleted_name(row)
+        if name is not None:
+            row["source_deleted"] = True
+            row["display_name"] = name[: -len(_DELETED_SUFFIX)]
+    return data
 
 
 def batch_get(invocation: Invocation) -> HandlerResult:

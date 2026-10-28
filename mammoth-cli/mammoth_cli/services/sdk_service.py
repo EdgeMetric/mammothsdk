@@ -841,6 +841,10 @@ class SdkMammothService:
             return kwargs
         parent = kwargs.get(parent_kwarg)
         if parent is None:
+            # The CLI remembers each view's parent dataset from any earlier read; an
+            # explicit id above always wins, the cache only fills the gap.
+            parent = parents.lookup(self._profile, self._workspace_id, value)
+        if parent is None:
             # Resolving the foreign view without its parent would re-enter the
             # SDK's project-wide browse-and-probe discovery before a mutation,
             # the same path the target view is already protected from.

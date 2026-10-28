@@ -95,7 +95,7 @@ def normalize_result(request: Request, call_next: Next) -> Outcome:
         meta = with_next_commands(
             invocation, checked, with_opens(invocation, checked, outcome.meta)
         )
-        data = with_compact(invocation, with_new_data_path(checked))
+        data = with_compact(invocation, with_new_data_path(checked), meta)
     except (Exception, KeyboardInterrupt) as exc:
         # Inside the journal: the read-back failing is the command's failure, recorded.
         return contained(request, exc)

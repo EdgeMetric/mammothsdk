@@ -52,6 +52,15 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
+# How long an upload into an existing dataset waits for its rows to land: the
+# upload's job ends when the staging dataset is made, and the rows reach the
+# target after that, while it reads "processing".
+APPEND_WAIT_SECONDS = 20.0
+APPEND_POLL_SECONDS = 1.0
+# The mode each batch was added under is kept this long, per batch. A batch
+# whose record has gone is refused by `undo`, never guessed at.
+BATCH_MODE_KIND = "batchmode"
+BATCH_MODE_SECONDS = 90 * 24 * 60 * 60
 # Connecting a source takes the user two or three minutes in Mammoth, so the
 # watch for the new connection runs for five. One tool call cannot hold that
 # long: Claude gives up on a call well inside a minute (a 40-second hold was cut
@@ -151,6 +160,42 @@ class UploadFields:
     REJECTED = "rejected"
     # Where the upload job lists the files Mammoth refused.
     ERRORS = "errors"
+    # The dataset an upload adds to, how to (the tool's `mode`), and what was
+    # read of it just before the files were sent.
+    APPEND_TO = "append_to_dataset_id"
+    APPEND = "append"
+    MODE = "mode"
+
+
+class AppendFields:
+    """Adding a file to an existing dataset: the API's names and what is reported."""
+
+    # The query parameter the upload route takes the target dataset in.
+    TARGET_QUERY = "append_to_ds_id"
+    # The route's batch list, and what a batch is told apart by.
+    BATCHES = "batches"
+    BATCH_FIELDS = ("id", "name", "status", "created_at", "created_by", "source")
+    PREVIOUS_MODE = "previous_mode"
+    ROWS_BEFORE = "rows_before"
+    # What an upload into a dataset, and `get_dataset`, report.
+    APPENDED_TO = "appended_to"
+    UPDATE_METHOD = "update_method"
+    ROWS_AFTER = "rows_after"
+    ROWS_ADDED = "rows_added"
+    BATCH_ID = "batch_id"
+    BATCH_IDS = "batch_ids"
+    UNMATCHED_BATCH_IDS = "unmatched_batch_ids"
+    APPEND_PENDING = "append_pending"
+    APPEND_FAILED = "append_failed"
+    STATUS = "status"
+    READ_ERROR = "read_error"
+    NEXT_STEP = "next_step"
+    NOTES = "notes"
+    REMOVED = "removed"
+    REMOVABLE = "removable"
+    MODE = "mode"
+    ERROR = "error"
+    BATCHES_ERROR = "batches_error"
 
 
 class UploadReportFields:
@@ -343,6 +388,8 @@ class ErrorFields:
 
     NAME = "name"
     MESSAGE = "message"
+    # Set on a refusal that left a dataset in the update method this upload gave it.
+    UPDATE_METHOD_KEPT = "update_method_kept"
 
 
 class ListFields:

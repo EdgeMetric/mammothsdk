@@ -37,6 +37,8 @@ from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_UNSUPPORTED_BY_SERVER,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -63,6 +65,8 @@ from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.delete_check import ensure_deleted
+from mammoth_cli.services.secret_files import read_secret_file
 
 
 def dashboard_list(invocation: Invocation) -> HandlerResult:
@@ -426,6 +430,16 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "type_of_auth": type_of_auth}
     assert document is not None
     _forward_optional(document, kwargs, ("users",))
+    password_file = document.get("password_file")
+    if password_file is not None:
+        if type_of_auth != "password":
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"password_file needs type_of_auth password, not {type_of_auth}.",
+                exit_status=EXIT_USAGE,
+                hint='Use {"type_of_auth": "password", "password_file": "./pw.txt"}.',
+            )
+        kwargs["password"] = read_secret_file(password_file)
     with open_service(invocation) as (service, auth):
         was_published = _was_published(service, dashboard_id)
         if not was_published:
@@ -442,12 +456,95 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
             action=f"share dashboard {dashboard_id}{unpublished}"
             + _board_findings(invocation, service, auth, dashboard_id),
         )
+        previous = _share_readback(service, dashboard_id)["share"] if password_file else None
         data = service.call(_symbol(invocation), **kwargs)
-        if data is None:
+        if data is None or password_file:
             # The route answers 200 with no body, so the result was ``data: null`` and
             # the caller could not see whether the share took. Read it back.
             data = _share_readback(service, dashboard_id)
+        if password_file:
+            _require_stored_password(service, invocation, dashboard_id, data["share"], previous)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _require_stored_password(
+    service: Any,
+    invocation: Invocation,
+    dashboard_id: int,
+    share: Any,
+    previous: Any,
+) -> None:
+    """Fail loud when a password share left a board that has no password, and put it back.
+
+    A Mammoth without PRD-656 stores only the kind of sharing and ignores the password, so
+    the share reports success on a board that is now type ``password`` with no password.
+
+    ``options.has_password`` is the key the PRD-656 backend defines (EdgeMetric/mvc-service#7262,
+    ``common/datatypes.py``: ``HAS_PASSWORD_KEY = "has_password"``). If that key is renamed
+    there, change it here in the same step, or every password share is refused and rolled back.
+
+    Args:
+        service: The open SDK service.
+        invocation: The running ``dashboard share`` command.
+        dashboard_id: The shared dashboard.
+        share: The share as read back after the call.
+        previous: The share as read before the call, for the restore.
+
+    Raises:
+        CliError: ``unsupported_by_server`` when the stored share is not a password share
+            with ``options.has_password`` true; the message says whether the previous
+            share was restored.
+    """
+    options = share.get("options") if isinstance(share, dict) else None
+    stored = isinstance(options, dict) and options.get("has_password") is True
+    if isinstance(share, dict) and share.get("type_of_auth") == "password" and stored:
+        return
+    restored = _restore_share(service, invocation, dashboard_id, previous)
+    outcome = (
+        "The previous sharing was put back."
+        if restored
+        else (
+            f"The board is now type password with no password; switch it back with: mammoth "
+            f'dashboard share {dashboard_id} --input \'{{"type_of_auth": "mammoth"}}\' --yes'
+        )
+    )
+    raise CliError(
+        code=CODE_UNSUPPORTED_BY_SERVER,
+        message=(
+            "This Mammoth does not store a share password yet (PRD-656), so the password "
+            f"was not set. {outcome}"
+        ),
+        exit_status=EXIT_API,
+        hint="Ask for a Mammoth release with PRD-656, or share by email with type_of_auth mammoth.",
+        details={"dashboard_id": dashboard_id, "share_restored": restored},
+    )
+
+
+def _restore_share(service: Any, invocation: Invocation, dashboard_id: int, previous: Any) -> bool:
+    """Put a board's earlier share back, best effort.
+
+    Args:
+        service: The open SDK service.
+        invocation: The running ``dashboard share`` command.
+        dashboard_id: The dashboard.
+        previous: The share read before the change (``None`` when it had none).
+
+    Returns:
+        True when the share was written back and read back as the earlier kind.
+    """
+    previous = previous if isinstance(previous, dict) else {}
+    kind = previous.get("type_of_auth") or "mammoth"
+    kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "type_of_auth": kind}
+    options = previous.get("options")
+    users = options.get("users") if isinstance(options, dict) else None
+    if kind == "mammoth":
+        kwargs["users"] = users if isinstance(users, list) else []
+    try:
+        service.call(_symbol(invocation), **kwargs)
+        now = _share_readback(service, dashboard_id)["share"]
+    except Exception:
+        return False
+    return isinstance(now, dict) and now.get("type_of_auth") == kind
 
 
 def refuse_viewer_share_before_publish(
@@ -648,8 +745,27 @@ def dashboard_delete(invocation: Invocation) -> HandlerResult:
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete dashboard {dashboard_id}"
     )
     with open_service(invocation) as (service, auth):
+        # Read it first: the get route answers 403 for a deleted id, as it does for a real
+        # denial, so the read-back below may call a 403 "gone" only if this read had access.
+        try:
+            service.call(_DASHBOARD_GET, dashboard_id=dashboard_id)
+            had_access = True
+        except CliError:
+            had_access = False
         data = service.call(_symbol(invocation), dashboard_id=dashboard_id)
-    return data, _meta(invocation, auth.workspace_id)
+        ensure_deleted(
+            service,
+            noun="dashboard",
+            resource_id=dashboard_id,
+            read_symbol=_DASHBOARD_GET,
+            read_kwargs={"dashboard_id": dashboard_id},
+            responses=(data,),
+            forbidden_means_gone=had_access,
+        )
+    result = {**data} if isinstance(data, dict) else {}
+    return {**result, "dashboard_id": dashboard_id, "deleted": [dashboard_id]}, _meta(
+        invocation, auth.workspace_id
+    )
 
 
 def dashboard_archive(invocation: Invocation) -> HandlerResult:
