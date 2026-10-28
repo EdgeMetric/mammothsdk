@@ -6,8 +6,11 @@ caller without a token away with a pointer to that metadata. This server is a
 resource server alone: it has no sign-in of its own.
 """
 
+from typing import Any
+
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
+from pydantic import BaseModel, model_validator
 
 # Importing them binds their tools to `chat_apps` before the server takes it.
 from . import connect_app, dataset_app, upload_app  # noqa: F401
@@ -50,6 +53,36 @@ for card_path in (SERVER_CARD_PATH, SERVER_CARD_MCP_PATH):
     mcp_server.custom_route(card_path, methods=["GET", "OPTIONS"])(serve_server_card)
 
 
+class _OnlyNamedArguments(BaseModel):
+    """Refuses an argument the tool does not name, and names the ones it does.
+
+    The MCP SDK drops an unknown argument, so a model that guesses a parameter
+    name would see its call succeed with the argument ignored.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _refuse_unknown(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            accepted = [field.alias or name for name, field in cls.model_fields.items()]
+            unknown = [name for name in data if name not in accepted]
+            if unknown:
+                raise ValueError(
+                    f"unknown argument {', '.join(unknown)}; accepted: {', '.join(accepted)}"
+                )
+        return data
+
+
+def _refuse_unknown_arguments() -> None:
+    # The SDK has no option for this, so each registered tool's argument model
+    # is given the check, and its schema says so to the client.
+    for tool in mcp_server._tool_manager.list_tools():
+        model = tool.fn_metadata.arg_model
+        if not issubclass(model, _OnlyNamedArguments):
+            tool.fn_metadata.arg_model = type(model.__name__, (_OnlyNamedArguments, model), {})
+        tool.parameters["additionalProperties"] = False
+
+
 def register_tools() -> None:
     """Import every tool module, which registers its tools on `mcp_server`.
 
@@ -57,3 +90,5 @@ def register_tools() -> None:
     `mcp_server` from this module, so the server must exist first.
     """
     from . import tools  # noqa: F401
+
+    _refuse_unknown_arguments()
