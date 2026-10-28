@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from collections.abc import Sequence
@@ -81,6 +82,11 @@ def _output_mode_from_argv(argv: Sequence[str] | None) -> str:
             mode = token[2:]
         index += 1
     mode = canonical_output(mode)
+    if mode == OUTPUT_AUTO:
+        # ``MAMMOTH_OUTPUT`` is the session default an agent exports once; honour it here too.
+        requested = canonical_output(os.environ.get("MAMMOTH_OUTPUT", "").strip().lower())
+        if requested in SELECTABLE_OUTPUTS:
+            mode = requested
     if mode not in SELECTABLE_OUTPUTS:
         # A value the command would reject (``--output xml``) must not turn the
         # error into prose: judge it by where stdout goes, like the default.

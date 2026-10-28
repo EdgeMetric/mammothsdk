@@ -20,10 +20,18 @@ command that succeeded (`file upload`, `view create`, a `view transform`,
 filled in with this result's ids, usually the read-back. Run them as they are
 when they fit the task; a write that did not verify has none.
 
-## Error envelope (stderr)
+## Error envelope (stdout, non-zero exit)
 ```json
 {"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "exit": 1, "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
+
+With `-o json`, `-o ndjson` or `-o yaml` (also via `MAMMOTH_OUTPUT`, or `auto` on a pipe) the error
+envelope is the one document on stdout, exactly where a success envelope would be, and the exit
+status stays non-zero: read stdout, parse it, branch on `error` and the exit code. This covers
+usage errors, refusals, unexpected exceptions and Ctrl-C. stderr carries only what a person reads
+(the `Next:` line, hints, progress, `--debug` tracebacks); never depend on it. Only if stdout is
+unwritable (a closed pipe) does the envelope fall back to stderr. Table, plain and csv output keep
+the short `error [code]: message` text on stderr.
 
 A mistyped command, option or column carries `details.did_you_mean`: the nearest
 commands (unknown command), the nearest option (`--profle`, or `"--project 3633"`
@@ -105,7 +113,7 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
 - A bad line (invalid JSON, a duplicate or unknown key, a flag in `args`, a reserved flag) is an
   `invalid_run_line` error for that line, exit 2. `run`, `auth login` and `auth logout` cannot be
   lines, however `cmd` and `args` spell them (`run_command_refused`).
-- stdout carries only the envelopes; progress and diagnostics stay on stderr.
+- stdout carries only the envelopes (errors included); progress and diagnostics stay on stderr.
 - Steps: a line with `"name": "up"` keeps its envelope, and a later line reads it in `args`,
   `input` or `flags` as `"{{steps.up.data.dataset.id}}"` (a whole-string reference keeps its type;
   paths take `[0]` indexes). `"when"` skips a line when false (`{"eq": [A, B]}`, `{"in": [A, LIST]}`,

@@ -22,7 +22,7 @@ def test_use_requires_an_existing_profile(isolated_cli_config: Path) -> None:
     runner = make_runner()
     result = runner.invoke(["context", "project", "use", "42", "--output", "json", "--no-input"])
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "profile_not_found"
 
 
@@ -31,7 +31,7 @@ def test_use_rejects_nonpositive_project_id(isolated_cli_config: Path) -> None:
     runner = make_runner()
     result = runner.invoke(["context", "project", "use", "0", "--output", "json", "--no-input"])
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_project_id"
 
 

@@ -31,13 +31,13 @@ def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def test_invalid_output_mode_on_redirected_stdout_is_machine_error() -> None:
-    """A redirected invocation emits only the parseable error envelope on stderr."""
+    """A redirected invocation emits only the parseable error envelope, on stdout."""
     result = _run(["project", "list", "--output", "bogus"])
 
     assert result.returncode == 2
-    assert result.stdout == ""
-    assert "error [invalid_output_mode]" not in result.stderr
-    envelope = json.loads(result.stderr)
+    assert result.stderr == ""
+    assert "error [invalid_output_mode]" not in result.stdout
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_output_mode"
 
 
@@ -46,6 +46,6 @@ def test_invalid_output_mode_in_explicit_agent_mode_is_machine_error() -> None:
     result = _run(["project", "list", "--output", "bogus", "--no-input"])
 
     assert result.returncode == 2
-    assert result.stdout == ""
-    envelope = json.loads(result.stderr)
+    assert result.stderr == ""
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_output_mode"

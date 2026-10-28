@@ -8,6 +8,9 @@ import json
 import pytest
 import typer
 
+from mammoth_cli.app.usage import _output_mode_from_argv
+from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.output.emit import emit_error
 from mammoth_cli.output.render import NDJSON_STREAM_VERSION, render
 from mammoth_cli.runtime import executor
 
@@ -90,3 +93,47 @@ def test_ndjson_write_failure_leaves_no_false_end_and_reports_to_working_stderr(
     assert all(frame["event"] != "end" for frame in stdout_frames)
     assert stderr_frames[-1]["event"] == "error"
     assert stderr_frames[-1]["complete"] is False
+
+
+@pytest.mark.parametrize("output", ["json", "ndjson", "yaml"])
+def test_machine_error_is_the_one_document_on_stdout(
+    output: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    emit_error(CliError(code="resource_not_found", message="gone"), machine=True, output=output)
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "resource_not_found" in captured.out
+
+
+def test_human_error_stays_on_stderr(capsys: pytest.CaptureFixture[str]) -> None:
+    emit_error(CliError(code="resource_not_found", message="gone"), machine=False, output="table")
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "error [resource_not_found]: gone" in captured.err
+
+
+def test_machine_error_falls_back_to_stderr_when_stdout_is_unwritable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Closed(io.StringIO):
+        def write(self, text: str) -> int:
+            raise OSError("closed pipe")
+
+    stderr = io.StringIO()
+    monkeypatch.setattr("sys.stdout", _Closed())
+    monkeypatch.setattr("sys.stderr", stderr)
+
+    emit_error(CliError(code="resource_not_found", message="gone"), machine=True, output="json")
+
+    assert json.loads(stderr.getvalue())["error"]["code"] == "resource_not_found"
+
+
+def test_output_mode_from_argv_honours_the_session_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MAMMOTH_OUTPUT", "json")
+
+    assert _output_mode_from_argv(["project", "lst"]) == "json"
+    assert _output_mode_from_argv(["project", "lst", "-o", "yaml"]) == "yaml"

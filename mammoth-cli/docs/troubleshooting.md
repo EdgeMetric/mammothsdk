@@ -21,7 +21,7 @@ remote write did or did not commit.
 
 ## Error envelope
 
-Errors print to stderr as one stable envelope:
+Errors print to stdout as one stable envelope (the same stream as a success, so `-o json` never leaves stdout empty; the exit status stays non-zero, and stderr carries only human hints and progress):
 
 ```json
 {"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": [], "log_ref": {"file": "~/.local/state/mammoth-cli/logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
