@@ -99,6 +99,15 @@ class Table:
         )
         return float(data["data"][0]["total"])
 
+    def total_settles_to(self, column: str, expected: float, timeout: float = 30.0) -> float:
+        """``total`` read until it is ``expected`` or ``timeout`` seconds have passed."""
+        deadline = time.monotonic() + timeout
+        found = self.total(column)
+        while found != expected and time.monotonic() < deadline:
+            time.sleep(1.0)
+            found = self.total(column)
+        return found
+
     def values(self, column: str) -> list[Any]:
         document = {"group_by": [column], "aggregations": [{"function": "COUNT", "as_name": "n"}]}
         data, _ = self.cli.ok(
@@ -178,6 +187,9 @@ def local(source: Source) -> Iterator[Table]:
     yield from _fresh(source, source.local)
 
 
+# A test that joins or looks up `local` to `foreign_view` asks for `foreign_view` first: fixtures
+# tear down in reverse, so `local` is deleted before the view it reads (the server refuses to
+# delete a view another view's join reads).
 @pytest.fixture
 def foreign_view(source: Source) -> Iterator[Table]:
     yield from _fresh(source, source.foreign)
@@ -397,7 +409,9 @@ def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items:
     assert error["details"]["step_index"] == 1 and error["details"]["op"] == "replace"
     assert error["details"]["not_removed_task_ids"] == []
     assert items.steps() == before
-    assert items.total("Cost") == 100
+    # The rollback queues the view's re-run: the pipeline reads ready and idle, and the data is
+    # the batch's (a SUM of 60) for a few seconds before it is the original's.
+    assert items.total_settles_to("Cost", 100) == 100
 
 
 def test_a_batch_step_can_use_a_column_an_earlier_copy_step_creates(items: Table) -> None:
@@ -545,7 +559,7 @@ def test_an_unknown_name_in_a_math_expression_is_named_in_the_error(local: Table
 
 
 def test_join_resolves_foreign_display_names_at_the_foreign_parent(
-    local: Table, foreign_view: Table
+    foreign_view: Table, local: Table
 ) -> None:
     local.ok(
         "join",
@@ -577,7 +591,7 @@ def test_an_unknown_foreign_join_name_adds_no_step(local: Table, foreign_view: T
 
 
 def test_a_lookup_by_an_internal_foreign_id_is_rejected_and_by_a_unicode_name_posts_once(
-    local: Table, foreign_view: Table
+    foreign_view: Table, local: Table
 ) -> None:
     internal = foreign_view.columns()["SKU 名"]
     parent = {

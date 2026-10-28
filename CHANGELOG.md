@@ -51,6 +51,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.
 - CLI: `view transform discard-duplicates` takes `key_columns` (the columns that make a row a duplicate; every other column is ignored). `recipe run` refuses an input only when it still holds that input's own `<name>` placeholder.
 
+### Changed (next mammoth-io)
+
+- SDK: `AIAPI.generate_sql` requires `dataview_id`, as it requires `dataset_id`. Without it the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. The call is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
+
+### Fixed (next mammoth-cli)
+
+- CLI: `view delete` waits for the delete job the server accepts (202) before it reads the view back, so a delete that takes a few seconds no longer reports `delete_not_applied` (#333).
+
 ## mammoth-cli 2.3.1 (2026-10-26)
 
 ### Fixed (mammoth-cli 2.3.1)

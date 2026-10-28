@@ -13,7 +13,6 @@ from mammoth_cli.commands.view._common import (
 from mammoth_cli.errors.envelope import (
     CliError,
 )
-from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.read_memo import prefetch
 
 
@@ -62,12 +61,6 @@ _ERROR_TRANSFORM_STATUSES = {"ERROR", "REFERROR"}
 #: separate field -- already recorded the task that actually failed. Only
 #: ``execution_state`` is trustworthy here.
 _PIPELINE_ERROR_EXECUTION_STATES = frozenset({"runtime_error", "ref_error"})
-#: ``execution_state`` values that mean no run is queued or going (the server's own settle
-#: check counts ``idle`` and ``runtime_error`` as quiet). After a pipeline edit the ``state``
-#: reads ``ready`` while ``execution_state`` is still ``submitted`` or ``running``, and data
-#: read then is the old data.
-_IDLE_EXECUTION_STATES = frozenset({"idle", "runtime_error", "ref_error"})
-_IDLE_POLL_CAP_S = 2.0
 
 
 def wait_for_pipeline_to_settle(
@@ -98,7 +91,6 @@ def wait_for_pipeline_to_settle(
     pipeline to be ready, so the poll is skipped; the execution error is still read.
     """
     wait_error: str | None = None
-    deadline = time.monotonic() + settle_timeout
     try:
         if not already_ready:
             service.call(
@@ -107,8 +99,6 @@ def wait_for_pipeline_to_settle(
                 dataset_id=dataset_id,
                 timeout=settle_timeout,
             )
-        if not _wait_until_idle(service, dataset_id, view_id, deadline - time.monotonic()):
-            wait_error = f"the pipeline's run was still going after {settle_timeout:g} seconds"
     except CliError as exc:
         wait_error = exc.message
     error = _pipeline_execution_error(service, dataset_id, view_id)
@@ -148,21 +138,6 @@ def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | N
             return pending
         return {"execution_state": JOB_FAILED_STATE, "wait_error": exc.message}
     return None
-
-
-def _wait_until_idle(service: Any, dataset_id: int, view_id: int, timeout: float) -> bool:
-    """Wait up to ``timeout`` seconds for the run the pipeline edit queued to finish.
-
-    Returns True when ``execution_state`` is idle (or a run error, which the caller reports,
-    or a value this does not know), False when the run is still going at ``timeout``.
-    """
-    for gap in (0.0, *poll_delays(max(timeout, 0.0), _IDLE_POLL_CAP_S)):
-        time.sleep(gap)
-        pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=view_id, dataset_id=dataset_id)
-        state = pipeline.get("execution_state") if isinstance(pipeline, dict) else None
-        if not isinstance(state, str) or state.lower() in _IDLE_EXECUTION_STATES:
-            return True
-    return False
 
 
 def _pipeline_execution_error(service: Any, dataset_id: int, view_id: int) -> dict[str, Any] | None:

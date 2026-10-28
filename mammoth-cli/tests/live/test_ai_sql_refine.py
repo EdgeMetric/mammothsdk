@@ -15,9 +15,14 @@ from live_harness import LiveCli, SalesData
 
 pytestmark = pytest.mark.live
 
-# Names the query to change and what to keep. "Keep only the first ten rows" alone let the model
-# write a fresh query without the column in 2 of 8 runs; this wording kept it in 8 of 8.
-_REFINE_INTENT = "Change the current query to return only the first ten rows; keep all else in it."
+# Names the query and says to change nothing else. "Keep only the first ten rows" lost the
+# query's column in 2 of 8 runs, and "...and keep its source_tag column" in 2 of 16 (the answer
+# then says "validated in 2 attempts": the server revised the query). This wording kept it in
+# 16 of 16. "North" is the column's value: in the query only, never in the intent.
+_REFINE_INTENT = (
+    "Add LIMIT 10 to the current query. "
+    "Do not change anything else in it, keep its source_tag column."
+)
 
 
 def test_current_query_is_refined_as_asked(live_cli: LiveCli, sales_data: SalesData) -> None:
