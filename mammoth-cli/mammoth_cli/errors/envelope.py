@@ -65,6 +65,7 @@ CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
 CODE_JOB_FAILED = "job_failed"
+CODE_SCHEMA_MISMATCH = "schema_mismatch"
 CODE_INTERRUPTED = "interrupted"
 CODE_ABORTED = "aborted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
@@ -196,6 +197,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "workspace_mismatch": "The sign-in names a different workspace from its token.",
     "skipped": "This step wasn't run because an earlier step failed.",
     "job_failed": "A background task didn't finish successfully.",
+    "schema_mismatch": "The file's columns don't line up with the dataset's, so nothing was added.",
     "keyring_unavailable": _S_SETUP,
     "keyring_unresponsive": _S_SETUP,
     "lock_timeout": "Another sign-in refresh is still running, so this step was stopped.",
