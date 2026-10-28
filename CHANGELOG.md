@@ -95,6 +95,8 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: backend error 5GENR012 is reported as `feature_disabled`.
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
 
+- CLI: with `-o json`, `ndjson` or `yaml` the error envelope goes to stdout, like a success, instead of stderr, so a script reading stdout no longer gets an empty reply; the exit status is unchanged and stderr keeps only human hints and progress.
+- CLI: every create-type result and a waited `job wait`/`job get` carries its resource id at the top level as `<resource>_id` (`dataset_id`, `connection_id`, ...); the older keys stay.
 ### Changed (next mammoth-io)
 
 - SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).

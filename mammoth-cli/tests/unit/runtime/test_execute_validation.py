@@ -32,7 +32,7 @@ def test_profile_scoped_recovery_handles_commands_without_output_option() -> Non
     assert scoped.recovery_commands == ["mammoth auth login --profile staging"]
 
 
-def test_ndjson_error_is_one_terminal_frame_on_stderr(capsys: pytest.CaptureFixture[str]) -> None:
+def test_ndjson_error_is_one_terminal_frame_on_stdout(capsys: pytest.CaptureFixture[str]) -> None:
     def _failure() -> tuple[object, dict[str, object]]:
         raise CliError(code="interrupted", message="stopped", exit_status=130)
 
@@ -41,8 +41,8 @@ def test_ndjson_error_is_one_terminal_frame_on_stderr(capsys: pytest.CaptureFixt
 
     captured = capsys.readouterr()
     assert raised.value.exit_code == 130
-    assert captured.out == ""
-    assert json.loads(captured.err) == {
+    assert captured.err == ""
+    assert json.loads(captured.out) == {
         "complete": False,
         "error": {
             "authorization_required": False,

@@ -94,7 +94,7 @@ mammoth schema get view.transform.math
 mammoth project list --profile production
 ```
 
-Success is a JSON envelope on stdout; errors are a JSON envelope on stderr.
+Success is a JSON envelope on stdout; errors are a JSON envelope on stdout too, with a non-zero exit status (stderr carries only human hints and progress).
 Branch on the stable error code, `details.operation_state`, recovery metadata,
 and exit code—not prose. Preserve only nonsecret resource IDs, parent scope,
 job handles, request IDs, and bounded evidence hashes.

@@ -2,8 +2,9 @@
 
 [Documentation index](../llms.txt)
 
-Machine modes return a versioned envelope: successes go to stdout and failures
-to stderr. Both carry `schema_version`. Treat the process exit code and the
+Machine modes return a versioned envelope: successes and failures both go to
+stdout (a failure also sets a non-zero exit status; stderr carries only human hints and
+progress, never the only copy of a result). Both carry `schema_version`. Treat the process exit code and the
 stable error `code` as the control-flow interface; the prose message is for a
 human reader. For resource operations, also inspect `details.operation_state`
 and the returned resource/job identity. A zero exit is not a substitute for
@@ -52,11 +53,11 @@ An empty list is therefore `start` then `end` with `count: 0`, not an empty
 byte stream. A successful scalar `data: null` is one `item` frame whose `data`
 is `null`, followed by `end` with `count: 1`; it is distinct from an empty list.
 
-When failure occurs before `start`, stdout is empty. A failure after `start` or
-an `item` leaves those already-written stdout frames intact, but never writes
-an `end`/`complete: true` frame. When stderr remains writable, it receives one
-terminal `error` frame with `complete: false` and the normal error envelope
-payload. A broken stderr or terminated process cannot guarantee that error
+When failure occurs before `start`, stdout holds just the one terminal `error` frame. A
+failure after `start` or an `item` leaves those already-written stdout frames intact, never
+writes an `end`/`complete: true` frame, and follows them with one terminal `error` frame with
+`complete: false` and the normal error envelope payload. If stdout itself cannot be written,
+that frame goes to stderr instead. A terminated process cannot guarantee the error
 frame. An absent `end` frame means the stream is incomplete (for example, the
 caller lost the process or transport). Never treat it as success.
 
@@ -110,7 +111,7 @@ that choice. A project list on a terminal looks like this.
 
 ## Error envelope
 
-A failed command prints this shape to stderr and sets a non-zero exit code.
+A failed command prints this shape to stdout (the same stream as a success) and sets a non-zero exit code.
 
 ```json
 {"schema_version": 1, "error": {"code": "...", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "exit": 1}}

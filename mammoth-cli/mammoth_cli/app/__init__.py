@@ -55,7 +55,7 @@ from mammoth_cli.app.usage import (
     missing_argument_hint,
 )
 from mammoth_cli.commands import BESPOKE
-from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
+from mammoth_cli.errors.envelope import EXIT_INTERRUPT, EXIT_USAGE, CliError, cancelled_error
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.policy import (
     MACHINE_OUTPUTS,
@@ -178,12 +178,16 @@ class _EnvelopeGroup(TyperGroup):
         try:
             result = super().main(*args, **kwargs)
         except _USAGE_ERRORS as error:
-            argv = kwargs.get("args")
-            if argv is None:
-                argv = args[0] if args else None
+            argv = _argv_of(args, kwargs)
             self.render_usage_error(error, argv)
             raise SystemExit(getattr(error, "exit_code", EXIT_USAGE)) from None
         except _ABORT_ERRORS:
+            mode = _output_mode_from_argv(_argv_of(args, kwargs))
+            if mode in MACHINE_OUTPUTS or mode == "yaml":
+                from mammoth_cli.output.emit import emit_error
+
+                emit_error(cancelled_error(), machine=True, output=mode)
+                raise SystemExit(EXIT_INTERRUPT) from None
             typer.echo("Aborted!", err=True)
             raise SystemExit(1) from None
         # Under standalone_mode=False a normal return is either None (success) or
@@ -223,7 +227,8 @@ class _EnvelopeGroup(TyperGroup):
         if is_missing_parameter and (option := _unknown_flag_in(error, tokens)):
             # A misspelt flag is the first thing to fix, ahead of a missing argument.
             report = _unknown_option_report(error, option)
-        if _output_mode_from_argv(argv) in MACHINE_OUTPUTS:
+        mode = _output_mode_from_argv(argv)
+        if mode in MACHINE_OUTPUTS or mode == "yaml":
             if report is None:
                 missing = is_missing_parameter
                 if missing:
@@ -260,7 +265,7 @@ class _EnvelopeGroup(TyperGroup):
                     )
             from mammoth_cli.output.emit import emit_error
 
-            emit_error(report, machine=True)
+            emit_error(report, machine=True, output=mode)
         elif report is None:
             error.show()
             if is_missing_parameter:
@@ -278,6 +283,22 @@ class _EnvelopeGroup(TyperGroup):
                 typer.echo(report.hint, err=True)
             for command in report.recovery_commands:
                 typer.echo(f"  try: {command}", err=True)
+
+
+def _argv_of(args: tuple[Any, ...], kwargs: dict[str, Any]) -> Sequence[str] | None:
+    """The argv a ``main`` call was given: the ``args`` keyword, else the first positional.
+
+    Args:
+        args: The positional arguments of the ``main`` call.
+        kwargs: The keyword arguments of the ``main`` call.
+
+    Returns:
+        The argv tokens, or None when the call used ``sys.argv``.
+    """
+    argv = kwargs.get("args")
+    if argv is None:
+        argv = args[0] if args else None
+    return argv
 
 
 def _build_leaf(command_id: str, *, is_group_callback: bool = False) -> Callable[..., None]:

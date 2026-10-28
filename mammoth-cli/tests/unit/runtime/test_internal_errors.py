@@ -22,9 +22,9 @@ def _run_failing(
     invocation = Invocation(command_id="project.list", output="json", debug=debug)
     with pytest.raises(typer.Exit):
         run("project.list", "json", _boom, invocation=invocation)
-    stderr = capsys.readouterr().err
-    # The error envelope is the last line of stderr; a --debug traceback comes before it.
-    return json.loads(stderr.strip().splitlines()[-1]), stderr
+    captured = capsys.readouterr()
+    # The error envelope is the whole of stdout; a --debug traceback goes to stderr.
+    return json.loads(captured.out), captured.err
 
 
 def test_an_unexpected_exception_is_internal_error_not_api_error(
