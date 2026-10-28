@@ -153,8 +153,41 @@ def test_a_refused_sign_in_while_polling_stays_outcome_unknown_and_says_to_sign_
     hint = mapped.hint or ""
     assert "Do not resubmit" in hint
     assert hint.index("mammoth auth login") < hint.index("mammoth job get 52618")
-    assert mapped.recovery_commands == ["mammoth auth login", "mammoth job get 52618"]
+    assert mapped.recovery_commands == [
+        "mammoth auth login",
+        "mammoth job get 52618",
+        "mammoth job wait 52618",
+    ]
     assert mapped.details["job_handle"] == 52618
+
+
+def test_the_refused_and_the_other_poll_failures_share_one_shape() -> None:
+    def poll_failure(status: int) -> MammothAPIError:
+        return MammothAPIError(
+            "poll failed",
+            status_code=status,
+            method="GET",
+            request_id="req-9",
+            operation_state="outcome_unknown",
+            phase="polling",
+            job_handle=52618,
+        )
+
+    scope = {"profile": "work", "project_id": 7, "workspace_id": 3}
+    refused = map_sdk_exception(poll_failure(401), **scope)
+    other = map_sdk_exception(poll_failure(503), **scope)
+
+    assert refused.code == other.code == "outcome_unknown"
+    assert refused.details.keys() == other.details.keys()
+    assert refused.details["workspace_id"] == other.details["workspace_id"] == 3
+    assert refused.details["project_id"] == other.details["project_id"] == 7
+    job_reads = ["mammoth job get 52618 --project 7 --profile work"]
+    assert other.recovery_commands[0] == job_reads[0]
+    assert refused.recovery_commands[1:] == other.recovery_commands
+    assert refused.recovery_commands[0].startswith("mammoth auth login")
+    assert job_reads[0] in (refused.hint or "")
+    assert job_reads[0] in (other.hint or "")
+    assert "mammoth auth login" not in (other.hint or "")
 
 
 def test_a_refused_sign_in_outside_a_poll_is_still_an_authentication_failure() -> None:

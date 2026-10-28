@@ -52,7 +52,7 @@ def _failure_message(job: dict[str, Any]) -> str:
 
 #: Statuses of a refused sign-in. The job was accepted before the poll was refused, so
 #: its outcome stays unknown, but the next step is a new sign-in, then a read of the job.
-_AUTH_STATUSES = frozenset({401, 403})
+AUTH_STATUSES = frozenset({401, 403})
 AUTH_POLL_NEXT = (
     "Job {0} was accepted, but the server refused the credentials while it was being waited "
     "for, so its outcome is unknown. Do not resubmit the write: sign in again, then read the "
@@ -84,7 +84,7 @@ def _polling_failure(error: MammothAPIError, job_ids: list[int]) -> None:
     error.details.update(state)
     if len(job_ids) > 1:
         error.details["job_handles"] = list(job_ids)
-    if error.status_code in _AUTH_STATUSES:
+    if error.status_code in AUTH_STATUSES:
         error.details["next_step"] = AUTH_POLL_NEXT.format(job_ids[0])
 
 
