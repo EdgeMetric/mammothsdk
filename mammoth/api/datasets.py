@@ -108,6 +108,7 @@ class DatasetsAPI:
         offset: int = 0,
         sort: str = "(created_at:desc)",
         fields: str = "id,name",
+        ids: _list[int] | None = None,
     ) -> dict[str, Any]:
         """Get list of datasets in a project.
 
@@ -122,13 +123,17 @@ class DatasetsAPI:
                 the row/column counts, ``data_schema`` the column names and types,
                 ``sources`` how the dataset was made, plus ``created_at`` and
                 ``updated_at``.
+            ids: Only these dataset ids (sent as the server's comma-separated ``id``
+                filter); omitted lists every dataset.
 
         Returns:
             Dict containing datasets list with the requested fields.
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        params = {"fields": fields, "limit": limit, "offset": offset, "sort": sort}
+        params: dict[str, Any] = {"fields": fields, "limit": limit, "offset": offset, "sort": sort}
+        if ids:
+            params["id"] = ",".join(str(int(item)) for item in ids)
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/datasets", params=params
         )
@@ -141,6 +146,7 @@ class DatasetsAPI:
         sort: str = "(created_at:desc)",
         max_pages: int = 1000,
         fields: str = "id,name",
+        ids: _list[int] | None = None,
     ) -> dict[str, Any]:
         """List all datasets with bounded, progress-checked pagination.
 
@@ -157,6 +163,7 @@ class DatasetsAPI:
                 offset=offset,
                 sort=sort,
                 fields=fields,
+                ids=ids,
             ),
             item_key="datasets",
             limit=limit,

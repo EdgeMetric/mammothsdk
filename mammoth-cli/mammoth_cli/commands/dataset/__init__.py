@@ -872,13 +872,15 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
             recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
         )
         # The get can say gone while ``dataset list`` still shows the dataset: verified only
-        # when the list the caller reads next agrees.
+        # when the list the caller reads next agrees. The list is asked for this one id, so
+        # each check is one small request; a server that ignored the filter would return the
+        # whole project, which the pagination still reads in full, so the check stays exact.
         ensure_unlisted(
             service,
             noun="dataset",
             resource_id=dataset_id,
             list_symbol="mammoth.api.datasets.DatasetsAPI.list_all",
-            list_kwargs={"project_id": project_id, "fields": "id,name"},
+            list_kwargs={"project_id": project_id, "fields": "id,name", "ids": [dataset_id]},
             collection="datasets",
         )
     if isinstance(data, dict):

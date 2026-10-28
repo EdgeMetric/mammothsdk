@@ -946,7 +946,10 @@ def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
         (_GET, {"dataset_id": 7, "project_id": 180}),
         (_DELETE, {"dataset_id": 7, "project_id": 180}),
         (_GET, {"dataset_id": 7, "project_id": 180}),
-        ("mammoth.api.datasets.DatasetsAPI.list_all", {"project_id": 180, "fields": "id,name"}),
+        (
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            {"project_id": 180, "fields": "id,name", "ids": [7]},
+        ),
     ]
 
 
@@ -1297,6 +1300,8 @@ def test_delete_names_the_deleted_id_and_reads_the_list_to_confirm(
     assert data["deleted"] == [7]
     assert _LIST_ALL in fake_service.calls
     assert _LIST not in fake_service.calls
+    # One id asked for, not the project's whole listing.
+    assert dict(fake_service.call_log)[_LIST_ALL]["ids"] == [7]
 
 
 def test_delete_that_the_get_calls_gone_but_the_list_still_shows_is_unverified(

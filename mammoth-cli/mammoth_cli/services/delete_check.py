@@ -254,6 +254,11 @@ def ensure_unlisted(
     seen live for datasets. The list is what the caller reads next, so a delete is verified
     only when the list agrees.
 
+    Cost: up to ``_RECHECK_ATTEMPTS`` list calls, ``_RECHECK_DELAY_S`` apart, and only on a
+    delete. The first check that no longer shows the id returns at once. A caller that can
+    filter the list by id (``ids=[...]`` in ``list_kwargs``) makes each check one small
+    request; without a filter each check lists the whole project.
+
     Args:
         service: The open service.
         noun: ``dataset`` and the like, for the message.
