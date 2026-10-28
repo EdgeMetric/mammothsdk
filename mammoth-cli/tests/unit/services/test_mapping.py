@@ -6,10 +6,16 @@ come from the mapper itself or from a shared fake transport.
 
 from __future__ import annotations
 
+import asyncio
+import json
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from mammoth.client import MammothClient
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
@@ -91,6 +97,70 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert mapped.retryable is False
     assert mapped.details["job_handle"] == 44
     assert any("job get 44" in command for command in mapped.recovery_commands)
+
+
+class _RefusedPollHandler(BaseHTTPRequestHandler):
+    """Answers every read with the status its server was given."""
+
+    server: _RefusedPollServer
+
+    def do_GET(self) -> None:  # noqa: N802
+        body = json.dumps({"detail": "token expired"}).encode()
+        self.send_response(self.server.status)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args: object) -> None:
+        return
+
+
+class _RefusedPollServer(HTTPServer):
+    status = 401
+
+
+@pytest.fixture(params=[401, 403])
+def refused_poll_client(request: pytest.FixtureRequest) -> Iterator[MammothClient]:
+    server = _RefusedPollServer(("127.0.0.1", 0), _RefusedPollHandler)
+    server.status = request.param
+    threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+    ).start()
+    yield MammothClient(
+        "key",
+        "secret",
+        workspace_id=1,
+        base_url=f"http://127.0.0.1:{server.server_port}/api/v2",
+        allow_insecure_loopback_http=True,
+    )
+    server.shutdown()
+
+
+def test_a_refused_sign_in_while_polling_stays_outcome_unknown_and_says_to_sign_in(
+    refused_poll_client: MammothClient,
+) -> None:
+    # A real SDK poll the server refuses (401 or 403): the job was accepted, so the code is
+    # still outcome_unknown, but the hint is to sign in again and then read the job.
+    with pytest.raises(MammothAPIError) as raised:
+        asyncio.run(refused_poll_client.jobs.wait_for_job(52618, timeout=5))
+
+    mapped = map_sdk_exception(raised.value)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.exit_status == EXIT_RETRYABLE
+    assert mapped.retryable is False
+    assert "job 52618" in mapped.message
+    hint = mapped.hint or ""
+    assert "Do not resubmit" in hint
+    assert hint.index("mammoth auth login") < hint.index("mammoth job get 52618")
+    assert mapped.recovery_commands == ["mammoth auth login", "mammoth job get 52618"]
+    assert mapped.details["job_handle"] == 52618
+
+
+def test_a_refused_sign_in_outside_a_poll_is_still_an_authentication_failure() -> None:
+    mapped = map_sdk_exception(MammothAuthError("expired", method="GET", operation_state="failed"))
+
+    assert mapped.code == "authentication_failed"
 
 
 def test_a_failed_poll_of_an_accepted_job_says_the_state_is_unknown_not_unchanged() -> None:

@@ -6,7 +6,7 @@ import json
 import re
 import shlex
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeGuard
 
 from mammoth.exceptions import (
     MammothAPIError,
@@ -127,6 +127,58 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
 def _is_known_read(method: object) -> bool:
     """Return whether transport metadata proves the request was observational."""
     return isinstance(method, str) and method.upper() in {"GET", "HEAD", "OPTIONS"}
+
+
+def _is_refused_poll(exc: BaseException) -> TypeGuard[MammothAPIError]:
+    """Whether ``exc`` is a refused sign-in on the poll of a job the server had accepted."""
+    return (
+        isinstance(exc, MammothAPIError)
+        and exc.status_code in {401, 403}
+        and exc.operation_state == CODE_OUTCOME_UNKNOWN
+        and exc.phase == "polling"
+        and exc.job_handle is not None
+    )
+
+
+def _refused_poll_error(
+    exc: MammothAPIError, *, login: str, profile: str | None, project_id: int | None
+) -> CliError:
+    """The outcome of a job whose poll was refused for its credentials.
+
+    The job was accepted, so its outcome is unknown and the code stays ``outcome_unknown``;
+    the next step is to sign in again and then read the job, never to resubmit.
+
+    Args:
+        exc: The SDK error, already labelled ``outcome_unknown`` in phase ``polling``.
+        login: The sign-in command for the profile.
+        profile: The profile name, for the job commands.
+        project_id: The project to scope the job commands to, if known.
+
+    Returns:
+        An ``outcome_unknown`` error whose recovery commands are the sign-in, then the job read.
+    """
+    job_id = exc.job_handle
+    details = _metadata(exc)
+    details.setdefault("job_handle", job_id)
+    details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
+    read = _job_recovery(job_id, profile=profile, project_id=project_id)[0]
+    return CliError(
+        code=CODE_OUTCOME_UNKNOWN,
+        message=(
+            f"Mammoth accepted the request as job {job_id}, but the server refused your "
+            "credentials while the job was being read, so it is unknown whether it is still "
+            "running or done."
+        ),
+        exit_status=EXIT_RETRYABLE,
+        hint=(
+            f"Do not resubmit it. Sign in again (`{login}`, or set the profile's token), "
+            f"then read the job with '{read}' until it is done, and check the result."
+        ),
+        details=details,
+        request_id=exc.request_id,
+        retryable=False,
+        recovery_commands=[login, read],
+    )
 
 
 def _job_recovery(
@@ -465,6 +517,8 @@ def map_sdk_exception(
         )
 
     login = profiles.login_command(profile)
+    if _is_refused_poll(exc):
+        return _refused_poll_error(exc, login=login, profile=profile, project_id=project_id)
     if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
         return CliError(
             code=CODE_CLI_KEY_EXPIRED,
