@@ -73,6 +73,14 @@ _DATAVIEW_GET = "mammoth.api.dataviews.DataviewsAPI.get"
 #: ones a hand-kept list happens to name.
 _PROJECT_ID_UNSET = "project_id must be set on the client using client.set_project_id()"
 
+#: View methods that take another view, mapped to (the view argument, its parent dataset argument).
+#: ``call_view`` hydrates each into a rich View, taking the parent from the input or from the
+#: cache of earlier reads; a method listed here gets both.
+FOREIGN_VIEW_PARAMS: dict[str, tuple[str, str]] = {
+    "join": ("foreign_view", "foreign_dataset_id"),
+    "lookup": ("lookup_view_id", "lookup_dataset_id"),
+}
+
 
 _TOKEN_POSITION = re.compile(r"Unrecognized token at position (\d+)")
 
@@ -730,13 +738,10 @@ class SdkMammothService:
         # own metadata. Hydrate integer references into rich Views before the
         # SDK builders run, using the exact foreign parent when supplied.
         try:
-            if method == "join":
+            foreign_params = FOREIGN_VIEW_PARAMS.get(method)
+            if foreign_params is not None:
                 kwargs = self._hydrate_foreign_view(
-                    kwargs, view_kwarg="foreign_view", parent_kwarg="foreign_dataset_id"
-                )
-            elif method == "lookup":
-                kwargs = self._hydrate_foreign_view(
-                    kwargs, view_kwarg="lookup_view_id", parent_kwarg="lookup_dataset_id"
+                    kwargs, view_kwarg=foreign_params[0], parent_kwarg=foreign_params[1]
                 )
         except CliError:
             raise

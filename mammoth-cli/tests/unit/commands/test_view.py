@@ -1060,12 +1060,12 @@ def test_data_compare_joins_pivot_rows_and_computes_exact_delta(
     ]
 
 
-def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
+def test_data_compare_reports_keys_present_in_only_one_view(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     responses = {
         7: {"data": [{"Campaign": "A", "Spend": 100}, {"Campaign": "B", "Spend": 5}]},
-        9: {"data": [{"Campaign": "A", "Spend": 90}]},
+        9: {"data": [{"Campaign": "A", "Spend": 90}, {"Campaign": "C", "Spend": 7}]},
     }
 
     def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
@@ -1079,14 +1079,42 @@ def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
             "aggregations": [{"column": "Spend", "function": "SUM"}],
         },
     )
-    with pytest.raises(CliError) as excinfo:
-        view_cmd.view_data_compare(
-            _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
-        )
-    assert excinfo.value.code == "invalid_arguments"
-    assert excinfo.value.details is not None
-    assert excinfo.value.details["only_in_first"] == [{"Campaign": "B"}]
-    assert excinfo.value.details["only_in_second"] == []
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert data["data"] == [
+        {"Campaign": "A", "Spend_a": "100", "Spend_b": "90", "Spend_delta": "10"}
+    ]
+    assert data["matched"] == 1
+    assert data["only_in_first"] == {"count": 1, "rows": [{"Campaign": "B", "Spend": 5}]}
+    assert data["only_in_second"] == {"count": 1, "rows": [{"Campaign": "C", "Spend": 7}]}
+
+
+def test_data_compare_caps_the_unmatched_rows_but_counts_them_all(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    total = view_aggregate.COMPARE_UNMATCHED_CAP + 5
+    responses = {
+        7: {"data": [{"Campaign": f"c{n}", "Spend": n} for n in range(total)]},
+        9: {"data": []},
+    }
+
+    def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
+        return responses[int(invocation.extra_args[0])], {}
+
+    monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
+    doc = _doc(
+        tmp_path,
+        {"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM"}]},
+    )
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    only_first = data["only_in_first"]
+    assert only_first["count"] == total
+    assert len(only_first["rows"]) == view_aggregate.COMPARE_UNMATCHED_CAP
+    assert only_first["truncated"] is True
+    assert data["data"] == []
 
 
 def test_data_compare_metric_only_is_a_single_row(
