@@ -140,6 +140,7 @@ class UploadFields:
     JOB_ID = "job_id"
     # What the upload job returns: one job per file, under this key.
     JOB_IDS = "job_ids"
+    NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"
     # When the files were sent: what the upload made is what was created since.
     UPLOADED_AT = "uploaded_at"
@@ -392,6 +393,8 @@ class JobFields:
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.
     NOTE = "note"
+    # What `get_job` reports of a finished job.
+    RESULT = "result"
 
 
 class ViewFields:

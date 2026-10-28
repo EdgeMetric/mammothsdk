@@ -99,3 +99,4 @@ class TestUploadingText:
 
         assert report["status"] == "processing"
         assert report["job_ids"] == [42]
+        assert "get_job" in report["next_step"]

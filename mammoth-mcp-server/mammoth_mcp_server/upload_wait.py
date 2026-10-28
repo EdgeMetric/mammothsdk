@@ -12,6 +12,11 @@ from .jobs import JobStillRunning, job_id_of, wait_for_job
 from .sdk import JsonValue
 from .upload_report import report_upload
 
+STILL_READING = (
+    "Mammoth is still reading the file. Do not upload it again: read each job in"
+    " job_ids with get_job, then list_datasets shows the dataset it made."
+)
+
 
 async def finish_upload(
     workspace_id: int, project_id: int, since: str, started: dict[str, JsonValue]
@@ -35,6 +40,7 @@ async def finish_upload(
     if running:
         report[UploadFields.STATUS] = UploadFields.PROCESSING
         report[UploadFields.JOB_IDS] = list[JsonValue](running)
+        report[UploadFields.NEXT_STEP] = STILL_READING
     if started.get(UploadFields.ERRORS):
         report[UploadFields.REJECTED] = started[UploadFields.ERRORS]
     return report
