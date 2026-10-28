@@ -213,7 +213,7 @@ class AppendsAPI:
             why the batches are missing.
         """
         dataset_id = int(plan["target"])
-        before = set(plan.get("batch_ids_before") or [])
+        before = set(plan["batch_ids_before"])
         give_up_at = time.monotonic() + max(0.0, wait_seconds)
         gap = min(0.5, poll_seconds)
         settled = False
