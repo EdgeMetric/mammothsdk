@@ -144,6 +144,7 @@ def _is_refused_poll(exc: BaseException) -> TypeGuard[MammothAPIError]:
 def _polling_outcome_error(
     exc: MammothAPIError,
     job_id: object,
+    details: dict[str, Any],
     *,
     profile: str | None,
     project_id: int | None,
@@ -159,6 +160,7 @@ def _polling_outcome_error(
     Args:
         exc: The SDK error, labelled ``outcome_unknown`` in phase ``polling``.
         job_id: The accepted job.
+        details: The caller's details for the error (kept whole; this only fills gaps).
         profile: The profile name, for the job commands.
         project_id: The project to scope the job commands to, if known.
         workspace_id: The workspace, recorded in the details if known.
@@ -168,7 +170,7 @@ def _polling_outcome_error(
         An ``outcome_unknown`` error whose recovery commands are the job reads, preceded by
         ``login`` when it is set.
     """
-    details = _metadata(exc)
+    details = dict(details)
     details.setdefault("job_handle", job_id)
     details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
     if workspace_id is not None:
@@ -548,6 +550,7 @@ def map_sdk_exception(
         return _polling_outcome_error(
             exc,
             exc.job_handle,
+            _metadata(exc),
             profile=profile,
             project_id=project_id,
             workspace_id=workspace_id,
@@ -749,6 +752,7 @@ def map_sdk_exception(
                 return _polling_outcome_error(
                     exc,
                     job_id,
+                    details,
                     profile=profile,
                     project_id=project_id,
                     workspace_id=workspace_id,

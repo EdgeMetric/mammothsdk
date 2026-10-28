@@ -190,6 +190,66 @@ def test_the_refused_and_the_other_poll_failures_share_one_shape() -> None:
     assert "mammoth auth login" not in (other.hint or "")
 
 
+@pytest.fixture
+def malformed_jobs_client() -> Iterator[MammothClient]:
+    """A client whose job poll the server answers with a body that is not a jobs answer."""
+    server = _RefusedPollServer(("127.0.0.1", 0), _MalformedJobsHandler)
+    threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+    ).start()
+    yield MammothClient(
+        "key",
+        "secret",
+        workspace_id=1,
+        base_url=f"http://127.0.0.1:{server.server_port}/api/v2",
+        allow_insecure_loopback_http=True,
+    )
+    server.shutdown()
+
+
+class _MalformedJobsHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        body = json.dumps({"jobs": "not a list"}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args: object) -> None:
+        return
+
+
+def test_a_malformed_jobs_answer_keeps_metadata_missing_and_the_same_recovery_shape(
+    malformed_jobs_client: MammothClient,
+) -> None:
+    # A protocol error has no method, so the mapper notes the missing metadata; the shared
+    # polling builder must keep what the caller set.
+    with pytest.raises(MammothAPIError) as raised:
+        asyncio.run(malformed_jobs_client.jobs.wait_for_jobs([52618, 52619], timeout=5))
+    assert raised.value.method is None
+
+    scope = {"profile": "work", "project_id": 7, "workspace_id": 3}
+    mapped = map_sdk_exception(raised.value, **scope)
+    other = map_sdk_exception(
+        MammothAPIError(
+            "poll failed",
+            status_code=503,
+            method="GET",
+            operation_state="outcome_unknown",
+            phase="polling",
+            job_handle=52618,
+        ),
+        **scope,
+    )
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.details["metadata_missing"] == ["method", "operation_state"]
+    assert mapped.details["workspace_id"] == 3
+    assert mapped.details["project_id"] == 7
+    assert mapped.recovery_commands == other.recovery_commands
+    assert "job get 52618 --project 7 --profile work" in (mapped.hint or "")
+
+
 def test_a_refused_sign_in_outside_a_poll_is_still_an_authentication_failure() -> None:
     mapped = map_sdk_exception(MammothAuthError("expired", method="GET", operation_state="failed"))
 
