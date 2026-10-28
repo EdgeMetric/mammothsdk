@@ -937,8 +937,42 @@ class ViewShape:
 
     KEPT = ("id", "name", "ds_id", "status", "row_count", "column_count", "updated_at")
     METADATA = "metadata"
+    ROW_COUNT = "row_count"
     COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
     NUMERIC = "NUMERIC"
     DATE = "DATE"
     # The row identity Mammoth adds to every data page; the web app never shows it.
     SYSTEM_COLUMNS = frozenset({"hash"})
+
+
+class JoinCheckFields:
+    """What `add_transformations` reports about how a join or a lookup matched."""
+
+    JOIN_CHECK = "join_check"
+    ROWS_BEFORE = "rows_before"
+    ROWS_AFTER = "rows_after"
+    COLUMNS_ADDED = "columns_added"
+    UNMATCHED_ROWS = "unmatched_rows"
+    MATCH_RATE = "match_rate"
+    NOTES = "notes"
+    UNMATCHED_NOTE = (
+        "{} of {} rows found no match: every column the step brought in is empty."
+        " If that is more than a few, compare the key columns of both views (type,"
+        " case, spaces) before building on this, or tell the user."
+    )
+    NO_NEW_COLUMN_NOTE = (
+        "The step added no column, so matched rows cannot be counted; read the rows"
+        " with get_data to check them."
+    )
+    ROWS_REPEAT_NOTE = (
+        "The join added {} rows: a key repeats in the other view, so the rows it"
+        " matches repeat too, and totals count them more than once. A lookup brings"
+        " in one value per key."
+    )
+    ROWS_DROPPED_NOTE = (
+        "{} rows found no match and were dropped (an INNER join keeps matched rows only)."
+    )
+    ALONE_NOTE = (
+        "Add a join or a lookup in a call of its own to get its join_check: with other"
+        " steps in the same call, its matches cannot be told apart."
+    )
