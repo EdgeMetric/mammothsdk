@@ -6,7 +6,8 @@ import pytest
 
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.services.sdk_service import SdkMammothService
+from mammoth_cli.runtime import parents
+from mammoth_cli.services.sdk_service import FOREIGN_VIEW_PARAMS, SdkMammothService
 
 AUTH = ResolvedAuth(
     api_key="key",
@@ -180,6 +181,39 @@ def test_foreign_view_without_parent_is_refused_before_discovery(
     assert excinfo.value.code == "missing_argument"
     assert excinfo.value.details == {view_kwarg: 308756, "missing_field": parent_kwarg}
     assert probed == []
+
+
+@pytest.mark.parametrize(("method", "params"), sorted(FOREIGN_VIEW_PARAMS.items()))
+def test_foreign_view_parent_comes_from_an_earlier_read(
+    service: SdkMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+    method: str,
+    params: tuple[str, str],
+) -> None:
+    """A view read earlier (view list/get) needs no ``*_dataset_id`` for join or lookup."""
+    service._client.set_project_id(4300)
+    parents.remember(service._profile, service._workspace_id, {308756: 77})
+    fetched: list[tuple[int, int | None]] = []
+    received: dict[str, object] = {}
+
+    class _View:
+        columns: dict[str, str] = {}
+        column_types: dict[str, str] = {}
+
+        async def join(self, **kwargs: object) -> None:
+            received.update(kwargs)
+
+        async def lookup(self, **kwargs: object) -> None:
+            received.update(kwargs)
+
+    async def _get(view_id: int, dataset_id: int | None = None) -> _View:
+        fetched.append((view_id, dataset_id))
+        return _View()
+
+    monkeypatch.setattr(service._client.views, "get", _get)
+    service.call_view(308758, method, dataset_id=1, **{params[0]: 308756})
+    assert (308756, 77) in fetched
+    assert isinstance(received[params[0]], _View)
 
 
 def test_token_profile_sends_a_bearer_header() -> None:
