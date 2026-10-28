@@ -49,7 +49,7 @@ def test_a_failure_while_rendering_the_result_is_internal_error(
     monkeypatch.setattr(executor, "emit_success", broken_render)
     with pytest.raises(typer.Exit):
         run("project.list", "json", lambda: ({"ok": 1}, {}))
-    envelope = json.loads(capsys.readouterr().err.strip().splitlines()[-1])
+    envelope = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert envelope["error"]["code"] == "internal_error"
 
 
@@ -97,5 +97,5 @@ def test_a_yaml_error_is_a_yaml_envelope(capsys: pytest.CaptureFixture[str]) -> 
     invocation = Invocation(command_id="project.list", output="yaml")
     with pytest.raises(typer.Exit):
         run("project.list", "yaml", _boom, invocation=invocation)
-    document = yaml.safe_load(capsys.readouterr().err)
+    document = yaml.safe_load(capsys.readouterr().out)
     assert document["error"]["code"] == "internal_error"

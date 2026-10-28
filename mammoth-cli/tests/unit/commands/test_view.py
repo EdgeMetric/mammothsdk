@@ -1091,7 +1091,7 @@ def test_data_compare_reports_keys_present_in_only_one_view(
         tmp_path,
         {
             "group_by": ["Campaign"],
-            "aggregations": [{"column": "Spend", "function": "SUM"}],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
         },
     )
     data = view_cmd.view_data_compare(
@@ -1120,7 +1120,10 @@ def test_data_compare_caps_the_unmatched_rows_but_counts_them_all(
     monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
     doc = _doc(
         tmp_path,
-        {"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM"}]},
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
+        },
     )
     data = view_cmd.view_data_compare(
         _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)

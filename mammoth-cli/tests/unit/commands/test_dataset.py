@@ -940,11 +940,13 @@ def test_delete_blocked_without_confirmation_names_the_writing_export(
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
-    # Preview read, the delete, then the read that confirms the dataset is gone.
+    # Preview read, the delete, the read that confirms the dataset is gone, then
+    # the dataset list that must no longer show it (#345).
     assert fake_service.call_log == [
         (_GET, {"dataset_id": 7, "project_id": 180}),
         (_DELETE, {"dataset_id": 7, "project_id": 180}),
         (_GET, {"dataset_id": 7, "project_id": 180}),
+        ("mammoth.api.datasets.DatasetsAPI.list_all", {"project_id": 180, "fields": "id,name"}),
     ]
 
 

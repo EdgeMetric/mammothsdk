@@ -218,7 +218,7 @@ def test_error_envelope_carries_log_ref_and_the_run_is_recorded(
     with pytest.raises(typer.Exit):
         run("project.list", "json", _failure, invocation=invocation)
 
-    envelope = json.loads(capsys.readouterr().err)
+    envelope = json.loads(capsys.readouterr().out)
     ref = envelope["error"]["log_ref"]
     assert Path(ref["file"]).parent == isolated_run_log
     records = runlog.read_records(run_id=ref["run_id"])
