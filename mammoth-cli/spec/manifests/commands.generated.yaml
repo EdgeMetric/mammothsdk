@@ -2264,7 +2264,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth ai sql generate --help
-  agent_example: 'mammoth ai sql generate ''Summarize revenue by region'' --input ''{"dataset_id": 456}'''
+  agent_example: 'mammoth ai sql generate ''Summarize revenue by region'' --input ''{"dataset_id": 456,
+    "dataview_id": 123}'''
   unit_tests:
   - UT-AI-SQL-GENERATE
   contract_tests:
