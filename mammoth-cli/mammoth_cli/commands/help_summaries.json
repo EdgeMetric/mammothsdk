@@ -157,7 +157,7 @@
   "config.path": "Print the path to the non-secret profiles file.",
   "config.set": "Set one profile-scoped configuration value.",
   "connector.active": "List active connectors with established connections (workspace-scoped).",
-  "connector.ai.chat": "Send a message to the connector AI chat assistant. 'body' is required input.",
+  "connector.ai.chat": "Send a message to the older connector chat, not the AI connector builder.",
   "connector.ai.history": "Get chat history for a connection. The connection key is positional.",
   "connector.ai.session.list": "List connector chat sessions in the active project.",
   "connector.ai.session.messages": "Get messages for a connector chat session. The session id is positional.",

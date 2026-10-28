@@ -100,7 +100,7 @@ class ConnectorDraftsAPI:
         session_id: str | None = None,
         start: bool = True,
     ) -> dict[str, Any]:
-        """Start a connector draft.
+        """Start an AI connector draft and send its request as the builder's first turn.
 
         Without ``session_id`` the server starts a new agent chat for the draft. A
         draft with no ``connection_key`` needs the project admin role. When another

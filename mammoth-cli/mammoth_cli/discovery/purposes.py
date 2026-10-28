@@ -712,8 +712,10 @@ COMMAND_DISCOVERY_PURPOSES = {
     "support.template.audit": "platform admin audit curated template catalog gates faults",
     "support.template.export": "platform admin download curated template bundle zip",
     "support.template.export-dashboard": "platform admin download a board as template bundle zip",
-    "connector.ai.chat": (
-        "connect our own internal custom api build a connector for an unsupported source"
+    "connector.ai.chat": "older connector chat for a connection; cannot save an AI connector",
+    "connector.draft.create": (
+        "build an AI connector custom connector for our own internal api or an unsupported "
+        "source; sends the request to the builder agent"
     ),
     "file.set-password": "locked password protected file pdf excel unlock",
     "file.update": (

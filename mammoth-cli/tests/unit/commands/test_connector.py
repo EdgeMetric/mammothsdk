@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from mammoth_cli.app.help_text import _group_description, live_command_summary
 from mammoth_cli.commands import connector as connector_cmd
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
@@ -835,3 +837,21 @@ def test_query_status_dispatches(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [
         (_QUERY_STATUS, {"connector_key": "postgres", "connection_key": "conn1", "project_id": 180})
     ]
+
+
+def test_the_older_connector_chat_says_it_is_not_the_ai_connector_builder() -> None:
+    summary = live_command_summary("connector.ai.chat") or ""
+
+    assert "older connector chat" in summary
+    assert "not the AI connector builder" in summary
+    assert "connector draft create" in _group_description(("connector", "ai"))
+
+
+@pytest.mark.parametrize(
+    "query", ["build an AI connector", "build a connector for our internal api"]
+)
+def test_building_an_ai_connector_finds_the_draft_builder_not_the_older_chat(query: str) -> None:
+    found = [m["command_id"] for m in find_schemas(query)["matches"]]
+
+    assert found[0] == "connector.draft.create"
+    assert "connector.ai.chat" not in found

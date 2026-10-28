@@ -119,8 +119,11 @@ _SUBGROUP_DESCRIPTIONS = {
     "collection members": "Remove members from a collection.",
     "automation route": "Preview and set which automation a watched folder's file goes to.",
     "automation run-file": "Act on a file an automation run held back.",
-    "connector ai": "Chat with the connector assistant to set up a connection.",
-    "connector ai session": "List connector assistant sessions and their messages.",
+    "connector ai": (
+        "The older connector chat for one connection; it cannot save an AI connector. "
+        "To build one, use 'connector draft create'."
+    ),
+    "connector ai session": "List older connector chat sessions and their messages.",
     "connector connection": "Create, read, update and delete connector connections.",
     "connector draft": "Build a connector step by step: sources, gaps, sample, then save.",
     "connector draft source": "List a draft's sources, preview them and find join keys.",

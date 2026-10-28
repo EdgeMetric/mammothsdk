@@ -99,6 +99,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
 - `agent chat --wait` returns the reply its own turn wrote, never the previous turn's; when the server moves a long turn to the background it returns `reply: null`, `background: true` and `next`, the command that reads the answer (SDK `AgentsAPI.chat` too) (D5)
 - `connector draft create` with `request_text` sends it as the first agent turn (as the web app does) and returns `first_turn` and `next`, the command that follows it; before, nothing ran (D6)
+- `connector ai` help says it is the older connector chat that cannot save an AI connector and points to `connector draft create`; "build an AI connector" now finds the builder (D4)
 
 ### Changed (next mammoth-io)
 
