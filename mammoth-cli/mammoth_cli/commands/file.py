@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from mammoth.api.appends import APPEND_WAIT_S
+from mammoth.appends import FAILURE_SCHEMA_MISMATCH
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view.upload import upload_preview
@@ -26,6 +27,7 @@ from mammoth_cli.errors.envelope import (
     CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_SCHEMA_MISMATCH,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_UPLOAD_REFUSED,
     EXIT_API,
@@ -291,6 +293,25 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             ),
             details={"field": "mode"},
         )
+    if document.get("override_target_schema") and (
+        document.get("append_to_ds_id") is None
+        or document.get("wait_for_completion", True) is False
+    ):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                "'override_target_schema' needs 'append_to_ds_id' and the wait for the "
+                "upload (no 'wait_for_completion: false')."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "The server applies it only to a dataset whose update method is 'replace', "
+                "which deletes the rows the dataset holds; the CLI checks that before it sends "
+                'the file: --input \'{"append_to_ds_id": 123, "mode": "replace", '
+                '"override_target_schema": true}\'.'
+            ),
+            details={"field": "override_target_schema"},
+        )
     wanted_mode = update_method.parse_mode(mode) if mode is not None else None
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
@@ -413,6 +434,10 @@ _APPEND_REPORT_FIELDS = (
     "unmatched_batch_ids",
     "append_pending",
     "append_failed",
+    "failure",
+    "reason",
+    "kept_dataset_ids",
+    "next_step",
     "read_error",
     "batches_error",
 )
@@ -470,6 +495,19 @@ def _append_failed_error(target: int, status: Any, appended: dict[str, Any]) -> 
     Returns:
         A ``job_failed`` error that carries the report, so the caller sees what was read.
     """
+    if appended.get("failure") == FAILURE_SCHEMA_MISMATCH:
+        return CliError(
+            code=CODE_SCHEMA_MISMATCH,
+            message=str(appended["reason"]),
+            exit_status=EXIT_API,
+            hint=str(appended["next_step"]),
+            details={
+                "appended_to": target,
+                "rows_added": 0,
+                "kept_dataset_ids": appended["kept_dataset_ids"],
+                "append": appended,
+            },
+        )
     return CliError(
         code=CODE_JOB_FAILED,
         message=(

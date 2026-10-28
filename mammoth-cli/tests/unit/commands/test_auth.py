@@ -105,7 +105,7 @@ def test_login_noninteractive_without_source_requires_input(
     runner = make_runner()
     result = runner.invoke(["auth", "login", "--output", "json", "--no-input"], env={})
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "login_input_required"
 
 
@@ -120,7 +120,7 @@ def test_login_connection_failure_leaves_state_unchanged(
         env={},
     )
     assert result.exit_code == 4
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "authentication_failed"
     assert profiles.get_profile("default") is None
     assert credentials.load_credential("default") is None
@@ -140,7 +140,7 @@ def test_login_input_document_permission_checked(
         ["auth", "login", "--input", str(doc), "--output", "json", "--no-input"], env={}
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "insecure_input_file"
 
 
@@ -165,7 +165,7 @@ def test_insecure_login_document_is_rejected_before_read(
         ["auth", "login", "--input", str(doc), "--output", "json", "--no-input"], env={}
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "insecure_input_file"
     assert "SECRET_SENTINEL" not in result.output
 
@@ -203,7 +203,7 @@ def test_login_document_rejects_unknown_field(
         ["auth", "login", "--input", str(doc), "--output", "json", "--no-input"], env={}
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_login_document"
 
 
@@ -238,7 +238,7 @@ def test_login_file_uses_strict_shared_admission(
         env={},
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == expected
     assert "check_connection" not in fake_service.calls
 
@@ -385,7 +385,7 @@ def test_status_check_failure_surfaces_mapped_error(
     fake_service.connection_ok = False
     result = runner.invoke(["auth", "status", "--check", "--output", "json", "--no-input"])
     assert result.exit_code == 4
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "authentication_failed"
 
 
@@ -393,7 +393,7 @@ def test_logout_requires_yes_when_noninteractive(isolated_cli_config: Path) -> N
     runner = make_runner()
     result = runner.invoke(["auth", "logout", "--output", "json", "--no-input"])
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "confirmation_required"
 
 
@@ -458,7 +458,7 @@ def test_logout_all_and_profile_are_mutually_exclusive(isolated_cli_config: Path
         ["auth", "logout", "--all", "--profile", "default", "--yes", "--output", "json"]
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_argument_combination"
 
 
@@ -514,7 +514,7 @@ def test_login_auth_failure_names_endpoint_and_masked_key(
         env={},
     )
     assert result.exit_code == 4
-    error = json.loads(result.stderr)["error"]
+    error = json.loads(result.stdout)["error"]
     assert error["code"] == "authentication_failed"
     assert error["details"]["endpoint_base_url"] == "https://app.mammoth.io/api/v2"
     assert error["details"]["credential_receipt"] == {
@@ -593,7 +593,7 @@ def test_login_rejects_the_token_id_pasted_as_the_token(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
     )
     assert result.exit_code == 2
-    error = json.loads(result.stderr)["error"]
+    error = json.loads(result.stdout)["error"]
     assert error["code"] == "invalid_credentials"
     assert "id" in error["message"]
     assert "check_connection" not in fake_service.calls
@@ -618,7 +618,7 @@ def test_login_document_requires_an_api_token(
         ["auth", "login", "--input", str(doc), "--storage", "file", "--output", "json"], env={}
     )
     assert result.exit_code == 2, result.stdout
-    assert json.loads(result.stderr)["error"]["code"] == "invalid_login_document"
+    assert json.loads(result.stdout)["error"]["code"] == "invalid_login_document"
     assert "check_connection" not in fake_service.calls
 
 
@@ -643,7 +643,7 @@ def test_device_flag_cannot_be_combined_with_another_method(
         env={},
     )
     assert result.exit_code == 2
-    assert json.loads(result.stderr)["error"]["code"] == "invalid_argument_combination"
+    assert json.loads(result.stdout)["error"]["code"] == "invalid_argument_combination"
 
 
 def test_device_flag_cannot_be_combined_with_input(
@@ -656,7 +656,7 @@ def test_device_flag_cannot_be_combined_with_input(
         env={},
     )
     assert result.exit_code == 2
-    assert json.loads(result.stderr)["error"]["code"] == "invalid_argument_combination"
+    assert json.loads(result.stdout)["error"]["code"] == "invalid_argument_combination"
 
 
 def _choose_at_real_prompt(server_prefix: str | None, typed: bytes) -> tuple[str, str]:
@@ -972,7 +972,7 @@ def test_status_of_a_profile_that_does_not_exist_exits_4_with_a_login_hint(
 ) -> None:
     result = make_runner().invoke(["auth", "status", "--profile", "nosuch", "-o", "json"], env={})
     assert result.exit_code == 4, result.stdout
-    error = json.loads(result.stderr.strip().splitlines()[-1])["error"]
+    error = json.loads(result.stdout.strip().splitlines()[-1])["error"]
     assert error["code"] == "authentication_failed"
     assert "mammoth auth login --profile nosuch" in error["recovery_commands"]
 

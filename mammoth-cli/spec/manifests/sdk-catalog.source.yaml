@@ -6455,6 +6455,78 @@ sdk_methods:
   openapi_operation_ids:
   - PurgeProjectMove
   notes: "Tech admin only. Deletes the source copies a finished move left behind; files not safe in the target are skipped."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.list
+  canonical_command: workflow.template.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListCatalog
+  notes: "Reads the project's workflow-template catalog (`/workflow-templates`), not the workspace templates of `template list`."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.get
+  canonical_command: workflow.template.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetCatalogTemplate
+  notes: "Read-only: the inputs, roles and settings the other template commands take."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result
+  canonical_command: workflow.template.sample-result
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetCatalogSampleResult
+  notes: "Computed in memory on the template's own sample rows; nothing is imported."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank
+  canonical_command: workflow.template.rank
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - RankCatalogTables
+  notes: "Read-only; judges each table from its column names and types alone."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit
+  canonical_command: workflow.template.fit
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - FitCatalogTemplate
+  notes: "Read-only: proposes the column for every role of the chosen tables."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview
+  canonical_command: workflow.template.preview
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PreviewCatalogTemplate
+  notes: "Read-only: runs the template on the first rows of your tables and runs its checks."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples
+  canonical_command: workflow.template.samples
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ImportCatalogSamples
+  notes: "Imports the template's sample tables into the project once; a second run finds them again."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
+  canonical_command: workflow.template.build
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - BuildCatalogTemplate
+  notes: "Adds the template's steps to a workflow and starts the Save that builds them (202); follow it with `workflow get`."
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states

@@ -1248,6 +1248,17 @@ _TARGETS: dict[str, str] = {
     ),
     "support.project-move.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "support.project-move.purge": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # The project workflow-template catalog (not the legacy workspace `template` group).
+    "workflow.template.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.sample-result": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "workflow.template.rank": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.fit": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.samples": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.build": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one

@@ -503,8 +503,8 @@ def test_subprocess_machine_success_and_error_keep_streams_separate() -> None:
         check=False,
     )
     assert failure.returncode == 2
-    assert failure.stdout == ""
-    assert json.loads(failure.stderr)["error"]["code"] == "schema_not_found"
+    assert failure.stderr == ""
+    assert json.loads(failure.stdout)["error"]["code"] == "schema_not_found"
 
 
 @pytest.mark.parametrize(

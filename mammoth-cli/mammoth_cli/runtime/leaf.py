@@ -36,6 +36,7 @@ from mammoth_cli.runtime.locked_files import with_locked_files
 from mammoth_cli.runtime.new_data import with_new_data_path
 from mammoth_cli.runtime.next_commands import with_next_commands
 from mammoth_cli.runtime.opens import with_opens
+from mammoth_cli.runtime.resource_ids import with_resource_ids
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.state import with_state
 from mammoth_cli.runtime.strict import validate_extra_args
@@ -92,10 +93,10 @@ def normalize_result(request: Request, call_next: Next) -> Outcome:
         return outcome
     try:
         checked = with_locked_files(with_dataset_health(apply_verify(invocation, outcome.data)))
-        meta = with_next_commands(
-            invocation, checked, with_opens(invocation, checked, outcome.meta)
-        )
-        data = with_compact(invocation, with_new_data_path(checked), meta)
+        opened = with_opens(invocation, checked, outcome.meta)
+        identified = with_resource_ids(invocation.command_id, checked, opened)
+        meta = with_next_commands(invocation, identified, opened)
+        data = with_compact(invocation, with_new_data_path(identified), meta)
     except (Exception, KeyboardInterrupt) as exc:
         # Inside the journal: the read-back failing is the command's failure, recorded.
         return contained(request, exc)

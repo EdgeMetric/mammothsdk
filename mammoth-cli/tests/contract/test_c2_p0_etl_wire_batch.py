@@ -81,11 +81,25 @@ def _path(api: Any) -> str:
     return api.last().path.removeprefix("/api/v2")
 
 
-def _deletion(api: Any) -> Any:
-    """The DELETE request, followed by the read that confirms the resource is gone."""
-    assert api.requests[-1].method == "GET"
-    assert api.requests[-1].path == api.requests[-2].path
-    return api.requests[-2]
+def _deletion(api: Any, *, listed: bool = False) -> Any:
+    """The DELETE request, followed by the read that confirms the resource is gone.
+
+    Args:
+        api: The recording API.
+        listed: Whether a dataset-list read follows the get (a dataset delete checks the
+            project's list as well, so the list is what the caller reads next).
+
+    Returns:
+        The DELETE request.
+    """
+    requests = list(api.requests)
+    if listed:
+        listing = requests.pop()
+        assert listing.method == "GET"
+        assert listing.path.removeprefix("/api/v2") == f"/workspaces/4/projects/{PROJECT}/datasets"
+    assert requests[-1].method == "GET"
+    assert requests[-1].path == requests[-2].path
+    return requests[-2]
 
 
 def test_p0_upload_view_create_and_task_add_wires(
@@ -195,7 +209,7 @@ def test_p0_export_wire_and_delete_confirmation_controls(
 
     with _bind(monkeypatch, dataset_cmd, service):
         _drive(dataset_cmd.dataset_delete(_inv("dataset.delete", [str(DATASET)], yes=True)))
-    deletion = _deletion(api)
+    deletion = _deletion(api, listed=True)
     assert deletion.method == "DELETE"
     assert deletion.path.removeprefix("/api/v2") == (
         f"/workspaces/4/projects/{PROJECT}/datasets/{DATASET}"

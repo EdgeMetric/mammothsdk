@@ -17,7 +17,7 @@ import pytest
 
 from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothAPIError, MammothValidationError
 from mammoth.models.automations import (
     AlertType,
     AutomationConditionSpec,

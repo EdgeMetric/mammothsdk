@@ -208,6 +208,42 @@ async def test_chat_wait_ignores_a_different_turn_that_is_working(
     assert result["reply"] == {"role": "assistant", "text": "old"}
 
 
+async def test_chat_wait_never_returns_an_earlier_turns_reply_after_a_hand_off(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers["POST /agents/chat"] = (202, STARTED)
+    server.answers["GET /agents/sessions/s1/messages"] = {
+        "session_id": "s1",
+        "working": False,
+        "messages": [
+            {"role": "user", "text": "first"},
+            {"role": "assistant", "text": "previous answer", "turn_id": "t0"},
+            {"role": "user", "text": "long question"},
+        ],
+    }
+    result = await client.agents.chat("long question", SCOPE, wait=30)
+    assert result["reply"] is None
+    assert result["background"] is True
+    assert result["next"] == "mammoth agent session messages s1"
+
+
+async def test_chat_wait_picks_the_reply_written_by_its_own_turn(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers["POST /agents/chat"] = (202, STARTED)
+    server.answers["GET /agents/sessions/s1/messages"] = {
+        "session_id": "s1",
+        "working": False,
+        "messages": [
+            {"role": "assistant", "text": "mine", "turn_id": "t1"},
+            {"role": "assistant", "text": "later turn", "turn_id": "t2"},
+        ],
+    }
+    result = await client.agents.chat("hi", SCOPE, wait=30)
+    assert result["reply"] == {"role": "assistant", "text": "mine", "turn_id": "t1"}
+    assert "background" not in result
+
+
 # --- plan decisions ---------------------------------------------------------------------------
 
 PLAN = {

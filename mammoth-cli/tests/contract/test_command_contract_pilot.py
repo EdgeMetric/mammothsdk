@@ -93,7 +93,6 @@ def test_zero_input_read_has_no_sdk_keywords(fake_service) -> None:
             {
                 "folder_resource_id": "folder-sentinel",
                 "append_to_ds_id": 731,
-                "override_target_schema": True,
                 "wait_for_completion": False,
                 "timeout": 47,
             },

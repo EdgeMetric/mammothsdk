@@ -93,6 +93,16 @@ def _is_gone(error: CliError, *, forbidden_means_gone: bool = False) -> bool:
 #: Flags and ``status`` words by which a read of a trashed record says it is in the trash.
 _TRASHED_FLAGS = ("is_trashed", "trashed", "is_deleted", "deleted")
 _TRASHED_STATUSES = frozenset({"trashed", "deleted"})
+#: A ``status`` word for a record the server is still removing: not gone yet, not refused.
+_REMOVING_STATUSES = frozenset({"deleting"})
+
+
+def _is_removing(record: Any) -> bool:
+    """Whether ``record`` says the server is still in the middle of deleting it."""
+    if hasattr(record, "model_dump"):
+        record = record.model_dump()
+    status = record.get("status") if isinstance(record, dict) else None
+    return isinstance(status, str) and status.lower() in _REMOVING_STATUSES
 
 
 def _still_there(record: Any, resource_id: int) -> bool:
@@ -147,6 +157,7 @@ def ensure_deleted(
         (found for found in (find_dependents(r, resource_id) for r in responses) if found), None
     )
     # With a dependency map the server has said why it stayed: no point waiting.
+    record: Any = None
     for attempt in range(1 if dependents is not None else _RECHECK_ATTEMPTS):
         if attempt:
             time.sleep(_RECHECK_DELAY_S)
@@ -186,10 +197,96 @@ def ensure_deleted(
             details={f"{noun}_id": resource_id, "dependents": dependents, "deleted": False},
             recovery_commands=recovery_commands or [],
         )
+    if _is_removing(record):
+        raise CliError(
+            code=CODE_DELETE_UNVERIFIED,
+            message=(
+                f"The {noun} {resource_id} delete was accepted, but the {noun} still reads "
+                "as deleting, so it is not known yet whether it is gone."
+            ),
+            exit_status=EXIT_API,
+            hint=f"Check again with the {noun} list command before deleting it a second time.",
+            details={f"{noun}_id": resource_id, "deleted": None, "status": "deleting"},
+        )
     raise CliError(
         code=CODE_DELETE_NOT_APPLIED,
         message=f"{noun.capitalize()} {resource_id} still exists after the delete was accepted.",
         exit_status=EXIT_API,
         hint=f"Read it again with the {noun} get command; retry the delete if it is still there.",
         details={f"{noun}_id": resource_id, "deleted": False},
+    )
+
+
+def listed_ids(listing: Any, collection: str) -> set[str]:
+    """The ids, as text, of the records a list response carries under ``collection``.
+
+    Args:
+        listing: What the list call returned.
+        collection: The key the records sit under (``datasets``).
+
+    Returns:
+        The set of ids; empty when the response has no such list.
+    """
+    records = listing.get(collection) if isinstance(listing, dict) else None
+    if not isinstance(records, list):
+        return set()
+    ids: set[str] = set()
+    for record in records:
+        if hasattr(record, "model_dump"):
+            record = record.model_dump()
+        if isinstance(record, dict) and record.get("id") is not None:
+            ids.add(str(record["id"]))
+    return ids
+
+
+def ensure_unlisted(
+    service: Any,
+    *,
+    noun: str,
+    resource_id: int,
+    list_symbol: str,
+    list_kwargs: dict[str, Any],
+    collection: str,
+) -> None:
+    """Raise ``delete_unverified`` while the resource is still in the list a user would read.
+
+    A get can answer "gone" (or a trashed record) while the list still shows the resource, as
+    seen live for datasets. The list is what the caller reads next, so a delete is verified
+    only when the list agrees.
+
+    Cost: up to ``_RECHECK_ATTEMPTS`` list calls, ``_RECHECK_DELAY_S`` apart, and only on a
+    delete. The first check that no longer shows the id returns at once. A caller that can
+    filter the list by id (``ids=[...]`` in ``list_kwargs``) makes each check one small
+    request; without a filter each check lists the whole project.
+
+    Args:
+        service: The open service.
+        noun: ``dataset`` and the like, for the message.
+        resource_id: The id that was deleted.
+        list_symbol: The SDK list call that returns every such resource.
+        list_kwargs: Its arguments.
+        collection: The key the list response holds the records under.
+
+    Raises:
+        CliError: ``delete_unverified`` when the id is still listed after the rechecks.
+    """
+    for attempt in range(_RECHECK_ATTEMPTS):
+        if attempt:
+            time.sleep(_RECHECK_DELAY_S)
+        listing = service.call(list_symbol, **list_kwargs)
+        if str(resource_id) not in listed_ids(listing, collection):
+            return
+    raise CliError(
+        code=CODE_DELETE_UNVERIFIED,
+        message=(
+            f"The {noun} {resource_id} delete was accepted and reads as gone, but the {noun} "
+            f"is still in the {noun} list, so it is not confirmed deleted."
+        ),
+        exit_status=EXIT_API,
+        hint=(
+            f"Run the {noun} list command again in a moment; delete it a second time only if "
+            "it is still listed."
+        ),
+        details={f"{noun}_id": resource_id, "deleted": None, "still_listed": True},
+        recovery_commands=[f"mammoth {noun} list"],
     )

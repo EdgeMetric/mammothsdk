@@ -187,3 +187,25 @@ def test_a_dataset_list_with_need_action_entries_does_not_set_needs_user() -> No
     data = {"datasets": [{"id": 5, "status": "need_action"}]}
     assert with_verify(data, _inv("dataset.list"))["verify"]["needs_user"] is None
     assert with_verify(data)["verify"]["needs_user"] is None
+
+
+def test_a_schema_mismatched_append_is_a_failure_with_its_own_code() -> None:
+    appended = {
+        "failure": "schema_mismatch",
+        "reason": "The server did not append the file: its columns do not match dataset 9's.",
+        "next_step": "Fix the file and upload it again.",
+        "kept_dataset_ids": [900],
+        "rows_added": 0,
+    }
+    error = file_cmd._append_failed_error(9, None, appended)
+    assert error.code == "schema_mismatch"
+    assert error.exit_status == 1
+    assert "do not match dataset 9" in error.message
+    assert error.hint == "Fix the file and upload it again."
+    assert error.details["kept_dataset_ids"] == [900]
+    assert error.details["rows_added"] == 0
+
+
+def test_an_append_that_ended_in_a_failed_status_stays_a_job_failure() -> None:
+    error = file_cmd._append_failed_error(9, "error", {"append_failed": True})
+    assert error.code == "job_failed"

@@ -50,6 +50,32 @@ UNKNOWN_EFFECT = "Unknown: the dataset's update method could not be read."
 SETTLED_STATUSES = frozenset({"ready", "processed", "empty"})
 #: Dataset statuses of an upload that failed.
 FAILED_STATUSES = frozenset({"error", "failed", "failure"})
+#: The flag the server sets on an uploaded file's ``additional_data`` when its columns do not
+#: match the dataset it was to be appended to, and the key of the dataset it names.
+SCHEMA_MISMATCH_FLAG = "schema_mismatch"
+SCHEMA_MISMATCH_TARGET = "schema_mismatch_target_ds_id"
+#: The ``failure`` an append reports when the server held the file back for its columns.
+FAILURE_SCHEMA_MISMATCH = "schema_mismatch"
+#: Said when the server held a file back instead of appending it.
+SCHEMA_MISMATCH_REASON = (
+    "The server did not append the file: its columns do not match dataset {0}'s (a column the"
+    " dataset has is missing, or a column has another type). Nothing was added to dataset {0}."
+    " The file's own dataset {1} is kept in the project as a separate dataset that still holds"
+    " the rows."
+)
+#: What to do about it.
+SCHEMA_MISMATCH_NEXT = (
+    "Compare the file's columns with dataset {0}'s. Fix the file and upload it again, or delete"
+    " the kept dataset {1} if it is not wanted."
+)
+#: Said when ``override_target_schema`` is asked for under a method the server ignores it for.
+OVERRIDE_NEEDS_REPLACE = (
+    "override_target_schema has no effect unless the dataset's update method is 'replace': the"
+    " server applies it only when the upload also replaces the dataset's rows, so under '{0}'"
+    " a column mismatch would hold the file back as before. Nothing was uploaded. To replace"
+    " the dataset's columns and rows with the file's, pass mode 'replace' as well: that DELETES"
+    " the rows the dataset holds now."
+)
 
 
 class UnknownUpdateMethodError(ValueError):
@@ -130,6 +156,90 @@ def refuse_batch_removal(
     if set(existing_ids) <= set(batch_ids):
         return WOULD_EMPTY.format(sorted(set(batch_ids)))
     return None
+
+
+def refuse_override(override: Any, mode: str | None) -> str | None:
+    """Say why ``override_target_schema`` may not be sent, or None when it may.
+
+    The server adopts the file's columns as the dataset's only when the dataset's update
+    method is ``replace`` (the public upload route turns that into "delete the existing rows
+    after the append", and the override needs both). Under ``add``, or an unknown method, the
+    flag is dropped silently and a schema mismatch holds the file back.
+
+    Args:
+        override: The ``override_target_schema`` the caller asked for.
+        mode: The update method the upload will run under (``add``, ``replace``), or None
+            when it could not be read.
+
+    Returns:
+        The reason, or None when the flag is off or the method is ``replace``.
+    """
+    if not override or mode == "replace":
+        return None
+    return OVERRIDE_NEEDS_REPLACE.format(mode if mode is not None else "unknown")
+
+
+def held_back(pending: Iterable[Any], target: int) -> list[dict[str, Any]]:
+    """The pending items the server flagged as held back for ``target``'s schema.
+
+    Args:
+        pending: The ``pending_batches`` the target's batch listing holds.
+        target: The dataset the files were to be appended to.
+
+    Returns:
+        The items whose ``additional_data`` carries :data:`SCHEMA_MISMATCH_FLAG` and names
+        ``target``, and whose ``dataset_id`` is an int.
+    """
+    items: list[dict[str, Any]] = []
+    for item in pending:
+        extra = item.get("additional_data") if isinstance(item, dict) else None
+        if (
+            isinstance(extra, dict)
+            and extra.get(SCHEMA_MISMATCH_FLAG) is True
+            and extra.get(SCHEMA_MISMATCH_TARGET) == target
+            and isinstance(item.get("dataset_id"), int)
+        ):
+            items.append(item)
+    return items
+
+
+def schema_mismatches(
+    pending: Iterable[Any],
+    target: int,
+    known: Iterable[int],
+    staging_ids: Iterable[int],
+    sent: Sequence[str],
+) -> list[int]:
+    """The files the server held back for ``target`` because their columns do not match.
+
+    The server lists such a file as a pending batch of the target whose ``additional_data``
+    carries :data:`SCHEMA_MISMATCH_FLAG` and the target's id. One counts as this upload's when
+    it is not in ``known`` (those listed before the upload) and is the staging dataset the
+    upload made or names a file that was sent.
+
+    Args:
+        pending: The ``pending_batches`` the target's batch listing holds.
+        target: The dataset the file was to be appended to.
+        known: Dataset ids of held-back files already listed before the upload.
+        staging_ids: The staging dataset ids the upload job made.
+        sent: The names of the files that were sent.
+
+    Returns:
+        The ids of the datasets the held-back files became (``dataset_id`` of each item).
+    """
+    skip = set(known)
+    staging = set(staging_ids)
+    wanted = {name.lower() for name in sent} | {PurePosixPath(n).stem.lower() for n in sent}
+    found: list[int] = []
+    for item in held_back(pending, target):
+        dataset_id = item["dataset_id"]
+        if dataset_id in skip:
+            continue
+        labels = batch_labels({"source": item.get("source"), "name": item.get("name")})
+        stems = {PurePosixPath(label).stem for label in labels}
+        if dataset_id in staging or labels & wanted or stems & wanted:
+            found.append(dataset_id)
+    return found
 
 
 def describe_update_method(result: Any) -> dict[str, Any]:
@@ -252,6 +362,7 @@ def describe_append(
     settled: bool,
     status: str | None = None,
     read_error: str | None = None,
+    mismatched: Sequence[int] = (),
 ) -> dict[str, Any]:
     """Report what an upload into a dataset did.
 
@@ -263,6 +374,8 @@ def describe_append(
         settled: Whether the dataset had taken the rows in by the time it was read.
         status: The dataset's status at the last read, or None when it was never read.
         read_error: Why the dataset could not be read at the last try, if it could not.
+        mismatched: The datasets the server kept for files it held back for a schema mismatch
+            (:func:`schema_mismatches`).
 
     Returns:
         ``appended_to``, the ``update_method`` the upload ran under (``mode``,
@@ -271,7 +384,10 @@ def describe_append(
         when a replace shrank the dataset), ``batch_ids``, and when present
         ``unmatched_batch_ids``, ``append_pending`` (with ``read_error`` when the last read of
         the dataset failed) and, when the dataset ended in a failed status, ``append_failed``
-        with that ``status``.
+        with that ``status``. A file the server held back because its columns do not match
+        reports ``append_failed`` with ``failure`` ``schema_mismatch``, the ``reason``, the
+        ``kept_dataset_ids`` (the file's own datasets, which stay in the project) and a
+        ``next_step``.
     """
     entry = plan["update_method"]
     report: dict[str, Any] = {"appended_to": plan["target"], "update_method": dict(entry)}
@@ -281,7 +397,15 @@ def describe_append(
     report["batch_ids"] = list(ours)
     if unmatched:
         report["unmatched_batch_ids"] = list(unmatched)
-    if status in FAILED_STATUSES:
+    if mismatched:
+        target = plan["target"]
+        kept = ", ".join(str(dataset_id) for dataset_id in mismatched)
+        report["append_failed"] = True
+        report["failure"] = FAILURE_SCHEMA_MISMATCH
+        report["reason"] = SCHEMA_MISMATCH_REASON.format(target, kept)
+        report["kept_dataset_ids"] = list(mismatched)
+        report["next_step"] = SCHEMA_MISMATCH_NEXT.format(target, kept)
+    elif status in FAILED_STATUSES:
         report["append_failed"] = True
         report["status"] = status
     elif not settled:

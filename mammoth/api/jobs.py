@@ -50,6 +50,44 @@ def _failure_message(job: dict[str, Any]) -> str:
     return str(message) if message else "Job failed"
 
 
+#: Statuses of a refused sign-in. The job was accepted before the poll was refused, so
+#: its outcome stays unknown, but the next step is a new sign-in, then a read of the job.
+AUTH_STATUSES = frozenset({401, 403})
+AUTH_POLL_NEXT = (
+    "Job {0} was accepted, but the server refused the credentials while it was being waited "
+    "for, so its outcome is unknown. Do not resubmit the write: sign in again, then read the "
+    "job (jobs.get_job({0})) until it is done."
+)
+
+
+def _polling_failure(error: MammothAPIError, job_ids: list[int]) -> None:
+    """Re-label a failed job poll: the job exists, so its state is unknown.
+
+    A poll is a read, so the request layer labels its failure ``not_started``. Once a request
+    has returned a job id, the write behind it was accepted and may be running or done: the
+    failure of a later poll says nothing about the write, and a caller told that nothing
+    started resubmits it.
+
+    Args:
+        error: The failure of the poll request (or a malformed poll answer).
+        job_ids: The job(s) being waited for; the first is the recovery handle.
+
+    The error is changed in place to ``outcome_unknown`` in phase ``polling``, with
+    ``job_handle`` set (``job_handles`` lists every job when there are several). When the
+    poll was refused for its credentials (401 or 403) the label is the same, and
+    ``details["next_step"]`` says to sign in again and then read the job.
+    """
+    state = {"operation_state": "outcome_unknown", "phase": "polling", "job_handle": job_ids[0]}
+    error.operation_state = "outcome_unknown"
+    error.phase = "polling"
+    error.job_handle = job_ids[0]
+    error.details.update(state)
+    if len(job_ids) > 1:
+        error.details["job_handles"] = list(job_ids)
+    if error.status_code in AUTH_STATUSES:
+        error.details["next_step"] = AUTH_POLL_NEXT.format(job_ids[0])
+
+
 def _poll_delay(attempt: int, cap: float, elapsed: float = 0.0) -> float:
     """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``.
 
@@ -180,11 +218,15 @@ class JobsAPI:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            job_response = (
-                await fetch(job_id, remaining)
-                if fetch is not None
-                else await self.get_job(job_id, timeout=remaining)
-            )
+            try:
+                job_response = (
+                    await fetch(job_id, remaining)
+                    if fetch is not None
+                    else await self.get_job(job_id, timeout=remaining)
+                )
+            except MammothAPIError as failure:
+                _polling_failure(failure, [job_id])
+                raise
 
             # Extract job from response
             if "job" in job_response:
@@ -291,54 +333,58 @@ class JobsAPI:
                 break
             # get_jobs is a read-only observation.  Supplying its remaining
             # budget prevents one poll from overrunning the public wait limit.
-            jobs_response = await self.get_jobs(job_ids_list, timeout=remaining)
-            jobs = jobs_response.get("jobs", [])
-            if not isinstance(jobs, list):
-                raise MammothAPIError(
-                    "Jobs response has an invalid 'jobs' collection.",
-                    details={"protocol_error": "invalid_jobs_collection"},
-                )
-            observed_ids: set[int] = set()
+            try:
+                jobs_response = await self.get_jobs(job_ids_list, timeout=remaining)
+                jobs = jobs_response.get("jobs", [])
+                if not isinstance(jobs, list):
+                    raise MammothAPIError(
+                        "Jobs response has an invalid 'jobs' collection.",
+                        details={"protocol_error": "invalid_jobs_collection"},
+                    )
+                observed_ids: set[int] = set()
 
-            for job in jobs:
-                if not isinstance(job, dict):
-                    raise MammothAPIError(
-                        "Jobs response contains an invalid job record.",
-                        details={"protocol_error": "invalid_job_record"},
-                    )
-                job_id = job.get("id")
-                status = job.get("status")
-                if not isinstance(job_id, int) or isinstance(job_id, bool):
-                    raise MammothAPIError(
-                        "Jobs response contains a job without an integer id.",
-                        details={"protocol_error": "invalid_job_id"},
-                    )
-                if job_id not in requested_ids:
-                    raise MammothAPIError(
-                        "Jobs response includes a job that was not requested.",
-                        details={"protocol_error": "unexpected_job_id", "job_id": job_id},
-                    )
-                if job_id in observed_ids:
-                    raise MammothAPIError(
-                        "Jobs response includes the same job more than once.",
-                        details={"protocol_error": "duplicate_job_id", "job_id": job_id},
-                    )
-                observed_ids.add(job_id)
-                observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
-                if not isinstance(observed_phase, str):
-                    observed_phase = "polling"
-                last_observed[job_id] = safe_response_body(job)
+                for job in jobs:
+                    if not isinstance(job, dict):
+                        raise MammothAPIError(
+                            "Jobs response contains an invalid job record.",
+                            details={"protocol_error": "invalid_job_record"},
+                        )
+                    job_id = job.get("id")
+                    status = job.get("status")
+                    if not isinstance(job_id, int) or isinstance(job_id, bool):
+                        raise MammothAPIError(
+                            "Jobs response contains a job without an integer id.",
+                            details={"protocol_error": "invalid_job_id"},
+                        )
+                    if job_id not in requested_ids:
+                        raise MammothAPIError(
+                            "Jobs response includes a job that was not requested.",
+                            details={"protocol_error": "unexpected_job_id", "job_id": job_id},
+                        )
+                    if job_id in observed_ids:
+                        raise MammothAPIError(
+                            "Jobs response includes the same job more than once.",
+                            details={"protocol_error": "duplicate_job_id", "job_id": job_id},
+                        )
+                    observed_ids.add(job_id)
+                    observed_phase = job.get("phase") or job.get("execution_phase") or "polling"
+                    if not isinstance(observed_phase, str):
+                        observed_phase = "polling"
+                    last_observed[job_id] = safe_response_body(job)
 
-                if status == "success":
-                    completed_jobs[job_id] = job
-                elif status in ["failure", "error"]:
-                    error_msg = _failure_message(job)
-                    raise MammothJobFailedError(
-                        job_id,
-                        error_msg,
-                        observed_job=last_observed.get(job_id),
-                        phase=observed_phase,
-                    )
+                    if status == "success":
+                        completed_jobs[job_id] = job
+                    elif status in ["failure", "error"]:
+                        error_msg = _failure_message(job)
+                        raise MammothJobFailedError(
+                            job_id,
+                            error_msg,
+                            observed_job=last_observed.get(job_id),
+                            phase=observed_phase,
+                        )
+            except MammothAPIError as failure:
+                _polling_failure(failure, job_ids_list)
+                raise
             # A partial (including empty) server response is an observation
             # that some requested jobs remain unconfirmed, never proof that
             # the whole requested set completed.

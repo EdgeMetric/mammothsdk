@@ -200,7 +200,11 @@ def connector_list(invocation: Invocation) -> HandlerResult:
 
 
 def connector_ai_chat(invocation: Invocation) -> HandlerResult:
-    """Send a message to the connector AI chat assistant. ``body`` is required input."""
+    """Send a message to the older connector chat, not the AI connector builder.
+
+    ``body`` is required input. This chat cannot save an AI connector version; build one
+    with ``connector draft create`` and follow its agent chat.
+    """
     project_id = require_project(invocation)
     document = invocation.load_input()
     body = _require_field(document, "body")

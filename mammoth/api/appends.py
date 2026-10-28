@@ -28,8 +28,11 @@ from .._pure.appends import (
     UnknownUpdateMethodError,
     describe_append,
     describe_update_method,
+    held_back,
     match_batches,
+    refuse_override,
     rows_of,
+    schema_mismatches,
     sent_names,
     status_of,
     stored_mode,
@@ -102,7 +105,24 @@ class AppendsAPI:
             short page, at a full page that adds no new id, or after :data:`BATCH_PAGES`
             pages.
         """
+        return (await self.read_batches(dataset_id, project_id))[0]
+
+    async def read_batches(
+        self, dataset_id: int, project_id: int | None = None
+    ) -> tuple[_list[dict[str, Any]], _list[dict[str, Any]]]:
+        """Every batch of a dataset, and the files the server lists as waiting on it.
+
+        Args:
+            dataset_id: ID of the dataset.
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            ``(batches, pending)``: the batch rows as :meth:`list_batches` gives them, and the
+            ``pending_batches`` of the first page (files not yet appended, among them the ones
+            the server held back for a schema mismatch).
+        """
         found: _list[dict[str, Any]] = []
+        pending: _list[dict[str, Any]] = []
         offset = 0
         for _ in range(BATCH_PAGES):
             page = await self._client.batches.list(
@@ -110,6 +130,13 @@ class AppendsAPI:
             )
             rows = page.get("batches") if isinstance(page, dict) else page
             rows = rows if isinstance(rows, _list) else []
+            if offset == 0 and isinstance(page, dict):
+                waiting = page.get("pending_batches")
+                pending = (
+                    [row for row in waiting if isinstance(row, dict)]
+                    if isinstance(waiting, _list)
+                    else []
+                )
             seen = {row["id"] for row in found}
             new = [
                 row
@@ -122,7 +149,7 @@ class AppendsAPI:
             if len(rows) < BATCH_PAGE or not new:
                 break
             offset += BATCH_PAGE
-        return found
+        return found, pending
 
     async def prepare(
         self, dataset_id: int, mode: str | None = None, project_id: int | None = None
@@ -144,7 +171,8 @@ class AppendsAPI:
             Plain data for :meth:`finish`, :meth:`restore_mode` and ``describe_append``:
             ``target``, ``update_method`` (``mode``, ``effect``, ``previous_mode`` when this
             changed it, ``error`` when the stored mode could not be read), ``mode_changed``,
-            ``rows_before`` and ``batch_ids_before``.
+            ``rows_before``, ``batch_ids_before`` and ``held_back_before`` (files the server
+            had already held back for a schema mismatch).
 
         Raises:
             MammothValidationError: If *mode* is not a known mode.
@@ -157,7 +185,7 @@ class AppendsAPI:
             except UnknownUpdateMethodError as exc:
                 raise MammothValidationError(str(exc)) from exc
         rows_before = rows_of(await self._read_dataset(dataset_id, project_id))
-        batches = await self.list_batches(dataset_id, project_id)
+        batches, waiting = await self.read_batches(dataset_id, project_id)
         read = await self.read_mode(dataset_id, project_id)
         changed = False
         entry = {key: value for key, value in read.items() if key != "schema_mapping"}
@@ -177,6 +205,7 @@ class AppendsAPI:
             "mode_changed": changed,
             "rows_before": rows_before,
             "batch_ids_before": [row["id"] for row in batches],
+            "held_back_before": [item["dataset_id"] for item in held_back(waiting, dataset_id)],
         }
 
     async def finish(
@@ -221,6 +250,7 @@ class AppendsAPI:
         status: str | None = None
         read_error: str | None = None
         after: _list[dict[str, Any]] = []
+        mismatched: _list[int] = []
         batches_error: str | None = None
         while True:
             try:
@@ -237,11 +267,20 @@ class AppendsAPI:
                 # The upload job ends before the target starts taking the rows in, so a
                 # ready target may not have them yet: it has them once their batch is listed.
                 try:
-                    after = await self.list_batches(dataset_id, project_id)
+                    after, waiting = await self.read_batches(dataset_id, project_id)
                     batches_error = None
+                    # A file whose columns do not match is never appended: the server flags
+                    # it on its pending item, which is the only record of why no batch came.
+                    mismatched = schema_mismatches(
+                        waiting,
+                        dataset_id,
+                        plan.get("held_back_before", []),
+                        staging_ids or [],
+                        file_names,
+                    )
                 except MammothError as failure:
                     batches_error = str(failure).strip() or type(failure).__name__
-                settled = any(row["id"] not in before for row in after)
+                settled = bool(mismatched) or any(row["id"] not in before for row in after)
             if settled or time.monotonic() >= give_up_at:
                 break
             await asyncio.sleep(gap)
@@ -252,7 +291,9 @@ class AppendsAPI:
             report["batches_error"] = batches_error
             return report
         ours, unmatched = match_batches(list(before), after, file_names, staging_ids or [])
-        return describe_append(plan, rows_after, ours, unmatched, settled, status, read_error)
+        return describe_append(
+            plan, rows_after, ours, unmatched, settled, status, read_error, mismatched
+        )
 
     async def restore_mode(self, plan: dict[str, Any], project_id: int | None = None) -> str | None:
         """Put the dataset's mode back after the upload that needed it failed (best effort).
@@ -309,7 +350,9 @@ class AppendsAPI:
             mode: ``add`` or ``replace`` to set first, or None to keep the dataset's own.
                 A mode set stays on the dataset: every later upload follows it.
             folder_resource_id: Resource ID of the target folder.
-            override_target_schema: Override the target schema when appending.
+            override_target_schema: Make the file's columns the dataset's. The server applies
+                this only when the dataset's update method is ``replace`` (which deletes the
+                rows it holds), so any other method is refused before anything is sent.
             timeout: Timeout in seconds for the upload job.
             wait_seconds: The longest to wait for the dataset to settle afterwards.
             poll_seconds: The longest gap between reads of the dataset.
@@ -319,16 +362,26 @@ class AppendsAPI:
             datasets, ``errors``, ``nested_job_ids``, ``files``, ``files_error``) and
             :meth:`finish`'s: ``appended_to``, ``update_method``, ``rows_before``,
             ``rows_after``, ``rows_added``, ``batch_ids``, ``unmatched_batch_ids``,
-            ``append_pending``.
+            ``append_pending``; ``append_failed`` with ``failure`` ``schema_mismatch``,
+            ``reason``, ``kept_dataset_ids`` and ``next_step`` when the server held the file
+            back because its columns do not match (nothing was added; the file's own dataset
+            stays in the project).
 
         Raises:
-            MammothValidationError: If *mode* is unknown, or the server refused the files
+            MammothValidationError: If *mode* is unknown, *override_target_schema* is asked
+                for under a method other than ``replace``, or the server refused the files
                 and added nothing.
             MammothJobTimeoutError: If the upload job outlasted *timeout*. The mode is not
                 put back: the job still runs and reads it when the file lands.
             MammothError: Any other refusal, after the mode was put back.
         """
         plan = await self.prepare(dataset_id, mode)
+        refusal = refuse_override(override_target_schema, plan["update_method"].get("mode"))
+        if refusal:
+            kept = await self.restore_mode(plan)
+            raise MammothValidationError(
+                refusal, details={UPDATE_METHOD_KEPT: kept} if kept else None
+            )
         try:
             outcome = await self._client.files.upload_result(
                 files,

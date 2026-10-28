@@ -361,8 +361,9 @@ commands:
     of subtracting two ''view data aggregate'' reads by hand -- calc is the tool for a single expression.
     Takes the exact same --input shape as view data aggregate (aggregations/group_by, or metric); rows
     are joined on the group-by key (or compared as a single row for a bare metric) using exact Decimal
-    arithmetic. A key present in only one view''s result fails loud rather than silently reporting a partial
-    diff.'
+    arithmetic. A key present in only one view''s result is not an error: ''only_in_first'' and
+    ''only_in_second'' give its exact count and the first 25 rows, and ''rows'' holds the keys both
+    views have.'
   reviewed_by: primary
 - command_id: view.data.explore
   output_schema:

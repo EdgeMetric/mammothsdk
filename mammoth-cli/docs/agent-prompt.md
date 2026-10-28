@@ -23,7 +23,7 @@ server other than `app`, say so in the task. The agent then adds
 You operate Mammoth Analytics through the `mammoth` CLI in bash. Use only that
 command for anything Mammoth: no Python SDK, no MCP, no HTTP calls of your own,
 no web UI. Run `export MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once; every
-call then returns a JSON envelope (`data`, `meta`, or `error` on stderr) and
+call then returns a JSON envelope (`data`, `meta`, or `error`, always on stdout) and
 never prompts. Read the envelope, never prose.
 
 TASK

@@ -6,8 +6,9 @@ import json
 import re
 import shlex
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeGuard
 
+from mammoth.api.jobs import AUTH_STATUSES
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
@@ -127,6 +128,86 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
 def _is_known_read(method: object) -> bool:
     """Return whether transport metadata proves the request was observational."""
     return isinstance(method, str) and method.upper() in {"GET", "HEAD", "OPTIONS"}
+
+
+def _is_refused_poll(exc: BaseException) -> TypeGuard[MammothAPIError]:
+    """Whether ``exc`` is a refused sign-in on the poll of a job the server had accepted."""
+    return (
+        isinstance(exc, MammothAPIError)
+        and exc.status_code in AUTH_STATUSES
+        and exc.operation_state == CODE_OUTCOME_UNKNOWN
+        and exc.phase == "polling"
+        and exc.job_handle is not None
+    )
+
+
+def _polling_outcome_error(
+    exc: MammothAPIError,
+    job_id: object,
+    details: dict[str, Any],
+    *,
+    profile: str | None,
+    project_id: int | None,
+    workspace_id: int | None,
+    login: str | None = None,
+) -> CliError:
+    """The outcome of a job that was accepted but whose poll failed.
+
+    The job was accepted, so its outcome is unknown and the code is ``outcome_unknown``; the
+    next step is to read the job, never to resubmit. When ``login`` is set the poll was refused
+    for its credentials, and signing in again comes first.
+
+    Args:
+        exc: The SDK error, labelled ``outcome_unknown`` in phase ``polling``.
+        job_id: The accepted job.
+        details: The caller's details for the error (kept whole; this only fills gaps).
+        profile: The profile name, for the job commands.
+        project_id: The project to scope the job commands to, if known.
+        workspace_id: The workspace, recorded in the details if known.
+        login: The sign-in command when the poll was refused for its credentials, else None.
+
+    Returns:
+        An ``outcome_unknown`` error whose recovery commands are the job reads, preceded by
+        ``login`` when it is set.
+    """
+    details = dict(details)
+    details.setdefault("job_handle", job_id)
+    details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
+    if workspace_id is not None:
+        details.setdefault("workspace_id", workspace_id)
+    if project_id is not None:
+        details.setdefault("project_id", project_id)
+    recovery = _job_recovery(job_id, profile=profile, project_id=project_id)
+    if login is None:
+        message = (
+            f"Mammoth accepted the request as job {job_id}, but reading the job's "
+            "state failed, so it is unknown whether it is still running or done."
+        )
+        hint = (
+            f"Do not resubmit it. Read the job with '{recovery[0]}' until it is done, "
+            "then check the result."
+        )
+    else:
+        message = (
+            f"Mammoth accepted the request as job {job_id}, but the server refused your "
+            "credentials while the job was being read, so it is unknown whether it is still "
+            "running or done."
+        )
+        hint = (
+            f"Do not resubmit it. Sign in again (`{login}`, or set the profile's token), "
+            f"then read the job with '{recovery[0]}' until it is done, and check the result."
+        )
+        recovery = [login, *recovery]
+    return CliError(
+        code=CODE_OUTCOME_UNKNOWN,
+        message=message,
+        exit_status=EXIT_RETRYABLE,
+        hint=hint,
+        details=details,
+        request_id=exc.request_id,
+        retryable=False,
+        recovery_commands=recovery,
+    )
 
 
 def _job_recovery(
@@ -465,6 +546,16 @@ def map_sdk_exception(
         )
 
     login = profiles.login_command(profile)
+    if _is_refused_poll(exc):
+        return _polling_outcome_error(
+            exc,
+            exc.job_handle,
+            _metadata(exc),
+            profile=profile,
+            project_id=project_id,
+            workspace_id=workspace_id,
+            login=login,
+        )
     if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
         return CliError(
             code=CODE_CLI_KEY_EXPIRED,
@@ -657,6 +748,15 @@ def map_sdk_exception(
             details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
             if method is None:
                 details.setdefault("metadata_missing", ["method", "operation_state"])
+            if details.get("phase") == "polling" and job_id is not None:
+                return _polling_outcome_error(
+                    exc,
+                    job_id,
+                    details,
+                    profile=profile,
+                    project_id=project_id,
+                    workspace_id=workspace_id,
+                )
             if workspace_id is not None:
                 details.setdefault("workspace_id", workspace_id)
             if project_id is not None:
@@ -665,10 +765,8 @@ def map_sdk_exception(
                 code=CODE_OUTCOME_UNKNOWN,
                 message="The request may have committed, but its outcome was not confirmed.",
                 exit_status=EXIT_RETRYABLE,
-                hint=(
-                    "Do not replay this operation. Inspect the observed job/resource "
-                    "and original request context before taking any further mutation."
-                ),
+                hint="Do not replay this operation. Inspect the observed job/resource "
+                "and original request context before taking any further mutation.",
                 details=details,
                 request_id=request_id,
                 retryable=False,

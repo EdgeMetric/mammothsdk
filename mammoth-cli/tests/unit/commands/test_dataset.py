@@ -940,11 +940,16 @@ def test_delete_blocked_without_confirmation_names_the_writing_export(
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
-    # Preview read, the delete, then the read that confirms the dataset is gone.
+    # Preview read, the delete, the read that confirms the dataset is gone, then
+    # the dataset list that must no longer show it (#345).
     assert fake_service.call_log == [
         (_GET, {"dataset_id": 7, "project_id": 180}),
         (_DELETE, {"dataset_id": 7, "project_id": 180}),
         (_GET, {"dataset_id": 7, "project_id": 180}),
+        (
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            {"project_id": 180, "fields": "id,name", "ids": [7]},
+        ),
     ]
 
 
@@ -1285,12 +1290,62 @@ def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
     assert data["dataset_name"] == "wb.csv"
 
 
-def test_delete_names_the_deleted_id_and_lists_nothing(fake_service: FakeMammothService) -> None:
+def test_delete_names_the_deleted_id_and_reads_the_list_to_confirm(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 8, "name": "other"}]}
     data, _ = dataset_cmd.dataset_delete(
         _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
     )
     assert data["deleted"] == [7]
-    assert all(symbol != "mammoth.api.datasets.DatasetsAPI.list" for symbol in fake_service.calls)
+    assert _LIST_ALL in fake_service.calls
+    assert _LIST not in fake_service.calls
+    # One id asked for, not the project's whole listing.
+    assert dict(fake_service.call_log)[_LIST_ALL]["ids"] == [7]
+
+
+def test_delete_that_the_get_calls_gone_but_the_list_still_shows_is_unverified(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Live (#345): the get said gone, ``dataset list`` kept the dataset across every check.
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleted"}
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 7, "name": "orders"}]}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    error = excinfo.value
+    assert error.code == "delete_unverified"
+    assert error.details["still_listed"] is True
+    assert error.recovery_commands == ["mammoth dataset list"]
+    assert fake_service.calls.count(_LIST_ALL) > 1
+
+
+def test_delete_that_the_list_drops_on_a_later_check_is_verified(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleted"}
+
+    def listing(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        reads = sum(1 for symbol, _ in log if symbol == _LIST_ALL)
+        return {"datasets": [{"id": 7}] if reads < 3 else []}
+
+    fake_service.responses[_LIST_ALL] = listing  # type: ignore[assignment]
+    data, _meta = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert data["deleted"] == [7]
+
+
+def test_delete_that_still_reads_as_deleting_is_unverified_not_not_applied(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleting"}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_unverified"
+    assert excinfo.value.details["status"] == "deleting"
 
 
 def test_list_total_counts_whole_project_when_page_is_cut(

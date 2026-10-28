@@ -1,8 +1,10 @@
 """Render one success or error envelope: the terminal's output port.
 
-A machine-readable envelope goes to stdout (success) or stderr (error) in the selected
-mode. Inside ``mammoth run`` or an embedded call the envelope is handed to that surface's
-capture instead of being printed.
+A machine-readable envelope, success or error, goes to stdout in the selected mode: a script
+reads one document from one stream and branches on ``error`` and the exit status. stderr
+carries only what a person reads (the ``Next:`` line, hints, progress, human error text).
+Inside ``mammoth run`` or an embedded call the envelope is handed to that surface's capture
+instead of being printed.
 """
 
 from __future__ import annotations
@@ -92,27 +94,34 @@ def run_id() -> str | None:
 
 
 def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
-    """Render one error envelope to stderr.
+    """Render one error envelope: the json, ndjson or yaml document to stdout, text to stderr.
+
+    In a machine mode the envelope is the one document on stdout, so a caller reading stdout
+    never sees an empty reply. If stdout cannot be written (closed pipe), it falls back to
+    stderr so the error is not lost. Human mode prints a short message to stderr.
 
     Args:
         error: The classified error to render.
-        machine: Whether the current output mode is machine-readable (``json``
-            or ``ndjson``). Machine mode renders the versioned JSON error
-            envelope; human mode renders a short readable message with any
+        machine: Whether the current output mode is machine-readable (``json``,
+            ``ndjson`` or ``yaml``). Machine mode renders the versioned error
+            envelope in the selected format (``json`` for any other machine
+            mode); human mode renders a short readable message with any
             recovery commands.
-        output: The selected machine mode. Only ``ndjson`` selects lifecycle
-            framing; all other machine errors retain the JSON envelope.
+        output: The selected machine mode. ``ndjson`` and ``yaml`` render the
+            envelope in that format (``ndjson`` also selects lifecycle
+            framing); every other machine mode renders JSON.
     """
     if embedded.capture(normalize(error.to_envelope())) or linecapture.capture(
         normalize(error.to_envelope())
     ):
         return
     if machine:
-        render(
-            error.to_envelope(),
-            output=output if output in ("ndjson", "yaml") else "json",
-            stream=sys.stderr,
-        )
+        mode = output if output in ("ndjson", "yaml") else "json"
+        try:
+            render(error.to_envelope(), output=mode, stream=sys.stdout)
+            sys.stdout.flush()
+        except OSError:
+            render(error.to_envelope(), output=mode, stream=sys.stderr)
         return
     message = error.message
     if error.hint:

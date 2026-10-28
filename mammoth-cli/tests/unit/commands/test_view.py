@@ -457,10 +457,11 @@ def test_data_get_relabels_and_drops_system_columns(
     # Data rows come back keyed by internal ids plus the system ``hash`` column;
     # the handler relabels to display names and drops ``hash``.
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
+        "row_count": 1,
         "metadata": [
             {"internal_name": "column_1", "display_name": "store"},
             {"internal_name": "column_2", "display_name": "revenue"},
-        ]
+        ],
     }
     fake_service.responses[_DATA_GET] = {
         "data": [{"column_1": "A", "column_2": "10", "hash": "deadbeef"}]
@@ -541,9 +542,12 @@ def test_data_get_adds_column_warnings(fake_service: FakeMammothService) -> None
     assert "convert-type 7" in data["column_warnings"][0]["fix"]
 
 
-def _duplicates_read(fake_service: FakeMammothService, rows: list[dict[str, Any]]) -> None:
+def _duplicates_read(
+    fake_service: FakeMammothService, rows: list[dict[str, Any]], view_rows: int | None = None
+) -> None:
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.get"] = {
-        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}]
+        "row_count": len(rows) if view_rows is None else view_rows,
+        "metadata": [{"internal_name": "column_1", "display_name": "n", "type": "NUMERIC"}],
     }
     fake_service.responses[_DATA_GET] = {"data": rows}
     fake_service.responses["mammoth.api.dataviews.DataviewsAPI.query_data"] = {"data": rows}
@@ -570,6 +574,17 @@ def test_data_get_counts_exact_duplicates_over_the_whole_view(
     data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
     assert data["duplicates"]["exact_duplicate_rows"] == 6
     assert data["duplicates"]["row_count"] == 10
+
+
+def test_a_page_shorter_than_the_view_is_not_called_every_row(
+    fake_service: FakeMammothService,
+) -> None:
+    # 410 rows in the view, the route's first page holds 400: no "every row" claim (#335).
+    _duplicates_read(fake_service, [{"column_1": n} for n in range(400)], view_rows=410)
+    data, _ = view_cmd.view_data_get(_inv("view.data.get", project=180, extra_args=["7", "9"]))
+    facts = data["duplicates"]
+    assert facts["scope"] == "this page only" and "row_count" not in facts
+    assert "discard-duplicates 7" in facts["table_wide_check"]
 
 
 def test_a_later_page_names_the_table_wide_duplicate_check(
@@ -1060,12 +1075,12 @@ def test_data_compare_joins_pivot_rows_and_computes_exact_delta(
     ]
 
 
-def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
+def test_data_compare_reports_keys_present_in_only_one_view(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     responses = {
         7: {"data": [{"Campaign": "A", "Spend": 100}, {"Campaign": "B", "Spend": 5}]},
-        9: {"data": [{"Campaign": "A", "Spend": 90}]},
+        9: {"data": [{"Campaign": "A", "Spend": 90}, {"Campaign": "C", "Spend": 7}]},
     }
 
     def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
@@ -1076,17 +1091,48 @@ def test_data_compare_fails_loud_on_a_key_present_in_only_one_view(
         tmp_path,
         {
             "group_by": ["Campaign"],
-            "aggregations": [{"column": "Spend", "function": "SUM"}],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
         },
     )
-    with pytest.raises(CliError) as excinfo:
-        view_cmd.view_data_compare(
-            _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
-        )
-    assert excinfo.value.code == "invalid_arguments"
-    assert excinfo.value.details is not None
-    assert excinfo.value.details["only_in_first"] == [{"Campaign": "B"}]
-    assert excinfo.value.details["only_in_second"] == []
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    assert data["data"] == [
+        {"Campaign": "A", "Spend_a": "100", "Spend_b": "90", "Spend_delta": "10"}
+    ]
+    assert data["matched"] == 1
+    assert data["only_in_first"] == {"count": 1, "rows": [{"Campaign": "B", "Spend": 5}]}
+    assert data["only_in_second"] == {"count": 1, "rows": [{"Campaign": "C", "Spend": 7}]}
+
+
+def test_data_compare_caps_the_unmatched_rows_but_counts_them_all(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    total = view_aggregate.COMPARE_UNMATCHED_CAP + 5
+    responses = {
+        7: {"data": [{"Campaign": f"c{n}", "Spend": n} for n in range(total)]},
+        9: {"data": []},
+    }
+
+    def fake_aggregate(invocation: Invocation) -> tuple[dict[str, object], dict[str, object]]:
+        return responses[int(invocation.extra_args[0])], {}
+
+    monkeypatch.setattr(view_aggregate, "view_data_aggregate", fake_aggregate)
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": ["Campaign"],
+            "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}],
+        },
+    )
+    data = view_cmd.view_data_compare(
+        _inv("view.data.compare", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    only_first = data["only_in_first"]
+    assert only_first["count"] == total
+    assert len(only_first["rows"]) == view_aggregate.COMPARE_UNMATCHED_CAP
+    assert only_first["truncated"] is True
+    assert data["data"] == []
 
 
 def test_data_compare_metric_only_is_a_single_row(

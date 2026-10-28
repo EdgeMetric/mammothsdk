@@ -8,7 +8,13 @@ import pytest
 from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli.errors.envelope import EXIT_API, EXIT_AUTH, EXIT_NOT_FOUND, CliError
-from mammoth_cli.services.delete_check import GONE_BACKEND_CODES, _is_gone, _still_there
+from mammoth_cli.services.delete_check import (
+    GONE_BACKEND_CODES,
+    _is_gone,
+    _is_removing,
+    _still_there,
+    listed_ids,
+)
 from mammoth_cli.services.mapping import map_sdk_exception
 
 
@@ -81,3 +87,18 @@ def test_a_trashed_or_empty_read_counts_as_deleted(record: dict[str, Any]) -> No
 
 def test_a_live_record_is_still_there() -> None:
     assert _still_there({"id": 7, "status": "active"}, 7)
+
+
+def test_listed_ids_reads_the_ids_of_a_list_response_as_text() -> None:
+    assert listed_ids({"datasets": [{"id": 7}, {"id": "8"}, {"name": "x"}]}, "datasets") == {
+        "7",
+        "8",
+    }
+    assert listed_ids({}, "datasets") == set()
+    assert listed_ids("nope", "datasets") == set()
+
+
+def test_a_deleting_record_is_removing_and_not_yet_gone() -> None:
+    assert _is_removing({"id": 7, "status": "Deleting"})
+    assert _still_there({"id": 7, "status": "deleting"}, 7)
+    assert not _is_removing({"id": 7, "status": "ready"})
