@@ -28,7 +28,12 @@
           "properties": {
             "strategy": {"enum": ["inverse", "manual"]},
             "command": {"$ref": "#/$defs/no_placeholder"},
-            "note": {"$ref": "#/$defs/no_placeholder"}
+            "note": {"$ref": "#/$defs/no_placeholder"},
+            "input_from_result": {
+              "description": "An inverse that sets a value back: input field -> result field holding the earlier value.",
+              "type": "object",
+              "additionalProperties": {"type": "string"}
+            }
           }
         },
         {

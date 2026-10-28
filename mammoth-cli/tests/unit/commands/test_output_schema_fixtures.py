@@ -66,6 +66,9 @@ _EXEMPT: dict[str, str] = {
     "history.undo": "needs a journaled write to undo; test_history.py runs it",
     "history.resume": "needs a journaled run to resume; test_history.py runs it",
     "dataset.download": "queues a server file job and writes a local file the sample never serves",
+    "dataset.update-method.set": (
+        "the sample server keeps no schema_settings, so the read-back sees no change"
+    ),
 }
 
 #: Commands left out of the dry-run check: they wait on a background job the sample never ends.
@@ -821,6 +824,7 @@ _VERIFY = {
 _EXEMPT_RESULTS: dict[str, dict[str, Any]] = {
     "dataset.download": {"output_path": "orders.csv"},
     "dataset.update": {"verify": _VERIFY},
+    "dataset.update-method.set": {"mode": "replace", "previous_mode": "add", "verify": _VERIFY},
     "schedule.create": {"id": 3, "verify": _VERIFY},
     "view.export.dataset": {"dataset_id": 9, "verify": _VERIFY},
     "view.draft.auto-run": {"auto_run": True, "verify": _VERIFY},

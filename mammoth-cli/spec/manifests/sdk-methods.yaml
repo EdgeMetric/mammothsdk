@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 893
+method_count: 895
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -5648,11 +5648,11 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.file_settings_update
   implementation_origin: mammoth.api.datasets.DatasetsAPI.file_settings_update
-  signature: 'file_settings_update(self, dataset_id: ''int'', delimiter: ''str'', has_header: ''bool'',
-    initial_skip_count: ''int'', quotechar: ''str'', date_format: ''str | None'' = None, preview_mode:
-    ''bool'' = False, skip_auto_process_check: ''bool'' = True, date_formats: ''dict[str, str] | None''
-    = None, set_project_level_date_format: ''bool'' = False, workspace_id: ''int | None'' = None, project_id:
-    ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'file_settings_update(self, dataset_id: ''int'', delimiter: ''str | None'' = None, has_header:
+    ''bool | None'' = None, initial_skip_count: ''int | None'' = None, quotechar: ''str | None'' = None,
+    date_format: ''str | None'' = None, preview_mode: ''bool'' = False, skip_auto_process_check: ''bool''
+    = True, date_formats: ''dict[str, str] | None'' = None, set_project_level_date_format: ''bool'' =
+    False, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.file-settings.update
   alias_of: null
@@ -5750,6 +5750,19 @@ methods:
     ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.broken-rows.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_update_method
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.get_update_method
+  signature: 'get_update_method(self, dataset_id: ''int'', workspace_id: ''int | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.update-method.get
   alias_of: null
   no_command_reason: null
   mutation_class: read
@@ -5944,6 +5957,20 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.set_update_method
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.set_update_method
+  signature: 'set_update_method(self, dataset_id: ''int'', mode: ''str'', schema_mapping: ''dict[str,
+    _list[str]] | None'' = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: dataset.update-method.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.tool_claim_get

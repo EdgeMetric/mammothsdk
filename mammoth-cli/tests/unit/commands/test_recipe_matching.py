@@ -39,6 +39,16 @@ def _find(goal: str) -> str | None:
     return str(recipes[0]["id"]) if recipes else None
 
 
+def _finds_it(match, recipe: str) -> str | None:  # type: ignore[no-untyped-def]
+    """The id ``match`` should answer for ``recipe``: schema find offers only runnable ones.
+
+    A recipe with no ``run`` block (undo-append: it would run a permanent delete) is found by
+    ``how`` but not by ``schema find``, which routes its goals to the command instead.
+    """
+    steps_only = recipe in {r["id"] for r in load_recipes() if not r.get("run")}
+    return None if match is _find and steps_only else recipe
+
+
 _MATCHERS = pytest.mark.parametrize("match", [_how, _find], ids=["how", "schema-find"])
 
 
@@ -65,7 +75,7 @@ def test_a_goal_finds_its_own_recipe_and_never_another(match) -> None:  # type: 
         goal: (recipe, match(goal))
         for goal, recipe in POSITIVES + BLIND_POSITIVES + SHORT_POSITIVES
     }
-    wrong = {goal: pair for goal, pair in got.items() if pair[1] != pair[0]}
+    wrong = {goal: pair for goal, pair in got.items() if pair[1] != _finds_it(match, str(pair[0]))}
     assert wrong == {}
 
 
@@ -75,7 +85,7 @@ def test_the_goals_in_the_recipe_data_find_their_own_recipe(match) -> None:  # t
         goal: (recipe["id"], match(goal))
         for recipe in load_recipes()
         for goal in recipe["goals"]
-        if match(goal) != recipe["id"]
+        if match(goal) != _finds_it(match, recipe["id"])
     }
     assert wrong == {}
 

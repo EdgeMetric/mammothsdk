@@ -100,6 +100,7 @@ if TYPE_CHECKING:
         DashboardShareRole,
         DashboardShareUser,
     )
+    from mammoth.models.datasets import DataAdditionMode
     from mammoth.models.exports import (
         BigQueryExportType,
         ExportHostPolicy,
@@ -230,6 +231,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "OdbcType": ("mammoth.models.exports", "OdbcType"),
     "RestAuthType": ("mammoth.models.exports", "RestAuthType"),
     "TriggerType": ("mammoth.models.exports", "TriggerType"),
+    "DataAdditionMode": ("mammoth.models.datasets", "DataAdditionMode"),
     "ExternalKeyType": ("mammoth.models.external_keys", "ExternalKeyType"),
     "ModelConfigSpec": ("mammoth.models.external_keys", "ModelConfigSpec"),
     "AggregateFunction": ("mammoth.models.pipeline", "AggregateFunction"),
@@ -413,6 +415,7 @@ __all__ = [
     "UserRolePatchOp",
     # External keys
     "ExternalKeyType",
+    "DataAdditionMode",
     "ModelConfigSpec",
     # Exceptions
     "MammothError",

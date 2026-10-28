@@ -669,6 +669,9 @@ def compensation(
         document = request.invocation.bound_input() if request.invocation else None
         if command_id.startswith("trash.") and document:
             line["input"] = document
+        carried = _input_from_result(undo.get("input_from_result"), outcome.data)
+        if carried:
+            line["input"] = carried
         return [line], None
     if strategy == _PIPELINE_VERSION:
         return _pipeline_undo(before, flags)
@@ -680,6 +683,9 @@ def compensation(
         ]
         if created:
             return list(reversed(created)), None
+        appended = _append_undo(outcome.data, flags)
+        if appended is not None:
+            return appended
         if any(o.get("kind") == "dataset" for o in outcome.meta.get("opens") or []):
             return [], "It added to a dataset that already existed; rows cannot be taken out again."
         return [], "It made nothing the trash can take back."
@@ -694,6 +700,49 @@ def compensation(
     if strategy == _IRREVERSIBLE:
         return [], str(undo["reason"])
     return [], "No undo is declared for it."
+
+
+def _input_from_result(mapping: Any, data: Any) -> dict[str, Any]:
+    """The input of a set-it-back inverse, read from the write's result.
+
+    Args:
+        mapping: The undo's ``input_from_result``: input field -> result field.
+        data: The write's result data.
+
+    Returns:
+        The input document; empty when nothing is declared or the result lacks a field.
+    """
+    if not isinstance(mapping, dict) or not isinstance(data, dict):
+        return {}
+    return {field: data[source] for field, source in mapping.items() if source in data}
+
+
+def _append_undo(
+    data: Any, flags: dict[str, Any]
+) -> tuple[list[dict[str, Any]], str | None] | None:
+    """The undo of an upload appended to an existing dataset: delete the batch it added.
+
+    Args:
+        data: The upload's result data.
+        flags: The flags every undo line carries.
+
+    Returns:
+        The lines (one per batch, newest first) and the reason when there are none, or
+        None when ``data`` is not an append that reports its batches.
+    """
+    if not isinstance(data, dict) or data.get("appended_to") is None:
+        return None
+    method = data.get("update_method")
+    if isinstance(method, dict) and method.get("mode") == "replace":
+        return [], "It replaced the dataset's rows; the rows it replaced are not kept."
+    batches = data.get("batch_ids")
+    if not isinstance(batches, list) or not batches:
+        return None
+    dataset = data["appended_to"]
+    return [
+        {"cmd": "batch delete", "args": [dataset, batch], "flags": {**flags, "yes": True}}
+        for batch in reversed(batches)
+    ], None
 
 
 def _pipeline_undo(

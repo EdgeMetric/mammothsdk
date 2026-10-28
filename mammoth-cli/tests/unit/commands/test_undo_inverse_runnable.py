@@ -60,8 +60,11 @@ def _original(command_id: str, tmp_path: Path) -> Request:
 def test_the_undo_line_of_an_inverse_pair_passes_the_inverse_commands_checks(
     command_id: str, inverse: str, fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    record = next(r for r in command_records() if r["command_id"] == command_id)
+    # A set-it-back inverse reads the earlier value from the write's result.
+    carried = {src: "add" for src in record["undo"].get("input_from_result", {}).values()}
     lines, reason = journal.compensation(
-        _original(command_id, tmp_path), Outcome(data={}, meta={}), journal._Before()
+        _original(command_id, tmp_path), Outcome(data=carried, meta={}), journal._Before()
     )
     assert lines, f"{command_id} declares {inverse} but built no line: {reason}"
     runner = Invocation(command_id="history.undo", output="json")

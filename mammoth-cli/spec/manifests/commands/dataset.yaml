@@ -289,6 +289,29 @@ commands:
     ids:
       dataset_id: positional.0
     kind: object
+- command_id: dataset.update-method.get
+  output_schema:
+    ref: OpenObject
+  known_restrictions: 'mode "add" means each new file (an upload with append_to_ds_id, or a folder
+    automation) adds its rows to the dataset; "replace" means it takes the place of the rows already
+    there. A dataset with no setting stored adds.'
+- command_id: dataset.update-method.set
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: inverse
+    command: dataset.update-method.set
+    input_from_result:
+      mode: previous_mode
+  readback:
+    command: dataset.update-method.get
+    ids:
+      dataset_id: positional.0
+    kind: object
+  known_restrictions: 'mode "replace" or "add". It stays on the dataset: every later upload into it
+    (file upload with append_to_ds_id) and every folder automation feeding it follows it, until it is
+    set again. Optional schema_mapping {"dataset column": ["file column"]} matches a new file''s columns
+    to the dataset''s. The other settings for new rows are kept as stored.'
 - command_id: dataset.restore
   output_schema:
     ref: WriteResult

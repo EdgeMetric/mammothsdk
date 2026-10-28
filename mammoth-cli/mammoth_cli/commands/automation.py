@@ -33,6 +33,7 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.delete_check import ensure_deleted
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -236,7 +237,19 @@ def automation_delete(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), automation_id=automation_id)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # Read it back: gone (or in the trash) is the verified outcome of a delete.
+        ensure_deleted(
+            service,
+            noun="automation",
+            resource_id=automation_id,
+            read_symbol="mammoth.api.automations.AutomationsAPI.get",
+            read_kwargs={"automation_id": automation_id},
+            responses=(data,),
+        )
+    result = {**data} if isinstance(data, dict) else {}
+    return {**result, "automation_id": automation_id, "deleted": [automation_id]}, _meta(
+        invocation, auth.workspace_id, resolved_project(invocation)
+    )
 
 
 _RETENTION_TASK = "apply_retention_policy"

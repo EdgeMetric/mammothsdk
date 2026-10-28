@@ -16,7 +16,14 @@ from mammoth_cli.runtime.embed_scope import hidden_embedded, refused_embedded
 from mammoth_cli.services import factory as service_factory
 from mammoth_cli.services.testing import FakeMammothService
 
-_LOCAL = {"append-rows", "upload-dashboard", "upload-clean", "join-files", "undo-last-change"}
+_LOCAL = {
+    "append-rows",
+    "replace-data",
+    "upload-dashboard",
+    "upload-clean",
+    "join-files",
+    "undo-last-change",
+}
 
 
 @pytest.fixture(autouse=True)

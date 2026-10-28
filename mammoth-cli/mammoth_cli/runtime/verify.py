@@ -136,7 +136,11 @@ def with_verify(data: Any, invocation: Invocation | None = None) -> Any:
     verify["warnings"] = warnings
     verify["reason"] = reason
     verify["needs_user"] = _needs_user(
-        data, verified=verified, rows_before=rows_before, rows_after=rows_after
+        data,
+        verified=verified,
+        rows_before=rows_before,
+        rows_after=rows_after,
+        is_upload=_is_upload(data, invocation),
     )
     if data.get("status") != _NO_CHANGE_STATUS:
         # A step that was not applied cannot have broken an export.
@@ -426,12 +430,66 @@ def _warnings(data: dict[str, Any]) -> list[str]:
     return notes
 
 
+#: Upload statuses a person must act on before anything is built on the dataset.
+_UPLOAD_DATASET_STATUSES = frozenset({"need_action", "unhealthy", "needs_view"})
+_UPLOAD_OVERALL_STATUSES = frozenset({_NO_DATASET_STATUS, "needs_sheet_choice", "needs_password"})
+
+
+def _upload_needs_user(data: dict[str, Any]) -> str | None:
+    """The message for an upload result that waits on a person, or None.
+
+    Args:
+        data: The command's result data.
+
+    Returns:
+        A sentence naming the dataset or file and the command to run next, when a dataset
+        reads ``need_action``, ``unhealthy`` or ``needs_view``, a file waits for a sheet
+        choice or a password, or the upload made no dataset.
+    """
+    datasets = data.get("datasets")
+    for entry in datasets if isinstance(datasets, list) else []:
+        if isinstance(entry, dict) and entry.get("status") in _UPLOAD_DATASET_STATUSES:
+            label = entry.get("name") or f"dataset {entry.get('id')}"
+            nxt = entry.get("next_command")
+            return (
+                f"{label} (dataset {entry.get('id')}) is {entry['status']}"
+                + (f"; next: {nxt}" if nxt else "")
+                + "."
+            )
+    files = data.get("files")
+    for item in files if isinstance(files, list) else []:
+        if isinstance(item, dict) and item.get("next_command"):
+            return (
+                f"File {item.get('name') or item.get('file_id')} (file {item.get('file_id')}) "
+                f"waits for the user; next: {item['next_command']}."
+            )
+    if data.get("status") in _UPLOAD_OVERALL_STATUSES:
+        message = data.get("message")
+        nxt = data.get("next_command")
+        base = message if isinstance(message, str) else "The upload made no dataset."
+        return f"{base} Next: {nxt}" if nxt else base
+    return None
+
+
+def _is_upload(data: dict[str, Any], invocation: Invocation | None) -> bool:
+    """Whether the result is a ``file upload`` result (the only one ``_upload_needs_user`` reads).
+
+    Other commands list datasets with the same ``status`` words (``dataset list``), so the
+    command id decides; without an invocation the upload shape (``dataset_ids`` and
+    ``datasets``) must be there.
+    """
+    if invocation is not None:
+        return invocation.command_id == "file.upload"
+    return "dataset_ids" in data and "datasets" in data
+
+
 def _needs_user(
     data: dict[str, Any],
     *,
     verified: bool,
     rows_before: int | None,
     rows_after: int | None,
+    is_upload: bool = False,
 ) -> str | None:
     """The few outcomes worth interrupting the caller for.
 
@@ -445,10 +503,9 @@ def _needs_user(
     """
     if not verified:
         return None
-    if data.get("status") == _NO_DATASET_STATUS:
-        # An upload that made no dataset (a PDF awaiting table extraction).
-        message = data.get("message")
-        return message if isinstance(message, str) else "The upload made no dataset."
+    waiting = _upload_needs_user(data) if is_upload else None
+    if waiting is not None:
+        return waiting
     if rows_after == 0 and isinstance(rows_before, int) and rows_before > 0:
         return f"The change left the view with no rows (was {rows_before})."
     join_check = data.get("join_check")

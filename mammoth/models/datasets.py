@@ -5,11 +5,21 @@ Pydantic models for Datasets API responses.
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from pydantic import ConfigDict, model_validator
 
 from ._base import MammothModel
+
+
+class DataAdditionMode(str, Enum):
+    """What a new file or pull does to a dataset's rows (its "Update Method")."""
+
+    #: The new rows take the place of the old ones.
+    REPLACE = "replace"
+    #: The new rows are added to the old ones.
+    COMBINE = "combine"
 
 
 class DatasetProperties(MammothModel):

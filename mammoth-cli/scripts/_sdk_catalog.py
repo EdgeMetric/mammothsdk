@@ -295,6 +295,8 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     # Server release only (mvc-service #7166, #7169): not in any pinned snapshot yet.
     "dataset.from-url.preview": {"operation_ids": ["PreviewLinkFile"], "method": "POST"},
     "dataset.from-url.follow": {"operation_ids": ["UpdateDataset"], "method": "PATCH"},
+    "dataset.update-method.get": {"operation_ids": ["GetDataset"], "method": "GET"},
+    "dataset.update-method.set": {"operation_ids": ["UpdateDataset"], "method": "PATCH"},
     "dataset.from-url.links": {"operation_ids": ["GetProjectLinks"], "method": "GET"},
     # mvc-service #7203.
     "dataset.download": {"operation_ids": ["CreateDownload"], "method": "POST"},

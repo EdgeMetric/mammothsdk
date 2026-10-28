@@ -207,6 +207,17 @@
           "month"
         ]
       ],
+      "reject": [
+        "replace",
+        "replaces",
+        "overwrite",
+        "swap",
+        "undo",
+        "remove",
+        "revert",
+        "instead",
+        "delete"
+      ],
       "doc": "references/recipes/file-import.md",
       "steps": [
         {
@@ -4113,6 +4124,14 @@
             "{{inputs.history_id}}"
           ]
         }
+      ],
+      "reject": [
+        "append",
+        "appended",
+        "batch",
+        "upload",
+        "uploaded",
+        "file"
       ]
     },
     {
@@ -4461,6 +4480,383 @@
           "args": [
             "{{item}}"
           ]
+        }
+      ]
+    },
+    {
+      "id": "replace-data",
+      "version": 1,
+      "title": "Replace a dataset's rows with a newer file",
+      "goals": [
+        "replace a dataset's data with a newer file",
+        "overwrite last month's data with this month's file",
+        "swap the data in my dataset for a new export"
+      ],
+      "keywords": [
+        "replace",
+        "overwrite",
+        "swap",
+        "newer",
+        "new",
+        "update",
+        "method",
+        "file",
+        "data",
+        "dataset",
+        "export",
+        "rows",
+        "month"
+      ],
+      "intent": [
+        [
+          "replace",
+          "replaces",
+          "overwrite",
+          "swap",
+          "instead"
+        ],
+        [
+          "file",
+          "data",
+          "dataset",
+          "rows",
+          "export",
+          "upload"
+        ]
+      ],
+      "doc": "references/recipes/file-import.md",
+      "steps": [
+        {
+          "command_id": "dataset.find",
+          "purpose": "Find the dataset to replace, and its id.",
+          "example": "mammoth dataset find NAME",
+          "key_flags": []
+        },
+        {
+          "command_id": "dataset.update-method.set",
+          "purpose": "The setting stays on the dataset, so every later upload replaces its rows.",
+          "example": "mammoth dataset update-method set DATASET_ID --input '{\"mode\": \"replace\"}'",
+          "key_flags": [
+            "--input mode"
+          ]
+        },
+        {
+          "command_id": "file.upload",
+          "purpose": "Upload the new file into that dataset. Its rows replace the old ones.",
+          "example": "mammoth file upload ./new.csv --input '{\"append_to_ds_id\": DATASET_ID}'",
+          "key_flags": [
+            "--input append_to_ds_id"
+          ]
+        },
+        {
+          "command_id": "view.data.get",
+          "purpose": "Read the view back. Its pipeline re-ran over the new rows.",
+          "example": "mammoth view data get VIEW_ID DATASET_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "The update method is a setting on the dataset, not on one upload. Set it back with 'mammoth dataset update-method set DATASET_ID --input '{\"mode\": \"add\"}'' before the next upload if the rows should be added again."
+      ],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset whose rows are replaced."
+        },
+        "file": {
+          "type": "string",
+          "required": true,
+          "example": "./new.csv",
+          "help": "The newer file (same columns)."
+        }
+      },
+      "run": [
+        {
+          "name": "method",
+          "cmd": "dataset update-method set",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "mode": "replace"
+          }
+        },
+        {
+          "name": "upload",
+          "cmd": "file upload",
+          "args": [
+            "{{inputs.file}}"
+          ],
+          "input": {
+            "append_to_ds_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "undo-append",
+      "version": 1,
+      "title": "Take back the rows a file added to a dataset (undo an append)",
+      "goals": [
+        "undo the file I just appended",
+        "undo the last upload batch",
+        "remove the rows a file added",
+        "take back an append"
+      ],
+      "keywords": [
+        "undo",
+        "remove",
+        "revert",
+        "delete",
+        "back",
+        "append",
+        "appended",
+        "batch",
+        "upload",
+        "file",
+        "rows",
+        "history",
+        "added"
+      ],
+      "intent": [
+        [
+          "undo",
+          "revert",
+          "delete",
+          "remove",
+          "back"
+        ],
+        [
+          "append",
+          "appended",
+          "appends",
+          "batch",
+          "upload",
+          "uploaded",
+          "added"
+        ]
+      ],
+      "doc": "references/recipes/file-import.md",
+      "steps": [
+        {
+          "command_id": "batch.list",
+          "purpose": "Find the batch the file was added in: its id and row count.",
+          "example": "mammoth batch list DATASET_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "batch.delete",
+          "purpose": "Delete that batch. Its rows leave the dataset. Check the batch id first.",
+          "example": "mammoth batch delete DATASET_ID BATCH_ID --yes",
+          "key_flags": [
+            "--yes"
+          ]
+        }
+      ],
+      "notes": [
+        "'mammoth history undo' also reverts an append. Use batch list and batch delete when the batch to remove is not the last change."
+      ],
+      "reject": [
+        "column",
+        "columns",
+        "view",
+        "dashboard",
+        "blank",
+        "empty",
+        "duplicate",
+        "duplicates",
+        "filter",
+        "replace"
+      ]
+    },
+    {
+      "id": "pick-sheet",
+      "version": 1,
+      "title": "Bring in one sheet (tab) of an Excel workbook",
+      "goals": [
+        "read the second tab of an excel workbook",
+        "pick a sheet from an xlsx",
+        "import one tab of a workbook"
+      ],
+      "keywords": [
+        "sheet",
+        "sheets",
+        "tab",
+        "tabs",
+        "worksheet",
+        "excel",
+        "xlsx",
+        "workbook",
+        "file",
+        "extract",
+        "second"
+      ],
+      "intent": [
+        [
+          "sheet",
+          "sheets",
+          "tab",
+          "tabs",
+          "worksheet"
+        ],
+        [
+          "excel",
+          "xlsx",
+          "workbook",
+          "file",
+          "second",
+          "one"
+        ]
+      ],
+      "doc": "references/recipes/file-import.md",
+      "steps": [
+        {
+          "command_id": "file.list",
+          "purpose": "Find the workbook's file id.",
+          "example": "mammoth file list",
+          "key_flags": []
+        },
+        {
+          "command_id": "file.extract-sheets",
+          "purpose": "Choose the sheet(s) to bring in. Each becomes its own dataset.",
+          "example": "mammoth file extract-sheets FILE_ID --input '{\"sheets\": [\"Sheet2\"]}'",
+          "key_flags": [
+            "--input sheets"
+          ]
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "file_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The uploaded workbook's file id."
+        },
+        "sheet": {
+          "type": "string",
+          "required": true,
+          "example": "Sheet2",
+          "help": "The name of the tab to bring in."
+        }
+      },
+      "run": [
+        {
+          "name": "extract",
+          "cmd": "file extract-sheets",
+          "args": [
+            "{{inputs.file_id}}"
+          ],
+          "input": {
+            "sheets": [
+              "{{inputs.sheet}}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "fix-heading-row",
+      "version": 1,
+      "title": "Fix a file read with the wrong heading row or title rows",
+      "goals": [
+        "the header row is wrong",
+        "skip title rows at the top of a csv",
+        "the file has two title rows above the table"
+      ],
+      "keywords": [
+        "header",
+        "heading",
+        "title",
+        "skip",
+        "rows",
+        "row",
+        "csv",
+        "file",
+        "top",
+        "wrong",
+        "settings"
+      ],
+      "intent": [
+        [
+          "header",
+          "headers",
+          "heading",
+          "title",
+          "skip"
+        ],
+        [
+          "csv",
+          "file",
+          "row",
+          "rows",
+          "wrong",
+          "upload"
+        ]
+      ],
+      "doc": "references/recipes/need-action.md",
+      "steps": [
+        {
+          "command_id": "dataset.interpretation.preview",
+          "purpose": "Preview how the file reads with the instruction in plain English. Nothing changes yet.",
+          "example": "mammoth dataset interpretation preview DATASET_ID --input '{\"user_instruction\": \"the header is on row 3\"}'",
+          "key_flags": [
+            "--input user_instruction"
+          ]
+        },
+        {
+          "command_id": "dataset.interpretation.confirm",
+          "purpose": "Apply the preview's structure_map to the dataset.",
+          "example": "mammoth dataset interpretation confirm DATASET_ID --input '{\"structure_map\": \"STRUCTURE_MAP_FROM_PREVIEW\"}'",
+          "key_flags": [
+            "--input structure_map"
+          ]
+        },
+        {
+          "command_id": "dataset.file-settings.update",
+          "purpose": "Set the rows to skip at the top. Send only the field that changes; the others are kept.",
+          "example": "mammoth dataset file-settings update DATASET_ID --input '{\"initial_skip_count\": 2}'",
+          "key_flags": [
+            "--input initial_skip_count"
+          ]
+        }
+      ],
+      "notes": [],
+      "inputs": {
+        "dataset_id": {
+          "type": "integer",
+          "required": true,
+          "example": 1,
+          "help": "The dataset read from the file with the wrong heading."
+        },
+        "skip_rows": {
+          "type": "integer",
+          "required": true,
+          "example": 2,
+          "help": "How many title rows sit above the table."
+        }
+      },
+      "reject": [
+        "blank",
+        "empty",
+        "duplicate",
+        "duplicates",
+        "sheet",
+        "tab",
+        "append"
+      ],
+      "run": [
+        {
+          "name": "skip",
+          "cmd": "dataset file-settings update",
+          "args": [
+            "{{inputs.dataset_id}}"
+          ],
+          "input": {
+            "initial_skip_count": "{{inputs.skip_rows}}"
+          }
         }
       ]
     }

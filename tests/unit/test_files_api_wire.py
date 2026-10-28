@@ -527,3 +527,109 @@ async def test_upload_with_some_refused_files_returns_the_created_datasets(
     server.answers["GET /jobs"] = {"jobs": [_finished_job(56, 901)]}
     result = await client.files.upload([_csv(tmp_path, "a.csv"), _csv(tmp_path, "X.pbix")])
     assert result == [901]
+
+
+# --- upload_result: files that made no dataset -------------------------------------------
+
+RESOURCES = "/workspaces/1/projects/25654/resources"
+
+
+def _file_resource(
+    object_id: int, name: str, status: str, action: dict[str, Any] | None = None, **extra: Any
+) -> dict[str, Any]:
+    return {
+        "object_id": object_id,
+        "name": name,
+        "status": status,
+        "resource_type": "file_object",
+        "created_at": extra.get("created_at", "2999-01-01T00:00:00Z"),
+        "object_properties": {"user_action_required": action} if action else {},
+    }
+
+
+def _no_dataset_job(job_id: int) -> dict[str, Any]:
+    # The Excel path resolves the file's job with {} before it reads the sheets.
+    return {**_finished_job(job_id, 0), "response": {}}
+
+
+async def test_upload_result_reports_a_workbook_waiting_for_its_sheets(
+    server: RecordingServer, client: MammothClient, tmp_path: Path  # noqa: F811
+) -> None:
+    sheets = [{"sheet_name": "Jan"}, {"sheet_name": "Feb"}, {"sheet_name": "Mar"}]
+    server.answers[f"POST {BASE}"] = (202, {"id": 55})
+    server.answers["GET /jobs/55"] = _job(55, {"job_ids": [{"job_id": 56}], "errors": {}})
+    server.answers["GET /jobs"] = {"jobs": [_no_dataset_job(56)]}
+    action = {
+        "type": "sheet_selection_required",
+        "message": "Select sheets to extract",
+        "sheet_info": sheets,
+    }
+    server.answers[f"GET {RESOURCES}"] = {
+        "resources": [_file_resource(313357, "book.xlsx", "action_needed", action)]
+    }
+    outcome = await client.files.upload_result(_csv(tmp_path, "book.xlsx"))
+    assert outcome["dataset_ids"] == []
+    assert outcome["files"] == [
+        {
+            "file_id": 313357,
+            "name": "book.xlsx",
+            "status": "action_needed",
+            "action_needed": "sheet_selection_required",
+            "message": "Select sheets to extract",
+            "sheets_info": sheets,
+        }
+    ]
+    listed = [r for r in server.requests if r["path"] == RESOURCES][-1]
+    assert listed["query"] == {
+        "type": "file_object",
+        "sort": "created_at:desc",
+        "limit": "50",
+        "fields": "full",
+    }
+
+
+async def test_upload_result_skips_files_that_finished_or_predate_the_upload(
+    server: RecordingServer, client: MammothClient, tmp_path: Path  # noqa: F811
+) -> None:
+    server.answers[f"POST {BASE}"] = (202, {"id": 55})
+    server.answers["GET /jobs/55"] = _job(
+        55, {"job_ids": [{"job_id": 56}, {"job_id": 57}], "errors": {}}
+    )
+    server.answers["GET /jobs"] = {"jobs": [_no_dataset_job(56), _no_dataset_job(57)]}
+    server.answers[f"GET {RESOURCES}"] = {
+        "resources": [
+            _file_resource(2, "a.xlsx", "extracted"),
+            _file_resource(1, "b.xlsx", "action_needed", created_at="2001-01-01T00:00:00Z"),
+        ]
+    }
+    outcome = await client.files.upload_result([_csv(tmp_path, "a.xlsx"), _csv(tmp_path, "b.xlsx")])
+    assert outcome["files"] == []
+
+
+async def test_upload_result_waits_while_the_workbook_is_still_being_read(
+    server: RecordingServer,
+    client: MammothClient,  # noqa: F811
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("mammoth.api.files._SETTLE_POLL_S", 0.0)
+    server.answers[f"POST {BASE}"] = (202, {"id": 55})
+    server.answers["GET /jobs/55"] = _job(55, {"job_ids": [{"job_id": 56}], "errors": {}})
+    server.answers["GET /jobs"] = {"jobs": [_no_dataset_job(56)]}
+    reads = iter(
+        [
+            {"resources": [_file_resource(9, "book.xlsx", "processing")]},
+            {"resources": [_file_resource(9, "book.xlsx", "action_needed", {"type": "x"})]},
+        ]
+    )
+
+    real_list = client.browse.resources_list
+
+    async def scripted(**kwargs: Any) -> dict[str, Any]:
+        await real_list(**kwargs)
+        return next(reads)
+
+    monkeypatch.setattr(client.browse, "resources_list", scripted)
+    outcome = await client.files.upload_result(_csv(tmp_path, "book.xlsx"))
+    assert [entry["action_needed"] for entry in outcome["files"]] == ["x"]
+    assert len([r for r in server.requests if r["path"] == RESOURCES]) == 2

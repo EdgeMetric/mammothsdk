@@ -5,7 +5,7 @@
       "id": "file-dataset-refresh",
       "area": "schedules and automations",
       "limitation": "A dataset made from an uploaded file (or a URL) has no source to pull from, so an automation's run_data_retrieval or a schedule cannot refresh it.",
-      "instead": "Upload each new file into the same dataset; its views re-run over the new rows. To make that automatic, connect the files' cloud storage and let an automation pull them.",
+      "instead": "There are two ways to load a new file into the same dataset: add its rows (the default), or replace them after 'mammoth dataset update-method set DATASET_ID --input '{\"mode\": \"replace\"}''. Its views re-run either way. To make that automatic, connect the files' cloud storage and let an automation pull them.",
       "workarounds": [
         {
           "command_id": "file.upload",
@@ -18,6 +18,10 @@
         {
           "command_id": "automation.capabilities",
           "example": "mammoth automation capabilities"
+        },
+        {
+          "command_id": "dataset.update-method.set",
+          "example": "mammoth dataset update-method set DATASET_ID --input '{\"mode\": \"replace\"}'"
         }
       ],
       "doc": "references/recipes/scheduling.md",
@@ -52,32 +56,6 @@
         "schedule",
         "list",
         "schedules"
-      ]
-    },
-    {
-      "id": "mcp-task-edit",
-      "area": "pipeline tasks",
-      "limitation": "The Mammoth MCP server cannot edit an existing pipeline task; it can only add tasks.",
-      "instead": "Edit the task with the CLI: list the view's tasks, then replace the one you want.",
-      "workarounds": [
-        {
-          "command_id": "view.task.list",
-          "example": "mammoth view task list VIEW_ID --input '{\"dataset_id\": DATASET_ID}'"
-        },
-        {
-          "command_id": "view.task.update",
-          "example": "mammoth view task update VIEW_ID TASK_ID --input '{\"task_spec\": {...}, \"dataset_id\": DATASET_ID}'"
-        }
-      ],
-      "doc": "references/commands/view.md",
-      "keywords": [
-        "mcp",
-        "edit",
-        "task",
-        "pipeline",
-        "update",
-        "change",
-        "step"
       ]
     },
     {
@@ -144,6 +122,28 @@
         "dashboard",
         "twbx",
         "pbix"
+      ]
+    },
+    {
+      "id": "dashboard-password-share",
+      "area": "dashboard sharing",
+      "limitation": "A dashboard cannot be shared behind a password from the CLI: the share route takes the kind of sharing and the people, but no password to set.",
+      "instead": "Share the dashboard with each person by email, or set the password in the Mammoth app.",
+      "workarounds": [
+        {
+          "command_id": "dashboard.share",
+          "example": "mammoth dashboard share DASHBOARD_ID --input '{\"type_of_auth\": \"mammoth\", \"users\": [{\"email\": \"colleague@example.com\"}]}' --yes"
+        }
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "keywords": [
+        "password",
+        "protected",
+        "share",
+        "dashboard",
+        "link",
+        "secret",
+        "lock"
       ]
     }
   ]

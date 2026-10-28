@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+from dataclasses import dataclass
 from typing import Any
 
 from mammoth.exceptions import (
@@ -25,6 +26,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_FEATURE_DISABLED,
     CODE_INTERNAL_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_INVALID_ARGUMENTS,
@@ -45,6 +47,7 @@ from mammoth_cli.errors.envelope import (
     interrupted_error,
 )
 from mammoth_cli.runtime import embedded
+from mammoth_cli.services.delete_check import GONE_BACKEND_CODES
 
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
 
@@ -267,18 +270,43 @@ _NOT_ALLOWED_SUFFIX = "_NOT_ALLOWED"
 #: The generic permission refusal (4PERM002), which some routes send as a 400.
 _PERMISSION_ERROR_NAME = "PERMISSION_ERROR"
 
-#: Backend codes that refuse an action because of the workspace's plan or AI
-#: quota, not the user's permissions: no id or role change fixes them.
-_PLAN_LIMIT_CODES = frozenset(
-    {
-        "4SUBS101",  # FEATURE_NOT_AVAILABLE_ON_PLAN
-        "4SUBS102",  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
-        "4SUBS103",  # PLAN_PAYMENT_REQUIRED
-        "4SUBS104",  # AI_QUOTA_EXHAUSTED
-        "4SUBS105",  # WORKSPACE_OVER_PLAN_LIMITS
-        "4SUBS106",  # PLAN_LIMIT_REACHED
-    }
+
+@dataclass(frozen=True)
+class _Refusal:
+    """How a backend code that refuses by account state, not by request, reads in the CLI."""
+
+    code: str
+    hint: str
+
+
+_PLAN_LIMIT_REFUSAL = _Refusal(
+    code=CODE_PLAN_LIMIT,
+    hint=(
+        "The workspace's plan or monthly AI quota does not cover this; the ids "
+        "and permissions are not the problem. Do not retry: tell the user, who "
+        "can upgrade the plan or ask Mammoth support to extend the quota."
+    ),
 )
+_FEATURE_DISABLED_REFUSAL = _Refusal(
+    code=CODE_FEATURE_DISABLED,
+    hint=(
+        "This feature is switched off for this user and workspace; the request is not "
+        "the problem. Do not retry or rephrase: tell the user to ask Mammoth support or "
+        "the workspace admin to turn it on."
+    ),
+)
+#: Backend codes that refuse an action because of the account (its plan, its AI quota, a
+#: feature switched off), not the request or the user's permissions: no id or role change
+#: fixes them, and a retry gives the same answer.
+_BACKEND_REFUSALS: dict[str, _Refusal] = {
+    "4SUBS101": _PLAN_LIMIT_REFUSAL,  # FEATURE_NOT_AVAILABLE_ON_PLAN
+    "4SUBS102": _PLAN_LIMIT_REFUSAL,  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
+    "4SUBS103": _PLAN_LIMIT_REFUSAL,  # PLAN_PAYMENT_REQUIRED
+    "4SUBS104": _PLAN_LIMIT_REFUSAL,  # AI_QUOTA_EXHAUSTED
+    "4SUBS105": _PLAN_LIMIT_REFUSAL,  # WORKSPACE_OVER_PLAN_LIMITS
+    "4SUBS106": _PLAN_LIMIT_REFUSAL,  # PLAN_LIMIT_REACHED
+    "5GENR012": _FEATURE_DISABLED_REFUSAL,  # FEATURE_DISABLED
+}
 
 
 def _not_allowed_reason(body: Any, status: int | None) -> str | None:
@@ -294,15 +322,25 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
     return message if isinstance(message, str) and message else name
 
 
-def _plan_limit_reason(body: Any, status: int | None) -> str | None:
-    """The backend's own words when a 4xx refuses for the plan or AI quota."""
+def _backend_refusal(body: Any, status: int | None) -> tuple[_Refusal, str] | None:
+    """The refusal and the backend's own words when a 4xx refuses for the account's state.
+
+    Args:
+        body: The parsed response body.
+        status: The HTTP status.
+
+    Returns:
+        The matching :class:`_Refusal` and the backend message (its code when it sent none),
+        or ``None`` when the code is not in :data:`_BACKEND_REFUSALS`.
+    """
     if status is None or not 400 <= status < 500 or not isinstance(body, dict):
         return None
     backend_code = body.get("error_code") or body.get("code")
-    if backend_code not in _PLAN_LIMIT_CODES:
+    refusal = _BACKEND_REFUSALS.get(backend_code) if isinstance(backend_code, str) else None
+    if refusal is None:
         return None
     message = body.get("message")
-    return message if isinstance(message, str) and message else str(backend_code)
+    return refusal, message if isinstance(message, str) and message else str(backend_code)
 
 
 #: A bare error name such as ``PERMISSION_ERROR``: a label, not a reason.
@@ -365,13 +403,6 @@ def _stored_credential_kind(profile: str | None) -> str | None:
     """The stored credential kind of ``profile`` (the selected one when None)."""
     credential = credentials.load_credential(profile or profiles.get_selected())
     return credential.kind if credential is not None else None
-
-
-#: Backend codes that mean "no such id" on a 400 (the dataset and file get routes do not 404).
-_UNKNOWN_ID_CODES = (
-    ("4DSET001", "dataset", "dataset list"),
-    ("4FILE001", "file", "file list"),
-)
 
 
 def _not_refreshable(message: str, details: dict[str, Any], request_id: str | None) -> CliError:
@@ -694,19 +725,16 @@ def map_sdk_exception(
                 request_id=request_id,
                 recovery_commands=[token_login],
             )
-        plan_limit = _plan_limit_reason(exc.response_body, status)
-        if plan_limit is not None:
+        refusal = _backend_refusal(exc.response_body, status)
+        if refusal is not None:
             return CliError(
-                code=CODE_PLAN_LIMIT,
-                message=plan_limit,
+                code=refusal[0].code,
+                message=refusal[1],
                 exit_status=EXIT_AUTH,
-                hint=(
-                    "The workspace's plan or monthly AI quota does not cover this; the ids "
-                    "and permissions are not the problem. Do not retry: tell the user, who "
-                    "can upgrade the plan or ask Mammoth support to extend the quota."
-                ),
+                hint=refusal[0].hint,
                 details=details,
                 request_id=request_id,
+                retryable=False,
             )
         if status == 403:
             return CliError(
@@ -775,7 +803,7 @@ def map_sdk_exception(
                 retryable=True,
             )
         message = _backend_message(exc.response_body, status)
-        for backend_code, noun, list_command in _UNKNOWN_ID_CODES:
+        for backend_code, (noun, list_command) in GONE_BACKEND_CODES.items():
             if message and backend_code in message:
                 return CliError(
                     code=CODE_RESOURCE_NOT_FOUND,

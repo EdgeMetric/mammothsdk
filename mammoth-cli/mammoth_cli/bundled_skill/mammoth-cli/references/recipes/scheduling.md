@@ -61,13 +61,16 @@ file-backed dataset's pipeline re-runs on new data exactly like any other
 dataset's ([how Mammoth organises
 data](../about-mammoth.md#how-mammoth-organises-data)); the only difference
 is that nothing pulls the next file in for you — each new batch has to be
-uploaded with `append_to_ds_id` rather than fetched automatically. Once a
+uploaded with `append_to_ds_id` rather than fetched automatically. The dataset's
+update method decides whether each upload adds its rows or replaces them
+(`mammoth dataset update-method get DATASET_ID`). Once a
 new file lands that way, every view on that dataset recomputes over it
 automatically, so a monthly "email this view as CSV" delivery is buildable
 today, with no connector:
 
 ```bash
-# each month, once the new file is ready (a person or an outside script runs this):
+# each month, once the new file is ready (a person or an outside script runs this).
+# Adds or replaces rows, per the dataset's update method:
 mammoth file upload ./brand_spend_2026_10.csv --input '{"append_to_ds_id": DATASET_ID}'
 # one-time setup: the recurring delivery itself, via send_an_alert
 mammoth automation create 'Monthly brand spend to client' --yes --input '{

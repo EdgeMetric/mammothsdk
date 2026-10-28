@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import automation as automation_cmd
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_NOT_FOUND, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -139,8 +139,44 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    automation_cmd.automation_delete(_inv("automation.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"automation_id": 7})]
+    data, _meta = automation_cmd.automation_delete(
+        _inv("automation.delete", extra_args=["7"], yes=True)
+    )
+    # The delete is read back; an empty read is "gone", so the result says so.
+    assert fake_service.call_log == [(_DELETE, {"automation_id": 7}), (_GET, {"automation_id": 7})]
+    assert data["deleted"] == [7]
+
+
+def test_delete_reads_back_a_gone_automation_as_deleted(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GET] = CliError(
+        code="resource_not_found", message="gone", exit_status=EXIT_NOT_FOUND
+    )
+    data, _meta = automation_cmd.automation_delete(
+        _inv("automation.delete", extra_args=["7"], yes=True)
+    )
+    assert data == {"automation_id": 7, "deleted": [7]}
+
+
+def test_delete_counts_a_trashed_automation_as_deleted(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_GET] = {"automation": {"id": 7, "status": "trashed"}}
+    data, _meta = automation_cmd.automation_delete(
+        _inv("automation.delete", extra_args=["7"], yes=True)
+    )
+    assert data["deleted"] == [7]
+
+
+def test_delete_that_left_the_automation_alive_is_an_error(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"automation": {"id": 7, "status": "active"}}
+    with pytest.raises(CliError) as excinfo:
+        automation_cmd.automation_delete(_inv("automation.delete", extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_not_applied"
 
 
 # --- automation create -----------------------------------------------------

@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         DashboardSource,
     )
     from .datasets import (
+        DataAdditionMode,
         DatasetCreateSpec,
         DatasetDataResponse,
         DatasetPatchData,
@@ -168,6 +169,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DashboardAnalytics": ("mammoth.models.dashboards", "DashboardAnalytics"),
     "DashboardInfo": ("mammoth.models.dashboards", "DashboardInfo"),
     "DashboardSource": ("mammoth.models.dashboards", "DashboardSource"),
+    "DataAdditionMode": ("mammoth.models.datasets", "DataAdditionMode"),
     "DatasetCreateSpec": ("mammoth.models.datasets", "DatasetCreateSpec"),
     "DatasetDataResponse": ("mammoth.models.datasets", "DatasetDataResponse"),
     "DatasetPatchData": ("mammoth.models.datasets", "DatasetPatchData"),
@@ -311,6 +313,7 @@ __all__ = [
     "PipelineExportsPaginated",
     "PipelineExportsModificationResp",
     # Datasets models
+    "DataAdditionMode",
     "DatasetSchema",
     "DatasetsList",
     "DatasetProperties",

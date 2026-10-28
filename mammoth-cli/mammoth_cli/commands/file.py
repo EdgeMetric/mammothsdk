@@ -11,6 +11,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -37,7 +38,9 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services import update_method
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.delete_check import ensure_deleted
 from mammoth_cli.services.paging import listing_with_paging
 from mammoth_cli.services.poll import poll_delays
 
@@ -225,7 +228,19 @@ def file_delete(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete file {file_id}")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), file_id=file_id)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # The route answers with no body; read the file back so the result says it is gone.
+        ensure_deleted(
+            service,
+            noun="file",
+            resource_id=file_id,
+            read_symbol="mammoth.api.files.FilesAPI.get",
+            read_kwargs={"file_id": file_id},
+            responses=(data,),
+        )
+    result = {**data} if isinstance(data, dict) else {}
+    return {**result, "file_id": file_id, "deleted": [file_id]}, _meta(
+        invocation, auth.workspace_id, resolved_project(invocation)
+    )
 
 
 def file_bulk_delete(invocation: Invocation) -> HandlerResult:
@@ -245,6 +260,23 @@ def file_bulk_delete(invocation: Invocation) -> HandlerResult:
 def file_upload(invocation: Invocation) -> HandlerResult:
     """Upload local files: one path as the argument, several via the ``files`` input field."""
     document = invocation.load_input() or {}
+    # ``mode`` and ``sheets`` belong to this handler, not to the SDK call: take them out
+    # before the inputs are bound.
+    mode = document.get("mode")
+    sheets = document.get("sheets")
+    document = {k: v for k, v in document.items() if k not in ("mode", "sheets")}
+    if mode is not None and document.get("append_to_ds_id") is None:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'mode' only applies when 'append_to_ds_id' is set.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "It sets the update method of the dataset the file goes into: pass "
+                '--input \'{"append_to_ds_id": 123, "mode": "replace"}\'.'
+            ),
+            details={"field": "mode"},
+        )
+    wanted_mode = update_method.parse_mode(mode) if mode is not None else None
     # ``files`` is intentionally dual-sourced: explicit paths are expanded to
     # the SDK's list form and take precedence over the same input field.
     kwargs = bind_command_inputs(
@@ -277,7 +309,19 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # The SDK waits for the upload job; ``upload_result`` also returns the
         # files the server refused, which the bare id list of ``upload`` drops.
         target = kwargs.get("append_to_ds_id")
+        project_id = resolved_project(invocation)
+        mode_change: dict[str, Any] | None = None
+        if wanted_mode is not None and target is not None:
+            # The backend reads the dataset's mode when the file lands, so set it first.
+            changed = service.call(
+                update_method.SET_SYMBOL,
+                dataset_id=target,
+                mode=wanted_mode,
+                project_id=project_id,
+            )
+            mode_change = update_method.describe(changed, target)
         rows_before = _dataset_rows(service, target) if target is not None else None
+        batches_before = _batch_ids(service, target, project_id) if target is not None else None
         outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
         data = [target] if target is not None and outcome["dataset_ids"] else outcome["dataset_ids"]
         if target is not None and data:
@@ -290,20 +334,37 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # A finished upload job does not mean a usable dataset: a CSV with an
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
-        result = _upload_result(data, lambda dataset_id: _dataset_status(service, dataset_id))
+        result = _upload_result(
+            data,
+            lambda dataset_id: _dataset_status(service, dataset_id),
+            files=outcome.get("files"),
+        )
+        warnings: list[str] = []
+        if mode_change is not None:
+            result["update_method"] = {
+                "mode": mode_change["mode"],
+                "previous_mode": mode_change.get("previous_mode"),
+                "effect": mode_change["effect"],
+            }
+            warnings.append(
+                f"Dataset {target} now has the update method '{mode_change['mode']}', and it "
+                "keeps it: every later upload into it follows it too."
+            )
         if target is not None and data:
             # The upload made a staging dataset the backend already deleted; the result is
-            # the dataset the rows were appended to.
+            # the dataset the rows were appended to. The batch it added is what to undo.
             rows_after = _dataset_rows(service, target)
             result["appended_to"] = target
-            result["staging_dataset_ids"] = list(outcome["dataset_ids"])
+            seen = set(batches_before or [])
+            result["batch_ids"] = [
+                b for b in _batch_ids(service, target, project_id) if b not in seen
+            ]
             if rows_before is not None and rows_after is not None:
                 result.update(
                     rows_before=rows_before,
                     rows_after=rows_after,
                     rows_added=rows_after - rows_before,
                 )
-        warnings: list[str] = []
         if target is not None and data and not target_ready:
             # The rows may still be on their way: rows_added is what had landed by now.
             result["append_pending"] = True
@@ -318,7 +379,8 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         if warnings:
             result["warnings"] = warnings
         _mark_partial_upload(result, bool(refused))
-        project_id = resolved_project(invocation)
+        if sheets is not None:
+            _extract_chosen_sheets(service, result, sheets)
         previewed = 0
         for entry in result["datasets"]:
             if entry.get("status") != "ready" or target is not None:
@@ -342,6 +404,79 @@ def file_upload(invocation: Invocation) -> HandlerResult:
                     {preview["view_id"]: int(entry["id"])},
                 )
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+_BATCH_LIST_SYMBOL = "mammoth.api.batches.BatchesAPI.list"
+_EXTRACT_SHEETS_SYMBOL = "mammoth.api.files.FilesAPI.extract_sheets"
+_BATCH_PAGE = 100
+
+
+def _batch_ids(service: Any, dataset_id: int, project_id: int | None) -> list[int]:
+    """Every batch id of a dataset, in listing order, paging through the listing.
+
+    Args:
+        service: The SDK service.
+        dataset_id: The dataset whose batches to read.
+        project_id: The active project, or None for the client default.
+
+    Returns:
+        The batch ids; empty when the listing cannot be read.
+    """
+    ids: list[int] = []
+    offset = 0
+    while True:
+        kwargs: dict[str, Any] = {"dataset_id": dataset_id, "limit": _BATCH_PAGE, "offset": offset}
+        if project_id is not None:
+            kwargs["project_id"] = project_id
+        try:
+            response = service.call(_BATCH_LIST_SYMBOL, **kwargs)
+        except CliError:
+            return ids
+        rows = response.get("batches") if isinstance(response, dict) else response
+        rows = rows if isinstance(rows, list) else []
+        ids.extend(
+            r["id"]
+            for r in rows
+            if isinstance(r, dict) and isinstance(r.get("id"), int) and r["id"] not in ids
+        )
+        if len(rows) < _BATCH_PAGE:
+            return ids
+        offset += _BATCH_PAGE
+
+
+def _extract_chosen_sheets(service: Any, result: dict[str, Any], sheets: Any) -> None:
+    """Extract the caller's sheets from the one workbook waiting for a choice.
+
+    Args:
+        service: The SDK service.
+        result: The upload result; gains ``extract_sheets`` (the extraction job) and a
+            message, or a warning when no single workbook is waiting.
+        sheets: The ``sheets`` input: a list of sheet names.
+
+    Raises:
+        CliError: ``invalid_argument`` when ``sheets`` is not a list of names.
+    """
+    if not isinstance(sheets, list) or not sheets or not all(isinstance(s, str) for s in sheets):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'sheets' must be a non-empty list of sheet names.",
+            exit_status=EXIT_USAGE,
+            details={"field": "sheets"},
+        )
+    waiting = [f for f in result.get("files", []) if f.get("action_needed") == _SHEETS_ACTION]
+    if len(waiting) != 1:
+        result.setdefault("warnings", []).append(
+            "'sheets' was ignored: it applies only when exactly one uploaded file waits for a "
+            f"sheet choice, and {len(waiting)} did."
+        )
+        return
+    file_id = waiting[0]["file_id"]
+    result["extract_sheets"] = service.call(_EXTRACT_SHEETS_SYMBOL, file_id=file_id, sheets=sheets)
+    result["message"] = (
+        f"Extracting {', '.join(sheets)} from file {file_id}; the datasets appear when the job "
+        "ends. Check with 'mammoth file list'."
+    )
+    result["next_command"] = "mammoth file list"
 
 
 _UPLOAD_FAILED_STATUSES = frozenset({"error", "failed", "failure"})
@@ -504,15 +639,88 @@ def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] 
 
 #: An upload whose job finished without making any dataset.
 NO_DATASET_STATUS = "no_dataset"
+SHEET_CHOICE_STATUS = "needs_sheet_choice"
+PASSWORD_STATUS = "needs_password"  # noqa: S105
+_SHEETS_ACTION = "sheet_selection_required"
+_PASSWORD_ACTION = "password_required"  # noqa: S105
 _NO_DATASET_MESSAGE = (
     "The file was uploaded but no dataset was made from it. A PDF waits in the file list "
-    "as action_needed until its tables are extracted, which the CLI cannot do yet; do that "
-    "in the Mammoth app. Do not upload the file again."
+    "as action_needed until its tables are extracted; do that in the Mammoth app. Do not "
+    "upload the file again."
 )
+
+#: Words in a ``need_action`` ``status_info`` that point at a header or title-row problem
+#: rather than an ambiguous date: ``interpretation preview`` shows how the rows would read.
+_HEADER_CAUSE_WORDS = ("header", "title", "skip")
+
+
+def _need_action_command(dataset_id: int, status_info: dict[str, Any] | None) -> str:
+    """The command that fits why a dataset waits in ``need_action``.
+
+    Args:
+        dataset_id: The dataset.
+        status_info: Its ``status_info`` from the platform.
+
+    Returns:
+        ``dataset interpretation preview`` when the message names a header or title-row
+        problem, else ``dataset file-settings get`` (ambiguous dates, delimiters).
+    """
+    said = " ".join(str(v) for v in (status_info or {}).values()).lower()
+    if any(word in said for word in _HEADER_CAUSE_WORDS):
+        return f"mammoth dataset interpretation preview {dataset_id}"
+    return f"mammoth dataset file-settings get {dataset_id}"
+
+
+def _waiting_files(files: Any) -> list[dict[str, Any]]:
+    """Shape the SDK's ``files`` (uploads that made no dataset) into what to do for each.
+
+    Args:
+        files: ``upload_result``'s ``files`` list, or None.
+
+    Returns:
+        One entry per file. A file waiting for a sheet choice or a password gets a
+        runnable ``next_command`` with its real id and sheet names, and a message.
+    """
+    entries: list[dict[str, Any]] = []
+    for item in files if isinstance(files, list) else []:
+        if not isinstance(item, dict) or item.get("file_id") is None:
+            continue
+        file_id = item["file_id"]
+        entry: dict[str, Any] = {k: v for k, v in item.items() if k != "sheets_info"}
+        label = item.get("name") or file_id
+        action = item.get("action_needed")
+        if action == _SHEETS_ACTION:
+            names = [
+                s.get("sheet_name") if isinstance(s, dict) else s
+                for s in item.get("sheets_info") or []
+            ]
+            names = [n for n in names if isinstance(n, str)]
+            entry["sheets_info"] = names
+            first = json.dumps(names[:1])
+            entry["next_command"] = (
+                f"mammoth file extract-sheets {file_id} --input '{{\"sheets\": {first}}}'"
+            )
+            entry["message"] = (
+                f"File {label} has several sheets; the user must choose which ones become "
+                "datasets."
+            )
+        elif action == _PASSWORD_ACTION:
+            entry["next_command"] = (
+                f"mammoth file set-password {file_id} --input ./password.json "
+                f"--yes --confirm {file_id}"
+            )
+            entry["message"] = (
+                f"File {label} is password protected; the user must give the password. It goes "
+                'in ./password.json as {"password": "..."}, not on the command line.'
+            )
+        entries.append(entry)
+    return entries
 
 
 def _upload_result(
-    value: Any, read_status: Callable[[int], tuple[str, dict[str, Any] | None, str | None]]
+    value: Any,
+    read_status: Callable[[int], tuple[str, dict[str, Any] | None, str | None]],
+    files: Any = None,
 ) -> dict[str, Any]:
     """Shape the SDK upload return (int | list[int] | None) into a labeled result.
 
@@ -521,7 +729,8 @@ def _upload_result(
     checks one field sees the dataset that still needs work. ``datasets``
     carries the per-dataset status, and a ``need_action`` or ``needs_view``
     dataset also gets the recovery route so the caller does not have to know
-    the recipe.
+    the recipe. A file that made no dataset is listed in ``files``; with no
+    dataset at all, a workbook awaiting a sheet choice or a password sets the status.
     """
     if isinstance(value, list):
         ids = [int(v) for v in value]
@@ -544,7 +753,7 @@ def _upload_result(
         if status_info:
             entry["status_info"] = status_info
         if status == "need_action":
-            entry["next_command"] = f"mammoth dataset file-settings get {dataset_id}"
+            entry["next_command"] = _need_action_command(dataset_id, status_info)
         elif status == "needs_view":
             entry["next_command"] = f"mammoth view create {dataset_id}"
         datasets.append(entry)
@@ -552,12 +761,26 @@ def _upload_result(
     result: dict[str, Any] = {"status": overall, "dataset_ids": ids, "datasets": datasets}
     if len(ids) == 1:
         result["dataset_id"] = ids[0]
+    waiting = _waiting_files(files)
+    if waiting:
+        result["files"] = waiting
     if not ids:
-        # A PDF ends the upload job in ``action_needed`` with no dataset: its
-        # tables must be picked first (#255), so nothing here is ready.
-        result["status"] = NO_DATASET_STATUS
-        result["message"] = _NO_DATASET_MESSAGE
-        result["next_command"] = "mammoth file list"
+        # A workbook waits for a sheet choice (or a password); a PDF ends the job in
+        # ``action_needed`` with no dataset (#255). Nothing here is ready.
+        by_action = {f.get("action_needed"): f for f in waiting}
+        chosen = by_action.get(_SHEETS_ACTION) or by_action.get(_PASSWORD_ACTION)
+        if chosen is not None:
+            result["status"] = (
+                SHEET_CHOICE_STATUS
+                if chosen.get("action_needed") == _SHEETS_ACTION
+                else PASSWORD_STATUS
+            )
+            result["message"] = chosen["message"]
+            result["next_command"] = chosen["next_command"]
+        else:
+            result["status"] = NO_DATASET_STATUS
+            result["message"] = _NO_DATASET_MESSAGE
+            result["next_command"] = "mammoth file list"
     return result
 
 

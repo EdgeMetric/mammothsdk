@@ -4,14 +4,16 @@ Files API client for managing files and datasets in Mammoth.
 
 from __future__ import annotations
 
+import asyncio
 import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO
 
 if TYPE_CHECKING:
     from ..client import MammothClient
 
-from ..exceptions import MammothValidationError
+from ..exceptions import MammothAPIError, MammothValidationError
 from ..models.files import (
     FileDetails,
     FilePatchData,
@@ -24,6 +26,48 @@ from ..models.files import (
 from ..models.jobs import ObjectJobSchema
 
 _list = list  # Alias to avoid shadowing by method name
+
+#: The project resource type of an uploaded file.
+_FILE_RESOURCE = "file_object"
+#: File statuses that mean the file is done with (its dataset was made).
+_FINISHED_FILE_STATUSES = frozenset({"processed", "extracted"})
+#: File statuses of a file still being read, before it says what it waits on.
+_BUSY_FILE_STATUSES = frozenset({"processing", "extracting"})
+#: How long to wait for a file to say what it waits on, and how often to look.
+_SETTLE_S = 60.0
+_SETTLE_POLL_S = 1.0
+#: How many of the project's newest files to read for an upload's own.
+_NEWEST_FILES = 50
+#: Allowance for the gap between this machine's clock and the server's.
+_CLOCK_SKEW = timedelta(minutes=5)
+
+
+def _created_at(stamp: Any) -> datetime | None:
+    """Read a resource's ``created_at`` (naive UTC, sometimes with a ``Z``) as UTC."""
+    try:
+        read = datetime.fromisoformat(str(stamp).removesuffix("Z"))
+    except ValueError:
+        return None
+    return read if read.tzinfo else read.replace(tzinfo=UTC)
+
+
+def _waiting_file(item: dict[str, Any]) -> dict[str, Any]:
+    """One uploaded file and what it waits on, from its project resource row."""
+    properties = item.get("object_properties")
+    action = properties.get("user_action_required") if isinstance(properties, dict) else None
+    entry: dict[str, Any] = {
+        "file_id": item.get("object_id"),
+        "name": item.get("name"),
+        "status": item.get("status"),
+        "action_needed": None,
+    }
+    if isinstance(action, dict):
+        entry["action_needed"] = action.get("type")
+        if action.get("message"):
+            entry["message"] = action["message"]
+        if isinstance(action.get("sheet_info"), _list):
+            entry["sheets_info"] = action["sheet_info"]
+    return entry
 
 
 class FilesAPI:
@@ -191,9 +235,13 @@ class FilesAPI:
     ) -> dict[str, Any]:
         """Upload files and report the created datasets AND any server refusals.
 
-        Like :meth:`upload`, but returns ``{"job_id", "dataset_ids", "errors", "nested_job_ids"}``.
-        ``errors`` is the upload job's own ``errors`` map (for example
-        ``{"unsupported_files": ["X.pbix"]}``), empty when nothing was refused.
+        Like :meth:`upload`, but returns ``{"job_id", "dataset_ids", "errors", "nested_job_ids",
+        "files"}``. ``errors`` is the upload job's own ``errors`` map (for example
+        ``{"unsupported_files": ["X.pbix"]}``), empty when nothing was refused. ``files``
+        lists each uploaded file that made no dataset and what it waits on:
+        ``{"file_id", "name", "status", "action_needed"}``, where ``action_needed`` is
+        Mammoth's own ``user_action_required`` type (``sheet_selection_required`` with
+        ``sheets_info`` for a workbook, ``password_required``, ...) or ``None``.
 
         Each file becomes a separate dataset. Folder structure is preserved.
 
@@ -207,7 +255,7 @@ class FilesAPI:
 
         Returns:
             ``job_id`` is the initial job; with wait_for_completion=False the
-            other two are empty.
+            other fields are empty.
         """
         ws = self._ws()
         proj = self._proj()
@@ -245,6 +293,7 @@ class FilesAPI:
             if override_target_schema is not None:
                 params["override_target_schema"] = override_target_schema
 
+            sent_at = datetime.now(UTC)
             response = await self._client._request_json(
                 "POST",
                 f"/workspaces/{ws}/projects/{proj}/files",
@@ -263,6 +312,7 @@ class FilesAPI:
             "dataset_ids": [],
             "errors": {},
             "nested_job_ids": [],
+            "files": [],
         }
         if not wait_for_completion:
             return outcome
@@ -290,8 +340,74 @@ class FilesAPI:
                 for job in finished.get("jobs", [])
                 if (ds_id := (job.get("response") or {}).get("ds_id"))
             ]
+            if len(outcome["dataset_ids"]) < len(nested):
+                # A file that stops for the user (a workbook's sheets, a password)
+                # ends its job with no ``ds_id`` and no file id: the project's
+                # resource list is where it says what it waits on.
+                outcome["files"] = await self._waiting_files(
+                    [part[0] for _, part in file_data], sent_at, min(float(timeout), _SETTLE_S)
+                )
 
         return outcome
+
+    async def _waiting_files(
+        self, names: _list[str], sent_at: datetime, timeout: float
+    ) -> _list[dict[str, Any]]:
+        """The newest file of each uploaded name, made since the upload, that made no dataset.
+
+        A workbook's job ends before its sheets are read, so this waits (up to
+        ``timeout``) until no such file is still being read.
+
+        Args:
+            names: The names the files were uploaded under.
+            sent_at: When the upload was sent.
+            timeout: Longest wait, in seconds, for the files to settle.
+
+        Returns:
+            One ``{"file_id", "name", "status", "action_needed", ...}`` per such file.
+        """
+        deadline = asyncio.get_running_loop().time() + timeout
+        while True:
+            found = await self._uploaded_files(names, sent_at)
+            busy = any(
+                entry["status"] in _BUSY_FILE_STATUSES and not entry["action_needed"]
+                for entry in found
+            )
+            if not busy or asyncio.get_running_loop().time() >= deadline:
+                break
+            await asyncio.sleep(_SETTLE_POLL_S)
+        return [
+            entry
+            for entry in found
+            if entry["action_needed"] or entry["status"] not in _FINISHED_FILE_STATUSES
+        ]
+
+    async def _uploaded_files(self, names: _list[str], sent_at: datetime) -> _list[dict[str, Any]]:
+        """The newest project file of each name in ``names`` made since ``sent_at``.
+
+        The upload itself went through, so a failed read here reports no files
+        rather than failing it.
+        """
+        try:
+            listed = await self._client.browse.resources_list(
+                resource_type=_FILE_RESOURCE,
+                sort="created_at:desc",
+                limit=_NEWEST_FILES,
+                fields="full",
+            )
+        except MammothAPIError:
+            return []
+        wanted = set(names)
+        found: _list[dict[str, Any]] = []
+        for item in listed.get("resources") or []:
+            if not isinstance(item, dict) or item.get("name") not in wanted:
+                continue
+            created = _created_at(item.get("created_at"))
+            if created is None or created < sent_at - _CLOCK_SKEW:
+                continue
+            wanted.discard(item["name"])
+            found.append(_waiting_file(item))
+        return found
 
     async def upload_folder(
         self,

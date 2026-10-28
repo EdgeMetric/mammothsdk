@@ -265,7 +265,7 @@ COMMAND_DISCOVERY_PURPOSES = {
         "sequence generate dates"
     ),
     "view.transform.rename-columns": (
-        "rename column columns header headers relabel change column name names title"
+        "rename column columns header headers relabel change column name names title data"
     ),
     "view.column.format.set": (
         "format display column date format number format decimals decimal places currency "
@@ -381,7 +381,7 @@ COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.analytics": "who viewed seen opened views visitors usage of a board",
     "dashboard.share": (
         "share make live publish board for the team link access with a user person "
-        "colleague invite grant"
+        "colleague invite grant email address"
     ),
     "dashboard.delete": "delete remove permanently dashboard board",
     "view.delete": "delete remove permanently",
@@ -866,5 +866,20 @@ COMMAND_DISCOVERY_PURPOSES = {
     ),
     "support.project-move.purge": (
         "purge delete the source copies left in the old workspace after a project move"
+    ),
+    "batch.delete": (
+        "undo the file just appended take back an append revert remove roll back the last upload "
+        "batch of data added to a dataset delete a batch"
+    ),
+    "file.extract-sheets": (
+        "second tab tabs of a workbook pull chosen tabs out of an xlsx file into datasets"
+    ),
+    "dataset.update-method.set": (
+        "replace overwrite a dataset's data with a newer file or append instead update method "
+        "mode refresh data"
+    ),
+    "dataset.file-settings.update": (
+        "skip title rows header rows at the top change the delimiter separator quote character "
+        "of an uploaded csv file parsing settings"
     ),
 }

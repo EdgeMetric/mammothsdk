@@ -698,12 +698,24 @@ def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
     assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
-def test_file_settings_update_requires_delimiter(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_file_settings_update(
-            _inv("dataset.file-settings.update", project=180, extra_args=["7"])
+def test_file_settings_update_forwards_a_single_field_alone(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write(tmp_path, {"initial_skip_count": 2})
+    dataset_cmd.dataset_file_settings_update(
+        _inv(
+            "dataset.file-settings.update",
+            project=180,
+            extra_args=["7"],
+            input_file=input_file,
         )
-    assert excinfo.value.code == "missing_field"
+    )
+    assert fake_service.call_log[:1] == [
+        (
+            _FILE_SETTINGS_UPDATE,
+            {"dataset_id": 7, "initial_skip_count": 2, "project_id": 180},
+        )
+    ]
 
 
 def test_file_settings_update_forwards_required_and_optional(
@@ -1156,6 +1168,7 @@ def test_update_rejects_raw_patch_even_with_confirmation(
     assert excinfo.value.details["blocker"] == "B07 DATASET_PATCH_UNTYPED"
     assert excinfo.value.details["typed_alternatives"] == [
         "dataset.rename",
+        "dataset.update-method.set",
         "dataset.file-settings.update",
     ]
     assert fake_service.call_log == []
@@ -1359,3 +1372,46 @@ def test_last_list_page_does_not_point_to_names_true(fake_service: FakeMammothSe
     fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "a"}]}
     result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
     assert "names" not in result["note"]
+
+
+def test_interpretation_confirm_reads_back_columns_and_row_count(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses["mammoth.api.datasets.DatasetsAPI.interpretation_confirm"] = {
+        "view_count": 1
+    }
+    fake_service.responses[_GET] = {
+        "dataset": {
+            "id": 5,
+            "row_count": 120,
+            "data_schema": [
+                {"c_name": "Region", "c_type": "TEXT"},
+                {"c_name": "Sales", "c_type": "NUMERIC"},
+            ],
+        }
+    }
+    doc = _write(tmp_path, {"mode": "original"})
+
+    data, _meta = dataset_cmd.dataset_interpretation(
+        _inv("dataset.interpretation.confirm", project=3, extra_args=["5"], input_file=doc)
+    )
+
+    assert data["view_count"] == 1
+    assert data["row_count"] == 120
+    assert data["columns"] == [
+        {"name": "Region", "type": "TEXT"},
+        {"name": "Sales", "type": "NUMERIC"},
+    ]
+
+
+def test_interpretation_confirm_survives_an_unreadable_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_GET] = CliError(code="api_error", message="boom", exit_status=1)
+    doc = _write(tmp_path, {"mode": "original"})
+
+    data, _meta = dataset_cmd.dataset_interpretation(
+        _inv("dataset.interpretation.confirm", project=3, extra_args=["5"], input_file=doc)
+    )
+
+    assert "columns" not in data

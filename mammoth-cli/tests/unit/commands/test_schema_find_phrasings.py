@@ -8,6 +8,12 @@ from mammoth_cli.commands.schema.find import find_schemas
 
 #: (what a user says, the command that must be among the first three matches)
 PHRASINGS = [
+    ("share with a colleague by email", "dashboard.share"),
+    ("undo the last upload batch", "batch.delete"),
+    ("read the second tab of an excel workbook", "file.extract-sheets"),
+    ("replace a dataset's data with a newer file", "dataset.update-method.set"),
+    ("skip title rows", "dataset.file-settings.update"),
+    ("change the delimiter", "dataset.file-settings.update"),
     ("repeat each row 3 times", "view.transform.repeat-rows"),
     ("one row per month from Jan 2024 to today for each product", "view.transform.repeat-rows"),
     ("duplicate every row", "view.transform.repeat-rows"),

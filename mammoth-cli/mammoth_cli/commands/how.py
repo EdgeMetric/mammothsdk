@@ -215,6 +215,10 @@ _Key = tuple[float, int, int]
 #: Where each recipe sits in a pipeline; a composed goal runs them in this order.
 _STAGE = {
     "append-rows": 0,
+    "replace-data": 0,
+    "undo-append": 0,
+    "pick-sheet": 0,
+    "fix-heading-row": 0,
     "stuck-upload": 0,
     "upload-clean": 0,
     "blend-by-key": 1,

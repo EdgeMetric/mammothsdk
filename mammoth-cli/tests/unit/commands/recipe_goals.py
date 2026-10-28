@@ -111,6 +111,18 @@ POSITIVES: tuple[tuple[str, str], ...] = (
     ("create a new project", "create-projects"),
     ("set up projects for each of my teams", "create-projects"),
     ("make several projects from a list of names", "create-projects"),
+    ("make the dataset use the rows of the new file instead of adding them", "replace-data"),
+    ("overwrite the old rows with this week's export", "replace-data"),
+    ("replace the rows in my sales dataset with a fresh csv", "replace-data"),
+    ("revert the upload that appended rows to my dataset", "undo-append"),
+    ("delete the batch the last file added", "undo-append"),
+    ("undo yesterday's append to the orders dataset", "undo-append"),
+    ("load only the third sheet of my excel file", "pick-sheet"),
+    ("bring in one worksheet from an xlsx workbook", "pick-sheet"),
+    ("choose which tabs of the workbook to import", "pick-sheet"),
+    ("the first two rows of my csv are a title, skip them", "fix-heading-row"),
+    ("wrong heading row after the upload", "fix-heading-row"),
+    ("my file's header is on row three", "fix-heading-row"),
 )
 
 NEGATIVES: tuple[str, ...] = (

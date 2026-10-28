@@ -184,6 +184,9 @@ _SUBGROUP_DESCRIPTIONS = {
     "dataset definition": "List, save and remove what terms mean for a dataset.",
     "dataset from-url": "Preview a link, follow or copy a dataset made from a link, and show them.",
     "dataset file-settings": "Read, update and undo a dataset's file settings.",
+    "dataset update-method": (
+        "Read or set whether a new file replaces a dataset's rows or adds to them."
+    ),
     "dataset interpretation": "Preview and confirm how a file is interpreted.",
     "dataset tool-claim": "Read an emailed Open tables link and add its tables to a project.",
     "parameter group": "Create, list, update, reorder and delete parameter groups.",

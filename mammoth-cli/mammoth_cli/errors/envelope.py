@@ -60,6 +60,7 @@ CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
 CODE_AUTHORIZATION_REQUIRED = "authorization_required"
 CODE_PLAN_LIMIT = "plan_limit"
+CODE_FEATURE_DISABLED = "feature_disabled"
 CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
@@ -201,6 +202,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "missing_argument": _S_MISSING_INFO,
     "missing_field": _S_MISSING_INFO,
     "network_error": "Mammoth couldn't be reached over the network.",
+    "feature_disabled": "This feature is switched off for your account.",
     "no_op": "There is nothing to change, so this step isn't needed.",
     "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",

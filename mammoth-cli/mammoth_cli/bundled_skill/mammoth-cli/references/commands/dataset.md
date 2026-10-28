@@ -176,7 +176,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"initial_skip_count": 2}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -351,3 +351,23 @@ Example: `mammoth dataset update --input '{"patch_data": [{"name": "Status"}]}' 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 
 Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route, so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.
+
+### `dataset.update-method.get`
+
+Run: `mammoth dataset update-method get`. Exact input fields: `mammoth schema get dataset.update-method.get`.
+
+Example: `mammoth dataset update-method get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetUpdateMethodGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.update-method.set`
+
+Run: `mammoth dataset update-method set`. Exact input fields: `mammoth schema get dataset.update-method.set`.
+
+Example: `mammoth dataset update-method set 123 --input '{"mode": "replace"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetUpdateMethodSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

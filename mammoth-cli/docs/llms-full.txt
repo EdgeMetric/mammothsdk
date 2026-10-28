@@ -842,7 +842,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset file-settings undo` [destructive/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.file_settings_undo
   example: mammoth dataset file-settings undo 123 --yes
 - `mammoth dataset file-settings update` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.file_settings_update
-  example: mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'
+  example: mammoth dataset file-settings update 123 --input '{"initial_skip_count": 2}'
 - `mammoth dataset find` [read/none] -> mammoth_cli.commands.dataset.find
   example: mammoth dataset find sales
 - `mammoth dataset from-url follow` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.follow_link
@@ -878,6 +878,10 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset update` [high_impact/confirm_target] -> mammoth.api.datasets.DatasetsAPI.update
   example: mammoth dataset update --input '{"patch_data": [{"name": "Status"}]}' --yes
   agent note: raw patch input is intentionally blocked; use a separately typed command or return unsupported_contract.
+- `mammoth dataset update-method get` [read/none] -> mammoth.api.datasets.DatasetsAPI.get_update_method
+  example: mammoth dataset update-method get 123
+- `mammoth dataset update-method set` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.set_update_method
+  example: mammoth dataset update-method set 123 --input '{"mode": "replace"}'
 
 ## doctor
 

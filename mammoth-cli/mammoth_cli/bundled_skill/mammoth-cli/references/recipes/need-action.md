@@ -28,6 +28,9 @@ mammoth dataset file-settings update DATASET_ID --project PROJECT_ID \
   --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\"", "date_format": "US"}'
 ```
 
+`file-settings update` also accepts one field alone (for example only
+`initial_skip_count`); the fields you leave out are kept as stored.
+
 The response is a job (`operation: "understand_csv"`). Run
 `mammoth job wait JOB_ID` on its `job_id` instead of polling by hand, then
 read `dataset get` once (the record is under `data.dataset`, so read

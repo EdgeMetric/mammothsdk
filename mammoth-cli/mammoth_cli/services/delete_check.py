@@ -44,22 +44,56 @@ def find_dependents(response: Any, resource_id: int) -> Any:
     return None
 
 
-#: Backend codes a get answers for an id that no longer exists, besides a 404: the
-#: dataset get route answers ``400 4DSET001`` for a deleted dataset, and the dataview get
-#: ``400 4DTVW019`` for a deleted view (it raises it when the view record comes back empty,
-#: apiv2 dataview controller ``get``).
-_GONE_BACKEND_CODES = frozenset({"4DSET001", "4DTVW019"})
+#: Backend codes that mean "this id does not exist (any more)", each with the noun and the list
+#: command a hint names. A get answers them for an id that is gone, besides a 404: the dataset
+#: and file get routes answer ``400 4DSET001`` / ``4FILE001``, the dataview get ``400 4DTVW019``
+#: (raised when the view record comes back empty, apiv2 dataview controller ``get``), the
+#: automation get ``4AUTO001`` (``invalid_automation_id``) or ``4AUTO005`` and the dashboard
+#: routes ``4DASH001``. ``services.mapping`` maps these to ``resource_not_found`` from the same
+#: table, so a read of a deleted id and a delete's read-back agree.
+GONE_BACKEND_CODES: dict[str, tuple[str, str]] = {
+    "4DSET001": ("dataset", "dataset list"),
+    "4FILE001": ("file", "file list"),
+    "4DTVW019": ("view", "view list DATASET_ID"),
+    "4AUTO001": ("automation", "automation list"),
+    "4AUTO005": ("automation", "automation list"),
+    "4DASH001": ("dashboard", "dashboard list"),
+}
+#: Dashboard routes answer ``403`` (the permission check runs before the lookup), not a not-found,
+#: for a deleted dashboard. Only a read-back of a just-deleted id may treat that as gone.
+_GONE_STATUS_NOUNS = frozenset({"dashboard"})
 
 
-def _is_gone(error: CliError) -> bool:
+def _is_gone(error: CliError, noun: str) -> bool:
+    """Whether a read-back error says the just-deleted ``noun`` is gone."""
+    details = error.details or {}
     return (
         error.code == CODE_RESOURCE_NOT_FOUND
-        or (error.details or {}).get("backend_code") in _GONE_BACKEND_CODES
+        or details.get("backend_code") in GONE_BACKEND_CODES
+        or (noun in _GONE_STATUS_NOUNS and details.get("status_code") == 403)
     )
 
 
+#: Flags and ``status`` words by which a read of a trashed record says it is in the trash.
+_TRASHED_FLAGS = ("is_trashed", "trashed", "is_deleted", "deleted")
+_TRASHED_STATUSES = frozenset({"trashed", "deleted"})
+
+
 def _still_there(record: Any, resource_id: int) -> bool:
-    return isinstance(record, dict) and str(record.get("id")) == str(resource_id)
+    """Whether ``record`` is the live resource: a trashed one counts as deleted."""
+    if hasattr(record, "model_dump"):
+        record = record.model_dump()
+    if not isinstance(record, dict):
+        return False
+    if isinstance(record.get("automation"), dict):
+        # The automation get wraps the record: ``{"automation": {...}}``.
+        record = record["automation"]
+    status = record.get("status")
+    if any(record.get(flag) is True for flag in _TRASHED_FLAGS) or (
+        isinstance(status, str) and status.lower() in _TRASHED_STATUSES
+    ):
+        return False
+    return str(record.get("id")) == str(resource_id)
 
 
 def ensure_deleted(
@@ -76,7 +110,7 @@ def ensure_deleted(
 
     Args:
         service: The open service.
-        noun: ``dataset``, ``view`` or ``project``, for the message.
+        noun: ``dataset``, ``view``, ``file``, ``automation`` or ``dashboard``, for the message.
         resource_id: The id that was deleted.
         read_symbol: The SDK ``get`` that reads one such resource.
         read_kwargs: Its arguments.
@@ -97,7 +131,7 @@ def ensure_deleted(
         try:
             record = service.call(read_symbol, **read_kwargs)
         except CliError as error:
-            if _is_gone(error):
+            if _is_gone(error, noun):
                 return
             raise
         if not _still_there(record, resource_id):

@@ -543,6 +543,53 @@ def test_a_plan_or_quota_refusal_names_the_plan_not_the_ids(status: int) -> None
     assert "Check the ids" not in (mapped.hint or "")
 
 
+def test_feature_disabled_names_support_not_the_request() -> None:
+    # 5GENR012 (FEATURE_DISABLED) read "correct the request" on `view export csv`.
+    message = "This feature is disabled for the user-account combination, contact support"
+    error = MammothAPIError(
+        "Bad Request",
+        status_code=400,
+        method="POST",
+        operation_state="failed",
+        response_body={"error_code": "5GENR012", "name": "FEATURE_DISABLED", "message": message},
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "feature_disabled"
+    assert mapped.retryable is False
+    assert mapped.message == message
+    assert "support" in (mapped.hint or "") and "admin" in (mapped.hint or "")
+    assert "correct the request" not in (mapped.hint or "").lower()
+
+
+@pytest.mark.parametrize(
+    ("backend_code", "noun"),
+    [
+        ("4DSET001", "dataset"),
+        ("4FILE001", "file"),
+        ("4DTVW019", "view"),
+        ("4AUTO001", "automation"),
+        ("4AUTO005", "automation"),
+        ("4DASH001", "dashboard"),
+    ],
+)
+def test_every_gone_backend_code_reads_as_resource_not_found(backend_code: str, noun: str) -> None:
+    error = MammothAPIError(
+        "Bad Request",
+        status_code=400,
+        method="GET",
+        operation_state="failed",
+        response_body={"error_code": backend_code, "name": "NOT_FOUND", "message": "No such id"},
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "resource_not_found"
+    assert mapped.exit_status == EXIT_NOT_FOUND
+    assert noun in mapped.message
+
+
 def test_an_ordinary_400_stays_an_api_error() -> None:
     error = MammothAPIError(
         "Bad request",

@@ -99,7 +99,10 @@ def test_a_dry_run_plans_every_line(
 
 
 def test_every_recipe_is_an_executable_task() -> None:
-    assert len(runnable_recipes()) == len(load_recipes()) >= 20
+    # undo-append has steps only: its run would be a permanent delete (test_recipe_safety).
+    steps_only = {recipe["id"] for recipe in load_recipes() if not recipe.get("run")}
+    assert steps_only == {"undo-append"}
+    assert len(runnable_recipes()) == len(load_recipes()) - len(steps_only) >= 20
 
 
 def test_every_task_has_a_stage_for_composed_goals() -> None:
@@ -110,6 +113,8 @@ def test_every_task_has_a_stage_for_composed_goals() -> None:
 def test_a_tasks_first_goal_finds_that_task(recipe: dict[str, Any]) -> None:
     ranked = how_cmd._rank(recipe["goals"][0])
     assert ranked and ranked[0][1]["id"] == recipe["id"]
+    if not recipe.get("run"):
+        return  # schema find offers runnable recipes only; the goal reaches the command instead
     found = find_schemas(recipe["goals"][0])
     assert recipe["id"] in [task["id"] for task in found["recipes"]]
 

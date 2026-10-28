@@ -2994,6 +2994,20 @@ sdk_methods:
   openapi_operation_ids: []
   notes: Convenience alias implemented through DatasetsAPI.update but registered as its own canonical
     command.
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.get_update_method
+  canonical_command: dataset.update-method.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.set_update_method
+  canonical_command: dataset.update-method.set
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.resolve_unstructured_rows
   canonical_command: dataset.broken-rows.resolve
   alias_of: null

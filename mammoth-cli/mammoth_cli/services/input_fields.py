@@ -148,6 +148,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             }
         }
     },
+    # The four reading settings are optional (the SDK keeps the stored ones); one
+    # changed alone is the call this command exists for.
+    "dataset.file-settings.update": {"initial_skip_count": 2},
+    "dataset.update-method.set": {"mode": "replace"},
     "automation.route.order": {"automation_ids": [12, 11]},
     "automation.route.preview": {"names": ["sales_2026-10.csv"]},
     "automation.runs": {"limit": 10},

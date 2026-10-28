@@ -36,6 +36,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: bulk download. `ExportsAPI.bulk_download_plan`, `bulk_download_url` and `bulk_download`.
 - SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
 - SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
+- SDK: update method. `DatasetsAPI.get_update_method(dataset_id)` reads whether a new file replaces a dataset's rows or adds to them (the web app's "Update Method"). `DatasetsAPI.set_update_method(dataset_id, mode, schema_mapping=None)` sets it to `DataAdditionMode.REPLACE` or `DataAdditionMode.COMBINE`. Set reads the dataset's stored schema settings first and writes them back with only the mode (and `schema_mapping`) changed, so the other settings are kept.
+- SDK: `FilesAPI.upload_result` returns `files`: the uploads that made no dataset, each with `action_needed`, either `sheet_selection_required` (with `sheets_info`) for a workbook or `password_required`.
+- SDK: `mammoth.api.automations.build_automation_create_body` and `build_automation_patch_ops` are public. They validate and build the request body that `AutomationsAPI.create` and `update` send; the CLI's dry run uses them.
+
+### Changed (next mammoth-io)
+
+- SDK: `DatasetsAPI.file_settings_update`: `delimiter`, `has_header`, `initial_skip_count` and `quotechar` are optional. A setting left out keeps the value the dataset stores, which the SDK reads first; if it cannot be read, the call raises `MammothValidationError`. Calls that pass all four are unchanged.
+
 
 ### Added (next mammoth-cli)
 
@@ -45,11 +53,37 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: bulk download: `dataset download` and `dataset download-plan`.
 - CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
 - CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs the next mammoth-io (the release raises the floor).
+- CLI: `dataset update-method get DATASET_ID` and `dataset update-method set DATASET_ID --input '{"mode": "replace"}'` (`mode` is `replace` or `add`; `schema_mapping` is optional). The setting stays on the dataset, and so does every later upload into it. A set reports `previous_mode`, and `history undo` sets the previous mode back.
+- CLI: `file upload` takes `mode` (`replace` or `add`) with `append_to_ds_id`, which sets the target's update method before the upload, and `sheets`, the sheet names to extract from a workbook that waits for a choice. An append reports `batch_ids`, the batches it added.
+- CLI: an upload that waits on a person says so. A workbook with several sheets returns `needs_sheet_choice` with a runnable `file extract-sheets` command; a password-protected file returns `needs_password` with a `file set-password` command. Each file that made no dataset is listed in `files`, and `verify.needs_user` is set for these uploads.
+- CLI: `batch list` marks batches whose source was deleted: `source_deleted: true` and `display_name`, the name without the " (Deleted)" suffix.
+- CLI: `dataset file-settings update` takes any one of its fields; the fields left out keep their stored values.
+- CLI: `--dry-run` of `automation create` and `automation update` runs the SDK's own validation and shows the request body the server would receive.
+- CLI: `dataset interpretation confirm` returns the dataset's `columns` (name and type) and `row_count`.
+- CLI: `how` recipes for replacing a dataset's data (`replace-data`), undoing an append (`undo-append`), choosing sheets (`pick-sheet`) and fixing a heading row (`fix-heading-row`).
+- CLI: `capabilities` lists password-protected dashboard sharing as a limitation: the share route has no password to set.
+
 
 ### Changed (next mammoth-cli)
 
 - CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.
 - CLI: `view transform discard-duplicates` takes `key_columns` (the columns that make a row a duplicate; every other column is ignored). `recipe run` refuses an input only when it still holds that input's own `<name>` placeholder.
+- CLI: `history undo` of an append deletes the batch that upload added, and so its rows.
+- CLI: a `need_action` hint points at `dataset interpretation preview` for a header or title-row problem; other cases still point at `dataset file-settings get`.
+- CLI: `file delete` reads the file back after the delete and says it is gone (`deleted` names it); `automation delete` does the same.
+- CLI: the `file-dataset-refresh` limitation names both ways to load a new file into a dataset: add its rows (the default) or replace them.
+
+### Removed (next mammoth-cli)
+
+- CLI: `file upload` no longer returns `staging_dataset_ids`. An append reports `appended_to` and `batch_ids` instead.
+- CLI: the `mcp-task-edit` entry is removed from the limitations list.
+
+### Fixed (next mammoth-cli)
+
+- CLI: when `foreign_dataset_id` is missing, `view transform join` and `lookup` use the parent dataset from the cache.
+- CLI: a deleted automation or dashboard reads as `resource_not_found`.
+- CLI: backend error 5GENR012 is reported as `feature_disabled`.
+- CLI: suggested commands no longer contain a `DASHBOARD_ID` placeholder.
 
 ## mammoth-cli 2.3.1 (2026-10-26)
 

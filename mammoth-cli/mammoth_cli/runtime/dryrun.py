@@ -26,7 +26,13 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any
 
+from mammoth.api.automations import (
+    ERR_AUTOMATION_ID_POSITIVE,
+    build_automation_create_body,
+    build_automation_patch_ops,
+)
 from mammoth.condition import CompoundCondition, Condition, NotCondition
+from mammoth.exceptions import MammothValidationError
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import command_by_id, load_commands, load_operations
@@ -173,6 +179,59 @@ def jsonable(value: Any) -> Any:
     return repr(value)
 
 
+@dataclasses.dataclass(frozen=True)
+class SdkPreview:
+    """What a dry run does at the SDK call a command exists for, beyond naming it.
+
+    A real run validates its inputs inside the SDK method and sends a body that method
+    builds; the gate stops before the method, so without this the dry run would pass
+    inputs the real call refuses and show builder defaults the server never receives.
+
+    Attributes:
+        check: Raises the SDK's own error for arguments the real call would refuse.
+        body: Renders the request body the SDK method would send; ``None`` keeps the
+            generic rendering of the arguments.
+    """
+
+    check: Callable[[dict[str, Any]], None]
+    body: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+
+
+def _automation_create_body(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate and build the body ``AutomationsAPI.create`` posts, with the SDK's builder."""
+    return build_automation_create_body(
+        arguments.get("name", ""),
+        arguments.get("description", ""),
+        arguments.get("tasks") or [],
+        arguments.get("conditions"),
+        arguments.get("condition_mode", "and"),
+    )
+
+
+def _check_automation_create(arguments: dict[str, Any]) -> None:
+    """Run the validation ``AutomationsAPI.create`` runs before it sends anything."""
+    _automation_create_body(arguments)
+
+
+def _check_automation_update(arguments: dict[str, Any]) -> None:
+    """Run the validation ``AutomationsAPI.update`` runs before it sends anything."""
+    automation_id = arguments.get("automation_id")
+    if isinstance(automation_id, int) and automation_id <= 0:
+        raise MammothValidationError(ERR_AUTOMATION_ID_POSITIVE.format(automation_id))
+    build_automation_patch_ops(arguments.get("patch") or [])
+
+
+#: SDK symbol -> its dry-run preview. Register a symbol here to have its SDK-side
+#: validation run, and its real request body shown, on a dry run; one entry covers
+#: every command backed by that symbol.
+SDK_PREVIEWS: dict[str, SdkPreview] = {
+    "mammoth.api.automations.AutomationsAPI.create": SdkPreview(
+        _check_automation_create, _automation_create_body
+    ),
+    "mammoth.api.automations.AutomationsAPI.update": SdkPreview(_check_automation_update),
+}
+
+
 def make_gate(command_id: str) -> Gate:
     """Return the gate for ``command_id`` (see the module docstring)."""
     record = command_by_id(command_id) or {}
@@ -187,6 +246,12 @@ def make_gate(command_id: str) -> Gate:
     view_reads = _read_view_methods()
 
     def stop(symbol: str, arguments: dict[str, Any], *, own: bool, **scope: Any) -> None:
+        preview = SDK_PREVIEWS.get(symbol)
+        shown: Any = arguments
+        if preview is not None:
+            preview.check(arguments)  # the refusals a real run raises inside the SDK method
+            if preview.body is not None:
+                shown = {"body": preview.body(arguments)}
         raise DryRunStop(
             {
                 "dry_run": True,
@@ -199,7 +264,7 @@ def make_gate(command_id: str) -> Gate:
                 "would_call": {
                     "sdk_symbol": symbol,
                     **{key: value for key, value in scope.items() if value is not None},
-                    "arguments": jsonable(arguments),
+                    "arguments": jsonable(shown),
                 },
                 "note": NOTE_OWN if own else NOTE_UNDECLARED,
             }

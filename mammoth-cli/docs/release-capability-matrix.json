@@ -4910,7 +4910,8 @@
       "schema_id": "dataset.get",
       "sdk_symbol": "mammoth.api.datasets.DatasetsAPI.get",
       "bound_commands": [
-        "dataset.get"
+        "dataset.get",
+        "dataset.update-method.get"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,
@@ -7513,7 +7514,8 @@
         "dataset.from-url.follow",
         "dataset.refresh",
         "dataset.rename",
-        "dataset.update"
+        "dataset.update",
+        "dataset.update-method.set"
       ],
       "mapping_state": "cli_and_sdk_mapped",
       "mapping_gap_reason": null,

@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import file as file_cmd
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_NOT_FOUND, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -217,8 +217,18 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
 
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    file_cmd.file_delete(_inv("file.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"file_id": 7})]
+    data, _meta = file_cmd.file_delete(_inv("file.delete", extra_args=["7"], yes=True))
+    # The delete is read back; an empty read is "gone", so the result says so.
+    assert fake_service.call_log == [(_DELETE, {"file_id": 7}), (_GET, {"file_id": 7})]
+    assert data == {"file_id": 7, "deleted": [7]}
+
+
+def test_delete_reads_a_4file001_back_as_gone(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_GET] = CliError(
+        code="resource_not_found", message="gone", exit_status=EXIT_NOT_FOUND
+    )
+    data, _meta = file_cmd.file_delete(_inv("file.delete", extra_args=["7"], yes=True))
+    assert data["deleted"] == [7]
 
 
 def test_bulk_delete_requires_file_ids(fake_service: FakeMammothService) -> None:
