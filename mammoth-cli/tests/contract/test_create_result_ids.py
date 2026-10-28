@@ -15,6 +15,7 @@ import pytest
 import mammoth_cli
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.resource_ids import (
+    CREATE_RESOURCES,
     id_key,
     is_create_command,
     resource_name,
@@ -22,23 +23,42 @@ from mammoth_cli.runtime.resource_ids import (
 )
 
 _CREATE_COMMANDS = sorted(
-    record["command_id"]
-    for record in load_commands()
-    if is_create_command(record["command_id"]) and resource_name(record["command_id"])
+    record["command_id"] for record in load_commands() if is_create_command(record["command_id"])
 )
+_MAKING = sorted(command for command, created in CREATE_RESOURCES.items() if created)
+_SKIPPED = sorted(command for command, created in CREATE_RESOURCES.items() if created is None)
 #: Reply shapes the API uses for a made resource, as functions of the documented key.
 _SHAPES: dict[str, Any] = {
     "own key": lambda key: {key: 7, "name": "x"},
-    "plain id": lambda key: {"id": 7, "name": "x"},
     "nested in response": lambda key: {"status": "done", "response": {key: 7}},
 }
 
 
-def test_the_manifest_has_create_commands_to_check() -> None:
-    assert len(_CREATE_COMMANDS) > 40
+def test_every_create_command_is_classified_and_every_entry_is_a_command() -> None:
+    """A new create command must say which resource it makes, or that its reply has no id."""
+    assert set(CREATE_RESOURCES) == set(_CREATE_COMMANDS)
 
 
 @pytest.mark.parametrize("command_id", _CREATE_COMMANDS)
+def test_an_entry_names_the_resource_the_command_makes(command_id: str) -> None:
+    """The noun in the command id is not always the resource: spot the odd ones explicitly."""
+    expected = {
+        "view.variants.create": None,
+        "billing.stripe.create": "subscription",
+        "agent.access.request.create": "access_request",
+        "parameter.group.create": "parameter_group",
+        "view.data-check.create": "data_check",
+        "batch.create-spec": "batch",
+        "project.copy": None,
+    }
+    if command_id in expected:
+        assert resource_name(command_id) == expected[command_id]
+    elif CREATE_RESOURCES[command_id]:
+        resource = resource_name(command_id)
+        assert resource is not None and not resource.endswith("s"), (command_id, resource)
+
+
+@pytest.mark.parametrize("command_id", _MAKING)
 @pytest.mark.parametrize("shape", sorted(_SHAPES))
 def test_a_create_result_exposes_its_resource_id_at_the_top_level(
     command_id: str, shape: str
@@ -50,6 +70,25 @@ def test_a_create_result_exposes_its_resource_id_at_the_top_level(
     result = with_resource_ids(command_id, _SHAPES[shape](key), {})
 
     assert result[key] == 7
+
+
+@pytest.mark.parametrize("command_id", _MAKING)
+def test_the_bare_id_is_read_only_where_the_entry_says_it_is_the_resources(
+    command_id: str,
+) -> None:
+    created = CREATE_RESOURCES[command_id]
+    assert created is not None
+
+    result = with_resource_ids(command_id, {"id": 7, "name": "x"}, {})
+
+    assert (result.get(id_key(created.resource)) == 7) is created.plain_id
+
+
+@pytest.mark.parametrize("command_id", _SKIPPED)
+def test_a_skipped_command_gets_no_derived_key(command_id: str) -> None:
+    reply = {"id": 7, "job_id": 3, "view_ids": [1, 2]}
+
+    assert with_resource_ids(command_id, reply, {}) is reply
 
 
 @pytest.mark.parametrize("old_key", ["identity_key", "connection_key"])
