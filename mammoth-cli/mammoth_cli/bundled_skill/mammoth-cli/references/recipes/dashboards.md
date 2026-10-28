@@ -193,7 +193,13 @@ not publish: `was_published` stays false until you also run
 To put the link behind a password, write it (8 to 128 characters) to a file and
 pass the path, never the password itself:
 `mammoth dashboard share ID --input '{"type_of_auth": "password", "password_file": "./pw.txt"}' --yes`.
-The trailing newline is stripped and the password is never printed or logged.
+The file must not be readable by group or others (`chmod 600`). The trailing
+newline is stripped and the password is never printed or logged.
+This needs a Mammoth with PRD-656. On an older one the password is ignored: the
+CLI reads the share back, and unless `options.has_password` is true it exits
+non-zero with `unsupported_by_server` and puts the earlier share back (the
+error says whether it did; if not, run
+`mammoth dashboard share ID --input '{"type_of_auth": "mammoth"}' --yes`).
 Sharing as `password` again without `password_file` keeps the old password;
 `dashboard get` shows `options.has_password: true`, never the password. To undo,
 share as `mammoth` or `public` again. Viewers enter the password on the link.

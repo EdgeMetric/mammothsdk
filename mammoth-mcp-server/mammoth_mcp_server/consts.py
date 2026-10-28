@@ -57,8 +57,10 @@ UPLOAD_POLL_SECONDS = 1.0
 # target after that, while it reads "processing".
 APPEND_WAIT_SECONDS = 20.0
 APPEND_POLL_SECONDS = 1.0
-# The batch listing is paged this many rows at a time.
-BATCH_PAGE = 100
+# The mode each batch was added under is kept this long, per batch. A batch
+# whose record has gone is refused by `undo`, never guessed at.
+BATCH_MODE_KIND = "batchmode"
+BATCH_MODE_SECONDS = 90 * 24 * 60 * 60
 # Connecting a source takes the user two or three minutes in Mammoth, so the
 # watch for the new connection runs for five. One tool call cannot hold that
 # long: Claude gives up on a call well inside a minute (a 40-second hold was cut
@@ -173,23 +175,11 @@ class AppendFields:
     # The route's batch list, and what a batch is told apart by.
     BATCHES = "batches"
     BATCH_FIELDS = ("id", "name", "status", "created_at", "created_by", "source")
-    SOURCE = "source"
-    SOURCE_NAMES = ("file_name", "name", "ds_name")
-    # The stored settings and the dataset's counts.
-    DATA_ADDITION_MODE = "data_addition_mode"
-    SCHEMA_MAPPING = "schema_mapping"
-    STATS = "stats"
-    ROW_COUNT = "row_count"
-    # What the plan taken before the files were sent holds.
-    TARGET = "target"
     PREVIOUS_MODE = "previous_mode"
     ROWS_BEFORE = "rows_before"
-    BATCH_IDS_BEFORE = "batch_ids_before"
     # What an upload into a dataset, and `get_dataset`, report.
     APPENDED_TO = "appended_to"
     UPDATE_METHOD = "update_method"
-    EFFECT = "effect"
-    MODE_CHANGED = "mode_changed"
     ROWS_AFTER = "rows_after"
     ROWS_ADDED = "rows_added"
     BATCH_ID = "batch_id"
@@ -199,6 +189,10 @@ class AppendFields:
     NEXT_STEP = "next_step"
     NOTES = "notes"
     REMOVED = "removed"
+    REMOVABLE = "removable"
+    MODE = "mode"
+    ERROR = "error"
+    BATCHES_ERROR = "batches_error"
 
 
 class UploadReportFields:

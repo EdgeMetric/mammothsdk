@@ -161,12 +161,14 @@ async def get_dataset(
         dataset_id: Which dataset to read.
         include_batches: Also report the `update_method` and the `batches`,
             each file or dataset added to this one with its `id`. `undo` with
-            what="batch" removes a batch, on a dataset that adds.
+            what="batch" removes a batch that was added under "add".
 
     Returns:
         The dataset, under the key `dataset`, with the page in Mammoth it opens
         on as `mammoth_url`. With `include_batches`, `update_method` (`mode`,
-        `effect`, `schema_mapping`) and `batches` with their `total`.
+        `effect`, `schema_mapping`; `mode` is null with an `error` when it cannot be
+        read) and `batches` with their `total`, each with `removable`: whether `undo`
+        will remove it (only a batch an upload through this server added under "add").
     """
     async with build_client(workspace_id) as client:
         read = await read_sdk_errors(

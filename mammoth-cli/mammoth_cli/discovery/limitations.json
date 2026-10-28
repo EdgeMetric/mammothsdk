@@ -123,6 +123,28 @@
         "twbx",
         "pbix"
       ]
+    },
+    {
+      "id": "dashboard-password-share",
+      "area": "dashboard sharing",
+      "limitation": "Sharing a dashboard behind a password needs a Mammoth server with PRD-656. An older server ignores the password, so the CLI reads the share back, refuses with unsupported_by_server and puts the earlier share back.",
+      "instead": "On an older server share the dashboard with each person by email, or set the password in the Mammoth app.",
+      "workarounds": [
+        {
+          "command_id": "dashboard.share",
+          "example": "mammoth dashboard share DASHBOARD_ID --input '{\"type_of_auth\": \"mammoth\", \"users\": [{\"email\": \"colleague@example.com\"}]}' --yes"
+        }
+      ],
+      "doc": "references/recipes/dashboards.md",
+      "keywords": [
+        "dashboard",
+        "share",
+        "password",
+        "protect",
+        "link",
+        "public",
+        "private"
+      ]
     }
   ]
 }

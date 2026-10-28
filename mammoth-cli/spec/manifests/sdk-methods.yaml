@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 895
+method_count: 902
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -1330,6 +1330,98 @@ methods:
   canonical_command: annotation.update
   alias_of: null
   no_command_reason: null
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.append
+  implementation_origin: mammoth.api.appends.AppendsAPI.append
+  signature: 'append(self, files: ''_list[str | Path | BinaryIO] | str | Path | BinaryIO'', dataset_id:
+    ''int'', mode: ''str | None'' = None, folder_resource_id: ''str | int | None'' = None, override_target_schema:
+    ''bool | None'' = None, timeout: ''int'' = 300, wait_seconds: ''float'' = 120.0, poll_seconds: ''float''
+    = 5.0) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.finish
+  implementation_origin: mammoth.api.appends.AppendsAPI.finish
+  signature: 'finish(self, plan: ''dict[str, Any]'', file_names: ''_list[str]'', staging_ids: ''_list[int]
+    | None'' = None, wait_seconds: ''float'' = 120.0, poll_seconds: ''float'' = 5.0, project_id: ''int
+    | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.list_batches
+  implementation_origin: mammoth.api.appends.AppendsAPI.list_batches
+  signature: 'list_batches(self, dataset_id: ''int'', project_id: ''int | None'' = None) -> ''_list[dict[str,
+    Any]]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.prepare
+  implementation_origin: mammoth.api.appends.AppendsAPI.prepare
+  signature: 'prepare(self, dataset_id: ''int'', mode: ''str | None'' = None, project_id: ''int | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.read_mode
+  implementation_origin: mammoth.api.appends.AppendsAPI.read_mode
+  signature: 'read_mode(self, dataset_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.restore_mode
+  implementation_origin: mammoth.api.appends.AppendsAPI.restore_mode
+  signature: 'restore_mode(self, plan: ''dict[str, Any]'', project_id: ''int | None'' = None) -> ''str
+    | None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.appends.AppendsAPI.rows
+  implementation_origin: mammoth.api.appends.AppendsAPI.rows
+  signature: 'rows(self, dataset_id: ''int'', project_id: ''int | None'' = None) -> ''int | None'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
   mutation_class: null
   wait_policy: null
   pagination_policy: null

@@ -37,6 +37,8 @@ from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_UNSUPPORTED_BY_SERVER,
+    EXIT_API,
     EXIT_USAGE,
     CliError,
 )
@@ -454,12 +456,91 @@ def dashboard_share(invocation: Invocation) -> HandlerResult:
             action=f"share dashboard {dashboard_id}{unpublished}"
             + _board_findings(invocation, service, auth, dashboard_id),
         )
+        previous = _share_readback(service, dashboard_id)["share"] if password_file else None
         data = service.call(_symbol(invocation), **kwargs)
-        if data is None:
+        if data is None or password_file:
             # The route answers 200 with no body, so the result was ``data: null`` and
             # the caller could not see whether the share took. Read it back.
             data = _share_readback(service, dashboard_id)
+        if password_file:
+            _require_stored_password(service, invocation, dashboard_id, data["share"], previous)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _require_stored_password(
+    service: Any,
+    invocation: Invocation,
+    dashboard_id: int,
+    share: Any,
+    previous: Any,
+) -> None:
+    """Fail loud when a password share left a board that has no password, and put it back.
+
+    A Mammoth without PRD-656 stores only the kind of sharing and ignores the password, so
+    the share reports success on a board that is now type ``password`` with no password.
+
+    Args:
+        service: The open SDK service.
+        invocation: The running ``dashboard share`` command.
+        dashboard_id: The shared dashboard.
+        share: The share as read back after the call.
+        previous: The share as read before the call, for the restore.
+
+    Raises:
+        CliError: ``unsupported_by_server`` when the stored share is not a password share
+            with ``options.has_password`` true; the message says whether the previous
+            share was restored.
+    """
+    options = share.get("options") if isinstance(share, dict) else None
+    stored = isinstance(options, dict) and options.get("has_password") is True
+    if isinstance(share, dict) and share.get("type_of_auth") == "password" and stored:
+        return
+    restored = _restore_share(service, invocation, dashboard_id, previous)
+    outcome = (
+        "The previous sharing was put back."
+        if restored
+        else (
+            f"The board is now type password with no password; switch it back with: mammoth "
+            f'dashboard share {dashboard_id} --input \'{{"type_of_auth": "mammoth"}}\' --yes'
+        )
+    )
+    raise CliError(
+        code=CODE_UNSUPPORTED_BY_SERVER,
+        message=(
+            "This Mammoth does not store a share password yet (PRD-656), so the password "
+            f"was not set. {outcome}"
+        ),
+        exit_status=EXIT_API,
+        hint="Ask for a Mammoth release with PRD-656, or share by email with type_of_auth mammoth.",
+        details={"dashboard_id": dashboard_id, "share_restored": restored},
+    )
+
+
+def _restore_share(service: Any, invocation: Invocation, dashboard_id: int, previous: Any) -> bool:
+    """Put a board's earlier share back, best effort.
+
+    Args:
+        service: The open SDK service.
+        invocation: The running ``dashboard share`` command.
+        dashboard_id: The dashboard.
+        previous: The share read before the change (``None`` when it had none).
+
+    Returns:
+        True when the share was written back and read back as the earlier kind.
+    """
+    previous = previous if isinstance(previous, dict) else {}
+    kind = previous.get("type_of_auth") or "mammoth"
+    kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "type_of_auth": kind}
+    options = previous.get("options")
+    users = options.get("users") if isinstance(options, dict) else None
+    if kind == "mammoth":
+        kwargs["users"] = users if isinstance(users, list) else []
+    try:
+        service.call(_symbol(invocation), **kwargs)
+        now = _share_readback(service, dashboard_id)["share"]
+    except Exception:
+        return False
+    return isinstance(now, dict) and now.get("type_of_auth") == kind
 
 
 def refuse_viewer_share_before_publish(

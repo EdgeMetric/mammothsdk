@@ -12,10 +12,11 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import json
-import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+from mammoth.api.appends import APPEND_WAIT_S
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view.upload import upload_preview
@@ -43,7 +44,6 @@ from mammoth_cli.services import update_method
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.delete_check import ensure_deleted
 from mammoth_cli.services.paging import listing_with_paging
-from mammoth_cli.services.poll import poll_delays
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -311,47 +311,24 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # files the server refused, which the bare id list of ``upload`` drops.
         target = kwargs.get("append_to_ds_id")
         project_id = resolved_project(invocation)
-        mode_change: dict[str, Any] | None = None
-        previous_mode: str | None = None
-        if wanted_mode is not None and target is not None:
-            set_args = {"dataset_id": target, "mode": wanted_mode, "project_id": project_id}
-            if invocation.dry_run:
+        appended: dict[str, Any] = {}
+        if target is not None:
+            if wanted_mode is not None and invocation.dry_run:
                 # Report the mode change beside the upload the gate stops at, without making it.
-                plan_call(service, update_method.SET_SYMBOL, set_args)
-                mode_in_effect: dict[str, Any] | None = {
-                    "mode": "add" if wanted_mode == "combine" else wanted_mode,
-                    "effect": update_method.EFFECTS[wanted_mode],
-                }
-            else:
-                # The backend reads the dataset's mode when the file lands, so set it first.
-                changed = service.call(update_method.SET_SYMBOL, **set_args)
-                mode_change = update_method.describe(changed, target)
-                previous_mode = mode_change.get("previous_mode")
-                mode_in_effect = mode_change
+                plan_call(
+                    service,
+                    update_method.SET_SYMBOL,
+                    {"dataset_id": target, "mode": wanted_mode, "project_id": project_id},
+                )
+            outcome = _append(service, kwargs, target, wanted_mode)
+            appended = {key: outcome.pop(key) for key in _APPEND_REPORT_FIELDS if key in outcome}
+            data = [target] if outcome["dataset_ids"] else []
         else:
-            # No mode asked for: the dataset's stored mode decides whether the upload adds a
-            # batch or replaces the rows, and the undo depends on which.
-            mode_in_effect = _stored_mode(service, target, project_id) if target else None
-        rows_before = _dataset_rows(service, target) if target is not None else None
-        batches_before = _batch_rows(service, target, project_id) if target is not None else None
-        try:
             outcome = service.call(_UPLOAD_RESULT_SYMBOL, **kwargs)
-            data = (
-                [target]
-                if target is not None and outcome["dataset_ids"]
-                else outcome["dataset_ids"]
-            )
-            if target is not None and data:
-                # The upload job ends when the staging dataset is made; the rows reach the
-                # target after that, while it reads 'processing' (found by recipe run, live).
-                target_ready = _wait_until_ready(service, target)
-            refused = _refused_files(outcome.get("errors"))
-            if outcome.get("errors") and not data:
-                raise _upload_refused_error(outcome["errors"], refused)
-        except Exception as failure:
-            if mode_change is not None and target is not None:
-                _restore_mode(service, failure, target, previous_mode, project_id)
-            raise
+            data = outcome["dataset_ids"]
+        refused = _refused_files(outcome.get("errors"))
+        if outcome.get("errors") and not data:
+            raise _upload_refused_error(outcome["errors"], refused)
         # A finished upload job does not mean a usable dataset: a CSV with an
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
@@ -361,54 +338,13 @@ def file_upload(invocation: Invocation) -> HandlerResult:
             files=outcome.get("files"),
         )
         warnings: list[str] = []
-        if mode_change is not None:
-            warnings.append(
-                f"Dataset {target} now has the update method '{mode_change['mode']}', and it "
-                "keeps it: every later upload into it follows it too."
-            )
-        if target is not None and data:
-            result["update_method"] = _update_method_entry(mode_in_effect)
-            if mode_in_effect is None:
-                warnings.append(
-                    f"The update method of dataset {target} could not be read, so it is not "
-                    "known whether this upload added a batch or replaced the rows; "
-                    "'history undo' will not delete anything for it."
-                )
         if target is not None and data:
             # The upload made a staging dataset the backend already deleted; the result is
             # the dataset the rows were appended to. The batch it added is what to undo.
-            rows_after = _dataset_rows(service, target)
-            result["appended_to"] = target
+            result.update(appended)
             # Deprecated: kept for one more release; read ``batch_ids`` or ``appended_to``.
             result["staging_dataset_ids"] = list(outcome["dataset_ids"])
-            ours, unmatched = _batches_of_upload(
-                batches_before or [],
-                _batch_rows(service, target, project_id),
-                _sent_names(kwargs.get("files")),
-                outcome["dataset_ids"],
-            )
-            result["batch_ids"] = ours
-            if unmatched:
-                result["unmatched_batch_ids"] = unmatched
-                warnings.append(
-                    f"Batches {unmatched} appeared in dataset {target} during the upload but "
-                    "none could be tied to the uploaded file by name, so they are not listed "
-                    "in batch_ids and 'history undo' will not delete them."
-                )
-            if rows_before is not None and rows_after is not None:
-                result.update(
-                    rows_before=rows_before,
-                    rows_after=rows_after,
-                    rows_added=rows_after - rows_before,
-                )
-        if target is not None and data and not target_ready:
-            # The rows may still be on their way: rows_added is what had landed by now.
-            result["append_pending"] = True
-            warnings.append(
-                f"Dataset {target} was still processing after {_APPEND_WAIT_S:.0f} s, so the "
-                f"appended rows may not be in it yet. Check with 'mammoth dataset get {target}' "
-                "before using it."
-            )
+            warnings.extend(_append_warnings(target, appended))
         if refused:
             warnings.append(_upload_refused_message(outcome["errors"], refused))
             result["refused_files"] = refused
@@ -448,166 +384,105 @@ def file_upload(invocation: Invocation) -> HandlerResult:
     return result, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
-_BATCH_LIST_SYMBOL = "mammoth.api.batches.BatchesAPI.list"
 _EXTRACT_SHEETS_SYMBOL = "mammoth.api.files.FilesAPI.extract_sheets"
-_BATCH_PAGE = 100
+_APPEND_SYMBOL = "mammoth.api.appends.AppendsAPI.append"
+#: What ``AppendsAPI.append`` reports about the dataset, beside the upload job's own fields.
+_APPEND_REPORT_FIELDS = (
+    "appended_to",
+    "update_method",
+    "rows_before",
+    "rows_after",
+    "rows_added",
+    "batch_ids",
+    "unmatched_batch_ids",
+    "append_pending",
+    "batches_error",
+)
 
 
-def _batch_rows(service: Any, dataset_id: int, project_id: int | None) -> list[dict[str, Any]]:
-    """Every batch row of a dataset, in listing order, paging through the listing.
-
-    Args:
-        service: The SDK service.
-        dataset_id: The dataset whose batches to read.
-        project_id: The active project, or None for the client default.
-
-    Returns:
-        The batch rows (each with an int ``id``); empty when the listing cannot be read.
-    """
-    found: list[dict[str, Any]] = []
-    offset = 0
-    while True:
-        kwargs: dict[str, Any] = {"dataset_id": dataset_id, "limit": _BATCH_PAGE, "offset": offset}
-        if project_id is not None:
-            kwargs["project_id"] = project_id
-        try:
-            response = service.call(_BATCH_LIST_SYMBOL, **kwargs)
-        except CliError:
-            return found
-        rows = response.get("batches") if isinstance(response, dict) else response
-        rows = rows if isinstance(rows, list) else []
-        seen = {row["id"] for row in found}
-        found.extend(
-            r
-            for r in rows
-            if isinstance(r, dict) and isinstance(r.get("id"), int) and r["id"] not in seen
-        )
-        if len(rows) < _BATCH_PAGE:
-            return found
-        offset += _BATCH_PAGE
-
-
-def _sent_names(files: Any) -> list[str]:
-    """The base names of the files an upload sends (paths, or file objects with a name)."""
-    names: list[str] = []
-    for item in files if isinstance(files, list) else [files]:
-        raw = item if isinstance(item, (str, Path)) else getattr(item, "name", None)
-        if isinstance(raw, (str, Path)) and str(raw):
-            names.append(Path(str(raw)).name)
-    return names
-
-
-def _batch_labels(row: dict[str, Any]) -> set[str]:
-    """The lower-case names a batch row carries for its source: file name, name, dataset name."""
-    source = row.get("source")
-    source = source if isinstance(source, dict) else {}
-    labels = (source.get("file_name"), source.get("name"), source.get("ds_name"), row.get("name"))
-    return {Path(label).name.lower() for label in labels if isinstance(label, str) and label}
-
-
-def _batches_of_upload(
-    before: list[dict[str, Any]],
-    after: list[dict[str, Any]],
-    sent_names: list[str],
-    staging_ids: list[int],
-) -> tuple[list[int], list[int]]:
-    """Tell the batches this upload added from the ones that merely appeared meanwhile.
-
-    The backend appends a staging dataset into the target and records it as the batch's
-    source, so a new batch is this upload's only when its source names a file this upload
-    sent (or the staging dataset made from it). Any other new batch (a folder automation,
-    another user) is reported apart and never put up for undo.
-
-    Args:
-        before: The batch rows before the upload.
-        after: The batch rows after it.
-        sent_names: Base names of the files sent.
-        staging_ids: The staging dataset ids the upload job made.
-
-    Returns:
-        ``(batch ids of this upload, new batch ids that could not be tied to it)``.
-    """
-    known = {row["id"] for row in before}
-    new = [row for row in after if row["id"] not in known]
-    wanted = {name.lower() for name in sent_names} | {Path(n).stem.lower() for n in sent_names}
-    ours: list[int] = []
-    unmatched: list[int] = []
-    for row in new:
-        source = row.get("source")
-        linked = isinstance(source, dict) and source.get("datasource_id") in staging_ids
-        if (
-            linked
-            or _batch_labels(row) & wanted
-            or {Path(n).stem for n in _batch_labels(row)} & wanted
-        ):
-            ours.append(row["id"])
-        else:
-            unmatched.append(row["id"])
-    return ours, unmatched
-
-
-def _stored_mode(service: Any, dataset_id: int, project_id: int | None) -> dict[str, Any] | None:
-    """The dataset's stored update method as ``update_method.describe`` shapes it, or None.
+def _append(
+    service: Any, kwargs: dict[str, Any], target: int, wanted_mode: str | None
+) -> dict[str, Any]:
+    """Upload into a dataset with the SDK's append: mode, rows, batches and the wait are its.
 
     Args:
         service: The SDK service.
-        dataset_id: The dataset an upload appends to.
-        project_id: The active project, or None.
+        kwargs: The bound upload inputs (``files``, ``append_to_ds_id``, ...).
+        target: The dataset the files are added to.
+        wanted_mode: The stored mode asked for, or None to keep the dataset's own.
 
     Returns:
-        The described mode; None when the read fails, so the caller does not guess.
+        ``AppendsAPI.append``'s answer: the upload job's fields and the append report.
+
+    Raises:
+        CliError: The SDK's failure; a refusal of the files by the server is raised as the
+            upload-refused error, and a mode that stayed is named in ``update_method_kept``.
     """
+    arguments = {
+        key: value for key, value in kwargs.items() if key not in ("append_to_ds_id", "files")
+    }
+    arguments.pop("wait_for_completion", None)
     try:
-        stored = service.call(
-            update_method.GET_SYMBOL, dataset_id=dataset_id, project_id=project_id
+        outcome: dict[str, Any] = service.call(
+            _APPEND_SYMBOL,
+            files=kwargs["files"],
+            dataset_id=target,
+            mode=wanted_mode,
+            **arguments,
         )
-    except CliError:
-        return None
-    return update_method.describe(stored, dataset_id)
+        return outcome
+    except CliError as failure:
+        errors = failure.details.get("errors")
+        if not (isinstance(errors, dict) and errors):
+            raise
+        refusal = _upload_refused_error(errors, _refused_files(errors))
+        if failure.details.get("update_method_kept"):
+            refusal.details["update_method_kept"] = failure.details["update_method_kept"]
+        raise refusal from failure
 
 
-def _update_method_entry(mode: dict[str, Any] | None) -> dict[str, Any]:
-    """The result's ``update_method``: the mode in effect for the upload, or unknown."""
-    if mode is None:
-        return {"mode": None, "effect": "Unknown: the dataset's update method could not be read."}
-    entry: dict[str, Any] = {"mode": mode["mode"], "effect": mode["effect"]}
-    if mode.get("previous_mode") is not None:
-        entry["previous_mode"] = mode["previous_mode"]
-    return entry
-
-
-def _restore_mode(
-    service: Any,
-    failure: Exception,
-    dataset_id: int,
-    previous_mode: str | None,
-    project_id: int | None,
-) -> None:
-    """Put the dataset's update method back after the upload that needed it failed.
+def _append_warnings(target: int, appended: dict[str, Any]) -> list[str]:
+    """The warnings an append's report calls for: the mode that stays, what is unknown.
 
     Args:
-        service: The SDK service.
-        failure: The error being raised; gains a note in its details when the mode stays.
-        dataset_id: The dataset whose mode was changed.
-        previous_mode: Its mode before the change (``add`` or ``replace``), or None.
-        project_id: The active project, or None.
+        target: The dataset the files were added to.
+        appended: The append report (``update_method``, ``unmatched_batch_ids``, ...).
+
+    Returns:
+        Plain sentences for the result's ``warnings``.
     """
-    note = (
-        f"Dataset {dataset_id} kept the new mode this upload gave it, because the old one "
-        "could not be restored"
-    )
-    try:
-        if previous_mode is None:
-            raise CliError(code="unknown", message="the previous mode is not known")
-        service.call(
-            update_method.SET_SYMBOL,
-            dataset_id=dataset_id,
-            mode=update_method.parse_mode(previous_mode),
-            project_id=project_id,
+    warnings: list[str] = []
+    entry = appended.get("update_method") or {}
+    if entry.get("previous_mode") is not None:
+        warnings.append(
+            f"Dataset {target} now has the update method '{entry['mode']}', and it "
+            "keeps it: every later upload into it follows it too."
         )
-    except CliError as restore_failure:
-        if isinstance(failure, CliError):
-            failure.details["update_method_kept"] = f"{note} ({restore_failure.message})."
+    if entry.get("mode") is None:
+        warnings.append(
+            f"The update method of dataset {target} could not be read "
+            f"({entry.get('error', 'no reason given')}), so it is not "
+            "known whether this upload added a batch or replaced the rows; "
+            "'history undo' will not delete anything for it."
+        )
+    if appended.get("unmatched_batch_ids"):
+        warnings.append(
+            f"Batches {appended['unmatched_batch_ids']} appeared in dataset {target} during the "
+            "upload but none could be tied to the uploaded file by name, so they are not listed "
+            "in batch_ids and 'history undo' will not delete them."
+        )
+    if appended.get("batches_error"):
+        warnings.append(
+            f"The batches of dataset {target} could not be read after the upload "
+            f"({appended['batches_error']}), so batch_ids is missing."
+        )
+    if appended.get("append_pending"):
+        warnings.append(
+            f"Dataset {target} was still processing after {APPEND_WAIT_S:.0f} s, so the "
+            f"appended rows may not be in it yet. Check with 'mammoth dataset get {target}' "
+            "before using it."
+        )
+    return warnings
 
 
 def _extract_chosen_sheets(service: Any, result: dict[str, Any], sheets: Any) -> None:
@@ -750,40 +625,6 @@ def _upload_refused_error(errors: dict[str, Any], refused: list[str]) -> CliErro
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"
-#: How long an append waits for its target dataset to finish taking the rows, and the
-#: longest gap between reads.
-_APPEND_WAIT_S = 120.0
-_APPEND_RETRY_S = 5.0
-
-
-def _dataset_rows(service: Any, dataset_id: int) -> int | None:
-    """The dataset's stored row count, or None when it cannot be read."""
-    try:
-        response = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id)
-    except CliError:
-        return None
-    dataset = response.get("dataset", response) if isinstance(response, dict) else {}
-    stats = dataset.get("stats") if isinstance(dataset, dict) else None
-    rows = stats.get("row_count") if isinstance(stats, dict) else None
-    return rows if isinstance(rows, int) else None
-
-
-def _wait_until_ready(service: Any, dataset_id: int) -> bool:
-    """Wait (up to ``_APPEND_WAIT_S``) until the dataset reads ``ready`` or failed.
-
-    Args:
-        service: The SDK service.
-        dataset_id: The dataset an append writes into.
-
-    Returns:
-        True when the dataset settled (ready or failed), False when the wait ran out.
-    """
-    for delay in poll_delays(_APPEND_WAIT_S, _APPEND_RETRY_S):
-        status = _dataset_status(service, dataset_id)[0]
-        if status == "ready" or status in _UPLOAD_FAILED_STATUSES:
-            return True
-        time.sleep(delay)
-    return False
 
 
 def _dataset_status(service: Any, dataset_id: int) -> tuple[str, dict[str, Any] | None, str | None]:

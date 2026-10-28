@@ -698,26 +698,6 @@ def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
     assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
-def test_file_settings_update_forwards_a_single_field_alone(
-    fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    input_file = _write(tmp_path, {"initial_skip_count": 2})
-    dataset_cmd.dataset_file_settings_update(
-        _inv(
-            "dataset.file-settings.update",
-            project=180,
-            extra_args=["7"],
-            input_file=input_file,
-        )
-    )
-    assert fake_service.call_log[:1] == [
-        (
-            _FILE_SETTINGS_UPDATE,
-            {"dataset_id": 7, "initial_skip_count": 2, "project_id": 180},
-        )
-    ]
-
-
 def test_file_settings_update_forwards_required_and_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

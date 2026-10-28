@@ -38,6 +38,8 @@ _SETTLE_S = 60.0
 _SETTLE_POLL_S = 1.0
 #: How many of the project's newest files to read for an upload's own.
 _NEWEST_FILES = 50
+#: Pages of the file list read to find every file id of one upload.
+_FILE_PAGES = 10
 #: Allowance for the gap between this machine's clock and the server's.
 _CLOCK_SKEW = timedelta(minutes=5)
 
@@ -244,13 +246,17 @@ class FilesAPI:
         Mammoth's own ``user_action_required`` type (``sheet_selection_required`` with
         ``sheets_info`` for a workbook, ``password_required``, ...) or ``None``.
 
-        A file is matched to this upload by its name
-        among the project's 50 newest files, made no earlier than 5 minutes before the
-        upload was sent: the file listing carries no job or batch id (only ``created_by``,
-        a user name). A same-named file uploaded within those 5 minutes can be taken for
-        this one, and a file pushed out by more than 50 newer ones is not found. When the
-        listing could not be read, ``files`` stays empty and ``files_error`` holds the
-        message.
+        A file is matched to this upload by the ``file_object_id`` the upload job lists for
+        each file in its ``job_ids`` (the file's ``object_id`` in the project's file list),
+        so a same-named earlier or concurrent upload is never taken for it; the list is
+        paged (up to 10 pages of 50) until every id is found. Only when the job lists no
+        ``file_object_id`` (an older server) does it fall back to the name among the newest
+        50 files, made no earlier than the upload JOB's own server-side ``created_at`` (or,
+        when the job carries none, 5 minutes before the upload was sent). That fallback
+        cannot do better: the file list's ``created_by`` is a user name and carries no
+        job, batch or folder id, so a same-named file made after the job started by the
+        same user can still be taken for this one. When the listing could not be read,
+        ``files`` stays empty and ``files_error`` holds the message.
 
         Each file becomes a separate dataset. Folder structure is preserved.
 
@@ -334,6 +340,7 @@ class FilesAPI:
             errors = job_response.get("errors")
             outcome["errors"] = errors if isinstance(errors, dict) else {}
             nested_job_ids = job_response.get("job_ids", [])
+            job_started = _created_at(completed_initial_job.get("created_at"))
 
             if not nested_job_ids:
                 return outcome
@@ -356,7 +363,12 @@ class FilesAPI:
                 try:
                     outcome["files"] = await self._waiting_files(
                         [part[0] for _, part in file_data],
-                        sent_at,
+                        [
+                            int(info["file_object_id"])
+                            for info in nested_job_ids
+                            if isinstance(info, dict) and info.get("file_object_id") is not None
+                        ],
+                        job_started or sent_at - _CLOCK_SKEW,
                         min(float(timeout), _SETTLE_S),
                     )
                 except MammothAPIError as exc:
@@ -365,16 +377,18 @@ class FilesAPI:
         return outcome
 
     async def _waiting_files(
-        self, names: _list[str], sent_at: datetime, timeout: float
+        self, names: _list[str], file_ids: _list[int], since: datetime, timeout: float
     ) -> _list[dict[str, Any]]:
-        """The newest file of each uploaded name, made since the upload, that made no dataset.
+        """The uploaded files that made no dataset, once none is still being read.
 
         A workbook's job ends before its sheets are read, so this waits (up to
         ``timeout``) until no such file is still being read.
 
         Args:
-            names: The names the files were uploaded under.
-            sent_at: When the upload was sent.
+            names: The names the files were uploaded under (the fallback match).
+            file_ids: The file object ids the upload job listed; when non-empty they
+                are the match and ``names`` and ``since`` are not used.
+            since: The earliest ``created_at`` a name-matched file may have.
             timeout: Longest wait, in seconds, for the files to settle.
 
         Returns:
@@ -382,7 +396,7 @@ class FilesAPI:
         """
         deadline = asyncio.get_running_loop().time() + timeout
         while True:
-            found = await self._uploaded_files(names, sent_at)
+            found = await self._uploaded_files(names, file_ids, since)
             busy = any(
                 entry["status"] in _BUSY_FILE_STATUSES and not entry["action_needed"]
                 for entry in found
@@ -396,29 +410,46 @@ class FilesAPI:
             if entry["action_needed"] or entry["status"] not in _FINISHED_FILE_STATUSES
         ]
 
-    async def _uploaded_files(self, names: _list[str], sent_at: datetime) -> _list[dict[str, Any]]:
-        """The newest project file of each name in ``names`` made since ``sent_at``.
+    async def _uploaded_files(
+        self, names: _list[str], file_ids: _list[int], since: datetime
+    ) -> _list[dict[str, Any]]:
+        """The project files of this upload: by file object id, else by name since ``since``.
 
         Raises:
             MammothAPIError: If the project's file list cannot be read; the caller
                 reports it, since the upload itself went through.
         """
-        listed = await self._client.browse.resources_list(
-            resource_type=_FILE_RESOURCE,
-            sort="created_at:desc",
-            limit=_NEWEST_FILES,
-            fields="full",
-        )
+        by_id = bool(file_ids)
+        wanted_ids = set(file_ids)
         wanted = set(names)
         found: _list[dict[str, Any]] = []
-        for item in listed.get("resources") or []:
-            if not isinstance(item, dict) or item.get("name") not in wanted:
-                continue
-            created = _created_at(item.get("created_at"))
-            if created is None or created < sent_at - _CLOCK_SKEW:
-                continue
-            wanted.discard(item["name"])
-            found.append(_waiting_file(item))
+        cursor: str | None = None
+        for _ in range(_FILE_PAGES if by_id else 1):
+            listed = await self._client.browse.resources_list(
+                resource_type=_FILE_RESOURCE,
+                sort="created_at:desc",
+                limit=_NEWEST_FILES,
+                fields="full",
+                cursor=cursor,
+            )
+            for item in listed.get("resources") or []:
+                if not isinstance(item, dict):
+                    continue
+                if by_id:
+                    if item.get("object_id") in wanted_ids:
+                        wanted_ids.discard(item["object_id"])
+                        found.append(_waiting_file(item))
+                    continue
+                if item.get("name") not in wanted:
+                    continue
+                created = _created_at(item.get("created_at"))
+                if created is None or created < since:
+                    continue
+                wanted.discard(item["name"])
+                found.append(_waiting_file(item))
+            cursor = listed.get("next_cursor")
+            if (by_id and not wanted_ids) or not listed.get("has_more") or not cursor:
+                break
         return found
 
     async def upload_folder(

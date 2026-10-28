@@ -620,6 +620,7 @@ if TYPE_CHECKING:
 # module and its models at ``import mammoth.client`` time.
 SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "files": ("mammoth.api.files", "FilesAPI"),
+    "appends": ("mammoth.api.appends", "AppendsAPI"),
     "jobs": ("mammoth.api.jobs", "JobsAPI"),
     "exports": ("mammoth.api.exports", "ExportsAPI"),
     "workspaces": ("mammoth.api.workspace", "WorkspaceAPI"),

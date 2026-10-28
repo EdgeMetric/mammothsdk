@@ -3,26 +3,25 @@
 The platform stores it as ``data_addition_mode`` (``replace`` or ``combine``) in the
 dataset's schema settings; the web app calls it the dataset's "Update Method". Every
 upload into the dataset (``file upload`` with ``append_to_ds_id``) and every folder
-automation feeding it follows it.
+automation feeding it follows it. The words, their effects and the reading of the stored
+value are the SDK's (``mammoth.appends``); this module only turns them into CLI results
+and errors.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from mammoth.appends import (
+    UnknownUpdateMethodError,
+    describe_update_method,
+    stored_mode,
+    unknown_update_method,
+)
+
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 
-GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get_update_method"
 SET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.set_update_method"
-
-#: The words a caller may use for each stored mode.
-_MODES = {"replace": "replace", "add": "combine", "combine": "combine", "append": "combine"}
-
-#: What each stored mode does to the next file, said plainly.
-EFFECTS = {
-    "replace": "Each new file replaces the dataset's rows.",
-    "combine": "Each new file adds its rows to the dataset's rows.",
-}
 
 
 def parse_mode(value: Any) -> str:
@@ -37,8 +36,9 @@ def parse_mode(value: Any) -> str:
     Raises:
         CliError: ``invalid_argument`` when the value is not one of the accepted words.
     """
-    mode = _MODES.get(str(value).strip().lower()) if isinstance(value, str) else None
-    if mode is None:
+    try:
+        return stored_mode(value)
+    except UnknownUpdateMethodError:
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
             message=f"'mode' must be 'replace' or 'add', got {value!r}.",
@@ -48,8 +48,7 @@ def parse_mode(value: Any) -> str:
                 "to the rows already there."
             ),
             details={"field": "mode", "accepted": ["replace", "add"]},
-        )
-    return mode
+        ) from None
 
 
 def describe(result: Any, dataset_id: int) -> dict[str, Any]:
@@ -64,24 +63,11 @@ def describe(result: Any, dataset_id: int) -> dict[str, Any]:
     Returns:
         ``{"dataset_id", "mode", "effect", "schema_mapping"}``, plus ``previous_mode``
         after a change. ``mode`` is ``add`` or ``replace``; a dataset with nothing stored
-        reads as the platform default, ``add``.
+        reads as the platform default, ``add``. A stored mode this CLI does not know reads
+        as ``mode: null`` with the reason in ``error``: it is reported, never guessed.
     """
-    body = result if isinstance(result, dict) else {}
-    settings = body.get("schema_settings", body)
-    stored = body.get("data_addition_mode") or "combine"
-    shaped: dict[str, Any] = {
-        "dataset_id": dataset_id,
-        "mode": _word(stored),
-        "effect": EFFECTS.get(stored, ""),
-        "schema_mapping": settings.get("schema_mapping") if isinstance(settings, dict) else None,
-    }
-    if "previous_data_addition_mode" in body:
-        previous = body.get("previous_data_addition_mode") or "combine"
-        shaped["previous_mode"] = _word(previous)
-        shaped["changed"] = previous != stored
-    return shaped
-
-
-def _word(stored: str) -> str:
-    """The caller's word for a stored mode: ``combine`` reads as ``add``."""
-    return "add" if stored == "combine" else stored
+    try:
+        shaped = describe_update_method(result)
+    except UnknownUpdateMethodError as unknown:
+        shaped = unknown_update_method(str(unknown))
+    return {"dataset_id": dataset_id, **shaped}

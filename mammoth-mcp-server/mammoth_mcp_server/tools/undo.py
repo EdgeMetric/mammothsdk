@@ -11,8 +11,10 @@ What can be taken back:
 - A file added to a dataset that adds (its update method is "add") is a batch.
   `undo` with what="batch" removes the batches and their rows; the batches are
   listed by `get_dataset` with `include_batches`, and `upload_file` and
-  `check_upload` report the batch of an upload. A dataset that replaces has no
-  batch to remove: the old rows are gone.
+  `check_upload` report the batch of an upload. Only a batch this server saw added
+  under "add" is removed: one added under "replace", one added elsewhere, and all
+  the batches a dataset has at once are refused. A replace has no batch to remove:
+  the old rows are gone.
 
 A deleted file or export, and rows already sent out, are not in the trash.
 
@@ -24,7 +26,7 @@ from typing import Literal, TypedDict
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..appends import NO_BATCH_TO_REMOVE, read_rows, rows_of, word_of
+from ..appends import forget_batch_modes, recall_batch_modes, refuse_batch_removal
 from ..consts import AppendFields, PageFields, PipelineFields, TrashFields, VersionFields
 from ..jobs import JobStillRunning, job_id_of, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
@@ -142,8 +144,9 @@ async def undo(
     Ask the user first. Putting a pipeline back replaces its steps with the
     version's, and the view runs again. Removing a batch deletes the rows that
     file added to the dataset, and cannot itself be taken back: the file has to
-    be uploaded again. It only exists on a dataset that adds; on one that
-    replaces the old rows are already gone, and this refuses.
+    be uploaded again. It only removes a batch that an upload added under "add":
+    one added under "replace", or not recorded as added by an upload through
+    this server, is refused, and so is removing every batch of a dataset.
 
     Args:
         workspace_id: Which workspace the project is in.
@@ -222,7 +225,11 @@ async def put_pipeline_back(
 async def remove_batches(
     workspace_id: int, project_id: int, dataset_id: int, batch_ids: list[int]
 ) -> dict[str, JsonValue]:
-    """Remove batches from a dataset that adds, and report the rows before and after.
+    """Remove batches this server recorded as added, and report the rows before and after.
+
+    What a batch was added under is read from the record made when it was uploaded, never
+    from the dataset's mode now: a dataset switched to "add" after a replace still holds
+    batches whose rows it depends on.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -234,18 +241,16 @@ async def remove_batches(
         The `removed` ids, and `rows_before` and `rows_after` when they can be read.
 
     Raises:
-        ToolError: If the dataset replaces its rows, so no batch of it can be
-            removed, or Mammoth refuses.
+        ToolError: If a batch has no record or was not added by an upload that adds, if
+            removing them would leave the dataset with no batch, or Mammoth refuses.
     """
     async with build_client(workspace_id, project_id) as client:
-        stored = await read_sdk_errors(
-            client.datasets.get_update_method(
-                dataset_id, workspace_id=workspace_id, project_id=project_id
-            )
-        )
-        if word_of(stored.get(AppendFields.DATA_ADDITION_MODE)) == "replace":
-            raise ToolError(NO_BATCH_TO_REMOVE)
-        before = rows_of(await read_rows(client, workspace_id, project_id, dataset_id))
+        existing = await read_sdk_errors(client.appends.list_batches(dataset_id))
+        recorded = await recall_batch_modes(workspace_id, dataset_id, batch_ids)
+        refusal = refuse_batch_removal(batch_ids, recorded, [int(row["id"]) for row in existing])
+        if refusal is not None:
+            raise ToolError(refusal)
+        before = await read_sdk_errors(client.appends.rows(dataset_id))
         started = await read_sdk_errors(
             client.batches.bulk_delete(dataset_id, batch_ids, project_id=project_id)
         )
@@ -254,8 +259,9 @@ async def remove_batches(
             await wait_for_job(workspace_id, started)
         except JobStillRunning as running:
             return still_running(running, STILL_REMOVING)
+    await forget_batch_modes(workspace_id, dataset_id, batch_ids)
     async with build_client(workspace_id, project_id) as client:
-        after = rows_of(await read_rows(client, workspace_id, project_id, dataset_id))
+        after = await read_sdk_errors(client.appends.rows(dataset_id))
     removed: list[JsonValue] = list(batch_ids)
     return {
         AppendFields.REMOVED: removed,

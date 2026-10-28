@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -54,38 +53,6 @@ def test_need_action_by_header_cause_points_at_interpretation() -> None:
     info = {"need_action": "Header row"}
     data = file_cmd._upload_result([58], lambda _id: ("need_action", info, None))
     assert data["datasets"][0]["next_command"] == "mammoth dataset interpretation preview 58"
-
-
-def _batch(batch_id: int, file_name: str | None = None, **source: Any) -> dict[str, Any]:
-    named = {"file_name": file_name} if file_name else {}
-    return {"id": batch_id, "name": "", "row_count": 1, "source": {**named, **source}}
-
-
-def test_only_the_batch_whose_source_is_the_sent_file_is_this_uploads() -> None:
-    before = [_batch(1, "old.csv")]
-    after = [_batch(1, "old.csv"), _batch(2, "a.csv"), _batch(3, "other.csv")]
-    ours, unmatched = file_cmd._batches_of_upload(before, after, ["a.csv"], [900])
-    assert ours == [2]
-    assert unmatched == [3]
-
-
-def test_names_are_compared_by_basename_and_case() -> None:
-    after = [_batch(2, "/tmp/x/A.CSV")]
-    assert file_cmd._batches_of_upload([], after, ["a.csv"], []) == ([2], [])
-
-
-def test_a_batch_from_the_staging_dataset_is_this_uploads() -> None:
-    after = [_batch(4, datasource_id=900)]
-    assert file_cmd._batches_of_upload([], after, ["a.csv"], [900]) == ([4], [])
-
-
-def test_new_batches_that_match_nothing_are_reported_not_claimed() -> None:
-    after = [_batch(5, type="cloud"), _batch(6)]
-    assert file_cmd._batches_of_upload([], after, ["a.csv"], [900]) == ([], [5, 6])
-
-
-def test_sent_names_take_the_basename_of_paths() -> None:
-    assert file_cmd._sent_names(["dir/a.csv", Path("b.csv")]) == ["a.csv", "b.csv"]
 
 
 def test_append_undo_deletes_each_batch_newest_first() -> None:

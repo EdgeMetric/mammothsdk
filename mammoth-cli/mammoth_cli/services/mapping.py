@@ -76,6 +76,10 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     endpoint = getattr(exc, "endpoint", None)
     if endpoint is not None:
         details["endpoint"] = _CLIENT_KEY_SEGMENT.sub(r"\1{client_key}", str(endpoint))
+    kept = exc.details.get("update_method_kept")
+    if kept:
+        # A mode an append set stayed on the dataset: the caller must be told.
+        details["update_method_kept"] = kept
     if exc.retry_after is not None:
         details["retry_after"] = exc.retry_after
     if exc.request_id is not None:

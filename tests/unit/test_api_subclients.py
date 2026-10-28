@@ -646,10 +646,11 @@ class TestDatasetsAPI:
             },
         )
 
-    async def test_set_update_method_rejects_an_unknown_mode(self, client: MammothClient):
+    async def test_set_update_method_rejects_an_unknown_mode(self):
+        # A real client with a dummy token and no server: the mode is refused before any request.
+        real = MammothClient(api_token="mm_dummy", workspace_id=1)
         with pytest.raises(MammothValidationError, match="'append'"):
-            await client.datasets.set_update_method(500, "append")
-        client._request_json.assert_not_called()
+            await real.datasets.set_update_method(500, "append")
 
     async def test_file_settings_update_rejects_nonpositive_dataset_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataset_id"):

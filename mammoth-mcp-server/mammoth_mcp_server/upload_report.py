@@ -133,7 +133,7 @@ NOTHING_TO_DO = {
         " waiting changes that: tell the user, and offer to delete it with"
         " delete_file so they can fix it and upload it again."
     ),
-    DatasetStatus.EMPTY: ("This file held no rows to read. Tell the user; it is theirs to fix."),
+    DatasetStatus.EMPTY: "This file held no rows to read. Tell the user; it is theirs to fix.",
 }
 STOPPED = (
     "This stopped before it was ready, and Mammoth did not say what it waits"
@@ -358,7 +358,7 @@ def describe_stop(item: Item, ticket: Record) -> Item:
     status = str(item[UploadFields.STATUS])
     return {
         UploadReportFields.ACTION: status,
-        UploadReportFields.NEXT_STEP: (f"{NOTHING_TO_DO.get(status, STOPPED)} {CARRY_ON}"),
+        UploadReportFields.NEXT_STEP: f"{NOTHING_TO_DO.get(status, STOPPED)} {CARRY_ON}",
         UploadReportFields.MAMMOTH_URL: project_url(ticket),
     }
 

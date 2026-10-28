@@ -1,55 +1,45 @@
 """Add a file to an existing dataset, see what was added, and take it back.
 
-A dataset has an update method (`data_addition_mode`, "Update Method" in the web
-app): "add" puts a new file's rows under the rows it holds, "replace" throws the
-old rows away and keeps the new ones. Every upload into the dataset follows it,
-so an upload that names a target also names the mode, and the mode is set
-before the files are sent: the backend reads it when the file lands.
+The reading, the mode, the matching and the report are the SDK's (`client.appends`,
+`mammoth.appends`): this module is the MCP side of them. It holds what is said to a model
+(what to call next, what stays), the record of the mode each batch was added under, and the
+rule that decides whether a batch may be removed.
 
-Adding a file makes a batch, which is what can be removed again. Replacing makes
-none worth removing: the old rows are gone. So this module keeps three things
-apart and reports them: the mode the upload ran under, the rows before and
-after, and the batches the upload added — told apart from batches that merely
-appeared meanwhile (a folder automation, another user) by their source naming
-the file that was sent.
+A dataset has an update method: "add" puts a new file's rows under the rows it holds,
+"replace" throws the old rows away and keeps the new ones. Adding a file makes a batch,
+which is what can be removed again. Removing a batch that a replace made would delete rows
+the dataset now depends on, so the mode in effect when each batch was made is recorded here
+at upload time, and `undo` removes only batches recorded as added.
 
-The upload tools and `check_upload` share it. `request_upload` sends the file
-later, from the browser, so what is read before the send travels in the ticket
-as plain data (`prepare_append` returns it).
+`request_upload` sends the file later, from the browser, so what is read before the send
+travels in the ticket as plain data (`prepare_append` returns it).
 """
 
-import asyncio
-import time
-from pathlib import PurePosixPath
+import io
+from collections.abc import Mapping, Sequence
 from typing import Literal
 
-from mammoth.client import MammothClient
+from mammoth.appends import ADDING_MODES
+from mammoth.exceptions import MammothError, MammothJobTimeoutError
 from mcp.server.mcpserver.exceptions import ToolError
 
 from .consts import (
     APPEND_POLL_SECONDS,
     APPEND_WAIT_SECONDS,
-    BATCH_PAGE,
-    ApiFields,
+    BATCH_MODE_KIND,
+    BATCH_MODE_SECONDS,
     AppendFields,
-    DatasetStatus,
-    ListFields,
+    JobFields,
     PageFields,
 )
 from .deadline import seconds_left
+from .jobs import JobStillRunning
 from .sdk import JsonValue, build_client, read_sdk_errors
+from .store import forget, recall, remember
 
 type Mode = Literal["add", "replace"]
 type Plan = dict[str, JsonValue]
 
-# The words a caller uses, and the names the platform stores them under.
-STORED_MODE: dict[str, str] = {"add": "combine", "replace": "replace"}
-EFFECTS: dict[str, str] = {
-    "add": "Each new file adds its rows to the rows the dataset holds.",
-    "replace": "Each new file replaces the rows the dataset holds.",
-}
-# A status in which the dataset is no longer taking rows in.
-SETTLED = {DatasetStatus.READY, DatasetStatus.PROCESSED, DatasetStatus.EMPTY}
 NOT_AN_APPEND = (
     "`mode` only applies together with `append_to_dataset_id`: it sets the update method"
     " of the dataset the file goes into."
@@ -62,176 +52,166 @@ NOTHING_TO_REMOVE = (
     "The dataset replaces its rows, so the old rows are gone and there is no batch to remove."
     " To get them back, upload the old file again."
 )
-NO_BATCH_TO_REMOVE = "The update method is replace: no batch of this dataset can be removed."
+NO_MODE_NO_BATCH = (
+    "The update method of the dataset could not be read ({0}), so no batch is offered for"
+    " removal."
+)
+NO_RECORD = (
+    "Batch {0} was not added through this server, so what it was added under is not known:"
+    " it is not removed. Remove it in Mammoth."
+)
+NOT_ADDED = (
+    "Batch {0} was added under the update method {1}: the dataset's rows depend on it, so it"
+    " is not removed. To get the old rows back, upload the old file again."
+)
+WOULD_EMPTY = (
+    "Removing {0} would remove every batch the dataset has and leave it empty: it is not"
+    " removed. Delete the dataset instead, if that is what the user wants."
+)
 
 
-def word_of(stored: JsonValue) -> Mode:
-    """The caller's word for a stored mode; a dataset with none stored adds, as the platform does."""
-    return "replace" if stored == STORED_MODE["replace"] else "add"
-
-
-def describe_update_method(settings: dict[str, JsonValue]) -> dict[str, JsonValue]:
-    """Say what a dataset's stored settings mean for the next file.
-
-    Args:
-        settings: What `DatasetsAPI.get_update_method` returned; empty for a
-            dataset that has none stored.
-
-    Returns:
-        The `mode` ("add" or "replace"), its `effect` in words, and the
-        `schema_mapping` that matches a file's columns to the dataset's.
-    """
-    mode = word_of(settings.get(AppendFields.DATA_ADDITION_MODE))
-    return {
-        "mode": mode,
-        AppendFields.EFFECT: EFFECTS[mode],
-        AppendFields.SCHEMA_MAPPING: settings.get(AppendFields.SCHEMA_MAPPING),
-    }
-
-
-def sent_labels(file_names: list[str]) -> set[str]:
-    """The lower-case names a batch's source can carry for files that were sent."""
-    names = {PurePosixPath(name).name.lower() for name in file_names}
-    return names | {PurePosixPath(name).stem.lower() for name in names}
-
-
-def batch_labels(row: dict[str, JsonValue]) -> set[str]:
-    """The lower-case names a batch row carries for its source."""
-    source = row.get(AppendFields.SOURCE)
-    holders = [source if isinstance(source, dict) else {}, row]
-    labels = [holder.get(key) for holder in holders for key in AppendFields.SOURCE_NAMES]
-    names = {PurePosixPath(label).name.lower() for label in labels if isinstance(label, str)}
-    return names | {PurePosixPath(name).stem for name in names}
-
-
-def find_new_batches(
-    before_ids: list[int], after: list[dict[str, JsonValue]], file_names: list[str]
-) -> tuple[list[int], list[int]]:
-    """Tell the batches an upload added from the ones that appeared meanwhile.
-
-    A new batch is the upload's only when its source names a file that was sent.
-    Any other new batch is returned apart and never offered for removal: it may
-    be another user's.
+def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
+    """Say what an upload into a dataset did, and what can be done about it.
 
     Args:
-        before_ids: The ids of the dataset's batches before the files were sent.
-        after: The batch rows now.
-        file_names: The names of the files that were sent.
+        report: What the SDK's append reported (`AppendsAPI.finish`).
 
     Returns:
-        `(ids of this upload's batches, ids of new batches not tied to it)`.
+        The report, with the `batch_ids` kept (and `batch_id` when there is one) only for an
+        upload that added, `next_step` saying what to call, and `notes` for what the user
+        should be told: a method this upload changed and that stays, rows still landing,
+        new batches that could not be tied to the upload.
     """
-    known = set(before_ids)
-    wanted = sent_labels(file_names)
-    ours: list[int] = []
-    other: list[int] = []
-    for row in after:
-        batch_id = row.get("id")
-        if not isinstance(batch_id, int) or batch_id in known:
-            continue
-        (ours if batch_labels(row) & wanted else other).append(batch_id)
-    return ours, other
-
-
-def rows_of(response: dict[str, JsonValue]) -> int | None:
-    """The row count a dataset read holds, or None when it holds none."""
-    dataset = response.get(ListFields.DATASET, response)
-    stats = dataset.get(AppendFields.STATS) if isinstance(dataset, dict) else None
-    rows = stats.get(AppendFields.ROW_COUNT) if isinstance(stats, dict) else None
-    return rows if isinstance(rows, int) else None
-
-
-async def read_rows(
-    client: MammothClient, workspace_id: int, project_id: int, dataset_id: int
-) -> dict[str, JsonValue]:
-    """Read a dataset with its status and row counts."""
-    return await read_sdk_errors(
-        client.datasets.get(
-            dataset_id,
-            workspace_id=workspace_id,
-            project_id=project_id,
-            fields=ApiFields.STANDARD,
-        )
+    entry = report[AppendFields.UPDATE_METHOD]
+    method: dict[str, JsonValue] = dict(entry) if isinstance(entry, dict) else {}
+    mode = method.get(AppendFields.MODE)
+    shown = {key: value for key, value in report.items() if key != AppendFields.BATCH_IDS}
+    ours = report.get(AppendFields.BATCH_IDS)
+    batch_ids = (
+        [batch for batch in ours if isinstance(batch, int)] if isinstance(ours, list) else []
     )
-
-
-def status_of(response: dict[str, JsonValue]) -> str | None:
-    """The status a dataset read holds, or None when it holds none."""
-    dataset = response.get(ListFields.DATASET, response)
-    status = dataset.get("status") if isinstance(dataset, dict) else None
-    return status if isinstance(status, str) else None
-
-
-def describe_append(
-    plan: Plan,
-    rows_after: int | None,
-    ours: list[int],
-    other: list[int],
-    settled: bool,
-) -> dict[str, JsonValue]:
-    """Report what an upload into a dataset did, and what can be done about it.
-
-    Args:
-        plan: What `prepare_append` read before the files were sent.
-        rows_after: The dataset's rows now, or None when they could not be read.
-        ours: The batches this upload added.
-        other: New batches that could not be tied to this upload.
-        settled: Whether the dataset had taken the rows in by the time it was read.
-
-    Returns:
-        `appended_to`, the `update_method` the upload ran under, the rows before
-        and after with `rows_added` (negative when a replace shrank the dataset),
-        and for an "add" the `batch_ids` to remove. A "replace" offers none.
-    """
-    mode = str(plan[AppendFields.UPDATE_METHOD])
-    before = plan[AppendFields.ROWS_BEFORE]
-    report: dict[str, JsonValue] = {
-        AppendFields.APPENDED_TO: plan[AppendFields.TARGET],
-        AppendFields.UPDATE_METHOD: mode,
-        AppendFields.EFFECT: EFFECTS[mode],
-    }
     notes: list[str] = []
-    if plan.get(AppendFields.MODE_CHANGED):
+    previous = method.get(AppendFields.PREVIOUS_MODE)
+    if previous is not None:
         notes.append(
-            f"The dataset's update method was {plan[AppendFields.PREVIOUS_MODE]} and is now"
-            f" {mode}. It stays: every later upload into it follows it too."
+            f"The dataset's update method was {previous} and is now {mode}. It stays: every"
+            " later upload into it follows it too."
         )
-    if isinstance(before, int) and rows_after is not None:
-        report[AppendFields.ROWS_BEFORE] = before
-        report[AppendFields.ROWS_AFTER] = rows_after
-        report[AppendFields.ROWS_ADDED] = rows_after - before
-    if not settled:
-        report[AppendFields.APPEND_PENDING] = True
+    if report.get(AppendFields.APPEND_PENDING):
         notes.append(
             "The dataset was still taking the rows in, so rows_added is what had landed. Call"
             " check_upload again, or get_dataset, before using it."
         )
-    if mode == "replace":
-        report[AppendFields.NEXT_STEP] = NOTHING_TO_REMOVE
+    if mode in ADDING_MODES:
+        shown[AppendFields.BATCH_IDS] = list(batch_ids)
+        if len(batch_ids) == 1:
+            shown[AppendFields.BATCH_ID] = batch_ids[0]
+        if batch_ids:
+            shown[AppendFields.NEXT_STEP] = UNDO_WITH
+    elif mode is None:
+        notes.append(NO_MODE_NO_BATCH.format(method.get(AppendFields.ERROR, "no reason given")))
     else:
-        report[AppendFields.BATCH_IDS] = list(ours)
-        if len(ours) == 1:
-            report[AppendFields.BATCH_ID] = ours[0]
-        report[AppendFields.NEXT_STEP] = UNDO_WITH if ours else None
+        shown[AppendFields.NEXT_STEP] = NOTHING_TO_REMOVE
+    other = report.get(AppendFields.UNMATCHED_BATCH_IDS)
     if other:
-        report[AppendFields.UNMATCHED_BATCH_IDS] = list(other)
         notes.append(
             f"Batches {other} appeared in the dataset meanwhile and none names the uploaded"
             " file, so they are not listed in batch_ids and are not to be removed."
         )
+    if report.get(AppendFields.BATCHES_ERROR):
+        notes.append(
+            f"The batches could not be read after the upload ({report[AppendFields.BATCHES_ERROR]}),"
+            " so none is offered for removal."
+        )
     if notes:
-        report[AppendFields.NOTES] = list(notes)
-    return {key: value for key, value in report.items() if value is not None}
+        shown[AppendFields.NOTES] = list(notes)
+    return shown
+
+
+def refuse_batch_removal(
+    batch_ids: Sequence[int],
+    recorded: Mapping[int, str | None],
+    existing_ids: Sequence[int],
+) -> str | None:
+    """Say why batches may not be removed, or None when they may.
+
+    A batch is removed only when it was recorded, at upload time, as added under a mode that
+    adds. One with no record (added elsewhere, or the record expired) and one added under a
+    replace are refused: the dataset's current mode says nothing of how they were made.
+    Removing every batch a dataset has is refused too, as it would leave it empty.
+
+    Args:
+        batch_ids: The batches asked to be removed.
+        recorded: The mode recorded for each batch id; absent or None when none is.
+        existing_ids: The ids of every batch the dataset has now.
+
+    Returns:
+        The reason, for the user and the model, or None.
+    """
+    for batch_id in batch_ids:
+        mode = recorded.get(batch_id)
+        if mode is None:
+            return NO_RECORD.format(batch_id)
+        if mode not in ADDING_MODES:
+            return NOT_ADDED.format(batch_id, mode)
+    if set(existing_ids) <= set(batch_ids):
+        return WOULD_EMPTY.format(sorted(set(batch_ids)))
+    return None
+
+
+def batch_mode_key(workspace_id: int, dataset_id: int, batch_id: int) -> str:
+    """The store key of the mode one batch was added under."""
+    return f"{workspace_id}:{dataset_id}:{batch_id}"
+
+
+async def record_batch_modes(
+    workspace_id: int, dataset_id: int, batch_ids: Sequence[int], mode: str
+) -> None:
+    """Keep the mode in effect when each batch was added, for `undo` to read back."""
+    for batch_id in batch_ids:
+        await remember(
+            BATCH_MODE_KIND,
+            batch_mode_key(workspace_id, dataset_id, batch_id),
+            {AppendFields.MODE: mode},
+            BATCH_MODE_SECONDS,
+        )
+
+
+async def recall_batch_modes(
+    workspace_id: int, dataset_id: int, batch_ids: Sequence[int]
+) -> dict[int, str | None]:
+    """The mode each batch was recorded as added under; None where there is no record."""
+    modes: dict[int, str | None] = {}
+    for batch_id in batch_ids:
+        record = await recall(BATCH_MODE_KIND, batch_mode_key(workspace_id, dataset_id, batch_id))
+        stored = record.get(AppendFields.MODE) if record else None
+        modes[batch_id] = stored if isinstance(stored, str) else None
+    return modes
+
+
+async def forget_batch_modes(workspace_id: int, dataset_id: int, batch_ids: Sequence[int]) -> None:
+    """Drop the records of batches that were removed."""
+    for batch_id in batch_ids:
+        await forget(BATCH_MODE_KIND, batch_mode_key(workspace_id, dataset_id, batch_id))
+
+
+async def report_append(workspace_id: int, report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
+    """Record the mode each of an upload's batches was added under, and present the report."""
+    method = report.get(AppendFields.UPDATE_METHOD)
+    mode = method.get(AppendFields.MODE) if isinstance(method, dict) else None
+    ours = report.get(AppendFields.BATCH_IDS)
+    target = report.get(AppendFields.APPENDED_TO)
+    if isinstance(mode, str) and isinstance(ours, list) and isinstance(target, int):
+        await record_batch_modes(
+            workspace_id, target, [batch for batch in ours if isinstance(batch, int)], mode
+        )
+    return present_append(report)
 
 
 async def prepare_append(
     workspace_id: int, project_id: int, dataset_id: int, mode: Mode | None
 ) -> Plan:
     """Set the mode the files will run under, and read the dataset as it is before them.
-
-    The mode is set before the files are sent, because the backend reads it when
-    they land. Nothing is changed when `mode` is left out: the stored mode is
-    read, so the report can say which one the upload ran under.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -240,101 +220,86 @@ async def prepare_append(
         mode: "add" or "replace" to set, or None to keep what the dataset holds.
 
     Returns:
-        Plain data for `describe_append`: the target, the mode the upload runs
-        under, the mode it had (when this changed it), the rows and the batch
-        ids it had.
+        The SDK's plan: plain data for `finish_append` and `restore_mode`.
 
     Raises:
         ToolError: If the dataset cannot be read or its mode cannot be set.
     """
     async with build_client(workspace_id, project_id) as client:
-        stored = await read_sdk_errors(
-            client.datasets.get_update_method(
-                dataset_id, workspace_id=workspace_id, project_id=project_id
-            )
-        )
-        previous = word_of(stored.get(AppendFields.DATA_ADDITION_MODE))
-        changed = mode is not None and mode != previous
-        if mode is not None and changed:
-            await read_sdk_errors(
-                client.datasets.set_update_method(
-                    dataset_id,
-                    STORED_MODE[mode],
-                    workspace_id=workspace_id,
-                    project_id=project_id,
-                )
-            )
-        read = await read_rows(client, workspace_id, project_id, dataset_id)
-        batches = await list_batches(workspace_id, project_id, dataset_id)
-    return {
-        AppendFields.TARGET: dataset_id,
-        AppendFields.UPDATE_METHOD: mode or previous,
-        AppendFields.MODE_CHANGED: changed,
-        AppendFields.PREVIOUS_MODE: previous,
-        AppendFields.ROWS_BEFORE: rows_of(read),
-        AppendFields.BATCH_IDS_BEFORE: [int(str(row["id"])) for row in batches],
-    }
+        plan = await read_sdk_errors(client.appends.prepare(dataset_id, mode))
+    return dict(plan)
 
 
 async def restore_mode(workspace_id: int, project_id: int, plan: Plan) -> str | None:
     """Put the dataset's mode back after the upload that needed it failed.
 
-    Args:
-        workspace_id: Which workspace the dataset is in.
-        project_id: Which project the dataset is in.
-        plan: What `prepare_append` returned.
-
     Returns:
-        None when nothing needed putting back or it was put back; otherwise a
-        sentence saying the new mode stayed, for the error being raised.
+        None when nothing needed putting back or it was put back; otherwise a sentence
+        saying the new mode stayed, for the error being raised.
     """
-    if not plan.get(AppendFields.MODE_CHANGED):
-        return None
-    dataset_id = int(str(plan[AppendFields.TARGET]))
+    async with build_client(workspace_id, project_id) as client:
+        return await client.appends.restore_mode(plan)
+
+
+async def finish_append(
+    workspace_id: int, project_id: int, plan: Plan, file_names: list[str]
+) -> dict[str, JsonValue]:
+    """Wait for the rows to land in the dataset, then report what the upload did.
+
+    The wait is bounded by the tool call's own clock, so a slow append is reported as
+    pending, not hung on.
+    """
+    async with build_client(workspace_id, project_id) as client:
+        report = await read_sdk_errors(
+            client.appends.finish(
+                plan,
+                file_names,
+                wait_seconds=min(APPEND_WAIT_SECONDS, seconds_left()),
+                poll_seconds=APPEND_POLL_SECONDS,
+            )
+        )
+    return await report_append(workspace_id, report)
+
+
+async def append_file(
+    workspace_id: int,
+    project_id: int,
+    dataset_id: int,
+    file_name: str,
+    content: bytes,
+    mode: Mode | None,
+) -> dict[str, JsonValue]:
+    """Add one file's content to a dataset through the SDK's append, and report it.
+
+    Raises:
+        JobStillRunning: If the upload job outlasted the tool call. It keeps running, and
+            reads the mode when the file lands, so the mode is not put back.
+        ToolError: If Mammoth refuses; a mode this upload set that could not be put back
+            is named in the message.
+    """
+    upload = io.BytesIO(content)
+    upload.name = file_name
+    timeout = max(1, int(seconds_left()))
     try:
         async with build_client(workspace_id, project_id) as client:
-            await read_sdk_errors(
-                client.datasets.set_update_method(
+            outcome = await read_sdk_errors(
+                client.appends.append(
+                    upload,
                     dataset_id,
-                    STORED_MODE[str(plan[AppendFields.PREVIOUS_MODE])],
-                    workspace_id=workspace_id,
-                    project_id=project_id,
+                    mode,
+                    timeout=timeout,
+                    wait_seconds=min(APPEND_WAIT_SECONDS, seconds_left()),
+                    poll_seconds=APPEND_POLL_SECONDS,
                 )
             )
     except ToolError as failed:
-        return (
-            f"Dataset {dataset_id} kept the update method {plan[AppendFields.UPDATE_METHOD]}"
-            f" this upload gave it, because the old one could not be restored ({failed})."
-        )
-    return None
-
-
-async def list_batches(
-    workspace_id: int, project_id: int, dataset_id: int
-) -> list[dict[str, JsonValue]]:
-    """Every batch of a dataset, in listing order, paging through the listing."""
-    found: list[dict[str, JsonValue]] = []
-    offset = 0
-    async with build_client(workspace_id, project_id) as client:
-        while True:
-            page = await read_sdk_errors(
-                client.batches.list(
-                    dataset_id, project_id=project_id, limit=BATCH_PAGE, offset=offset
-                )
-            )
-            rows = page.get(AppendFields.BATCHES)
-            rows = rows if isinstance(rows, list) else []
-            known = {row["id"] for row in found}
-            found.extend(
-                row
-                for row in rows
-                if isinstance(row, dict)
-                and isinstance(row.get("id"), int)
-                and row["id"] not in known
-            )
-            if len(rows) < BATCH_PAGE:
-                return found
-            offset += BATCH_PAGE
+        cause = failed.__cause__
+        if isinstance(cause, MammothJobTimeoutError):
+            job_id = cause.details.get("job_id")
+            raise JobStillRunning({JobFields.ID: job_id}, timeout) from cause
+        kept = cause.details.get("update_method_kept") if isinstance(cause, MammothError) else None
+        raise ToolError(f"{failed} {kept}" if kept else str(failed)) from failed
+    return await report_append(workspace_id, outcome)
 
 
 async def read_append_history(
@@ -343,55 +308,26 @@ async def read_append_history(
     """A dataset's update method and the batches it was built from.
 
     Returns:
-        `update_method` (mode, effect, schema_mapping) and `batches`: each
-        file or dataset added, with its `id` (what `undo` takes) and source.
+        `update_method` (mode, effect, schema_mapping; `mode` is null with an `error` when it
+        could not be read) and `batches`: each file or dataset added, with its `id` (what
+        `undo` takes), source, and `removable`: whether `undo` will remove it.
     """
     async with build_client(workspace_id, project_id) as client:
-        stored = await read_sdk_errors(
-            client.datasets.get_update_method(
-                dataset_id, workspace_id=workspace_id, project_id=project_id
-            )
+        method = await client.appends.read_mode(dataset_id)
+        rows = await read_sdk_errors(client.appends.list_batches(dataset_id))
+    ids = [int(str(row["id"])) for row in rows]
+    recorded = await recall_batch_modes(workspace_id, dataset_id, ids)
+    batches: list[JsonValue] = []
+    for row in rows:
+        batch_id = int(str(row["id"]))
+        batches.append(
+            {
+                **{key: row[key] for key in AppendFields.BATCH_FIELDS if key in row},
+                AppendFields.REMOVABLE: recorded.get(batch_id) in ADDING_MODES,
+            }
         )
-    rows = await list_batches(workspace_id, project_id, dataset_id)
-    batches: list[JsonValue] = [
-        {key: row[key] for key in AppendFields.BATCH_FIELDS if key in row} for row in rows
-    ]
     return {
-        AppendFields.UPDATE_METHOD: describe_update_method(stored),
+        AppendFields.UPDATE_METHOD: method,
         AppendFields.BATCHES: batches,
         PageFields.TOTAL: len(batches),
     }
-
-
-async def finish_append(
-    workspace_id: int, project_id: int, plan: Plan, file_names: list[str]
-) -> dict[str, JsonValue]:
-    """Wait for the rows to land in the dataset, then report what the upload did.
-
-    The upload's job ends when its staging dataset is made; the rows reach the
-    target after that, while it reads "processing". The wait is bounded by the
-    tool call's own clock, so a slow append is reported as pending, not hung on.
-
-    Args:
-        workspace_id: Which workspace the dataset is in.
-        project_id: Which project the dataset is in.
-        plan: What `prepare_append` returned before the files were sent.
-        file_names: The names of the files that were sent.
-
-    Returns:
-        What `describe_append` reports.
-    """
-    dataset_id = int(str(plan[AppendFields.TARGET]))
-    give_up_at = time.monotonic() + min(APPEND_WAIT_SECONDS, seconds_left())
-    async with build_client(workspace_id, project_id) as client:
-        while True:
-            read = await read_rows(client, workspace_id, project_id, dataset_id)
-            settled = status_of(read) in SETTLED
-            if settled or time.monotonic() >= give_up_at:
-                break
-            await asyncio.sleep(APPEND_POLL_SECONDS)
-    after = await list_batches(workspace_id, project_id, dataset_id)
-    known = plan[AppendFields.BATCH_IDS_BEFORE]
-    before_ids = [int(str(batch_id)) for batch_id in known] if isinstance(known, list) else []
-    ours, other = find_new_batches(before_ids, after, file_names)
-    return describe_append(plan, rows_of(read), ours, other, settled)

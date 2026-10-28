@@ -26,10 +26,10 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 ## Public SDK method parity
 
-- Total public methods: `895`
+- Total public methods: `902`
 - With canonical command: `797`
 - Alias of another command: `38`
-- Reviewed SDK-only exemptions: `60`
+- Reviewed SDK-only exemptions: `67`
 
 ## Command surface
 

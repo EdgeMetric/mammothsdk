@@ -41,6 +41,8 @@ _SCHEMA_SETTINGS_FIELDS = (
     "match_existing_target_schema",
     "schema_mapping",
     "unique_sequence_column",
+    "ignored_source_columns",
+    "optional_destination_columns",
 )
 #: What the platform stores for a dataset that has no settings yet: mvc-service
 #: ``api/api/ds/schema.py`` ``SchemaPropertiesDefaultValues`` (origin/release).
@@ -49,9 +51,11 @@ _SCHEMA_SETTINGS_FIELDS = (
 #: whole, and that model's own field defaults differ again (``data_addition_mode``
 #: defaults to "replace", ``apiv2/apiv2/datasets/schema.py``), so every field must
 #: be sent: one left out is stored as the model default, not as the dataset had it.
-#: ``ignored_source_columns`` and ``optional_destination_columns`` are deliberately
-#: not sent: the backend keeps the remembered choices when the request does not
-#: name them and the matching keys are unchanged (``_with_remembered_column_choices``).
+#: ``ignored_source_columns`` and ``optional_destination_columns`` are not defaulted: they
+#: are read back with the other stored settings (``_SCHEMA_SETTINGS_FIELDS``), so
+#: ``set_update_method`` sends the dataset's own choices again and echoes them as stored.
+#: A dataset that holds none sends none, and the backend then keeps its remembered choices
+#: when the matching keys are unchanged (``_with_remembered_column_choices``).
 _STORED_DEFAULTS: dict[str, Any] = {
     "data_addition_mode": "combine",
     "delete_after_append": True,

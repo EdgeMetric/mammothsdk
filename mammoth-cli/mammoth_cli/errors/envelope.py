@@ -68,6 +68,7 @@ CODE_JOB_FAILED = "job_failed"
 CODE_INTERRUPTED = "interrupted"
 CODE_ABORTED = "aborted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
+CODE_UNSUPPORTED_BY_SERVER = "unsupported_by_server"
 CODE_NO_OP = "no_op"
 CODE_WOULD_FAIL = "would_fail"
 CODE_EMPTIES_VIEW = "empties_view"
@@ -248,6 +249,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "unknown_input_field": _S_BAD_REQUEST,
     "unknown_option": _S_BAD_REQUEST,
     "unknown_scope": _S_SETUP,
+    "unsupported_by_server": "This Mammoth does not support that yet, so it was not applied.",
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
     "unsupported_shell": _S_UNAVAILABLE,

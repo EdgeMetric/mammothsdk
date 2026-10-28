@@ -141,6 +141,44 @@ async def test_upload_result_reports_a_workbook_waiting_for_its_sheets(
                 await client.datasets.delete(dataset_id)
 
 
+async def test_upload_result_gives_each_same_named_upload_its_own_file_id(
+    client: MammothClient, tmp_path: Path
+) -> None:
+    """The same workbook name uploaded twice within a minute: each reports its own file id."""
+    workbook = Workbook()
+    workbook.active.title = _SHEETS[0]
+    for title in _SHEETS[1:]:
+        workbook.create_sheet(title)
+    for sheet in workbook.worksheets:
+        sheet.append(["name", "salary"])
+        sheet.append(["alice", 100])
+    path = tmp_path / "same_name_twice_update_method.xlsx"
+    workbook.save(path)
+
+    outcomes: list[dict[str, Any]] = []
+    try:
+        for _ in range(2):
+            outcomes.append(await client.files.upload_result(str(path)))
+        file_ids = []
+        for outcome in outcomes:
+            assert "files_error" not in outcome
+            assert len(outcome["files"]) == 1
+            entry = outcome["files"][0]
+            assert entry["name"] == path.name
+            assert entry["action_needed"] == "sheet_selection_required"
+            # The id the upload job itself named for this upload's file.
+            assert [entry["file_id"]] == [
+                info["file_object_id"] for info in outcome["nested_job_ids"]
+            ]
+            file_ids.append(entry["file_id"])
+        assert len(set(file_ids)) == 2
+    finally:
+        for outcome in outcomes:
+            for entry in outcome.get("files", []):
+                with contextlib.suppress(Exception):
+                    await client.files.delete(entry["file_id"])
+
+
 async def test_file_settings_update_with_one_setting_keeps_the_others(
     client: MammothClient, tmp_path: Path
 ) -> None:

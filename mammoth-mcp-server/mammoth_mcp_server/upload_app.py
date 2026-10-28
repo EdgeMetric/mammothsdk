@@ -22,7 +22,7 @@ from mcp.server.apps import ResourceCsp
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
-from .appends import Mode
+from .appends import NOT_AN_APPEND, Mode
 from .chat_apps import chat_apps
 from .config import MCP_UPLOAD_URL, UPLOAD_ORIGIN
 from .consts import (
@@ -274,11 +274,17 @@ async def request_upload(
         project_id: Which project the files land in. Leave it out when the
             user limited this connection to one project: that is the project
             the files land in. With several, name one of them.
+        append_to_dataset_id: An existing dataset to put the files into, from
+            `list_datasets`. Leave out to make new datasets.
+        mode: "add" or "replace", only together with `append_to_dataset_id`:
+            the dataset's update method, set when the file is sent.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
         `check_upload` with.
     """
+    if mode is not None and append_to_dataset_id is None:
+        raise ToolError(NOT_AN_APPEND)
     caller = get_access_token()
     if caller is None:
         raise ToolError("Sign in again: this call carries no Mammoth user.")

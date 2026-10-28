@@ -12,8 +12,6 @@ TTY prompt, or a permission-checked JSON/YAML login document read through
 
 from __future__ import annotations
 
-import os
-import stat
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -43,6 +41,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.token_scope import forget_pins, pin_names, pinned_projects, pins_label
 from mammoth_cli.runtime.view_dataset_cache import forget_view_datasets
 from mammoth_cli.services import factory as service_factory
+from mammoth_cli.services.secret_files import refuse_shared_file
 
 _STORAGE_MODES = ("auto", "keyring", "file")
 
@@ -52,28 +51,6 @@ def _forget_credential_caches() -> None:
     forget_pins()
     forget_view_datasets()
     forget_etags()
-
-
-def _check_file_permissions(path: Path) -> None:
-    """Reject a login document readable by group or other users.
-
-    Args:
-        path: The document path.
-
-    Raises:
-        CliError: ``insecure_input_file`` on POSIX when the file is group- or
-            other-readable.
-    """
-    if os.name != "posix":
-        return
-    mode = stat.S_IMODE(path.stat().st_mode)
-    if mode & (stat.S_IRWXG | stat.S_IRWXO):
-        raise CliError(
-            code="insecure_input_file",
-            message=f"'{path}' is readable by group or other users.",
-            exit_status=EXIT_USAGE,
-            hint=f"Restrict its permissions, for example: chmod 600 {path}",
-        )
 
 
 def _preflight_login_input(path_or_dash: str | None) -> None:
@@ -87,7 +64,7 @@ def _preflight_login_input(path_or_dash: str | None) -> None:
             message=f"'{path}' does not exist.",
             exit_status=EXIT_USAGE,
         )
-    _check_file_permissions(path)
+    refuse_shared_file(path)
 
 
 def _load_login_document(path_or_dash: str, input_format: str | None) -> dict[str, Any]:

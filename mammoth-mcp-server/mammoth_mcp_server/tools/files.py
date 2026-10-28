@@ -16,7 +16,7 @@ from typing import Literal
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..appends import NOT_AN_APPEND, Mode, finish_append, prepare_append, restore_mode
+from ..appends import NOT_AN_APPEND, Mode, append_file, finish_append
 from ..consts import (
     DISCARD_READS,
     LIST_LIMIT_DEFAULT,
@@ -26,7 +26,6 @@ from ..consts import (
     UPLOAD_WAIT_SECONDS,
     ApiFields,
     ApiPaths,
-    AppendFields,
     ColumnFields,
     FilePatchFields,
     FileSettingsFields,
@@ -35,7 +34,7 @@ from ..consts import (
     UnstructuredFields,
     UploadFields,
 )
-from ..jobs import JobStillRunning, find_job_id, wait_for_job
+from ..jobs import find_job_id, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
@@ -88,39 +87,26 @@ async def upload_file(
 
     Returns:
         What Mammoth made of the file, including the dataset it created. For an
-        upload into a dataset: `appended_to`, the `update_method` it ran under,
+        upload into a dataset: `appended_to`, the `update_method` it ran under
+        (`mode`, `effect`, and `previous_mode` when this upload changed it),
         `rows_before`, `rows_after` and `rows_added`, and for "add" the
         `batch_ids` (`batch_id` when there is one) that `undo` with
         what="batch" removes. A "replace" has no batch to remove.
     """
     if mode is not None and append_to_dataset_id is None:
         raise ToolError(NOT_AN_APPEND)
-    plan = None
     if append_to_dataset_id is not None:
-        plan = await prepare_append(workspace_id, project_id, append_to_dataset_id, mode)
-    try:
-        async with build_client(workspace_id, project_id) as client:
-            started = await request_api(
-                client,
-                "POST",
-                ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
-                query=(
-                    {AppendFields.TARGET_QUERY: append_to_dataset_id}
-                    if append_to_dataset_id is not None
-                    else None
-                ),
-                upload=[(file_name, content.encode(), find_media_type(file_name))],
-            )
-        made = await wait_for_job(workspace_id, started)
-    except JobStillRunning:
-        # The job is still reading the file, and reads the mode when it lands.
-        raise
-    except ToolError as failed:
-        kept = await restore_mode(workspace_id, project_id, plan) if plan else None
-        raise ToolError(f"{failed} {kept}" if kept else str(failed)) from failed
-    if plan is None:
-        return made
-    return {**made, **await finish_append(workspace_id, project_id, plan, [file_name])}
+        return await append_file(
+            workspace_id, project_id, append_to_dataset_id, file_name, content.encode(), mode
+        )
+    async with build_client(workspace_id, project_id) as client:
+        started = await request_api(
+            client,
+            "POST",
+            ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
+            upload=[(file_name, content.encode(), find_media_type(file_name))],
+        )
+    return await wait_for_job(workspace_id, started)
 
 
 async def wait_for_the_file(upload_id: str) -> Record:

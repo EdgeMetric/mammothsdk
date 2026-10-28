@@ -1,8 +1,10 @@
-"""Live: share a dashboard behind a password, read it back, then restore ``mammoth`` sharing.
+"""Live: a password share is read back; a server that stores no password is refused.
 
-Marked ``live`` (deselected by default and in CI). It uses an existing dashboard of the
-configured project, writes the password to a temporary file (never the command line), and
-switches the share back to ``mammoth`` in a ``finally`` so the tenant is left as found.
+Marked ``live`` (deselected by default and in CI). It makes its own throwaway dashboard in a
+scratch project, writes the password to a private temporary file (never the command line) and
+deletes the dashboard in a ``finally``, so no existing board's sharing is touched.
+
+    pytest tests/live/test_dashboard_share_password.py -m live -v
 """
 
 from __future__ import annotations
@@ -12,66 +14,55 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
-from mammoth_cli.testing import make_runner
+from live_harness import LiveCli, SalesData
 
 pytestmark = pytest.mark.live
 
 PASSWORD = "live-test-password-1"
 
 
-def _run(args: list[str], env: dict[str, str]) -> dict[str, Any]:
-    """Invoke the CLI, assert a clean exit, and return the parsed envelope."""
-    result = make_runner().invoke([*args, "--output", "json", "--no-input"], env=env)
-    assert result.exit_code == 0, result.output
-    assert PASSWORD not in result.output
-    envelope: dict[str, Any] = json.loads(result.output)
-    assert not envelope.get("error"), envelope.get("error")
-    return envelope
+def _input(payload: dict[str, Any]) -> list[str]:
+    return ["--input", json.dumps(payload)]
 
 
-def test_password_share_reads_back_has_password_and_no_hash(
-    live_env: dict[str, str], live_project: str, tmp_path: Path
+def test_password_share_is_read_back_or_refused_and_restored(
+    live_cli: LiveCli, sales_data: SalesData, tmp_path: Path
 ) -> None:
-    """Share as password, see ``has_password`` true with no hash, then share as mammoth."""
-    listed = _run(["dashboard", "list", "--project", live_project], live_env)["data"]
-    items = listed.get("dashboards") if isinstance(listed, dict) else listed
-    if not items:
-        pytest.skip("no dashboard in the configured project to share")
-    dashboard_id = str(items[0]["id"])
+    """With PRD-656 the board reads back ``has_password`` true and no hash; without it the
+    CLI refuses with ``unsupported_by_server`` and the share is put back."""
+    project = sales_data.project
+    created, _ = live_cli.ok(
+        "dashboard",
+        "create-blank",
+        *_input({"params": {"dataview_id": sales_data.view, "title": "Password share check"}}),
+        "--yes",
+        project=project,
+    )
+    board = str(int(created["id"]))
     password_file = tmp_path / "pw.txt"
     password_file.write_text(PASSWORD + "\n", encoding="utf-8")
-
+    password_file.chmod(0o600)
     try:
-        _run(
-            [
-                "dashboard",
-                "share",
-                dashboard_id,
-                "--project",
-                live_project,
-                "--input",
-                json.dumps({"type_of_auth": "password", "password_file": str(password_file)}),
-                "--yes",
-            ],
-            live_env,
+        envelope = live_cli.run(
+            "dashboard",
+            "share",
+            board,
+            *_input({"type_of_auth": "password", "password_file": str(password_file)}),
+            "--yes",
+            project=project,
         )
-        read = _run(["dashboard", "get", dashboard_id, "--project", live_project], live_env)
-        share = json.dumps(read["data"].get("share", read["data"]))
-        assert '"has_password": true' in share
-        assert "hash" not in share.lower()
+        assert PASSWORD not in json.dumps(envelope)
+        read, _ = live_cli.ok("dashboard", "get", board, project=project)
+        share = read.get("share") or {}
         assert PASSWORD not in json.dumps(read)
+        assert "hash" not in json.dumps(share).lower()
+        if "error" not in envelope:
+            assert share.get("type_of_auth") == "password", share
+            assert (share.get("options") or {}).get("has_password") is True, share
+        else:
+            error = envelope["error"]
+            assert error["code"] == "unsupported_by_server", error
+            assert (error.get("details") or {}).get("share_restored") is True, error
+            assert share.get("type_of_auth") != "password", share
     finally:
-        _run(
-            [
-                "dashboard",
-                "share",
-                dashboard_id,
-                "--project",
-                live_project,
-                "--input",
-                json.dumps({"type_of_auth": "mammoth"}),
-                "--yes",
-            ],
-            live_env,
-        )
+        live_cli.run(*("dashboard", "delete", board, "--yes", "--confirm", board), project=project)
