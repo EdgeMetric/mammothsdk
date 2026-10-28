@@ -976,3 +976,18 @@ class JoinCheckFields:
         "Add a join or a lookup in a call of its own to get its join_check: with other"
         " steps in the same call, its matches cannot be told apart."
     )
+
+
+# A file-backed dataset has no source a refresh could pull from.
+_NOT_REFRESHABLE = (
+    "A dataset made from an uploaded file has no source to pull from, so it cannot be"
+    " refreshed or retrieved on a schedule. Upload the new file instead, or bring the"
+    " data in from a cloud or database connection (find_new_connection, then"
+    " add_dataset_from_connection): such a dataset refreshes on its own schedule."
+)
+# What to add to a refusal whose own words give no reason or way forward, by
+# Mammoth's error code.
+REFUSAL_HINTS: dict[object, str] = {
+    "4AUTO006": _NOT_REFRESHABLE,
+    "4DSET048": _NOT_REFRESHABLE,
+}

@@ -100,6 +100,31 @@ class TestWhatAModelIsToldWhenTheApiRefuses:
         with pytest.raises(ToolError, match=UNREADABLE_API_ERROR):
             run(read_sdk_errors(refused()))
 
+    @pytest.mark.parametrize("code", ["4AUTO006", "4DSET048"])
+    def test_refreshing_a_file_dataset_says_why_and_what_to_do_instead(self, code: str) -> None:
+        # Mammoth's own words name no reason: "Invalid source type".
+        async def refused() -> None:
+            raise MammothAPIError(
+                "Invalid source type", 400, {"error_code": code, "message": "Invalid source type"}
+            )
+
+        with pytest.raises(ToolError) as error:
+            run(read_sdk_errors(refused()))
+
+        message = str(error.value)
+        assert "Invalid source type" in message
+        assert "uploaded file has no source to pull from" in message
+        assert "add_dataset_from_connection" in message
+
+    def test_a_refusal_with_another_code_gets_no_hint(self) -> None:
+        async def refused() -> None:
+            raise MammothAPIError("Dataset name already exists", 400, {"error_code": "4DSET001"})
+
+        with pytest.raises(ToolError) as error:
+            run(read_sdk_errors(refused()))
+
+        assert "no source to pull from" not in str(error.value)
+
 
 class TestARouteTheSdkHasNoMethodFor:
     @staticmethod

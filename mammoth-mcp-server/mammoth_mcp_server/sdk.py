@@ -32,6 +32,7 @@ from .config import API_ROOT, API_URL
 from .consts import (
     JOB_POLL_SECONDS,
     JOB_TIMEOUT_SECONDS,
+    REFUSAL_HINTS,
     ROUTE_TIMEOUT_SECONDS,
     UPLOAD_FIELD,
     TokenClaims,
@@ -270,8 +271,11 @@ async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T
     except MammothError as refused:
         if not_found is not None and getattr(refused, "status_code", None) == NOT_FOUND:
             raise ToolError(f"{API_ERROR_PREFIX}: {not_found}") from refused
+        body = getattr(refused, "response_body", None)
+        code = body.get("error_code") if isinstance(body, dict) else None
+        hint = f" {REFUSAL_HINTS[code]}" if code in REFUSAL_HINTS else ""
         raise ToolError(
-            f"{API_ERROR_PREFIX}: {str(refused).strip() or UNREADABLE_API_ERROR}"
+            f"{API_ERROR_PREFIX}: {str(refused).strip() or UNREADABLE_API_ERROR}{hint}"
         ) from refused
 
 
