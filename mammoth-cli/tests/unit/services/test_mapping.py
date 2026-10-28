@@ -93,6 +93,26 @@ def test_unknown_mutation_is_not_advertised_as_safe_retry() -> None:
     assert any("job get 44" in command for command in mapped.recovery_commands)
 
 
+def test_a_failed_poll_of_an_accepted_job_says_the_state_is_unknown_not_unchanged() -> None:
+    # The SDK re-labels a poll that failed after the write was accepted (#340).
+    error = MammothAPIError(
+        "Request timed out",
+        method="GET",
+        operation_state="outcome_unknown",
+        phase="polling",
+        job_handle=52618,
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert "job 52618" in mapped.message
+    assert "changed nothing" not in (mapped.hint or "")
+    assert "mammoth job get 52618" in (mapped.hint or "")
+    assert any("job get 52618" in command for command in mapped.recovery_commands)
+
+
 def test_cross_workspace_401_is_no_access_not_bad_credentials() -> None:
     """A 401 whose endpoint targets a workspace other than the profile's own
     is a scoping mistake, not invalid credentials: it must not tell the user
