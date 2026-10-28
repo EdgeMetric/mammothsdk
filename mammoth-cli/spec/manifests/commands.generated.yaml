@@ -34196,7 +34196,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth workflow template rank KEY --help
-  agent_example: 'mammoth workflow template rank bank-reconciliation --input ''{"input": "main", "dataset_ids":
+  agent_example: 'mammoth workflow template rank bank-reconciliation --input ''{"input_key": "main", "dataset_ids":
     [101, 102]}'''
   unit_tests:
   - UT-WORKFLOW-TEMPLATE-RANK

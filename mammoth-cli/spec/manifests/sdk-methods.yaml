@@ -5921,8 +5921,8 @@ methods:
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.list
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list
   signature: 'list(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
-    ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'', fields: ''str'' = ''id,name'')
-    -> ''dict[str, Any]'''
+    ''int'' = 100, offset: ''int'' = 0, sort: ''str'' = ''(created_at:desc)'', fields: ''str'' = ''id,name'',
+    ids: ''_list[int] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dataset.list
   alias_of: null
@@ -5936,7 +5936,7 @@ methods:
   implementation_origin: mammoth.api.datasets.DatasetsAPI.list_all
   signature: 'list_all(self, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None, limit:
     ''int'' = 100, sort: ''str'' = ''(created_at:desc)'', max_pages: ''int'' = 1000, fields: ''str'' =
-    ''id,name'') -> ''dict[str, Any]'''
+    ''id,name'', ids: ''_list[int] | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
   alias_of: null
@@ -10368,7 +10368,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank
   implementation_origin: mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank
-  signature: 'rank(self, key: ''str'', input: ''str'', dataset_ids: ''_list[int]'', project_id: ''int
+  signature: 'rank(self, key: ''str'', input_key: ''str'', dataset_ids: ''_list[int]'', project_id: ''int
     | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids:
   - RankCatalogTables

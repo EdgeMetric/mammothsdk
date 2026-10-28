@@ -158,7 +158,7 @@ _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     # request model cannot sample: ``main`` is a template's main input, ``amount`` a role in it.
     "workflow.template.rank": (
         ("bank-reconciliation",),
-        {"input": "main", "dataset_ids": [101, 102]},
+        {"input_key": "main", "dataset_ids": [101, 102]},
     ),
     "workflow.template.fit": (("bank-reconciliation",), {"inputs": {"main": 101}}),
     "workflow.template.preview": (

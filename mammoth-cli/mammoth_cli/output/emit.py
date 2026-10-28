@@ -94,7 +94,7 @@ def run_id() -> str | None:
 
 
 def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
-    """Render one error envelope: the JSON document to stdout, human text to stderr.
+    """Render one error envelope: the json, ndjson or yaml document to stdout, text to stderr.
 
     In a machine mode the envelope is the one document on stdout, so a caller reading stdout
     never sees an empty reply. If stdout cannot be written (closed pipe), it falls back to
@@ -102,12 +102,14 @@ def emit_error(error: CliError, *, machine: bool, output: str = "json") -> None:
 
     Args:
         error: The classified error to render.
-        machine: Whether the current output mode is machine-readable (``json``
-            or ``ndjson``). Machine mode renders the versioned JSON error
-            envelope; human mode renders a short readable message with any
+        machine: Whether the current output mode is machine-readable (``json``,
+            ``ndjson`` or ``yaml``). Machine mode renders the versioned error
+            envelope in the selected format (``json`` for any other machine
+            mode); human mode renders a short readable message with any
             recovery commands.
-        output: The selected machine mode. Only ``ndjson`` selects lifecycle
-            framing; all other machine errors retain the JSON envelope.
+        output: The selected machine mode. ``ndjson`` and ``yaml`` render the
+            envelope in that format (``ndjson`` also selects lifecycle
+            framing); every other machine mode renders JSON.
     """
     if embedded.capture(normalize(error.to_envelope())) or linecapture.capture(
         normalize(error.to_envelope())

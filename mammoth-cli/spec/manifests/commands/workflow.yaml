@@ -216,7 +216,7 @@ commands:
         type: array
         items:
           type: object
-  known_restrictions: 'Input: {input: INPUT_KEY, dataset_ids: [1 to 200 dataset ids]}. Judges each table
+  known_restrictions: 'Input: {input_key: INPUT_KEY, dataset_ids: [1 to 200 dataset ids]}. Judges each table
     from its column names and types alone, so it reads no rows.'
 - command_id: workflow.template.fit
   output_schema:

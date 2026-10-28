@@ -14,7 +14,7 @@ _list = list  # Alias to avoid shadowing by the `list` method name
 
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_KEY_EMPTY = "`key` must be a non-empty template key (see `workflow_templates.list`)."
-ERR_INPUT_EMPTY = "`input` must be a non-empty input key of the template."
+ERR_INPUT_EMPTY = "`input_key` must be a non-empty input key of the template."
 ERR_DATASET_IDS = "`dataset_ids` must be 1 to 200 positive dataset ids, got {0!r}."
 ERR_INPUTS = "`inputs` must map each input key to a positive dataset id, got {0!r}."
 ERR_DESTINATION = "`destination_name` must be 1 to 120 characters."
@@ -131,7 +131,7 @@ class WorkflowTemplatesAPI:
     async def rank(
         self,
         key: str,
-        input: str,
+        input_key: str,
         dataset_ids: _list[int],
         project_id: int | None = None,
     ) -> dict[str, Any]:
@@ -139,7 +139,7 @@ class WorkflowTemplatesAPI:
 
         Args:
             key: The template's key.
-            input: The input's key, from the template's ``inputs``.
+            input_key: The input's key, from the template's ``inputs``.
             dataset_ids: The tables to rank (1 to 200 dataset ids).
             project_id: Project ID (uses the client default if not provided).
 
@@ -151,7 +151,7 @@ class WorkflowTemplatesAPI:
         Raises:
             MammothValidationError: If an argument is empty, not positive or too long.
         """
-        if not isinstance(input, str) or not input.strip():
+        if not isinstance(input_key, str) or not input_key.strip():
             raise MammothValidationError(ERR_INPUT_EMPTY)
         bad = not isinstance(dataset_ids, list) or not 1 <= len(dataset_ids) <= _DATASET_IDS_MAX
         if bad or any(not isinstance(i, int) or isinstance(i, bool) or i <= 0 for i in dataset_ids):
@@ -159,7 +159,7 @@ class WorkflowTemplatesAPI:
         ranked = await self._client._request_list(
             "POST",
             self._template_path(key, project_id, "/rank"),
-            json={"input": input.strip(), "dataset_ids": dataset_ids},
+            json={"input": input_key.strip(), "dataset_ids": dataset_ids},
         )
         return {"tables": ranked}
 

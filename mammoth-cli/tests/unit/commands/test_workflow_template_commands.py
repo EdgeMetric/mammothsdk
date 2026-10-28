@@ -30,9 +30,16 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
     (["workflow", "template", "get", _KEY], "get", {"key": _KEY}),
     (["workflow", "template", "sample-result", _KEY], "sample_result", {"key": _KEY}),
     (
-        ["workflow", "template", "rank", _KEY, "--input", '{"input": "main", "dataset_ids": [4]}'],
+        [
+            "workflow",
+            "template",
+            "rank",
+            _KEY,
+            "--input",
+            '{"input_key": "main", "dataset_ids": [4]}',
+        ],
         "rank",
-        {"key": _KEY, "input": "main", "dataset_ids": [4]},
+        {"key": _KEY, "input_key": "main", "dataset_ids": [4]},
     ),
     (
         ["workflow", "template", "fit", _KEY, "--input", '{"inputs": {"main": 4}}'],

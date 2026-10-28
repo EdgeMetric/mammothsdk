@@ -8668,7 +8668,7 @@ Total commands: 872.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank`
-- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input": "main", "dataset_ids": [101, 102]}'`
+- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input_key": "main", "dataset_ids": [101, 102]}'`
 
 ### `mammoth workflow template sample-result`
 

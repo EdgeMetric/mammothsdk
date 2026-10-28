@@ -246,7 +246,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow template rank`. Exact input fields: `mammoth schema get workflow.template.rank`.
 
-Example: `mammoth workflow template rank bank-reconciliation --input '{"input": "main", "dataset_ids": [101, 102]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow template rank bank-reconciliation --input '{"input_key": "main", "dataset_ids": [101, 102]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowTemplateRankResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
