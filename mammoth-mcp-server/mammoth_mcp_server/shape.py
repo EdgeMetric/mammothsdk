@@ -9,6 +9,8 @@ there is one, and a missing id with the tool that lists the right ones.
 import math
 from collections.abc import Callable
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from .consts import (
     MAMMOTH_DATASET_URL,
     MAMMOTH_VIEW_URL,
@@ -18,6 +20,9 @@ from .consts import (
     ViewShape,
 )
 from .sdk import JsonValue, api_url
+
+# The keys of a condition that join tests rather than name a column.
+LOGICAL_KEYS = frozenset({"AND", "OR", "NOT"})
 
 HTTPS = "https://"
 HTTP = "http://"
@@ -183,3 +188,36 @@ def read_rows(
     if full and (not isinstance(total, int) or seen < total):
         paging[PageFields.NEXT_OFFSET] = seen
     return {**answer, PageFields.DATA: rows, PageFields.PAGING: paging}
+
+
+def condition_columns(condition: JsonValue) -> list[str]:
+    """Every column a `get_data` condition tests, in the order it names them."""
+    if isinstance(condition, list):
+        return [name for part in condition for name in condition_columns(part)]
+    if not isinstance(condition, dict):
+        return []
+    named: list[str] = []
+    for key, value in condition.items():
+        named.extend(condition_columns(value) if key in LOGICAL_KEYS else [key])
+    return named
+
+
+def check_internal_names(view: dict[str, JsonValue], names: list[str]) -> None:
+    """Refuse a column the view does not have, with the names it does have.
+
+    The route answers an unknown column with a 404, read as a missing view, or
+    with no rows at all, read as "nothing matches".
+    """
+    columns = view.get(ViewShape.METADATA)
+    known = [c for c in (columns if isinstance(columns, list) else []) if isinstance(c, dict)]
+    internal = {str(c.get(ColumnFields.INTERNAL_NAME)) for c in known}
+    unknown = [name for name in names if name not in internal]
+    if unknown:
+        listed = ", ".join(
+            f"{c.get(ColumnFields.DISPLAY_NAME)} = {c.get(ColumnFields.INTERNAL_NAME)}"
+            for c in known
+        )
+        raise ToolError(
+            f"The view has no column {', '.join(repr(n) for n in unknown)}: name columns by"
+            f" their internal name. Its columns: {listed}."
+        )
