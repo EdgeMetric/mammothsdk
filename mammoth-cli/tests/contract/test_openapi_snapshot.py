@@ -441,11 +441,20 @@ def test_fetch_with_a_refused_token_fails_and_does_not_fall_back(monkeypatch) ->
     assert [path for path, _ in server.seen] == ["/support/openapi.json"]
 
 
-@pytest.mark.parametrize("status", [403, 500, 502, 503])
-def test_fetch_never_falls_back_on_a_refusal_or_a_server_error(monkeypatch, status: int) -> None:
-    # The public document answers 200 here, so a fallback would succeed and hide the error.
+def test_fetch_with_a_forbidden_token_says_so_and_does_not_fall_back(monkeypatch) -> None:
+    # 403: the token is valid but not a super or tech admin's. The public document
+    # answers 200 here, so a fallback would hide the problem.
+    with _SpecServer(token="mm_staff", staff_status=403, public_status=200) as server:
+        with pytest.raises(SystemExit, match="answered 403: MAMMOTH_OPENAPI_TOKEN is expired"):
+            _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert [path for path, _ in server.seen] == ["/support/openapi.json"]
+
+
+@pytest.mark.parametrize("status", [500, 502, 503])
+def test_fetch_never_falls_back_on_a_server_error(monkeypatch, status: int) -> None:
     with _SpecServer(token="mm_staff", staff_status=status, public_status=200) as server:
-        with pytest.raises(SystemExit, match=f"answered {status}"):
+        with pytest.raises(SystemExit, match=f"answered {status}$"):
             _fetch_from(monkeypatch, server, "mm_staff")
 
     assert [path for path, _ in server.seen] == ["/support/openapi.json"]
