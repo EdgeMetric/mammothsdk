@@ -37,7 +37,9 @@ ERR_SAMPLE_TOO_BIG = (
 )
 ERR_SAMPLE_FILE = "The sample file {0} is not a readable local file."
 ERR_PREVIEW_LIMIT = "`limit` must be between 1 and 100, got {0}."
-ERR_SPEC_SLUG = "`connector_slug` must not be empty."
+#: A slug is lower-case letters, digits and ``_`` where the server writes it
+#: (``normalise_slug``); a ``/`` would be read as another path segment, so it is refused here.
+ERR_SPEC_SLUG = "`connector_slug` must be a name without '/', got {0!r}."
 ERR_SPEC_VERSION = "`version` must be a positive integer, got {0}."
 #: A 404 with no error code is the router saying the route does not exist; a spec or draft
 #: that is missing comes back with a code (``4CDFT004``, ``4CDFT001``).
@@ -239,8 +241,11 @@ class ConnectorDraftsAPI:
 
         Returns:
             Dict with ``code_id``, ``connector_slug``, ``version``, ``status``,
-            ``is_active``, ``spec_sha256``, ``allowed_hosts``, ``tables`` (each
+            ``is_active``, ``entrypoint``, ``spec_sha256``, ``allowed_hosts``,
+            ``created_at`` (ISO 8601), ``tables`` (each
             ``{name, request_path, records_path, paging}``) and the whole ``spec``.
+            A literal that could be a secret, and a raw body's ``template`` or an
+            XML-RPC body's ``args``, read ``[redacted]``.
 
         Raises:
             MammothAPIError: 404 when the draft is not in the project or has no AI-built
@@ -259,12 +264,13 @@ class ConnectorDraftsAPI:
             The same dict as :meth:`spec`.
 
         Raises:
-            MammothValidationError: ``connector_slug`` is empty or ``version`` is below 1.
+            MammothValidationError: ``connector_slug`` is empty or holds a ``/``, or
+                ``version`` is below 1.
             MammothAPIError: 404 when the workspace has no such version, or when the
                 server does not serve the read yet.
         """
-        if not connector_slug.strip():
-            raise MammothValidationError(ERR_SPEC_SLUG)
+        if not connector_slug.strip() or "/" in connector_slug:
+            raise MammothValidationError(ERR_SPEC_SLUG.format(connector_slug))
         if version <= 0:
             raise MammothValidationError(ERR_SPEC_VERSION.format(version))
         slug = quote(connector_slug, safe="")
