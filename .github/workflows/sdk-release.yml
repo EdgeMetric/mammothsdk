@@ -65,9 +65,12 @@ jobs:
         run: poetry install --no-interaction
 
       # A release that calls a route production does not serve fails here. It reads
-      # the public OpenAPI document (no credentials) and ignores routes production
+      # the staff-only OpenAPI document (the public one leaves out /support/*) with
+      # the token of a Mammoth super or tech admin, and ignores routes production
       # serves that this release does not use.
       - name: Gate — every route the SDK calls is served by production
+        env:
+          MAMMOTH_OPENAPI_TOKEN: ${{ secrets.MAMMOTH_OPENAPI_TOKEN }}
         run: |
           poetry run pip install "PyYAML>=6,<7"
           poetry run python mammoth-cli/scripts/sync_openapi.py --check-served
