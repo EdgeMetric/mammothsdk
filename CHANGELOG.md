@@ -18,10 +18,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An upload into a dataset reports `appended_to`, `update_method`, `rows_before`, `rows_after`, `rows_added` and, for "add", the `batch_ids` it added (`batch_id` when there is one). `check_upload` reports the same for `request_upload`. A new batch is the upload's only when its source names the file that was sent; others that appeared meanwhile come back as `unmatched_batch_ids` and are not offered for removal. A dataset that replaces offers no batch to remove: the old rows are gone.
 - `get_dataset` with `include_batches` reads the dataset's update method (`mode`, `effect`, `schema_mapping`) and lists its batches, each file added with its `id`.
 - `undo` with what="batch" removes `batch_ids` from a dataset that adds, and reports the rows before and after. It is destructive like the other `undo` kinds: it tells the model to ask the user first. It removes only batches an upload through these tools added to a dataset that was adding: the upload records each batch's mode when it lands (kept 90 days), so a mode changed later does not turn a replace into a removable batch. It refuses a batch with no such record, a dataset whose update method is replace, and a removal of every batch the dataset holds. These need no new tools.
+- `create_project` makes a project, and `rename` renames a project, dataset or view (what="project", "dataset" or "view"). Both report what they changed.
+- `create_folder` makes a folder in a project. `list_files` also lists the folders, each with the `folder_resource_id` that `upload_file` and `request_upload` take to put a file in that folder, where a folder automation picks it up. Neither takes a folder together with `append_to_dataset_id`.
+- `get_job` reads a job by id. A tool call that ends before its job does now names the job, so the model reads it with `get_job` instead of starting it again.
+- `add_transformations` with a join or lookup on its own reports `join_check`: how many rows matched the other view.
 
 ### Changed (next mammoth-mcp-server)
 
 - `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
+- `set_date_format` is now `set_file_settings`: it also sets the delimiter, header, rows to skip and quote character, and keeps any setting not named. With no settings it reports the file's `settings`. `get_file` reports them too, and `interpret_file` with apply=true applies the preview the user approved, with no new preview.
+- `delete_views` refuses to delete a dataset's last view, and lists the exports, dashboards, views and automations that go with the views. It deletes nothing until `confirmed=true`. With `whole_dataset=true` it moves the dataset to the trash instead.
+- `upload_file` waits until Mammoth has read each file, and reports as `check_upload` does: the dataset and view it made, or what the file needs. Before, it returned only job ids.
+- `add_export` waits for the export's first run and reports only the new export: `outcome` ("ran", "run_failed", "run_pending" or "added"), `last_run`, `next_step` and `mammoth_url`. Before, it returned every export of the view while the new one still read "added", and when the run failed Mammoth removed the export without a word.
+- `add_export` to "internal_dataset" takes plain settings: `dataset_name` for a new dataset, or `target_dataset_name` / `target_ds_id` with `save_as_mode` ("append" or "replace") for one there already. A name that two datasets share answers `which_dataset` and adds nothing. `get_schema` with kind="export" lists these settings.
+- `create_view` answers with the new view, and `delete_dashboard` with the dashboard it trashed, not every one there is.
+- `get_pipeline` names a step's columns as the user sees them, and a join's other view by its own column names.
+- A tool refuses an argument it does not take, and names the ones it does. Before, an unknown argument was dropped and the call ran without it.
 
 ### Removed (next mammoth-mcp-server)
 
@@ -30,6 +42,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `get_transformation_schema`, `get_export_schema` and `get_automation_schema`: one `get_schema(kind, of)` answers all three, `kind` being "transformation", "export" or "automation". Only "automation" names a workspace and project.
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
+
+### Fixed (next mammoth-mcp-server)
+
+- A column the view does not have is named, with the view's real columns, instead of being read as a missing view or as no rows. A word in a math expression that is no column is named the same way.
+- `get_data` `offset` counts rows to skip from 0, like every other paged tool.
+- Refreshing a dataset made from a file says why it cannot be refreshed and what to do instead.
+- An export into a dataset there is already sends that dataset's name, so the run no longer reports writing to "Result Dataset".
+- `add_export` refuses "csv_file", which writes to a path on the Mammoth server, and names s3, email or sftp instead. It is no longer offered.
 
 ### Added (next mammoth-io)
 
@@ -48,6 +68,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `DashboardsAPI.share` takes `password` with `DashboardAuthType.PASSWORD` (8 to 128 characters); Mammoth stores only its hash and reports `options.has_password`. A Mammoth without password sharing (PRD-656) ignores the password, so check `options.has_password` after the share.
 - SDK: `mammoth.api.automations.build_automation_create_body` and `build_automation_patch_ops` are public. They validate and build the request body that `AutomationsAPI.create` and `update` send; the CLI's dry run uses them.
 - SDK: the project workflow-template catalog. New sub-client `client.workflow_templates` (`list`, `get`, `sample_result`, `rank`, `fit`, `preview`, `import_samples`, `build`) over `/workflow-templates` (#337).
+- SDK: `mammoth.builders.build_branch_out_params` is public: it builds the settings of an export into a Mammoth dataset. The MCP server's `add_export` uses it.
 
 ### Changed (next mammoth-io)
 
