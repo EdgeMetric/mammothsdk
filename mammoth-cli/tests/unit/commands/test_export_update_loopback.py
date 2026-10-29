@@ -55,13 +55,13 @@ def _stored(**extra: Any) -> dict[str, Any]:
     }
 
 
-def _windowed(**extra: Any) -> dict[str, Any]:
+def _windowed(window: dict[str, Any] = SEND_WINDOW, **extra: Any) -> dict[str, Any]:
     """An email export on a pipeline trigger with a send window (what the server accepts)."""
     return _stored(
         trigger_type="pipeline",
         additional_properties={
             "note": "kept",
-            "send_window": SEND_WINDOW,
+            "send_window": window,
             "send_window_pending_since": "2026-10-28T00:00:00",
         },
         **extra,
@@ -236,3 +236,17 @@ def test_a_stored_schedule_with_a_future_until_is_still_carried(
     )
 
     assert value["schedule"] == open_ended
+
+
+def test_a_stored_send_window_that_has_ended_is_refused_not_resent(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    ended = {**SEND_WINDOW, "until": "2020-01-01T00:00:00"}
+    server.answers[("GET", EXPORT_PATH)] = _windowed(ended)
+
+    with pytest.raises(CliError) as refused:
+        _update_stored(service, server, {"save_as_mode": "REPLACE_IN_DS"})
+
+    assert refused.value.code == "invalid_argument"
+    assert "send_window" in str(refused.value) and "until" in str(refused.value)
+    assert server.bodies("PATCH", "/exports/") == []

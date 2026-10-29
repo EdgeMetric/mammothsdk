@@ -91,8 +91,8 @@ def test_a_daily_automation_gets_the_dataset_with_start_now_false(
 
 @pytest.mark.parametrize(
     "conditions",
-    [(MANUAL,), (), (MANUAL, DAILY), (ENDED,)],
-    ids=["manual", "no conditions", "manual+daily", "ended"],
+    [(MANUAL,), (), (MANUAL, DAILY), (MANUAL, ENDED)],
+    ids=["manual", "no conditions", "manual+daily", "manual+ended"],
 )
 def test_an_automation_the_server_would_run_is_refused_and_nothing_is_sent(
     service: SdkMammothService, server: Recorder, conditions: tuple[dict[str, Any], ...]
@@ -102,4 +102,17 @@ def test_an_automation_the_server_would_run_is_refused_and_nothing_is_sent(
 
     assert refused.value.code == "invalid_argument"
     assert "no recurring schedule" in refused.value.message
+    assert server.bodies("PATCH", "/automations/") == []
+
+
+def test_an_ended_schedule_is_refused_with_its_own_message(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    with pytest.raises(CliError) as refused:
+        _add(service, server, ENDED)
+
+    assert refused.value.code == "invalid_argument"
+    assert "schedule ended at 2020-01-01T00:00:00" in refused.value.message
+    assert "new `until`" in refused.value.message
+    assert "no recurring schedule" not in refused.value.message
     assert server.bodies("PATCH", "/automations/") == []

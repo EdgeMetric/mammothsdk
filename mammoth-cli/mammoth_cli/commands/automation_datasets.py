@@ -138,6 +138,14 @@ def dataset_patch(
     ):
         raise _refused("This automation has no data-refresh (run_data_retrieval) task.")
     if not _has_recurring_schedule(automation):
+        ended = _ended_until(automation)
+        if ended:
+            raise _refused(
+                f"This automation's schedule ended at {ended} (its `until` has passed), so "
+                "Mammoth starts a refresh of every dataset whenever its datasets are edited. "
+                "Nothing was changed. Give the schedule a new `until` in the automation's "
+                "timing condition first, then edit the datasets."
+            )
         raise _refused(
             "This automation has no recurring schedule (it is manual or has no timing "
             "condition), and Mammoth starts a refresh of every dataset whenever such an "
@@ -204,6 +212,35 @@ def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
         ):
             scheduled = True
     return scheduled
+
+
+def _ended_until(automation: dict[str, Any]) -> str | None:
+    """The ``until`` of an ended schedule that is the only reason for a refusal.
+
+    Args:
+        automation: The automation as ``automation get`` returns it.
+
+    Returns:
+        The ended ``until`` of a recurring schedule condition, or None when there is none
+        or a manual trigger is the cause (a manual trigger is reported as such).
+    """
+    ended = None
+    for item in automation.get("conditions") or []:
+        if not isinstance(item, dict):
+            continue
+        details = item.get("details")
+        details = details if isinstance(details, dict) else {}
+        if item.get("condition_type") == CONDITION_RUN_CONFIG and (
+            details.get("trigger_type") == TRIGGER_MANUAL
+        ):
+            return None
+        if (
+            item.get("condition_type") == CONDITION_SCHEDULE
+            and details.get("frequency")
+            and until_has_passed(details)
+        ):
+            ended = str(details.get("until"))
+    return ended
 
 
 def _condition(item: Any) -> Any:
