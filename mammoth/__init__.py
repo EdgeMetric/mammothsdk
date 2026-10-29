@@ -100,6 +100,7 @@ if TYPE_CHECKING:
         DashboardShareRole,
         DashboardShareUser,
     )
+    from mammoth.models.datasets import DataAdditionMode
     from mammoth.models.exports import (
         BigQueryExportType,
         ExportHostPolicy,
@@ -138,6 +139,10 @@ if TYPE_CHECKING:
         MathOperator,
         Operator,
         ProviderType,
+        RepeatBound,
+        RepeatBoundKind,
+        RepeatOrder,
+        RepeatSeries,
         SaveAsDatasetMode,
         SetValue,
         SmallLargeFunction,
@@ -226,6 +231,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "OdbcType": ("mammoth.models.exports", "OdbcType"),
     "RestAuthType": ("mammoth.models.exports", "RestAuthType"),
     "TriggerType": ("mammoth.models.exports", "TriggerType"),
+    "DataAdditionMode": ("mammoth.models.datasets", "DataAdditionMode"),
     "ExternalKeyType": ("mammoth.models.external_keys", "ExternalKeyType"),
     "ModelConfigSpec": ("mammoth.models.external_keys", "ModelConfigSpec"),
     "AggregateFunction": ("mammoth.models.pipeline", "AggregateFunction"),
@@ -263,6 +269,10 @@ _LAZY: dict[str, tuple[str, str]] = {
     "ValueType": ("mammoth.models.pipeline", "ValueType"),
     "WindowFunction": ("mammoth.models.pipeline", "WindowFunction"),
     "WindowRange": ("mammoth.models.pipeline", "WindowRange"),
+    "RepeatBound": ("mammoth.models.pipeline", "RepeatBound"),
+    "RepeatBoundKind": ("mammoth.models.pipeline", "RepeatBoundKind"),
+    "RepeatOrder": ("mammoth.models.pipeline", "RepeatOrder"),
+    "RepeatSeries": ("mammoth.models.pipeline", "RepeatSeries"),
     "WebhookMode": ("mammoth.models.webhooks", "WebhookMode"),
     "BillingCycle": ("mammoth.models.workspaces", "BillingCycle"),
     "UserRolePatchOp": ("mammoth.models.workspaces", "UserRolePatchOp"),
@@ -290,7 +300,7 @@ def __dir__() -> list[str]:
     return sorted({*globals(), *_LAZY})
 
 
-__version__ = "0.8.51"
+__version__ = "0.8.52"
 __all__ = [
     # Client
     "MammothClient",
@@ -342,6 +352,10 @@ __all__ = [
     "SplitColumnSpec",
     "BulkReplaceMapping",
     "DateDelta",
+    "RepeatSeries",
+    "RepeatBound",
+    "RepeatBoundKind",
+    "RepeatOrder",
     # Export enums
     "HandlerType",
     "TriggerType",
@@ -401,6 +415,7 @@ __all__ = [
     "UserRolePatchOp",
     # External keys
     "ExternalKeyType",
+    "DataAdditionMode",
     "ModelConfigSpec",
     # Exceptions
     "MammothError",

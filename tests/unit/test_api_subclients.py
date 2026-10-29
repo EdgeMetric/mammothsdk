@@ -17,7 +17,7 @@ import pytest
 
 from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothAPIError, MammothValidationError
 from mammoth.models.automations import (
     AlertType,
     AutomationConditionSpec,
@@ -645,6 +645,12 @@ class TestDatasetsAPI:
                 "set_project_level_date_format": False,
             },
         )
+
+    async def test_set_update_method_rejects_an_unknown_mode(self):
+        # A real client with a dummy token and no server: the mode is refused before any request.
+        real = MammothClient(api_token="mm_dummy", workspace_id=1)
+        with pytest.raises(MammothValidationError, match="'append'"):
+            await real.datasets.set_update_method(500, "append")
 
     async def test_file_settings_update_rejects_nonpositive_dataset_id(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="dataset_id"):
@@ -3425,12 +3431,21 @@ class TestAIAPI:
         assert_called_with_method_and_endpoint(client._request_json, "GET", "/data/generate")
 
     async def test_generate_sql(self, client: MammothClient):
-        # The route requires the dataset_id query parameter.
-        await client.ai.generate_sql(intent="count employees", dataset_id=48)
+        # The route requires both query parameters; without dataview_id the server writes
+        # against its default view 4.
+        await client.ai.generate_sql(intent="count employees", dataset_id=48, dataview_id=7)
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/sql_generation")
-        assert client._request_json.call_args.kwargs["params"] == {"dataset_id": 48}
-        with pytest.raises(MammothValidationError, match="dataset_id"):
-            await client.ai.generate_sql(intent="count employees")
+        assert client._request_json.call_args.kwargs["params"] == {
+            "dataset_id": 48,
+            "dataview_id": 7,
+        }
+        client._request_json.reset_mock()
+        # Both ids are required keywords: a call without one is refused before it is sent.
+        with pytest.raises(TypeError, match="dataview_id"):
+            await client.ai.generate_sql(intent="count employees", dataset_id=48)  # type: ignore[call-arg]
+        with pytest.raises(TypeError, match="dataset_id"):
+            await client.ai.generate_sql(intent="count employees", dataview_id=7)  # type: ignore[call-arg]
+        client._request_json.assert_not_called()
 
     async def test_generate_profile_sends_action(self, client: MammothClient):
         await client.ai.generate_profile(dataview_id=42, dataset_id=500, action="data_quality")

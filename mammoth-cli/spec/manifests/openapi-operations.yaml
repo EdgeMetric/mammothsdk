@@ -8195,11 +8195,11 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Staff-only support route: status of a project move.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.project-move.get
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_get
   reviewed_by: primary
 - identity: POST /support/project-moves/{move_id}/purge
   method: POST
@@ -8217,11 +8217,11 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Staff-only support route: purges the source of a finished project move.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.project-move.purge
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_purge
   reviewed_by: primary
 - identity: GET /support/search
   method: GET
@@ -8616,11 +8616,11 @@ operations:
   response_schemas:
   - WorkspaceProjectsResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Staff-only support route: lists a workspace''s projects.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.workspace.project.list
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.workspace_project_list
   reviewed_by: primary
 - identity: GET /support/workspaces/{workspace_id}/projects/{project_id}/move
   method: GET
@@ -8638,11 +8638,11 @@ operations:
   response_schemas:
   - MoveCheckResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Staff-only support route: dry run of a cross-workspace project move.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.workspace.project.move-check
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_check
   reviewed_by: primary
 - identity: POST /support/workspaces/{workspace_id}/projects/{project_id}/move
   method: POST
@@ -8660,11 +8660,11 @@ operations:
   response_schemas:
   - MoveResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Staff-only support route: starts a cross-workspace project move.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: support.workspace.project.move-start
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.support.SupportAPI.project_move_start
   reviewed_by: primary
 - identity: POST /support/workspaces/{workspace_id}/restore
   method: POST

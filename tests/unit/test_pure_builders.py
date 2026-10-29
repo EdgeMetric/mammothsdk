@@ -17,6 +17,7 @@ from collections.abc import Callable
 
 import pytest
 
+from mammoth._expression_parser import parameter_names
 from mammoth._pure import builders as b
 from mammoth._pure.resolve import (
     build_as_column,
@@ -54,6 +55,10 @@ from mammoth.models.pipeline import (
     JsonOpType,
     JsonType,
     Operator,
+    RepeatBound,
+    RepeatBoundKind,
+    RepeatOrder,
+    RepeatSeries,
     SaveAsDatasetMode,
     SetValue,
     SortDirection,
@@ -476,6 +481,33 @@ class TestMath:
         spec = b.build_math_params("Sales * 2", COLS)
         assert "AS" not in spec["MATH"] and "DESTINATION" not in spec["MATH"]
 
+    def test_math_parameter_token_becomes_a_parameter_atom(self) -> None:
+        spec = b.build_math_params("Sales * {tax rate}", COLS, parameter_ids={"tax rate": 7})
+        assert spec["MATH"]["EXPRESSION"] == [
+            {"TYPE": "COLUMN", "VALUE": "c1"},
+            {"TYPE": "OPERATOR", "VALUE": "*"},
+            {"TYPE": "NUMBER", "VALUE": {"type": "parameter", "parameter_id": 7}},
+        ]
+
+    def test_math_parameter_inside_parentheses(self) -> None:
+        spec = b.build_math_params("({a} + 1) * {b}", COLS, parameter_ids={"a": 1, "b": 2})
+        atom_a = {"TYPE": "NUMBER", "VALUE": {"type": "parameter", "parameter_id": 1}}
+        assert spec["MATH"]["EXPRESSION"][0] == [
+            atom_a,
+            {"TYPE": "OPERATOR", "VALUE": "+"},
+            {"TYPE": "NUMBER", "VALUE": 1},
+        ]
+
+    def test_math_unknown_or_unclosed_parameter_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="no parameter named 'nope'"):
+            b.build_math_params("Sales * {nope}", COLS, parameter_ids={"rate": 1})
+        with pytest.raises(ValueError, match="unclosed brace"):
+            b.build_math_params("Sales * {rate", COLS, parameter_ids={"rate": 1})
+
+    def test_parameter_names_lists_each_name_once(self) -> None:
+        assert parameter_names("Sales * { rate } + {rate} - {fee}") == ["rate", "fee"]
+        assert parameter_names("Sales * 2") == []
+
 
 # ===============================================================
 # Text operations
@@ -852,6 +884,217 @@ class TestRowOps:
             ["Sales", "Region"], COLS, INTERNALS, value_type="NUMERIC", name_gen=gen()
         )
         assert spec["UNNEST"]["LABEL"]["TYPE"] == "TEXT"
+
+
+class TestRepeatRows:
+    def test_times(self) -> None:
+        assert b.build_repeat_params(COLS, INTERNALS, times=2) == {"REPEAT": {"TIMES": 2}}
+
+    def test_new_column_type_with_times_is_refused(self) -> None:
+        with pytest.raises(MammothValidationError, match="new_column_type is for"):
+            b.build_repeat_params(COLS, INTERNALS, times=2, new_column_type=ColumnType.TEXT)
+
+    def test_new_column_type_with_existing_column_is_refused(self) -> None:
+        with pytest.raises(MammothValidationError, match="new_column_type is for"):
+            b.build_repeat_params(
+                COLS,
+                INTERNALS,
+                values=["x"],
+                existing_column="Notes",
+                new_column_type=ColumnType.TEXT,
+            )
+
+    def test_times_bounds_pass(self) -> None:
+        assert b.build_repeat_params(COLS, INTERNALS, times=10_000) == {"REPEAT": {"TIMES": 10_000}}
+
+    @pytest.mark.parametrize("times", [1, 10_001, True])
+    def test_times_out_of_range(self, times: int) -> None:
+        with pytest.raises(MammothValidationError, match="times must be a whole number"):
+            b.build_repeat_params(COLS, INTERNALS, times=times)
+
+    def test_times_takes_no_column_or_order(self) -> None:
+        with pytest.raises(MammothValidationError, match="takes no column"):
+            b.build_repeat_params(COLS, INTERNALS, times=3, existing_column="Notes")
+        with pytest.raises(MammothValidationError, match="takes no column"):
+            b.build_repeat_params(COLS, INTERNALS, times=3, order=RepeatOrder.GROUPED)
+
+    def test_exactly_one_mode(self) -> None:
+        with pytest.raises(MammothValidationError, match="exactly one of times, values or series"):
+            b.build_repeat_params(COLS, INTERNALS)
+        with pytest.raises(MammothValidationError, match="exactly one of times, values or series"):
+            b.build_repeat_params(COLS, INTERNALS, times=2, values=["x"], new_column="N")
+
+    def test_values_into_existing_column_keeping_originals(self) -> None:
+        spec = b.build_repeat_params(
+            COLS,
+            INTERNALS,
+            values=["x", "y"],
+            existing_column="Notes",
+            keep_original=True,
+            order=RepeatOrder.INTERLEAVED,
+        )
+        assert spec == {
+            "REPEAT": {
+                "VALUES": ["x", "y"],
+                "DESTINATION": "c4",
+                "KEEP_ORIGINAL": True,
+                "ORDER": "INTERLEAVED",
+            }
+        }
+
+    def test_values_into_new_numeric_column(self) -> None:
+        spec = b.build_repeat_params(
+            COLS,
+            INTERNALS,
+            values=[1, "2.5"],
+            new_column="Rank",
+            new_column_type=ColumnType.NUMERIC,
+            name_gen=gen(),
+        )
+        assert spec == {
+            "REPEAT": {
+                "VALUES": [1, "2.5"],
+                "AS": {"COLUMN": "Rank", "TYPE": "NUMERIC", "INTERNAL_NAME": "gen1"},
+            }
+        }
+
+    def test_values_into_new_column_need_a_text_or_numeric_type(self) -> None:
+        with pytest.raises(MammothValidationError, match="TEXT or NUMERIC"):
+            b.build_repeat_params(COLS, INTERNALS, values=["x"], new_column="N")
+        with pytest.raises(MammothValidationError, match="TEXT or NUMERIC"):
+            b.build_repeat_params(
+                COLS, INTERNALS, values=["x"], new_column="N", new_column_type=ColumnType.DATE
+            )
+
+    def test_values_count_limits(self) -> None:
+        with pytest.raises(MammothValidationError, match="1 to 1000 values"):
+            b.build_repeat_params(COLS, INTERNALS, values=[], existing_column="Notes")
+        with pytest.raises(MammothValidationError, match="1 to 1000 values"):
+            b.build_repeat_params(
+                COLS, INTERNALS, values=[str(i) for i in range(1001)], existing_column="Notes"
+            )
+
+    def test_destination_xor_new_column(self) -> None:
+        for kwargs in ({}, {"new_column": "N", "existing_column": "Notes"}):
+            with pytest.raises(MammothValidationError, match="exactly one of new_column"):
+                b.build_repeat_params(COLS, INTERNALS, values=["x"], **kwargs)  # type: ignore[arg-type]
+
+    def test_keep_original_only_for_values_into_an_existing_column(self) -> None:
+        with pytest.raises(MammothValidationError, match="keep_original"):
+            b.build_repeat_params(
+                COLS,
+                INTERNALS,
+                values=["x"],
+                new_column="N",
+                new_column_type=ColumnType.TEXT,
+                keep_original=True,
+            )
+        with pytest.raises(MammothValidationError, match="keep_original"):
+            b.build_repeat_params(
+                COLS,
+                INTERNALS,
+                series=RepeatSeries(1, 3, step=1),
+                existing_column="Sales",
+                keep_original=True,
+            )
+
+    def test_date_series_with_moving_bounds(self) -> None:
+        series = RepeatSeries(
+            RepeatBound(RepeatBoundKind.EARLIEST, column="Order Date"),
+            RepeatBound(RepeatBoundKind.TODAY),
+            delta=DateDelta(months=3),
+        )
+        spec = b.build_repeat_params(
+            COLS, INTERNALS, series=series, new_column="Quarter", name_gen=gen()
+        )
+        assert spec == {
+            "REPEAT": {
+                "SERIES": {
+                    "START": {"KIND": "EARLIEST", "COLUMN": "c3"},
+                    "END": {"KIND": "TODAY"},
+                    "DELTA": {"MONTH": 3},
+                },
+                "AS": {"COLUMN": "Quarter", "TYPE": "DATE", "INTERNAL_NAME": "gen1"},
+            }
+        }
+
+    def test_date_series_with_fixed_dates_and_start_of_year(self) -> None:
+        fixed = RepeatSeries("2026-01-01", "2026-12-31", delta=DateDelta(days=1))
+        assert b.build_repeat_params(COLS, INTERNALS, series=fixed, existing_column="End Date") == {
+            "REPEAT": {
+                "SERIES": {"START": "2026-01-01", "END": "2026-12-31", "DELTA": {"DAY": 1}},
+                "DESTINATION": "c5",
+            }
+        }
+        moving = RepeatSeries(
+            RepeatBound(RepeatBoundKind.START_OF_YEAR), "2026-12-31", delta=DateDelta(weeks=1)
+        )
+        built = b.build_repeat_params(COLS, INTERNALS, series=moving, existing_column="End Date")
+        assert built["REPEAT"]["SERIES"]["START"] == {"KIND": "START_OF_YEAR"}
+
+    def test_number_series_into_new_column_is_numeric(self) -> None:
+        spec = b.build_repeat_params(
+            COLS, INTERNALS, series=RepeatSeries(0, 1, step=0.1), new_column="T", name_gen=gen()
+        )
+        assert spec["REPEAT"]["SERIES"] == {"START": 0, "END": 1, "STEP": 0.1}
+        assert spec["REPEAT"]["AS"]["TYPE"] == "NUMERIC"
+
+    def test_series_new_column_type_must_match_the_series(self) -> None:
+        with pytest.raises(MammothValidationError, match="series writes NUMERIC"):
+            b.build_repeat_params(
+                COLS,
+                INTERNALS,
+                series=RepeatSeries(1, 3, step=1),
+                new_column="N",
+                new_column_type=ColumnType.TEXT,
+            )
+
+    @pytest.mark.parametrize(
+        "series,match",
+        [
+            (RepeatSeries(1, 3), "exactly one of delta or step"),
+            (RepeatSeries("2026-01-01", "2026-02-01", delta=DateDelta(days=1), step=1), "exactly"),
+            (RepeatSeries(1, 3, step=0), "step must be greater than 0"),
+            (RepeatSeries(1, 3, step=-1), "step must be greater than 0"),
+            (RepeatSeries("2026-01-01", "2026-02-01", delta=DateDelta()), "exactly one of years"),
+            (
+                RepeatSeries("2026-01-01", "2026-02-01", delta=DateDelta(days=1, weeks=1)),
+                "exactly one of years",
+            ),
+            (RepeatSeries("2026-01-01", "2026-02-01", delta=DateDelta(hours=1)), "exactly one"),
+            (RepeatSeries("2026-01-01", "2026-02-01", delta=DateDelta(days=-1)), "1 or more"),
+            (
+                RepeatSeries(RepeatBound(RepeatBoundKind.TODAY), "2026-02-01", DateDelta(days=1)),
+                "not valid here",
+            ),
+            (
+                RepeatSeries(
+                    "2026-01-01", RepeatBound(RepeatBoundKind.START_OF_YEAR), DateDelta(days=1)
+                ),
+                "not valid here",
+            ),
+            (
+                RepeatSeries(RepeatBound(RepeatBoundKind.START_OF_YEAR), 3, step=1),
+                "not valid here",
+            ),
+            (
+                RepeatSeries(
+                    RepeatBound(RepeatBoundKind.EARLIEST), "2026-02-01", DateDelta(days=1)
+                ),
+                "bound column with EARLIEST",
+            ),
+        ],
+    )
+    def test_invalid_series(self, series: RepeatSeries, match: str) -> None:
+        with pytest.raises(MammothValidationError, match=match):
+            b.build_repeat_params(COLS, INTERNALS, series=series, existing_column="Sales")
+
+    def test_earliest_bound_resolves_an_unknown_column_loudly(self) -> None:
+        series = RepeatSeries(
+            RepeatBound(RepeatBoundKind.EARLIEST, column="Nope"), "2026-02-01", DateDelta(days=1)
+        )
+        with pytest.raises(MammothColumnError):
+            b.build_repeat_params(COLS, INTERNALS, series=series, existing_column="End Date")
 
 
 # ===============================================================
@@ -1346,6 +1589,36 @@ class TestAdvanced:
             {"COLUMN": "Name", "KEY": "name", "TYPE": "TEXT", "INTERNAL_NAME": "gen1"},
             {"COLUMN": "Age", "KEY": "age", "TYPE": "NUMERIC", "INTERNAL_NAME": "gen2"},
         ]
+
+    def test_json_extract_nested_key_paths(self) -> None:
+        extractions = [
+            JsonExtractionSpec(key=["company", "location", "country"]),
+            JsonExtractionSpec(key=["orders", 0, "total"], as_name="First total"),
+        ]
+        spec = b.build_json_extract_params(
+            "Notes", COLS, INTERNALS, extractions=extractions, name_gen=gen()
+        )
+        assert spec["JSON_HANDLE"]["JSON_EXTRACT"] == [
+            {
+                "COLUMN": "company.location.country",
+                "KEY": ["company", "location", "country"],
+                "TYPE": "TEXT",
+                "INTERNAL_NAME": "gen1",
+            },
+            {
+                "COLUMN": "First total",
+                "KEY": ["orders", 0, "total"],
+                "TYPE": "TEXT",
+                "INTERNAL_NAME": "gen2",
+            },
+        ]
+
+    @pytest.mark.parametrize("key", [[], ["a", -1], ["a", True], ["a", 1.5], ["a", None]])
+    def test_json_extract_invalid_key_path_is_refused(self, key: list) -> None:
+        with pytest.raises(MammothValidationError, match="key path"):
+            b.build_json_extract_params(
+                "Notes", COLS, INTERNALS, extractions=[JsonExtractionSpec(key=key)]
+            )
 
     def test_json_extract_keys_list_op_override_wrong_count_raises(self) -> None:
         """DBAdapter's json_handle asserts ``len(column_spec) == 2`` for

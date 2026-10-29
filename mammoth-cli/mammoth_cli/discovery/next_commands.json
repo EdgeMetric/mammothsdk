@@ -31,6 +31,12 @@
     ],
     "automation.create": [
       "mammoth automation get {automation_id|id}"
+    ],
+    "workflow.template.list": [
+      "mammoth workflow template get {templates.0.key}"
+    ],
+    "workflow.template.build": [
+      "mammoth workflow get {workflow.id}"
     ]
   }
 }

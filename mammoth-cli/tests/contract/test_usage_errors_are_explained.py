@@ -75,7 +75,7 @@ def test_a_group_invoked_with_no_subcommand_explains_itself(path: list[str]) -> 
     assert error["code"], f"{path}: empty error code"
     assert error["message"].strip(), (
         f"'mammoth {' '.join(path)}' returned a usage error with an empty message; "
-        "give it a real one in mammoth_cli.app._usage_error_report"
+        "give it a real one in mammoth_cli.app.usage._usage_error_report"
     )
     # An empty hint is allowed, but a whitespace-only one is a formatting bug.
     if error["hint"] is not None:

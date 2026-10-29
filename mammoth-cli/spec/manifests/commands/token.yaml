@@ -1,6 +1,11 @@
 manifest_schema_version: 1
 commands:
 - command_id: token.create
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: token.revoke
   command_path: token create
   disposition: command
   alias_of: null
@@ -39,7 +44,8 @@ commands:
   - CT-CLIENT-APP-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: The token is shown once, in this response only; store it at once. It is redacted from logs and diagnostics. Needs --yes.
+  known_restrictions: The token is shown once, in this response only; store it at once. It is redacted
+    from logs and diagnostics. Needs --yes.
   reviewed_by: primary
   readback:
     command: client-app.get
@@ -48,6 +54,7 @@ commands:
     kind: object
 - command_id: token.list
   command_path: token list
+  output_schema: openapi
   disposition: command
   alias_of: null
   operation_ids:
@@ -81,6 +88,7 @@ commands:
   known_restrictions: Lists the workspace's API tokens.
   reviewed_by: primary
 - command_id: token.revoke
+  output_schema: {ref: WriteResultOrNull}
   command_path: token revoke
   disposition: command
   alias_of: null
@@ -100,6 +108,9 @@ commands:
   result_model: ClientAppDeleteResult
   mutation_class: destructive
   edits_target: true
+  undo:
+    strategy: "irreversible"
+    reason: "A revoked token stays revoked; issue a new one with `mammoth token create`."
   confirmation: prompt_or_yes
   wait_policy: not_async
   pagination_policy: none
@@ -119,7 +130,8 @@ commands:
   - CT-CLIENT-APP-DELETE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Revokes the token for good; anything using it stops working. Needs --yes and --confirm with the exact token key.
+  known_restrictions: Revokes the token for good; anything using it stops working. Needs --yes and --confirm
+    with the exact token key.
   reviewed_by: primary
   readback:
     command: client-app.list

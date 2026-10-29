@@ -30,7 +30,7 @@ CSV_PATH = _DATA_DIR / "employee.csv"
 STORE_CSV_PATH = _DATA_DIR / "Store_Transactions.csv"
 EMPLOYEE_CSV_PATH = CSV_PATH
 
-_CRED_SUFFIXES = ("BASE_URL", "API_KEY", "API_SECRET", "WORKSPACE_ID", "PROJECT_ID")
+_CRED_SUFFIXES = ("BASE_URL", "WORKSPACE_ID", "PROJECT_ID")
 
 
 def _client_from_env(
@@ -38,22 +38,28 @@ def _client_from_env(
 ) -> MammothClient:
     """Build a ``MammothClient`` from the ``<prefix>_*`` env vars.
 
-    Skips the requesting test (rather than connecting to any default host) when
-    any credential in the group is missing, so tests never write to an
-    unintended instance.
+    Authenticates with ``<prefix>_API_TOKEN`` when it is set, otherwise with
+    ``<prefix>_API_KEY`` and ``<prefix>_API_SECRET``. Skips the requesting test
+    (rather than connecting to any default host) when any credential in the
+    group is missing, so tests never write to an unintended instance.
     """
-    names = {suffix: f"{prefix}_{suffix}" for suffix in _CRED_SUFFIXES}
+    token = os.environ.get(f"{prefix}_API_TOKEN")
+    suffixes = _CRED_SUFFIXES if token else (*_CRED_SUFFIXES, "API_KEY", "API_SECRET")
+    names = {suffix: f"{prefix}_{suffix}" for suffix in suffixes}
     missing = [name for name in names.values() if not os.environ.get(name)]
     if missing:
         pytest.skip(f"integration credentials not set: {', '.join(missing)}")
-    kwargs: dict[str, int] = {}
+    kwargs: dict[str, int | str] = {}
     if timeout is not None:
         kwargs["timeout"] = timeout
     if job_timeout is not None:
         kwargs["job_timeout"] = job_timeout
+    if token:
+        kwargs["api_token"] = token
+    else:
+        kwargs["api_key"] = os.environ[names["API_KEY"]]
+        kwargs["api_secret"] = os.environ[names["API_SECRET"]]
     c = MammothClient(
-        api_key=os.environ[names["API_KEY"]],
-        api_secret=os.environ[names["API_SECRET"]],
         workspace_id=int(os.environ[names["WORKSPACE_ID"]]),
         base_url=os.environ[names["BASE_URL"]],
         **kwargs,

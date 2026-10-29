@@ -82,6 +82,8 @@ _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
     "view.update": frozenset({"patch_data"}),
     # The endpoint names the target page as ``page``; the handler maps it onto these two.
     "dashboard.figure.add": frozenset({"page_id", "page_new_title"}),
+    # The password comes from ``password_file``, never from the command line.
+    "dashboard.share": frozenset({"password"}),
     # The handler builds the panel from ``edits`` and the figure from ``card``.
     "view.explore-panel.edit": frozenset({"panel"}),
     "view.explore-panel.add-to-dashboard": frozenset(
@@ -148,6 +150,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
             }
         }
     },
+    # The four reading settings are optional (the SDK keeps the stored ones); one
+    # changed alone is the call this command exists for.
+    "dataset.file-settings.update": {"initial_skip_count": 2},
+    "dataset.update-method.set": {"mode": "replace"},
     "automation.route.order": {"automation_ids": [12, 11]},
     "automation.route.preview": {"names": ["sales_2026-10.csv"]},
     "automation.runs": {"limit": 10},
@@ -174,6 +180,9 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "agent.access.request.resolve": {"status": "done"},
     "agent.turn.rate": {"rating": "up"},
     "agent.session.set-visibility": {"visibility": "shared"},
+    "dataset.download": {"resource_ids": [12, 13], "name": "sales", "file_type": "csv"},
+    "dataset.download-plan": {"resource_ids": [12, 13]},
+    "dataset.from-url.follow": {"follow": False},
     "ai.expression.generate": {"intent": "Summarize revenue by region", "mode": "math"},
     "annotation.create": {
         "target_type": "dataview",
@@ -232,6 +241,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "workspace.update": {"patches": [{"op": "replace", "path": "name", "value": "Revenue team"}]},
     # Every field is optional; the useful call narrows to failures.
     "log.tail": {"errors_only": True, "limit": 20},
+    "history.list": {"undoable_only": True},
+    "recipe.run": {"inputs": {"view_id": 1, "dataset_id": 2}},
     # first_name/last_name are each individually optional (either one alone is
     # a valid update), so neither is `required`; show one so the example is a
     # real call rather than the bare command, which the handler rejects.
@@ -401,6 +412,11 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     # Blank dashboard creation requires a typed params envelope. Keep the
     # generated destructive example runnable with the explicit approval flag.
     "dashboard.create-blank": {"params": {"dataview_id": 1}},
+    # The generator builds the dashboard from the intent: an example without one makes
+    # a dashboard about nothing in particular.
+    "dashboard.v3.generate": {
+        "body": {"params": {"intent": "Weekly sales by region", "dataview_id": 1}}
+    },
     # The draft/published data routes take a WidgetDataSpec keyed by the
     # widget UUID (read it from ``dashboard canvas get``), not a SQL string.
     "dashboard.data.draft": {"widget_id": "550e8400-e29b-41d4-a716-446655440000"},
@@ -416,10 +432,10 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patch": [{"op": "replace", "path": "title", "value": "Renamed dashboard"}]
     },
     # Contracts observed on release (write sweep 2026-09-18): the SQL route
-    # requires dataset_id; conditional-format deletion is per rule; bulk
+    # requires dataset_id and dataview_id; conditional-format deletion is per rule; bulk
     # dataset deletion takes explicit ids; folder moves take integer resource
     # ids and a destination folder id or "root"; a project rename needs a field.
-    "ai.sql.generate": {"dataset_id": 456},
+    "ai.sql.generate": {"dataset_id": 456, "dataview_id": 123},
     # UnifiedPromptSpec: the params shape follows suggestion_type.
     "ai.suggestion.list": {
         "suggestion_type": "generate_task",

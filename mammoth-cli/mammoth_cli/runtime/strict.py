@@ -32,13 +32,14 @@ or not-yet-backed commands.
 
 from __future__ import annotations
 
+import difflib
 import math
 import re
 from collections.abc import Iterable, Mapping
 from typing import Any
 
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
-from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG
+from mammoth_cli.runtime.compact import FULL_FLAG, FULL_FLAG_COMMANDS
 from mammoth_cli.runtime.reveal import REVEAL_COMMANDS, REVEAL_FLAG
 from mammoth_cli.services.argspec import FieldSpec
 from mammoth_cli.services.command_contract import (
@@ -57,17 +58,18 @@ NEGATIVE_NUMBER = re.compile(r"^-(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
 #: Flags a few commands take in place of the ``--input`` field of the same name.
 COMMAND_FLAGS: dict[str, frozenset[str]] = {
     "schema.get": frozenset({"--full"}),
-    "schema.find": frozenset({"--unsupported"}),
     # Keep going after a failed line instead of stopping at the first.
     "run": frozenset({"--continue"}),
     # The compacted dashboard writes: --full returns the whole response.
-    **{command_id: frozenset({FULL_FLAG}) for command_id in COMPACT_COMMANDS},
+    **{command_id: frozenset({FULL_FLAG}) for command_id in FULL_FLAG_COMMANDS},
+    "schema.find": frozenset({"--unsupported", FULL_FLAG}),
     # A once-shown credential is masked unless --reveal asks for it.
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
 }
 
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
+SCHEMA_GET = "schema.get"
 CODE_UNKNOWN_INPUT_FIELD = "unknown_input_field"
 CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 
@@ -77,6 +79,7 @@ CODE_INVALID_INPUT_FIELD_TYPE = "invalid_input_field_type"
 INPUT_ALIASES: dict[str, dict[str, str]] = {
     "view.transform.sort": {"sort_by": "order_by"},
     "view.transform.limit-rows": {"limit": "n"},
+    "view.data.query": {"filter": "condition"},
     "view.export.download": {"format": "file_type"},
 }
 _SORT_COMMAND = "view.transform.sort"
@@ -117,7 +120,7 @@ def _unknown_option_hint(command_id: str, token: str) -> tuple[str, dict[str, An
                 f"pass --input '{{\"{guessed}\": VALUE}}' after the positional arguments.",
                 {"input_field": guessed},
             )
-    from mammoth_cli.app import _global_option_flags
+    from mammoth_cli.app.usage import _global_option_flags
     from mammoth_cli.services.suggest import option_suggestion
 
     known = sorted(_global_option_flags()[0] | COMMAND_FLAGS.get(command_id, frozenset()))
@@ -161,7 +164,9 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
             )
 
     max_positionals = len(resolve_positionals(command_id))
-    if len(tokens) > max_positionals:
+    # 'schema get' takes ids separated by spaces as well as by ',' or ';' (an agent that
+    # was told the comma form still writes the space form), or a command as typed.
+    if len(tokens) > max_positionals and command_id != SCHEMA_GET:
         surplus = tokens[max_positionals:]
         raise CliError(
             code=CODE_UNEXPECTED_ARGUMENT,
@@ -225,6 +230,7 @@ def _invalid_field_type_error(
                 "accepted": list(accepted),
                 "did_you_mean": did_you_mean,
             },
+            recovery_commands=[_schema_command(command_id)],
         )
     if expected == "a required field":
         message = f"Input field '{field}' for '{command}' is required."
@@ -241,6 +247,7 @@ def _invalid_field_type_error(
         exit_status=EXIT_USAGE,
         hint=hint,
         details={"field": field, "expected_type": expected},
+        recovery_commands=[_schema_command(command_id)],
     )
 
 
@@ -382,6 +389,17 @@ _UNKNOWN_FIELD_HINTS: dict[str, str] = {
 }
 
 
+def _schema_command(command_id: str) -> str:
+    """The command that lists every field of ``command_id``."""
+    return f"mammoth schema get {command_id}"
+
+
+def _nearest_fields(unknown: list[str], accepted: list[str]) -> dict[str, str]:
+    """For each unknown key, the closest accepted field; a key with none close is left out."""
+    nearest = {key: difflib.get_close_matches(key, accepted, n=1) for key in unknown}
+    return {key: close[0] for key, close in nearest.items() if close}
+
+
 def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: list[str]) -> str:
     """Name the fix for an unknown ``--input`` key, with the caller's own value."""
     if command_id in _UNKNOWN_FIELD_HINTS:
@@ -393,11 +411,14 @@ def _unknown_field_hint(command_id: str, document: dict[str, Any], accepted: lis
             f"mammoth {command_id.replace('.', ' ')} ... --project {document['project_id']} "
             "(or omit it to use the active project)."
         )
-    return f"Accepted fields: {', '.join(accepted) or '(none)' }."
+    return f"Accepted fields: {', '.join(accepted) or '(none)'}."
 
 
 def _sort_entry(entry: Any) -> Any:
-    """``"col"`` / ``"col asc"`` / ``"col desc"`` as ``[col, DIR]``; any other entry as it is."""
+    """``"col"``, ``"col desc"`` or ``{"column", "order"}`` as ``[col, DIR]``; else unchanged."""
+    if isinstance(entry, dict) and isinstance(entry.get("column"), str):
+        direction = str(entry.get("order") or entry.get("direction") or "asc").upper()
+        return [entry["column"], direction]
     if not isinstance(entry, str):
         return entry
     words = entry.split()
@@ -409,11 +430,11 @@ def _sort_entry(entry: Any) -> Any:
 #: ``dashboard v3 generate`` wants ``{"body": {"params": {...}}}``; these are the params an
 #: agent writes at the top level instead.
 _GENERATE_COMMAND = "dashboard.v3.generate"
-_GENERATE_PARAMS = ("intent", "dataview_id", "title")
+_GENERATE_PARAMS = ("intent", "dataview_id", "title", "format")
 
 
 def _nest_generate_params(document: dict[str, Any]) -> None:
-    """Move top-level ``intent``/``dataview_id``/``title`` into ``body.params``, in place."""
+    """Move top-level ``intent``/``dataview_id``/``title``/``format`` into ``body.params``."""
     flat = [key for key in _GENERATE_PARAMS if key in document]
     if not flat or "body" in document:
         return
@@ -505,7 +526,12 @@ def validate_input_fields(command_id: str, document: dict[str, Any] | None) -> N
             ),
             exit_status=EXIT_USAGE,
             hint=_unknown_field_hint(command_id, document, sorted(fields_by_name)),
-            details={"unknown": unknown, "accepted": sorted(fields_by_name)},
+            details={
+                "unknown": unknown,
+                "accepted": sorted(fields_by_name),
+                "did_you_mean": _nearest_fields(unknown, sorted(fields_by_name)),
+            },
+            recovery_commands=[_schema_command(command_id)],
         )
     if is_closed_zero_input(command_id) and document == {}:
         raise CliError(

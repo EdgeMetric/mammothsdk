@@ -22,6 +22,7 @@ from mcp.server.apps import ResourceCsp
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
+from .appends import NOT_AN_APPEND, Mode
 from .chat_apps import chat_apps
 from .config import MCP_UPLOAD_URL, UPLOAD_ORIGIN
 from .consts import (
@@ -231,7 +232,12 @@ chat_apps.add_html_resource(
 
 
 @chat_apps.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
-async def request_upload(workspace_id: int, project_id: int | None = None) -> dict[str, JsonValue]:
+async def request_upload(
+    workspace_id: int,
+    project_id: int | None = None,
+    append_to_dataset_id: int | None = None,
+    mode: Mode | None = None,
+) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 
     Use this for any file you do not already hold as text: a spreadsheet, a
@@ -250,6 +256,16 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
     in. Many clients draw an uploader right under this call, so tell the user
     to drop the file there; if none shows, give them `upload_url` to open.
 
+    With `append_to_dataset_id` the file goes into that existing dataset
+    instead of making a new one, and the dataset's update method decides what
+    happens to its rows: "add" puts the file's rows under the ones it holds,
+    "replace" throws the old rows away and keeps the file's. Without `mode` the
+    dataset keeps the method it has (`get_dataset` with `include_batches` reads
+    it). A `mode` is set when the file is sent and stays on the dataset: every
+    later upload and folder automation into it follows it too. Say so to the
+    user, and ask before a "replace", which cannot be taken back. `check_upload`
+    reports the rows added and the batch to remove with `undo`.
+
     The link acts as the user, is good for one upload, and expires in half an
     hour. Ask for a new one rather than reusing an old one.
 
@@ -258,11 +274,17 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
         project_id: Which project the files land in. Leave it out when the
             user limited this connection to one project: that is the project
             the files land in. With several, name one of them.
+        append_to_dataset_id: An existing dataset to put the files into, from
+            `list_datasets`. Leave out to make new datasets.
+        mode: "add" or "replace", only together with `append_to_dataset_id`:
+            the dataset's update method, set when the file is sent.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
         `check_upload` with.
     """
+    if mode is not None and append_to_dataset_id is None:
+        raise ToolError(NOT_AN_APPEND)
     caller = get_access_token()
     if caller is None:
         raise ToolError("Sign in again: this call carries no Mammoth user.")
@@ -272,7 +294,7 @@ async def request_upload(workspace_id: int, project_id: int | None = None) -> di
         pinned = own_projects()
         may_use = f"{named_projects(pinned)}" if pinned else "any project in the workspace"
         raise ToolError(f"Name the project the files land in: this connection may use {may_use}.")
-    upload_id = await mint_ticket(caller, workspace_id, landing)
+    upload_id = await mint_ticket(caller, workspace_id, landing, append_to_dataset_id, mode)
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",
         UploadFields.UPLOAD_ID: upload_id,

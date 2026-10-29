@@ -21,7 +21,7 @@ def test_config_get_unknown_key_fails(isolated_cli_config: Path) -> None:
     runner = make_runner()
     result = runner.invoke(["config", "get", "nonsense", "--output", "json", "--no-input"])
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "unknown_config_key"
 
 
@@ -40,7 +40,7 @@ def test_config_set_output_rejects_invalid_mode(isolated_cli_config: Path) -> No
         ["config", "set", "output", "not-a-mode", "--output", "json", "--no-input"]
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_config_value"
 
 
@@ -56,7 +56,7 @@ def test_config_set_project_requires_existing_profile(isolated_cli_config: Path)
     runner = make_runner()
     result = runner.invoke(["config", "set", "project", "42", "--output", "json", "--no-input"])
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "profile_not_found"
 
 
@@ -75,7 +75,7 @@ def test_config_set_server_prefix_validates_format(isolated_cli_config: Path) ->
         ["config", "set", "server_prefix", "bad prefix", "--output", "json", "--no-input"]
     )
     assert result.exit_code == 2
-    envelope = json.loads(result.stderr)
+    envelope = json.loads(result.stdout)
     assert envelope["error"]["code"] == "invalid_server_prefix"
 
 

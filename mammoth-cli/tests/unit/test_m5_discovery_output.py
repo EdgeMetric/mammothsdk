@@ -20,7 +20,8 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands.capability import find_capabilities
-from mammoth_cli.commands.schema import find_schemas, get_schema, schema_entries
+from mammoth_cli.commands.schema import get_schema, schema_entries
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.output.envelope import Meta, Result
 from mammoth_cli.output.normalize import normalize
@@ -502,8 +503,8 @@ def test_subprocess_machine_success_and_error_keep_streams_separate() -> None:
         check=False,
     )
     assert failure.returncode == 2
-    assert failure.stdout == ""
-    assert json.loads(failure.stderr)["error"]["code"] == "schema_not_found"
+    assert failure.stderr == ""
+    assert json.loads(failure.stdout)["error"]["code"] == "schema_not_found"
 
 
 @pytest.mark.parametrize(

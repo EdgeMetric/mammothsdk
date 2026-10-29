@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -25,8 +26,6 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
 from mammoth_cli.services.command_contract import bind_command_inputs
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -124,7 +123,12 @@ def template_get(invocation: Invocation) -> HandlerResult:
 
 
 def template_list(invocation: Invocation) -> HandlerResult:
-    """List templates."""
+    """List the legacy workspace templates (not the workflow template catalog).
+
+    This reads the older ``/workspaces/{ws}/templates`` API, which is empty for most
+    workspaces. The project catalog of ready-made workflows (reconciliations and
+    reports) is ``mammoth workflow template list``.
+    """
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     return data, _meta(invocation, auth.workspace_id)

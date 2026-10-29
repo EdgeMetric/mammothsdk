@@ -14,13 +14,13 @@ from __future__ import annotations
 import csv
 import io
 import json
-import time
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
 import pytest
-from live_harness import LiveCli, open_live_service, upload_csv
+from live_harness import LiveCli, open_live_service, upload_csv, wait_for
 
 pytestmark = pytest.mark.live
 
@@ -177,6 +177,9 @@ def local(source: Source) -> Iterator[Table]:
     yield from _fresh(source, source.local)
 
 
+# A test that joins or looks up `local` to `foreign_view` asks for `foreign_view` first: fixtures
+# tear down in reverse, so `local` is deleted before the view it reads (the server refuses to
+# delete a view another view's join reads).
 @pytest.fixture
 def foreign_view(source: Source) -> Iterator[Table]:
     yield from _fresh(source, source.foreign)
@@ -261,6 +264,72 @@ def test_first_name_needs_exactly_one_destination(items: Table) -> None:
     assert items.steps() == before
 
 
+def test_math_uses_a_parameter_written_in_braces(source: Source, items: Table) -> None:
+    name = f"live_factor_{uuid.uuid4().hex[:8]}"
+    created, _ = source.cli.ok(
+        *("parameter", "create"),
+        *("--input", json.dumps({"name": name, "param_type": "NUMERIC", "value": 2})),
+        project=source.project,
+    )
+    try:
+        items.ok("math", expression=f"Cost * {{{name}}}", new_column="Scaled")
+
+        assert items.total("Scaled") == 200
+    finally:
+        source.cli.run(
+            *("parameter", "delete", str(created["id"]), "--yes"), project=source.project
+        )
+
+
+def test_json_extract_takes_a_key_path_into_nested_objects(items: Table) -> None:
+    doc = '{"company": {"location": {"country": "Peru"}}, "tags": ["x", "y"]}'
+    items.ok("set-values", new_column="Doc", values=[{"value": doc}])
+
+    items.ok(
+        "json-extract",
+        column="Doc",
+        extractions=[
+            {"key": ["company", "location", "country"], "as_name": "Country"},
+            {"key": ["tags", 1], "as_name": "Second tag"},
+        ],
+    )
+
+    assert items.values("Country") == ["Peru"] * 4
+    assert items.values("Second tag") == ["y"] * 4
+
+
+# -- repeat-rows ----------------------------------------------------------------
+
+
+def test_repeat_rows_values_make_one_copy_of_each_row_per_value(items: Table) -> None:
+    data = items.ok("repeat-rows", values=["a", "b"], new_column="Tag", new_column_type="TEXT")
+
+    assert data["row_check"] == {"rows_before": 4, "rows_after": 8}
+    assert items.values("Tag") == ["a"] * 4 + ["b"] * 4
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_times_doubles_the_rows(items: Table) -> None:
+    items.ok("repeat-rows", times=2)
+
+    assert items.total("Cost") == 200
+
+
+def test_repeat_rows_number_series_names_its_values(items: Table) -> None:
+    items.ok("repeat-rows", series={"start": 1, "end": 3, "step": 1}, new_column="N")
+
+    assert sorted(set(items.values("N"))) == [1, 2, 3]
+
+
+def test_repeat_rows_needs_exactly_one_mode(items: Table) -> None:
+    before = items.steps()
+
+    error = items.err("repeat-rows")
+
+    assert "exactly one of times, values or series" in json.dumps(error)
+    assert items.steps() == before
+
+
 # -- batch ---------------------------------------------------------------------
 
 _KEEP_FROM_20 = {"condition": {"column": "Cost", "operator": "GTE", "value": 20}}
@@ -330,7 +399,10 @@ def test_a_batch_whose_second_task_fails_names_the_step_and_keeps_no_task(items:
     assert error["details"]["step_index"] == 1 and error["details"]["op"] == "replace"
     assert error["details"]["not_removed_task_ids"] == []
     assert items.steps() == before
-    assert items.total("Cost") == 100
+    # The rollback queues the view's re-run: the pipeline reads ready and idle, and the data is
+    # the batch's (a SUM of 60) for a few seconds before it is the original's.
+    settled = wait_for(lambda: items.total("Cost"), lambda v: v == 100, timeout=30, interval=1)
+    assert settled == 100
 
 
 def test_a_batch_step_can_use_a_column_an_earlier_copy_step_creates(items: Table) -> None:
@@ -421,10 +493,9 @@ def test_the_service_turns_a_raw_json_mapping_into_the_bulk_replace_task(items: 
             items.view, "bulk_replace", dataset_id=items.dataset, columns=["Item"], mapping=mapping
         )
 
-    deadline = time.monotonic() + 90
-    while items.values("Item") != ["TOOL", "TOOL", "gizmo", "widget"]:
-        assert time.monotonic() < deadline, items.values("Item")
-        time.sleep(3)
+    expected = ["TOOL", "TOOL", "gizmo", "widget"]
+    found = wait_for(lambda: items.values("Item"), lambda v: v == expected, timeout=90, interval=3)
+    assert found == expected
 
 
 # -- display-name resolution ----------------------------------------------
@@ -478,7 +549,7 @@ def test_an_unknown_name_in_a_math_expression_is_named_in_the_error(local: Table
 
 
 def test_join_resolves_foreign_display_names_at_the_foreign_parent(
-    local: Table, foreign_view: Table
+    foreign_view: Table, local: Table
 ) -> None:
     local.ok(
         "join",
@@ -510,7 +581,7 @@ def test_an_unknown_foreign_join_name_adds_no_step(local: Table, foreign_view: T
 
 
 def test_a_lookup_by_an_internal_foreign_id_is_rejected_and_by_a_unicode_name_posts_once(
-    local: Table, foreign_view: Table
+    foreign_view: Table, local: Table
 ) -> None:
     internal = foreign_view.columns()["SKU 名"]
     parent = {

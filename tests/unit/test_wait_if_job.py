@@ -47,7 +47,7 @@ class TestWaitIfJobPatterns:
         response = {"job_id": 42}
         result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            42, timeout=60, poll_interval=2, fetch=None
+            42, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -55,7 +55,7 @@ class TestWaitIfJobPatterns:
         """Generated integrations can wait without reaching into SDK internals."""
         result = await self.client.wait_if_job({"job_id": 42})
         self.client.jobs.wait_for_job.assert_called_once_with(
-            42, timeout=60, poll_interval=2, fetch=None
+            42, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -64,7 +64,7 @@ class TestWaitIfJobPatterns:
         response = {"job": {"id": 99, "status": "processing"}}
         result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            99, timeout=60, poll_interval=2, fetch=None
+            99, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -73,7 +73,7 @@ class TestWaitIfJobPatterns:
         response = {"id": 77, "status": "processing"}
         result = await self.client._wait_if_job(response)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            77, timeout=60, poll_interval=2, fetch=None
+            77, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -145,7 +145,7 @@ class TestWaitIfJobTimeoutForwarding:
     async def test_custom_timeout(self):
         await self.client._wait_if_job({"job_id": 1}, timeout=120)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            1, timeout=120, poll_interval=2, fetch=None
+            1, timeout=120, poll_interval=0.5, fetch=None
         )
 
     async def test_custom_poll_interval(self):
@@ -158,7 +158,7 @@ class TestWaitIfJobTimeoutForwarding:
         self.client.job_timeout = 300
         await self.client._wait_if_job({"job_id": 1})
         self.client.jobs.wait_for_job.assert_called_once_with(
-            1, timeout=300, poll_interval=2, fetch=None
+            1, timeout=300, poll_interval=0.5, fetch=None
         )
 
     async def test_completed_job_without_response_key(self):
@@ -182,7 +182,7 @@ class TestDataviewsJobWaiting:
         self.client._request_json = AsyncMock(return_value={"job_id": 55})
         result = await self.client.dataviews.get_data(dataset_id=10, dataview_id=20)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            55, timeout=60, poll_interval=2, fetch=None
+            55, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -237,7 +237,7 @@ class TestPipelineJobWaiting:
             dataview_id=20, task_spec={"TYPE": "SET"}, dataset_id=10
         )
         self.client.jobs.wait_for_job.assert_called_once_with(
-            101, timeout=60, poll_interval=2, fetch=None
+            101, timeout=60, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -317,7 +317,7 @@ class TestViewAddTaskSimplified:
 
         # wait_for_job called exactly once (by pipeline.add_task)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            200, timeout=60, poll_interval=2, fetch=None
+            200, timeout=60, poll_interval=0.5, fetch=None
         )
 
 
@@ -345,7 +345,7 @@ class TestAIJobWaiting:
 
     async def test_generate_sql_waits(self):
         self.client._request_json = AsyncMock(return_value={"id": 302, "status": "processing"})
-        await self.client.ai.generate_sql(intent="total sales", dataset_id=48)
+        await self.client.ai.generate_sql(intent="total sales", dataset_id=48, dataview_id=7)
         self.client.jobs.wait_for_job.assert_called_once()
 
     async def test_get_suggestions_waits(self):
@@ -388,7 +388,7 @@ class TestDatasetsGetDataRefactored:
         self.client._request_json = AsyncMock(return_value={"job_id": 401})
         result = await self.client.datasets.get_data(dataset_id=10)
         self.client.jobs.wait_for_job.assert_called_once_with(
-            401, timeout=300, poll_interval=2, fetch=None
+            401, timeout=300, poll_interval=0.5, fetch=None
         )
         assert result == {"rows": [1, 2, 3]}
 
@@ -410,15 +410,15 @@ class TestDatasetsGetDataRefactored:
 class TestHowOftenAJobIsAsked:
     """How long the client waits between polls is the caller's to set.
 
-    Two seconds suits a script that started a long build. It is far too long
+    Two seconds, the old default, is far too long
     for a caller answering a person in a conversation, where the job is
     usually finished before the first sleep would end.
     """
 
-    async def test_the_poll_interval_defaults_to_two_seconds(self):
+    async def test_the_poll_interval_defaults_to_half_a_second(self):
         client = _make_client()
         await client._wait_if_job({"job_id": 42})
-        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 2
+        assert client.jobs.wait_for_job.await_args.kwargs["poll_interval"] == 0.5
 
     async def test_a_client_can_ask_more_often_than_that(self):
         client = _make_client(job_poll_seconds=0.2)

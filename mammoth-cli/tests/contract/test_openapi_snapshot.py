@@ -322,3 +322,139 @@ def test_unserved_operations_names_a_route_production_does_not_serve() -> None:
         assert sync_openapi.unserved_operations(with_extra, called) == []
     finally:
         sys.path.remove(str(scripts))
+
+
+class _SpecServer:
+    """A real local HTTP server standing in for production.
+
+    ``/support/openapi.json`` answers ``staff_status`` (200 only to ``token``) and
+    ``/docs/openapi.json`` answers ``public_status``; each 200 carries its own spec.
+    """
+
+    def __init__(self, *, token: str, staff_status: int, public_status: int) -> None:
+        import http.server
+        import threading
+
+        outer = self
+        self.seen: list[tuple[str, str | None]] = []
+        staff_spec = {"openapi": "3.1.0", "paths": {"/support/workspaces": {"get": {}}}}
+        public_spec = {"openapi": "3.1.0", "paths": {"/public": {"get": {}}}}
+
+        class _Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802 (http.server API)
+                auth = self.headers.get("Authorization")
+                outer.seen.append((self.path, auth))
+                if self.path == "/support/openapi.json":
+                    status = staff_status
+                    if status == 200 and auth != f"Bearer {token}":
+                        status = 401
+                    spec = staff_spec
+                else:
+                    status, spec = public_status, public_spec
+                self.send_response(status)
+                self.end_headers()
+                if status == 200:
+                    self.wfile.write(json.dumps(spec).encode())
+
+            def log_message(self, *_args: object) -> None:
+                return None
+
+        self._server = http.server.HTTPServer(("127.0.0.1", 0), _Handler)
+        base = f"http://127.0.0.1:{self._server.server_port}"
+        self.fetch_url = f"{base}/support/openapi.json"
+        self.source_url = f"{base}/docs/openapi.json"
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+
+    def __enter__(self) -> _SpecServer:
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+
+
+def _sync_openapi():
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import sync_openapi
+    finally:
+        sys.path.remove(str(scripts))
+    return sync_openapi
+
+
+def _fetch_from(monkeypatch, server: _SpecServer, token: str | None):
+    sync_openapi = _sync_openapi()
+    monkeypatch.setattr(sync_openapi, "FETCH_URL", server.fetch_url)
+    monkeypatch.setattr(sync_openapi, "SOURCE_URL", server.source_url)
+    if token is None:
+        monkeypatch.delenv(sync_openapi.TOKEN_ENV, raising=False)
+    else:
+        monkeypatch.setenv(sync_openapi.TOKEN_ENV, token)
+    return sync_openapi.fetch_document()
+
+
+def test_fetch_sends_the_staff_token_and_returns_the_full_document(monkeypatch) -> None:
+    with _SpecServer(token="mm_staff", staff_status=200, public_status=401) as server:
+        _, document = _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert "/support/workspaces" in document["paths"]
+    assert server.seen == [("/support/openapi.json", "Bearer mm_staff")]
+
+
+def test_fetch_falls_back_to_the_public_document_while_the_route_is_not_deployed(
+    monkeypatch, capsys
+) -> None:
+    with _SpecServer(token="mm_staff", staff_status=404, public_status=200) as server:
+        _, document = _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert "/public" in document["paths"]
+    assert [path for path, _ in server.seen] == ["/support/openapi.json", "/docs/openapi.json"]
+    assert server.seen[1][1] is None, "the fallback request must carry no token"
+    assert capsys.readouterr().err.count("not deployed yet") == 1
+
+
+def test_fetch_without_a_token_uses_the_public_document_when_it_answers_200(
+    monkeypatch,
+) -> None:
+    with _SpecServer(token="mm_staff", staff_status=200, public_status=200) as server:
+        _, document = _fetch_from(monkeypatch, server, None)
+
+    assert "/public" in document["paths"]
+    assert server.seen == [("/docs/openapi.json", None)]
+
+
+def test_fetch_without_a_token_and_a_locked_public_document_says_to_set_the_token(
+    monkeypatch,
+) -> None:
+    with _SpecServer(token="mm_staff", staff_status=200, public_status=401) as server:
+        with pytest.raises(SystemExit, match="MAMMOTH_OPENAPI_TOKEN is not set.*answered 401"):
+            _fetch_from(monkeypatch, server, None)
+
+
+def test_fetch_with_a_refused_token_fails_and_does_not_fall_back(monkeypatch) -> None:
+    with _SpecServer(token="mm_staff", staff_status=200, public_status=200) as server:
+        with pytest.raises(SystemExit, match="answered 401"):
+            _fetch_from(monkeypatch, server, "mm_wrong")
+
+    assert [path for path, _ in server.seen] == ["/support/openapi.json"]
+
+
+def test_fetch_with_a_forbidden_token_says_so_and_does_not_fall_back(monkeypatch) -> None:
+    # 403: the token is valid but not a super or tech admin's. The public document
+    # answers 200 here, so a fallback would hide the problem.
+    with _SpecServer(token="mm_staff", staff_status=403, public_status=200) as server:
+        with pytest.raises(SystemExit, match="answered 403: MAMMOTH_OPENAPI_TOKEN is expired"):
+            _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert [path for path, _ in server.seen] == ["/support/openapi.json"]
+
+
+@pytest.mark.parametrize("status", [400, 410, 429, 500, 502, 503])
+def test_fetch_never_falls_back_on_another_error_status(monkeypatch, status: int) -> None:
+    with _SpecServer(token="mm_staff", staff_status=status, public_status=200) as server:
+        with pytest.raises(SystemExit, match=f"answered {status}$"):
+            _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert [path for path, _ in server.seen] == ["/support/openapi.json"]

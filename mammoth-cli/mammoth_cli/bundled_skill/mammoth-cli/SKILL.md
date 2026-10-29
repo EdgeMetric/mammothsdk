@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.2.100
+version: 2.3.1
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -47,7 +47,7 @@ MAMMOTH_OUTPUT=json MAMMOTH_NO_INPUT=1` once.
 ## Running inside the Mammoth app
 
 Use the project you are given; never `project ensure`. No `doctor`, auth,
-profiles, `config set`, `upgrade`, `skill install`, env vars, local files,
+profiles, `config set`, `upgrade`, `skill install`, `history`, env vars, local files,
 stdin, `--input FILE` or `output_path` (they fail `not_available_embedded`);
 downloads return `download_url`. Ask for a reload on `authentication_failed` only; on a 403 check ids and scope.
 
@@ -63,13 +63,12 @@ downloads return `download_url`. Ask for a reload on `authentication_failed` onl
 
 ## Find the command for a goal
 
-State the goal in plain words;
-`view transform --help` is the Transform menu with one line per task:
+State the goal in plain words; run the `run_command` `how` returns (1 call):
 
 ```bash
 mammoth how "blend two files by day"       # ordered steps, multi-step goal
 mammoth schema find "merge two datasets"   # -> view.transform.join
-mammoth view transform --help              # every data transformation
+mammoth view transform --help              # Transform menu, 1 line per task
 mammoth schema find "join two datasets; remove duplicates; build a dashboard"   # 1 call, 1 result per goal
 ```
 
@@ -92,8 +91,7 @@ mammoth schema find "join two datasets; remove duplicates; build a dashboard"   
 | Deliver the rows | `view export csv`, `view export postgres`, `view export dataset` |
 | Run something on a schedule or on new data (refresh, append, alert) | `automation create`: a condition (`at_specific_time`, new file in a folder, ...) and tasks (`run_data_retrieval`, `append_data`, `send_an_alert`, `pull_cloud_files`). `schedule create` only pulls a connector's data. An upload can't refresh; a URL dataset: `dataset refresh` on demand, never on a schedule; say so. Recipe: [recurring work](references/recipes/scheduling.md) |
 
-Call a find result (or `suggestions` entry) from its `accepted_fields` and
-`agent_example`. Before concluding the CLI cannot do something the web app
+Call a find result from its `agent_example` and `accepted_fields`. Before concluding the CLI cannot do something the web app
 does, run `mammoth capabilities` (known gaps) and check
 `view transform --help` and "View settings, and what has no
 command" in [about Mammoth](references/about-mammoth.md). Do not switch to
@@ -142,7 +140,7 @@ your report. If no column links the files, ask before you combine them.
 - Ids are positionals; request fields are one `--input '{...}'` document;
   no per-field flags (`project create NAME`, not `--name`).
 - `COMMAND --help` lists input fields and allowed values; `schema find WORDS` inlines
-  `accepted_fields`/`agent_example` for top matches, else `schema get
+  `accepted_fields`/`agent_example` for top matches (`--full`: all), else `schema get
   ID,ID` (one call; `--input '{"full": true}'` for all
   fields); `schema list`/`schema list view` list families.
 - Uploads return a **dataset** id; transforms, joins, exports and previews

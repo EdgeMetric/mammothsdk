@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: calc
+  output_schema:
+    ref: Calc
   command_path: calc
   disposition: command
   alias_of: null
@@ -11,8 +13,8 @@ commands:
     required: true
     metavar: EXPRESSION
     falls_back_to_field: null
-    help: 'Arithmetic expression: + - * / and parentheses, unary +/-, a trailing
-      %% (divides by 100), and round(x[, ndigits]).'
+    help: 'Arithmetic expression: + - * / and parentheses, unary +/-, a trailing %% (divides by 100),
+      and round(x[, ndigits]).'
   options: []
   sdk_symbol: mammoth_cli.commands.calc.calc
   sdk_conversion: Call mammoth_cli.commands.calc.calc with validated request fields.
@@ -36,7 +38,7 @@ commands:
   - CT-CALC-S1-LOCAL
   draft_test: null
   undo_test: null
-  known_restrictions: 'Every number reported to the user comes from a tool result:
-    use calc for a single expression, view data compare for a per-key comparison
-    across two views. Never compute a difference or percentage mentally.'
+  known_restrictions: 'Every number reported to the user comes from a tool result: use calc for a single
+    expression, view data compare for a per-key comparison across two views. Never compute a difference
+    or percentage mentally.'
   reviewed_by: primary

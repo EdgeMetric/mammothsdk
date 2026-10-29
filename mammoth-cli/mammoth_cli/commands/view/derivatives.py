@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
-    HandlerResult,
     _forward_optional,
     _meta,
     _require_field,
@@ -173,6 +173,9 @@ def view_version_apply(invocation: Invocation) -> HandlerResult:
             version_id=version_id,
             project_id=project_id,
         )
+        # Applying rebuilds the pipeline in a job; wait so the view shows the
+        # applied steps when this returns.
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

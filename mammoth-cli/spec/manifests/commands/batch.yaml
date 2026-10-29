@@ -1,329 +1,65 @@
 manifest_schema_version: 1
 commands:
 - command_id: batch.bulk-delete
-  command_path: batch bulk-delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteBatches
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.bulk_delete
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.bulk_delete with validated request fields.
-  request_model: BatchBulkDeleteRequest
-  result_model: BatchBulkDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-BATCH-BULK-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch bulk-delete DATASET_ID --help
-  agent_example: 'mammoth batch bulk-delete 123 --input ''{"ids": [11, 12]}'' --yes'
-  unit_tests:
-  - UT-BATCH-BULK-DELETE
-  contract_tests:
-  - CT-BATCH-BULK-DELETE-HUMAN
-  - CT-BATCH-BULK-DELETE-JSON
-  - CT-BATCH-BULK-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: ids is required (the backend rejects a delete with no batch ids; it never deletes all batches). List ids with batch list.
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
+  known_restrictions: ids is required (the backend rejects a delete with no batch ids; it never deletes
+    all batches). List ids with batch list.
   readback:
     command: batch.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: batch.create
-  command_path: batch create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateBatch
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: source_id
-    type: int
-    required: true
-    metavar: SOURCE_ID
-    falls_back_to_field: null
-    help: ID of the source.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.create
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.create with validated request fields.
-  request_model: BatchCreateRequest
-  result_model: BatchCreateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-BATCH-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch create DATASET_ID SOURCE_ID --help
-  agent_example: 'mammoth batch create 123 456 --input ''{"mapping": {"column_1": "column_1"}}'''
-  unit_tests:
-  - UT-BATCH-CREATE
-  contract_tests:
-  - CT-BATCH-CREATE-HUMAN
-  - CT-BATCH-CREATE-JSON
-  - CT-BATCH-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Every source column must be mapped to an existing destination column; the CLI reads both schemas and refuses (append_mapping_incomplete) an unmapped source column or a destination the dataset lacks, because the backend appends only mapped columns. A destination column no mapping item fills (add_column items count) would be NULL in every appended row, so it is refused (append_leaves_columns_blank) unless the input lists exactly those names in blank_columns; the confirmed blanks are named in mapping_check.warnings. The CLI sends each item's expected_destination_c_type as the destination's current type (never re-types it; an explicit different value is refused with append_type_mismatch) and warns in mapping_check.warnings when source and destination types differ. SOURCE_ID is a standalone dataset in the same project (4BATC010 INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id. delete_source_ds=true changes the mutation class to destructive and requires confirmation.
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
+  undo:
+    strategy: manual
+    command: batch.delete
+  known_restrictions: Every source column must be mapped to an existing destination column; the CLI reads
+    both schemas and refuses (append_mapping_incomplete) an unmapped source column or a destination the
+    dataset lacks, because the backend appends only mapped columns. A destination column no mapping item
+    fills (add_column items count) would be NULL in every appended row, so it is refused (append_leaves_columns_blank)
+    unless the input lists exactly those names in blank_columns; the confirmed blanks are named in mapping_check.warnings.
+    The CLI sends each item's expected_destination_c_type as the destination's current type (never re-types
+    it; an explicit different value is refused with append_type_mismatch) and warns in mapping_check.warnings
+    when source and destination types differ. SOURCE_ID is a standalone dataset in the same project (4BATC010
+    INVALID_SOURCE_DATASET for a file id or an append child); to append a file use file upload with append_to_ds_id.
+    delete_source_ds=true changes the mutation class to destructive and requires confirmation.
   readback:
     command: batch.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: batch.create-spec
-  command_path: batch create-spec
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateBatch
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.create_spec
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.create_spec with validated request fields.
-  request_model: BatchCreateSpecRequest
-  result_model: BatchCreateSpecResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-BATCH-CREATE-SPEC
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch create-spec DATASET_ID --help
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: batch.delete
   agent_example: 'mammoth batch create-spec 123 --input ''{"file_id": 94}'''
-  unit_tests:
-  - UT-BATCH-CREATE-SPEC
-  contract_tests:
-  - CT-BATCH-CREATE-SPEC-HUMAN
-  - CT-BATCH-CREATE-SPEC-JSON
-  - CT-BATCH-CREATE-SPEC-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Release BatchesPostRequest; file_id-only or source_id plus homogeneous mapping array.
-    Dynamic confirmation applies only to delete_source_ds.
-  reviewed_by: primary
   readback:
     command: batch.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: batch.delete
-  command_path: batch delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteBatch
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: batch_id
-    type: int
-    required: true
-    metavar: BATCH_ID
-    falls_back_to_field: null
-    help: ID of the batch.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.delete
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.delete with validated request fields.
-  request_model: BatchDeleteRequest
-  result_model: BatchDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-BATCH-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch delete DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch delete 123 456 --yes
-  unit_tests:
-  - UT-BATCH-DELETE
-  contract_tests:
-  - CT-BATCH-DELETE-HUMAN
-  - CT-BATCH-DELETE-JSON
-  - CT-BATCH-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Resolve the batch before confirmation.
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: batch.list
     ids:
       dataset_id: positional.0
     kind: object
 - command_id: batch.get
-  command_path: batch get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetBatch
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  - name: batch_id
-    type: int
-    required: true
-    metavar: BATCH_ID
-    falls_back_to_field: null
-    help: ID of the batch.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.get
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.get with validated request fields.
-  request_model: BatchGetRequest
-  result_model: BatchGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-BATCH-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch get DATASET_ID BATCH_ID --help
-  agent_example: mammoth batch get 123 456
-  unit_tests:
-  - UT-BATCH-GET
-  contract_tests:
-  - CT-BATCH-GET-HUMAN
-  - CT-BATCH-GET-JSON
-  - CT-BATCH-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: batch.list
-  command_path: batch list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetBatches
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.list
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.list with validated request fields.
-  request_model: BatchListRequest
-  result_model: BatchListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: offset
-  acceptance_evidence: live_read_only
-  live_test: LT-BATCH-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch list DATASET_ID --help
-  agent_example: mammoth batch list 123
-  unit_tests:
-  - UT-BATCH-LIST
-  contract_tests:
-  - CT-BATCH-LIST-HUMAN
-  - CT-BATCH-LIST-JSON
-  - CT-BATCH-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: batch.update
-  command_path: batch update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateBatches
-  positionals:
-  - name: dataset_id
-    type: int
-    required: true
-    metavar: DATASET_ID
-    falls_back_to_field: null
-    help: ID of the dataset.
-  options: []
-  sdk_symbol: mammoth.api.batches.BatchesAPI.update
-  sdk_conversion: Call mammoth.api.batches.BatchesAPI.update with validated request fields.
-  request_model: BatchUpdateRequest
-  result_model: BatchUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: returns_job
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-BATCH-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth batch update DATASET_ID --help
-  agent_example: 'mammoth batch update 123 --input ''{"patch": {"name": "Status"}}'''
-  unit_tests:
-  - UT-BATCH-UPDATE
-  contract_tests:
-  - CT-BATCH-UPDATE-HUMAN
-  - CT-BATCH-UPDATE-JSON
-  - CT-BATCH-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'The server takes one patch operation per call: {"patch": {"op": "replace", "path": "batches", "value": {"suspend": [BATCH_ID], "restore": [BATCH_ID]}}} (a list holding that one operation is also accepted; "path" defaults to batches). Any remove operation in the patch changes the mutation class to destructive.'
-  reviewed_by: primary
+  output_schema: {ref: WriteResult}
+  known_restrictions: 'The server takes one patch operation per call: {"patch": {"op": "replace", "path":
+    "batches", "value": {"suspend": [BATCH_ID], "restore": [BATCH_ID]}}} (a list holding that one operation
+    is also accepted; "path" defaults to batches). Any remove operation in the patch changes the mutation
+    class to destructive.'
   readback:
     command: batch.list
     ids:

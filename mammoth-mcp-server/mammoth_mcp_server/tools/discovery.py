@@ -5,6 +5,7 @@ of transformation tasks over a dataset. These tools walk that hierarchy; every
 one of them calls the same API route the web app calls, as the signed-in user.
 """
 
+from ..appends import read_append_history
 from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
 from ..sdk import (
     JsonValue,
@@ -142,17 +143,32 @@ async def list_datasets(
 
 
 @mcp_server.tool(title="Get dataset", annotations=READS)
-async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> dict[str, JsonValue]:
+async def get_dataset(
+    workspace_id: int, project_id: int, dataset_id: int, include_batches: bool = False
+) -> dict[str, JsonValue]:
     """Get one dataset with its columns, row counts and status.
+
+    With `include_batches` it also says what a new file does to the dataset
+    and what has been added to it. The update method is "add" (a new file's
+    rows go under the rows it holds) or "replace" (they take the place of
+    them); `upload_file` and `request_upload` with `append_to_dataset_id` put
+    a file in and can set it. Read it before uploading into a dataset, and
+    to find the batch of a file that was added by mistake.
 
     Args:
         workspace_id: Which workspace the dataset is in.
         project_id: Which project the dataset is in.
         dataset_id: Which dataset to read.
+        include_batches: Also report the `update_method` and the `batches`,
+            each file or dataset added to this one with its `id`. `undo` with
+            what="batch" removes a batch that was added under "add".
 
     Returns:
         The dataset, under the key `dataset`, with the page in Mammoth it opens
-        on as `mammoth_url`.
+        on as `mammoth_url`. With `include_batches`, `update_method` (`mode`,
+        `effect`, `schema_mapping`; `mode` is null with an `error` when it cannot be
+        read) and `batches` with their `total`, each with `removable`: whether `undo`
+        will remove it (only a batch an upload through this server added under "add").
     """
     async with build_client(workspace_id) as client:
         read = await read_sdk_errors(
@@ -164,10 +180,13 @@ async def get_dataset(workspace_id: int, project_id: int, dataset_id: int) -> di
             not_found_message(workspace_id, project_id, dataset_id),
         )
     link = {ListFields.MAMMOTH_URL: dataset_url(workspace_id, project_id, dataset_id)}
+    history = (
+        await read_append_history(workspace_id, project_id, dataset_id) if include_batches else {}
+    )
     dataset = read.get(ListFields.DATASET)
     if isinstance(dataset, dict):
-        return {**read, ListFields.DATASET: {**dataset, **link}}
-    return {**read, **link}
+        return {**read, ListFields.DATASET: {**dataset, **link}, **history}
+    return {**read, **link, **history}
 
 
 @mcp_server.tool(title="List views", annotations=READS)

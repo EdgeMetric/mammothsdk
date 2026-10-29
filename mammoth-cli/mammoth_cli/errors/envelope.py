@@ -60,13 +60,16 @@ CODE_CONFIRMATION_DECLINED = "confirmation_declined"
 CODE_AUTHENTICATION_FAILED = "authentication_failed"
 CODE_AUTHORIZATION_REQUIRED = "authorization_required"
 CODE_PLAN_LIMIT = "plan_limit"
+CODE_FEATURE_DISABLED = "feature_disabled"
 CODE_CONFLICT = "conflict"
 CODE_RETRYABLE = "retryable_error"
 CODE_OUTCOME_UNKNOWN = "outcome_unknown"
 CODE_JOB_FAILED = "job_failed"
+CODE_SCHEMA_MISMATCH = "schema_mismatch"
 CODE_INTERRUPTED = "interrupted"
 CODE_ABORTED = "aborted"
 CODE_UNSUPPORTED_CONTRACT = "unsupported_contract"
+CODE_UNSUPPORTED_BY_SERVER = "unsupported_by_server"
 CODE_NO_OP = "no_op"
 CODE_WOULD_FAIL = "would_fail"
 CODE_EMPTIES_VIEW = "empties_view"
@@ -116,6 +119,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "pin_not_recorded": "The version pin could not be saved, so nothing was changed.",
     "has_dependents": "Other items still depend on this, so it was not deleted.",
     "delete_not_applied": "The delete was accepted but the item is still there.",
+    "delete_unverified": "The delete was accepted, but it could not be checked as gone.",
     "column_type_mismatch": "A column has the wrong type for this step, so nothing was changed.",
     "conflict": "This conflicts with the current state of your data, so nothing was changed.",
     "device_login_expired": "The sign-in code expired before it was approved.",
@@ -137,7 +141,23 @@ ERROR_SUMMARIES: dict[str, str] = {
     "input_too_deep": _S_BAD_INPUT,
     "input_too_large": "The information provided was too large.",
     "invalid_run_line": "One line of the list of commands couldn't be used, so it wasn't run.",
+    "unresolved_reference": (
+        "A line used a result from an earlier line that wasn't there, so it wasn't run."
+    ),
     "run_command_refused": "That command can't be run from a list of commands.",
+    "history_not_found": "No recorded change has that id.",
+    "journal_off": "Change history is switched off, so there is nothing to show or undo.",
+    "nothing_to_resume": "Every line of that run finished.",
+    "resume_outcome_unknown": "A write's outcome is unknown, so the run wasn't resumed.",
+    "resume_secret_needed": (
+        "A line needs a secret the history doesn't keep, so the run wasn't resumed."
+    ),
+    "undo_in_progress": "Another undo of the same change is running.",
+    "view_changed_since_edit": "The view changed after that edit, so it wasn't undone.",
+    "undo_needs_token": "That change was made with another API token, so it wasn't undone.",
+    "resume_result_too_large": "A result the run needs again was too large to keep.",
+    "recipe_not_found": "No runnable recipe has that name.",
+    "recipe_input_invalid": "The recipe's inputs weren't valid.",
     "run_global_flag_refused": (
         "Confirmation has to be given on each command in the list, not for the whole list."
     ),
@@ -177,6 +197,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "workspace_mismatch": "The sign-in names a different workspace from its token.",
     "skipped": "This step wasn't run because an earlier step failed.",
     "job_failed": "A background task didn't finish successfully.",
+    "schema_mismatch": "The file's columns don't line up with the dataset's, so nothing was added.",
     "keyring_unavailable": _S_SETUP,
     "keyring_unresponsive": _S_SETUP,
     "lock_timeout": "Another sign-in refresh is still running, so this step was stopped.",
@@ -185,6 +206,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "missing_argument": _S_MISSING_INFO,
     "missing_field": _S_MISSING_INFO,
     "network_error": "Mammoth couldn't be reached over the network.",
+    "feature_disabled": "This feature is switched off for your account.",
     "no_op": "There is nothing to change, so this step isn't needed.",
     "variants_partial_failure": "Some of the variant views were created and one failed.",
     "no_output": "This step didn't return anything.",
@@ -229,6 +251,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "unknown_input_field": _S_BAD_REQUEST,
     "unknown_option": _S_BAD_REQUEST,
     "unknown_scope": _S_SETUP,
+    "unsupported_by_server": "This Mammoth does not support that yet, so it was not applied.",
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
     "unsupported_shell": _S_UNAVAILABLE,

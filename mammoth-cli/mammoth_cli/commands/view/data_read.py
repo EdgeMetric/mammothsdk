@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _COLUMNS_KEY,
     _QUERY_DATA_SYMBOL,
     _ROWS_KEY,
-    HandlerResult,
     _explain_swapped_ids,
     _forward_optional,
     _int_field,
@@ -82,7 +82,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         else:
             _forward_optional(document, kwargs, ("timeout", "poll_interval", "sequence", "raw"))
             data = service.call(_symbol(invocation), **kwargs)
-        whole_view = document.get("offset") is None
+        whole_view = _read_covers_view(data, meta, document)
         data = _relabel_and_check(
             service,
             dataset_id,
@@ -93,7 +93,7 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
             types=types,
             whole_view=whole_view,
         )
-    page_size = _DATA_PAGE_ROWS if whole_view else kwargs["limit"]
+    page_size = _DATA_PAGE_ROWS if document.get("offset") is None else kwargs["limit"]
     data = _trim_rows(data, limit, page_size)
     data = keep_columns(data, document.get("columns"))
     if document.get("sequence") is None:
@@ -102,6 +102,28 @@ def view_data_get(invocation: Invocation) -> HandlerResult:
         data = _close_last_page(data, kwargs.get("offset"))
     data = _with_cli_paging(data, invocation, view_id, kwargs.get("offset"), page_size, limit)
     return data, meta
+
+
+def _read_covers_view(data: Any, meta: dict[str, Any], document: dict[str, Any]) -> bool:
+    """Whether the rows read are every row of the view, so a count over them is the table's.
+
+    The route returns at most one page, so a read without ``offset`` covers the view only
+    when the page holds the view's whole row count. An unknown row count, a read at an earlier
+    ``sequence`` (a different row count) or a later page never counts as the whole view.
+
+    Args:
+        data: The data route's answer, before any trimming.
+        meta: The view metadata read for this command.
+        document: The ``--input`` document.
+
+    Returns:
+        True only when the read provably holds every row of the view.
+    """
+    if document.get("offset") is not None or document.get("sequence") is not None:
+        return False
+    rows = data.get(_ROWS_KEY) if isinstance(data, dict) else None
+    row_count = meta["view"].get("row_count")
+    return isinstance(rows, list) and isinstance(row_count, int) and len(rows) >= row_count
 
 
 def keep_columns(data: Any, columns: list[str] | None) -> Any:

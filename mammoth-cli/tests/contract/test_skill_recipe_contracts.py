@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 from mammoth_cli.commands.capability import find_capabilities
-from mammoth_cli.commands.schema import find_schemas
+from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.manifest.loader import load_commands
 
 ROOT = Path(__file__).parents[2]

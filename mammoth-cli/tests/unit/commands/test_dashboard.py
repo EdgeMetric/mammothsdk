@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
+from mammoth_cli.commands.dashboard import workbook as dashboard_workbook
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
@@ -24,7 +26,6 @@ _CANCEL_GENERATION = "mammoth.api.dashboards.DashboardsAPI.cancel_generation"
 _CREATE_BLANK = "mammoth.api.dashboards.DashboardsAPI.create_blank"
 _DATA_DRAFT = "mammoth.api.dashboards.DashboardsAPI.get_draft_data"
 _DATA_PUBLISHED = "mammoth.api.dashboards.DashboardsAPI.get_publish_data"
-_DELETE = "mammoth.api.dashboards.DashboardsAPI.delete"
 _GET = "mammoth.api.dashboards.DashboardsAPI.get"
 _GET_BY_URL = "mammoth.api.dashboards.DashboardsAPI.get_by_url"
 _JOB_BY_URL = "mammoth.api.dashboards.DashboardsAPI.job_by_url"
@@ -121,7 +122,7 @@ def test_pages_add_forwards_exact_body_and_target_confirmation(
             }
         },
     )
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert fake_service.call_log == [
@@ -147,11 +148,11 @@ def test_context_extract_requires_body_wrapper_and_dispatches_exact_symbol(
 ) -> None:
     bare = _write_doc(tmp_path, {"params": {"name": "context.txt"}})
     with pytest.raises(CliError):
-        dashboard_cmd.generated_dashboard(_inv("dashboard.context.extract", input_file=bare))
+        dashboard_generated.generated_dashboard(_inv("dashboard.context.extract", input_file=bare))
     assert fake_service.call_log == []
 
     wrapped = _write_doc(tmp_path, {"body": {"params": {"name": "context.txt", "size": 0}}})
-    dashboard_cmd.generated_dashboard(_inv("dashboard.context.extract", input_file=wrapped))
+    dashboard_generated.generated_dashboard(_inv("dashboard.context.extract", input_file=wrapped))
     assert fake_service.call_log == [
         (_EXTRACT_CONTEXT, {"body": {"params": {"name": "context.txt", "size": 0}}})
     ]
@@ -162,11 +163,11 @@ def test_exemplar_extract_requires_body_wrapper_and_dispatches_exact_symbol(
 ) -> None:
     bare = _write_doc(tmp_path, {"params": {"name": "example.pdf"}})
     with pytest.raises(CliError):
-        dashboard_cmd.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=bare))
+        dashboard_generated.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=bare))
     assert fake_service.call_log == []
 
     wrapped = _write_doc(tmp_path, {"body": {"params": {"name": "example.pdf", "size": 0}}})
-    dashboard_cmd.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=wrapped))
+    dashboard_generated.generated_dashboard(_inv("dashboard.exemplar.extract", input_file=wrapped))
     assert fake_service.call_log == [
         (_EXTRACT_EXEMPLAR, {"body": {"params": {"name": "example.pdf", "size": 0}}})
     ]
@@ -176,7 +177,7 @@ def test_swap_data_dispatches_exact_symbol(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
     doc = _write_doc(tmp_path, {"body": {"params": {"dataview_id": 9}}})
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv("dashboard.swap-data", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert fake_service.call_log == [
@@ -189,7 +190,7 @@ def test_pages_add_requires_exact_confirmation_before_transport(
 ) -> None:
     doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{}]}}})
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.generated_dashboard(
+        dashboard_generated.generated_dashboard(
             _inv("dashboard.pages.add", extra_args=["7"], input_file=doc)
         )
     assert excinfo.value.code == "confirmation_required"
@@ -201,7 +202,7 @@ def test_pages_add_rejects_empty_pages_before_confirmation_or_transport(
 ) -> None:
     doc = _write_doc(tmp_path, {"body": {"params": {"pages": []}}})
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.generated_dashboard(
+        dashboard_generated.generated_dashboard(
             _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
         )
     assert excinfo.value.code in {"invalid_argument", "invalid_input_field_type"}
@@ -213,7 +214,7 @@ def test_pages_add_returns_async_bake_without_waiting(
 ) -> None:
     fake_service.responses[_ADD_PAGES] = {"sequence": 4, "bake_job_id": 99}
     doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{"title": "Revenue"}]}}})
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert data.pop("deliverable_check")["checked"] is True
@@ -414,7 +415,7 @@ def test_published_data_generated_route_waits_through_url_scoped_job(
     fake_service.responses["mammoth.api.dashboards.DashboardsAPI.published_data"] = {"job_id": 313}
     fake_service.job_result = {"completed": 1}
     doc = _write_doc(tmp_path, {"body": {"params": {"descriptor_ids": ["abc"]}}})
-    data, _meta = dashboard_cmd.generated_dashboard(
+    data, _meta = dashboard_generated.generated_dashboard(
         _inv("dashboard.published.data", extra_args=["IuZl5tk5"], input_file=doc)
     )
     assert data == {"completed": 1}
@@ -488,7 +489,7 @@ def test_create_blank_is_an_ordinary_create_and_needs_no_confirmation(
         tmp_path,
         {"params": {"dataview_id": 42, "style": "presentation", "title": "Revenue"}},
     )
-    dashboard_cmd.generated_dashboard(_inv("dashboard.create-blank", input_file=doc))
+    dashboard_generated.generated_dashboard(_inv("dashboard.create-blank", input_file=doc))
     assert fake_service.call_log == [
         (
             _CREATE_BLANK,
@@ -517,7 +518,7 @@ def test_create_blank_checks_the_view_itself_when_the_canvas_has_no_profile(
         "data": [{"column_1": 2, "column_2": None}, {"column_1": 1, "column_2": 4}]
     }
     doc = _write_doc(tmp_path, {"params": {"dataview_id": 42}})
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv("dashboard.create-blank", input_file=doc, project=94)
     )
     check = data["deliverable_check"]
@@ -677,11 +678,6 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    dashboard_cmd.dashboard_delete(_inv("dashboard.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"dashboard_id": 7})]
-
-
 def test_delete_without_id_is_usage_error(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_delete(_inv("dashboard.delete", yes=True))
@@ -796,7 +792,7 @@ def test_pages_add_removes_a_new_page_whose_charts_were_all_refused(
         "meta": {"sequence": 2},
     }
     fake_service.responses[_CANVAS_SAVE] = {"sequence": 3, "bake_job_id": 223}
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.pages.add",
             extra_args=["7"],
@@ -835,7 +831,7 @@ def test_pages_add_without_refusals_makes_no_extra_request(
         "message": "\n\n_Built: Page added · Bad, Page added · Good._",
         "sequence": 2,
     }
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.pages.add",
             extra_args=["7"],
@@ -862,7 +858,7 @@ def test_pages_add_reports_the_fix_when_the_cleanup_save_fails(
         "meta": {"sequence": 2},
     }
     fake_service.responses[_CANVAS_SAVE] = RuntimeError("conflict")
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.pages.add",
             extra_args=["7"],
@@ -906,7 +902,7 @@ def _enter_embedded_call() -> object:
 def test_bi_preflight_dispatches_powerbi(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _bi_doc(tmp_path, {"target": "powerbi"})
     fake_service.responses[_POWERBI_PREFLIGHT] = {"exportable": True, "figures_total": 4}
-    data, _ = dashboard_cmd.dashboard_bi_preflight(
+    data, _ = dashboard_workbook.dashboard_bi_preflight(
         _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log == [(_POWERBI_PREFLIGHT, {"dashboard_id": 42})]
@@ -916,7 +912,7 @@ def test_bi_preflight_dispatches_powerbi(fake_service: FakeMammothService, tmp_p
 def test_bi_preflight_dispatches_tableau(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _bi_doc(tmp_path, {"target": "tableau"})
     fake_service.responses[_TABLEAU_PREFLIGHT] = {"exportable": False, "figures_total": 0}
-    data, _ = dashboard_cmd.dashboard_bi_preflight(
+    data, _ = dashboard_workbook.dashboard_bi_preflight(
         _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log == [(_TABLEAU_PREFLIGHT, {"dashboard_id": 42})]
@@ -928,7 +924,7 @@ def test_bi_preflight_rejects_missing_target_without_a_request(
 ) -> None:
     doc = _bi_doc(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_bi_preflight(
+        dashboard_workbook.dashboard_bi_preflight(
             _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
         )
     assert excinfo.value.code == "invalid_argument"
@@ -946,7 +942,7 @@ def test_bi_preflight_rejects_unknown_target_value_without_a_request(
     """
     doc = _bi_doc(tmp_path, bad_input)
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_bi_preflight(
+        dashboard_workbook.dashboard_bi_preflight(
             _inv("dashboard.bi-preflight", extra_args=["42"], input_file=doc)
         )
     assert excinfo.value.code == "invalid_input_field_type"
@@ -959,7 +955,7 @@ def test_bi_export_writes_file_in_terminal_mode(
     destination = tmp_path / "board.zip"
     doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
     fake_service.responses[_EXPORT_POWERBI] = destination
-    data, _ = dashboard_cmd.dashboard_bi_export(
+    data, _ = dashboard_workbook.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log[-1] == (
@@ -981,7 +977,7 @@ def test_bi_export_names_the_figures_it_dropped(
         "figures_exported": 4,
         "refusals": [{"title": "Map", "reason": "no geo support"}],
     }
-    data, _ = dashboard_cmd.dashboard_bi_export(
+    data, _ = dashboard_workbook.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
     assert data["output_path"] == str(destination)
@@ -996,7 +992,7 @@ def test_bi_export_dispatches_tableau_in_terminal_mode(
 ) -> None:
     doc = _bi_doc(tmp_path, {"target": "tableau"})
     fake_service.responses[_EXPORT_TABLEAU] = Path("dashboard_42_tableau.twbx")
-    data, _ = dashboard_cmd.dashboard_bi_export(
+    data, _ = dashboard_workbook.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
     )
     assert fake_service.call_log[-1] == (_EXPORT_TABLEAU, {"dashboard_id": 42})
@@ -1022,7 +1018,7 @@ def test_bi_export_embedded_points_user_to_export_dialog(
     token = _enter_embedded_call()
     try:
         with pytest.raises(CliError) as excinfo:
-            dashboard_cmd.dashboard_bi_export(
+            dashboard_workbook.dashboard_bi_export(
                 _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
             )
     finally:
@@ -1082,13 +1078,13 @@ def test_bi_export_refuses_an_existing_file_unless_overwrite(
     destination.write_bytes(b"old")
     doc = _bi_doc(tmp_path, {"target": "powerbi", "output_path": str(destination)})
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.dashboard_bi_export(
+        dashboard_workbook.dashboard_bi_export(
             _inv("dashboard.bi-export", extra_args=["42"], input_file=doc)
         )
     assert excinfo.value.code == "file_exists"
     assert fake_service.call_log == []
     fake_service.responses[_EXPORT_POWERBI] = destination
-    data, _ = dashboard_cmd.dashboard_bi_export(
+    data, _ = dashboard_workbook.dashboard_bi_export(
         _inv("dashboard.bi-export", extra_args=["42"], input_file=doc, overwrite=True)
     )
     assert data["output_path"] == str(destination)

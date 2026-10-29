@@ -20,26 +20,37 @@ Supports:
     - Parentheses (produce nested lists per backend convention)
     - Multi-word column names (matched longest-first)
     - Function calls: ABS(), INT(), SMALL(), LARGE()
+    - Workspace parameters as ``{name}`` (resolved through ``parameter_ids``)
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from typing import Any
 
 # Supported math functions
 _FUNCTIONS = frozenset({"ABS", "INT", "SMALL", "LARGE"})
+_PARAMETER_TOKEN = re.compile(r"\{([^{}]+)\}")
+
+
+def parameter_names(expression: str) -> list[str]:
+    """The distinct parameter names an expression uses as ``{name}``, in order of appearance."""
+    return list(dict.fromkeys(name.strip() for name in _PARAMETER_TOKEN.findall(expression)))
 
 
 def parse_expression(
     expression: str,
     column_map: dict[str, str],
+    parameter_ids: Mapping[str, int] | None = None,
 ) -> list[Any]:
     """Parse a math expression string into backend format.
 
     Args:
         expression: Human-readable expression (e.g. ``"Price * Quantity"``).
         column_map: Mapping from display names to internal column names.
+        parameter_ids: Mapping from parameter names to ids; each ``{name}`` in the
+            expression becomes a parameter atom with that id.
 
     Returns:
         List of expression parts in backend format. Parenthesized
@@ -48,11 +59,13 @@ def parse_expression(
     Raises:
         ValueError: If the expression contains unrecognized tokens.
     """
-    tokens = _tokenize(expression, column_map)
+    tokens = _tokenize(expression, column_map, parameter_ids or {})
     return _build_tree(tokens)
 
 
-def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any] | str]:
+def _tokenize(
+    expression: str, column_map: dict[str, str], parameter_ids: Mapping[str, int]
+) -> list[dict[str, Any] | str]:
     """Tokenize an expression string into typed tokens.
 
     Returns a flat list of dicts (COLUMN/NUMBER/OPERATOR/FUNCTION_START) and
@@ -113,6 +126,20 @@ def _tokenize(expression: str, column_map: dict[str, str]) -> list[dict[str, Any
                 f"Unrecognized token at position {pos} in expression: {expression!r}"
                 + (f" (no column named {name!r})" if end != -1 else " (unclosed quote)")
             )
+
+        # A workspace parameter: {name}
+        if char == "{":
+            end = text.find("}", pos + 1)
+            name = text[pos + 1 : end].strip() if end != -1 else ""
+            if name not in parameter_ids:
+                raise ValueError(
+                    f"Unrecognized token at position {pos} in expression: {expression!r}"
+                    + (f" (no parameter named {name!r})" if end != -1 else " (unclosed brace)")
+                )
+            atom = {"type": "parameter", "parameter_id": parameter_ids[name]}
+            tokens.append({"TYPE": "NUMBER", "VALUE": atom})
+            pos = end + 1
+            continue
 
         # Commas (argument separator in functions)
         if char == ",":

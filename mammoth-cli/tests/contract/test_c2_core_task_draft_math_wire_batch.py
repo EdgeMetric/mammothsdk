@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from mammoth_cli.commands import view, view_ops
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 
@@ -201,7 +202,7 @@ def test_task_draft_and_math_routes_have_literal_wires(
     before = len(api.requests)
     with _bind(monkeypatch, view_ops, service):
         with pytest.raises(CliError, match="Column reference"):
-            view_ops.view_transform_math(
+            view_transforms.view_transform_math(
                 _inv(
                     "view.transform.math",
                     [str(VIEW)],

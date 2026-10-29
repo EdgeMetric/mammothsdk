@@ -18,8 +18,6 @@ from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.runtime import parents
 from mammoth_cli.runtime.invocation import Invocation
 
-HandlerResult = tuple[Any, dict[str, Any]]
-
 # Wire-shape keys returned by the dataview data/preview/metadata endpoints,
 # named so the column-relabel logic and any future reader share one source of
 # truth instead of repeating magic strings.

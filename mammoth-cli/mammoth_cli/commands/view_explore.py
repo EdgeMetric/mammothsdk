@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     _EXPLORE_PANEL_GET_SYMBOL,
@@ -41,8 +42,6 @@ from mammoth_cli.services.explore_card_edit import (
 from mammoth_cli.services.explore_to_figure import card_level, card_to_figure, count_filters
 from mammoth_cli.services.explore_to_image import card_to_render_spec
 from mammoth_cli.services.local_files import refuse_existing_file
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _EXPLORE_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.explore"
 _SEQUENCE_SYMBOL = "mammoth.api.pipeline.PipelineAPI.latest_task_sequence"

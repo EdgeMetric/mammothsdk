@@ -976,7 +976,7 @@ class TestSortRows:
             {
                 "op": "replace",
                 "path": "display_properties/SORT",
-                "value": [["column_jkl1234567", "DESC"], ["column_abc1234567", "ASC"]],
+                "value": [["column_jkl1234567", "desc"], ["column_abc1234567", "asc"]],
             }
         ]
         assert result == {"sort": [["base_salary", "DESC"], ["emp_id", "ASC"]]}
@@ -985,9 +985,18 @@ class TestSortRows:
     async def test_lowercase_direction_and_clear(self, mock_view, monkeypatch):
         calls = _patch_view(mock_view, monkeypatch)
         await mock_view.sort_rows([["emp_id", "desc"]])
-        assert calls[-1][2][0]["value"] == [["column_abc1234567", "DESC"]]
+        assert calls[-1][2][0]["value"] == [["column_abc1234567", "desc"]]
         await mock_view.sort_rows([])
         assert calls[-1][2][0]["value"] == []
+
+    @pytest.mark.parametrize("direction", ["ASC", "Asc", SortDirection.ASC])
+    async def test_direction_is_sent_in_the_lowercase_the_server_model_types(
+        self, mock_view, monkeypatch, direction
+    ):
+        """The server's SORT pair is ``tuple[str, Literal["asc", "desc"]]``."""
+        calls = _patch_view(mock_view, monkeypatch)
+        await mock_view.sort_rows([["emp_id", direction]])
+        assert calls[-1][2][0]["value"] == [["column_abc1234567", "asc"]]
 
     @pytest.mark.parametrize(
         "order_by",

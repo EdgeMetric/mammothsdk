@@ -23,13 +23,26 @@ def test_a_task_types_schema_is_what_mammoth_says_it_takes() -> None:
     with a_fake_api() as api, as_caller():
         api.answer("GET", CAPABILITIES, {"tasks": [ALERT], "conditions": [SCHEDULE]})
         schema = call_tool(
-            "get_automation_schema",
+            "get_schema",
+            kind="automation",
+            of="send_an_alert",
             workspace_id=WORKSPACE,
             project_id=PROJECT,
-            task_type="send_an_alert",
         )
 
     assert schema == {"task": ALERT, "conditions": [SCHEDULE]}
+
+
+def test_an_automation_schema_names_the_project_it_is_for() -> None:
+    # Mammoth answers it per project, so the call needs one.
+    with (
+        a_fake_api() as api,
+        as_caller(),
+        pytest.raises(ToolError, match="project_id"),
+    ):
+        call_tool("get_schema", kind="automation", of="send_an_alert", workspace_id=WORKSPACE)
+
+    assert not api.requests
 
 
 def test_an_unknown_task_type_names_the_ones_there_are() -> None:
@@ -37,8 +50,9 @@ def test_an_unknown_task_type_names_the_ones_there_are() -> None:
         api.answer("GET", CAPABILITIES, {"tasks": [ALERT], "conditions": []})
         with pytest.raises(ToolError, match="send_an_alert"):
             call_tool(
-                "get_automation_schema",
+                "get_schema",
+                kind="automation",
+                of="send_a_fax",
                 workspace_id=WORKSPACE,
                 project_id=PROJECT,
-                task_type="send_a_fax",
             )

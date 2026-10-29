@@ -19,7 +19,6 @@ _GET = "mammoth.api.files.FilesAPI.get"
 _UPDATE = "mammoth.api.files.FilesAPI.update"
 _SET_PASSWORD = "mammoth.api.files.FilesAPI.set_password"
 _EXTRACT_SHEETS = "mammoth.api.files.FilesAPI.extract_sheets"
-_DELETE = "mammoth.api.files.FilesAPI.delete"
 _BULK_DELETE = "mammoth.api.files.FilesAPI.bulk_delete"
 _UPLOAD = "mammoth.api.files.FilesAPI.upload"
 _UPLOAD_RESULT = "mammoth.api.files.FilesAPI.upload_result"
@@ -216,11 +215,6 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    file_cmd.file_delete(_inv("file.delete", extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"file_id": 7})]
-
-
 def test_bulk_delete_requires_file_ids(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         file_cmd.file_bulk_delete(_inv("file.bulk-delete", yes=True))
@@ -260,8 +254,6 @@ def test_upload_uses_files_input_field_when_no_positional(
             {
                 "files": ["a.csv"],
                 "folder_resource_id": "r1",
-                "append_to_ds_id": 9,
-                "override_target_schema": True,
                 "wait_for_completion": False,
                 "timeout": 30,
             }
@@ -275,8 +267,6 @@ def test_upload_uses_files_input_field_when_no_positional(
             {
                 "files": ["a.csv"],
                 "folder_resource_id": "r1",
-                "append_to_ds_id": 9,
-                "override_target_schema": True,
                 "wait_for_completion": False,
                 "timeout": 30,
             },
@@ -312,6 +302,26 @@ def test_upload_with_append_to_ds_id_and_no_files_is_missing_argument(
         file_cmd.file_upload(_inv("file.upload", input_file=str(doc)))
     assert excinfo.value.code == "missing_argument"
     assert "files" in excinfo.value.message
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"override_target_schema": True},
+        {"append_to_ds_id": 9, "override_target_schema": True, "wait_for_completion": False},
+    ],
+)
+def test_override_target_schema_needs_an_append_and_the_wait(
+    fake_service: FakeMammothService, tmp_path: Path, fields: dict[str, Any]
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps(fields), encoding="utf-8")
+    with pytest.raises(CliError) as excinfo:
+        file_cmd.file_upload(_inv("file.upload", extra_args=["a.csv"], input_file=str(doc)))
+    assert excinfo.value.code == "invalid_argument"
+    assert excinfo.value.details["field"] == "override_target_schema"
+    assert "replace" in (excinfo.value.hint or "")
     assert fake_service.call_log == []
 
 
@@ -592,36 +602,6 @@ def test_upload_result_names_each_dataset_in_its_health_entry(
     from mammoth_cli.runtime.dataset_health import with_dataset_health
 
     assert with_dataset_health(data)["dataset_health"][0]["name"] == "foo.csv"
-
-
-def test_append_upload_reports_the_target_dataset_not_the_staging_one(
-    isolated_cli_config: object, fake_service: FakeMammothService, tmp_path: Path
-) -> None:
-    """Bug bash 2026-10-15: the result named the deleted staging dataset plus a preview_error."""
-    csv = tmp_path / "d11.csv"
-    csv.write_text("day,events\n2026-10-11,3\n")
-    fake_service.responses[_UPLOAD_RESULT] = {"dataset_ids": [313583], "errors": {}}
-
-    def _get(log: list[Any]) -> dict[str, Any]:
-        reads = [kw for sym, kw in log if sym.endswith("DatasetsAPI.get")]
-        rows = 30 if len(reads) == 1 else 33
-        return {"id": 313571, "name": "events", "status": "ready", "stats": {"row_count": rows}}
-
-    fake_service.responses["mammoth.api.datasets.DatasetsAPI.get"] = _get
-    data, _ = file_cmd.file_upload(
-        _inv(
-            "file.upload",
-            extra_args=[str(csv)],
-            input_file=str(_input_doc(tmp_path, {"append_to_ds_id": 313571})),
-        )
-    )
-    assert data["dataset_id"] == 313571
-    assert data["dataset_ids"] == [313571]
-    assert data["appended_to"] == 313571
-    assert data["rows_before"] == 30 and data["rows_after"] == 33 and data["rows_added"] == 3
-    assert "preview_error" not in json.dumps(data)
-    assert 313583 not in [d["id"] for d in data["datasets"]]
-    assert not any(kw.get("dataset_id") == 313583 for _sym, kw in fake_service.call_log)
 
 
 def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:

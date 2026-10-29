@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dataset import named_project, search_cut_note, search_hits
+from mammoth_cli.commands.dataset.find import named_project, search_cut_note, search_hits
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -30,8 +31,6 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services.delete_check import CODE_DELETE_NOT_APPLIED
 from mammoth_cli.services.folder_ids import FolderIds
 from mammoth_cli.services.paging import listing_with_paging
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:

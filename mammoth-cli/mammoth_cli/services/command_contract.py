@@ -27,7 +27,8 @@ from mammoth_cli.services.input_fields import (
     is_closed_zero_input,
 )
 from mammoth_cli.services.openapi_types import openapi_body_schema_for
-from mammoth_cli.services.positionals import PositionalSpec, resolve_positionals
+from mammoth_cli.services.positional_spec import PositionalSpec
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.type_system import is_opaque_mapping, json_schema
 
 
@@ -282,6 +283,19 @@ _LOCAL_CONTRACT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("command_id", required=False, annotation=str | None, default=None),
         FieldSpec("run_id", required=False, annotation=str | None, default=None),
     ),
+    "history.list": (
+        FieldSpec("limit", required=False, annotation=int, default=20),
+        FieldSpec("undoable_only", required=False, annotation=bool, default=False),
+    ),
+    "history.show": (),
+    "history.undo": (FieldSpec("force", required=False, annotation=bool, default=False),),
+    "history.resume": (
+        FieldSpec("from_line", required=False, annotation=int | None, default=None),
+    ),
+    "recipe.list": (),
+    "recipe.run": (
+        FieldSpec("inputs", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     "skill.list": (),
     "skill.show": (FieldSpec("file", required=False, annotation=str | None, default=None),),
     "skill.agents-md.install": (
@@ -477,6 +491,12 @@ _LOCAL_COMMANDS = frozenset(
         "folder.find",
         "how",
         "link",
+        "history.list",
+        "history.show",
+        "history.undo",
+        "history.resume",
+        "recipe.list",
+        "recipe.run",
         "log.path",
         "log.tail",
         "schema.find",
@@ -724,6 +744,41 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Instead of ``patch``: the handler reads the automation and writes the changed dataset
+    # list back as a ``details`` patch (``automation update`` docstring).
+    "automation.update": (
+        FieldSpec("add_datasets", required=False, annotation=list[int] | None, default=None),
+        FieldSpec("remove_datasets", required=False, annotation=list[int] | None, default=None),
+    ),
+    # Instead of ``patches``: the fields to change on the stored export (``export_update``).
+    "view.export.update": (
+        FieldSpec("save_as_mode", required=False, annotation=str | None, default=None),
+        FieldSpec(
+            "target_properties", required=False, annotation=dict[str, Any] | None, default=None
+        ),
+        FieldSpec(
+            "additional_properties", required=False, annotation=dict[str, Any] | None, default=None
+        ),
+        FieldSpec("condition", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("trigger_type", required=False, annotation=str | None, default=None),
+        FieldSpec("handler_type", required=False, annotation=str | None, default=None),
+        FieldSpec("end_of_pipeline", required=False, annotation=bool | None, default=None),
+        FieldSpec("sequence", required=False, annotation=int | None, default=None),
+        FieldSpec("run_immediately", required=False, annotation=bool | None, default=None),
+        FieldSpec("schedule", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("send_window", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
+    # The share password is read from this file by the handler (the SDK's own ``password``
+    # is never an input: a password on the command line lands in shell history).
+    "dashboard.share": (
+        FieldSpec("password_file", required=False, annotation=str | None, default=None),
+    ),
+    # ``file upload`` handler reads both and strips them before the SDK call:
+    # ``mode`` picks replace|add for an existing dataset, ``sheets`` the workbook sheets.
+    "file.upload": (
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+        FieldSpec("sheets", required=False, annotation=list[str] | None, default=None),
+    ),
     # Published-dashboard jobs are readable only through the URL-scoped job
     # route; ``job wait`` polls it when the dashboard URL slug is given.
     "job.wait": (FieldSpec("dashboard_url", required=False, annotation=str | None, default=None),),
@@ -743,6 +798,10 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("order_by", required=False, annotation=list[Any] | None, default=None),
         FieldSpec("top", required=False, annotation=int | None, default=None),
         FieldSpec("text_date_format", required=False, annotation=str | None, default=None),
+    ),
+    # ``key_columns`` is turned into ``ignore_columns`` (every other column) by the handler.
+    "view.transform.discard-duplicates": (
+        FieldSpec("key_columns", required=False, annotation=list[str] | None, default=None),
     ),
     # ``range`` adds the exact earliest and latest value of the explored column.
     "view.data.explore": (

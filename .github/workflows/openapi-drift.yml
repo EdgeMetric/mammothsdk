@@ -26,4 +26,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compare pinned and production operation inventories
+        env:
+          MAMMOTH_OPENAPI_TOKEN: ${{ secrets.MAMMOTH_OPENAPI_TOKEN }}
         run: python scripts/sync_openapi.py --check-live

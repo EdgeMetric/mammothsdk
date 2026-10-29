@@ -8,7 +8,8 @@
 Compact single-line JSON when stdout is not a terminal (pretty when it is;
 `MAMMOTH_JSON_PRETTY=1` forces pretty). `meta` carries only the keys that have a
 value: `exit` is the exit status (0, or 1 or 3 for a write whose read-back failed
-or was partial); `stderr` (embedded calls only) holds up to 500 characters a library
+or was partial); `run_id` names this invocation (the same id as `log_ref.run_id`, for
+`mammoth log tail` and `mammoth history show`); `stderr` (embedded calls only) holds up to 500 characters a library
 wrote to stderr during the call, and `elapsed_ms` (embedded calls only) its wall time;
 `pagination` appears on paged reads, `update_available`
 (`{"current", "latest", "command"}`) when a newer CLI is on PyPI (checked once
@@ -19,10 +20,18 @@ command that succeeded (`file upload`, `view create`, a `view transform`,
 filled in with this result's ids, usually the read-back. Run them as they are
 when they fit the task; a write that did not verify has none.
 
-## Error envelope (stderr)
+## Error envelope (stdout, non-zero exit)
 ```json
 {"schema_version": 1, "error": {"code": "resource_not_found", "message": "...", "hint": "...", "details": {}, "request_id": null, "retryable": false, "authorization_required": false, "recovery_commands": ["..."], "exit": 1, "log_ref": {"file": ".../logs/2026-09-19.jsonl", "run_id": "b6bc6bf6d166"}}}
 ```
+
+With `-o json`, `-o ndjson` or `-o yaml` (also via `MAMMOTH_OUTPUT`, or `auto` on a pipe) the error
+envelope is the one document on stdout, exactly where a success envelope would be, and the exit
+status stays non-zero: read stdout, parse it, branch on `error` and the exit code. This covers
+usage errors, refusals, unexpected exceptions and Ctrl-C. stderr carries only what a person reads
+(the `Next:` line, hints, progress, `--debug` tracebacks); never depend on it. Only if stdout is
+unwritable (a closed pipe) does the envelope fall back to stderr. Table, plain and csv output keep
+the short `error [code]: message` text on stderr.
 
 A mistyped command, option or column carries `details.did_you_mean`: the nearest
 commands (unknown command), the nearest option (`--profle`, or `"--project 3633"`
@@ -40,6 +49,20 @@ refresh (`login_expired`, exit 4) needs a new `mammoth auth login`. `auth status
 `auth login` add `workspace_name` (and `project_name` / `token_project_name` for a project-limited
 token); a name is left out when its lookup fails, and the ids are always present. A sign-in limited
 to several projects adds `project_ids` to `auth login` and `token_projects` to `auth status --check`.
+
+## Resource ids in results
+
+One id key per resource, at the top level of `data`: `<resource>_id`. Every create-type command
+(`create`, `create-*`, `duplicate`, `copy`) names the resource it made that way: `dataset create`
+gives `dataset_id`, `project create` `project_id`, `connector connection create` `connection_id`
+(the value `identity_key` / `connection_key` holds, which is the CONNECTION_KEY other commands
+take), `dashboard create-blank` `dashboard_id`. A write that made a dataset, view or dashboard
+(`file upload`, `view export dataset`, `dashboard v3 generate`, ...) also gives that
+`<kind>_id`, and `job wait` / `job get` lift the `dataset_id`, `view_id` or `dashboard_id` their
+`response` or `result` holds, so a script never reads `response.dataset_id`. The older keys
+(`id`, `identity_key`, nested `response`) stay for compatibility; save `data.<resource>_id`, never
+the whole reply. A result that carries no id (a job still running) has no such key: wait on its
+`job_id`, then read the id from `job wait`.
 
 ## Representative result keys
 
@@ -104,7 +127,15 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
 - A bad line (invalid JSON, a duplicate or unknown key, a flag in `args`, a reserved flag) is an
   `invalid_run_line` error for that line, exit 2. `run`, `auth login` and `auth logout` cannot be
   lines, however `cmd` and `args` spell them (`run_command_refused`).
-- stdout carries only the envelopes; progress and diagnostics stay on stderr.
+- stdout carries only the envelopes (errors included); progress and diagnostics stay on stderr.
+- Steps: a line with `"name": "up"` keeps its envelope, and a later line reads it in `args`,
+  `input` or `flags` as `"{{steps.up.data.dataset.id}}"` (a whole-string reference keeps its type;
+  paths take `[0]` indexes). `"when"` skips a line when false (`{"eq": [A, B]}`, `{"in": [A, LIST]}`,
+  `{"not": C}`, `{"all": [...]}`, `{"any": [...]}`, `{"present": REF}`), printing `skipped: true`.
+  `"for_each": "{{steps.ls.data.items}}"` runs a line once per item with `{{item}}` and `{{index}}`,
+  one envelope per item (`item` = its index). `$keys`, `$first`, `$without` and `$default` build
+  values. A reference that does not resolve fails the line with `unresolved_reference` (exit 2);
+  under `--dry-run` the line is planned instead (`data.planned`, `data.waits_on`). JSON only: no code runs.
 
 ## Exit codes
 | code | meaning |

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -28,8 +29,6 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -162,7 +161,9 @@ def agent_chat(invocation: Invocation) -> HandlerResult:
 
     ``message``/``scope`` are required. The request key the server needs is made
     here, never asked of the user. ``wait`` (seconds, default 120) bounds how long
-    the command waits for the reply; ``0`` returns as soon as the turn starts.
+    the command waits for the reply; ``0`` returns as soon as the turn starts. The reply is
+    the one this turn wrote. When the server moves a long turn to a background run, ``reply`` is
+    null, ``background`` is true and ``next`` names the command that reads the answer once it lands.
     """
     document = _bound_document(invocation)
     message = _require_field(document, "message")

@@ -27,8 +27,34 @@ _BILLING_INTERVALS = ("monthly", "yearly", "annual")
 _COLLECTION_METHODS = ("send_invoice", "charge_automatically")
 _PAYMENT_TERMS = ("due_on_receipt", "net15", "net30", "net45", "net60")
 
+#: How a new file meets a dataset's rows (``update_method.parse_mode``; ``add`` is ``combine``).
+_UPDATE_MODES = ("replace", "add", "combine")
+
 #: Where a connector draft was started (``mammoth.api.connector_drafts.DRAFT_ORIGINS``).
 _DRAFT_ORIGINS = ("agent", "connections", "modal")
+
+#: The swatches a conditional format paints (mvc-service apiv2 conditional_formatting/const.py
+#: ``CFColor``): the backend refuses any other word and lists them only in its 400 body.
+_CF_COLORS = (
+    "red",
+    "amber",
+    "green",
+    "blue",
+    "purple",
+    "teal",
+    "coral",
+    "grey",
+    "text-red",
+    "text-amber",
+    "text-green",
+    "text-blue",
+    "text-purple",
+    "text-teal",
+    "text-coral",
+    "text-grey",
+    "text-pink",
+    "text-lime",
+)
 
 #: command id -> field -> accepted spellings (canonical casing).
 FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
@@ -46,6 +72,8 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "connector.draft.list": {"status": ("live", "saved", "all")},
     "connector.draft.save": {"refresh": ("daily", "manual")},
+    "view.conditional-format.create": {"color": _CF_COLORS},
+    "view.conditional-format.replace": {"color": _CF_COLORS},
     "annotation.create": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.list": {"target_type": ("dataset", "dataview", "workflow")},
     "annotation.update": {"status": ("open", "resolved")},
@@ -88,6 +116,8 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     "dataset.interpretation.confirm": {"mode": ("interpreted", "original")},
     "project.user.add": {"role": ("project_admin", "project_analyst")},
     "view.impact": {"scope": ("task", "view")},
+    "dataset.update-method.set": {"mode": _UPDATE_MODES},
+    "file.upload": {"mode": _UPDATE_MODES},
     "webhook.create": {"mode": ("replace", "combine")},
     "webhook.update": {"mode": ("replace", "combine")},
     **{
@@ -151,6 +181,7 @@ BATCH_OPS: tuple[str, ...] = (
     "substring",
     "extract-date",
     "increment-date",
+    "repeat-rows",
     "copy-columns",
     "split",
     "unnest",

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands import automation_datasets
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -32,8 +34,9 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.delete_check import ensure_deleted
 
-HandlerResult = tuple[Any, dict[str, Any]]
+_AUTOMATION_GET_SYMBOL = "mammoth.api.automations.AutomationsAPI.get"
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -237,7 +240,19 @@ def automation_delete(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), automation_id=automation_id)
-    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+        # Read it back: gone (or in the trash) is the verified outcome of a delete.
+        ensure_deleted(
+            service,
+            noun="automation",
+            resource_id=automation_id,
+            read_symbol="mammoth.api.automations.AutomationsAPI.get",
+            read_kwargs={"automation_id": automation_id},
+            responses=(data,),
+        )
+    result = {**data} if isinstance(data, dict) else {}
+    return {**result, "automation_id": automation_id, "deleted": [automation_id]}, _meta(
+        invocation, auth.workspace_id, resolved_project(invocation)
+    )
 
 
 _RETENTION_TASK = "apply_retention_policy"
@@ -311,12 +326,17 @@ def automation_create(invocation: Invocation) -> HandlerResult:
 
 
 def automation_update(invocation: Invocation) -> HandlerResult:
-    """Apply JSON-patch operations to one automation. Requires ``--yes``.
+    """Apply JSON-patch operations to one automation, or add or remove its datasets.
 
-    Automation id is positional; the non-empty ``patch`` list comes from the
-    ``--input`` document.
+    Automation id is positional. ``--input`` is a non-empty ``patch`` list or, for a
+    data-refresh automation, ``{"add_datasets": [ids], "remove_datasets": [ids]}``: the
+    refreshed datasets are read, changed and written back with the schedule kept. Requires
+    ``--yes``.
     """
     automation_id = _require_int_positional(invocation, "automation id")
+    raw = invocation.load_input() or {}
+    if automation_datasets.wants_dataset_change(raw):
+        return _automation_update_datasets(invocation, automation_id, raw)
     document = _bound_document(invocation)
     patch = _require_field(document, "patch")
     enforce_confirmation(
@@ -326,4 +346,33 @@ def automation_update(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), automation_id=automation_id, patch=patch)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _automation_update_datasets(
+    invocation: Invocation, automation_id: int, document: dict[str, Any]
+) -> HandlerResult:
+    """Add or remove datasets on a data-refresh automation (see :func:`automation_update`)."""
+    stray = automation_datasets.unknown_dataset_fields(document)
+    if stray:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"Give 'patch' or add_datasets/remove_datasets, not both. Got: {stray}.",
+            exit_status=EXIT_USAGE,
+        )
+    add = automation_datasets.requested_ids(document, automation_datasets.ADD_FIELD)
+    remove = automation_datasets.requested_ids(document, automation_datasets.REMOVE_FIELD)
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"change the datasets of automation {automation_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        current = service.call(_AUTOMATION_GET_SYMBOL, automation_id=automation_id)
+        patch, datasets = automation_datasets.dataset_patch(
+            automation_datasets.automation_record(current), add, remove
+        )
+        data = service.call(_symbol(invocation), automation_id=automation_id, patch=patch)
+    if isinstance(data, dict):
+        data = {**data, "datasets": datasets}
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))

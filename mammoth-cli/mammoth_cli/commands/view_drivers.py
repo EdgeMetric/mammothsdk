@@ -19,6 +19,7 @@ import re
 from collections import Counter
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import _require_int_positional_at
 from mammoth_cli.commands.view.aggregate import aggregate_on, open_aggregate_source
 from mammoth_cli.runtime.invocation import Invocation
@@ -26,8 +27,6 @@ from mammoth_cli.runtime.session import open_service, require_project
 from mammoth_cli.services import period_analysis as pa
 from mammoth_cli.services.listing import LIST_DATA_BUDGET, json_size
 from mammoth_cli.services.read_queries import AGGREGATE_SYMBOL
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 #: Contributors listed per ``by`` column, largest change first.
 _TOP = 5

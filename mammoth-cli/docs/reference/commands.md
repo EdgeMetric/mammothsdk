@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.2.100.
+Generated from the reviewed command manifests for mammoth-cli 2.3.1.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 845.
+Total commands: 872.
 
 ## activity
 
@@ -537,7 +537,7 @@ Total commands: 845.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.generate_sql`
-- Agent example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456}'`
+- Agent example: `mammoth ai sql generate 'Summarize revenue by region' --input '{"dataset_id": 456, "dataview_id": 123}'`
 
 ### `mammoth ai suggestion list`
 
@@ -3670,7 +3670,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.v3_generate`
-- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"dataview_id": 1}}}'`
+- Agent example: `mammoth dashboard v3 generate --input '{"body": {"params": {"intent": "Weekly sales by region", "dataview_id": 1}}}'`
 
 ### `mammoth dashboard video export`
 
@@ -3847,6 +3847,20 @@ Total commands: 845.
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.delete`
 - Agent example: `mammoth dataset delete 123 --yes`
 
+### `mammoth dataset download`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download`
+- Agent example: `mammoth dataset download --input '{"resource_ids": [12, 13], "name": "sales", "file_type": "csv"}'`
+
+### `mammoth dataset download-plan`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.exports.ExportsAPI.bulk_download_plan`
+- Agent example: `mammoth dataset download-plan --input '{"resource_ids": [12, 13]}'`
+
 ### `mammoth dataset file-settings get`
 
 **Arguments**
@@ -3878,7 +3892,7 @@ Total commands: 845.
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.file_settings_update`
-- Agent example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'`
+- Agent example: `mammoth dataset file-settings update 123 --input '{"initial_skip_count": 2}'`
 
 ### `mammoth dataset find`
 
@@ -3890,6 +3904,35 @@ Total commands: 845.
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.dataset.find`
 - Agent example: `mammoth dataset find sales`
+
+### `mammoth dataset from-url follow`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.follow_link`
+- Agent example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`
+
+### `mammoth dataset from-url links`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.links`
+- Agent example: `mammoth dataset from-url links`
+
+### `mammoth dataset from-url preview`
+
+**Arguments**
+
+- `URL` (str, required) — URL slug identifying the resource.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.link_preview`
+- Agent example: `mammoth dataset from-url preview https://example.com/data.csv`
 
 ### `mammoth dataset get`
 
@@ -4023,6 +4066,28 @@ Total commands: 845.
   backend grammar is not a typed CLI contract. Do not infer an `op`,
   `path`, or `value` from examples; use a separately typed command or
   stop with the structured unsupported-contract result.
+
+### `mammoth dataset update-method get`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.get_update_method`
+- Agent example: `mammoth dataset update-method get 123`
+
+### `mammoth dataset update-method set`
+
+**Arguments**
+
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.datasets.DatasetsAPI.set_update_method`
+- Agent example: `mammoth dataset update-method set 123 --input '{"mode": "replace"}'`
 
 ## doctor
 
@@ -4281,6 +4346,48 @@ Total commands: 845.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.update`
 - Agent example: `mammoth folder update 123 --input '{"name": "Revenue report"}'`
+
+## history
+
+### `mammoth history list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.history.history_list`
+- Agent example: `mammoth history list --input '{"undoable_only": true}'`
+
+### `mammoth history resume`
+
+**Arguments**
+
+- `ID` (str, required) — The group of the mammoth run or recipe run that stopped (from 'history list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.history.history_resume`
+- Agent example: `mammoth history resume 97b9ee41d15d --yes`
+
+### `mammoth history show`
+
+**Arguments**
+
+- `ID` (str, required) — The write's inv, or the group of a whole mammoth run (from 'history list').
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.history.history_show`
+- Agent example: `mammoth history show 97b9ee41d15d`
+
+### `mammoth history undo`
+
+**Arguments**
+
+- `ID` (str, required) — The write's inv, or the group of a whole mammoth run (from 'history list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.history.history_undo`
+- Agent example: `mammoth history undo 97b9ee41d15d --yes`
 
 ## how
 
@@ -4814,6 +4921,26 @@ Total commands: 845.
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.projects.ProjectsAPI.user_update`
 - Agent example: `mammoth project user update 123 --input '{"role": "project_admin", "user_id": 123}' --yes`
+
+## recipe
+
+### `mammoth recipe list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_list`
+- Agent example: `mammoth recipe list`
+
+### `mammoth recipe run`
+
+**Arguments**
+
+- `ID` (str, required) — The recipe to run (from 'recipe list').
+
+- Mutation class: `high_impact`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth_cli.commands.recipe.recipe_run`
+- Agent example: `mammoth recipe run export-csv --input '{"inputs": {"view_id": 1, "dataset_id": 2}}' --yes`
 
 ## report
 
@@ -5772,6 +5899,28 @@ Total commands: 845.
 - Backing SDK: `mammoth.api.support.SupportAPI.plan_update_storage_tiers`
 - Agent example: `mammoth support plan update-storage-tiers 123 --input '{"storage_tiers": [{"name": "Status"}]}' --yes --confirm 123`
 
+### `mammoth support project-move get`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_get`
+- Agent example: `mammoth support project-move get 123`
+
+### `mammoth support project-move purge`
+
+**Arguments**
+
+- `MOVE_ID` (int, required) — ID of the move.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_purge`
+- Agent example: `mammoth support project-move purge 123 --yes --confirm 123`
+
 ### `mammoth support search`
 
 **Arguments**
@@ -6155,6 +6304,41 @@ Total commands: 845.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.support.SupportAPI.workspace_list`
 - Agent example: `mammoth support workspace list`
+
+### `mammoth support workspace project list`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.workspace_project_list`
+- Agent example: `mammoth support workspace project list 123`
+
+### `mammoth support workspace project move-check`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_check`
+- Agent example: `mammoth support workspace project move-check 123 456 --input '{"target_workspace_id": 1}'`
+
+### `mammoth support workspace project move-start`
+
+**Arguments**
+
+- `WORKSPACE_ID` (int, required) — ID of the workspace.
+- `PROJECT_ID` (int, required) — ID of the project.
+
+- Mutation class: `high_impact`
+- Confirmation: `confirm_target`
+- Backing SDK: `mammoth.api.support.SupportAPI.project_move_start`
+- Agent example: `mammoth support workspace project move-start 123 456 --input '{"target_workspace_id": 1}' --yes --confirm 123`
 
 ### `mammoth support workspace restore-access`
 
@@ -7930,6 +8114,17 @@ Total commands: 845.
 - Backing SDK: `mammoth.View.rename_columns`
 - Agent example: `mammoth view transform rename-columns 123 --input '{"renames": {"cust_id": "Customer ID"}, "dataset_id": 456}'`
 
+### `mammoth view transform repeat-rows`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view to act on.
+
+- Mutation class: `reversible_pipeline`
+- Confirmation: `none`
+- Backing SDK: `mammoth.View.repeat_rows`
+- Agent example: `mammoth view transform repeat-rows 123 --input '{"dataset_id": 456}'`
+
 ### `mammoth view transform replace`
 
 **Arguments**
@@ -8412,6 +8607,90 @@ Total commands: 845.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.undo_save`
 - Agent example: `mammoth workflow save-undo 123 resource-123 --yes`
+
+### `mammoth workflow template build`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.build`
+- Agent example: `mammoth workflow template build bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'`
+
+### `mammoth workflow template fit`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit`
+- Agent example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"main": 101}}'`
+
+### `mammoth workflow template get`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.get`
+- Agent example: `mammoth workflow template get bank-reconciliation`
+
+### `mammoth workflow template list`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.list`
+- Agent example: `mammoth workflow template list`
+
+### `mammoth workflow template preview`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.preview`
+- Agent example: `mammoth workflow template preview bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}}'`
+
+### `mammoth workflow template rank`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.rank`
+- Agent example: `mammoth workflow template rank bank-reconciliation --input '{"input_key": "main", "dataset_ids": [101, 102]}'`
+
+### `mammoth workflow template sample-result`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.sample_result`
+- Agent example: `mammoth workflow template sample-result bank-reconciliation`
+
+### `mammoth workflow template samples`
+
+**Arguments**
+
+- `KEY` (str, required) — Workflow template key, from 'workflow template list'.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.import_samples`
+- Agent example: `mammoth workflow template samples bank-reconciliation`
 
 ### `mammoth workflow update`
 

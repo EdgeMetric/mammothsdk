@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
+from mammoth_cli.commands.view import export_update
 from mammoth_cli.commands.view._common import (
     _DATASET_ID_FIELD,
-    HandlerResult,
     _forward_optional,
     _int_positional_at,
     _meta,
@@ -43,6 +44,10 @@ from mammoth_cli.runtime.session import (
     require_project,
 )
 from mammoth_cli.services.local_files import refuse_existing_file
+
+_EXPORTS_GET_SYMBOL = "mammoth.api.exports.ExportsAPI.get"
+#: The default export representation leaves out fields a whole-params replace must resend.
+_EXPORT_FIELDS_FULL = "__full"
 
 
 def view_export_create(invocation: Invocation) -> HandlerResult:
@@ -354,12 +359,29 @@ def view_export_publish_db_update(invocation: Invocation) -> HandlerResult:
 
 
 def view_export_update(invocation: Invocation) -> HandlerResult:
-    """Apply JSON Patch operations to an export. Always requires ``--yes``."""
+    """Edit an export: a merge over the stored one, still pinned to the pipeline end.
+
+    ``--input`` is ``{"patches": [...]}`` (``command`` patches need no ``value``) or, without
+    ``patches``, the fields to change, e.g. ``{"save_as_mode": "REPLACE_IN_DS"}``. A
+    ``replace`` of ``params`` keeps every field it leaves out from the stored export and keeps
+    the export pinned to the end of the pipeline unless it sets ``end_of_pipeline: false``.
+    Always requires ``--yes``.
+    """
     project_id = require_project(invocation)
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     export_id = _require_int_positional_at(invocation, 1, "export id")
     document = invocation.load_input()
-    patches = _require_field(document, "patches")
+    if "patches" not in (document or {}) and export_update.has_shorthand(document):
+        assert document is not None
+        patches = export_update.shorthand_patches(document)
+    else:
+        patches = _require_field(document, "patches")
+    if not isinstance(patches, list):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="The 'patches' input field must be a list of patch operations.",
+            exit_status=EXIT_USAGE,
+        )
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
@@ -375,6 +397,19 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("skip_validation", "dataset_id"))
     with open_service(invocation) as (service, auth):
         _require_exact_parent(service, invocation, dataview_id, kwargs)
+        stored = None
+        if export_update.needs_stored_export(patches):
+            stored = dict(
+                service.call(
+                    _EXPORTS_GET_SYMBOL,
+                    dataview_id=dataview_id,
+                    export_id=export_id,
+                    project_id=project_id,
+                    dataset_id=kwargs.get(_DATASET_ID_FIELD),
+                    fields=_EXPORT_FIELDS_FULL,
+                )
+            )
+        kwargs["patches"] = export_update.normalize_patches(patches, stored, dataview_id)
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 

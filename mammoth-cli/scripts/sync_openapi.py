@@ -18,6 +18,12 @@ and some descriptions. This script does two things:
    projection across fetches to classify semantic differences before replacing
    the pinned snapshot.
 
+The public ``/docs/openapi.json`` no longer lists the staff routes (``/support/*``), and
+the CLI's ``support.*`` commands are built on them. The fetch therefore goes to the
+staff-only ``/support/openapi.json`` with a bearer token of a Mammoth super or tech admin
+in ``MAMMOTH_OPENAPI_TOKEN``. Until production serves that route (404), or when the
+token is unset, it falls back to the anonymous public URL if that still answers 200.
+
 Usage::
 
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
@@ -44,14 +50,22 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+#: The spec's identity in the pinned metadata. The snapshot is the full document, the
+#: one this URL served before the staff routes left it.
 SOURCE_URL = "https://app.mammoth.io/api/v2/docs/openapi.json"
+#: Where the full document is fetched from: super and tech admins only.
+FETCH_URL = "https://app.mammoth.io/api/v2/support/openapi.json"
+#: Environment variable holding the bearer token for FETCH_URL.
+TOKEN_ENV = "MAMMOTH_OPENAPI_TOKEN"
 SPEC_DIR = Path(__file__).resolve().parent.parent / "spec" / "openapi"
 SNAPSHOT_PATH = SPEC_DIR / "openapi.json"
 METADATA_PATH = SPEC_DIR / "metadata.json"
@@ -115,12 +129,62 @@ def operation_inventory(document: dict[str, Any]) -> set[str]:
     }
 
 
-def fetch_document() -> tuple[bytes, dict[str, Any]]:
-    """Fetch and decode the production document from the fixed source URL."""
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "mammoth-cli-sync/0.1"})
-    with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 (fixed https host)
-        raw = response.read()
+def _get(url: str, token: str | None) -> tuple[int, bytes]:
+    """GET ``url`` (with a bearer token when given); return the status and body.
+
+    An HTTP error status is returned, not raised, so the caller picks what each means.
+    """
+    headers = {"User-Agent": "mammoth-cli-sync/0.1"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(
+            request, timeout=60
+        ) as response:  # noqa: S310 (fixed https host)
+            return response.status, response.read()
+    except urllib.error.HTTPError as error:
+        return error.code, b""
+
+
+def _fetch_public(reason: str) -> tuple[bytes, dict[str, Any]]:
+    """Fetch the anonymous document at SOURCE_URL; it must answer 200."""
+    status, raw = _get(SOURCE_URL, None)
+    if status != 200:
+        raise SystemExit(
+            f"{reason}, and {SOURCE_URL} answered {status} without a token. "
+            f"Set {TOKEN_ENV} to the API token of a Mammoth super or tech admin."
+        )
     return raw, json.loads(raw)
+
+
+def fetch_document() -> tuple[bytes, dict[str, Any]]:
+    """Fetch and decode the full production document.
+
+    Tries the staff-only FETCH_URL with ``MAMMOTH_OPENAPI_TOKEN``. While production
+    does not serve that route yet (404), or when the token is unset, it falls back to
+    the anonymous SOURCE_URL, which is the full document until the docs are locked
+    down. A refused token (401/403) never falls back.
+
+    Raises:
+        SystemExit: The server refused the token, or no source answered 200.
+    """
+    token = os.environ.get(TOKEN_ENV, "").strip()
+    if not token:
+        print(f"{TOKEN_ENV} is not set: fetching the public {SOURCE_URL}", file=sys.stderr)
+        return _fetch_public(f"{TOKEN_ENV} is not set")
+    status, raw = _get(FETCH_URL, token)
+    if status == 200:
+        return raw, json.loads(raw)
+    if status == 404:
+        print(f"{FETCH_URL} is not deployed yet: fetching the public {SOURCE_URL}", file=sys.stderr)
+        return _fetch_public(f"{FETCH_URL} answered 404")
+    if status in {401, 403}:
+        raise SystemExit(
+            f"{FETCH_URL} answered {status}: {TOKEN_ENV} is expired, revoked, "
+            "or not a super or tech admin's token."
+        )
+    raise SystemExit(f"{FETCH_URL} answered {status}")
 
 
 def _strip_examples(node: Any) -> Any:

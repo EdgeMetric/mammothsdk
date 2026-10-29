@@ -22,19 +22,19 @@ uv venv && uv pip install -e . --group dev                    # SDK
 cd mammoth-cli && uv pip install -e .. -e . --group dev       # CLI (same for mammoth-mcp-server)
 
 # SDK checks (run from the repo root)
-black -t py312 mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/unit/ -q
+black -t py312 mammoth/ tests/ && ruff check mammoth/ && mypy mammoth/ && pytest tests/unit/ -q -n auto
 pytest tests/unit/test_transformations.py::TestMath -v        # one class
 pytest tests/integration/ -v                                  # live API, needs credentials
 
 # CLI checks (run from mammoth-cli/); the suite is slow, so run the touched test files first
 black --check -t py312 mammoth_cli/ tests/ scripts/ && ruff check mammoth_cli/ tests/ scripts/ && mypy mammoth_cli/
-pytest tests -m "not live and not fuzz and not subprocess" -q
+pytest tests -m "not live and not fuzz and not subprocess" -q -n auto
 
 # MCP server checks (run from mammoth-mcp-server/)
-ruff check . && mypy mammoth_mcp_server/ && pytest tests -q
+ruff check . && mypy mammoth_mcp_server/ && pytest tests -q -n auto
 ```
 
-`.github/workflows/pr-checks.yml` is the source of truth for these commands. It runs the tests on Python 3.12 and 3.14, and lint and types on 3.12 only. `pytest -m fuzz` (about 20 minutes) and `pytest -m live` (needs `MAMMOTH_EVAL_TOKEN_FILE` and `MAMMOTH_SERVER_PREFIX`) are opt-in.
+`.github/workflows/pr-checks.yml` is the source of truth for these commands. It runs the tests on Python 3.12 and 3.14, and lint and types on 3.12 only. `pytest -m fuzz` (about 20 minutes) and `pytest -m live` (needs `MAMMOTH_EVAL_TOKEN_FILE` and `MAMMOTH_SERVER_PREFIX`) are opt-in. `-n auto` (pytest-xdist, in every `dev` group) runs the tests in parallel: the CLI suite drops from about 10 minutes to under 3. Drop it to debug a single failure.
 
 ## Architecture
 
@@ -85,7 +85,9 @@ All methods accept **display names** (user-friendly). The SDK auto-resolves to i
 
 ## CLI: adding a command or covering a new API operation
 
-- A command is a `command_id` (e.g. `support.workspace.get`) mapped in `mammoth-cli/mammoth_cli/commands/registry.py` to `"module:function"`, plus a hand-written manifest in `mammoth-cli/spec/manifests/commands/<group>.yaml`.
+- A command is a `command_id` (e.g. `support.workspace.get`) mapped in `mammoth-cli/mammoth_cli/commands/registry.py` to `"module:function"`, plus a manifest record.
+  - `scripts/build_manifests.py` generates a record for every operation-backed or SDK-catalog command into `spec/manifests/commands.generated.yaml`. Never edit that file.
+  - `spec/manifests/commands/<group>.yaml` holds only the fields that differ from the generated record (plus `unset`, a list of generated fields to drop), or the full record of a command the generator doesn't make. The loader merges the two.
 - Every operation in the pinned prod OpenAPI spec has a row in `spec/manifests/openapi-operations.yaml` with a `disposition`. `unmapped` means a real gap.
   - Cover a gap with an SDK method plus a CLI command.
   - If no terminal user should drive the operation, add it with a reason to `INTERNAL_ONLY` or `PROTOCOL_ONLY` in `scripts/_command_map.py`.

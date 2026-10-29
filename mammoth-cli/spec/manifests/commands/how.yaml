@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: how
+  output_schema:
+    ref: How
   command_path: how
   disposition: command
   alias_of: null

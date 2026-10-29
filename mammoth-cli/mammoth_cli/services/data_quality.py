@@ -50,6 +50,16 @@ def _blank(value: Any) -> bool:
     return value is None or (isinstance(value, str) and not value.strip())
 
 
+#: Text that stands for "no value" in an exported sheet. It doesn't count against a
+#: column being numbers or dates (``100, 250, N/A`` is a number column), and the
+#: conversion makes it empty.
+_PLACEHOLDERS = frozenset({"n/a", "na", "#n/a", "-", "--", "null", "none", "nil", "?", "nan"})
+
+
+def _placeholder(text: str) -> bool:
+    return text.strip().lower() in _PLACEHOLDERS
+
+
 def _is_number(text: str) -> bool:
     return bool(_NUMBER.match(text.strip()))
 
@@ -505,7 +515,9 @@ def column_warnings(
                 (numbers, "numbers_stored_as_text", "NUMERIC", "numbers"),
                 (dates, "dates_stored_as_text", "DATE", "dates"),
             ):
-                if len(matched) / len(texts) < _MOSTLY:
+                # Placeholders say "no value"; judge the column by the values it has.
+                meaningful = [t for t in texts if not _placeholder(t)]
+                if len(meaningful) < _MIN_VALUES or len(matched) / len(meaningful) < _MOSTLY:
                     continue
                 others = sorted({t for t in texts if t not in set(matched)})
                 detail = (

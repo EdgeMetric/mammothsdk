@@ -132,6 +132,26 @@ Result: `DatasetDeleteResult`; mutation `destructive`, confirmation `prompt_or_y
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted dataset 85 (main fixture.csv/view 106) after get-back confirmed id/name. Single invocation only.
 
+### `dataset.download`
+
+Run: `mammoth dataset download`. Exact input fields: `mammoth schema get dataset.download`.
+
+Example: `mammoth dataset download --input '{"resource_ids": [12, 13], "name": "sales", "file_type": "csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDownloadResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.download-plan`
+
+Run: `mammoth dataset download-plan`. Exact input fields: `mammoth schema get dataset.download-plan`.
+
+Example: `mammoth dataset download-plan --input '{"resource_ids": [12, 13]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetDownloadPlanResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `dataset.file-settings.get`
 
 Run: `mammoth dataset file-settings get`. Exact input fields: `mammoth schema get dataset.file-settings.get`.
@@ -156,7 +176,7 @@ Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0
 
 Run: `mammoth dataset file-settings update`. Exact input fields: `mammoth schema get dataset.file-settings.update`.
 
-Example: `mammoth dataset file-settings update 123 --input '{"delimiter": ",", "has_header": true, "initial_skip_count": 0, "quotechar": "\""}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset file-settings update 123 --input '{"initial_skip_count": 2}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFileSettingsUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
@@ -169,6 +189,36 @@ Run: `mammoth dataset find`. Exact input fields: `mammoth schema get dataset.fin
 Example: `mammoth dataset find sales`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetFindResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.follow`
+
+Run: `mammoth dataset from-url follow`. Exact input fields: `mammoth schema get dataset.from-url.follow`.
+
+Example: `mammoth dataset from-url follow 123 --input '{"follow": false}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlFollowResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.links`
+
+Run: `mammoth dataset from-url links`. Exact input fields: `mammoth schema get dataset.from-url.links`.
+
+Example: `mammoth dataset from-url links`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlLinksResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.from-url.preview`
+
+Run: `mammoth dataset from-url preview`. Exact input fields: `mammoth schema get dataset.from-url.preview`.
+
+Example: `mammoth dataset from-url preview https://example.com/data.csv`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetFromUrlPreviewResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -301,3 +351,23 @@ Example: `mammoth dataset update --input '{"patch_data": [{"name": "Status"}]}' 
 Execution is unavailable for the current contract and returns `unsupported_contract`. Do not infer request fields or retry it; use only a separately typed alternative.
 
 Known restriction: BLOCKED[B07 DATASET_PATCH_UNTYPED]: raw patch operations include rename/refresh/column changes/reattach/deletion; do not dispatch them. Use dataset.rename or dataset.file-settings.update for their typed variants. The pinned SDK has no public binding for the singular UpdateDataset route, so its other OpenAPI patch variants remain unavailable until a typed SDK contract exists.
+
+### `dataset.update-method.get`
+
+Run: `mammoth dataset update-method get`. Exact input fields: `mammoth schema get dataset.update-method.get`.
+
+Example: `mammoth dataset update-method get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetUpdateMethodGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `dataset.update-method.set`
+
+Run: `mammoth dataset update-method set`. Exact input fields: `mammoth schema get dataset.update-method.set`.
+
+Example: `mammoth dataset update-method set 123 --input '{"mode": "replace"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `DatasetUpdateMethodSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

@@ -38,7 +38,7 @@
       "error": "stable code/message/hint/details/recovery fields",
       "schema_version": 1
     },
-    "error_stream": "stderr",
+    "error_stream": "stdout",
     "human_outputs": [
       "table",
       "yaml",

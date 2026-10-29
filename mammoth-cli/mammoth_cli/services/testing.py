@@ -8,6 +8,7 @@ contract tests can import one shared fake, mirroring
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -19,7 +20,29 @@ from mammoth_cli.errors.envelope import (
     EXIT_NOT_FOUND,
     CliError,
 )
+from mammoth_cli.runtime.dryrun import SDK_PREVIEWS
+from mammoth_cli.services.coerce import coerce_arguments
 from mammoth_cli.services.read_memo import ReadMemo
+
+
+def _coerced_like_the_real_service(sdk_symbol: str, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Coerce the arguments of a symbol with an SDK dry-run preview, as the real service does.
+
+    The real service coerces JSON-shaped input to the SDK's models before the gate runs, and a
+    preview's validation needs those models.
+
+    Args:
+        sdk_symbol: The symbol the handler dispatched to.
+        kwargs: The raw keyword arguments.
+
+    Returns:
+        The coerced arguments, or ``kwargs`` when the symbol has no preview.
+    """
+    if sdk_symbol not in SDK_PREVIEWS:
+        return kwargs
+    module_path, class_name, method_name = sdk_symbol.rsplit(".", 2)
+    owner = getattr(importlib.import_module(module_path), class_name)
+    return coerce_arguments(getattr(owner, method_name), kwargs)
 
 
 @dataclass
@@ -88,7 +111,7 @@ class FakeMammothService:
         if found:
             return answer
         if self.gate is not None:
-            self.gate(sdk_symbol, dict(kwargs))
+            self.gate(sdk_symbol, _coerced_like_the_real_service(sdk_symbol, dict(kwargs)))
         self.calls.append(sdk_symbol)
         self.call_log.append((sdk_symbol, dict(kwargs)))
         if sdk_symbol in self.responses:

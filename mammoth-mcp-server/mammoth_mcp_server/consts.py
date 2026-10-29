@@ -52,6 +52,15 @@ UPLOAD_SECONDS = 30 * 60
 # to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
 UPLOAD_WAIT_SECONDS = 30.0
 UPLOAD_POLL_SECONDS = 1.0
+# How long an upload into an existing dataset waits for its rows to land: the
+# upload's job ends when the staging dataset is made, and the rows reach the
+# target after that, while it reads "processing".
+APPEND_WAIT_SECONDS = 20.0
+APPEND_POLL_SECONDS = 1.0
+# The mode each batch was added under is kept this long, per batch. A batch
+# whose record has gone is refused by `undo`, never guessed at.
+BATCH_MODE_KIND = "batchmode"
+BATCH_MODE_SECONDS = 90 * 24 * 60 * 60
 # Connecting a source takes the user two or three minutes in Mammoth, so the
 # watch for the new connection runs for five. One tool call cannot hold that
 # long: Claude gives up on a call well inside a minute (a 40-second hold was cut
@@ -151,6 +160,43 @@ class UploadFields:
     REJECTED = "rejected"
     # Where the upload job lists the files Mammoth refused.
     ERRORS = "errors"
+    # The dataset an upload adds to, how to (the tool's `mode`), and what was
+    # read of it just before the files were sent.
+    APPEND_TO = "append_to_dataset_id"
+    APPEND = "append"
+    MODE = "mode"
+
+
+class AppendFields:
+    """Adding a file to an existing dataset: the API's names and what is reported."""
+
+    # The query parameter the upload route takes the target dataset in.
+    TARGET_QUERY = "append_to_ds_id"
+    # The route's batch list, and what a batch is told apart by.
+    BATCHES = "batches"
+    BATCH_FIELDS = ("id", "name", "status", "created_at", "created_by", "source")
+    PREVIOUS_MODE = "previous_mode"
+    ROWS_BEFORE = "rows_before"
+    # What an upload into a dataset, and `get_dataset`, report.
+    APPENDED_TO = "appended_to"
+    UPDATE_METHOD = "update_method"
+    ROWS_AFTER = "rows_after"
+    ROWS_ADDED = "rows_added"
+    BATCH_ID = "batch_id"
+    BATCH_IDS = "batch_ids"
+    UNMATCHED_BATCH_IDS = "unmatched_batch_ids"
+    APPEND_PENDING = "append_pending"
+    APPEND_FAILED = "append_failed"
+    STATUS = "status"
+    REASON = "reason"
+    READ_ERROR = "read_error"
+    NEXT_STEP = "next_step"
+    NOTES = "notes"
+    REMOVED = "removed"
+    REMOVABLE = "removable"
+    MODE = "mode"
+    ERROR = "error"
+    BATCHES_ERROR = "batches_error"
 
 
 class UploadReportFields:
@@ -343,6 +389,8 @@ class ErrorFields:
 
     NAME = "name"
     MESSAGE = "message"
+    # Set on a refusal that left a dataset in the update method this upload gave it.
+    UPDATE_METHOD_KEPT = "update_method_kept"
 
 
 class ListFields:
@@ -384,6 +432,8 @@ class JobFields:
     ID = "id"
     STATUS = "status"
     RESPONSE = "response"
+    # The API route that started the job, which says what it is a job of.
+    PATH = "path"
     PROCESSING = "processing"
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.
@@ -397,6 +447,38 @@ class ViewFields:
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
+    NEXT_STEP = "next_step"
+
+
+class TrashFields:
+    """The trash of a project, as its route lists it and this server reports it."""
+
+    ITEMS = "items"
+    TYPE = "type"
+    # A dataset that is not in the trash, sent only so the web app can group
+    # its trashed views under it. Nothing to restore.
+    IS_ACTIVE_PARENT = "is_active_parent"
+    # What a model needs of a trashed item to restore it and tell the user.
+    ITEM_FIELDS = ("id", "type", "name", "dataset_id", "trashed_at", "days_until_purge")
+    RETENTION_DAYS = "retention_days"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    LISTED = 50
+
+
+class VersionFields:
+    """A view's pipeline versions, as the versions route lists them."""
+
+    VERSIONS = "versions"
+    # Newest first, as the route writes a sort.
+    NEWEST_FIRST = "(id:desc)"
+    LISTED = 10
+    ITEM_FIELDS = ("id", "name", "modification_type", "created_at", "change_summary")
+    NEXT_STEP = "next_step"
+    # A view's run after a version is put back: still going, or failed.
+    EXECUTION_STATE = "execution_state"
+    RUNNING_STATES = ("waiting_for_lock", "submitted", "running", "exports_running")
+    RUNTIME_ERROR = "runtime_error"
 
 
 class TaskFields:
@@ -447,7 +529,7 @@ class AutomationFields:
     DESCRIPTION = "description"
     TASKS = "tasks"
     TASK_TYPE = "task_type"
-    # What `get_automation_schema` answers: one task type, and every condition.
+    # What `get_schema` answers for an automation: one task type, and every condition.
     TASK = "task"
     CONDITIONS = "conditions"
     AUTOMATIONS = "automations"
@@ -495,6 +577,50 @@ class DashboardFields:
     # Which version the numbers are from: "published" or "draft".
     VALUES_FROM = "values_from"
     DRAFT = "draft"
+    # What a finished AI edit reports that a model can use. The rest is the
+    # whole canvas and its layout.
+    CHANGED = "changed"
+    EDITED = (MESSAGE, CHANGED)
+    EDITING = "editing"
+    NEXT_STEP = "next_step"
+    # A board's embed, as `get_dashboard` and `edit_dashboard` report it.
+    EMBED = "embed"
+    # What of an AI edit did not land, from Mammoth's own check, and the
+    # job a later call picks an unfinished edit up by.
+    PARTIAL = "partial"
+    NOT_DONE = "not_done"
+    JOB_ID = "job_id"
+    # What the edit's job reports of Mammoth's own check: each ask with its
+    # status, "applied" for one that landed, and what it could not do.
+    ASKS = "asks"
+    ASK = "ask"
+    ASK_STATUS = "status"
+    APPLIED = "applied"
+    COULD_NOT_DO = "could_not_do"
+
+
+class EmbedFields:
+    """A dashboard's embed settings, as this server reports them."""
+
+    MODE = "mode"
+    KEY_MODE = "key"
+    SIGNED_MODE = "signed"
+    PUBLISHED = "published"
+    PUBLIC = "public"
+    HAS_SIGNING_SECRET = "has_signing_secret"
+    # The route's origins are the sites a user names.
+    ANY_SITE = "any_site"
+    ALLOWED_SITES = "allowed_sites"
+    MOST_SITES = 20
+    KEY = "key"
+    EMBED_CODE = "embed_code"
+    ROW_LEVEL_SECURITY = "row_level_security"
+    NEXT_STEP = "next_step"
+    # The web app's frame height when none is saved.
+    HEIGHT = "height"
+    DEFAULT_HEIGHT = 640
+    # What a signed embed's host page puts in place of a token it signs per viewer.
+    TOKEN_PLACEHOLDER = "TOKEN"
 
 
 class ConnectorFields:

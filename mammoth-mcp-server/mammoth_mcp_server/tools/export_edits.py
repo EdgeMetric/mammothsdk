@@ -52,7 +52,7 @@ RUN_PENDING_NOTE = (
 )
 RUN_FAILED_NOTE = (
     "The run failed: `last_run` says why. Tell the user. Fix the settings with"
-    ' edit_export "replace" (get_export_schema lists them), then "run" again; or'
+    ' edit_export "replace" (get_schema with kind="export" lists them), then "run" again; or'
     ' "suspend" the export until it can be fixed.'
 )
 
@@ -85,7 +85,7 @@ async def edit_export(
         export_id: The export's `id`, as `list_exports` lists it.
         change: "replace", "suspend", "restore" or "run".
         settings: With "replace" only: the settings that change, named as
-            `get_export_schema` names them.
+            `get_schema` with kind="export" names them.
 
     Returns:
         `outcome`: "changed", "ran", "run_failed" or "run_pending" (Mammoth

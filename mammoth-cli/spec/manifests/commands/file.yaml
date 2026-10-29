@@ -1,433 +1,86 @@
 manifest_schema_version: 1
 commands:
 - command_id: file.bulk-delete
-  command_path: file bulk-delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteFiles
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.bulk_delete
-  sdk_conversion: Call mammoth.api.files.FilesAPI.bulk_delete with validated request fields.
-  request_model: FileBulkDeleteRequest
-  result_model: FileBulkDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: {ref: WriteResultOrNull}
   readback:
     command: file.list
     ids: {}
     kind: object
-  live_test: LT-FILE-BULK-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file bulk-delete --help
-  agent_example: 'mammoth file bulk-delete --input ''{"file_ids": [1]}'' --yes'
-  unit_tests:
-  - UT-FILE-BULK-DELETE
-  contract_tests:
-  - CT-FILE-BULK-DELETE-HUMAN
-  - CT-FILE-BULK-DELETE-JSON
-  - CT-FILE-BULK-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Deletes every listed uploaded file for good and cannot be undone. List them first (`file list`). Needs a prompt or --yes.
-  reviewed_by: primary
+  known_restrictions: Deletes every listed uploaded file for good and cannot be undone. List them first
+    (`file list`). Needs a prompt or --yes.
 - command_id: file.delete
-  command_path: file delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteFile
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.delete
-  sdk_conversion: Call mammoth.api.files.FilesAPI.delete with validated request fields.
-  request_model: FileDeleteRequest
-  result_model: FileDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: {ref: WriteResultOrNull}
   readback:
     command: file.list
     ids: {}
     kind: object
-  live_test: LT-FILE-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file delete FILE_ID --help
-  agent_example: mammoth file delete 123 --yes
-  unit_tests:
-  - UT-FILE-DELETE
-  contract_tests:
-  - CT-FILE-DELETE-HUMAN
-  - CT-FILE-DELETE-JSON
-  - CT-FILE-DELETE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Canonical file delete FILE_ID... accepts one or more IDs; resolve every ID before
-    confirmation.
-  reviewed_by: primary
 - command_id: file.extract-sheets
-  command_path: file extract-sheets
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateFileConfigs
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.extract_sheets
-  sdk_conversion: Call mammoth.api.files.FilesAPI.extract_sheets with validated request fields.
-  request_model: FileExtractSheetsRequest
-  result_model: FileExtractSheetsResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: openapi
   readback:
     command: file.get
     ids:
       file_id: positional.0
     kind: object
-  live_test: LT-FILE-EXTRACT-SHEETS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file extract-sheets FILE_ID --help
-  agent_example: 'mammoth file extract-sheets 123 --input ''{"sheets": ["Sheet1"]}'''
-  unit_tests:
-  - UT-FILE-EXTRACT-SHEETS
-  contract_tests:
-  - CT-FILE-EXTRACT-SHEETS-HUMAN
-  - CT-FILE-EXTRACT-SHEETS-JSON
-  - CT-FILE-EXTRACT-SHEETS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Requires unique nonempty sheet names. Live upload permission is currently blocked.
-  reviewed_by: primary
 - command_id: file.get
-  command_path: file get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetFileDetails
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.get
-  sdk_conversion: Call mammoth.api.files.FilesAPI.get with validated request fields.
-  request_model: FileGetRequest
-  result_model: FileGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-FILE-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file get FILE_ID --help
-  agent_example: mammoth file get 123
-  unit_tests:
-  - UT-FILE-GET
-  contract_tests:
-  - CT-FILE-GET-HUMAN
-  - CT-FILE-GET-JSON
-  - CT-FILE-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: FileGet
 - command_id: file.list
-  command_path: file list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListFiles
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.list
-  sdk_conversion: Call mammoth.api.files.FilesAPI.list with validated request fields.
-  request_model: FileListRequest
-  result_model: FileListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: offset
-  acceptance_evidence: live_read_only
-  live_test: LT-FILE-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file list --help
-  agent_example: mammoth file list
-  unit_tests:
-  - UT-FILE-LIST
-  contract_tests:
-  - CT-FILE-LIST-HUMAN
-  - CT-FILE-LIST-JSON
-  - CT-FILE-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: FileList
 - command_id: file.multi-sheet-extract
-  command_path: file multi-sheet-extract
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateDatasetsFromMultiSheetFile
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet
-  sdk_conversion: Call mammoth.api.files.FilesAPI.create_datasets_from_multi_sheet with validated request fields.
-  request_model: FileMultiSheetExtractRequest
-  result_model: FileMultiSheetExtractResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
-  no_readback: 'the file is gone after a default extract; read the new datasets with dataset list'
+  no_readback: the file is gone after a default extract; read the new datasets with dataset list
   live_test: null
   live_exemption_reason: Write with contract coverage but no automated disposable fixture in tests/live.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file multi-sheet-extract FILE_ID --help
-  agent_example: 'mammoth file multi-sheet-extract 123 --input ''{"tables": [{"name": "Status"}]}'''
-  unit_tests:
-  - UT-FILE-MULTI-SHEET-EXTRACT
-  contract_tests:
-  - CT-FILE-MULTI-SHEET-EXTRACT-HUMAN
-  - CT-FILE-MULTI-SHEET-EXTRACT-JSON
-  - CT-FILE-MULTI-SHEET-EXTRACT-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Input: {tables: [{sheet_name, dataset_name, structure_map, block_id?, combine_group_id?, source_label?, sheet_block_count?}] (1 to 100 accepted reads from file multi-sheet-preview), delete_file_after_extract?}. The file is deleted after extraction unless delete_file_after_extract is false."
-  reviewed_by: primary
+  known_restrictions: 'Input: {tables: [{sheet_name, dataset_name, structure_map, block_id?, combine_group_id?,
+    source_label?, sheet_block_count?}] (1 to 100 accepted reads from file multi-sheet-preview), delete_file_after_extract?}.
+    The file is deleted after extraction unless delete_file_after_extract is false.'
 - command_id: file.multi-sheet-preview
-  command_path: file multi-sheet-preview
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PreviewMultiSheetInterpretation
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.preview_multi_sheet
-  sdk_conversion: Call mammoth.api.files.FilesAPI.preview_multi_sheet with validated request fields.
-  request_model: FileMultiSheetPreviewRequest
-  result_model: FileMultiSheetPreviewResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   acceptance_evidence: contract_only_no_disposable_fixture
-  no_readback: 'preview only; nothing is created until file multi-sheet-extract'
+  no_readback: preview only; nothing is created until file multi-sheet-extract
   live_test: null
-  live_exemption_reason: 'Preview only: creates nothing; a live run needs a multi-sheet file id on the box.'
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file multi-sheet-preview FILE_ID --help
-  agent_example: "mammoth file multi-sheet-preview 123 --input '{\"sheet_name\": \"Revenue report\"}'"
-  unit_tests:
-  - UT-FILE-MULTI-SHEET-PREVIEW
-  contract_tests:
-  - CT-FILE-MULTI-SHEET-PREVIEW-HUMAN
-  - CT-FILE-MULTI-SHEET-PREVIEW-JSON
-  - CT-FILE-MULTI-SHEET-PREVIEW-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Input: {sheet_name (required), block_id?, user_instruction?, structure_map?}. Shows how one sheet reads before any dataset exists; nothing is saved."
-  reviewed_by: primary
+  live_exemption_reason: 'Preview only: creates nothing; a live run needs a multi-sheet file id on the
+    box.'
+  known_restrictions: 'Input: {sheet_name (required), block_id?, user_instruction?, structure_map?}. Shows
+    how one sheet reads before any dataset exists; nothing is saved.'
 - command_id: file.set-password
-  command_path: file set-password
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateFileConfigs
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.set_password
-  sdk_conversion: Call mammoth.api.files.FilesAPI.set_password with validated request fields.
-  request_model: FileSetPasswordRequest
-  result_model: FileSetPasswordResult
-  mutation_class: high_impact
-  edits_target: true
-  confirmation: confirm_target
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
+  output_schema:
+    type: object
+    properties:
+      failure_reason:
+        type: [string, 'null']
+      job_id:
+        type: [integer, 'null']
+      status_code:
+        type: [integer, 'null']
   readback:
     command: file.get
     ids:
       file_id: positional.0
     kind: object
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
   secret_fields:
   - password
-  human_example: mammoth file set-password FILE_ID --help
   agent_example: mammoth file set-password 123 --input /private/path/request.json --yes --confirm 123
-  unit_tests:
-  - UT-FILE-SET-PASSWORD
-  contract_tests:
-  - CT-FILE-SET-PASSWORD-HUMAN
-  - CT-FILE-SET-PASSWORD-JSON
-  - CT-FILE-SET-PASSWORD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: "Unlocks a password-protected file: ask the user for the file's password and pass it in --input; never ask for an unlocked copy. The password is secret and never a normal flag."
-  reviewed_by: primary
 - command_id: file.update
-  command_path: file update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateFileConfigs
-  positionals:
-  - name: file_id
-    type: int
-    required: true
-    metavar: FILE_ID
-    falls_back_to_field: null
-    help: ID of the file.
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.update
-  sdk_conversion: Call mammoth.api.files.FilesAPI.update with validated request fields.
-  request_model: FileUpdateRequest
-  result_model: FileUpdateResult
-  mutation_class: benign_mutation
-  edits_target: true
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: openapi
   readback:
     command: file.get
     ids:
       file_id: positional.0
     kind: object
-  live_test: LT-FILE-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file update FILE_ID --help
-  agent_example: 'mammoth file update 123 --input ''{"patch_request": {"patch": [{"op": "replace", "path": "extract_sheets", "value": "Sheet1"}]}}'''
-  unit_tests:
-  - UT-FILE-UPDATE
-  contract_tests:
-  - CT-FILE-UPDATE-HUMAN
-  - CT-FILE-UPDATE-JSON
-  - CT-FILE-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: Existing method waits but returns the pre-wait response; must return stable final
     state. Path extract_pdf_tables takes a typed value (filename, extraction_method tables_only, all_content
-    or custom, optional user_instruction with instruction and instruction_type, preview_page,
-    extract_full_document, delete_file_after_extract) - the extraction setting a dataset's saved recipe
-    replays for PDFs an automation receives.
-  reviewed_by: primary
+    or custom, optional user_instruction with instruction and instruction_type, preview_page, extract_full_document,
+    delete_file_after_extract) - the extraction setting a dataset's saved recipe replays for PDFs an automation
+    receives.
 - command_id: file.upload
-  command_path: file upload
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateFileDataset
-  positionals:
-  - name: files
-    type: str
-    required: false
-    metavar: FILES
-    falls_back_to_field: files
-    help: Path to a local file to upload; or pass one or more via the 'files' field.
-    kind: local_path
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.upload
-  sdk_conversion: Call mammoth.api.files.FilesAPI.upload with validated request fields.
-  request_model: FileUploadRequest
-  result_model: FileUploadResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: start_or_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: {ref: UploadResult}
   no_readback: the upload result already carries each ready dataset's post-processing view (columns, row_count,
     sample rows) from a real read
-  live_test: LT-FILE-UPLOAD
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file upload --help
-  agent_example: mammoth file upload ./sales.csv
-  unit_tests:
-  - UT-FILE-UPLOAD
-  contract_tests:
-  - CT-FILE-UPLOAD-HUMAN
-  - CT-FILE-UPLOAD-JSON
-  - CT-FILE-UPLOAD-ERROR
-  draft_test: null
-  undo_test: null
   known_restrictions: 'Accepted extensions: csv tsv psv txt xls xlsx xml pdf tiff jpeg jpg png heic webp
     and archives zip gz bz2 tar 7z (not json). Request size is capped by the ingress in front of the API:
     a 60 MB upload is refused with HTTP 413 (invalid_argument) before the API sees it; 16 MB is accepted
@@ -436,51 +89,18 @@ commands:
     past a few MB and poll the returned job on timeout. Upload authorization is tenant- and scope-specific;
     a permission failure does not make this route universally unavailable. On success retain returned
     IDs, read them back, and verify owned cleanup; do not assume other upload variants are qualified.
-    Each sheet of an Excel file becomes its own dataset.'
-  reviewed_by: primary
+    Each sheet of an Excel file becomes its own dataset. The input field mode (replace or add) sets the
+    update method of the dataset the file is appended to: it needs append_to_ds_id and cannot be combined
+    with wait_for_completion false (both are usage errors). An upload into a dataset whose columns do
+    not match is not appended: the command fails with code schema_mismatch, rows_added 0 and
+    kept_dataset_ids (the file''s own dataset stays in the project as a separate dataset; delete it
+    or fix the file and upload again). The input field override_target_schema (make the file''s columns
+    the dataset''s) is honoured by the server only when the dataset''s update method is replace, which
+    deletes the rows it holds: the CLI refuses it under any other method before sending the file, and
+    without append_to_ds_id or with wait_for_completion false.'
 - command_id: file.upload-folder
-  command_path: file upload-folder
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateFileDataset
-  positionals:
-  - name: folder_path
-    type: str
-    required: false
-    metavar: FOLDER_PATH
-    falls_back_to_field: folder_path
-    help: Path to a local folder to upload; or pass it via the 'folder_path' input field.
-    kind: local_path
-  options: []
-  sdk_symbol: mammoth.api.files.FilesAPI.upload_folder
-  sdk_conversion: Call mammoth.api.files.FilesAPI.upload_folder with validated request fields.
-  request_model: FileUploadFolderRequest
-  result_model: FileUploadFolderResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: start_or_wait
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
+  output_schema: {ref: FolderUploadResult}
   readback:
     command: file.list
     ids: {}
     kind: object
-  live_test: LT-FILE-UPLOAD-FOLDER
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth file upload-folder --help
-  agent_example: mammoth file upload-folder ./sales.csv
-  unit_tests:
-  - UT-FILE-UPLOAD-FOLDER
-  contract_tests:
-  - CT-FILE-UPLOAD-FOLDER-HUMAN
-  - CT-FILE-UPLOAD-FOLDER-JSON
-  - CT-FILE-UPLOAD-FOLDER-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Nonrecursive; rejects an empty folder. Live upload permission is currently blocked.
-  reviewed_by: primary

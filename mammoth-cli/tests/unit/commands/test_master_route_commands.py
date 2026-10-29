@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 from mammoth.api import connector_drafts as sdk
 
-from mammoth_cli.commands import dashboard as dashboard_cmd
+from mammoth_cli.commands.dashboard import generated as dashboard_generated
 from mammoth_cli.commands.registry import HANDLERS
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
@@ -251,7 +251,7 @@ def test_a_destructive_or_data_adding_command_refuses_without_yes(
     fake_service: FakeMammothService, command_id: str
 ) -> None:
     with pytest.raises(CliError) as excinfo:
-        dashboard_cmd.generated_dashboard(_inv(command_id, extra_args=["9"], no_input=True))
+        dashboard_generated.generated_dashboard(_inv(command_id, extra_args=["9"], no_input=True))
 
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
@@ -273,7 +273,7 @@ def test_rows_keeps_the_handle_that_says_which_result_is_which(
         "results": {"r": {"data": [{"sales": 10.0}]}, "c": {"value": 1}, "t": {"value": 10.0}},
     }
 
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.figure.rows",
             extra_args=["7"],
@@ -293,7 +293,7 @@ def test_a_published_rows_wait_reads_the_job_through_the_board_url(
     fake_service.responses[f"{_DASHBOARDS}.published_rows"] = {"job_id": 5}
     fake_service.job_result = {"results": {}}
 
-    dashboard_cmd.generated_dashboard(
+    dashboard_generated.generated_dashboard(
         _inv(
             "dashboard.published.rows",
             extra_args=["abc"],
@@ -308,7 +308,7 @@ def test_save_waits_for_its_job(fake_service: FakeMammothService) -> None:
     fake_service.responses[f"{_DRAFTS}.save"] = {"job_id": 8}
     fake_service.job_result = {"status": "success"}
 
-    data, _ = dashboard_cmd.generated_dashboard(
+    data, _ = dashboard_generated.generated_dashboard(
         _inv("connector.draft.save", extra_args=["9"], input_file='{"refresh": "manual"}')
     )
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from typer.testing import CliRunner
 
-from mammoth_cli import app as app_module
-from mammoth_cli.app import _group_description, app
+from mammoth_cli.app import app, help_text
+from mammoth_cli.app.help_text import _group_description
 from mammoth_cli.manifest.loader import load_commands
 
 
@@ -88,7 +88,7 @@ def test_no_command_in_the_tree_shows_the_dispatcher_placeholder_as_its_help() -
 
 def test_file_and_folder_group_help_say_which_command_does_what() -> None:
     """Bug bash 2026-10-15: finding upload/delete for files and folders took guessing."""
-    from mammoth_cli.app import _GROUP_DESCRIPTIONS  # noqa: PLC2701
+    from mammoth_cli.app.help_text import _GROUP_DESCRIPTIONS  # noqa: PLC2701
 
     assert "dataset delete" in _GROUP_DESCRIPTIONS["file"]
     assert "upload-folder" in _GROUP_DESCRIPTIONS["file"]
@@ -98,7 +98,7 @@ def test_file_and_folder_group_help_say_which_command_does_what() -> None:
 
 def test_help_input_types_keep_their_brackets() -> None:
     """Bug bash 2026-10-15: ``list[a.B] | list[a.C]`` printed as ``B] | C] |``."""
-    from mammoth_cli.app import _short_type  # noqa: PLC2701
+    from mammoth_cli.app.help_text import _short_type  # noqa: PLC2701
 
     assert (
         _short_type("list[mammoth.m.ColumnNameMapping] | list[mammoth.m.ColumnIdMapping] | None")
@@ -109,7 +109,7 @@ def test_help_input_types_keep_their_brackets() -> None:
 
 
 def test_a_long_help_type_is_cut_at_a_word_never_inside_a_value() -> None:
-    from mammoth_cli.app import _short_type  # noqa: PLC2701
+    from mammoth_cli.app.help_text import _short_type  # noqa: PLC2701
 
     text = _short_type(
         "list[mammoth.m.ColumnNameMapping] | list[mammoth.m.ColumnIdMapping] | bytes | None"
@@ -120,7 +120,7 @@ def test_a_long_help_type_is_cut_at_a_word_never_inside_a_value() -> None:
 
 def test_download_help_lists_every_file_type() -> None:
     # #282: the Literal was cut at 60 characters, ending in the invalid value 'par.
-    from mammoth_cli.app import _help_input_fields  # noqa: PLC2701
+    from mammoth_cli.app.help_text import _help_input_fields  # noqa: PLC2701
 
     line = _help_input_fields("view.export.download") or ""
     assert "file_type (csv | xlsx | json | ndjson | xml | yaml | parquet)" in line
@@ -131,14 +131,14 @@ def test_sdk_backed_leaf_help_reads_the_installed_sdk_not_the_index(
 ) -> None:
     """The CLI accepts a range of SDK versions, so a stale index must not win for those."""
     command_id = "workspace.current"
-    live = app_module.live_command_summary(command_id)
+    live = help_text.live_command_summary(command_id)
     assert live
-    monkeypatch.setattr(app_module, "_summary_index", lambda: {command_id: "STALE INDEX TEXT"})
-    help_text = app_module._command_help(command_id, None) or ""
-    assert "STALE INDEX TEXT" not in help_text
-    assert live in help_text
+    monkeypatch.setattr(help_text, "_summary_index", lambda: {command_id: "STALE INDEX TEXT"})
+    page = help_text._command_help(command_id, None) or ""
+    assert "STALE INDEX TEXT" not in page
+    assert live in page
 
 
 def test_handler_backed_leaf_help_still_reads_the_index(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(app_module, "_summary_index", lambda: {"project.list": "INDEX TEXT"})
-    assert "INDEX TEXT" in (app_module._command_help("project.list", None) or "")
+    monkeypatch.setattr(help_text, "_summary_index", lambda: {"project.list": "INDEX TEXT"})
+    assert "INDEX TEXT" in (help_text._command_help("project.list", None) or "")

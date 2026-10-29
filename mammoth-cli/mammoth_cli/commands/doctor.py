@@ -25,15 +25,13 @@ from mammoth_cli import __version__
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.resolver import SERVER_PREFIX_ENV, ResolvedAuth, resolve_auth
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime import embedded, runlog, updates
+from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.runtime.token_scope import Pins, as_pins, pin_details, pinned_projects, pins_label
 from mammoth_cli.services.protocol import MammothService
-
-HandlerResult = tuple[Any, dict[str, Any]]
-
 
 _NO_PROJECTS_DETAIL = {
     False: "no projects visible yet; 'mammoth project ensure NAME' creates one",
@@ -231,7 +229,7 @@ def _wait_seconds(invocation: Invocation) -> float:
     document = invocation.load_input() or {}
     try:
         value = float(document.get("wait") or 0)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         raise CliError(
             code="invalid_argument",
             message="wait must be a number of seconds.",
@@ -240,16 +238,16 @@ def _wait_seconds(invocation: Invocation) -> float:
     return max(0.0, min(value, _WAIT_MAX))
 
 
-def doctor(invocation: Invocation) -> HandlerResult:
+def doctor(invocation: Invocation) -> Outcome:
     """Run environment and connectivity diagnostics.
 
     Args:
         invocation: The current command's resolved global options.
 
     Returns:
-        ``(data, meta_extra)`` where ``data`` holds the Python/CLI versions, the
-        active profile, and an ordered list of check results with an overall
-        ``ok`` flag.
+        The report: the Python/CLI versions, the active profile, and an ordered list of
+        check results with an overall ``ok`` flag. A failed report exits as an auth
+        failure.
     """
     profile_name = invocation.profile or profiles.get_selected()
     checks: list[dict[str, Any]] = []
@@ -488,4 +486,6 @@ def doctor(invocation: Invocation) -> HandlerResult:
         "recommendations": recommendations,
         "ok": all(c["ok"] for c in checks),
     }
-    return data, {"profile": profile_name, "project_id": resolved_project(invocation)}
+    meta = {"profile": profile_name, "project_id": resolved_project(invocation)}
+    # The report prints either way; a failed one must not exit 0.
+    return Outcome(data=data, meta=meta, exit_status=0 if data["ok"] else EXIT_AUTH)

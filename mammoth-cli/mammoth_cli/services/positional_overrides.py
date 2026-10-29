@@ -1,0 +1,1364 @@
+"""Hand-written positional parameters for commands whose SDK signature doesn't give them."""
+
+from __future__ import annotations
+
+from mammoth_cli.services.positional_spec import LOCAL_PATH, PositionalSpec
+
+
+def _optional_project_id() -> tuple[PositionalSpec, ...]:
+    """The shared ``project`` family locator: an optional project-id positional.
+
+    Every ``project`` command that acts on a single project accepts the project
+    id as an optional positional, falling back to the active project when
+    omitted. That dual-sourcing is invisible to the SDK signature (the id is
+    ``project``/``project_id`` and looks required), so it is authored here.
+    """
+    return (
+        PositionalSpec(
+            name="project_id",
+            type=int,
+            required=False,
+            help="ID of the project to act on; defaults to the active project.",
+            # ``project get`` names this argument ``project`` in the SDK; every
+            # other project command names it ``project_id``. Declaring the alias
+            # keeps the resource id positional-sourced (never an --input field)
+            # regardless of the backing parameter's name.
+            fills_sdk_param="project",
+        ),
+    )
+
+
+# Commands whose positionals the signature cannot express correctly. Each entry
+# replaces the derivation wholesale; the drift test proves the union is right.
+POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
+    # The chat session is the global ``--session`` option, never a positional or
+    # an --input field; only the action or run being addressed is positional.
+    "agent.action.list": (),
+    # The parent is named in ``--input`` (``parent_id``), never positionally.
+    "browse.resources": (),
+    "browse.resource": (
+        PositionalSpec(
+            name="resource_type",
+            type=str,
+            required=True,
+            help="Resource type, for example dataset or dataview.",
+            example_value="dataset",
+        ),
+        PositionalSpec(
+            name="object_id", type=int, required=True, help="ID of the resource within its type."
+        ),
+    ),
+    # A folder's mm-auth resource id, which the derived "ID of the resource."
+    # would let an agent confuse with the folder's object id.
+    "browse.ancestors": (
+        PositionalSpec(
+            name="resource_id",
+            type=int,
+            required=True,
+            help="The folder's id, as folder list and browse return it.",
+        ),
+    ),
+    # The image is a local file, positional after the template like assess-pbix.
+    "dashboard.template.thumbnail.set": (
+        PositionalSpec(name="template_id", type=str, required=True, help="ID of the template."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            kind=LOCAL_PATH,
+            example_value="card.png",
+        ),
+    ),
+    # The figure's source view is the ``dataview_id`` input field, never a second positional.
+    "dashboard.figure.add": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
+    "dashboard.gallery.get": (
+        PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
+    ),
+    # Curated-catalog admin commands address a template by slug, never an id.
+    "support.template.edit": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.data-preview": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.canvas": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.publish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.unpublish": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.retire": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.thumbnail.clear": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.discard": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.export": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+    ),
+    "support.template.inspect": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            kind=LOCAL_PATH,
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.import": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local template file (.zip).",
+            kind=LOCAL_PATH,
+            example_value="template.zip",
+        ),
+    ),
+    "support.template.thumbnail.set": (
+        PositionalSpec(name="slug", type=str, required=True, help="Curated template slug."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local PNG, JPEG or WebP image (1 MB at most).",
+            kind=LOCAL_PATH,
+            example_value="card.png",
+        ),
+    ),
+    # The invite is named in ``--input`` (``invite_id``), never positionally.
+    "workspace.invite.update-role": (),
+    "agent.run.status": (),
+    "agent.run.list": (),
+    # A project move names the workspace the project is in, then the project.
+    "support.workspace.project.move-check": (
+        PositionalSpec(name="workspace_id", type=int, required=True, help="ID of the workspace."),
+        PositionalSpec(name="project_id", type=int, required=True, help="ID of the project."),
+    ),
+    "support.workspace.project.move-start": (
+        PositionalSpec(name="workspace_id", type=int, required=True, help="ID of the workspace."),
+        PositionalSpec(name="project_id", type=int, required=True, help="ID of the project."),
+    ),
+    "agent.access.askers": (
+        PositionalSpec(
+            name="project_id",
+            type=int,
+            required=True,
+            help="ID of the project whose askers to list.",
+            example_value="123",
+        ),
+    ),
+    "agent.action.delete": (
+        PositionalSpec(
+            name="action_id",
+            type=str,
+            required=True,
+            help="ID of the recorded action (from agent action list).",
+        ),
+    ),
+    "agent.run.units.set": (
+        PositionalSpec(
+            name="run_id",
+            type=str,
+            required=True,
+            help="ID of the run (from agent run status or agent run list).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("pause", "resume", "stop", "extend")
+    },
+    "agent.turn.cancel": (
+        PositionalSpec(
+            name="turn_id",
+            type=str,
+            required=True,
+            help="ID of the turn to stop (from the chat's events or agent session messages).",
+        ),
+    ),
+    "agent.plan.edit-proposal": (),
+    **{
+        f"agent.plan.{verb}": (
+            PositionalSpec(
+                name="session_id",
+                type=str,
+                required=True,
+                help="ID of the chat session (from agent session list).",
+            ),
+            *(
+                (
+                    PositionalSpec(
+                        name="n",
+                        type=int,
+                        required=True,
+                        help=(
+                            "Number of the proposed plan step to skip "
+                            "(from agent session messages)."
+                        ),
+                    ),
+                )
+                if verb == "skip"
+                else ()
+            ),
+        )
+        for verb in ("approve", "skip", "discard")
+    },
+    "agent.message.set-request-kind": (
+        PositionalSpec(
+            name="message_id",
+            type=str,
+            required=True,
+            help="ID of the reply message (from agent session messages).",
+        ),
+    ),
+    **{
+        f"agent.run.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+        )
+        for verb in ("retry", "units.list", "instance.list")
+    },
+    **{
+        f"agent.run.instance.{verb}": (
+            PositionalSpec(
+                name="run_id",
+                type=str,
+                required=True,
+                help="ID of the run (from agent run status or agent run list).",
+            ),
+            PositionalSpec(
+                name="instance_id",
+                type=str,
+                required=True,
+                help="ID of the agent (from agent run instance list).",
+            ),
+        )
+        for verb in ("messages", "transcript")
+    },
+    "dashboard.assess-twb": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            kind=LOCAL_PATH,
+            example_value="Sales.twb",
+        ),
+    ),
+    "dashboard.assess-pbix": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            kind=LOCAL_PATH,
+            example_value="Sales.pbix",
+        ),
+    ),
+    "dashboard.attachment-create": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            kind=LOCAL_PATH,
+            example_value="Sales.pbix",
+        ),
+    ),
+    "connector.draft.sample": (
+        PositionalSpec(name="draft_id", type=int, required=True, help="ID of the connector draft."),
+        PositionalSpec(
+            name="path",
+            type=str,
+            required=True,
+            help="Path to a local CSV, TSV or Excel file shaped like the table wanted.",
+            kind=LOCAL_PATH,
+            example_value="deals_2026-10.csv",
+        ),
+    ),
+    "dashboard.chat.attachment.upload": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local file to attach to the dashboard chat.",
+            kind=LOCAL_PATH,
+            example_value="notes.pdf",
+        ),
+    ),
+    "dashboard.import-workbook": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=True,
+            help="Path to a local workbook.",
+            kind=LOCAL_PATH,
+            example_value="Sales.twbx",
+        ),
+    ),
+    "dashboard.templates.use": (
+        PositionalSpec(name="slug", type=str, required=True, help="Template slug."),
+    ),
+    # The widget UUID is a WidgetDataSpec field, read from ``--input`` with the
+    # optional filters; only the dashboard is addressed positionally.
+    "dashboard.data.draft": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
+    "dashboard.data.published": (
+        PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
+    ),
+    "dashboard.tags.merge": (
+        PositionalSpec(name="tag_id", type=int, required=True, help="ID of the source tag."),
+    ),
+    # Item G: an agent's first move is often `view list` before it has any
+    # dataset id; omitting it now walks every dataset in the active project
+    # (paged) instead of failing with missing_argument.
+    "view.list": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help=(
+                "ID of the dataset. Omit it to list dataviews across every "
+                "dataset in the active project instead (paged; see the "
+                "'dataset_offset' input field and the 'next_dataset_offset' "
+                "result field)."
+            ),
+        ),
+    ),
+    # Explicit parent avoids rich-view discovery for the release-scoped GET.
+    "view.get": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the view."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional exact parent dataset ID; omit to retain legacy discovery.",
+        ),
+    ),
+    # View deletion targets a dataview nested under a dataset.  The SDK keeps
+    # ``dataset_id`` optional for backwards compatibility (when omitted it
+    # resolves the parent), but the CLI must expose the exact-parent form as a
+    # dual-sourced locator so callers can avoid probing an unrelated dataset.
+    "view.delete": (
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=True,
+            help="ID of the view.",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="ID of the parent dataset; or pass it via the 'dataset_id' input field.",
+        ),
+    ),
+    "view.exportable-config.get": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
+    "view.exportable-config.apply": (
+        PositionalSpec(name="view_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
+    "view.export.list": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; avoids parent discovery when supplied.",
+        ),
+    ),
+    "workflow.save-cancel-step": (
+        PositionalSpec(name="workflow_id", type=int, required=True, help="ID of the workflow."),
+        PositionalSpec(
+            name="run_id",
+            type=str,
+            required=True,
+            help="ID of the Save run (from 'workflow save' or 'workflow get').",
+        ),
+        PositionalSpec(
+            name="step", type=int, required=True, help="Number of the step to cancel (0 or more)."
+        ),
+    ),
+    "workflow.duplicate": (
+        PositionalSpec(
+            name="source_workflow_id",
+            type=int,
+            required=False,
+            falls_back_to_field="source_workflow_id",
+            help="ID of the workflow to copy; or pass 'source_workflow_id' in --input.",
+        ),
+    ),
+    "view.export.runs": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(name="export_id", type=int, required=True, help="ID of the export."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; avoids parent discovery when supplied.",
+        ),
+    ),
+    "view.export.rest-fill": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Exact parent dataset ID; or pass it via the 'dataset_id' input field.",
+        ),
+    ),
+    "view.summary": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Optional parent dataset ID; resolved from the view when omitted.",
+        ),
+    ),
+    "view.pipeline.items-all": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            falls_back_to_field="dataset_id",
+            help="Exact parent dataset ID; pass it via the 'dataset_id' input field.",
+        ),
+    ),
+    # project family: the project id is an optional positional (falls back to the
+    # active project). The SDK signature marks it required or omits it, so the
+    # dual-sourced optional locator is authored here.
+    "project.get": _optional_project_id(),
+    # Without a key the command lists the connections of every connector that has one.
+    "connector.connection.list": (
+        PositionalSpec(
+            name="connector_key",
+            type=str,
+            required=False,
+            help=(
+                "Key identifying the connector. Leave it out to list the connections of "
+                "every connector that has one."
+            ),
+        ),
+    ),
+    # ``project check PROJECT_ID DATASET_ID [VIEW_ID]`` narrows the check to one dataset,
+    # and to one of its views (its first, most recent one when VIEW_ID is omitted).
+    "project.check": (
+        *_optional_project_id(),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="Check only this dataset (its first view unless VIEW_ID is given); "
+            "no other dataset or dashboard is read.",
+        ),
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=False,
+            help="Check this view of DATASET_ID instead of its first (most recent) one.",
+        ),
+    ),
+    "project.needs-attention": _optional_project_id(),
+    "project.pending-changes": _optional_project_id(),
+    "project.memory.list": _optional_project_id(),
+    "project.memory.add": _optional_project_id(),
+    "project.memory.remove": _optional_project_id(),
+    "project.resource-status": _optional_project_id(),
+    "project.resource-dependencies": _optional_project_id(),
+    "project.resource-dependencies.update": _optional_project_id(),
+    "project.publish-credentials": _optional_project_id(),
+    "project.update": _optional_project_id(),
+    "project.delete": _optional_project_id(),
+    "project.sample-flow": _optional_project_id(),
+    "project.checkpoint.list": _optional_project_id(),
+    "project.data-check.list": _optional_project_id(),
+    "project.user.add": _optional_project_id(),
+    "project.user.remove": _optional_project_id(),
+    "project.user.update": _optional_project_id(),
+    # project create takes the name as an optional positional or a ``name`` field.
+    "project.create": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=False,
+            help="Name of the new project; or pass it via the 'name' input field.",
+            falls_back_to_field="name",
+        ),
+    ),
+    # project copy: the source project is the resource, the new project's name follows.
+    "project.copy": (
+        PositionalSpec(
+            name="project_id", type=int, required=True, help="ID of the project to copy."
+        ),
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help=(
+                "Name of the new project. If it is already taken, the copy is named with the next "
+                'free suffix ("NAME 2", "NAME 3", ...); no need to check the name first.'
+            ),
+        ),
+    ),
+    # project ensure: exact name to find or create, positional or ``name`` field.
+    "project.ensure": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=False,
+            help="Exact project name to find or create; or pass it via the 'name' input field.",
+            falls_back_to_field="name",
+        ),
+    ),
+    # project commands sourced entirely from ``--input`` or the active workspace.
+    "project.list": (),
+    # ``support deal create`` puts the deal on an existing workspace (the optional positional) or
+    # on a new one (``workspace_create`` in ``--input``). ``workspace_id`` is a context field the
+    # CLI never takes from ``--input``, so the positional is the only way to name the workspace.
+    "support.deal.create": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to put the deal on; omit it and pass 'workspace_create'.",
+        ),
+    ),
+    # ``support search`` takes its text as a positional or the ``q`` field.
+    "support.search": (
+        PositionalSpec(
+            name="q",
+            type=str,
+            required=False,
+            help="Text to search for (a workspace, user, deal or partner); or the 'q' field.",
+            falls_back_to_field="q",
+            example_value="acme",
+        ),
+    ),
+    "project.bulk-delete": (),
+    "project.bulk-update": (),
+    # ``file upload`` takes a local file path as an optional positional so the
+    # common case is ``mammoth file upload data.csv``. The SDK's ``files``
+    # parameter is a list (never a scalar identity), so the signature derivation
+    # emits no positional; author the single-path locator here. Upload several
+    # files at once with ``--input '{"files": [...]}'``.
+    "file.upload": (
+        PositionalSpec(
+            name="files",
+            type=str,
+            required=False,
+            help="Path to a local file to upload; or pass one or more via the 'files' field.",
+            kind=LOCAL_PATH,
+            falls_back_to_field="files",
+            example_value="./sales.csv",
+        ),
+    ),
+    # ``ai condition generate`` / ``ai expression generate`` take the dataset id
+    # as a positional. The SDK signature leads with the required ``intent`` (a
+    # non-identity ``str``), so the derivation stops before ``dataset_id`` and
+    # emits nothing -- leaving the command uninvokable (the positional was
+    # unregistered) while ``dataset_id`` was still advertised as an --input field
+    # the handler never reads. Author the id locator here; ``intent`` (and
+    # ``mode`` for the expression variant) remain required --input fields.
+    "ai.condition.generate": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=True,
+            help="ID of the dataset to generate a condition for.",
+        ),
+    ),
+    "ai.expression.generate": (
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=True,
+            help="ID of the dataset to generate an expression for.",
+        ),
+    ),
+    # ``support`` create/register verbs take their identifying name/email as a
+    # positional OR the matching ``--input`` field (handler
+    # ``_require_positional_or_field``). Without a registered optional positional
+    # the strict validator rejects the positional form outright, so only the
+    # ``--input`` form is invokable and the documented dual-sourcing is a half
+    # promise. Author an optional locator that falls back to the field -- the
+    # same shape as ``project create``.
+    **{
+        command: (
+            PositionalSpec(
+                name=field,
+                type=str,
+                required=False,
+                help=f"{label}; or pass it via the '{field}' input field.",
+                falls_back_to_field=field,
+            ),
+        )
+        for command, field, label in (
+            ("support.connector.create", "name", "Name of the new connector"),
+            ("support.connector-profile.create", "name", "Name of the new connector profile"),
+            ("support.feature.create", "name", "Name of the new feature"),
+            ("support.feature-profile.create", "name", "Name of the new feature profile"),
+            ("support.plan.create", "name", "Name of the new plan"),
+            ("support.workspace.create", "name", "Name of the new workspace"),
+            ("support.partner.create", "name", "Name of the new partner"),
+            ("support.user.register", "email", "Email of the user to register"),
+            ("support.user.update", "email", "Email of the user to update"),
+        )
+    },
+    # These ``create`` verbs take their identifying name (or ``intent``) as a
+    # positional OR the matching ``--input`` field: each handler reads
+    # ``extra_args[0] or document.get(<field>)``. Without a registered optional
+    # positional the strict validator rejects the positional form outright, so
+    # only the ``--input`` form is invokable and the documented dual-sourcing is
+    # a half promise. Author an optional locator that falls back to the field --
+    # the same shape as ``project create``.
+    **{
+        command: (
+            PositionalSpec(
+                name=field,
+                type=str,
+                required=False,
+                help=f"{label}; or pass it via the '{field}' input field.",
+                falls_back_to_field=field,
+            ),
+        )
+        for command, field, label in (
+            ("automation.create", "name", "Name of the new automation"),
+            ("client-app.create", "app_name", "Name of the new client app"),
+            ("token.create", "app_name", "Name of the new API key"),
+            ("folder.create", "name", "Name of the new folder"),
+            ("parameter.create", "name", "Name of the new parameter"),
+            ("parameter.group.create", "name", "Name of the new parameter group"),
+            ("snippet.create", "name", "Name of the new snippet"),
+            ("webhook.create", "name", "Name of the new webhook"),
+            ("workflow.create", "name", "Name of the new workflow"),
+        )
+    },
+    # ``schema get`` / ``capability get`` are CLI-only discovery commands with no
+    # backing SDK signature (their ``sdk_symbol`` is a meta-reference), so the
+    # derivation emits nothing. Their handlers read the single id positionally
+    # (``registry._require_arg`` -> ``extra_args[0]``), so without a registered
+    # positional the strict validator rejects the id and the documented command
+    # is uninvokable. Author the required locator here.
+    "schema.get": (
+        PositionalSpec(
+            name="command_id",
+            type=str,
+            required=True,
+            help=(
+                "Command id to fetch the schema for (e.g. view.transform.bulk-replace); "
+                "join several with commas (view.list,view.analyze) for one result with all of them."
+            ),
+            # The generated example is executed offline against the real command
+            # catalog (see the discovery-example subprocess test), so its
+            # placeholder must be a genuine, resolvable command id -- the generic
+            # ``example`` would resolve to nothing and exit non-zero.
+            example_value="view.transform.bulk-replace",
+        ),
+    ),
+    "schema.list": (
+        PositionalSpec(
+            name="family",
+            type=str,
+            required=False,
+            help="Command family to list (e.g. view); omit for the family index.",
+            example_value="view",
+            falls_back_to_field="family",
+        ),
+    ),
+    "schema.find": (
+        PositionalSpec(
+            name="query",
+            type=str,
+            required=True,
+            help="Match command names, examples, or purpose (e.g. view transform).",
+            example_value="view transform",
+        ),
+    ),
+    "history.show": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The write's inv, or the group of a whole mammoth run (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
+    "history.undo": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The write's inv, or the group of a whole mammoth run (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
+    "history.resume": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The group of the mammoth run or recipe run that stopped (from 'history list').",
+            example_value="97b9ee41d15d",
+        ),
+    ),
+    "recipe.run": (
+        PositionalSpec(
+            name="id",
+            type=str,
+            required=True,
+            help="The recipe to run (from 'recipe list').",
+            example_value="export-csv",
+        ),
+    ),
+    "run": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=False,
+            help="JSON Lines file with one command per line, or '-' (the default) for stdin.",
+            example_value="commands.jsonl",
+        ),
+    ),
+    "calc": (
+        PositionalSpec(
+            name="expression",
+            type=str,
+            required=True,
+            help=(
+                "Arithmetic expression: + - * / and parentheses, unary +/-, a "
+                "trailing %% (divides by 100), and round(x[, ndigits])."
+            ),
+            example_value="2063664 - 1917815",
+        ),
+    ),
+    "link": (
+        PositionalSpec(
+            name="url",
+            type=str,
+            required=True,
+            help="A Mammoth web app address pasted by the user.",
+            example_value="https://app.mammoth.io/workspaces/1/projects/2/data/datasets",
+        ),
+    ),
+    "how": (
+        PositionalSpec(
+            name="goal",
+            type=str,
+            required=True,
+            help='The goal in plain words, for example "refresh a dataset daily" or '
+            '"blend two files by day".',
+            example_value="refresh a dataset daily",
+        ),
+    ),
+    "resolve": (
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=True,
+            help="Case-insensitive name, or part of one, to look up as a dataset, view or project.",
+            example_value="uqa-w29-ren",
+        ),
+    ),
+    "capability.find": (
+        PositionalSpec(
+            name="query",
+            type=str,
+            required=True,
+            help="Match operation names, commands, examples, or purpose.",
+            example_value="show projects",
+        ),
+    ),
+    "capability.get": (
+        PositionalSpec(
+            name="operation_id",
+            type=str,
+            required=True,
+            help="Operation id to fetch the capability record for (e.g. AddTask).",
+            # A genuine, resolvable operation id, for the same reason as above.
+            example_value="AddTask",
+        ),
+    ),
+    # ``dataset find``/``folder find`` are bespoke local composite reads with no
+    # backing SDK signature (they search across every project the credential
+    # can see); author the required substring locator here, mirroring
+    # ``schema find``.
+    "dataset.find": (
+        PositionalSpec(
+            name="name_substring",
+            type=str,
+            required=False,
+            help="Case-insensitive substring to match against dataset names; optional "
+            "when --input gives 'columns'. Matches in other projects are listed too, "
+            "marked in_project when --project is given.",
+            example_value="sales",
+        ),
+    ),
+    "dataset.schema-diff": (
+        PositionalSpec(
+            name="destination_id",
+            type=int,
+            required=True,
+            help="Dataset the rows would be appended into (the DATASET_ID of batch create).",
+            example_value="10",
+        ),
+        PositionalSpec(
+            name="source_id",
+            type=int,
+            required=True,
+            help="Dataset whose rows would be appended (the SOURCE_ID of batch create).",
+            example_value="11",
+        ),
+    ),
+    "dataset.search": (
+        PositionalSpec(
+            name="term",
+            type=str,
+            required=True,
+            help="Text to find in dataset names, column names or sampled column values "
+            "(case-insensitive, at least 2 characters).",
+            example_value="New Year Sale",
+        ),
+    ),
+    "folder.find": (
+        PositionalSpec(
+            name="name_substring",
+            type=str,
+            required=True,
+            help="Case-insensitive substring to match against folder names.",
+            example_value="reports",
+        ),
+    ),
+    # ``folder delete`` takes a single folder id positionally; the handler wraps
+    # it into the SDK's ``folder_ids`` list. The signature leads with the
+    # required ``folder_ids`` (a ``list[int]``, not a scalar identity), so the
+    # derivation emits nothing -- the command was uninvokable and ``folder_ids``
+    # was advertised as an --input field the handler ignores. Author the scalar
+    # locator and mark it as filling ``folder_ids`` so that SDK parameter is
+    # excluded from the advertised --input fields.
+    "folder.delete": (
+        PositionalSpec(
+            name="folder_id",
+            type=int,
+            required=True,
+            help="ID of the folder to delete.",
+            fills_sdk_param="folder_ids",
+        ),
+    ),
+    # The interactive data-read commands take the VIEW id as the leading
+    # required positional and the DATASET id as an OPTIONAL trailing one. A view
+    # id already uniquely identifies its dataset, so the handler resolves the
+    # dataset from the view (via the public pipeline resolver) when the second
+    # positional -- and a ``dataset_id`` --input field -- are both absent. That
+    # makes ``mammoth view preview VIEW_ID`` the common case, while
+    # ``mammoth view preview VIEW_ID DATASET_ID`` still works to skip the lookup.
+    # The SDK signature leads with a required ``dataset_id`` then ``dataview_id``,
+    # so the derivation would force both, in the wrong order, and never optional;
+    # author the pair here. ``view_id`` fills the SDK's ``dataview_id`` argument,
+    # so that parameter stays positional-sourced (never an --input field), while
+    # ``dataset_id`` remains a dual-sourced --input key via ``falls_back_to_field``.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view to act on.",
+                fills_sdk_param="dataview_id",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+                falls_back_to_field="dataset_id",
+            ),
+        )
+        for command in (
+            "view.preview",
+            "view.data.get",
+            "view.data.query",
+            "view.data.aggregate",
+            "view.data.profile",
+        )
+    },
+    # `view data compare` runs the same aggregate against two views and joins
+    # the results -- both ids are required and neither is dual-sourced or
+    # forwarded into an SDK parameter, so the handler reads them directly via
+    # ``_require_int_positional_at`` rather than a ``fills_sdk_param`` binding.
+    "view.data.compare": (
+        PositionalSpec(
+            name="view_id_a",
+            type=int,
+            required=True,
+            help="ID of the first view to compare.",
+        ),
+        PositionalSpec(
+            name="view_id_b",
+            type=int,
+            required=True,
+            help="ID of the second view to compare.",
+        ),
+    ),
+    # The period-analysis composites (``view data drivers``, ``forecast``) run
+    # several aggregates over one view: VIEW_ID, then an optional DATASET_ID
+    # resolved from the view. Neither fills an SDK parameter; the handler reads both itself.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view whose figures rose or dropped: the change to explain.",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.drivers",)
+    },
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help=(
+                    "ID of the view to forecast from, e.g. to estimate what revenue will be "
+                    "next month or in October."
+                ),
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            ),
+        )
+        for command in ("view.data.forecast",)
+    },
+    # The view sub-resource commands take VIEW_ID first, then an OPTIONAL trailing
+    # DATASET_ID resolved from the view -- mirroring the view data commands so the
+    # whole view.* surface is uniformly view-first. The SDK signatures lead with a
+    # required ``dataset_id`` then ``dataview_id``, which the derivation would
+    # force in the wrong order and never optional; author the corrected order.
+    # ``view_id`` fills the SDK ``dataview_id`` (kept positional-sourced), while
+    # ``dataset_id`` is a dual-sourced optional trailing locator.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view to act on.",
+                fills_sdk_param="dataview_id",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+                falls_back_to_field="dataset_id",
+            ),
+        )
+        for command in (
+            "view.active-user.list",
+            "view.active-user.mark",
+            "view.parameter-context",
+            "view.restore",
+            "view.trash",
+            "view.impact",
+            "view.optimize",
+            "view.update",
+            "view.explore-panel.get",
+            "view.explore-panel.set",
+            "view.explore-panel.edit",
+            "view.explore-panel.add-to-dashboard",
+            "view.explore-panel.export-image",
+            "view.conditional-format.create",
+            "view.conditional-format.delete-all",
+            "view.conditional-format.list",
+            "view.conditional-format.replace",
+            "view.conditional-format.update",
+            "view.checkpoint.create",
+            "view.checkpoint.list",
+            "view.data-check.create",
+            "view.data-check.list",
+            "view.derivative.create",
+            "view.derivative.list",
+            "view.version.list",
+        )
+    },
+    # ``view analyze`` reads several views in one call, so VIEW_ID is text that the
+    # handler splits (5000,5001); the trailing DATASET_ID then applies to every id.
+    "view.analyze": (
+        PositionalSpec(
+            name="view_id",
+            type=str,
+            required=True,
+            help=(
+                "ID of the view to analyze; join several with commas (5000,5001) for one "
+                "result with all of them."
+            ),
+            fills_sdk_param="dataview_id",
+            example_value="123",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
+    # The sub-resource commands that also take a specific item id: VIEW_ID first,
+    # then the required sub id, then the OPTIONAL trailing DATASET_ID resolved from
+    # the view. The sub id keeps its own name (a real, positional-sourced SDK
+    # parameter, so it stays out of the advertised --input fields).
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view to act on.",
+                fills_sdk_param="dataview_id",
+            ),
+            PositionalSpec(name=sub_name, type=int, required=True, help=sub_help),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+                falls_back_to_field="dataset_id",
+            ),
+        )
+        for command, sub_name, sub_help in (
+            ("view.checkpoint.get", "checkpoint_id", "ID of the checkpoint."),
+            ("view.checkpoint.delete", "checkpoint_id", "ID of the checkpoint."),
+            ("view.checkpoint.update", "checkpoint_id", "ID of the checkpoint."),
+            ("view.data-check.get", "data_check_id", "ID of the data check."),
+            ("view.data-check.delete", "data_check_id", "ID of the data check."),
+            ("view.data-check.update", "data_check_id", "ID of the data check."),
+            ("view.derivative.data", "derivative_id", "ID of the derivative."),
+            ("view.derivative.delete", "derivative_id", "ID of the derivative."),
+            ("view.derivative.update", "derivative_id", "ID of the derivative."),
+            ("view.version.get", "version_id", "ID of the pipeline version."),
+            ("view.version.apply", "version_id", "ID of the pipeline version."),
+            ("view.version.delete", "version_id", "ID of the pipeline version."),
+            ("view.version.update", "version_id", "ID of the pipeline version."),
+        )
+    },
+    # ``view data explore`` takes VIEW_ID first, then the required COLUMN (a
+    # display name, not an id -- the only ``str``-typed sub-positional in this
+    # family), then the OPTIONAL trailing DATASET_ID resolved from the view,
+    # mirroring the sub-resource commands above. ``column`` is a real,
+    # positional-sourced parameter of ``DataviewsAPI.explore``, so it stays out
+    # of the advertised --input fields without needing ``fills_sdk_param``.
+    "view.data.explore": (
+        PositionalSpec(
+            name="view_id",
+            type=int,
+            required=True,
+            help="ID of the view to act on.",
+            fills_sdk_param="dataview_id",
+        ),
+        PositionalSpec(
+            name="column",
+            type=str,
+            required=True,
+            help="Display name of the column to explore.",
+        ),
+        PositionalSpec(
+            name="dataset_id",
+            type=int,
+            required=False,
+            help="ID of the dataset the view belongs to; resolved from the view when omitted.",
+            falls_back_to_field="dataset_id",
+        ),
+    ),
+    # ``billing hosted-page`` takes the page's object type as a positional OR an
+    # ``object_type`` --input field (handler dual-sources
+    # ``_string_positional(invocation) or document.get("object_type")``). The SDK
+    # leads with a required ``object_type`` ``str`` that the derivation cannot
+    # tell is dual-sourced, so without this override the positional form is
+    # rejected by the strict validator and the documented dual-sourcing is a
+    # half promise. Author the optional field-backed locator.
+    "billing.hosted-page": (
+        PositionalSpec(
+            name="object_type",
+            type=str,
+            required=False,
+            help="Type of hosted page to generate; or pass it via the 'object_type' input field.",
+            falls_back_to_field="object_type",
+        ),
+    ),
+    # The ``workspace`` single-target verbs accept the target workspace id as an
+    # OPTIONAL positional, defaulting to the client's own workspace when omitted
+    # (SDK ``workspace_id: int | None = None``). Each handler reads the id
+    # positionally only (never from ``--input``), so the id is authored here as a
+    # purely positional optional locator -- with the default ``fills_sdk_param``
+    # (its own name) keeping ``workspace_id`` out of the advertised --input
+    # fields. Without the override the strict validator rejects the id token and
+    # the documented explicit-target form is uninvokable.
+    **{
+        command: (
+            PositionalSpec(
+                name="workspace_id",
+                type=int,
+                required=False,
+                help="ID of the workspace to act on; defaults to the client's own workspace.",
+            ),
+        )
+        for command in (
+            "workspace.get",
+            "workspace.delete",
+            "workspace.reactivate",
+            "workspace.update",
+        )
+    },
+    # OAuth clients belong to a workspace: the id is an optional trailing
+    # positional (defaulting to the client's own workspace) after the client id
+    # where the command takes one, so ``workspace oauth-client delete 5`` works.
+    "workspace.oauth-client.list": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    "workspace.oauth-client.create": (
+        PositionalSpec(
+            name="workspace_id",
+            type=int,
+            required=False,
+            help="ID of the workspace to act on; defaults to the client's own workspace.",
+        ),
+    ),
+    **{
+        command: (
+            PositionalSpec(
+                name="oauth_client_id",
+                type=int,
+                required=True,
+                help="ID of the OAuth client.",
+            ),
+            PositionalSpec(
+                name="workspace_id",
+                type=int,
+                required=False,
+                help="ID of the workspace to act on; defaults to the client's own workspace.",
+            ),
+        )
+        for command in (
+            "workspace.oauth-client.delete",
+            "workspace.oauth-client.revoke-grant",
+        )
+    },
+    # ``file upload-folder`` takes the local folder path as a positional OR a
+    # ``folder_path`` --input field (handler dual-sources). Mirror the
+    # ``file.upload`` locator so the documented positional form is registered.
+    "file.upload-folder": (
+        PositionalSpec(
+            name="folder_path",
+            type=str,
+            required=False,
+            help="Path to a local folder to upload; or pass it via the 'folder_path' input field.",
+            kind=LOCAL_PATH,
+            falls_back_to_field="folder_path",
+        ),
+    ),
+    # ``user avatar upload`` takes the local image path as a positional OR a
+    # ``file`` --input field (handler dual-sources). Mirror the ``file.upload``
+    # locator so ``mammoth user avatar upload avatar.png`` is accepted.
+    "user.avatar.upload": (
+        PositionalSpec(
+            name="file",
+            type=str,
+            required=False,
+            help="Path to a local image to upload; or pass it via the 'file' input field.",
+            kind=LOCAL_PATH,
+            falls_back_to_field="file",
+        ),
+    ),
+    # ``ai sql generate`` takes the generation intent as the first positional OR
+    # an ``intent`` --input field (handler dual-sources). The SDK leads with a
+    # required ``intent`` ``str`` the derivation cannot tell is dual-sourced, so
+    # author the optional field-backed locator -- the same shape as
+    # ``dashboard create``.
+    "ai.sql.generate": (
+        PositionalSpec(
+            name="intent",
+            type=str,
+            required=False,
+            help="Generation intent for the SQL query; or pass it via the 'intent' input field.",
+            falls_back_to_field="intent",
+        ),
+    ),
+    # ``completion show`` / ``completion install`` take the shell name as a
+    # positional OR a ``shell`` --input field (handler ``_resolve_shell`` also
+    # falls back to ``$SHELL``). These are CLI-only commands whose ``sdk_symbol``
+    # is a meta-reference, so the derivation emits nothing; author the optional
+    # field-backed locator so ``mammoth completion show bash`` is accepted.
+    **{
+        command: (
+            PositionalSpec(
+                name="shell",
+                type=str,
+                required=False,
+                help="Shell to target (bash/zsh/fish); or pass it via the 'shell' input field.",
+                falls_back_to_field="shell",
+                example_value="bash",
+            ),
+        )
+        for command in ("completion.show", "completion.install")
+    },
+    # ``config get`` / ``config set`` are CLI-only commands whose ``sdk_symbol``
+    # is a meta-reference (no backing SDK signature), so the derivation emits
+    # nothing. Their bespoke handlers declare the key (and value) as REQUIRED
+    # ``typer.Argument``s, so without a registered positional the manifest and
+    # generated example advertise a bare, uninvokable form. Author the required
+    # locators here, mirroring ``schema.get``. The example values are genuine
+    # config keys so the documented example reads correctly.
+    "config.get": (
+        PositionalSpec(
+            name="key",
+            type=str,
+            required=True,
+            help="Configuration key to read (e.g. output, timeout).",
+            example_value="output",
+        ),
+    ),
+    "config.set": (
+        PositionalSpec(
+            name="key",
+            type=str,
+            required=True,
+            help="Configuration key to set (e.g. output, timeout).",
+            example_value="output",
+        ),
+        PositionalSpec(
+            name="value",
+            type=str,
+            required=True,
+            help="New value for the configuration key.",
+            example_value="text",
+        ),
+    ),
+    # ``context project use`` is CLI-only (meta ``sdk_symbol``); its bespoke
+    # handler declares ``project_id`` as a REQUIRED ``typer.Argument``. Without a
+    # registered positional the generated example omitted the id and was
+    # uninvokable. Author the required locator, mirroring ``schema.get``.
+    "context.project.use": (
+        PositionalSpec(
+            name="project_id",
+            type=int,
+            required=True,
+            help="Positive project id to make active.",
+        ),
+    ),
+    # Typed View.export destinations are receiver methods, so their source
+    # view id is not present in the SDK signature.  Expose the exact parent as
+    # an optional trailing locator for scoped resolution.
+    **{
+        command: (
+            PositionalSpec(
+                name="view_id",
+                type=int,
+                required=True,
+                help="ID of the view to export.",
+            ),
+            PositionalSpec(
+                name="dataset_id",
+                type=int,
+                required=False,
+                help="ID of the parent dataset; resolved from the view when omitted.",
+                falls_back_to_field="dataset_id",
+            ),
+        )
+        for command in (
+            "view.export.dataset",
+            "view.export.managed-s3",
+            "view.export.live-link",
+            "view.export.azure-blob",
+            "view.export.bigquery",
+            "view.export.elasticsearch",
+            "view.export.email",
+            "view.export.ftp",
+            "view.export.mssql",
+            "view.export.mysql",
+            "view.export.onedrive",
+            "view.export.postgres",
+            "view.export.powerbi",
+            "view.export.redshift",
+            "view.export.rest",
+            "view.export.sftp",
+            "view.export.sharepoint",
+            "view.export.tableau",
+        )
+    },
+    # A catalog template is addressed by its key (``workflow template list`` shows them),
+    # which the derived "Key identifying the resource." would not explain.
+    **{
+        f"workflow.template.{verb}": (
+            PositionalSpec(
+                name="key",
+                type=str,
+                required=True,
+                help="Workflow template key, from 'workflow template list'.",
+                example_value="bank-reconciliation",
+            ),
+        )
+        for verb in ("get", "sample-result", "rank", "fit", "preview", "samples", "build")
+    },
+}

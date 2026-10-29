@@ -24,10 +24,13 @@ from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime import runlog
 
 if TYPE_CHECKING:
+    from mammoth_cli.runtime.dispatch import Outcome
     from mammoth_cli.runtime.invocation import Invocation
 
 HandlerResult = tuple[Any, dict[str, Any]]
-type Handler = Callable[[Invocation], HandlerResult]
+#: A handler returns ``(data, meta_extra)``, or an ``Outcome`` when it names its own exit
+#: status or printed its own envelopes.
+type Handler = Callable[[Invocation], HandlerResult | Outcome]
 
 
 def _require_arg(invocation: Invocation, name: str) -> str:
@@ -53,7 +56,7 @@ def _capability_list(_: Invocation) -> HandlerResult:
     from mammoth_cli.commands import capability as capability_cmd
 
     entries = capability_cmd.capability_entries()
-    return [entry for entry in entries if not capability_cmd.hidden_pending(entry)], {}
+    return [entry for entry in entries if not capability_cmd.hidden_from_call(entry)], {}
 
 
 def _capability_get(invocation: Invocation) -> HandlerResult:
@@ -171,12 +174,20 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
     )
     # 'schema get A,B,C' (or 'A;B;C'): several ids in one call, like the
     # ';'-separated goals of 'schema find'. Command ids never contain either.
+    rest = [str(arg) for arg in invocation.extra_args or [] if str(arg) not in flags]
+    # Dotted ids separated by spaces are several ids too ('view transform math' is one command).
+    spaced = (
+        [command_id, *rest]
+        if rest and all("." in token for token in [command_id, *rest])
+        else [command_id]
+    )
     ids = list(
-        dict.fromkeys(part.strip() for part in re.split(r"[,;]", command_id) if part.strip())
+        dict.fromkeys(
+            part.strip() for token in spaced for part in re.split(r"[,;]", token) if part.strip()
+        )
     )
     if len(ids) > 1:
         return _schema_get_many(ids, full), {}
-    rest = [str(arg) for arg in invocation.extra_args or [] if str(arg) not in flags]
     command_id, entry = _resolve_schema(ids[0] if ids else command_id, rest)
     if entry is None:
         raise _schema_not_found(command_id)
@@ -205,11 +216,19 @@ def _cap_inline_detail(result: dict[str, Any], keep: int) -> None:
             entry.pop("agent_example", None)
 
 
+def _find_output(result: dict[str, Any], invocation: Invocation) -> dict[str, Any]:
+    """*result* cut to what picks and calls a command, unless ``--full``."""
+    from mammoth_cli.commands.schema.find import trim_find_result
+
+    return result if invocation.full_output else trim_find_result(result)
+
+
 def _schema_find(invocation: Invocation) -> HandlerResult:
-    from mammoth_cli.commands import schema as schema_cmd
+    from mammoth_cli.commands.schema.find import find_schemas
+    from mammoth_cli.runtime.compact import FULL_FLAG
     from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
-    flags = COMMAND_FLAGS["schema.find"]
+    flags = COMMAND_FLAGS["schema.find"] - {FULL_FLAG}
     words = [str(invocation.bound_input().get("query") or ""), *map(str, invocation.extra_args)]
     if any(word in flags for word in words):
         # 'schema find --unsupported [WORDS]': what the CLI cannot do yet.
@@ -221,7 +240,7 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
     if not query.strip():
         raise _EMPTY_QUERY_ERROR
     if ";" not in query:
-        return schema_cmd.find_schemas(query), {}
+        return _find_output(find_schemas(query), invocation), {}
     # Several goals in one call ("join customers onto orders; remove
     # duplicate rows; build a dashboard"): run the existing single-goal
     # search per goal instead of round-tripping once per goal.
@@ -238,13 +257,14 @@ def _schema_find(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
             hint="Split the goals across more than one 'schema find' call.",
         )
-    results = [schema_cmd.find_schemas(goal) for goal in goals]
+    results = [find_schemas(goal) for goal in goals]
     if len(results) > 1:
         # Cap inline accepted_fields/agent_example to the top match per goal
         # so a multi-goal envelope stays small even when every goal has
         # several candidates.
         for result in results:
             _cap_inline_detail(result, 1)
+    results = [_find_output(result, invocation) for result in results]
     return {
         "goals": [{"goal": goal, **result} for goal, result in zip(goals, results, strict=True)]
     }, {}
@@ -272,9 +292,15 @@ _TARGETS: dict[str, str] = {
     "version": "mammoth_cli.commands.registry:_version",
     "log.path": "mammoth_cli.commands.registry:_log_path",
     "log.tail": "mammoth_cli.commands.registry:_log_tail",
+    "history.list": "mammoth_cli.commands.history:history_list",
+    "history.show": "mammoth_cli.commands.history:history_show",
+    "history.undo": "mammoth_cli.commands.history:history_undo",
+    "history.resume": "mammoth_cli.commands.history:history_resume",
+    "recipe.list": "mammoth_cli.commands.recipe:recipe_list",
+    "recipe.run": "mammoth_cli.commands.recipe:recipe_run",
     "doctor": "mammoth_cli.commands.doctor:doctor",
-    "auth.connected-apps.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "auth.connected-apps.revoke": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "auth.connected-apps.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "auth.connected-apps.revoke": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "calc": "mammoth_cli.commands.calc:calc",
     "link": "mammoth_cli.commands.link:link",
     "resolve": "mammoth_cli.commands.resolve:resolve",
@@ -337,7 +363,7 @@ _TARGETS: dict[str, str] = {
     "workspace.app-usage": "mammoth_cli.commands.workspace:workspace_app_usage",
     "workspace.check-expression": "mammoth_cli.commands.workspace:workspace_check_expression",
     "workspace.create": "mammoth_cli.commands.workspace:workspace_create",
-    "workspace.current": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "workspace.current": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workspace.delete": "mammoth_cli.commands.workspace:workspace_delete",
     "workspace.get": "mammoth_cli.commands.workspace:workspace_get",
     "workspace.home": "mammoth_cli.commands.workspace:workspace_home",
@@ -348,10 +374,12 @@ _TARGETS: dict[str, str] = {
     "workspace.invite.revoke": "mammoth_cli.commands.workspace:workspace_invite_revoke",
     "workspace.invite.update-role": "mammoth_cli.commands.workspace:workspace_invite_update_role",
     "workspace.llm-task": "mammoth_cli.commands.workspace:workspace_llm_task",
-    "workspace.oauth-client.list": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "workspace.oauth-client.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workspace.oauth-client.create": "mammoth_cli.commands.workspace:workspace_oauth_client_create",
-    "workspace.oauth-client.delete": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "workspace.oauth-client.revoke-grant": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "workspace.oauth-client.delete": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workspace.oauth-client.revoke-grant": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
     "workspace.reactivate": "mammoth_cli.commands.workspace:workspace_reactivate",
     "workspace.segment.list": "mammoth_cli.commands.workspace:workspace_segment_list",
     "workspace.segment.update": "mammoth_cli.commands.workspace:workspace_segment_update",
@@ -364,11 +392,11 @@ _TARGETS: dict[str, str] = {
     "workspace.user.remove-batch": "mammoth_cli.commands.workspace:workspace_user_remove_batch",
     "workspace.user.update": "mammoth_cli.commands.workspace:workspace_user_update",
     "workspace.user.update-batch": "mammoth_cli.commands.workspace:workspace_user_update_batch",
-    "dataset.find": "mammoth_cli.commands.dataset:dataset_find",
+    "dataset.find": "mammoth_cli.commands.dataset.find:dataset_find",
     "dataset.list": "mammoth_cli.commands.dataset:dataset_list",
-    "dataset.search": "mammoth_cli.commands.dataset:dataset_search",
+    "dataset.search": "mammoth_cli.commands.dataset.find:dataset_search",
     "dataset.schema-diff": "mammoth_cli.commands.dataset:dataset_schema_diff",
-    "dataset.column-stats": "mammoth_cli.commands.dataset:dataset_column_stats",
+    "dataset.column-stats": "mammoth_cli.commands.dataset.find:dataset_column_stats",
     "dataset.definition.list": "mammoth_cli.commands.dataset:dataset_definition_list",
     "dataset.definition.add": "mammoth_cli.commands.dataset:dataset_definition_add",
     "dataset.definition.remove": "mammoth_cli.commands.dataset:dataset_definition_remove",
@@ -382,10 +410,12 @@ _TARGETS: dict[str, str] = {
     "dataset.broken-rows.resolve": "mammoth_cli.commands.dataset:dataset_broken_rows_resolve",
     "dataset.interpretation.preview": "mammoth_cli.commands.dataset:dataset_interpretation",
     "dataset.interpretation.confirm": "mammoth_cli.commands.dataset:dataset_interpretation",
-    "dataset.create": "mammoth_cli.commands.dataset:dataset_create",
-    "dataset.create-from-pdf": "mammoth_cli.commands.dataset:dataset_create_from_pdf",
+    "dataset.create": "mammoth_cli.commands.dataset.create:dataset_create",
+    "dataset.create-from-pdf": "mammoth_cli.commands.dataset.create:dataset_create_from_pdf",
     "dataset.refresh": "mammoth_cli.commands.dataset:dataset_refresh",
     "dataset.rename": "mammoth_cli.commands.dataset:dataset_rename",
+    "dataset.update-method.get": "mammoth_cli.commands.dataset:dataset_update_method_get",
+    "dataset.update-method.set": "mammoth_cli.commands.dataset:dataset_update_method_set",
     "dataset.trash": "mammoth_cli.commands.dataset:dataset_trash",
     "dataset.restore": "mammoth_cli.commands.dataset:dataset_restore",
     "dataset.delete": "mammoth_cli.commands.dataset:dataset_delete",
@@ -469,7 +499,7 @@ _TARGETS: dict[str, str] = {
     "dashboard.archive": "mammoth_cli.commands.dashboard:dashboard_archive",
     "dashboard.analytics": "mammoth_cli.commands.dashboard:dashboard_analytics",
     "dashboard.cancel-generation": "mammoth_cli.commands.dashboard:dashboard_cancel_generation",
-    "dashboard.create-blank": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.create-blank": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dashboard.data.draft": "mammoth_cli.commands.dashboard:dashboard_data_draft",
     "dashboard.data.published": "mammoth_cli.commands.dashboard:dashboard_data_published",
     "dashboard.delete": "mammoth_cli.commands.dashboard:dashboard_delete",
@@ -496,63 +526,73 @@ _TARGETS: dict[str, str] = {
     "dashboard.update": "mammoth_cli.commands.dashboard:dashboard_update",
     "dashboard.widget-data": "mammoth_cli.commands.dashboard:dashboard_widget_data",
     "dashboard.widget-data-by-url": "mammoth_cli.commands.dashboard:dashboard_widget_data_by_url",
-    "dashboard.pages.add": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.context.extract": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.exemplar.extract": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.swap-data": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.swap-fit": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.audience.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.audience.summary": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.audience.digest.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.audience.digest.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.columns": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.context.review": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.context.apply": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.qa.insights": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.templates.pending": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.templates.use": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.pages.add": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.context.extract": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.exemplar.extract": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.swap-data": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.swap-fit": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.audience.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.audience.summary": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.audience.digest.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.audience.digest.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.columns": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.context.review": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.context.apply": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.qa.insights": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.templates.pending": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.templates.use": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dashboard.duplicate": "mammoth_cli.commands.dashboard:dashboard_duplicate",
     "dashboard.pbix-intent": "mammoth_cli.commands.dashboard:dashboard_attachment_read",
     "dashboard.pbix-assess": "mammoth_cli.commands.dashboard:dashboard_attachment_read",
-    "dashboard.assess-twb": "mammoth_cli.commands.dashboard:dashboard_assess_twb",
-    "dashboard.assess-pbix": "mammoth_cli.commands.dashboard:dashboard_assess_pbix",
-    "dashboard.attachment-create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.import-workbook": "mammoth_cli.commands.dashboard:dashboard_import_workbook",
-    "dashboard.bi-preflight": "mammoth_cli.commands.dashboard:dashboard_bi_preflight",
-    "dashboard.bi-export": "mammoth_cli.commands.dashboard:dashboard_bi_export",
-    "dashboard.embed.config.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.config.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.key.rotate": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.usage.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.usage.summary": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.format-preview": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.template.thumbnail.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.template.thumbnail.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.template.thumbnail.clear": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.gallery.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.gallery.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.origin.revoke": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.preview-token.create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.secret.rotate": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.embed.lifetime.set": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.assess-twb": "mammoth_cli.commands.dashboard.workbook:dashboard_assess_twb",
+    "dashboard.assess-pbix": "mammoth_cli.commands.dashboard.workbook:dashboard_assess_pbix",
+    "dashboard.attachment-create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.import-workbook": (
+        "mammoth_cli.commands.dashboard.workbook:dashboard_import_workbook"
+    ),
+    "dashboard.bi-preflight": "mammoth_cli.commands.dashboard.workbook:dashboard_bi_preflight",
+    "dashboard.bi-export": "mammoth_cli.commands.dashboard.workbook:dashboard_bi_export",
+    "dashboard.embed.config.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.config.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.key.rotate": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.usage.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.usage.summary": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.format-preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.template.thumbnail.get": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.template.thumbnail.set": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.template.thumbnail.clear": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.gallery.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.gallery.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.origin.revoke": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.preview-token.create": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.embed.secret.rotate": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.embed.lifetime.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     # Collections have no handler of their own: the manifest-driven dashboard handler binds the
     # input to the SDK signature, applies the manifest's confirmation and calls the symbol.
-    "collection.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.get-by-url": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.update": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.delete": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.dashboards.add": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.dashboards.remove": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.share": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.members.remove": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.for-dashboard": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.activity": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.pipeline-changes": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.files.upload": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.active-job": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.job": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "collection.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.get-by-url": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.delete": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.dashboards.add": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.dashboards.remove": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.share": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.members.remove": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.for-dashboard": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.activity": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.pipeline-changes": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.files.upload": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.active-job": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.job": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.archive": "mammoth_cli.commands.workflow:workflow_archive",
     "workflow.attach-dataset": "mammoth_cli.commands.workflow:workflow_attach_dataset",
     "workflow.block.add": "mammoth_cli.commands.workflow:workflow_block_add",
@@ -754,25 +794,33 @@ _TARGETS: dict[str, str] = {
     "support.plan.storage-option.archive": (
         "mammoth_cli.commands.support:support_plan_storage_option_archive"
     ),
-    "support.template.list": "mammoth_cli.commands.support:support_template_list",
-    "support.template.edit": "mammoth_cli.commands.support:support_template_edit",
-    "support.template.data-preview": "mammoth_cli.commands.support:support_template_data_preview",
-    "support.template.canvas": "mammoth_cli.commands.support:support_template_canvas",
-    "support.template.publish": "mammoth_cli.commands.support:support_template_publish",
-    "support.template.unpublish": "mammoth_cli.commands.support:support_template_unpublish",
-    "support.template.retire": "mammoth_cli.commands.support:support_template_retire",
-    "support.template.inspect": "mammoth_cli.commands.support:support_template_inspect",
-    "support.template.import": "mammoth_cli.commands.support:support_template_import",
-    "support.template.thumbnail.set": "mammoth_cli.commands.support:support_template_thumbnail_set",
-    "support.template.thumbnail.clear": (
-        "mammoth_cli.commands.support:support_template_thumbnail_clear"
+    "support.template.list": "mammoth_cli.commands.support_template:support_template_list",
+    "support.template.edit": "mammoth_cli.commands.support_template:support_template_edit",
+    "support.template.data-preview": (
+        "mammoth_cli.commands.support_template:support_template_data_preview"
     ),
-    "support.template.discard": "mammoth_cli.commands.support:support_template_discard",
-    "support.template.snapshots": "mammoth_cli.commands.support:support_template_snapshots",
-    "support.template.audit": "mammoth_cli.commands.support:support_template_audit",
-    "support.template.export": "mammoth_cli.commands.support:support_template_export",
+    "support.template.canvas": "mammoth_cli.commands.support_template:support_template_canvas",
+    "support.template.publish": "mammoth_cli.commands.support_template:support_template_publish",
+    "support.template.unpublish": (
+        "mammoth_cli.commands.support_template:support_template_unpublish"
+    ),
+    "support.template.retire": "mammoth_cli.commands.support_template:support_template_retire",
+    "support.template.inspect": "mammoth_cli.commands.support_template:support_template_inspect",
+    "support.template.import": "mammoth_cli.commands.support_template:support_template_import",
+    "support.template.thumbnail.set": (
+        "mammoth_cli.commands.support_template:support_template_thumbnail_set"
+    ),
+    "support.template.thumbnail.clear": (
+        "mammoth_cli.commands.support_template:support_template_thumbnail_clear"
+    ),
+    "support.template.discard": "mammoth_cli.commands.support_template:support_template_discard",
+    "support.template.snapshots": (
+        "mammoth_cli.commands.support_template:support_template_snapshots"
+    ),
+    "support.template.audit": "mammoth_cli.commands.support_template:support_template_audit",
+    "support.template.export": "mammoth_cli.commands.support_template:support_template_export",
     "support.template.export-dashboard": (
-        "mammoth_cli.commands.support:support_template_export_dashboard"
+        "mammoth_cli.commands.support_template:support_template_export_dashboard"
     ),
     "support.plan.chargebee-list": "mammoth_cli.commands.support:support_plan_chargebee_list",
     "support.plan.create": "mammoth_cli.commands.support:support_plan_create",
@@ -973,24 +1021,34 @@ _TARGETS: dict[str, str] = {
     "workflow.duplicate": "mammoth_cli.commands.workflow:workflow_duplicate",
     "workflow.save-undo": "mammoth_cli.commands.workflow:workflow_save_undo",
     "workflow.save-cancel-step": "mammoth_cli.commands.workflow:workflow_save_cancel_step",
-    "dashboard.email-updates.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.email-updates.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.email-updates.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.email-updates.me.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.email-updates.me.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.email-updates.test": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.email-updates.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.email-updates.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.email-updates.me.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.email-updates.me.set": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "collection.email-updates.test": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.audience": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.usage": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.live-chart.placement": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.oembed": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "dashboard.email-updates.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.email-updates.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.email-updates.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.email-updates.me.get": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.email-updates.me.set": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.email-updates.test": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.email-updates.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.email-updates.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "collection.email-updates.me.get": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "collection.email-updates.me.set": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "collection.email-updates.test": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.audience": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.usage": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.live-chart.placement": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "dashboard.oembed": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "view.export.publish-db": "mammoth_cli.commands.view.export:view_export_publish_db",
     "view.export.publish-db-update": (
         "mammoth_cli.commands.view.export:view_export_publish_db_update"
@@ -1022,110 +1080,185 @@ _TARGETS: dict[str, str] = {
         "mammoth_cli.commands.view.export_specialized:view_export_specialized"
     ),
     "view.export.tableau": "mammoth_cli.commands.view.export_specialized:view_export_specialized",
-    "view.create": "mammoth_cli.commands.view_ops:view_create",
-    "view.variants.create": "mammoth_cli.commands.view_ops:view_variants_create",
-    "view.get": "mammoth_cli.commands.view_ops:view_get",
-    "view.delete": "mammoth_cli.commands.view_ops:view_delete",
-    "view.draft.enter": "mammoth_cli.commands.view_ops:view_draft_enter",
-    "view.draft.status": "mammoth_cli.commands.view_ops:view_draft_status",
-    "view.draft.submit": "mammoth_cli.commands.view_ops:view_draft_submit",
-    "view.draft.discard": "mammoth_cli.commands.view_ops:view_draft_discard",
-    "view.draft.auto-run": "mammoth_cli.commands.view_ops:view_draft_auto_run",
-    "view.transform.add-column": "mammoth_cli.commands.view_ops:view_transform_add_column",
-    "view.transform.add-sql": "mammoth_cli.commands.view_ops:view_transform_add_sql",
-    "view.transform.ai": "mammoth_cli.commands.view_ops:view_transform_ai",
-    "view.transform.batch": "mammoth_cli.commands.view_ops:view_transform_batch",
-    "view.transform.bulk-replace": "mammoth_cli.commands.view_ops:view_transform_bulk_replace",
+    "view.create": "mammoth_cli.commands.view_ops.crud:view_create",
+    "view.variants.create": "mammoth_cli.commands.view_ops.crud:view_variants_create",
+    "view.get": "mammoth_cli.commands.view_ops.crud:view_get",
+    "view.delete": "mammoth_cli.commands.view_ops.crud:view_delete",
+    "view.draft.enter": "mammoth_cli.commands.view_ops.draft:view_draft_enter",
+    "view.draft.status": "mammoth_cli.commands.view_ops.draft:view_draft_status",
+    "view.draft.submit": "mammoth_cli.commands.view_ops.draft:view_draft_submit",
+    "view.draft.discard": "mammoth_cli.commands.view_ops.draft:view_draft_discard",
+    "view.draft.auto-run": "mammoth_cli.commands.view_ops.draft:view_draft_auto_run",
+    "view.transform.add-column": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_add_column"
+    ),
+    "view.transform.add-sql": "mammoth_cli.commands.view_ops.transforms:view_transform_add_sql",
+    "view.transform.ai": "mammoth_cli.commands.view_ops.transforms:view_transform_ai",
+    "view.transform.batch": "mammoth_cli.commands.view_ops.batch:view_transform_batch",
+    "view.transform.bulk-replace": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_bulk_replace"
+    ),
     "view.transform.combine-columns": (
-        "mammoth_cli.commands.view_ops:view_transform_combine_columns"
+        "mammoth_cli.commands.view_ops.transforms:view_transform_combine_columns"
     ),
-    "view.transform.convert-type": "mammoth_cli.commands.view_ops:view_transform_convert_type",
-    "view.transform.copy-columns": "mammoth_cli.commands.view_ops:view_transform_copy_columns",
-    "view.transform.crosstab": "mammoth_cli.commands.view_ops:view_transform_crosstab",
-    "view.transform.date-diff": "mammoth_cli.commands.view_ops:view_transform_date_diff",
-    "view.transform.delete-columns": "mammoth_cli.commands.view_ops:view_transform_delete_columns",
+    "view.transform.convert-type": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_convert_type"
+    ),
+    "view.transform.copy-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_copy_columns"
+    ),
+    "view.transform.crosstab": "mammoth_cli.commands.view_ops.transforms:view_transform_crosstab",
+    "view.transform.date-diff": "mammoth_cli.commands.view_ops.transforms:view_transform_date_diff",
+    "view.transform.delete-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_delete_columns"
+    ),
     "view.transform.discard-duplicates": (
-        "mammoth_cli.commands.view_ops:view_transform_discard_duplicates"
+        "mammoth_cli.commands.view_ops.transforms:view_transform_discard_duplicates"
     ),
-    "view.transform.extract-date": "mammoth_cli.commands.view_ops:view_transform_extract_date",
-    "view.transform.fill-missing": "mammoth_cli.commands.view_ops:view_transform_fill_missing",
-    "view.transform.filter": "mammoth_cli.commands.view_ops:view_transform_filter",
-    "view.transform.generate-sql": "mammoth_cli.commands.view_ops:view_transform_generate_sql",
-    "view.transform.increment-date": "mammoth_cli.commands.view_ops:view_transform_increment_date",
-    "view.transform.join": "mammoth_cli.commands.view_ops:view_transform_join",
-    "view.column.format.set": "mammoth_cli.commands.view_ops:view_column_format_set",
-    "view.transform.json-extract": "mammoth_cli.commands.view_ops:view_transform_json_extract",
-    "view.transform.limit-rows": "mammoth_cli.commands.view_ops:view_transform_limit_rows",
-    "view.transform.lookup": "mammoth_cli.commands.view_ops:view_transform_lookup",
-    "view.transform.math": "mammoth_cli.commands.view_ops:view_transform_math",
-    "view.transform.pivot": "mammoth_cli.commands.view_ops:view_transform_pivot",
-    "view.transform.rename-columns": "mammoth_cli.commands.view_ops:view_transform_rename_columns",
-    "view.transform.replace": "mammoth_cli.commands.view_ops:view_transform_replace",
-    "view.transform.set-values": "mammoth_cli.commands.view_ops:view_transform_set_values",
-    "view.transform.small-large": "mammoth_cli.commands.view_ops:view_transform_small_large",
-    "view.transform.sort": "mammoth_cli.commands.view_ops:view_transform_sort",
-    "view.transform.split": "mammoth_cli.commands.view_ops:view_transform_split",
-    "view.transform.substring": "mammoth_cli.commands.view_ops:view_transform_substring",
-    "view.transform.first-name": "mammoth_cli.commands.view_ops:view_transform_first_name",
-    "view.transform.update-column": "mammoth_cli.commands.view_ops:view_transform_update_column",
-    "view.transform.text": "mammoth_cli.commands.view_ops:view_transform_text",
-    "view.transform.unnest": "mammoth_cli.commands.view_ops:view_transform_unnest",
-    "view.transform.window": "mammoth_cli.commands.view_ops:view_transform_window",
+    "view.transform.extract-date": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_extract_date"
+    ),
+    "view.transform.fill-missing": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_fill_missing"
+    ),
+    "view.transform.filter": "mammoth_cli.commands.view_ops.transforms:view_transform_filter",
+    "view.transform.generate-sql": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_generate_sql"
+    ),
+    "view.transform.increment-date": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_increment_date"
+    ),
+    "view.transform.join": "mammoth_cli.commands.view_ops.transforms:view_transform_join",
+    "view.column.format.set": "mammoth_cli.commands.view_ops.transforms:view_column_format_set",
+    "view.transform.json-extract": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_json_extract"
+    ),
+    "view.transform.limit-rows": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_limit_rows"
+    ),
+    "view.transform.lookup": "mammoth_cli.commands.view_ops.transforms:view_transform_lookup",
+    "view.transform.math": "mammoth_cli.commands.view_ops.transforms:view_transform_math",
+    "view.transform.pivot": "mammoth_cli.commands.view_ops.transforms:view_transform_pivot",
+    "view.transform.repeat-rows": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_repeat_rows"
+    ),
+    "view.transform.rename-columns": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_rename_columns"
+    ),
+    "view.transform.replace": "mammoth_cli.commands.view_ops.transforms:view_transform_replace",
+    "view.transform.set-values": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_set_values"
+    ),
+    "view.transform.small-large": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_small_large"
+    ),
+    "view.transform.sort": "mammoth_cli.commands.view_ops.transforms:view_transform_sort",
+    "view.transform.split": "mammoth_cli.commands.view_ops.transforms:view_transform_split",
+    "view.transform.substring": "mammoth_cli.commands.view_ops.transforms:view_transform_substring",
+    "view.transform.first-name": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_first_name"
+    ),
+    "view.transform.update-column": (
+        "mammoth_cli.commands.view_ops.transforms:view_transform_update_column"
+    ),
+    "view.transform.text": "mammoth_cli.commands.view_ops.transforms:view_transform_text",
+    "view.transform.unnest": "mammoth_cli.commands.view_ops.transforms:view_transform_unnest",
+    "view.transform.window": "mammoth_cli.commands.view_ops.transforms:view_transform_window",
     # Operation-bound commands served by the manifest-driven generic handler.
-    "agent.access.me": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.settings.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.settings.update": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.grant.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.grant.give": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.grant.update": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.grant.revoke": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.people": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.tree": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.askers": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.reach": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.request.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.request.mine": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.request.create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.request.resolve": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.request.add-to-context": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.access.chart.save": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.session.feedback.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "agent.turn.rate": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "agent.access.me": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.settings.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.settings.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.grant.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.grant.give": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.grant.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.grant.revoke": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.people": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.tree": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.askers": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.reach": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.request.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.request.mine": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.request.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.request.resolve": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.request.add-to-context": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "agent.access.chart.save": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.session.feedback.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.turn.rate": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "billing.stripe.held-change.get": "mammoth_cli.commands.billing:billing_stripe_held_change_get",
     "billing.stripe.held-change.cancel": (
         "mammoth_cli.commands.billing:billing_stripe_held_change_cancel"
     ),
-    "support.plan.update-entitlements": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.connection.list-all": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.connection.test": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "view.task.preview-cancel": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dataset.tool-claim.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dataset.tool-claim.redeem": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "dashboard.chat.attachment.upload": (
-        "mammoth_cli.commands.dashboard:dashboard_chat_attachment_upload"
+    "support.plan.update-entitlements": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
     ),
-    "dashboard.unpublished": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "connector.connection.list-all": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.connection.test": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "view.task.preview-cancel": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.tool-claim.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.tool-claim.redeem": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dashboard.chat.attachment.upload": (
+        "mammoth_cli.commands.dashboard.workbook:dashboard_chat_attachment_upload"
+    ),
+    "dashboard.unpublished": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     # Server-master routes: watched folders and file routing, connector drafts.
-    "automation.folders": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "automation.runs": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "automation.route.preview": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "automation.route.order": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "automation.run-file.add-anyway": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.create": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.known-sources": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.get": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.update": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.discard": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.browse": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.fill": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.open": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.read-tables": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.sample": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.save": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.source.list": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.source.join-candidates": "mammoth_cli.commands.dashboard:generated_dashboard",
-    "connector.draft.source.preview": "mammoth_cli.commands.dashboard:generated_dashboard",
+    "automation.folders": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "automation.runs": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "automation.route.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "automation.route.order": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "automation.run-file.add-anyway": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "connector.draft.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.known-sources": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.discard": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.browse": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.fill": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.open": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.read-tables": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.sample": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.save": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.source.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.draft.source.join-candidates": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "connector.draft.source.preview": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    # From URL: preview a link, follow or copy a link dataset, list the linked datasets.
+    "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "dataset.from-url.links": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Download several datasets as one file, and what that would hold.
+    "dataset.download": "mammoth_cli.commands.dataset.download:dataset_download",
+    "dataset.download-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # Project moves between workspaces (tech admin).
+    "support.workspace.project.list": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-check": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.workspace.project.move-start": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "support.project-move.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "support.project-move.purge": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    # The project workflow-template catalog (not the legacy workspace `template` group).
+    "workflow.template.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.sample-result": (
+        "mammoth_cli.commands.dashboard.generated:generated_dashboard"
+    ),
+    "workflow.template.rank": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.fit": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.samples": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.template.build": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
 }
 
 # Dashboard operations generated from the reviewed OpenAPI inventory share one
@@ -1137,7 +1270,8 @@ _DASHBOARD_SDK_PREFIX = "mammoth.api.dashboards.DashboardsAPI."
 for _record in load_commands():
     if str(_record.get("sdk_symbol", "")).startswith(_DASHBOARD_SDK_PREFIX):
         _TARGETS.setdefault(
-            str(_record["command_id"]), "mammoth_cli.commands.dashboard:generated_dashboard"
+            str(_record["command_id"]),
+            "mammoth_cli.commands.dashboard.generated:generated_dashboard",
         )
 
 #: Command id -> handler, imported from its command module on first use.

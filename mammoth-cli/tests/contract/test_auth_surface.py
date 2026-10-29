@@ -72,7 +72,7 @@ def test_no_shared_base_url_option_factory() -> None:
 
 def test_generic_leaf_declares_no_base_url_option() -> None:
     """The dynamically built shared-option parameters expose no ``--base-url``."""
-    from mammoth_cli.app import _SHARED_OPTION_PARAMS
+    from mammoth_cli.app.options import _SHARED_OPTION_PARAMS
 
     names = {param.name for param in _SHARED_OPTION_PARAMS}
     assert "base_url" not in names

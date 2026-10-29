@@ -1,559 +1,86 @@
 manifest_schema_version: 1
 commands:
 - command_id: connector.active
-  command_path: connector active
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetActiveConnectors
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.active_connectors
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.active_connectors with validated request fields.
-  request_model: ConnectorActiveRequest
-  result_model: ConnectorActiveResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-ACTIVE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector active --help
-  agent_example: mammoth connector active
-  unit_tests:
-  - UT-CONNECTOR-ACTIVE
-  contract_tests:
-  - CT-CONNECTOR-ACTIVE-HUMAN
-  - CT-CONNECTOR-ACTIVE-JSON
-  - CT-CONNECTOR-ACTIVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.ai.chat
-  command_path: connector ai chat
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - Chat
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.chat
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.chat with validated request fields.
-  request_model: ConnectorAiChatRequest
-  result_model: ConnectorAiChatResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-AI-CHAT
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai chat --help
-  agent_example: 'mammoth connector ai chat --input ''{"body": {"messages": [{"content": "Quarterly revenue summary", "role": "user"}]}}'''
-  unit_tests:
-  - UT-CONNECTOR-AI-CHAT
-  contract_tests:
-  - CT-CONNECTOR-AI-CHAT-HUMAN
-  - CT-CONNECTOR-AI-CHAT-JSON
-  - CT-CONNECTOR-AI-CHAT-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
     kind: object
 - command_id: connector.ai.history
-  command_path: connector ai history
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetChatHistory
-  positionals:
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.history
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.history with validated request fields.
-  request_model: ConnectorAiHistoryRequest
-  result_model: ConnectorAiHistoryResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-AI-HISTORY
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai history CONNECTION_KEY --help
-  agent_example: mammoth connector ai history prod-warehouse
-  unit_tests:
-  - UT-CONNECTOR-AI-HISTORY
-  contract_tests:
-  - CT-CONNECTOR-AI-HISTORY-HUMAN
-  - CT-CONNECTOR-AI-HISTORY-JSON
-  - CT-CONNECTOR-AI-HISTORY-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.ai.session.list
-  command_path: connector ai session list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListSessions
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.session_list
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.session_list with validated request fields.
-  request_model: ConnectorAiSessionListRequest
-  result_model: ConnectorAiSessionListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-AI-SESSION-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai session list --help
-  agent_example: mammoth connector ai session list
-  unit_tests:
-  - UT-CONNECTOR-AI-SESSION-LIST
-  contract_tests:
-  - CT-CONNECTOR-AI-SESSION-LIST-HUMAN
-  - CT-CONNECTOR-AI-SESSION-LIST-JSON
-  - CT-CONNECTOR-AI-SESSION-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: ConnectorAiSessionList
 - command_id: connector.ai.session.messages
-  command_path: connector ai session messages
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetSessionMessages
-  positionals:
-  - name: session_id
-    type: int
-    required: true
-    metavar: SESSION_ID
-    falls_back_to_field: null
-    help: ID of the session.
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.session_messages
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.session_messages with validated request
-    fields.
-  request_model: ConnectorAiSessionMessagesRequest
-  result_model: ConnectorAiSessionMessagesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-AI-SESSION-MESSAGES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai session messages SESSION_ID --help
-  agent_example: mammoth connector ai session messages 123
-  unit_tests:
-  - UT-CONNECTOR-AI-SESSION-MESSAGES
-  contract_tests:
-  - CT-CONNECTOR-AI-SESSION-MESSAGES-HUMAN
-  - CT-CONNECTOR-AI-SESSION-MESSAGES-JSON
-  - CT-CONNECTOR-AI-SESSION-MESSAGES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.ai.submit-column-selection
-  command_path: connector ai submit-column-selection
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SubmitColumnSelection
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.submit_column_selection with validated
-    request fields.
-  request_model: ConnectorAiSubmitColumnSelectionRequest
-  result_model: ConnectorAiSubmitColumnSelectionResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai submit-column-selection --help
-  agent_example: 'mammoth connector ai submit-column-selection --input ''{"body": {"selected_columns": ["Status"],
-    "session_id": "resource-123"}}'''
-  unit_tests:
-  - UT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION
-  contract_tests:
-  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-HUMAN
-  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-JSON
-  - CT-CONNECTOR-AI-SUBMIT-COLUMN-SELECTION-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
     kind: object
 - command_id: connector.ai.submit-credentials
-  command_path: connector ai submit-credentials
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SubmitCredentials
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials
-  sdk_conversion: Call mammoth.api.connector_ai.ConnectorAIAPI.submit_credentials with validated request
-    fields.
-  request_model: ConnectorAiSubmitCredentialsRequest
-  result_model: ConnectorAiSubmitCredentialsResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-AI-SUBMIT-CREDENTIALS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ai submit-credentials --help
-  agent_example: 'mammoth connector ai submit-credentials --input ''{"body": {"credentials": {}, "session_id":
-    "resource-123"}}'''
-  unit_tests:
-  - UT-CONNECTOR-AI-SUBMIT-CREDENTIALS
-  contract_tests:
-  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-HUMAN
-  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-JSON
-  - CT-CONNECTOR-AI-SUBMIT-CREDENTIALS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ai.session.list
     ids: {}
     kind: object
 - command_id: connector.connection.create
-  command_path: connector connection create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - SaveConnection
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_connection with validated request fields.
-  request_model: ConnectorConnectionCreateRequest
-  result_model: ConnectorConnectionCreateResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
+  output_schema: {ref: WriteResult}
+  undo:
+    strategy: manual
+    command: connector.connection.delete
   secret_fields:
   - config
-  human_example: mammoth connector connection create CONNECTOR_KEY --help
   agent_example: mammoth connector connection create postgres --input /private/path/request.json --yes
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-CREATE
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-CREATE-HUMAN
-  - CT-CONNECTOR-CONNECTION-CREATE-JSON
-  - CT-CONNECTOR-CONNECTION-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: The connection document depends on connector_key (see `connector get KEY` for its fields); credentials in it are secrets, so pass them through a protected --input FILE.
-  reviewed_by: primary
+  known_restrictions: The connection document depends on connector_key (see `connector get KEY` for its
+    fields); credentials in it are secrets, so pass them through a protected --input FILE.
   readback:
     command: connector.connection.list
     ids:
       connector_key: positional.0
     kind: object
 - command_id: connector.connection.delete
-  command_path: connector connection delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteConnection
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_connection with validated request fields.
-  request_model: ConnectorConnectionDeleteRequest
-  result_model: ConnectorConnectionDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-CONNECTION-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection delete CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection delete postgres prod-warehouse --yes
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-DELETE
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-DELETE-HUMAN
-  - CT-CONNECTOR-CONNECTION-DELETE-JSON
-  - CT-CONNECTOR-CONNECTION-DELETE-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema:
+    ref: WriteResult
   known_restrictions: Resolve immutable key before confirmation.
-  reviewed_by: primary
   readback:
     command: connector.connection.list
     ids:
       connector_key: positional.0
     kind: object
 - command_id: connector.connection.get
-  command_path: connector connection get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetConnection
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_connection with validated request fields.
-  request_model: ConnectorConnectionGetRequest
-  result_model: ConnectorConnectionGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-CONNECTION-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection get CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection get postgres prod-warehouse
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-GET
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-GET-HUMAN
-  - CT-CONNECTOR-CONNECTION-GET-JSON
-  - CT-CONNECTOR-CONNECTION-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Secrets in the returned config are redacted.
-  reviewed_by: primary
+  output_schema: openapi
+  known_restrictions: Secrets in the returned config are redacted. Without --project it looks for the
+    project that holds the connection; when none or several do, it fails with project_required and names
+    them.
 - command_id: connector.connection.list
-  command_path: connector connection list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnections
-  positionals:
-  - name: connector_key
-    type: str
-    required: false
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector. Leave it out to list the connections of every connector that has one.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_connections
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_connections with validated request fields.
-  request_model: ConnectorConnectionListRequest
-  result_model: ConnectorConnectionListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-CONNECTION-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection list --help
-  agent_example: mammoth connector connection list postgres
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-LIST
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-LIST-HUMAN
-  - CT-CONNECTOR-CONNECTION-LIST-JSON
-  - CT-CONNECTOR-CONNECTION-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Without a connector key the result lists the connections of every connector in
-    'connector active', each row with its connector_key. Secrets in a connection's config are redacted.
-  reviewed_by: primary
+  output_schema:
+    ref: OpenObjectList
+  known_restrictions: Without a connector key the result lists the connections of every connector in 'connector
+    active', each row with its connector_key. Secrets in a connection's config are redacted.
 - command_id: connector.connection.query
-  command_path: connector connection query
-  disposition: command
-  alias_of: null
-  operation_ids: []
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.query_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.query_connection with validated request fields.
-  request_model: ConnectorConnectionQueryRequest
-  result_model: ConnectorConnectionQueryResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
+  output_schema:
+    ref: OpenResult
   pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-CONNECTION-QUERY
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection query CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector connection query postgres prod-warehouse --input ''{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'''
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-QUERY
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-QUERY-HUMAN
-  - CT-CONNECTOR-CONNECTION-QUERY-JSON
-  - CT-CONNECTOR-CONNECTION-QUERY-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Runs one SELECT on the connected database and returns a sample of its rows in
-    data_sample (dataschema and rows). It saves no data source configuration and creates no dataset,
-    so it needs no --yes; Mammoth keeps only the short-lived job that carried the request. The CLI
-    refuses anything but a single SELECT or WITH ... SELECT, and the connection's database user decides
-    what the database allows. The sample is limited to the first rows of the result, so add your own
-    LIMIT or aggregate for a large table. To turn a query into a dataset use dataset create.
-  reviewed_by: primary
+  known_restrictions: Runs one SELECT on the connected database and returns a sample of its rows in data_sample
+    (dataschema and rows). It saves no data source configuration and creates no dataset, so it needs no
+    --yes; Mammoth keeps only the short-lived job that carried the request. The CLI refuses anything but
+    a single SELECT or WITH ... SELECT, and the connection's database user decides what the database allows.
+    The sample is limited to the first rows of the result, so add your own LIMIT or aggregate for a large
+    table. To turn a query into a dataset use dataset create.
 - command_id: connector.connection.update
-  command_path: connector connection update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateConnection
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_connection with validated request fields.
-  request_model: ConnectorConnectionUpdateRequest
-  result_model: ConnectorConnectionUpdateResult
-  mutation_class: external_effect
-  edits_target: true
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
+  output_schema: {ref: WriteResult}
   secret_fields:
   - credentials
-  human_example: mammoth connector connection update CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json --yes
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-UPDATE
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-UPDATE-HUMAN
-  - CT-CONNECTOR-CONNECTION-UPDATE-JSON
-  - CT-CONNECTOR-CONNECTION-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
+  agent_example: mammoth connector connection update postgres prod-warehouse --input /private/path/request.json
+    --yes
   known_restrictions: Needs --yes if validation contacts the destination.
-  reviewed_by: primary
   readback:
     command: connector.connection.get
     ids:
@@ -561,52 +88,11 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.create
-  command_path: connector ds-config create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ValidateAndGetDsConfig
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.create_ds_config
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.create_ds_config with validated request fields.
-  request_model: ConnectorDsConfigCreateRequest
-  result_model: ConnectorDsConfigCreateResult
-  mutation_class: external_effect
-  edits_target: false
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config create CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config create postgres prod-warehouse --yes
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-CREATE
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-CREATE-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-CREATE-JSON
-  - CT-CONNECTOR-DS-CONFIG-CREATE-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema: {ref: WriteResult}
+  undo:
+    strategy: manual
+    command: connector.ds-config.delete
   known_restrictions: Needs exactly one source; validate and data_sample cannot be combined.
-  reviewed_by: primary
   readback:
     command: connector.ds-config.list
     ids:
@@ -614,58 +100,9 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.delete
-  command_path: connector ds-config delete
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteDsConfig
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  - name: ds_config_key
-    type: str
-    required: true
-    metavar: DS_CONFIG_KEY
-    falls_back_to_field: null
-    help: Key identifying the ds config.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.delete_ds_config
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.delete_ds_config with validated request fields.
-  request_model: ConnectorDsConfigDeleteRequest
-  result_model: ConnectorDsConfigDeleteResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DS-CONFIG-DELETE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config delete CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config delete postgres prod-warehouse orders-config --yes
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-DELETE
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-DELETE-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-DELETE-JSON
-  - CT-CONNECTOR-DS-CONFIG-DELETE-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema:
+    ref: WriteResult
   known_restrictions: Resolve immutable key before confirmation.
-  reviewed_by: primary
   readback:
     command: connector.ds-config.list
     ids:
@@ -673,53 +110,8 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.delete-all
-  command_path: connector ds-config delete-all
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DeleteDsConfigs
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all with validated request
-    fields.
-  request_model: ConnectorDsConfigDeleteAllRequest
-  result_model: ConnectorDsConfigDeleteAllResult
-  mutation_class: destructive
-  edits_target: true
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DS-CONFIG-DELETE-ALL
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config delete-all CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector ds-config delete-all postgres prod-warehouse --input ''{"config_ids": ["resource-123"]}'' --yes'
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-DELETE-ALL
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-JSON
-  - CT-CONNECTOR-DS-CONFIG-DELETE-ALL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.ds-config.list
     ids:
@@ -727,156 +119,17 @@ commands:
       connection_key: positional.1
     kind: object
 - command_id: connector.ds-config.get
-  command_path: connector ds-config get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetDsConfig
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  - name: ds_config_key
-    type: str
-    required: true
-    metavar: DS_CONFIG_KEY
-    falls_back_to_field: null
-    help: Key identifying the ds config.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get_ds_config
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get_ds_config with validated request fields.
-  request_model: ConnectorDsConfigGetRequest
-  result_model: ConnectorDsConfigGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DS-CONFIG-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config get CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: mammoth connector ds-config get postgres prod-warehouse orders-config
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-GET
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-GET-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-GET-JSON
-  - CT-CONNECTOR-DS-CONFIG-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Reads one data-source config by key (from `connector ds-config list`); secrets in it are redacted.
-  reviewed_by: primary
+  output_schema: openapi
+  known_restrictions: Reads one data-source config by key (from `connector ds-config list`); secrets in
+    it are redacted.
 - command_id: connector.ds-config.list
-  command_path: connector ds-config list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListDsConfigs
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_ds_configs
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_ds_configs with validated request fields.
-  request_model: ConnectorDsConfigListRequest
-  result_model: ConnectorDsConfigListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DS-CONFIG-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config list CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector ds-config list postgres prod-warehouse
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-LIST
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-LIST-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-LIST-JSON
-  - CT-CONNECTOR-DS-CONFIG-LIST-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema: openapi
   known_restrictions: Secrets in nested configuration are redacted.
-  reviewed_by: primary
 - command_id: connector.ds-config.update
-  command_path: connector ds-config update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - UpdateDsConfigs
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  - name: ds_config_key
-    type: str
-    required: true
-    metavar: DS_CONFIG_KEY
-    falls_back_to_field: null
-    help: Key identifying the ds config.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.update_ds_config with validated request fields.
-  request_model: ConnectorDsConfigUpdateRequest
-  result_model: ConnectorDsConfigUpdateResult
-  mutation_class: external_effect
-  edits_target: true
-  confirmation: yes_always
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: contract_only_high_impact
-  live_test: null
-  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
-  agent_example: 'mammoth connector ds-config update postgres prod-warehouse orders-config --input ''{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}'' --yes'
-  unit_tests:
-  - UT-CONNECTOR-DS-CONFIG-UPDATE
-  contract_tests:
-  - CT-CONNECTOR-DS-CONFIG-UPDATE-HUMAN
-  - CT-CONNECTOR-DS-CONFIG-UPDATE-JSON
-  - CT-CONNECTOR-DS-CONFIG-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Only the query path is supported by the server today; other paths are refused. Read the config first with `connector ds-config get`.
-  reviewed_by: primary
+  output_schema:
+    ref: WriteResult
+  known_restrictions: Only the query path is supported by the server today; other paths are refused. Read
+    the config first with `connector ds-config get`.
   readback:
     command: connector.ds-config.get
     ids:
@@ -885,915 +138,115 @@ commands:
       ds_config_key: positional.2
     kind: object
 - command_id: connector.get
-  command_path: connector get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetConnector
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.get
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.get with validated request fields.
-  request_model: ConnectorGetRequest
-  result_model: ConnectorGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector get CONNECTOR_KEY --help
-  agent_example: mammoth connector get postgres
-  unit_tests:
-  - UT-CONNECTOR-GET
-  contract_tests:
-  - CT-CONNECTOR-GET-HUMAN
-  - CT-CONNECTOR-GET-JSON
-  - CT-CONNECTOR-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.list
-  command_path: connector list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListWorkspaceConnectors
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list with validated request fields.
-  request_model: ConnectorListRequest
-  result_model: ConnectorListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector list --help
-  agent_example: mammoth connector list
-  unit_tests:
-  - UT-CONNECTOR-LIST
-  contract_tests:
-  - CT-CONNECTOR-LIST-HUMAN
-  - CT-CONNECTOR-LIST-JSON
-  - CT-CONNECTOR-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema:
+    ref: OpenObjectList
 - command_id: connector.query.generate
-  command_path: connector query generate
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetQuerySuggestion
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.ai.AIAPI.query_gen
-  sdk_conversion: Call mammoth.api.ai.AIAPI.query_gen with validated request fields.
-  request_model: ConnectorQueryGenerateRequest
-  result_model: ConnectorQueryGenerateResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-QUERY-GENERATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector query generate CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: 'mammoth connector query generate postgres prod-warehouse --input ''{"query": "Total sales for January"}'''
-  unit_tests:
-  - UT-CONNECTOR-QUERY-GENERATE
-  contract_tests:
-  - CT-CONNECTOR-QUERY-GENERATE-HUMAN
-  - CT-CONNECTOR-QUERY-GENERATE-JSON
-  - CT-CONNECTOR-QUERY-GENERATE-ERROR
-  draft_test: null
-  undo_test: null
+  output_schema:
+    ref: OpenObject
   known_restrictions: Keys are nonempty and cannot contain '/'.
-  reviewed_by: primary
 - command_id: connector.query.status
-  command_path: connector query status
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetChatStatus
-  positionals:
-  - name: connector_key
-    type: str
-    required: true
-    metavar: CONNECTOR_KEY
-    falls_back_to_field: null
-    help: Key identifying the connector.
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.ai.AIAPI.status
-  sdk_conversion: Call mammoth.api.ai.AIAPI.status with validated request fields.
-  request_model: ConnectorQueryStatusRequest
-  result_model: ConnectorQueryStatusResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-QUERY-STATUS
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector query status CONNECTOR_KEY CONNECTION_KEY --help
-  agent_example: mammoth connector query status postgres prod-warehouse
-  unit_tests:
-  - UT-CONNECTOR-QUERY-STATUS
-  contract_tests:
-  - CT-CONNECTOR-QUERY-STATUS-HUMAN
-  - CT-CONNECTOR-QUERY-STATUS-JSON
-  - CT-CONNECTOR-QUERY-STATUS-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.connection.list-all
-  command_path: connector connection list-all
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListAllConnections
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.list_all_connections
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.list_all_connections with validated request
-    fields.
-  request_model: ConnectorConnectionListAllRequest
-  result_model: ConnectorConnectionListAllResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: single_page
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-CONNECTION-LIST-ALL
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection list-all --help
-  agent_example: mammoth connector connection list-all
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-LIST-ALL
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-LIST-ALL-HUMAN
-  - CT-CONNECTOR-CONNECTION-LIST-ALL-JSON
-  - CT-CONNECTOR-CONNECTION-LIST-ALL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: null
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.connection.test
-  command_path: connector connection test
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - TestConnection
-  positionals:
-  - name: connection_key
-    type: str
-    required: true
-    metavar: CONNECTION_KEY
-    falls_back_to_field: null
-    help: Key identifying the connection.
-  options: []
-  sdk_symbol: mammoth.api.connectors.ConnectorsAPI.test_connection
-  sdk_conversion: Call mammoth.api.connectors.ConnectorsAPI.test_connection with validated request fields.
-  request_model: ConnectorConnectionTestRequest
-  result_model: ConnectorConnectionTestResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-CONNECTION-TEST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector connection test CONNECTION_KEY --help
-  agent_example: mammoth connector connection test prod-warehouse
-  unit_tests:
-  - UT-CONNECTOR-CONNECTION-TEST
-  contract_tests:
-  - CT-CONNECTOR-CONNECTION-TEST-HUMAN
-  - CT-CONNECTOR-CONNECTION-TEST-JSON
-  - CT-CONNECTOR-CONNECTION-TEST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Needs project admin; the check reaches the connection's own service and its result is kept.
-  reviewed_by: primary
-  no_readback: returns the health check result itself (success, health_status, message); nothing else to read back
+  output_schema:
+    ref: WriteResult
+  known_restrictions: Needs project admin; the check reaches the connection's own service and its result
+    is kept.
+  no_readback: returns the health check result itself (success, health_status, message); nothing else
+    to read back
 - command_id: connector.draft.browse
-  command_path: connector draft browse
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - BrowseConnectorDraftFolderConnectorDrafts
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.browse
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.browse with validated request fields.
-  request_model: ConnectorDraftBrowseRequest
-  result_model: ConnectorDraftBrowseResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-BROWSE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft browse DRAFT_ID --help
-  agent_example: mammoth connector draft browse 123
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-BROWSE
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-BROWSE-HUMAN
-  - CT-CONNECTOR-DRAFT-BROWSE-JSON
-  - CT-CONNECTOR-DRAFT-BROWSE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. A files-shaped source only; for Google Sheets it lists the account's
-    recent spreadsheets.
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.draft.create
-  command_path: connector draft create
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - CreateConnectorDraft
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.create
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.create with validated request fields.
-  request_model: ConnectorDraftCreateRequest
-  result_model: ConnectorDraftCreateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: connector.draft.discard
   readback:
     command: connector.draft.get
     ids:
       draft_id: result.id
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-CREATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft create --help
-  agent_example: 'mammoth connector draft create --input ''{"origin": "connections", "connector_key":
-    "hubspot"}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-CREATE
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-CREATE-HUMAN
-  - CT-CONNECTOR-DRAFT-CREATE-JSON
-  - CT-CONNECTOR-DRAFT-CREATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Without `session_id` the server starts an agent chat for the draft. A draft with
-    no `connection_key` needs the project admin role. Another live draft for the same connector or connection
-    comes back as `resume_candidate`.
-  reviewed_by: primary
 - command_id: connector.draft.discard
-  command_path: connector draft discard
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - DiscardConnectorDraft
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.discard with validated request
-    fields.
-  request_model: ConnectorDraftDiscardRequest
-  result_model: ConnectorDraftDiscardResult
-  mutation_class: destructive
-  edits_target: false
-  confirmation: prompt_or_yes
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-DISCARD
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft discard DRAFT_ID --help
-  agent_example: mammoth connector draft discard 123 --yes
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-DISCARD
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-DISCARD-HUMAN
-  - CT-CONNECTOR-DRAFT-DISCARD-JSON
-  - CT-CONNECTOR-DRAFT-DISCARD-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Hides the draft from every list; its chat thread stays.
-  reviewed_by: primary
 - command_id: connector.draft.fill
-  command_path: connector draft fill
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - FillConnectorDraftGap
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.fill
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.fill with validated request fields.
-  request_model: ConnectorDraftFillRequest
-  result_model: ConnectorDraftFillResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-FILL
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft fill DRAFT_ID --help
-  agent_example: 'mammoth connector draft fill 123 --input ''{"column": "region", "file_object_id": 77}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-FILL
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-FILL-HUMAN
-  - CT-CONNECTOR-DRAFT-FILL-JSON
-  - CT-CONNECTOR-DRAFT-FILL-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Pass exactly one of `file_object_id` or `dataset_id`. 409 while the file is still
-    being read; retry once it is.
-  reviewed_by: primary
 - command_id: connector.draft.get
-  command_path: connector draft get
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - GetConnectorDraft
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.get
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.get with validated request fields.
-  request_model: ConnectorDraftGetRequest
-  result_model: ConnectorDraftGetResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-GET
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft get DRAFT_ID --help
-  agent_example: mammoth connector draft get 123
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-GET
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-GET-HUMAN
-  - CT-CONNECTOR-DRAFT-GET-JSON
-  - CT-CONNECTOR-DRAFT-GET-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only.
-  reviewed_by: primary
+  output_schema: openapi
+  known_restrictions: A per-parent table's `each` block says how its preview was sampled. `each.summary`
+    reads like "sampled 20 of 76 parents; 17 read, 3 failed", or "capped at 20 parents, total unknown"
+    when the parent table's row count is not known. `each.total` is the sample size, not the parent
+    count (`each.parents_total` is).
 - command_id: connector.draft.known-sources
-  command_path: connector draft known-sources
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnectorKnownSources
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.known_sources with validated request
-    fields.
-  request_model: ConnectorDraftKnownSourcesRequest
-  result_model: ConnectorDraftKnownSourcesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-KNOWN-SOURCES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft known-sources --help
-  agent_example: mammoth connector draft known-sources
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-KNOWN-SOURCES
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-KNOWN-SOURCES-HUMAN
-  - CT-CONNECTOR-DRAFT-KNOWN-SOURCES-JSON
-  - CT-CONNECTOR-DRAFT-KNOWN-SOURCES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. Sources with no built-in connector that a draft can still start on, deep
-    ones first.
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.draft.list
-  command_path: connector draft list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnectorDrafts
-  positionals: []
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.list
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.list with validated request fields.
-  request_model: ConnectorDraftListRequest
-  result_model: ConnectorDraftListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft list --help
-  agent_example: 'mammoth connector draft list --input ''{"status": "all"}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-LIST
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-LIST-HUMAN
-  - CT-CONNECTOR-DRAFT-LIST-JSON
-  - CT-CONNECTOR-DRAFT-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Read-only. `status`: live (not saved yet, the default), saved or all.'
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.draft.open
-  command_path: connector draft open
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - OpenConnectorDraftEntry
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.open
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.open with validated request fields.
-  request_model: ConnectorDraftOpenRequest
-  result_model: ConnectorDraftOpenResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-OPEN
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft open DRAFT_ID --help
-  agent_example: 'mammoth connector draft open 123 --input ''{"ref": "sheet-ref", "name": "Sales 2026"}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-OPEN
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-OPEN-HUMAN
-  - CT-CONNECTOR-DRAFT-OPEN-JSON
-  - CT-CONNECTOR-DRAFT-OPEN-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Take `ref` and `name` from a `connector draft browse` entry; each tab becomes a
-    table of the draft.
-  reviewed_by: primary
 - command_id: connector.draft.read-tables
-  command_path: connector draft read-tables
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ReadConnectorDraftTables
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.read_tables with validated request
-    fields.
-  request_model: ConnectorDraftReadTablesRequest
-  result_model: ConnectorDraftReadTablesResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-READ-TABLES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft read-tables DRAFT_ID --help
-  agent_example: mammoth connector draft read-tables 123
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-READ-TABLES
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-READ-TABLES-HUMAN
-  - CT-CONNECTOR-DRAFT-READ-TABLES-JSON
-  - CT-CONNECTOR-DRAFT-READ-TABLES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Queues the reads and returns how many; each table shows as not read yet until its
-    answer lands on the draft.
-  reviewed_by: primary
 - command_id: connector.draft.sample
-  command_path: connector draft sample
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ShapeConnectorDraftFromSample
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the connector draft.
-  - name: path
-    type: str
-    required: true
-    metavar: PATH
-    falls_back_to_field: null
-    help: Path to a local CSV, TSV or Excel file shaped like the table wanted.
-    kind: local_path
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sample
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.sample with validated request fields.
-  request_model: ConnectorDraftSampleRequest
-  result_model: ConnectorDraftSampleResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema: {ref: WriteResult}
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-SAMPLE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft sample DRAFT_ID PATH --help
-  agent_example: mammoth connector draft sample 123 deals_2026-10.csv
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-SAMPLE
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-SAMPLE-HUMAN
-  - CT-CONNECTOR-DRAFT-SAMPLE-JSON
-  - CT-CONNECTOR-DRAFT-SAMPLE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: A CSV, TSV or Excel file of about 5 MB at most; the server reads its header and
-    first rows and does not keep it. Sets the draft's target columns.
-  reviewed_by: primary
 - command_id: connector.draft.save
-  command_path: connector draft save
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - StartConnectorDraftSave
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.save
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.save with validated request fields.
-  request_model: ConnectorDraftSaveRequest
-  result_model: ConnectorDraftSaveResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: always_wait
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-SAVE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft save DRAFT_ID --help
-  agent_example: 'mammoth connector draft save 123 --input ''{"refresh": "daily", "dataset_name": "HubSpot
-    deals"}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-SAVE
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-SAVE-HUMAN
-  - CT-CONNECTOR-DRAFT-SAVE-JSON
-  - CT-CONNECTOR-DRAFT-SAVE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: 'Makes one dataset per source and joins the others onto the main one; `refresh:
-    daily` refreshes each API or table source daily. The draft''s `result` is set when the job is done.'
-  reviewed_by: primary
 - command_id: connector.draft.source.join-candidates
-  command_path: connector draft source join-candidates
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnectorDraftJoinCandidates
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  - name: source_id
-    type: str
-    required: true
-    metavar: SOURCE_ID
-    falls_back_to_field: null
-    help: ID of the source.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.join_candidates with validated
-    request fields.
-  request_model: ConnectorDraftSourceJoinCandidatesRequest
-  result_model: ConnectorDraftSourceJoinCandidatesResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-SOURCE-JOIN-CANDIDATES
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft source join-candidates DRAFT_ID SOURCE_ID --help
-  agent_example: mammoth connector draft source join-candidates 123 resource-123
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-SOURCE-JOIN-CANDIDATES
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-SOURCE-JOIN-CANDIDATES-HUMAN
-  - CT-CONNECTOR-DRAFT-SOURCE-JOIN-CANDIDATES-JSON
-  - CT-CONNECTOR-DRAFT-SOURCE-JOIN-CANDIDATES-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only. Match counts are an estimate over the rows read so far.
-  reviewed_by: primary
+  output_schema: openapi
 - command_id: connector.draft.source.list
-  command_path: connector draft source list
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - ListConnectorDraftSources
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.sources
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.sources with validated request
-    fields.
-  request_model: ConnectorDraftSourceListRequest
-  result_model: ConnectorDraftSourceListResult
-  mutation_class: read
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
-  acceptance_evidence: live_read_only
-  live_test: LT-CONNECTOR-DRAFT-SOURCE-LIST
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft source list DRAFT_ID --help
-  agent_example: mammoth connector draft source list 123
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-SOURCE-LIST
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-SOURCE-LIST-HUMAN
-  - CT-CONNECTOR-DRAFT-SOURCE-LIST-JSON
-  - CT-CONNECTOR-DRAFT-SOURCE-LIST-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Read-only, but it asks the connection for its tables.
-  reviewed_by: primary
+  output_schema: openapi
+  known_restrictions: A per-parent table's `each.summary` says how many parents its preview sampled,
+    out of how many when that is known (`each.parents_total`).
 - command_id: connector.draft.source.preview
-  command_path: connector draft source preview
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PreviewConnectorDraftSource
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  - name: source_id
-    type: str
-    required: true
-    metavar: SOURCE_ID
-    falls_back_to_field: null
-    help: ID of the source.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source with validated request
-    fields.
-  request_model: ConnectorDraftSourcePreviewRequest
-  result_model: ConnectorDraftSourcePreviewResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
+  known_restrictions: Reads up to `limit` (1-100) rows through the connection and records what came
+    back on the source. The limit is sent as given, but the server can return fewer rows; when the
+    rows come back short of `limit` and the source holds more, the answer sets `capped` true with
+    `limit_requested`, `limit_applied` and `source_row_count`. A preview is a sample; save the draft
+    to read every row.
   no_readback: returns the source's first rows itself; nothing is saved for a read to show
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-SOURCE-PREVIEW
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft source preview DRAFT_ID SOURCE_ID --help
-  agent_example: 'mammoth connector draft source preview 123 resource-123 --input ''{"limit": 20}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-SOURCE-PREVIEW
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-SOURCE-PREVIEW-HUMAN
-  - CT-CONNECTOR-DRAFT-SOURCE-PREVIEW-JSON
-  - CT-CONNECTOR-DRAFT-SOURCE-PREVIEW-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: Reads up to `limit` (1-100) rows through the connection and records what came back
-    on the source.
-  reviewed_by: primary
 - command_id: connector.draft.update
-  command_path: connector draft update
-  disposition: command
-  alias_of: null
-  operation_ids:
-  - PatchConnectorDraft
-  positionals:
-  - name: draft_id
-    type: int
-    required: true
-    metavar: DRAFT_ID
-    falls_back_to_field: null
-    help: ID of the draft.
-  options: []
-  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.update
-  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.update with validated request fields.
-  request_model: ConnectorDraftUpdateRequest
-  result_model: ConnectorDraftUpdateResult
-  mutation_class: benign_mutation
-  edits_target: false
-  confirmation: none
-  wait_policy: not_async
-  pagination_policy: none
+  output_schema:
+    ref: WriteResult
   readback:
     command: connector.draft.get
     ids:
       draft_id: positional.0
     kind: object
-  acceptance_evidence: live_disposable_project
-  live_test: LT-CONNECTOR-DRAFT-UPDATE
-  live_exemption_reason: null
-  contract_fixture: null
-  required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth connector draft update DRAFT_ID --help
-  agent_example: 'mammoth connector draft update 123 --input ''{"title": "HubSpot deals"}'''
-  unit_tests:
-  - UT-CONNECTOR-DRAFT-UPDATE
-  contract_tests:
-  - CT-CONNECTOR-DRAFT-UPDATE-HUMAN
-  - CT-CONNECTOR-DRAFT-UPDATE-JSON
-  - CT-CONNECTOR-DRAFT-UPDATE-ERROR
-  draft_test: null
-  undo_test: null
-  known_restrictions: '`target_columns` replaces the list whole. `echo` adds a quiet note to the draft''s
-    thread for the agent''s next turn.'
-  reviewed_by: primary

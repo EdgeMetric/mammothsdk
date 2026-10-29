@@ -453,6 +453,8 @@ CREATES_ONLY: frozenset[str] = frozenset(
         "dataset.create-from-pdf",
         # Redeeming an Open tables link adds a new folder of tables.
         "dataset.tool-claim.redeem",
+        # A bulk download writes one local file and changes no dataset.
+        "dataset.download",
     }
 )
 
@@ -892,6 +894,8 @@ def resolve_targets(
 DEPENDENT_IDS: dict[str, tuple[str, ...]] = {
     "dataset.delete": ("dataset_id",),
     "dataset.bulk-delete": ("dataset_ids",),
+    # A trash is restorable, but what reads the dataset stops working until it is restored.
+    "dataset.trash": ("dataset_id",),
     "view.delete": ("view_id",),
     "view.bulk-delete": ("dataview_ids",),
     "view.task.delete": ("dataview_id", "view_id"),

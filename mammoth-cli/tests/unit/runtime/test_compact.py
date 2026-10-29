@@ -14,8 +14,15 @@ from typing import Any
 
 import pytest
 
+from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime.compact import COMPACT_COMMANDS, FULL_FLAG, with_compact
+from mammoth_cli.runtime import embedded
+from mammoth_cli.runtime.compact import (
+    COMPACT_COMMANDS,
+    FULL_FLAG,
+    FULL_FLAG_COMMANDS,
+    with_compact,
+)
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import validate_extra_args
 
@@ -134,3 +141,142 @@ def test_help_says_the_result_is_compact_and_names_full() -> None:
 
     text = " ".join(make_runner().invoke_help("dashboard figure add").split())
     assert "The result is compact" in text and FULL_FLAG in text
+
+
+# --- dashboard canvas get: null fields are left out ------------------------
+
+
+def _canvas_get_result() -> dict[str, Any]:
+    return {
+        "dashboard_id": 7,
+        "sequence": 3,
+        "canvas": {
+            "title": "Sales",
+            "layout_key": None,
+            "filters": [],
+            "theme": {f"t{n}": None for n in range(40)},
+            "pages": [{"id": "p1", "added": [_null_figure(0), _null_figure(1)]}],
+        },
+        "plan": None,
+    }
+
+
+def test_canvas_get_leaves_out_null_fields_and_keeps_every_value() -> None:
+    full = _canvas_get_result()
+    data = with_compact(_inv("dashboard.canvas.get"), full)
+    assert len(json.dumps(data)) < len(json.dumps(full)) / 4
+    assert data["dashboard_id"] == 7 and data["sequence"] == 3
+    canvas = data["canvas"]
+    assert canvas["title"] == "Sales"
+    assert "layout_key" not in canvas and "theme" not in canvas and "plan" not in data
+    figures = canvas["pages"][0]["added"]
+    assert figures == [
+        {"id": "f0", "kind": "hbar", "title": "Chart 0"},
+        {"id": "f1", "kind": "hbar", "title": "Chart 1"},
+    ]
+
+
+def test_canvas_get_keeps_an_explicit_empty_list() -> None:
+    """canvas save reads an absent overlay as 'keep the head's' and [] as 'clear it'."""
+    data = with_compact(_inv("dashboard.canvas.get"), _canvas_get_result())
+    assert data["canvas"]["filters"] == []
+
+
+def test_canvas_get_full_returns_the_payload_unchanged() -> None:
+    full = _canvas_get_result()
+    assert with_compact(_inv("dashboard.canvas.get", full_output=True), full) is full
+
+
+def test_canvas_get_accepts_full() -> None:
+    assert "dashboard.canvas.get" in FULL_FLAG_COMMANDS
+    validate_extra_args("dashboard.canvas.get", [FULL_FLAG])
+
+
+# --- job wait: compact only for an embedded (agent) caller ----------------
+
+
+def _job_wait_result() -> dict[str, Any]:
+    return {
+        "status": "success",
+        "job_id": 41,
+        "operation": "generate_dashboard_v3",
+        "result": _figure_add_result(),
+    }
+
+
+def _job_wait_inv(**overrides: Any) -> Invocation:
+    return Invocation(command_id="job.wait", positionals={"job_id": 41}, **overrides)
+
+
+def test_job_wait_returns_the_whole_response_in_a_terminal_run() -> None:
+    full = _job_wait_result()
+    assert with_compact(_job_wait_inv(), full) is full
+
+
+def test_job_wait_is_compact_for_an_embedded_caller() -> None:
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, api_token="jwt", server_prefix="box", workspace_id=5
+    )
+    token = embedded.enter(embedded.EmbeddedCall(login=login))
+    try:
+        full = _job_wait_result()
+        data = with_compact(_job_wait_inv(), full)
+        assert with_compact(_job_wait_inv(full_output=True), full) is full
+    finally:
+        embedded.leave(token)
+    assert len(json.dumps(full)) > 15_000 and len(json.dumps(data)) < 3_000
+    assert data["status"] == "success" and data["job_id"] == 41
+    assert data["result"]["canvas_summary"]["pages"] == 2
+    assert data["result"]["verify"] == full["result"]["verify"]
+    assert data["compact"]["read_with"] == "mammoth job get 41"
+    assert data["compact"]["omitted"] == ["result.canvas", "result.plan", "result.specs"]
+
+
+def test_job_wait_accepts_full() -> None:
+    assert "job.wait" in FULL_FLAG_COMMANDS
+    validate_extra_args("job.wait", [FULL_FLAG])
+
+
+# --- no placeholder ids; a finished job keeps its payload ------------------
+
+
+def _generate_inv() -> Invocation:
+    return Invocation(command_id="dashboard.v3.generate")
+
+
+def test_no_known_dashboard_id_omits_read_with_instead_of_a_placeholder() -> None:
+    data = with_compact(_generate_inv(), _figure_add_result())
+    assert "read_with" not in data["compact"]
+    assert "DASHBOARD_ID" not in json.dumps(data)
+    assert data["compact"]["omitted"]
+
+
+def test_the_dashboard_id_comes_from_the_result_of_a_generate() -> None:
+    full = {**_figure_add_result(), "result": {"dashboard_id": 91}}
+    data = with_compact(_generate_inv(), full)
+    assert data["compact"]["read_with"] == "mammoth dashboard canvas get 91"
+
+
+def test_the_dashboard_id_comes_from_meta_opens() -> None:
+    meta = {"opens": [{"kind": "view", "id": 3}, {"kind": "dashboard", "id": 92}]}
+    data = with_compact(_generate_inv(), _figure_add_result(), meta)
+    assert data["compact"]["read_with"] == "mammoth dashboard canvas get 92"
+
+
+def test_a_job_wait_payload_that_compacts_to_nothing_is_kept_whole() -> None:
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, api_token="jwt", server_prefix="box", workspace_id=5
+    )
+    token = embedded.enter(embedded.EmbeddedCall(login=login))
+    try:
+        full = {
+            "status": "success",
+            "job_id": 41,
+            "result": {"plan": {"steps": 1}},
+            "response": {"dataset_id": 12, "plan": {"steps": 1}},
+        }
+        data = with_compact(_job_wait_inv(), full)
+    finally:
+        embedded.leave(token)
+    assert data["result"] == {"plan": {"steps": 1}}
+    assert data["response"] == {"dataset_id": 12}

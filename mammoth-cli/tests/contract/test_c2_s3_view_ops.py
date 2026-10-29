@@ -21,7 +21,7 @@ from typing import Any
 
 import pytest
 
-from mammoth_cli.commands import view_ops
+from mammoth_cli.commands.view_ops import transforms as view_transforms
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id, load_commands
 from mammoth_cli.runtime.invocation import Invocation
@@ -396,7 +396,7 @@ def test_substring_left_char_position_is_forwarded(
 ) -> None:
     """LEFT/RIGHT directions use character position, not ``num_char``."""
     payload = {"column": "S3_TEXT", "direction": "LEFT", "char_position": 2, "dataset_id": 122}
-    view_ops.view_transform_substring(
+    view_transforms.view_transform_substring(
         _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
     )
     assert fake_service.view_call_log == [(501, "substring", payload)]
@@ -412,7 +412,7 @@ def test_substring_regex_without_direction_is_forwarded(
         "regex_invert": True,
         "dataset_id": 122,
     }
-    view_ops.view_transform_substring(
+    view_transforms.view_transform_substring(
         _inv("view.transform.substring", extra_args=["501"], input_file=_write(tmp_path, payload))
     )
     assert fake_service.view_call_log == [(501, "substring", payload)]
@@ -425,7 +425,7 @@ def test_transform_inventory_is_explicit_and_complete() -> None:
         record = command_by_id(command_id)
         assert record is not None
         assert record["sdk_symbol"]
-        assert getattr(view_ops, handler_name)
+        assert getattr(view_transforms, handler_name)
         contract = resolve_command_contract(command_id)
         assert contract is not None
         # S3's shared owner closes these contracts; this assertion prevents a
@@ -443,7 +443,7 @@ def test_transform_wire_destination_is_exact(
     fake_service: FakeMammothService,
     tmp_path: Path,
 ) -> None:
-    handler: Callable[[Invocation], Any] = getattr(view_ops, handler_name)
+    handler: Callable[[Invocation], Any] = getattr(view_transforms, handler_name)
     # Callers supply the exact parent in --input; it rides along to the wire
     # as resource context and is never discovered for a mutation.
     document = {**payload, "dataset_id": 122}
@@ -463,7 +463,7 @@ def test_transform_dropped_field_is_rejected_before_dispatch(
     del method
     altered = dict(payload)
     altered["S3_DROPPED_FIELD"] = "must-not-be-forwarded"
-    handler: Callable[[Invocation], Any] = getattr(view_ops, handler_name)
+    handler: Callable[[Invocation], Any] = getattr(view_transforms, handler_name)
     with pytest.raises(CliError) as error:
         handler(
             _inv(command_id, extra_args=["501"], input_file=_write(tmp_path, altered), yes=True)
@@ -473,7 +473,7 @@ def test_transform_dropped_field_is_rejected_before_dispatch(
 
 
 def test_s3_every_route_has_closed_shared_admission() -> None:
-    """The 87-route S3 surface cannot silently accept a dropped field."""
+    """The 88-route S3 surface cannot silently accept a dropped field."""
     route_ids = {
         str(record["command_id"])
         for record in load_commands()
@@ -483,7 +483,7 @@ def test_s3_every_route_has_closed_shared_admission() -> None:
             ("view.checkpoint.", "view.draft.", "view.pipeline.", "view.task.", "view.version.")
         )
     }
-    assert len(route_ids) == 87
+    assert len(route_ids) == 88
     for command_id in route_ids:
         contract = resolve_command_contract(command_id)
         assert contract is not None

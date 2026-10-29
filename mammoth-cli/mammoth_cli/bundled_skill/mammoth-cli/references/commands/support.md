@@ -672,6 +672,26 @@ Result: `SupportPlanUpdateStorageTiersResult`; mutation `high_impact`, confirmat
 
 Status on release: untried; no live run recorded.
 
+### `support.project-move.get`
+
+Run: `mammoth support project-move get`. Exact input fields: `mammoth schema get support.project-move.get`.
+
+Example: `mammoth support project-move get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportProjectMoveGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.project-move.purge`
+
+Run: `mammoth support project-move purge`. Exact input fields: `mammoth schema get support.project-move.purge`.
+
+Example: `mammoth support project-move purge 123 --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportProjectMovePurgeResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `support.search`
 
 Run: `mammoth support search`. Exact input fields: `mammoth schema get support.search`.
@@ -1041,6 +1061,36 @@ Example: `mammoth support workspace list`. Placeholders are illustrative; resolv
 Result: `SupportWorkspaceListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.15 — admin read sweep 2026-09-18: exit 0 on release with CLI 2.0.15. The CLI gates this GET behind --yes --confirm WORKSPACE_ID (confirm_target policy); with confirmation: exit 0; route returns a bare array so the SDK wraps it as {status_code:200, response:[...]}…
+
+### `support.workspace.project.list`
+
+Run: `mammoth support workspace project list`. Exact input fields: `mammoth schema get support.workspace.project.list`.
+
+Example: `mammoth support workspace project list 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceProjectListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.project.move-check`
+
+Run: `mammoth support workspace project move-check`. Exact input fields: `mammoth schema get support.workspace.project.move-check`.
+
+Example: `mammoth support workspace project move-check 123 456 --input '{"target_workspace_id": 1}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `SupportWorkspaceProjectMoveCheckResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `support.workspace.project.move-start`
+
+Run: `mammoth support workspace project move-start`. Exact input fields: `mammoth schema get support.workspace.project.move-start`.
+
+Example: `mammoth support workspace project move-start 123 456 --input '{"target_workspace_id": 1}' --yes --confirm 123`. Illustrative only: append `--yes --confirm <EXACT_TARGET>` after observing the target.
+
+Result: `SupportWorkspaceProjectMoveStartResult`; mutation `high_impact`, confirmation `confirm_target`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `support.workspace.restore-access`
 

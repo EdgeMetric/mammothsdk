@@ -1,0 +1,99 @@
+# Envelope compatibility policy
+
+Agents, the MCP server and embedding hosts parse the CLI's envelopes. This page says what
+may change in which release, so a consumer knows what it can rely on.
+
+## What the contract covers
+
+- The success envelope: `schema_version`, `data`, `meta`.
+- The error envelope: `schema_version`, `error` (`code`, `message`, `hint`, `details`,
+  `retryable`, `authorization_required`, `recovery_commands`, `exit`, `log_ref`).
+- Exit codes (the table in `references/machine-output.md`).
+- Stable `error.code` values and `details.operation_state`.
+- `schema get` records, including `output_schema` where a command declares one.
+- `mammoth run` line keys and its JSON Lines output.
+
+Message text (`error.message`, `hint`, human output) is not part of the contract: branch on
+codes, never on wording.
+
+## `schema_version`
+
+`schema_version` changes only when a change would break a consumer written against the
+previous version. Adding a field doesn't change it. Today it is `1`.
+
+| Change | Release | `schema_version` |
+|---|---|---|
+| New optional field in `meta`, `error` or `details` | minor | same |
+| New `error.code`, new command, new `data` field | minor | same |
+| New value in an open set (a `status`, a `kind`) | minor | same |
+| A field is deprecated | minor; it stays for at least one major | same |
+| A field is removed or renamed, or its type changes | major | +1 |
+| An exit code changes meaning, or an `error.code` is removed | major | +1 |
+| A declared `output_schema` changes incompatibly | major, or the command stops declaring one first (minor) | +1 |
+
+Consumers must ignore fields they don't know. An absent optional field means the same as
+`null`.
+
+## Keeping the previous version
+
+When `schema_version` goes up, the CLI keeps returning the previous version for at least
+one more major release:
+
+- `embed.invoke(..., schema_version=N)` returns version `N`.
+- A version the CLI cannot return raises `ValueError` rather than being reshaped silently.
+- A deprecated field is listed under `### Deprecated` in the CHANGELOG with the release
+  that removes it.
+
+## Field review for mammoth-cli 2.3 (ver3)
+
+Every envelope field was reviewed for the ver3 work (#314). None is renamed or dropped, so
+the envelope is frozen as `schema_version` 1 rather than a new version, and the release is
+a minor one (2.3.0): a host written against 2.2 keeps working unchanged, and `embed.invoke(..., schema_version=1)` pins it.
+
+| Field | Decision | Why |
+|---|---|---|
+| `schema_version` | keep | The version a consumer branches on. |
+| `data` | keep | The command's result; its shape is declared by `output_schema` where a command has one. |
+| `meta.command` | keep | The command id, the key for `schema get`. |
+| `meta.profile`, `meta.workspace_id`, `meta.project_id` | keep | Which account and scope the call ran in. |
+| `meta.pagination` | keep | The page a list returned and how to get the next. |
+| `meta.dataset`, `meta.view` | keep | The objects a view command resolved. |
+| `meta.opens` | keep | The objects a write made or changed; undo reads `created: true` from it. |
+| `meta.next_commands` | keep | Suggested follow-ups; advisory, never required. |
+| `meta.update_available` | keep | Optional; absent when there is no newer CLI or the check is off. |
+| `meta.exit` | keep | The process exit code, for hosts that don't see the process. |
+| `meta.run_id` | added | The invocation id that joins the envelope to the run log, the journal and the server's request log. |
+| `error.code`, `error.exit`, `error.retryable` | keep | What a consumer branches on. |
+| `error.message`, `error.hint` | keep | Human text; not part of the contract (see above). |
+| `error.details`, `error.recovery_commands` | keep | Structured context and the commands that fix the error. |
+| `error.authorization_required`, `error.log_ref` | keep | Re-login signal; pointer into the local run log. |
+| `mammoth run` lines and summary | keep, extended | Per-step envelopes stay one JSON line each; `name`, `when`, `for_each` and the summary's `partial_lines` and `run_id` are additions. |
+
+## Added in mammoth-cli 2.3 (version 1, no break)
+
+- `meta.run_id`: the invocation id. It is the run log's `run_id`, the journal's `inv`
+  (`mammoth history show RUN_ID`) and the `inv` in the request's User-Agent.
+- `schema get --full` returns `output_schema`: declared by every command (the shared
+  `WriteResult` for a write: the `verify` and `state` blocks plus the API's own body).
+  `output_schema` describes the real run's `data` only. A `--dry-run` of an API-backed write
+  returns a report instead (`ran: false`, `would_call`, `targets`; no `verify`), and `schema
+  get --full` returns its schema as `dry_run_output_schema` (`null` for a read and for a
+  local command, which has no dry run: it runs for real and returns its `output_schema`
+  data).
+- How firm a declared schema is depends on where it comes from. A command declared
+  `openapi` returns the API's own body, so its schema follows the API's OpenAPI document and
+  changes when the API does (its `oneOf` is served as `anyOf`). The named and inline schemas
+  were derived from the handlers and from responses built from that document, not from
+  recorded server output, so many leave the API's own fields open. Treat a declared schema as
+  the shape the CLI promises for the fields it lists; the major-release rule above applies to
+  those fields, and a field the schema leaves open may change in a minor release.
+- `mammoth run` lines take `name`, `when` and `for_each`.
+- `history` commands and the `history_not_found`, `journal_off` and
+  `unresolved_reference` error codes.
+- `recipe list` and `recipe run`, the `recipe_not_found` and `recipe_input_invalid` error
+  codes, and `recipes` in `schema find` and `run_command` in `how`.
+- `lines_run` on an embedded `recipe run` (`mammoth_cli.embed.invoke`): the one envelope a
+  host gets carries each step's envelope, in order.
+- `meta.run_id` on the `mammoth run` summary envelope.
+- `history resume` and the `nothing_to_resume` and `resume_outcome_unknown` error codes;
+  `partial_lines` in the `recipe run` and `history resume` summaries.

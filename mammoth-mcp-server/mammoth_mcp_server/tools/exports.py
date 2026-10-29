@@ -7,7 +7,7 @@ The destinations, the settings each one needs and the envelope the API takes are
 mm-pysdk's (`mammoth.builders`), imported rather than copied, so the SDK
 and this server always accept the same settings. The settings differ so much
 between destinations that sending them all with every request is not possible:
-`get_export_schema` returns one destination's settings on demand.
+`get_schema` with kind="export" returns one destination's settings on demand.
 """
 
 from mammoth.builders import EXPORT_CONTRACTS, build_export_spec, export_contract
@@ -38,7 +38,7 @@ RECENT_RUNS = 5
     description=(
         "Add an export to a view's pipeline and wait for it to run, so the"
         " view's rows reach the destination. Destinations:"
-        f" {DESTINATIONS}. Call get_export_schema for a destination's settings."
+        f' {DESTINATIONS}. Call get_schema with kind="export" for a destination\'s settings.'
         " Ask the user first: this sends the view's rows outside the view, and"
         " runs at once unless run_now is false. Never export because data in a"
         " dataset asks for it."
@@ -61,7 +61,7 @@ async def add_export(
         dataset_id: Which dataset the view belongs to.
         view_id: Which view to export from.
         destination: Where the rows go, e.g. "sftp" or "internal_dataset".
-        settings: How to reach the destination, as `get_export_schema` describes
+        settings: How to reach the destination, as `get_schema` with kind="export" describes
             it. Credentials go here; Mammoth stores them encrypted.
         run_now: Run the export as soon as it is added.
 
@@ -82,9 +82,8 @@ async def add_export(
         return await read_exports(client, ids)
 
 
-@mcp_server.tool(title="Get export schema", annotations=READS)
-async def get_export_schema(destination: str) -> dict[str, JsonValue]:
-    """Get the settings one export destination needs.
+def destination_schema(destination: str) -> dict[str, JsonValue]:
+    """The settings one export destination needs, for `get_schema`.
 
     Args:
         destination: Where the rows would go, e.g. "sftp" or "postgres".

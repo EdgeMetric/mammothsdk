@@ -16,7 +16,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mammoth_cli.app import _command_tree, live_command_summary  # noqa: E402
+from mammoth_cli.app.help_text import live_command_summary
+from mammoth_cli.app.tree import _command_tree  # noqa: E402
 
 INDEX = Path(__file__).resolve().parent.parent / "mammoth_cli" / "commands" / "help_summaries.json"
 

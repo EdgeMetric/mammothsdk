@@ -37,7 +37,7 @@ def _how(goal: str, **invocation: object) -> dict[str, object]:
     ("goal", "recipe"),
     [
         ("refresh daily", "refresh-daily"),
-        ("blend two files by day", "blend-by-key"),
+        ("blend two datasets by day", "blend-by-key"),
         ("upload and build a dashboard", "upload-dashboard"),
         ("fix a stuck upload", "stuck-upload"),
         ("export to power bi", "export-powerbi"),
@@ -45,7 +45,7 @@ def _how(goal: str, **invocation: object) -> dict[str, object]:
         ("schedule a weekly refresh of my dataset", "refresh-daily"),
         ("join two datasets on customer id", "blend-by-key"),
         ("download my view as csv", "export-csv"),
-        ("remove duplicate rows", "clean-data"),
+        ("remove duplicate rows", "remove-duplicates"),
     ],
 )
 def test_a_goal_finds_its_recipe(goal: str, recipe: str) -> None:
@@ -100,7 +100,7 @@ def test_a_profile_chosen_by_default_is_not_written_into_examples() -> None:
 
 
 def test_a_goal_no_recipe_covers_falls_back_to_schema_find_and_says_so() -> None:
-    result = _how("rename a column")
+    result = _how("rename a dataset")
     assert result["matched"] is False
     assert "recipe" not in result
     assert "schema find" in str(result["hint"])
@@ -139,7 +139,7 @@ def test_a_goal_with_several_parts_gets_each_parts_steps_in_pipeline_order() -> 
     assert result["matched"] is True
     assert [r["id"] for r in result["recipes"]] == [
         "blend-by-key",
-        "upload-dashboard",
+        "dashboard-from-view",
         "refresh-daily",
     ]
     commands = [step["command_id"] for step in result["steps"]]

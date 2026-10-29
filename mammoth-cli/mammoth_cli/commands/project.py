@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_AUTHORIZATION_REQUIRED,
@@ -48,8 +49,6 @@ from mammoth_cli.runtime.token_scope import (
     require_unpinned_token,
 )
 from mammoth_cli.services import job_outcome
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -866,7 +865,7 @@ def _preview_dataset(
 
 
 def _check_dashboard(invocation: Invocation) -> Callable[[Any, Any, Any], dict[str, Any]]:
-    from mammoth_cli.commands.dashboard import _with_deliverable_check
+    from mammoth_cli.commands.dashboard.generated import _with_deliverable_check
 
     def _check(service: Any, auth: Any, board: Any) -> dict[str, Any]:
         dashboard_id = board.get("id") if isinstance(board, dict) else None

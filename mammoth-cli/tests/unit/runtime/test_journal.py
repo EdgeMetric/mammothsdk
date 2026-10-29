@@ -1,0 +1,394 @@
+"""The journal: a record before and after every write, with the lines that undo it."""
+
+from __future__ import annotations
+
+import json
+import os
+import stat
+import threading
+from dataclasses import replace
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import embedded, journal, trace
+from mammoth_cli.runtime.dispatch import Outcome, Request, dispatch
+from mammoth_cli.runtime.invocation import Invocation
+
+
+class _Memory:
+    def __init__(self) -> None:
+        self.kept: list[dict[str, Any]] = []
+
+    def append(self, record: Any) -> None:
+        self.kept.append(dict(record))
+
+    def records(self) -> list[dict[str, Any]]:
+        return list(self.kept)
+
+    @classmethod
+    def of(cls, kept: list[dict[str, Any]]) -> _Memory:
+        memory = cls()
+        memory.kept = list(kept)
+        return memory
+
+
+def _request(command_id: str, **positionals: Any) -> Request:
+    invocation = Invocation(command_id=command_id, output="json", project=9)
+    invocation.positionals.update(positionals)
+    return Request(command_id, "json", lambda: ({}, {}), invocation=invocation, profile="p")
+
+
+def _success(**meta: Any) -> Outcome:
+    return Outcome(data={}, meta=meta)
+
+
+def test_a_trash_is_undone_by_a_restore() -> None:
+    lines, reason = journal.compensation(
+        _request("dataset.trash", dataset_id=5), _success(), journal._Before()
+    )
+    assert reason is None
+    assert lines == [
+        {"cmd": "dataset restore", "args": [5], "flags": {"profile": "p", "project": 9}}
+    ]
+
+
+def test_a_setting_is_undone_by_setting_the_earlier_value_back() -> None:
+    outcome = Outcome(data={"previous_mode": "add", "mode": "replace"}, meta={})
+    lines, reason = journal.compensation(
+        _request("dataset.update-method.set", dataset_id=5), outcome, journal._Before()
+    )
+    assert reason is None
+    assert lines == [
+        {
+            "cmd": "dataset update-method set",
+            "args": [5],
+            "flags": {"profile": "p", "project": 9},
+            "input": {"mode": "add"},
+        }
+    ]
+
+
+def test_created_objects_go_to_the_trash_newest_first() -> None:
+    opens = [
+        {"kind": "dataset", "id": 1, "created": True},
+        {"kind": "view", "id": 2, "created": True},
+        {"kind": "view", "id": 3, "created": False},
+    ]
+    lines, reason = journal.compensation(
+        _request("file.upload"), _success(opens=opens, project_id=4), journal._Before()
+    )
+    assert reason is None
+    assert [(line["cmd"], line["args"]) for line in lines] == [
+        ("view trash", [2]),
+        ("dataset trash", [1]),
+    ]
+    assert lines[0]["flags"]["project"] == 4
+
+
+def test_a_pipeline_edit_is_undone_by_its_previous_version() -> None:
+    before = journal._Before(view_id=7, dataset_id=6, version_id=40)
+    lines, _ = journal.compensation(
+        _request("view.transform.filter", view_id=7), _success(), before
+    )
+    assert lines == [
+        {"cmd": "view version apply", "args": [7, 40, 6], "flags": {"profile": "p", "project": 9}}
+    ]
+
+
+def test_a_first_pipeline_edit_deletes_the_steps_it_added() -> None:
+    before = journal._Before(view_id=7, dataset_id=6, task_ids=[])
+    lines, _ = journal.compensation(
+        _request("view.transform.filter", view_id=7), _success(), before
+    )
+    assert lines[0]["cmd"] == "view task delete"
+    assert lines[0]["keep_tasks"] == []
+
+
+def test_an_unread_pipeline_cannot_be_undone() -> None:
+    lines, reason = journal.compensation(
+        _request("view.transform.filter", view_id=7), _success(), journal._Before(view_id=7)
+    )
+    assert lines == [] and reason is not None
+
+
+def test_a_permanent_delete_says_why_it_cannot_be_undone() -> None:
+    lines, reason = journal.compensation(
+        _request("dataset.delete", dataset_id=5), _success(), journal._Before()
+    )
+    assert lines == []
+    assert reason is not None and "permanently" in reason
+
+
+def test_a_declared_inverse_is_run_with_the_arguments_of_the_write() -> None:
+    lines, reason = journal.compensation(
+        _request("agent.run.pause", run_id=12), _success(), journal._Before()
+    )
+    assert reason is None
+    assert lines == [
+        {"cmd": "agent run resume", "args": [12], "flags": {"profile": "p", "project": 9}}
+    ]
+
+
+def test_a_manual_inverse_is_named_but_not_run() -> None:
+    lines, reason = journal.compensation(
+        _request("webhook.create", name="w"), _success(), journal._Before()
+    )
+    assert lines == []
+    assert reason is not None and "webhook delete" in reason
+
+
+def test_a_write_that_made_nothing_for_the_trash_says_so() -> None:
+    lines, reason = journal.compensation(
+        _request("file.upload"), _success(opens=[]), journal._Before()
+    )
+    assert lines == [] and reason is not None
+
+
+def test_an_append_is_not_undone_by_trashing_its_target() -> None:
+    opens = [{"kind": "dataset", "id": 49, "created": False}]
+    lines, reason = journal.compensation(
+        _request("file.upload"), _success(opens=opens), journal._Before()
+    )
+    assert lines == []
+    assert reason is not None and "rows cannot be taken out" in reason
+
+
+def test_an_external_effect_gives_its_own_reason() -> None:
+    _, reason = journal.compensation(
+        _request("view.export.postgres", view_id=3), _success(), journal._Before()
+    )
+    assert reason is not None and "PostgreSQL" in reason
+
+
+def _journaled(
+    command_id: str, producer: Any, store: _Memory, **positionals: Any
+) -> tuple[Outcome, list[dict[str, Any]]]:
+    request = _request(command_id, **positionals)
+    request = Request(command_id, "json", producer, invocation=request.invocation, profile="p")
+    interceptor = journal.journal_writes(lambda: store, lambda _r: journal._Before())
+    with trace.begin(command_id):
+        outcome = dispatch(request, (interceptor,))
+    return outcome, store.kept
+
+
+def test_a_read_is_not_journaled() -> None:
+    _, kept = _journaled("dataset.get", lambda: ({}, {}), _Memory(), dataset_id=5)
+    assert kept == []
+
+
+def test_a_write_is_journaled_before_and_after() -> None:
+    _, kept = _journaled("dataset.trash", lambda: ({"ok": 1}, {}), _Memory(), dataset_id=5)
+    assert [record["event"] for record in kept] == ["begin", "end"]
+    begin, end = kept
+    assert begin["command"] == "dataset.trash" and begin["inv"] == begin["group"]
+    assert end["exit"] == 0 and end["undo"][0]["cmd"] == "dataset restore"
+
+
+def test_a_failed_write_is_journaled_without_an_undo() -> None:
+    def refused() -> tuple[Any, dict[str, Any]]:
+        raise CliError(code="not_found", message="No.", exit_status=1)
+
+    outcome, kept = _journaled("dataset.trash", refused, _Memory(), dataset_id=5)
+    assert outcome.error is not None
+    assert kept[-1]["exit"] == 1 and kept[-1]["error_code"] == "not_found"
+    assert "undo" not in kept[-1]
+
+
+def test_a_dry_run_is_not_journaled() -> None:
+    store = _Memory()
+    request = _request("dataset.trash", dataset_id=5)
+    assert request.invocation is not None
+    object.__setattr__(request.invocation, "dry_run", True)
+    dispatch(request, (journal.journal_writes(lambda: store),))
+    assert store.kept == []
+
+
+def test_a_run_line_joins_the_run_group() -> None:
+    store = _Memory()
+    interceptor = journal.journal_writes(lambda: store, lambda _r: journal._Before())
+    with trace.begin("run") as outer, trace.begin("dataset.trash"):
+        dispatch(_request("dataset.trash", dataset_id=5), (interceptor,))
+    assert store.kept[0]["group"] == outer.invocation_id
+    assert store.kept[0]["inv"] != outer.invocation_id
+
+
+def test_entries_fold_records_and_status() -> None:
+    store = _Memory()
+    _journaled("dataset.trash", lambda: ({}, {}), store, dataset_id=5)
+    (entry,) = journal.entries(store)
+    assert entry.view()["status"] == "done" and entry.view()["undoable"]
+    journal.mark_undone(store, entry.inv, "abc")
+    (entry,) = journal.entries(store)
+    assert entry.view()["status"] == "undone" and not entry.view()["undoable"]
+
+
+def test_a_begin_without_an_end_is_unknown() -> None:
+    store = _Memory()
+    store.append({"event": "begin", "inv": "a", "group": "a", "command": "dataset.trash"})
+    (entry,) = journal.entries(store)
+    assert entry.view()["status"] == "unknown"
+
+
+def test_the_file_journal_is_owner_only_and_rotates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(journal, "MAX_BYTES", 100)
+    store = journal.FileJournal(tmp_path / "journal")
+    for number in range(5):
+        store.append({"event": "begin", "inv": str(number), "pad": "x" * 40})
+    path = tmp_path / "journal" / "journal.jsonl"
+    assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
+    assert (tmp_path / "journal" / "journal.1.jsonl").exists()
+    assert [record["inv"] for record in store.records()] == ["0", "1", "2", "3", "4"][
+        -len(list(store.records())) :
+    ]
+
+
+def test_the_journal_is_off_when_switched_off_or_embedded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert journal.default_store() is not None
+    monkeypatch.setenv(journal.JOURNAL_ENV, "0")
+    assert journal.default_store() is None
+    monkeypatch.delenv(journal.JOURNAL_ENV)
+    monkeypatch.setattr(embedded, "active", lambda: True)
+    assert journal.default_store() is None
+
+
+def test_a_defaulted_profile_is_not_recorded_in_the_undo() -> None:
+    request = _request("dataset.trash", dataset_id=5)
+    assert request.invocation is not None
+    request = replace(request, invocation=replace(request.invocation, profile_is_default=True))
+    lines, _ = journal.compensation(request, _success(), journal._Before())
+    assert "profile" not in lines[0]["flags"]
+
+
+def test_a_write_that_may_have_happened_is_marked_uncertain() -> None:
+    def timed_out() -> tuple[Any, dict[str, Any]]:
+        raise CliError(
+            code="timeout", message="Slow.", exit_status=75, details={"operation_state": "running"}
+        )
+
+    _, kept = _journaled("dataset.trash", timed_out, _Memory(), dataset_id=5)
+    assert kept[-1]["outcome_unknown"] is True
+    (entry,) = journal.entries(_Memory.of(kept))
+    assert entry.view()["status"] == "unknown"
+
+
+def test_a_write_refused_before_sending_leaves_no_entry() -> None:
+    def refused() -> tuple[Any, dict[str, Any]]:
+        raise CliError(code="confirmation_required", message="Sure?", exit_status=2)
+
+    _, kept = _journaled("dataset.trash", refused, _Memory(), dataset_id=5)
+    assert kept[-1]["nothing_sent"] is True
+    assert journal.entries(_Memory.of(kept)) == []
+
+
+def test_a_container_run_is_not_a_journal_entry() -> None:
+    store = _Memory()
+    _, kept = _journaled("recipe.run", lambda: ({}, {}), store)
+    assert kept == []
+    store.append({"event": "begin", "inv": "x", "group": "x", "command": "run"})
+    assert journal.entries(store) == []
+
+
+def test_a_pipeline_edit_undo_carries_the_fingerprint_taken_after_the_edit() -> None:
+    store = _Memory()
+    request = _request("view.transform.filter", view_id=7)
+    request = Request(
+        request.command_id, "json", lambda: ({}, {}), invocation=request.invocation, profile="p"
+    )
+    before = journal._Before(view_id=7, dataset_id=6, version_id=40)
+    interceptor = journal.journal_writes(lambda: store, lambda _r: before, lambda _r, _b: "fp1")
+    with trace.begin(request.command_id):
+        dispatch(request, (interceptor,))
+    assert store.kept[-1]["undo"][0]["expect"] == "fp1"
+
+
+def test_the_fingerprint_ignores_ids_and_order_numbers() -> None:
+    first = [{"id": 1, "sequence": 1, "type": "FILTER", "args": {"a": 1}}]
+    again = [{"id": 9, "sequence": 4, "type": "FILTER", "args": {"a": 1}, "updated_at": "x"}]
+    assert journal.fingerprint(first) == journal.fingerprint(again)
+    assert journal.fingerprint(first) != journal.fingerprint([{"type": "SORT"}])
+
+
+def test_run_records_hold_no_secret(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    line = json.dumps({"cmd": "connector create", "input": {"name": "c", "password": "hunter2"}})
+    journal.record_plan(
+        [(1, line)],
+        {},
+        scope={"inputs": {"api_key": "k-123"}},
+        keep_going=False,
+        past_partial=False,
+    )
+    journal.record_step(1, 0, {"made": {"data": {"access_token": "tok-abc", "id": 4}}})
+    text = "".join(path.read_text() for path in tmp_path.rglob("*.jsonl"))
+    assert "hunter2" not in text and "k-123" not in text and "tok-abc" not in text
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None
+    assert plan.steps["made"]["data"]["id"] == 4
+    assert plan.redacted_references() == {"steps.made", "inputs.api_key"}
+
+
+def test_a_failed_named_line_restores_nothing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan(
+        [(1, "{}"), (2, "{}")], {}, scope=None, keep_going=False, past_partial=False
+    )
+    journal.record_step(1, 0, {"a": 1})
+    journal.record_step(2, 1, {"p": 2})
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None
+    assert plan.steps == {"a": 1} and plan.finished == {1}
+    assert plan.steps_without([1]) == {}
+
+
+def test_a_partial_line_is_finished_when_the_run_goes_past_partial(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan([(1, "{}")], {}, scope=None, keep_going=False, past_partial=True)
+    journal.record_step(1, 3, {})
+    plan = journal.plan_for(store, "g1")
+    assert plan is not None and plan.finished == {1}
+
+
+def test_concurrent_appends_of_large_records_do_not_interleave(tmp_path: Path) -> None:
+    def write(worker: int) -> None:
+        store = journal.FileJournal(tmp_path)
+        for number in range(10):
+            store.append({"event": "begin", "inv": f"{worker}-{number}", "pad": "x" * 20000})
+
+    threads = [threading.Thread(target=write, args=(worker,)) for worker in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(list(journal.FileJournal(tmp_path).records())) == 80
+
+
+def test_a_plan_survives_rotation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(journal, "MAX_BYTES", 100)
+    store = journal.FileJournal(tmp_path)
+    monkeypatch.setattr(journal, "_run_store", lambda: (store, "g1"))
+    journal.record_plan([(1, "{}")], {}, scope=None, keep_going=False, past_partial=False)
+    for number in range(12):
+        store.append({"event": "begin", "inv": str(number), "pad": "x" * 60})
+    assert journal.plan_for(store, "g1") is not None
+
+
+def test_a_claim_is_exclusive(tmp_path: Path) -> None:
+    store = journal.FileJournal(tmp_path)
+    with store.claim("undo-a"), pytest.raises(journal.JournalBusy), store.claim("undo-a"):
+        pass
+    with store.claim("undo-a"):
+        pass

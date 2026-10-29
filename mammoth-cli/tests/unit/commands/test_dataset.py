@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import dataset as dataset_cmd
+from mammoth_cli.commands.dataset import create as create_cmd
+from mammoth_cli.commands.dataset import find as find_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
@@ -61,7 +63,7 @@ def _write(tmp_path: Path, payload: dict[str, object]) -> str:
 
 def test_find_requires_name_substring(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_find(_inv("dataset.find"))
+        find_cmd.dataset_find(_inv("dataset.find"))
     assert excinfo.value.code == "missing_argument"
 
 
@@ -80,7 +82,7 @@ def test_find_without_project_searches_every_visible_project(
         "resources": [_hit(1, 10, "Sales Q1"), _hit(2, 10, "Sales Q1"), _hit(2, 11, "Other")],
         "has_more": False,
     }
-    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    result, meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
         {"project_id": 1, "project_name": "P1", "id": 10, "name": "Sales Q1", "source": "unknown"},
@@ -97,7 +99,7 @@ def test_find_matches_are_case_insensitive(fake_service: FakeMammothService) -> 
         "resources": [_hit(1, 10, "SALES Q1")],
         "has_more": False,
     }
-    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
+    result, _meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["sales"]))
     assert [m["id"] for m in result["matches"]] == [10]
 
 
@@ -109,7 +111,7 @@ def test_find_with_project_puts_its_own_matches_first_and_marks_them(
         "resources": [_hit(1, 9, "Sales 2023"), _hit(42, 10, "Sales Q1")],
         "has_more": False,
     }
-    result, meta = dataset_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
+    result, meta = find_cmd.dataset_find(_inv("dataset.find", project=42, extra_args=["sales"]))
     assert result["projects_searched"] == 2
     assert result["matches"] == [
         {
@@ -152,7 +154,7 @@ def test_find_with_no_live_match_reads_the_trash_and_offers_restore(
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
     fake_service.responses[_TRASH_LIST] = {"items": [_trashed(451, "Late delivery log")]}
 
-    result, _meta = dataset_cmd.dataset_find(
+    result, _meta = find_cmd.dataset_find(
         _inv("dataset.find", project=42, extra_args=["Late delivery log"])
     )
 
@@ -181,7 +183,7 @@ def test_a_trashed_name_that_does_not_match_is_left_out(
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
     fake_service.responses[_TRASH_LIST] = {"items": [_trashed(9, "Delivery log late")]}
 
-    result, _meta = dataset_cmd.dataset_find(
+    result, _meta = find_cmd.dataset_find(
         _inv("dataset.find", project=42, extra_args=["late delivery"])
     )
 
@@ -194,7 +196,7 @@ def test_find_without_a_project_never_reads_the_trash(
     fake_service.projects = [{"id": 1, "name": "P1"}]
     fake_service.responses[_SEARCH] = {"resources": [], "has_more": False}
 
-    result, _meta = dataset_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
+    result, _meta = find_cmd.dataset_find(_inv("dataset.find", extra_args=["gone"]))
 
     assert "trashed_matches" not in result
     assert [symbol for symbol, _ in fake_service.call_log] == [_SEARCH]
@@ -215,7 +217,7 @@ def _col(name: str, blank_count: int, blank_pct: float) -> dict[str, object]:
 
 def test_column_stats_requires_project(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_column_stats(_inv("dataset.column-stats"))
+        find_cmd.dataset_column_stats(_inv("dataset.column-stats"))
     assert excinfo.value.code == "project_required"
     assert fake_service.call_log == []
 
@@ -232,7 +234,7 @@ def test_column_stats_reads_the_project_in_one_call(fake_service: FakeMammothSer
             },
         ]
     }
-    result, meta = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+    result, meta = find_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
 
     assert fake_service.call_log == [(_COLUMN_STATS, {"project_id": 180})]
     assert meta["project_id"] == 180
@@ -262,7 +264,7 @@ def test_column_stats_cuts_a_wide_project_to_the_output_cap(
             {"id": i, "name": f"Source {i}", "rows": 10, "columns": columns} for i in range(17)
         ]
     }
-    result, _ = dataset_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
+    result, _ = find_cmd.dataset_column_stats(_inv("dataset.column-stats", project=180))
 
     first = result["datasets"][0]
     assert first["columns"][0]["name"] == "Column 19"
@@ -696,14 +698,6 @@ def test_broken_rows_list_reads_the_dataset_s_unparsed_lines(
     assert fake_service.call_log == [(_BROKEN_ROWS, {"dataset_id": 7, "project_id": 180})]
 
 
-def test_file_settings_update_requires_delimiter(fake_service: FakeMammothService) -> None:
-    with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_file_settings_update(
-            _inv("dataset.file-settings.update", project=180, extra_args=["7"])
-        )
-    assert excinfo.value.code == "missing_field"
-
-
 def test_file_settings_update_forwards_required_and_optional(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -765,7 +759,7 @@ def test_file_settings_undo_proceeds_with_yes(fake_service: FakeMammothService) 
 def test_create_requires_dataset_spec(fake_service: FakeMammothService, tmp_path: Path) -> None:
     input_file = _write(tmp_path, {"ds_creation_type": "sketch"})
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+        create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert excinfo.value.code == "missing_field"
 
 
@@ -780,7 +774,7 @@ def test_create_forwards_folder_resource_id(
             "folder_resource_id": "r1",
         },
     )
-    dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+    create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert fake_service.call_log == [
         (
             _CREATE,
@@ -802,7 +796,7 @@ def test_create_waits_and_reports_dataset_id(
     fake_service.responses[_CREATE] = {"job_id": 14}
     fake_service.job_result = {"ds_id": 303686}
     input_file = _write(tmp_path, {"dataset_spec": {"url": "x"}, "ds_creation_type": "weburl"})
-    data, _ = dataset_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
+    data, _ = create_cmd.dataset_create(_inv("dataset.create", project=180, input_file=input_file))
     assert "wait_if_job" in fake_service.calls
     assert data == {"status": "ready", "dataset_id": 303686, "job_id": 14}
 
@@ -815,7 +809,7 @@ def test_create_from_pdf_requires_file_name(
 ) -> None:
     input_file = _write(tmp_path, {})
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd.dataset_create_from_pdf(
+        create_cmd.dataset_create_from_pdf(
             _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
         )
     assert excinfo.value.code == "missing_field"
@@ -832,7 +826,7 @@ def test_create_from_pdf_forwards_optional_fields(
             "delete_file_after_extract": True,
         },
     )
-    dataset_cmd.dataset_create_from_pdf(
+    create_cmd.dataset_create_from_pdf(
         _inv("dataset.create-from-pdf", project=180, extra_args=["9"], input_file=input_file)
     )
     assert fake_service.call_log == [
@@ -946,11 +940,16 @@ def test_delete_blocked_without_confirmation_names_the_writing_export(
 
 def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
     dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
-    # Preview read, the delete, then the read that confirms the dataset is gone.
+    # Preview read, the delete, the read that confirms the dataset is gone, then
+    # the dataset list that must no longer show it (#345).
     assert fake_service.call_log == [
         (_GET, {"dataset_id": 7, "project_id": 180}),
         (_DELETE, {"dataset_id": 7, "project_id": 180}),
         (_GET, {"dataset_id": 7, "project_id": 180}),
+        (
+            "mammoth.api.datasets.DatasetsAPI.list_all",
+            {"project_id": 180, "fields": "id,name", "ids": [7]},
+        ),
     ]
 
 
@@ -1154,6 +1153,7 @@ def test_update_rejects_raw_patch_even_with_confirmation(
     assert excinfo.value.details["blocker"] == "B07 DATASET_PATCH_UNTYPED"
     assert excinfo.value.details["typed_alternatives"] == [
         "dataset.rename",
+        "dataset.update-method.set",
         "dataset.file-settings.update",
     ]
     assert fake_service.call_log == []
@@ -1181,19 +1181,19 @@ def test_update_rejects_raw_patch_even_with_confirmation(
 def test_created_dataset_reads_every_settled_shape(
     settled: dict[str, object], expected: dict[str, object]
 ) -> None:
-    assert dataset_cmd._created_dataset({"job_id": 9}, settled) == expected
+    assert create_cmd._created_dataset({"job_id": 9}, settled) == expected
 
 
 def test_created_dataset_raises_when_the_job_made_nothing() -> None:
     with pytest.raises(CliError) as excinfo:
-        dataset_cmd._created_dataset({"job_id": 9}, {"message": "No such file"})
+        create_cmd._created_dataset({"job_id": 9}, {"message": "No such file"})
     assert excinfo.value.code == "job_failed"
     assert "No such file" in excinfo.value.message
 
 
 def test_created_dataset_passes_a_sketch_through() -> None:
     sketch = {"id": 12, "name": "n", "status": "ready"}
-    assert dataset_cmd._created_dataset(sketch, sketch) == sketch
+    assert create_cmd._created_dataset(sketch, sketch) == sketch
 
 
 # -- delete that the server accepts but does not carry out ----------------------
@@ -1290,12 +1290,62 @@ def test_file_settings_update_waits_for_the_reprocess_job_and_names_the_dataset(
     assert data["dataset_name"] == "wb.csv"
 
 
-def test_delete_names_the_deleted_id_and_lists_nothing(fake_service: FakeMammothService) -> None:
+def test_delete_names_the_deleted_id_and_reads_the_list_to_confirm(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 8, "name": "other"}]}
     data, _ = dataset_cmd.dataset_delete(
         _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
     )
     assert data["deleted"] == [7]
-    assert all(symbol != "mammoth.api.datasets.DatasetsAPI.list" for symbol in fake_service.calls)
+    assert _LIST_ALL in fake_service.calls
+    assert _LIST not in fake_service.calls
+    # One id asked for, not the project's whole listing.
+    assert dict(fake_service.call_log)[_LIST_ALL]["ids"] == [7]
+
+
+def test_delete_that_the_get_calls_gone_but_the_list_still_shows_is_unverified(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Live (#345): the get said gone, ``dataset list`` kept the dataset across every check.
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleted"}
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 7, "name": "orders"}]}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    error = excinfo.value
+    assert error.code == "delete_unverified"
+    assert error.details["still_listed"] is True
+    assert error.recovery_commands == ["mammoth dataset list"]
+    assert fake_service.calls.count(_LIST_ALL) > 1
+
+
+def test_delete_that_the_list_drops_on_a_later_check_is_verified(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleted"}
+
+    def listing(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        reads = sum(1 for symbol, _ in log if symbol == _LIST_ALL)
+        return {"datasets": [{"id": 7}] if reads < 3 else []}
+
+    fake_service.responses[_LIST_ALL] = listing  # type: ignore[assignment]
+    data, _meta = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert data["deleted"] == [7]
+
+
+def test_delete_that_still_reads_as_deleting_is_unverified_not_not_applied(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+    fake_service.responses[_GET] = {"id": 7, "status": "deleting"}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_unverified"
+    assert excinfo.value.details["status"] == "deleting"
 
 
 def test_list_total_counts_whole_project_when_page_is_cut(

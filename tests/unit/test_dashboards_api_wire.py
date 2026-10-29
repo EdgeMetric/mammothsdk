@@ -16,6 +16,7 @@ import pytest
 
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
+from mammoth.models.dashboards import DashboardAuthType
 
 from ._loopback import RecordingServer
 from ._loopback import client as client  # noqa: F401
@@ -565,4 +566,31 @@ async def test_share_refuses_a_bad_id_or_a_blank_email_before_any_request(
         await client.dashboards.share(0, DashboardAuthType.PUBLIC)
     with pytest.raises(MammothValidationError, match="email"):
         await client.dashboards.share(5, DashboardAuthType.MAMMOTH, [DashboardShareUser(email="")])
+    assert server.requests == []
+
+
+async def test_share_with_password_sends_it_under_options(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.dashboards.share(5, DashboardAuthType.PASSWORD, password="s3cret-pass")
+    assert _only(server)["body"] == {
+        "params": {"auth": {"type_of_auth": "password", "options": {"password": "s3cret-pass"}}}
+    }
+
+
+@pytest.mark.parametrize("password", ["short", "x" * 129, ""])
+async def test_share_refuses_a_password_outside_8_to_128_characters(
+    password: str, server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError, match="8 to 128 characters"):
+        await client.dashboards.share(5, DashboardAuthType.PASSWORD, password=password)
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("auth", [DashboardAuthType.PUBLIC, DashboardAuthType.MAMMOTH])
+async def test_share_refuses_a_password_with_another_auth_type(
+    auth: DashboardAuthType, server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError, match="only with type_of_auth `password`"):
+        await client.dashboards.share(5, auth, password="long-enough-pw")
     assert server.requests == []

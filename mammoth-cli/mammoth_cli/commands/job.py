@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -29,8 +30,6 @@ from mammoth_cli.runtime.session import open_service
 from mammoth_cli.runtime.verify import export_wait_budget, wait_export_run
 from mammoth_cli.services import job_outcome
 from mammoth_cli.services.board_values import board_values, dashboard_link
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 _WAIT_OPTIONAL = ("timeout", "poll_interval")
 _DASHBOARD_WAIT_SYMBOL = "mammoth.api.dashboards.DashboardsAPI.wait_for_job_by_url"

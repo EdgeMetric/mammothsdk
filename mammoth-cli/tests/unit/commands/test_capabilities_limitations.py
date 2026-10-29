@@ -39,7 +39,7 @@ def test_every_entry_links_a_doc_in_the_bundled_skill() -> None:
 
 @pytest.mark.parametrize(
     "required",
-    ["file-dataset-refresh", "mcp-task-edit", "multi-project-token", "workbook-synthetic-data"],
+    ["file-dataset-refresh", "multi-project-token", "workbook-synthetic-data"],
 )
 def test_the_known_gaps_are_listed(required: str) -> None:
     assert required in {entry["id"] for entry in capabilities_cmd.load_limitations()}

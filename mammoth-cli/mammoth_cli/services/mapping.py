@@ -5,8 +5,10 @@ from __future__ import annotations
 import json
 import re
 import shlex
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, TypeGuard
 
+from mammoth.api.jobs import AUTH_STATUSES
 from mammoth.exceptions import (
     MammothAPIError,
     MammothAuthError,
@@ -25,6 +27,7 @@ from mammoth_cli.errors.envelope import (
     CODE_AUTHENTICATION_FAILED,
     CODE_AUTHORIZATION_REQUIRED,
     CODE_CONFLICT,
+    CODE_FEATURE_DISABLED,
     CODE_INTERNAL_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_INVALID_ARGUMENTS,
@@ -45,6 +48,7 @@ from mammoth_cli.errors.envelope import (
     interrupted_error,
 )
 from mammoth_cli.runtime import embedded
+from mammoth_cli.services.delete_check import GONE_BACKEND_CODES
 
 _RETRYABLE_READ_STATUSES = frozenset({408, 425, 429, 502, 503, 504})
 
@@ -73,6 +77,14 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     endpoint = getattr(exc, "endpoint", None)
     if endpoint is not None:
         details["endpoint"] = _CLIENT_KEY_SEGMENT.sub(r"\1{client_key}", str(endpoint))
+    for name in ("rejection_note", "rejected_task_keys"):
+        # A refused task write: the SDK named the keys the server cannot take.
+        if name in exc.details:
+            details[name] = exc.details[name]
+    kept = exc.details.get("update_method_kept")
+    if kept:
+        # A mode an append set stayed on the dataset: the caller must be told.
+        details["update_method_kept"] = kept
     if exc.retry_after is not None:
         details["retry_after"] = exc.retry_after
     if exc.request_id is not None:
@@ -120,6 +132,86 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
 def _is_known_read(method: object) -> bool:
     """Return whether transport metadata proves the request was observational."""
     return isinstance(method, str) and method.upper() in {"GET", "HEAD", "OPTIONS"}
+
+
+def _is_refused_poll(exc: BaseException) -> TypeGuard[MammothAPIError]:
+    """Whether ``exc`` is a refused sign-in on the poll of a job the server had accepted."""
+    return (
+        isinstance(exc, MammothAPIError)
+        and exc.status_code in AUTH_STATUSES
+        and exc.operation_state == CODE_OUTCOME_UNKNOWN
+        and exc.phase == "polling"
+        and exc.job_handle is not None
+    )
+
+
+def _polling_outcome_error(
+    exc: MammothAPIError,
+    job_id: object,
+    details: dict[str, Any],
+    *,
+    profile: str | None,
+    project_id: int | None,
+    workspace_id: int | None,
+    login: str | None = None,
+) -> CliError:
+    """The outcome of a job that was accepted but whose poll failed.
+
+    The job was accepted, so its outcome is unknown and the code is ``outcome_unknown``; the
+    next step is to read the job, never to resubmit. When ``login`` is set the poll was refused
+    for its credentials, and signing in again comes first.
+
+    Args:
+        exc: The SDK error, labelled ``outcome_unknown`` in phase ``polling``.
+        job_id: The accepted job.
+        details: The caller's details for the error (kept whole; this only fills gaps).
+        profile: The profile name, for the job commands.
+        project_id: The project to scope the job commands to, if known.
+        workspace_id: The workspace, recorded in the details if known.
+        login: The sign-in command when the poll was refused for its credentials, else None.
+
+    Returns:
+        An ``outcome_unknown`` error whose recovery commands are the job reads, preceded by
+        ``login`` when it is set.
+    """
+    details = dict(details)
+    details.setdefault("job_handle", job_id)
+    details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
+    if workspace_id is not None:
+        details.setdefault("workspace_id", workspace_id)
+    if project_id is not None:
+        details.setdefault("project_id", project_id)
+    recovery = _job_recovery(job_id, profile=profile, project_id=project_id)
+    if login is None:
+        message = (
+            f"Mammoth accepted the request as job {job_id}, but reading the job's "
+            "state failed, so it is unknown whether it is still running or done."
+        )
+        hint = (
+            f"Do not resubmit it. Read the job with '{recovery[0]}' until it is done, "
+            "then check the result."
+        )
+    else:
+        message = (
+            f"Mammoth accepted the request as job {job_id}, but the server refused your "
+            "credentials while the job was being read, so it is unknown whether it is still "
+            "running or done."
+        )
+        hint = (
+            f"Do not resubmit it. Sign in again (`{login}`, or set the profile's token), "
+            f"then read the job with '{recovery[0]}' until it is done, and check the result."
+        )
+        recovery = [login, *recovery]
+    return CliError(
+        code=CODE_OUTCOME_UNKNOWN,
+        message=message,
+        exit_status=EXIT_RETRYABLE,
+        hint=hint,
+        details=details,
+        request_id=exc.request_id,
+        retryable=False,
+        recovery_commands=recovery,
+    )
 
 
 def _job_recovery(
@@ -267,18 +359,43 @@ _NOT_ALLOWED_SUFFIX = "_NOT_ALLOWED"
 #: The generic permission refusal (4PERM002), which some routes send as a 400.
 _PERMISSION_ERROR_NAME = "PERMISSION_ERROR"
 
-#: Backend codes that refuse an action because of the workspace's plan or AI
-#: quota, not the user's permissions: no id or role change fixes them.
-_PLAN_LIMIT_CODES = frozenset(
-    {
-        "4SUBS101",  # FEATURE_NOT_AVAILABLE_ON_PLAN
-        "4SUBS102",  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
-        "4SUBS103",  # PLAN_PAYMENT_REQUIRED
-        "4SUBS104",  # AI_QUOTA_EXHAUSTED
-        "4SUBS105",  # WORKSPACE_OVER_PLAN_LIMITS
-        "4SUBS106",  # PLAN_LIMIT_REACHED
-    }
+
+@dataclass(frozen=True)
+class _Refusal:
+    """How a backend code that refuses by account state, not by request, reads in the CLI."""
+
+    code: str
+    hint: str
+
+
+_PLAN_LIMIT_REFUSAL = _Refusal(
+    code=CODE_PLAN_LIMIT,
+    hint=(
+        "The workspace's plan or monthly AI quota does not cover this; the ids "
+        "and permissions are not the problem. Do not retry: tell the user, who "
+        "can upgrade the plan or ask Mammoth support to extend the quota."
+    ),
 )
+_FEATURE_DISABLED_REFUSAL = _Refusal(
+    code=CODE_FEATURE_DISABLED,
+    hint=(
+        "This feature is switched off for this user and workspace; the request is not "
+        "the problem. Do not retry or rephrase: tell the user to ask Mammoth support or "
+        "the workspace admin to turn it on."
+    ),
+)
+#: Backend codes that refuse an action because of the account (its plan, its AI quota, a
+#: feature switched off), not the request or the user's permissions: no id or role change
+#: fixes them, and a retry gives the same answer.
+_BACKEND_REFUSALS: dict[str, _Refusal] = {
+    "4SUBS101": _PLAN_LIMIT_REFUSAL,  # FEATURE_NOT_AVAILABLE_ON_PLAN
+    "4SUBS102": _PLAN_LIMIT_REFUSAL,  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
+    "4SUBS103": _PLAN_LIMIT_REFUSAL,  # PLAN_PAYMENT_REQUIRED
+    "4SUBS104": _PLAN_LIMIT_REFUSAL,  # AI_QUOTA_EXHAUSTED
+    "4SUBS105": _PLAN_LIMIT_REFUSAL,  # WORKSPACE_OVER_PLAN_LIMITS
+    "4SUBS106": _PLAN_LIMIT_REFUSAL,  # PLAN_LIMIT_REACHED
+    "5GENR012": _FEATURE_DISABLED_REFUSAL,  # FEATURE_DISABLED
+}
 
 
 def _not_allowed_reason(body: Any, status: int | None) -> str | None:
@@ -294,15 +411,29 @@ def _not_allowed_reason(body: Any, status: int | None) -> str | None:
     return message if isinstance(message, str) and message else name
 
 
-def _plan_limit_reason(body: Any, status: int | None) -> str | None:
-    """The backend's own words when a 4xx refuses for the plan or AI quota."""
+def _backend_refusal(body: Any, status: int | None) -> tuple[_Refusal, str] | None:
+    """The refusal and the backend's own words when a 4xx refuses for the account's state.
+
+    Args:
+        body: The parsed response body.
+        status: The HTTP status.
+
+    Returns:
+        The matching :class:`_Refusal` and the backend message (its code when it sent none),
+        or ``None`` when the code is not in :data:`_BACKEND_REFUSALS`.
+    """
     if status is None or not 400 <= status < 500 or not isinstance(body, dict):
         return None
     backend_code = body.get("error_code") or body.get("code")
-    if backend_code not in _PLAN_LIMIT_CODES:
+    refusal = _BACKEND_REFUSALS.get(backend_code) if isinstance(backend_code, str) else None
+    if refusal is None:
         return None
     message = body.get("message")
-    return message if isinstance(message, str) and message else str(backend_code)
+    return refusal, message if isinstance(message, str) and message else str(backend_code)
+
+
+#: A bare error name such as ``PERMISSION_ERROR``: a label, not a reason.
+_ERROR_NAME_ONLY = re.compile(r"[A-Z][A-Z0-9_]*")
 
 
 def _backend_message(body: Any, status: int | None) -> str | None:
@@ -319,6 +450,10 @@ def _backend_message(body: Any, status: int | None) -> str | None:
         # A generic backend message ("Invalid arguments passed") carries the real
         # reason one level down.
         text = f"{text}: {reason}"
+    name = body.get("name")
+    if isinstance(name, str) and name and name not in text and not _ERROR_NAME_ONLY.fullmatch(name):
+        # The reason can sit in ``name`` ("Workspace Creation Failed" over a missing field).
+        text = f"{text}: {name}"
     extra = details.get("extra")
     if isinstance(extra, list) and extra:
         text = "\n".join([text, *(_field_error_line(item) for item in extra)])
@@ -359,11 +494,29 @@ def _stored_credential_kind(profile: str | None) -> str | None:
     return credential.kind if credential is not None else None
 
 
-#: Backend codes that mean "no such id" on a 400 (the dataset and file get routes do not 404).
-_UNKNOWN_ID_CODES = (
-    ("4DSET001", "dataset", "dataset list"),
-    ("4FILE001", "file", "file list"),
-)
+def _not_refreshable(message: str, details: dict[str, Any], request_id: str | None) -> CliError:
+    """The error for refreshing, or automating the refresh of, a dataset with no source.
+
+    Args:
+        message: The message to show.
+        details: The structured details of the API error.
+        request_id: The server's request id, when it sent one.
+
+    Returns:
+        A ``dataset_not_refreshable`` error with the ways forward.
+    """
+    return CliError(
+        code="dataset_not_refreshable",
+        message=message,
+        exit_status=EXIT_USAGE,
+        hint=REFRESH_FILE_DATASET_HINT,
+        details=details,
+        request_id=request_id,
+        recovery_commands=[
+            "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
+            "mammoth connector connection list",
+        ],
+    )
 
 
 def map_sdk_exception(
@@ -397,6 +550,16 @@ def map_sdk_exception(
         )
 
     login = profiles.login_command(profile)
+    if _is_refused_poll(exc):
+        return _polling_outcome_error(
+            exc,
+            exc.job_handle,
+            _metadata(exc),
+            profile=profile,
+            project_id=project_id,
+            workspace_id=workspace_id,
+            login=login,
+        )
     if isinstance(exc, MammothAuthError) and _is_token_expired(exc):
         return CliError(
             code=CODE_CLI_KEY_EXPIRED,
@@ -589,6 +752,15 @@ def map_sdk_exception(
             details.setdefault("operation_state", CODE_OUTCOME_UNKNOWN)
             if method is None:
                 details.setdefault("metadata_missing", ["method", "operation_state"])
+            if details.get("phase") == "polling" and job_id is not None:
+                return _polling_outcome_error(
+                    exc,
+                    job_id,
+                    details,
+                    profile=profile,
+                    project_id=project_id,
+                    workspace_id=workspace_id,
+                )
             if workspace_id is not None:
                 details.setdefault("workspace_id", workspace_id)
             if project_id is not None:
@@ -597,10 +769,8 @@ def map_sdk_exception(
                 code=CODE_OUTCOME_UNKNOWN,
                 message="The request may have committed, but its outcome was not confirmed.",
                 exit_status=EXIT_RETRYABLE,
-                hint=(
-                    "Do not replay this operation. Inspect the observed job/resource "
-                    "and original request context before taking any further mutation."
-                ),
+                hint="Do not replay this operation. Inspect the observed job/resource "
+                "and original request context before taking any further mutation.",
                 details=details,
                 request_id=request_id,
                 retryable=False,
@@ -661,19 +831,16 @@ def map_sdk_exception(
                 request_id=request_id,
                 recovery_commands=[token_login],
             )
-        plan_limit = _plan_limit_reason(exc.response_body, status)
-        if plan_limit is not None:
+        refusal = _backend_refusal(exc.response_body, status)
+        if refusal is not None:
             return CliError(
-                code=CODE_PLAN_LIMIT,
-                message=plan_limit,
+                code=refusal[0].code,
+                message=refusal[1],
                 exit_status=EXIT_AUTH,
-                hint=(
-                    "The workspace's plan or monthly AI quota does not cover this; the ids "
-                    "and permissions are not the problem. Do not retry: tell the user, who "
-                    "can upgrade the plan or ask Mammoth support to extend the quota."
-                ),
+                hint=refusal[0].hint,
                 details=details,
                 request_id=request_id,
+                retryable=False,
             )
         if status == 403:
             return CliError(
@@ -742,7 +909,9 @@ def map_sdk_exception(
                 retryable=True,
             )
         message = _backend_message(exc.response_body, status)
-        for backend_code, noun, list_command in _UNKNOWN_ID_CODES:
+        if message and details.get("rejection_note"):
+            message = f"{message} {details['rejection_note']}"
+        for backend_code, (noun, list_command) in GONE_BACKEND_CODES.items():
             if message and backend_code in message:
                 return CliError(
                     code=CODE_RESOURCE_NOT_FOUND,
@@ -753,17 +922,13 @@ def map_sdk_exception(
                     request_id=request_id,
                 )
         if message and "4AUTO006" in message:
-            return CliError(
-                code="dataset_not_refreshable",
-                message=message,
-                exit_status=EXIT_USAGE,
-                hint=REFRESH_FILE_DATASET_HINT,
-                details=details,
-                request_id=request_id,
-                recovery_commands=[
-                    "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
-                    "mammoth connector connection list",
-                ],
+            return _not_refreshable(message, details, request_id)
+        if message and "4DSET048" in message:
+            # 'dataset refresh' on a dataset with no cloud or database source.
+            return _not_refreshable(
+                f"Only a dataset with a cloud or database source can be refreshed ({message}).",
+                details,
+                request_id,
             )
         return CliError(
             code=CODE_API_ERROR,

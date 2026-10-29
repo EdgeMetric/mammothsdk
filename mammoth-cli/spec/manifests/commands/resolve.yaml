@@ -1,6 +1,8 @@
 manifest_schema_version: 1
 commands:
 - command_id: resolve
+  output_schema:
+    ref: Resolve
   command_path: resolve
   disposition: command
   alias_of: null

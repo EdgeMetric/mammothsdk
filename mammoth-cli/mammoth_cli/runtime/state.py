@@ -24,6 +24,7 @@ from typing import Any
 from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, CliError
 from mammoth_cli.manifest.loader import command_by_id
 from mammoth_cli.output.normalize import Revealed
+from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.poll import poll_delays
 from mammoth_cli.services.positionals import resolve_positionals
@@ -330,7 +331,8 @@ def _call_read_with(
     if handler is None:
         raise LookupError(f"no handler registered for read command {command_id!r}")
     read_invocation = _read_invocation(command_id, resolved_ids, base)
-    read_data, _meta = handler(read_invocation)
+    result = handler(read_invocation)
+    read_data = result.data if isinstance(result, Outcome) else result[0]
     return read_data, read_invocation
 
 

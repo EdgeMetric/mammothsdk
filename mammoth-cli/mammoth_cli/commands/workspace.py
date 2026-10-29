@@ -15,7 +15,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.dashboard import generated_dashboard
+from mammoth_cli.commands.dashboard.generated import generated_dashboard
+from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
@@ -34,8 +35,6 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
-
-HandlerResult = tuple[Any, dict[str, Any]]
 
 
 def _symbol(invocation: Invocation) -> str:
