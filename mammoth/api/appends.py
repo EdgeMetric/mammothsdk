@@ -31,6 +31,7 @@ from .._pure.appends import (
     held_back,
     match_batches,
     refuse_override,
+    rows_have_landed,
     rows_of,
     schema_mismatches,
     sent_names,
@@ -221,8 +222,9 @@ class AppendsAPI:
 
         The upload job ends when its staging dataset is made; the rows reach the target
         after that, and the target can still read ready before it starts on them. So the
-        rows count as landed once the target is ready, lists a batch it did not have and
-        shows a row count other than the one before the upload (the batch can be listed first).
+        rows count as landed once the target is ready, lists a batch it did not have and its
+        row count fits that batch (the batch can be listed before the count moves; see
+        :func:`rows_have_landed`).
 
         Args:
             plan: What :meth:`prepare` returned before the files were sent.
@@ -247,6 +249,7 @@ class AppendsAPI:
         give_up_at = time.monotonic() + max(0.0, wait_seconds)
         gap = min(0.5, poll_seconds)
         settled = False
+        listed = False
         rows_after: int | None = None
         status: str | None = None
         read_error: str | None = None
@@ -283,16 +286,14 @@ class AppendsAPI:
                     batches_error = str(failure).strip() or type(failure).__name__
                 landed = any(row["id"] not in before for row in after)
                 # The batch can be listed before the dataset's row count moves, so the rows
-                # read above may be stale: keep polling (a fresh read each time) until the
-                # count differs from the one before the upload. A count that never changes
+                # read above may be stale: judge them against the batch's own row count (see
+                # rows_have_landed) and keep polling until they fit. A count that never fits
                 # ends the wait as append_pending, never as a confident rows_added of 0.
-                rows_before = plan.get("rows_before")
-                counted = (
-                    not isinstance(rows_before, int)
-                    or rows_after is None
-                    or rows_after != rows_before
+                counted = landed and rows_have_landed(
+                    plan, rows_after, after, file_names, staging_ids or [], listed
                 )
-                settled = bool(mismatched) or (landed and counted)
+                listed = listed or landed
+                settled = bool(mismatched) or counted
             if settled or time.monotonic() >= give_up_at:
                 break
             await asyncio.sleep(gap)

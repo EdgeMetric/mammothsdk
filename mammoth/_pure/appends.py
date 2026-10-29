@@ -339,6 +339,48 @@ def match_batches(
     return ours, unmatched
 
 
+def rows_have_landed(
+    plan: dict[str, Any],
+    rows_after: int | None,
+    after: Sequence[dict[str, Any]],
+    sent: Sequence[str],
+    staging_ids: Iterable[int],
+    listed_before: bool,
+) -> bool:
+    """Whether the dataset's row count shows the rows of a batch that is already listed.
+
+    The batch can be listed before the dataset's count moves, so a count read earlier may be
+    stale. When the new batches carry their own ``row_count`` that decides: under ``add`` the
+    dataset holds at least the rows before plus theirs, under ``replace`` exactly theirs, and
+    a batch of 0 rows is done at once. Without batch counts, ``add`` is done when the count
+    differs from the one before, and ``replace`` (whose count may stay the same) when one
+    more read has been made since the batch was listed.
+
+    Args:
+        plan: What ``AppendsAPI.prepare`` read before the files were sent.
+        rows_after: The dataset's rows at the latest read, or None when unreadable.
+        after: The batch rows now.
+        sent: The names of the files that were sent.
+        staging_ids: The staging dataset ids the upload job made.
+        listed_before: Whether the batch was already listed at the previous poll, so that
+            ``rows_after`` was read after it.
+
+    Returns:
+        True when the count can be trusted as the upload's.
+    """
+    before = plan.get("rows_before")
+    if rows_after is None or not isinstance(before, int):
+        return True
+    ours, unmatched = match_batches(plan.get("batch_ids_before", []), after, sent, staging_ids)
+    wanted = set(ours or unmatched)
+    counts = [row.get("row_count") for row in after if row.get("id") in wanted]
+    replacing = plan["update_method"].get("mode") == "replace"
+    if counts and all(isinstance(n, int) and not isinstance(n, bool) for n in counts):
+        total = sum(n for n in counts if isinstance(n, int))
+        return rows_after == total if replacing else rows_after >= before + total
+    return listed_before if replacing else rows_after != before
+
+
 def rows_of(response: Any) -> int | None:
     """The row count a dataset read holds, or None when it holds none."""
     dataset = response.get("dataset", response) if isinstance(response, dict) else None
