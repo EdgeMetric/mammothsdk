@@ -296,6 +296,7 @@ def _serve_pypi(version: str) -> Iterator[str]:
     Yields:
         The URL of the fake PyPI JSON endpoint.
     """
+
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
             payload = json.dumps({"info": {"version": version}}).encode()
@@ -323,7 +324,7 @@ def _cli_version_detail(pypi_latest: str, tmp_path: Path, monkeypatch: pytest.Mo
     monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
     with _serve_pypi(pypi_latest) as url:
         monkeypatch.setattr(upgrade, "PYPI_JSON_URL", url)
-        data, _meta = doctor_cmd.doctor(_inv("doctor"))
+        data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     return str(check["detail"])
