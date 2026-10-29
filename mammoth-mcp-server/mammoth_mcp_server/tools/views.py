@@ -4,12 +4,13 @@ A view is where transformations run, so a second view is the safe place to
 experiment: copy the view, change the copy, delete the copy.
 """
 
+import asyncio
 from collections.abc import Awaitable
 
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import LIST_LIMIT_DEFAULT, ListFields, ViewFields
+from ..consts import IMPACT_READS_AT_ONCE, LIST_LIMIT_DEFAULT, ListFields, ViewFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -170,15 +171,28 @@ async def _what_goes_with(
     client: MammothClient, ids: dict[str, int], view_ids: list[int]
 ) -> dict[str, JsonValue]:
     """What deleting the views takes with them, by kind, as Mammoth lists it."""
-    goes: dict[str, list[JsonValue]] = {}
-    for view_id in view_ids:
-        impact = await read_sdk_errors(
-            client.dataviews.delete_impact(
-                ids["dataset_id"], view_id, ViewFields.IMPACT_SCOPE, project_id=ids["project_id"]
+    at_once = asyncio.Semaphore(IMPACT_READS_AT_ONCE)
+
+    async def impact_of(view_id: int) -> dict[str, JsonValue]:
+        async with at_once:
+            return await read_sdk_errors(
+                client.dataviews.delete_impact(
+                    ids["dataset_id"],
+                    view_id,
+                    ViewFields.IMPACT_SCOPE,
+                    project_id=ids["project_id"],
+                )
             )
-        )
+
+    # Read side by side: a dataset of many views would spend the call's time in turn.
+    impacts = await asyncio.gather(*(impact_of(view_id) for view_id in view_ids))
+    goes: dict[str, list[JsonValue]] = {}
+    for view_id, impact in zip(view_ids, impacts, strict=True):
         for kind in ViewFields.IMPACT_KINDS:
-            for item in impact.get(kind) or []:
+            items = impact.get(kind)
+            for item in items if isinstance(items, list) else []:
+                if not isinstance(item, dict):
+                    continue
                 kept = {k: item[k] for k in ViewFields.IMPACT_ITEM_FIELDS if k in item}
                 goes.setdefault(kind, []).append({ViewFields.VIEW_ID: view_id, **kept})
     return dict(goes)

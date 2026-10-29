@@ -71,6 +71,8 @@ CONNECT_WAIT_SECONDS = 20.0
 CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
+# How many views' delete impact `delete_views` reads at once.
+IMPACT_READS_AT_ONCE = 8
 
 # Rows one `get_data` call returns. A model reads a sample to decide what to do
 # next; it does not read the table. The cap is the API's page limit.
