@@ -439,3 +439,13 @@ def test_fetch_with_a_refused_token_fails_and_does_not_fall_back(monkeypatch) ->
             _fetch_from(monkeypatch, server, "mm_wrong")
 
     assert [path for path, _ in server.seen] == ["/support/openapi.json"]
+
+
+@pytest.mark.parametrize("status", [403, 500, 502, 503])
+def test_fetch_never_falls_back_on_a_refusal_or_a_server_error(monkeypatch, status: int) -> None:
+    # The public document answers 200 here, so a fallback would succeed and hide the error.
+    with _SpecServer(token="mm_staff", staff_status=status, public_status=200) as server:
+        with pytest.raises(SystemExit, match=f"answered {status}"):
+            _fetch_from(monkeypatch, server, "mm_staff")
+
+    assert [path for path, _ in server.seen] == ["/support/openapi.json"]
