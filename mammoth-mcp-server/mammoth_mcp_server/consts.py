@@ -147,6 +147,10 @@ class UploadFields:
     PROJECT_ID = "project_id"
     CALLER = "caller"
     JOB_ID = "job_id"
+    # What the upload job returns: one job per file, under this key.
+    JOB_IDS = "job_ids"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
+    NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"
     # When the files were sent: what the upload made is what was created since.
     UPLOADED_AT = "uploaded_at"
@@ -315,7 +319,20 @@ class FileSettingsFields:
     DATE_COLUMNS = "editable_date_columns"
     AMBIGUOUS_COLUMNS = "date_columns"
     APPLIED = "applied"
-    KEPT = ("delimiter", "has_header", "initial_skip_count", "quotechar")
+    DELIMITER = "delimiter"
+    HAS_HEADER = "has_header"
+    SKIP_COUNT = "initial_skip_count"
+    QUOTE_CHAR = "quotechar"
+    KEPT = (DELIMITER, HAS_HEADER, SKIP_COUNT, QUOTE_CHAR)
+    SETTINGS = "settings"
+    # The settings as `set_file_settings` takes them, by the route's names.
+    SHOWN = {
+        "delimiter": DELIMITER,
+        "has_header": HAS_HEADER,
+        "skip_rows": SKIP_COUNT,
+        "quote_char": QUOTE_CHAR,
+        "date_format": DATE_FORMAT,
+    }
 
 
 class ApiPaths:
@@ -345,6 +362,8 @@ class ResourceTypes:
 
     FILE = "file_object"
     DATASET = "datasource"
+    # A folder is a label to the resources route: what it holds lists under it.
+    FOLDER = "label"
 
 
 class FileStatus:
@@ -438,6 +457,8 @@ class JobFields:
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.
     NOTE = "note"
+    # What `get_job` reports of a finished job.
+    RESULT = "result"
 
 
 class ViewFields:
@@ -484,6 +505,19 @@ class DeletedFileFields:
     FILE = "file"
     ADDITIONAL_INFO = "additional_info"
     FINAL_DATASET_ID = "final_ds_id"
+
+
+class FolderFields:
+    """A project's folders, as the API lists them and this server reports them."""
+
+    FOLDERS = "folders"
+    FOLDER = "folder"
+    ID = "id"
+    RESOURCE_ID = "resource_id"
+    NAME = "name"
+    PARENT_ID = "parent_id"
+    FOLDER_ID = "folder_id"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
 
 
 class TrashFields:

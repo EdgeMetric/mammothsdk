@@ -31,7 +31,11 @@ class JobStillRunning(ToolError):
     """A job had not finished when the wait ran out. It keeps running."""
 
     def __init__(self, job: dict[str, JsonValue], seconds: float) -> None:
-        super().__init__(f"{API_ERROR_PREFIX}: the job did not finish in {seconds:.0f} seconds")
+        super().__init__(
+            f"{API_ERROR_PREFIX}: job {job[JobFields.ID]} did not finish in {seconds:.0f} seconds."
+            f" It keeps running in Mammoth: read it with get_job(job_id={job[JobFields.ID]})"
+            " before starting the same work again."
+        )
         self.job = job
 
 

@@ -247,6 +247,7 @@ async def send_to_mammoth(
     workspace_id = int(ticket[UploadFields.WORKSPACE_ID])
     project_id = int(ticket[UploadFields.PROJECT_ID])
     target = ticket.get(UploadFields.APPEND_TO)
+    folder = ticket.get(UploadFields.FOLDER_RESOURCE_ID)
     with as_the_caller(read_caller(ticket)):
         plan = (
             await prepare_append(
@@ -263,7 +264,7 @@ async def send_to_mammoth(
                 payload: dict[str, JsonValue] = await client.request_json(
                     "POST",
                     ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
-                    params={AppendFields.TARGET_QUERY: target} if target is not None else None,
+                    params=upload_query(target, folder),
                     files=[(UPLOAD_FIELD, one) for one in files],
                 )
         except MammothError as failure:
@@ -272,6 +273,13 @@ async def send_to_mammoth(
                 failure.details[ErrorFields.UPDATE_METHOD_KEPT] = kept
             raise
     return payload, plan
+
+
+def upload_query(target: JsonValue, folder: JsonValue) -> dict[str, JsonValue] | None:
+    """Where the upload route puts the files: the dataset to add them to, or a folder."""
+    if target is not None:
+        return {AppendFields.TARGET_QUERY: target}
+    return {UploadFields.FOLDER_RESOURCE_ID: folder} if folder is not None else None
 
 
 async def read_upload(one: UploadFile) -> FileUpload:

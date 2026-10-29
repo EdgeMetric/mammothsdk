@@ -33,6 +33,7 @@ async def mint_ticket(
     project_id: int,
     append_to_dataset_id: int | None = None,
     mode: str | None = None,
+    folder_resource_id: int | None = None,
 ) -> str:
     """Remember who is uploading where, and return the ticket that stands for it.
 
@@ -43,6 +44,7 @@ async def mint_ticket(
         append_to_dataset_id: The existing dataset the file is added to, if any.
         mode: "add" or "replace", the update method to set on that dataset
             when the file is sent.
+        folder_resource_id: The folder the file lands in, if one was named.
 
     Returns:
         The upload id, which is both the ticket in the link and what
@@ -60,6 +62,11 @@ async def mint_ticket(
             **(
                 {UploadFields.APPEND_TO: append_to_dataset_id, UploadFields.MODE: mode}
                 if append_to_dataset_id is not None
+                else {}
+            ),
+            **(
+                {UploadFields.FOLDER_RESOURCE_ID: folder_resource_id}
+                if folder_resource_id is not None
                 else {}
             ),
         },

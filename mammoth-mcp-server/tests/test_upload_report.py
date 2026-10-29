@@ -151,7 +151,7 @@ class TestWhatTheModelIsTold:
 
         needs = needs_of(a_dataset(DatasetStatus.ACTION_NEEDED, action))
 
-        assert "set_date_format" in needs[UploadReportFields.NEXT_STEP]
+        assert "set_file_settings" in needs[UploadReportFields.NEXT_STEP]
         assert UploadReportFields.SHEETS not in needs
 
     def test_a_password_is_asked_for_with_somewhere_else_to_put_it(self) -> None:

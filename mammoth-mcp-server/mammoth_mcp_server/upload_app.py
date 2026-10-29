@@ -22,7 +22,7 @@ from mcp.server.apps import ResourceCsp
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 
-from .appends import NOT_AN_APPEND, Mode
+from .appends import NOT_AN_APPEND, NOT_IN_A_FOLDER, Mode
 from .chat_apps import chat_apps
 from .config import MCP_UPLOAD_URL, UPLOAD_ORIGIN
 from .consts import (
@@ -237,6 +237,7 @@ async def request_upload(
     project_id: int | None = None,
     append_to_dataset_id: int | None = None,
     mode: Mode | None = None,
+    folder_resource_id: int | None = None,
 ) -> dict[str, JsonValue]:
     """Let the user upload files from their own machine.
 
@@ -278,6 +279,10 @@ async def request_upload(
             `list_datasets`. Leave out to make new datasets.
         mode: "add" or "replace", only together with `append_to_dataset_id`:
             the dataset's update method, set when the file is sent.
+        folder_resource_id: A folder of the project to put the files in, as
+            `list_files` or `create_folder` names it. A folder automation
+            picks up what lands there. Leave out for the project itself, and
+            for an upload into a dataset.
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
@@ -285,6 +290,8 @@ async def request_upload(
     """
     if mode is not None and append_to_dataset_id is None:
         raise ToolError(NOT_AN_APPEND)
+    if folder_resource_id is not None and append_to_dataset_id is not None:
+        raise ToolError(NOT_IN_A_FOLDER)
     caller = get_access_token()
     if caller is None:
         raise ToolError("Sign in again: this call carries no Mammoth user.")
@@ -294,7 +301,9 @@ async def request_upload(
         pinned = own_projects()
         may_use = f"{named_projects(pinned)}" if pinned else "any project in the workspace"
         raise ToolError(f"Name the project the files land in: this connection may use {may_use}.")
-    upload_id = await mint_ticket(caller, workspace_id, landing, append_to_dataset_id, mode)
+    upload_id = await mint_ticket(
+        caller, workspace_id, landing, append_to_dataset_id, mode, folder_resource_id
+    )
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",
         UploadFields.UPLOAD_ID: upload_id,

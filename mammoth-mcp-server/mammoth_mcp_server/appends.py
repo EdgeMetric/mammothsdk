@@ -44,6 +44,10 @@ NOT_AN_APPEND = (
     "`mode` only applies together with `append_to_dataset_id`: it sets the update method"
     " of the dataset the file goes into."
 )
+NOT_IN_A_FOLDER = (
+    "`folder_resource_id` is for a new dataset: an upload into `append_to_dataset_id` goes into"
+    " that dataset, wherever it is. Leave one of them out."
+)
 UNDO_WITH = (
     'To take this back, ask the user, then call undo with what="batch", this dataset_id'
     " and these batch_ids."
