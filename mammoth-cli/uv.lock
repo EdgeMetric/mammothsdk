@@ -546,10 +546,11 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.3.1"
+version = "2.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
+    { name = "click" },
     { name = "jsonschema" },
     { name = "keyring" },
     { name = "mammoth-io" },
@@ -576,9 +577,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "certifi", specifier = ">=2026.10.19" },
+    { name = "click", specifier = ">=8.1,<9" },
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.52,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.53,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -601,16 +603,16 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.52"
+version = "0.8.53"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/81/f52e902e52bbb1bd8236d4cb08330772466d95d070cd6b8a1b78ab5233d9/mammoth_io-0.8.52.tar.gz", hash = "sha256:29f62862c287283f2dcbd7250deb98019e35e6777033b2072bae0c449f7ad7d3", size = 749347, upload-time = "2026-10-26T09:27:28.694Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/aa/3cc29798c0abeddc2c525619e582689a83e3b19a2519180b67352e26dd10/mammoth_io-0.8.53.tar.gz", hash = "sha256:007dc3fc7d76c1945a86a85fb4e12b41b28fbbba367fb7a3b057c691400a6fe3", size = 788489, upload-time = "2026-10-29T13:34:41.668Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/a2/16bb36006e1b71835f68596c1a723eecdea7ccb21fd7c47a009ab9968707/mammoth_io-0.8.52-py3-none-any.whl", hash = "sha256:ab67a849000c01efb0aa401f19086bf3703526e10460ff7a8740eb2d7459bd3d", size = 368413, upload-time = "2026-10-26T09:27:25.538Z" },
+    { url = "https://files.pythonhosted.org/packages/db/ce/7f47d0698b56f7d1da06bab6e9d19bf3eb4778ea472f8fb5da557c30dc26/mammoth_io-0.8.53-py3-none-any.whl", hash = "sha256:abaa49749ab49b82fe56cdc8fce3a3bbd2c87e482829dc8d920ce96a8c2d1c40", size = 400982, upload-time = "2026-10-29T13:34:38.542Z" },
 ]
 
 [[package]]
