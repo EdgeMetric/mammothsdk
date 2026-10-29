@@ -6527,6 +6527,22 @@ sdk_methods:
   openapi_operation_ids:
   - BuildCatalogTemplate
   notes: "Adds the template's steps to a workflow and starts the Save that builds them (202); follow it with `workflow get`."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.spec
+  canonical_command: connector.draft.spec.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Each table's request path, records path and paging, then the whole spec; credentials are references and anything that could be a secret reads [redacted]."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
+  canonical_command: connector.version.spec.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "One stored version of the workspace's AI-built connector, by slug and version number."
 notes_on_dispositions:
 - 'DatasetsAPI.bulk_delete: "the SDK sends collection DELETE without target IDs. The command is forbidden
   until OpenAPI proves exact targets and a typed SDK request carries them" (BLOCKED[B08], and doc 09 states

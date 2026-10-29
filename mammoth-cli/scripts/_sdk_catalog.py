@@ -298,6 +298,9 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dataset.update-method.get": {"operation_ids": ["GetDataset"], "method": "GET"},
     "dataset.update-method.set": {"operation_ids": ["UpdateDataset"], "method": "PATCH"},
     "dataset.from-url.links": {"operation_ids": ["GetProjectLinks"], "method": "GET"},
+    # mvc-service #7302: on origin/release, in no pinned snapshot yet.
+    "connector.draft.spec.get": {"operation_ids": [], "method": "GET"},
+    "connector.version.spec.get": {"operation_ids": [], "method": "GET"},
     # mvc-service #7203.
     "dataset.download": {"operation_ids": ["CreateDownload"], "method": "POST"},
     "dataset.download-plan": {"operation_ids": ["PlanDownload"], "method": "POST"},

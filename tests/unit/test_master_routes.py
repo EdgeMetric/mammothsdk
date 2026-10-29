@@ -16,7 +16,7 @@ import pytest
 
 from mammoth.api import connector_drafts
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothValidationError
+from mammoth.exceptions import MammothAPIError, MammothValidationError
 
 from ._loopback import RecordingServer
 from ._loopback import client as client  # noqa: F401
@@ -221,6 +221,30 @@ CASES: list[tuple[str, Call, str, str, dict[str, str], object]] = [
         None,
     ),
     (
+        "draft-spec",
+        lambda c: c.connector_drafts.spec(9),
+        "GET",
+        f"{DRAFTS}/9/spec",
+        {},
+        None,
+    ),
+    (
+        "draft-version-spec",
+        lambda c: c.connector_drafts.version_spec("school_ab12", 3),
+        "GET",
+        f"{DRAFTS}/versions/school_ab12/3/spec",
+        {},
+        None,
+    ),
+    (
+        "draft-version-spec-slug-is-one-path-segment",
+        lambda c: c.connector_drafts.version_spec("a/b c", 1),
+        "GET",
+        f"{DRAFTS}/versions/a%2Fb%20c/1/spec",
+        {},
+        None,
+    ),
+    (
         "draft-join-candidates",
         lambda c: c.connector_drafts.join_candidates(9, "s2"),
         "GET",
@@ -311,6 +335,9 @@ async def test_deletes_answer_what_they_removed(
         (lambda c: c.connector_drafts.fill(9, "r", file_object_id=1, dataset_id=2), "exactly one"),
         (lambda c: c.connector_drafts.update(9), "at least one"),
         (lambda c: c.connector_drafts.get(0), "positive"),
+        (lambda c: c.connector_drafts.spec(0), "positive"),
+        (lambda c: c.connector_drafts.version_spec(" ", 1), "connector_slug"),
+        (lambda c: c.connector_drafts.version_spec("school", 0), "version"),
         (lambda c: c.connector_drafts.list(status="old"), "status"),
         (lambda c: c.connector_drafts.create(origin="cli"), "origin"),
         (lambda c: c.connector_drafts.create(kind="ftp"), "kind"),
@@ -374,3 +401,50 @@ async def test_a_refused_first_turn_keeps_the_draft_and_says_so(
 
     assert draft["id"] == 9 and "first_turn" not in draft
     assert "first_turn_error" in draft and draft["next"] == "mammoth connector draft get 9"
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda c: c.connector_drafts.spec(9),
+        lambda c: c.connector_drafts.version_spec("school", 2),
+    ],
+    ids=["draft", "version"],
+)
+async def test_a_server_without_the_spec_route_says_so(
+    server: RecordingServer, client: MammothClient, call: Call
+) -> None:
+    server.answers[f"GET {DRAFTS}/9/spec"] = (404, {"detail": "Not Found"})
+    server.answers[f"GET {DRAFTS}/versions/school/2/spec"] = (404, {"detail": "Not Found"})
+
+    with pytest.raises(MammothAPIError, match="does not serve the connector spec read yet") as err:
+        await call(client)
+
+    assert err.value.status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("path", "call", "code"),
+    [
+        (f"{DRAFTS}/9/spec", lambda c: c.connector_drafts.spec(9), "4CDFT001"),
+        (
+            f"{DRAFTS}/versions/school/2/spec",
+            lambda c: c.connector_drafts.version_spec("school", 2),
+            "4CDFT004",
+        ),
+    ],
+    ids=["draft", "version"],
+)
+async def test_a_missing_spec_keeps_the_servers_own_error(
+    server: RecordingServer, client: MammothClient, path: str, call: Call, code: str
+) -> None:
+    server.answers[f"GET {path}"] = (
+        404,
+        {"error_code": code, "message": "No AI-built connector spec found"},
+    )
+
+    with pytest.raises(MammothAPIError) as err:
+        await call(client)
+
+    assert "does not serve" not in str(err.value)
+    assert err.value.response_body["error_code"] == code

@@ -717,6 +717,15 @@ COMMAND_DISCOVERY_PURPOSES = {
         "build an AI connector custom connector for our own internal api or an unsupported "
         "source; sends the request to the builder agent"
     ),
+    "connector.draft.spec.get": (
+        "read the spec of an AI connector draft, how a custom connector table is read, paging "
+        "type page size, records path, request path, data root path, why a save repeats the "
+        "same page"
+    ),
+    "connector.version.spec.get": (
+        "read a stored version of an AI custom connector, its spec paging type page size "
+        "records path request path, which version a dataset runs, compare connector versions"
+    ),
     "file.set-password": "locked password protected file pdf excel unlock",
     "file.update": (
         "pdf extraction method choose select pending tables only all content custom "

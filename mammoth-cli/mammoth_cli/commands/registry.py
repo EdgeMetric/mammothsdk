@@ -1229,6 +1229,9 @@ _TARGETS: dict[str, str] = {
     "connector.draft.source.preview": (
         "mammoth_cli.commands.dashboard.generated:generated_dashboard"
     ),
+    # An AI-built connector's spec, secrets left out (mvc-service #7302).
+    "connector.draft.spec.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.version.spec.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     # From URL: preview a link, follow or copy a link dataset, list the linked datasets.
     "dataset.from-url.preview": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dataset.from-url.follow": "mammoth_cli.commands.dashboard.generated:generated_dashboard",

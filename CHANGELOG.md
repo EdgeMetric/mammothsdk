@@ -38,6 +38,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `view.math()` takes `{name}` in an expression to use a workspace or project parameter.
 - SDK: `json_extract` takes a key that is a path of keys and array indexes, not only a single key.
 - SDK: From URL. `ConnectorDraftsAPI.link_preview` previews a link, `DatasetsAPI.follow_link` follows or copies a link dataset, and `DatasetsAPI.links` lists the linked datasets.
+- SDK: `ConnectorDraftsAPI.spec(draft_id)` and `version_spec(connector_slug, version)` read an AI-built connector's spec: each table's request path, records path and paging, then the whole spec with secrets left out. They need the server release with mvc-service PR 7302; before it, a 404 reads "This server does not serve the connector spec read yet".
 - SDK: bulk download. `ExportsAPI.bulk_download_plan`, `bulk_download_url` and `bulk_download`.
 - SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
 - SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
@@ -60,6 +61,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `view transform repeat-rows` (Repeat Rows).
 - CLI: `view transform math` takes `{name}` in an expression for a workspace or project parameter; `view transform json-extract` takes a key path (keys and array indexes).
 - CLI: From URL: `dataset from-url preview`, `follow` and `links`.
+- CLI: `connector draft spec get DRAFT_ID` and `connector version spec get SLUG VERSION` show how a custom connector's tables are read: request path, records path, paging type and page size, and the whole spec, with credentials as references and anything that could be a secret redacted. They need the server release with mvc-service PR 7302.
 - CLI: bulk download: `dataset download` and `dataset download-plan`.
 - CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
 - CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs the next mammoth-io (the release raises the floor).

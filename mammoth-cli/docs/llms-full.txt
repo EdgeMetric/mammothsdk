@@ -434,6 +434,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector draft source list 123
 - `mammoth connector draft source preview` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source
   example: mammoth connector draft source preview 123 resource-123 --input '{"limit": 20}'
+- `mammoth connector draft spec get` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.spec
+  example: mammoth connector draft spec get 123
 - `mammoth connector draft update` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.update
   example: mammoth connector draft update 123 --input '{"title": "HubSpot deals"}'
 - `mammoth connector ds-config create` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.create_ds_config
@@ -456,6 +458,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector query generate postgres prod-warehouse --input '{"query": "Total sales for January"}'
 - `mammoth connector query status` [read/none] -> mammoth.api.ai.AIAPI.status
   example: mammoth connector query status postgres prod-warehouse
+- `mammoth connector version spec get` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
+  example: mammoth connector version spec get isams_ab12cd34 123
 
 ## context
 

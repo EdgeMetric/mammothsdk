@@ -191,6 +191,8 @@
     "calc",
     "capabilities",
     "connector.connection.query",
+    "connector.draft.spec.get",
+    "connector.version.spec.get",
     "dataset.download",
     "dataset.find",
     "dataset.schema-diff",

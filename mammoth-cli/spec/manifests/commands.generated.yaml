@@ -7608,6 +7608,46 @@ commands:
   known_restrictions: Reads up to `limit` (1-100) rows through the connection and records what came back
     on the source.
   reviewed_by: primary
+- command_id: connector.draft.spec.get
+  command_path: connector draft spec get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: draft_id
+    type: int
+    required: true
+    metavar: DRAFT_ID
+    falls_back_to_field: null
+    help: ID of the draft.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.spec
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.spec with validated request fields.
+  request_model: ConnectorDraftSpecGetRequest
+  result_model: ConnectorDraftSpecGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-DRAFT-SPEC-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector draft spec get DRAFT_ID --help
+  agent_example: mammoth connector draft spec get 123
+  unit_tests:
+  - UT-CONNECTOR-DRAFT-SPEC-GET
+  contract_tests:
+  - CT-CONNECTOR-DRAFT-SPEC-GET-HUMAN
+  - CT-CONNECTOR-DRAFT-SPEC-GET-JSON
+  - CT-CONNECTOR-DRAFT-SPEC-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Each table's request path, records path and paging, then the whole spec; credentials
+    are references and anything that could be a secret reads [redacted].
+  reviewed_by: primary
 - command_id: connector.draft.update
   command_path: connector draft update
   disposition: command
@@ -8134,6 +8174,52 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.version.spec.get
+  command_path: connector version spec get
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: connector_slug
+    type: str
+    required: true
+    metavar: CONNECTOR_SLUG
+    falls_back_to_field: null
+    help: The connector's slug, as 'connector draft spec get' shows it.
+  - name: version
+    type: int
+    required: true
+    metavar: VERSION
+    falls_back_to_field: null
+    help: The version number, from 1.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec with validated request
+    fields.
+  request_model: ConnectorVersionSpecGetRequest
+  result_model: ConnectorVersionSpecGetResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-VERSION-SPEC-GET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector version spec get CONNECTOR_SLUG VERSION --help
+  agent_example: mammoth connector version spec get isams_ab12cd34 123
+  unit_tests:
+  - UT-CONNECTOR-VERSION-SPEC-GET
+  contract_tests:
+  - CT-CONNECTOR-VERSION-SPEC-GET-HUMAN
+  - CT-CONNECTOR-VERSION-SPEC-GET-JSON
+  - CT-CONNECTOR-VERSION-SPEC-GET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: One stored version of the workspace's AI-built connector, by slug and version number.
   reviewed_by: primary
 - command_id: context.project.clear
   command_path: context project clear
