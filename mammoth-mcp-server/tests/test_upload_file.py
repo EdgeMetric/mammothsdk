@@ -152,7 +152,9 @@ class TestUploadingText:
         assert len(api.sent("GET", RESOURCES)) == 1
         assert [failed["job_id"] for failed in report["failed"]] == [42]
         assert "job_ids" not in report
-        assert "failed" in report["next_step"]
+        # None landed, so the note must not say the others did.
+        assert "other files landed" not in report["next_step"]
+        assert "nothing landed" in report["next_step"]
 
     def test_a_failed_file_is_not_listed_as_still_reading_when_the_call_ends(self) -> None:
         two = {

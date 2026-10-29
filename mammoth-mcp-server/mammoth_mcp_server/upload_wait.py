@@ -23,6 +23,10 @@ UPLOAD_GOES_ON = (
     "Mammoth has not finished taking the upload in. Do not upload it again: read"
     " the job with get_job, then list_datasets shows what it made."
 )
+NONE_READ = (
+    "Mammoth could not read any of the files: `failed` says why for each. Tell the"
+    " user; nothing landed, so send the files again only once they are fixed."
+)
 SOME_FAILED = (
     "Mammoth could not read the files in `failed`: tell the user why. The other"
     " files landed, so do not upload them again; send only the failed ones once fixed."
@@ -64,7 +68,7 @@ async def finish_upload(
         notes.append(goes_on or STILL_READING)
     if failed:
         report[UploadFields.FAILED] = list[JsonValue](failed)
-        notes.append(SOME_FAILED)
+        notes.append(NONE_READ if len(failed) == len(jobs) else SOME_FAILED)
     if notes:
         report[UploadFields.NEXT_STEP] = " ".join(notes)
     if upload.get(UploadFields.ERRORS):
