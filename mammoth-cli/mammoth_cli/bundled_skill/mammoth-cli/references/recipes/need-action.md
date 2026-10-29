@@ -44,6 +44,24 @@ flagged an ISO `YYYY-MM-DD` column too and reached `ready` within seconds of
 the update. If the status becomes `error`, read `status_info` and stop; do
 not retry with guessed settings.
 
+## A workbook or file that waits on a person
+
+An upload that made no dataset can still be waiting. `file upload` then returns
+`status: "needs_sheet_choice"` (a workbook with several sheets) or
+`"needs_password"` (a protected file), a `message`, a runnable `next_command` and
+each such file under `files` (`file_id`, `action_needed`); `verify.needs_user` is
+set. Do not upload the file again. Ask the user which sheets become datasets, or
+for the password:
+
+```bash
+mammoth file extract-sheets FILE_ID --input '{"sheets": ["Sheet1"]}'
+mammoth file set-password FILE_ID --input ./password.json --yes --confirm FILE_ID   # {"password": "..."} in the file
+```
+
+When the sheets are already known, pass `"sheets": [...]` in the `file upload`
+input: it extracts them when exactly one file waits for a choice (else a warning
+says it was ignored). `mammoth file list` shows the datasets once the job ends.
+
 ## All-text CSV: ingested, but no view
 
 A CSV whose columns are all text (ids, names, regions, no number or date)
