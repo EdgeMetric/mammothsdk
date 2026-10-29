@@ -441,13 +441,18 @@ class JobFields:
 
 
 class ViewFields:
-    """What `delete_views` reports. The SDK names the fields it sends itself."""
+    """What `create_view` and `delete_views` report. The SDK names the fields it sends itself."""
 
     VIEW_ID = "view_id"
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
     NEXT_STEP = "next_step"
+    HAS_ERROR = "has_error"
+    COPY_FAILED = (
+        "The view was created, but a step copied into it failed to run. Call"
+        " get_pipeline on the new view to see which, and tell the user."
+    )
 
 
 class TrashFields:
@@ -545,6 +550,12 @@ class DashboardFields:
 
     ID = "id"
     DASHBOARDS = "dashboards"
+    TRASHED = "trashed"
+    NEXT_STEP = "next_step"
+    IN_THE_TRASH = (
+        'The dashboard is in the trash. To bring it back, call undo with what="trash";'
+        " list_trash shows it, with how long the trash keeps it."
+    )
     TITLE = "title"
     TAGS = "tags"
     BOARD = "dashboard"
@@ -900,6 +911,8 @@ class StepFields:
     PARAMS = "params"
     # The columns a step reads: the ones the steps before it leave.
     COLUMNS_READ = "prev_metadata"
+    # For the web app: a join's key analysis, with the other view's columns it uses.
+    DISPLAY_INFO = "display_info"
     RUN_STATE = "transform_status"
     FAILED_STATES = frozenset({"ERROR", "REFERROR", "EXCEPTION"})
     REFERENCE_ERRORS = "reference_errors"
@@ -985,8 +998,57 @@ class ViewShape:
 
     KEPT = ("id", "name", "ds_id", "status", "row_count", "column_count", "updated_at")
     METADATA = "metadata"
+    ROW_COUNT = "row_count"
     COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
     NUMERIC = "NUMERIC"
     DATE = "DATE"
     # The row identity Mammoth adds to every data page; the web app never shows it.
     SYSTEM_COLUMNS = frozenset({"hash"})
+
+
+class JoinCheckFields:
+    """What `add_transformations` reports about how a join or a lookup matched."""
+
+    JOIN_CHECK = "join_check"
+    ROWS_BEFORE = "rows_before"
+    ROWS_AFTER = "rows_after"
+    COLUMNS_ADDED = "columns_added"
+    UNMATCHED_ROWS = "unmatched_rows"
+    MATCH_RATE = "match_rate"
+    NOTES = "notes"
+    UNMATCHED_NOTE = (
+        "{} of {} rows found no match: every column the step brought in is empty."
+        " If that is more than a few, compare the key columns of both views (type,"
+        " case, spaces) before building on this, or tell the user."
+    )
+    NO_NEW_COLUMN_NOTE = (
+        "The step added no column, so matched rows cannot be counted; read the rows"
+        " with get_data to check them."
+    )
+    ROWS_REPEAT_NOTE = (
+        "The join added {} rows: a key repeats in the other view, so the rows it"
+        " matches repeat too, and totals count them more than once. A lookup brings"
+        " in one value per key."
+    )
+    ROWS_DROPPED_NOTE = (
+        "{} rows found no match and were dropped (an INNER join keeps matched rows only)."
+    )
+    ALONE_NOTE = (
+        "Add a join or a lookup in a call of its own to get its join_check: with other"
+        " steps in the same call, its matches cannot be told apart."
+    )
+
+
+# A file-backed dataset has no source a refresh could pull from.
+_NOT_REFRESHABLE = (
+    "A dataset made from an uploaded file has no source to pull from, so it cannot be"
+    " refreshed or retrieved on a schedule. Upload the new file instead, or bring the"
+    " data in from a cloud or database connection (find_new_connection, then"
+    " add_dataset_from_connection): such a dataset refreshes on its own schedule."
+)
+# What to add to a refusal whose own words give no reason or way forward, by
+# Mammoth's error code.
+REFUSAL_HINTS: dict[object, str] = {
+    "4AUTO006": _NOT_REFRESHABLE,
+    "4DSET048": _NOT_REFRESHABLE,
+}

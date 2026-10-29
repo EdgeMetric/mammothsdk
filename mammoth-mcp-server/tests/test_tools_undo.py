@@ -89,6 +89,7 @@ def a_view(api: FakeApi, job: dict[str, Any] | None = None) -> None:
     api.answer("POST", f"{VERSIONS}/201", STARTED)
     api.answer("GET", f"{VIEW_PATH}/pipeline", PIPELINE_STATE)
     api.answer("GET", f"{VIEW_PATH}/pipeline/tasks", TASKS)
+    api.answer("GET", VIEW_PATH, {"id": VIEW, "metadata": []})
     api.answer("GET", JOB, job or done({}))
 
 
@@ -287,3 +288,17 @@ class TestThePipelinesVersions:
 
         assert "versions" not in answer
         assert not api.sent("GET", VERSIONS)
+
+
+class TestDeletingADashboard:
+    def test_the_answer_names_the_dashboard_alone_and_how_to_bring_it_back(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", "/dashboards/7/trash", STARTED)
+            api.answer("GET", JOB, done({}))
+            answer = call_tool("delete_dashboard", workspace_id=WORKSPACE, dashboard_id=7)
+
+        # Not every dashboard of the workspace: a model reads every word.
+        assert api.sent("GET", "/dashboards") == []
+        assert answer["trashed"] == 7
+        assert 'what="trash"' in answer["next_step"]
+        assert set(answer) == {"trashed", "next_step"}

@@ -222,12 +222,15 @@ async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, Js
         dashboard_id: Which dashboard.
 
     Returns:
-        The workspace's dashboards afterwards, as `list_dashboards` reports them.
+        `trashed`: the dashboard's id. `next_step`: how to bring it back.
     """
     async with build_client(workspace_id) as client:
         started = await read_sdk_errors(client.dashboards.trash(dashboard_id))
     await wait_for_job(workspace_id, started)
-    return await list_dashboards(workspace_id)
+    return {
+        DashboardFields.TRASHED: dashboard_id,
+        DashboardFields.NEXT_STEP: DashboardFields.IN_THE_TRASH,
+    }
 
 
 @mcp_server.tool(title="Publish dashboard", annotations=DESTRUCTIVE)

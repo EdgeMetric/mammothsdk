@@ -16,15 +16,19 @@ from mcp.server.mcpserver.exceptions import ToolError
 from ..consts import (
     PREVIEW_ROWS_DEFAULT,
     PREVIEW_ROWS_MAX,
+    JoinCheckFields,
     ListFields,
     PipelineFields,
     StepFields,
     VersionFields,
+    ViewShape,
 )
 from ..jobs import JobStillRunning, still_running, wait_for_job
+from ..join_check import MATCHING_OPERATIONS, measure, read_before, read_view
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import view_url
+from ..step_names import with_display_names
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
@@ -88,7 +92,7 @@ async def get_pipeline(
     Returns:
         `pipeline`: the state (`draft_mode` is off, clean or dirty; `auto_run`;
         `execution_state`). `steps`: each step's `id`, `sequence`, `status`
-        and `params` (columns there are internal names). `mammoth_url`: the
+        and `params`, with columns named as the user sees them. `mammoth_url`: the
         page in Mammoth the view opens on. When a step is in error, or changes
         are staged and not run: `problems` (each step in error, with why) and
         `next_step`, what to tell the user and do. With `include_versions`,
@@ -104,17 +108,23 @@ async def get_pipeline(
         state = await read_sdk_errors(
             client.pipeline.get_pipeline(ids["dataview_id"], dataset_id=ids["dataset_id"])
         )
+        # The steps' last added columns are named only by the view itself.
+        view = await read_view(client, ids)
         versions = (
             {VersionFields.VERSIONS: await read_versions(client.pipeline_versions, ids)}
             if include_versions
             else {}
         )
     steps = tasks[PipelineFields.TASKS]
+    listed = steps if isinstance(steps, list) else []
+    columns = view.get(ViewShape.METADATA)
     return {
         PipelineFields.PIPELINE: state,
-        PipelineFields.STEPS: steps,
+        PipelineFields.STEPS: with_display_names(
+            listed, columns if isinstance(columns, list) else []
+        ),
         ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
-        **what_needs_doing(state, steps if isinstance(steps, list) else []),
+        **what_needs_doing(state, listed),
         **versions,
     }
 
@@ -288,21 +298,31 @@ async def add_transformations(
             describes for its `op`.
 
     Returns:
-        The pipeline's state afterwards, as `get_pipeline` reports it. When
-        the run outlasts the call: the run's `job_id` and what to do next.
+        The pipeline's state afterwards, as `get_pipeline` reports it. A join
+        or a lookup added on its own also gets `join_check`: rows before and
+        after, the columns added, `unmatched_rows` and `match_rate` over the
+        whole view, and notes to act on. When the run outlasts the call: the
+        run's `job_id` and what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     # The API refuses to show the pipeline to a caller who may not see the view.
     pipeline = await read_pipeline(ids)
     steps = [read_operation(operation) for operation in operations]
-    if pipeline[PipelineFields.DRAFT_MODE] == PipelineFields.NOT_DRAFTING:
-        try:
-            await run_in_one_draft(ids, steps)
-        except JobStillRunning as running:
-            return still_running(running, STEPS_RUN_ON)
-    else:
+    if pipeline[PipelineFields.DRAFT_MODE] != PipelineFields.NOT_DRAFTING:
         await stage_steps(ids, steps)
-    return await read_pipeline(ids)
+        return await read_pipeline(ids)
+    matching = [step for step in steps if step.op in MATCHING_OPERATIONS]
+    before = await read_before(ids) if matching and len(steps) == 1 else None
+    try:
+        await run_in_one_draft(ids, steps)
+    except JobStillRunning as running:
+        return still_running(running, STEPS_RUN_ON)
+    state = await read_pipeline(ids)
+    if before is not None:
+        state[JoinCheckFields.JOIN_CHECK] = await measure(ids, before)
+    elif matching:
+        state[JoinCheckFields.JOIN_CHECK] = {JoinCheckFields.NOTES: [JoinCheckFields.ALONE_NOTE]}
+    return state
 
 
 @mcp_server.tool(title="Run pipeline", annotations=DESTRUCTIVE)

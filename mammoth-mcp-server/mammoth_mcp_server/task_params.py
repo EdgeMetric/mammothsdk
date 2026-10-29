@@ -7,6 +7,7 @@ view's columns, a joined view's columns, and the query the AI writes for an
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -104,6 +105,12 @@ _SQL_GENERATION_FAILED_MESSAGE = (
     "Could not generate a valid SQL query for that intent. Rephrase the "
     "transformation more concretely, or use a structured operation."
 )
+
+
+# Where the expression parser stopped reading, and the word that stands there.
+_UNREAD_POSITION = re.compile(r"at position (\d+)")
+_QUOTED_NAME = re.compile(r'(["`])(.+?)\1')
+_BARE_WORD = re.compile(r"[^\s+\-*/(),]+")
 
 
 @dataclass(frozen=True)
@@ -274,7 +281,23 @@ def _build_math_param(op: MathOperation, cols: _ColumnContext) -> dict[str, Any]
             column_type=op.column_type,
         )
     except ValueError as unread:
-        raise MammothValidationError(f"The operation does not fit the view: {unread}") from unread
+        raise MammothValidationError(
+            f"The operation does not fit the view: {unread}{_unread_word(op.expression, unread, cols)}"
+        ) from unread
+
+
+def _unread_word(expression: str, unread: ValueError, cols: _ColumnContext) -> str:
+    """Which word of the expression is no column, and the columns there are.
+
+    The parser names only a position, e.g. "Unrecognized token at position 0".
+    """
+    at = _UNREAD_POSITION.search(str(unread))
+    if at is None:
+        return ""
+    rest = expression.strip()[int(at.group(1)) :]
+    quoted, bare = _QUOTED_NAME.match(rest), _BARE_WORD.match(rest)
+    name = quoted.group(2) if quoted else (bare.group(0) if bare else rest[:1])
+    return f". {name!r} is not a column of this view. Its columns: {', '.join(cols.col_map)}."
 
 
 def _build_combine_param(op: CombineOperation, cols: _ColumnContext) -> dict[str, Any]:

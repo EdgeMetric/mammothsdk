@@ -46,6 +46,7 @@ class TestViews:
         with a_fake_api() as api, as_caller():
             api.answer("GET", f"{VIEWS}/{VIEW}/pipeline", {"draft_mode": "none"})
             api.answer("GET", f"{VIEWS}/{VIEW}/pipeline/tasks", {"tasks": []})
+            api.answer("GET", f"{VIEWS}/{VIEW}", {"id": VIEW, "metadata": []})
             pipeline = call_tool("get_pipeline", view_id=VIEW, **IDS)
 
         assert pipeline["mammoth_url"].endswith(VIEW_PAGE)
