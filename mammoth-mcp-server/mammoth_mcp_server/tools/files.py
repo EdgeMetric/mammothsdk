@@ -101,7 +101,9 @@ async def upload_file(
         dataset it made. A dataset that is ready carries `view_id`; one that
         waits on the user carries `needs`. `processing`, with `job_ids`, when
         Mammoth was still reading the file as the call ended. `rejected`: what
-        Mammoth refused. For an upload into a dataset instead: `appended_to`, the `update_method` it ran under
+        Mammoth refused. `failed`: each file Mammoth could not read, with its
+        `job_id`, `file_object_id` and `error`; the other files landed. For an
+        upload into a dataset instead: `appended_to`, the `update_method` it ran under
         (`mode`, `effect`, and `previous_mode` when this upload changed it),
         `rows_before`, `rows_after` and `rows_added`, and for "add" the
         `batch_ids` (`batch_id` when there is one) that `undo` with
@@ -198,7 +200,9 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         without the user opening Mammoth. Put every one of them to the user in
         one message and wait for their answer — the choice is theirs, and
         guessing it spoils the data quietly. Several files can wait on
-        different things. `rejected`: files Mammoth refused.
+        different things. `rejected`: files Mammoth refused. `failed`: files
+        Mammoth took but could not read, each with its `job_id`, `file_object_id`
+        and `error`; the other files landed, so do not upload them again.
     """
     ticket = await wait_for_the_file(upload_id)
     job_id = ticket.get(UploadFields.JOB_ID)

@@ -44,21 +44,44 @@ async def finish_upload(ticket: Record, started: dict[str, JsonValue]) -> dict[s
         return still_running(outlasted, UPLOAD_GOES_ON)
     jobs = _file_jobs(upload)
     running, failed = await _wait_for_each_file(workspace_id, jobs)
-    report = await (report_upload(ticket) if running or not jobs else _report_once_read(ticket))
-    if report is None:
-        running, report = [int(str(job[UploadFields.JOB_ID])) for job in jobs], await report_upload(
-            ticket
-        )
+    report, late = await _report(ticket, jobs, running, failed)
+    running = running or late
+    notes: list[str] = []
     if running:
         report[UploadFields.STATUS] = UploadFields.PROCESSING
         report[UploadFields.JOB_IDS] = list[JsonValue](running)
-        report[UploadFields.NEXT_STEP] = STILL_READING
+        notes.append(STILL_READING)
     if failed:
         report[UploadFields.FAILED] = list[JsonValue](failed)
-        report.setdefault(UploadFields.NEXT_STEP, SOME_FAILED)
+        notes.append(SOME_FAILED)
+    if notes:
+        report[UploadFields.NEXT_STEP] = " ".join(notes)
     if upload.get(UploadFields.ERRORS):
         report[UploadFields.REJECTED] = upload[UploadFields.ERRORS]
     return report
+
+
+async def _report(
+    ticket: Record,
+    jobs: list[dict[str, JsonValue]],
+    running: list[int],
+    failed: list[dict[str, JsonValue]],
+) -> tuple[dict[str, JsonValue], list[int]]:
+    """The report, and the jobs of files read whose dataset was not listed in time.
+
+    It waits for the dataset only when a file was read and makes one: an append adds
+    to a dataset that exists, and a failed file makes nothing.
+    """
+    gone = {job[UploadFields.JOB_ID] for job in failed}
+    read = [
+        int(str(job[UploadFields.JOB_ID])) for job in jobs if job[UploadFields.JOB_ID] not in gone
+    ]
+    if read and not running and not ticket.get(UploadFields.APPEND):
+        report = await _report_once_read(ticket)
+        if report is not None:
+            return report, []
+        return await report_upload(ticket), read
+    return await report_upload(ticket), []
 
 
 def _file_jobs(started: dict[str, JsonValue]) -> list[dict[str, JsonValue]]:

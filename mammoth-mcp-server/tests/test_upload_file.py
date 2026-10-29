@@ -7,9 +7,11 @@ read, one waiting on the user and one ready all looked the same.
 from typing import Any
 from unittest.mock import patch
 
+from mcp.server.auth.middleware.auth_context import get_access_token
+
 from mammoth_mcp_server.consts import DatasetStatus, FileStatus, ResourceTypes
 from mammoth_mcp_server.tools.files import check_upload
-from mammoth_mcp_server.upload_tickets import mint_ticket, spend_ticket
+from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket, spend_ticket
 
 from .helpers import GOOD_TOKEN, WORKSPACE, a_fake_api, a_fake_store, as_caller, call_tool, run
 
@@ -120,6 +122,37 @@ class TestUploadingText:
         assert {item["kind"] for item in report["files"]} == {"dataset", "file"}
         assert "again" in report["next_step"]
 
+    def test_when_every_file_failed_the_report_is_read_once_and_nothing_is_still_reading(
+        self,
+    ) -> None:
+        broken = {"job": {"id": 42, "status": "failure", "response": {"message": "Bad row 7"}}}
+        with a_fake_api() as api, as_caller(), SHORT_CALL, QUICK_POLL:
+            an_upload(api, per_file_job=broken)
+            api.answer("GET", RESOURCES, {"resources": STILL_READING})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert len(api.sent("GET", RESOURCES)) == 1
+        assert [failed["job_id"] for failed in report["failed"]] == [42]
+        assert "job_ids" not in report
+        assert "failed" in report["next_step"]
+
+    def test_a_failed_file_is_not_listed_as_still_reading_when_the_call_ends(self) -> None:
+        two = {
+            "errors": {},
+            "job_ids": [*PER_FILE["job_ids"], {"job_id": 43, "file_object_id": 13}],
+        }
+        broken = {"job": {"id": 43, "status": "failure", "response": {"message": "Bad row 7"}}}
+        with a_fake_api() as api, as_caller(), SHORT_CALL, QUICK_POLL:
+            an_upload(api, started=two)
+            api.answer("GET", "/jobs/43", broken)
+            api.answer("GET", RESOURCES, {"resources": STILL_READING})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert report["status"] == "processing"
+        assert report["job_ids"] == [42]
+        assert "get_job" in report["next_step"]
+        assert "failed" in report["next_step"]
+
     def test_a_dataset_not_listed_when_the_call_ends_is_reported_as_processing(self) -> None:
         with a_fake_api() as api, as_caller(), SHORT_CALL, QUICK_POLL:
             an_upload(api)
@@ -142,24 +175,51 @@ class TestUploadingText:
 
 
 class TestCheckingAnUploadFromTheBrowser:
-    def test_it_waits_for_each_file_as_upload_file_does(self) -> None:
-        with a_fake_store(), as_caller(token=GOOD_TOKEN):
-            from mcp.server.auth.middleware.auth_context import get_access_token
-
-            caller = get_access_token()
-            assert caller is not None
-            upload_id = run(mint_ticket(caller, WORKSPACE, PROJECT))
-            from mammoth_mcp_server.upload_tickets import read_ticket
-
-            held = run(read_ticket(upload_id))
-            assert held is not None
-            run(
-                spend_ticket(upload_id, held, 41, ["sales.csv"], uploaded_at="2026-10-29T00:00:00Z")
+    def a_spent_ticket(self, append: dict[str, Any] | None = None) -> str:
+        """A link the user has used: the files went up as job 41."""
+        caller = get_access_token()
+        assert caller is not None
+        upload_id = run(mint_ticket(caller, WORKSPACE, PROJECT))
+        held = run(read_ticket(upload_id))
+        assert held is not None
+        run(
+            spend_ticket(
+                upload_id,
+                held,
+                41,
+                ["sales.csv"],
+                uploaded_at="2026-10-29T00:00:00Z",
+                append=append,
             )
-            with a_fake_api() as api:
-                an_upload(api)
-                api.answer("GET", RESOURCES, {"resources": READ})
-                report = run(check_upload(upload_id))
+        )
+        return upload_id
+
+    def test_it_waits_for_each_file_as_upload_file_does(self) -> None:
+        with a_fake_store(), as_caller(token=GOOD_TOKEN), a_fake_api() as api:
+            upload_id = self.a_spent_ticket()
+            an_upload(api)
+            api.answer("GET", RESOURCES, {"resources": READ})
+            report = run(check_upload(upload_id))
 
         assert api.sent("GET", "/jobs/42"), "it did not wait for the file's own job"
         assert report["status"] == "done"
+
+    def test_an_upload_into_a_dataset_is_reported_by_the_append_not_waited_on(self) -> None:
+        # An append makes no new dataset, so waiting for one would only run out the clock.
+        appended = {"appended_to": DATASET, "rows_added": 1}
+        with (
+            a_fake_store(),
+            as_caller(token=GOOD_TOKEN),
+            a_fake_api() as api,
+            SHORT_CALL,
+            QUICK_POLL,
+            patch("mammoth_mcp_server.tools.files.finish_append", return_value=appended),
+        ):
+            upload_id = self.a_spent_ticket(append={"dataset_id": DATASET})
+            an_upload(api)
+            api.answer("GET", RESOURCES, {"resources": []})
+            report = run(check_upload(upload_id))
+
+        assert len(api.sent("GET", RESOURCES)) == 1
+        assert report["appended_to"] == DATASET
+        assert "job_ids" not in report
