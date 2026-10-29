@@ -104,9 +104,12 @@ async def count_unmatched(client: MammothClient, ids: dict[str, int], added: lis
     rows = answer.get("data")
     first = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
     count = first.get(JoinCheckFields.COUNT)
-    if not isinstance(count, int | float | str) or not str(count).strip():
-        raise ToolError(f"Mammoth's answer held no count of the unmatched rows: {answer}")
-    return int(float(count))
+    if isinstance(count, int | float | str):
+        try:
+            return int(float(count))
+        except ValueError:
+            pass
+    raise ToolError(f"Mammoth's answer held no count of the unmatched rows: {answer}")
 
 
 async def read_before(ids: dict[str, int]) -> dict[str, JsonValue]:

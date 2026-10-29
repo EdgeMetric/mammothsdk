@@ -93,7 +93,8 @@ class TestMeasuringTheView:
         assert "match_rate" not in check
 
     @pytest.mark.parametrize(
-        "answer", [{}, {"data": []}, {"data": [{}]}, {"data": [{"agg_0": ""}]}]
+        "answer",
+        [{}, {"data": []}, {"data": [{}]}, {"data": [{"agg_0": ""}]}, {"data": [{"agg_0": "abc"}]}],
     )
     def test_an_answer_with_no_count_is_not_read_as_zero(self, answer: dict[str, Any]) -> None:
         async def count() -> int:
