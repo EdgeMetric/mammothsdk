@@ -93,6 +93,22 @@ dataset = await client.datasets.get(dataset_id=123)                # get one
 await client.datasets.delete(dataset_id=123)                       # delete
 batches = await client.datasets.list_batches(dataset_id=123)       # list data batches
 hits = await client.datasets.search("New Year Sale")              # name, column or sampled value
+only = await client.datasets.list(ids=[1, 2, 3])                   # only these ids (list_all too)
+
+# Update method: does a new file replace the rows or add to them?
+from mammoth import DataAdditionMode
+await client.datasets.get_update_method(123)   # stored settings: data_addition_mode, schema_mapping, ...; {} = combine
+await client.datasets.set_update_method(123, DataAdditionMode.REPLACE, schema_mapping=None)  # REPLACE or COMBINE
+# set reads the stored settings first and changes only the mode (and schema_mapping)
+
+# From URL (link datasets)
+await client.datasets.follow_link(123, follow=False)   # False = copy: stops refreshing from its link
+links = await client.datasets.links()                  # datasets that follow a link
+preview = await client.connector_drafts.link_preview("https://host/file.csv")  # {"tables": [...]}, keeps nothing
+
+# File settings: delimiter, has_header, initial_skip_count, quotechar are optional;
+# one left out keeps the stored value (MammothValidationError if it cannot be read)
+await client.datasets.file_settings_update(123, delimiter=";")
 ```
 
 ---
@@ -111,7 +127,25 @@ files = await client.files.list()
 
 # Delete
 await client.files.delete(file_id=42)
+
+# Upload and see refusals: {"job_id", "dataset_ids", "errors", "nested_job_ids", "files"}
+res = await client.files.upload_result("book.xlsx")
+# res["files"]: uploads that made no dataset, each {"file_id", "name", "status", "action_needed"};
+# action_needed is "sheet_selection_required" (with sheets_info) or "password_required".
+# files_error says why the file list could not be read (files is then empty).
 ```
+
+### Appends (`client.appends`)
+
+Add files to an existing dataset and report what that did.
+
+```python
+res = await client.appends.append("more.csv", dataset_id=123, mode="add")  # mode: add | replace | None (keep)
+# res: appended_to, update_method, rows_before, rows_after, rows_added, batch_ids, unmatched_batch_ids,
+# append_pending; append_failed (+ failure "schema_mismatch", reason, kept_dataset_ids, next_step) if held back
+```
+
+`mode` is set before the upload and put back if it fails; `override_target_schema` needs the `replace` method. `prepare(dataset_id, mode)` and `finish(plan, file_names)` are the two halves for a caller that sends the file elsewhere; `restore_mode`, `read_mode`, `rows`, `list_batches` are public. Pure helpers (no client): `mammoth.appends` (`describe_update_method`, `match_batches`, `describe_append`, `refuse_batch_removal`, ...).
 
 ---
 
@@ -189,6 +223,8 @@ result = await client.jobs.wait_for_job(job_id=12345, timeout=120)
 results = await client.jobs.wait_for_jobs([12345, 12346])
 ```
 
+A poll that fails after the job id was returned raises with `operation_state="outcome_unknown"`, `phase="polling"` and `job_handle` set (`details["job_handles"]` for several jobs): the write was accepted, so read the job instead of resubmitting. For a 401/403, `details["next_step"]` says to sign in again.
+
 Job statuses: `processing`, `success`, `failure`, `error`
 
 ---
@@ -208,6 +244,13 @@ result = await client.exports.create(
 
 # Download as CSV
 path = await client.exports.to_csv(dataview_id=456, output_path="data.csv", dataset_id=123)
+```
+
+```python
+# Bulk download of datasets, views and folders (file_type "csv" | "xlsx")
+plan = await client.exports.bulk_download_plan([1, 2], views={1: 10})        # reads headers, queues nothing
+url = await client.exports.bulk_download_url([1, 2], "my-data", stack=False, numbered=False)  # {"url", "job_id"}
+path = await client.exports.bulk_download([1, 2], "my-data", output_path="my-data.zip")       # Path
 ```
 
 Prefer using `view.export.to_csv()`, `view.export.to_postgres()`, etc. on View objects.
@@ -246,7 +289,10 @@ dashboards = await client.dashboards.list()
 job = await client.dashboards.generate_v3({...})   # GenerateV3Params or dict; returns the build job id
 blank = await client.dashboards.create_blank(params)  # CreateBlankParams; empty v3 dashboard bound to a dataview
 data = await client.dashboards.get_publish_data(dashboard_id=1, widget_id="w1")  # optional global_filters, drilldown_filters
+await client.dashboards.share(1, DashboardAuthType.PASSWORD, password="s3cret-pass")  # 8 to 128 chars; omit to keep the current one
 ```
+
+Mammoth stores only the password's hash (`options.has_password`). A Mammoth without password sharing ignores the password, so check `options.has_password` after the share.
 
 ---
 
@@ -273,6 +319,8 @@ automation = await client.automations.create(
 schedules = await client.automations.list_schedules()
 ```
 
+`from mammoth.api.automations import build_automation_create_body, build_automation_patch_ops` validate and build the request body that `create` and `update` send (no request; the CLI dry run uses them).
+
 ---
 
 ## AIAPI (`client.ai`)
@@ -288,6 +336,10 @@ data = await client.ai.generate_data(dataview_id=456, prompt="customers", no_of_
 
 # Get AI suggestions for the current project
 suggestions = await client.ai.get_suggestions()
+
+# Generate SQL for a rule: dataset_id and dataview_id are required keywords
+res = await client.ai.generate_sql("count by region", dataset_id=123, dataview_id=456,
+                                   current_query="SELECT ...")  # current_query: change this SQL instead of writing new
 ```
 
 ---
@@ -330,6 +382,8 @@ new_id = await client.branch_out(view_id=1039, dataset_name="Q1 snapshot")   # t
 Every public method of the sub-clients not described above, by name. All are coroutines (`await client.<attr>.<method>(...)`); read the signature with `help(client.<attr>.<method>)` or the source in `mammoth/api/`. Most take optional `workspace_id`/`project_id` defaults from the client.
 
 - `client.agents` (AgentsAPI): `chat`, `session_delete`, `session_list`, `session_messages`, `session_set_visibility`, `action_list`, `action_delete`, `run_status`, `run_list`, `run_pause`, `run_resume`, `run_stop`, `run_extend`, `run_units_set`, `turn_cancel`
+- `client.workflow_templates` (WorkflowTemplatesAPI): `list`, `get`, `sample_result`, `rank`, `fit`, `preview`, `import_samples`, `build` (project workflow-template catalog)
+- `client.support` project move (tech admin): `workspace_project_list(workspace_id)`, `project_move_check(workspace_id, project_id, target_workspace_id)`, `project_move_start(..., acknowledged_warnings=None)`, `project_move_get(move_id)`, `project_move_purge(move_id)`
 - `client.annotations` (AnnotationsAPI): `list`, `create`, `delete`, `update`, `comment_add`
 - `client.billing` (BillingAPI): `chargebee_plan`, `hosted_page`, `stripe_checkout_url`, `stripe_portal_url`, `stripe_get`, `stripe_create`, `stripe_cancel`, `stripe_end_trial`, `stripe_retry_payment`, `stripe_sync`, `stripe_status`, `stripe_history`, `stripe_usage`, `stripe_preview_invoice`, `stripe_upcoming_invoice`, `stripe_resume`, `stripe_recheck_limits`, `stripe_storage_update`, `stripe_payment_method_list`, `stripe_payment_method_set_default`, `stripe_payment_method_delete`, `invoice_list`, `invoice_charge`, `subscription_get`, `subscription_update`
 - `client.checkpoints` (CheckpointsAPI): `list`, `get`, `create`, `update`, `delete`

@@ -3,7 +3,7 @@ name: mammoth-sdk
 description: Practical knowledge base for the Mammoth Analytics Python SDK — client setup, View transformations, condition building, exports, and documented API sub-clients. Use this skill when the user asks to "use the SDK", "write SDK code", "apply a transformation", "build a condition", "export data", mentions "MammothClient", "View", "Condition", "Operator", "filter_rows", "set_values", "pivot", "window", "join", "export", or needs to understand or write code using the Mammoth Python SDK. Covers documented SDK workflows from authentication through transformations to exports.
 ---
 
-# Mammoth Python SDK Knowledge Base (v0.8.52)
+# Mammoth Python SDK Knowledge Base (v0.8.53)
 
 The Mammoth Python SDK (`mammoth` package) provides programmatic access to the Mammoth Analytics platform. It wraps the REST API with Pythonic classes, rich View objects, a condition builder with operator overloading, and export helpers.
 
@@ -71,7 +71,7 @@ Single entry point. Authenticates with an API token (`api_token="mm_..."`, sent 
 | `client.addons` | AddonsAPI | Workspace addons |
 | `client.reports` | ReportsAPI | Report listing |
 
-Also on the client (method names in [references/api-reference.md](references/api-reference.md#other-sub-clients)): `agents`, `annotations`, `billing`, `checkpoints`, `connector_ai`, `data_checks`, `derivatives`, `notifications`, `parameters`, `pipeline_versions`, `snippets`, `support`, `templates`, `trash`, `users`, `workflows`, and `workspace` (cross-workspace calls; note `workspaces` is `WorkspaceAPI`).
+Also on the client (method names in [references/api-reference.md](references/api-reference.md#other-sub-clients)): `agents`, `annotations`, `appends`, `billing`, `checkpoints`, `connector_ai`, `connector_drafts`, `data_checks`, `derivatives`, `notifications`, `parameters`, `pipeline_versions`, `snippets`, `support`, `templates`, `trash`, `users`, `workflow_templates`, `workflows`, and `workspace` (cross-workspace calls; note `workspaces` is `WorkspaceAPI`).
 
 ### View Object
 
@@ -85,7 +85,7 @@ Rich domain object for a dataview. Created via `client.views.get(id)` or `client
 - `TextOpsMixin`: text_transform, replace_values, bulk_replace, split_column, substring
 - `DateOpsMixin`: extract_date, date_diff, increment_date
 - `AggregateOpsMixin`: pivot, window, crosstab (materialises a NEW dataset; `dataset_name` is required and the call returns its id)
-- `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows
+- `RowOpsMixin`: fill_missing, limit_rows, discard_duplicates, unnest, sort_rows, repeat_rows
 - `AdvancedOpsMixin`: join, lookup, json_extract, gen_ai, generate_sql, add_sql
 
 **Metadata**: `view.columns`, `view.display_names`, `view.column_types`, `view.name`, `view.id`; `await view.refresh()`, `view.get_metadata()`, `view.get_column_mapping()`
@@ -218,7 +218,7 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | `SplitColumnSpec` | `name: str`, `type: ColumnType = TEXT` | split_column() |
 | `BulkReplaceMapping` | `search: list[str]`, `replace: str` | bulk_replace() |
 | `DateDelta` | `years`, `months`, `weeks`, `days`, `hours`, `minutes`, `seconds` (all `int = 0`) | increment_date() |
-| `JsonExtractionSpec` | `key: str`, `as_name: str \| None`, `type: ColumnType = TEXT` | json_extract() |
+| `JsonExtractionSpec` | `key: str \| list[str \| int]` (key path), `as_name: str \| None`, `type: ColumnType = TEXT` | json_extract() |
 
 ## Exceptions
 

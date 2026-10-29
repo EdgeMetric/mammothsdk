@@ -137,6 +137,8 @@ await view.math("base_salary * 1.1", new_column="salary_with_raise")
 await view.math("(Revenue - Cost) / Revenue * 100", new_column="Margin %")
 ```
 
+`{name}` in an expression uses the workspace or project parameter of that name (`math("Price * {rate}", new_column="Total")`); the step re-runs when the parameter changes, and an unknown name raises `MammothValidationError`.
+
 String expression parser: column names are auto-resolved, supports `+`, `-`, `*`, `/`, `%`, and parentheses. A multi-word name works bare (`Unit Price * Quantity`) or quoted (`"Unit Price"` or `` `Unit Price` ``, 0.7.15+).
 
 ### small_large(function, columns, index=1, constants=None, new_column=None, existing_column=None)
@@ -366,6 +368,17 @@ await view.sort_rows([["Sales", "DESC"]])          # up to three columns; [] cle
 await view.rename_columns({"cust_id": "Customer ID"})
 ```
 
+### repeat_rows(times=None, values=None, series=None, new_column=None, new_column_type=None, existing_column=None, keep_original=None, order=None)
+
+Repeat every row (REPEAT task). Give exactly one of `times` (2 to 10000 copies), `values` (1 to 1000 unique values, written into `new_column` or `existing_column`) or `series` (`RepeatSeries`, a date or number range). `order` is `RepeatOrder.GROUPED` or `INTERLEAVED` (not with `times`).
+
+```python
+from mammoth import DateDelta, RepeatSeries
+await view.repeat_rows(times=2)
+await view.repeat_rows(values=["North", "South"], new_column="Region", new_column_type=ColumnType.TEXT)
+await view.repeat_rows(series=RepeatSeries("2026-01-01", "2026-12-31", delta=DateDelta(months=1)), new_column="Month")
+```
+
 ### discard_duplicates(ignore_columns=None)
 
 Remove duplicate rows.
@@ -589,6 +602,11 @@ await view.json_extract(
         JsonExtractionSpec(key="age", as_name="Age", type=ColumnType.NUMERIC),
     ],
 )
+
+# Nested value: a key path of object keys (str) and array indexes (int >= 0)
+await view.json_extract("metadata", extractions=[
+    JsonExtractionSpec(key=["orders", 0, "total"], as_name="First total"),  # no as_name: named "orders.0.total"
+])
 
 # List: expand to rows
 await view.json_extract("tags", json_type=JsonType.LIST)
