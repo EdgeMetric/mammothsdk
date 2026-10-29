@@ -77,6 +77,10 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     endpoint = getattr(exc, "endpoint", None)
     if endpoint is not None:
         details["endpoint"] = _CLIENT_KEY_SEGMENT.sub(r"\1{client_key}", str(endpoint))
+    for name in ("rejection_note", "rejected_task_keys"):
+        # A refused task write: the SDK named the keys the server cannot take.
+        if name in exc.details:
+            details[name] = exc.details[name]
     kept = exc.details.get("update_method_kept")
     if kept:
         # A mode an append set stayed on the dataset: the caller must be told.
@@ -905,6 +909,8 @@ def map_sdk_exception(
                 retryable=True,
             )
         message = _backend_message(exc.response_body, status)
+        if message and details.get("rejection_note"):
+            message = f"{message} {details['rejection_note']}"
         for backend_code, (noun, list_command) in GONE_BACKEND_CODES.items():
             if message and backend_code in message:
                 return CliError(

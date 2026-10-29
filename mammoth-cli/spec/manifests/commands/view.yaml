@@ -960,6 +960,14 @@ commands:
     kind: delivery
   known_restrictions: Prohibit secret in CA bundle file.
 - command_id: view.export.update
+  known_restrictions: 'Merge-style: --input is the fields to change (save_as_mode, target_properties,
+    additional_properties, condition, end_of_pipeline, sequence, run_immediately, schedule, send_window)
+    or {"patches":
+    [...]}. A replace of params keeps what it leaves out from the stored export and keeps the export
+    pinned to the end of the pipeline unless it sets end_of_pipeline false (sequence null means pinned;
+    a number unpins, and a sequence without end_of_pipeline false is refused). The stored schedule and
+    send_window are sent back with the edit. A command patch needs no value: {"op":"command","path":"run"} (also suspend, restore,
+    discard).'
   output_schema:
     ref: WriteResult
   readback:
@@ -1063,6 +1071,10 @@ commands:
   output_schema:
     ref: OpenObject
 - command_id: view.task.update
+  known_restrictions: 'Strict replacement task union. task_spec may be the params `view task get` returns:
+    the server-written keys (EXECUTION_TIMESTAMP, TASK_NAMESPACE) are dropped before the send and TASK_KEY
+    is kept (the server ignores it). A refusal names the keys sent beyond the envelope. To change a SQL
+    step: get the task, edit task_spec.SQL.QUERY (keep DATAVIEW_ID and SEQUENCE_NUMBER), send it back.'
   output_schema:
     ref: WriteResult
   readback:

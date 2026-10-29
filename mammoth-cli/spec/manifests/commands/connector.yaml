@@ -56,7 +56,9 @@ commands:
     kind: object
 - command_id: connector.connection.get
   output_schema: openapi
-  known_restrictions: Secrets in the returned config are redacted.
+  known_restrictions: Secrets in the returned config are redacted. Without --project it looks for the
+    project that holds the connection; when none or several do, it fails with project_required and names
+    them.
 - command_id: connector.connection.list
   output_schema:
     ref: OpenObjectList
@@ -186,6 +188,10 @@ commands:
     kind: object
 - command_id: connector.draft.get
   output_schema: openapi
+  known_restrictions: A per-parent table's `each` block says how its preview was sampled. `each.summary`
+    reads like "sampled 20 of 76 parents; 17 read, 3 failed", or "capped at 20 parents, total unknown"
+    when the parent table's row count is not known. `each.total` is the sample size, not the parent
+    count (`each.parents_total` is).
 - command_id: connector.draft.known-sources
   output_schema: openapi
 - command_id: connector.draft.list
@@ -225,9 +231,16 @@ commands:
   output_schema: openapi
 - command_id: connector.draft.source.list
   output_schema: openapi
+  known_restrictions: A per-parent table's `each.summary` says how many parents its preview sampled,
+    out of how many when that is known (`each.parents_total`).
 - command_id: connector.draft.source.preview
   output_schema:
     ref: WriteResult
+  known_restrictions: Reads up to `limit` (1-100) rows through the connection and records what came
+    back on the source. The limit is sent as given, but the server can return fewer rows; when the
+    rows come back short of `limit` and the source holds more, the answer sets `capped` true with
+    `limit_requested`, `limit_applied` and `source_row_count`. A preview is a sample; save the draft
+    to read every row.
   no_readback: returns the source's first rows itself; nothing is saved for a read to show
 - command_id: connector.draft.update
   output_schema:

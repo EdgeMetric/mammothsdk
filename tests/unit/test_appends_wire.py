@@ -8,6 +8,8 @@ batches off the batch listing and report a held-back file as ``append_failed``, 
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import Any
 
 import pytest
@@ -50,11 +52,12 @@ def _script(
     batches: list[dict[str, Any]],
     pending: list[dict[str, Any]],
     mode: str = "combine",
+    rows: int = 6,
 ) -> None:
     server.answers[f"GET {DATASET}"] = {
         "id": 77,
         "status": "ready",
-        "stats": {"row_count": 6},
+        "stats": {"row_count": rows},
         "configurations": {"schema_properties": {"data_addition_mode": mode}},
     }
     server.answers[f"GET {BATCHES}"] = {"batches": batches, "pending_batches": pending}
@@ -127,13 +130,14 @@ async def test_finish_reports_a_landed_batch_when_nothing_was_held_back(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
     new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
-    _script(server, batches=[OLD_BATCH, new_batch], pending=[])
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[], rows=9)
 
     report = await client.appends.finish(
         _plan(), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
     )
 
     assert report["batch_ids"] == [2]
+    assert report["rows_added"] == 3
     assert "append_failed" not in report
     assert "append_pending" not in report
 
@@ -149,3 +153,134 @@ async def test_append_refuses_override_target_schema_under_add_before_uploading(
         await client.appends.append(path, dataset_id=77, override_target_schema=True)
 
     assert [r["method"] for r in server.requests if r["method"] != "GET"] == []
+
+
+async def test_finish_never_reports_zero_rows_when_the_batch_is_listed_but_the_count_is_stale(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[])
+
+    report = await client.appends.finish(
+        _plan(), ["orders.csv"], [900], wait_seconds=0.2, poll_seconds=0.01
+    )
+
+    # The batch is listed but the dataset still reads 6 rows: pending, not "0 rows added".
+    assert report.get("append_pending") is True
+    assert report["batch_ids"] == [2]
+
+
+async def test_finish_keeps_polling_until_the_row_count_moves(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[])
+    waiting = asyncio.create_task(
+        client.appends.finish(_plan(), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01)
+    )
+    await asyncio.sleep(0.15)
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[], rows=10)
+
+    report = await waiting
+
+    assert report["rows_after"] == 10
+    assert report["rows_added"] == 4
+    assert "append_pending" not in report
+
+
+def _counted(batch_id: int, rows: int) -> dict[str, Any]:
+    return {"id": batch_id, "name": "", "row_count": rows, "source": {"file_name": "orders.csv"}}
+
+
+async def test_finish_settles_a_replace_with_the_same_row_count_without_waiting(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    _script(server, batches=[OLD_BATCH, _counted(2, 6)], pending=[], mode="replace")
+
+    started = time.monotonic()
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
+    )
+
+    assert time.monotonic() - started < 2
+    assert report["rows_added"] == 0
+    assert report["rows_after"] == 6
+    assert "append_pending" not in report
+
+
+async def test_finish_settles_a_replace_without_batch_counts_after_one_more_read(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[], mode="replace")
+
+    started = time.monotonic()
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
+    )
+
+    assert time.monotonic() - started < 2
+    assert "append_pending" not in report
+    assert report["batch_ids"] == [2]
+
+
+async def test_finish_settles_a_zero_row_file_at_once(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    _script(server, batches=[OLD_BATCH, _counted(2, 0)], pending=[])
+
+    started = time.monotonic()
+    report = await client.appends.finish(
+        _plan(), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
+    )
+
+    assert time.monotonic() - started < 2
+    assert report["rows_added"] == 0
+    assert "append_pending" not in report
+
+
+async def test_finish_keeps_polling_an_add_whose_first_read_is_short_of_the_batch_count(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    _script(server, batches=[OLD_BATCH, _counted(2, 4)], pending=[])
+    waiting = asyncio.create_task(
+        client.appends.finish(_plan(), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01)
+    )
+    await asyncio.sleep(0.15)
+    _script(server, batches=[OLD_BATCH, _counted(2, 4)], pending=[], rows=10)
+
+    report = await waiting
+
+    assert report["rows_added"] == 4
+    assert "append_pending" not in report
+
+
+async def test_finish_keeps_polling_a_replace_while_the_dataset_holds_more_than_the_batch(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    # The batch has 6 rows but the dataset still reads 10: the old rows are not gone yet.
+    # Replace needs exactly the batch's rows, so this must not settle on `rows >= batch`.
+    _script(server, batches=[OLD_BATCH, _counted(2, 6)], pending=[], mode="replace", rows=10)
+
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=0.3, poll_seconds=0.01
+    )
+
+    assert report.get("append_pending") is True
+
+
+async def test_finish_reads_the_dataset_again_before_it_settles_a_replace_without_counts(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[], mode="replace")
+    reads_before = len([r for r in server.requests if r["path"] == DATASET])
+
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
+    )
+
+    reads = len([r for r in server.requests if r["path"] == DATASET]) - reads_before
+    assert "append_pending" not in report
+    # One read sees the batch listed; a settle needs one more after it.
+    assert reads >= 2

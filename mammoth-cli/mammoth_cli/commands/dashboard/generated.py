@@ -58,6 +58,12 @@ from mammoth_cli.services.dashboard_review import (
     review,
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.draft_report import (
+    EACH_REPORTED,
+    PREVIEW_COMMAND,
+    with_each_reports,
+    with_preview_cap,
+)
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.read_memo import forget, remember
 
@@ -213,6 +219,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
+        data = _with_draft_reports(invocation.command_id, service, positionals, kwargs, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
             data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
@@ -221,6 +228,27 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     if invocation.reveal_secrets and invocation.command_id in REVEAL_COMMANDS:
         data = Revealed(normalize(data, redact_secrets=False))
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _with_draft_reports(
+    command_id: str,
+    service: Any,
+    positionals: dict[str, Any],
+    kwargs: dict[str, Any],
+    data: Any,
+) -> Any:
+    """Route a connector draft read to its sample report (:mod:`...services.draft_report`)."""
+    if command_id in EACH_REPORTED:
+        return with_each_reports(_dump_model(data))
+    if command_id == PREVIEW_COMMAND:
+        return with_preview_cap(
+            service,
+            positionals["draft_id"],
+            positionals["source_id"],
+            kwargs.get("limit"),
+            _dump_model(data),
+        )
+    return data
 
 
 #: Board-building steps whose result carries the evaluated card/tile numbers.

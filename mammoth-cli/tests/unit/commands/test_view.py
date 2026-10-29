@@ -2958,6 +2958,89 @@ def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_p
     ]
 
 
+_STORED_EXPORT = {
+    "id": 3,
+    "dataview_id": 7,
+    "sequence": 4,
+    "end_of_pipeline": True,
+    "handler_type": "internal_dataset",
+    "trigger_type": "pipeline",
+    "target_properties": {"TARGET_DS_ID": 55, "SAVE_AS_DS_MODE": "APPEND_TO_DS"},
+    "additional_properties": {},
+    "condition": {},
+}
+
+
+def _update_export(
+    fake_service: FakeMammothService, tmp_path: Path, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Run ``view export update`` on a stored pinned export; the kwargs of the PATCH call."""
+    fake_service.responses[_EXPORT_GET] = _STORED_EXPORT
+    view_cmd.view_export_update(
+        _inv(
+            "view.export.update",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(tmp_path, {**payload, "dataset_id": 9}),
+            yes=True,
+        )
+    )
+    symbol, kwargs = fake_service.call_log[-1]
+    assert symbol == _EXPORT_UPDATE
+    return kwargs
+
+
+def test_export_update_command_patch_needs_no_value(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    kwargs = _update_export(fake_service, tmp_path, {"patches": [{"op": "command", "path": "run"}]})
+
+    assert kwargs["patches"] == [{"op": "command", "path": "run", "value": None}]
+    assert [symbol for symbol, _ in fake_service.call_log] == [_EXPORT_UPDATE]
+
+
+def test_export_update_mode_alone_keeps_the_send_pinned_to_the_pipeline_end(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    kwargs = _update_export(fake_service, tmp_path, {"save_as_mode": "REPLACE_IN_DS"})
+
+    (patch,) = kwargs["patches"]
+    assert patch["op"] == "replace"
+    assert patch["path"] == "params"
+    spec = patch["value"]
+    assert spec["target_properties"] == {"TARGET_DS_ID": 55, "SAVE_AS_DS_MODE": "REPLACE_IN_DS"}
+    assert spec["handler_type"] == "internal_dataset"
+    assert spec["DATAVIEW_ID"] == 7
+    # sequence null is what pins an export to the end of the pipeline.
+    assert spec["sequence"] is None
+    assert spec["end_of_pipeline"] is True
+
+
+def test_export_update_replace_params_with_the_sequence_from_get_stays_pinned(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    rebuilt = {**_STORED_EXPORT, "run_immediately": False, "DATAVIEW_ID": 7}
+    kwargs = _update_export(
+        fake_service,
+        tmp_path,
+        {"patches": [{"op": "replace", "path": "params", "value": rebuilt}]},
+    )
+
+    spec = kwargs["patches"][0]["value"]
+    assert spec["sequence"] is None
+    assert spec["end_of_pipeline"] is True
+
+
+def test_export_update_unpins_only_when_the_caller_asks(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    kwargs = _update_export(fake_service, tmp_path, {"end_of_pipeline": False})
+
+    spec = kwargs["patches"][0]["value"]
+    assert spec["end_of_pipeline"] is False
+    assert spec["sequence"] == 4
+
+
 def test_pipeline_items_all_accepts_trailing_parent_positional(
     fake_service: FakeMammothService,
 ) -> None:

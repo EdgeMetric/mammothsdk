@@ -744,6 +744,30 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Instead of ``patch``: the handler reads the automation and writes the changed dataset
+    # list back as a ``details`` patch (``automation update`` docstring).
+    "automation.update": (
+        FieldSpec("add_datasets", required=False, annotation=list[int] | None, default=None),
+        FieldSpec("remove_datasets", required=False, annotation=list[int] | None, default=None),
+    ),
+    # Instead of ``patches``: the fields to change on the stored export (``export_update``).
+    "view.export.update": (
+        FieldSpec("save_as_mode", required=False, annotation=str | None, default=None),
+        FieldSpec(
+            "target_properties", required=False, annotation=dict[str, Any] | None, default=None
+        ),
+        FieldSpec(
+            "additional_properties", required=False, annotation=dict[str, Any] | None, default=None
+        ),
+        FieldSpec("condition", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("trigger_type", required=False, annotation=str | None, default=None),
+        FieldSpec("handler_type", required=False, annotation=str | None, default=None),
+        FieldSpec("end_of_pipeline", required=False, annotation=bool | None, default=None),
+        FieldSpec("sequence", required=False, annotation=int | None, default=None),
+        FieldSpec("run_immediately", required=False, annotation=bool | None, default=None),
+        FieldSpec("schedule", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("send_window", required=False, annotation=dict[str, Any] | None, default=None),
+    ),
     # The share password is read from this file by the handler (the SDK's own ``password``
     # is never an input: a password on the command line lands in shell history).
     "dashboard.share": (
