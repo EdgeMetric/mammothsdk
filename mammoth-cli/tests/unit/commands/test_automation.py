@@ -270,3 +270,124 @@ def test_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Pa
     assert fake_service.call_log == [
         (_UPDATE, {"automation_id": 7, "patch": [{"op": "command", "path": "run", "value": {}}]})
     ]
+
+
+# --- automation update: add or remove datasets (issue #328) ---------------
+
+
+def _refresh_automation() -> dict[str, object]:
+    """An automation as ``automation get`` returns it: two datasets on a daily schedule."""
+    return {
+        "id": 7,
+        "tasks": [
+            {
+                "task_type": "run_data_retrieval",
+                "details": [
+                    {"id": 1, "ds_details": {"ds_id": 11}},
+                    {"id": 2, "ds_details": {"ds_id": 12}},
+                ],
+            },
+            {"task_type": "send_an_alert", "details": [{"id": 3}]},
+        ],
+        "conditions": [
+            {
+                "condition_type": "at_specific_time",
+                "details": {
+                    "frequency": "daily",
+                    "interval": 1,
+                    "start_at": "2026-10-01T09:00:00Z",
+                },
+            }
+        ],
+        "condition_mode": "and",
+    }
+
+
+def _update_datasets(
+    fake_service: FakeMammothService, tmp_path: Path, payload: dict[str, object]
+) -> dict[str, object]:
+    fake_service.responses[_GET] = _refresh_automation()
+    automation_cmd.automation_update(
+        _inv(
+            "automation.update",
+            extra_args=["7"],
+            input_file=_write_doc(tmp_path, payload),
+            yes=True,
+        )
+    )
+    symbol, kwargs = fake_service.call_log[-1]
+    assert symbol == _UPDATE
+    assert [name for name, _ in fake_service.call_log] == [_GET, _UPDATE]
+    return kwargs
+
+
+def test_update_adds_a_dataset_to_a_data_refresh_automation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    kwargs = _update_datasets(fake_service, tmp_path, {"add_datasets": [13]})
+
+    (patch,) = kwargs["patch"]  # type: ignore[misc]
+    assert patch["op"] == "replace"
+    assert patch["path"] == "details"
+    value = patch["value"]
+    assert value["tasks"] == [
+        {
+            "task_type": "run_data_retrieval",
+            "details": {"ds_details": [{"ds_id": 11}, {"ds_id": 12}, {"ds_id": 13}]},
+        }
+    ]
+    # The schedule goes back as it was, without starting a run by itself.
+    assert value["conditions"] == [
+        {
+            "condition_type": "at_specific_time",
+            "details": {
+                "frequency": "daily",
+                "interval": 1,
+                "start_at": "2026-10-01T09:00:00Z",
+                "start_now": False,
+            },
+        }
+    ]
+    assert value["condition_mode"] == "and"
+
+
+def test_update_removes_a_dataset_and_keeps_the_rest(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    kwargs = _update_datasets(fake_service, tmp_path, {"remove_datasets": [11]})
+
+    patch = kwargs["patch"][0]  # type: ignore[index]
+    assert patch["value"]["tasks"][0]["details"]["ds_details"] == [{"ds_id": 12}]
+
+
+def test_update_refuses_to_remove_every_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_GET] = _refresh_automation()
+    with pytest.raises(CliError) as excinfo:
+        automation_cmd.automation_update(
+            _inv(
+                "automation.update",
+                extra_args=["7"],
+                input_file=_write_doc(tmp_path, {"remove_datasets": [11, 12]}),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert [name for name, _ in fake_service.call_log] == [_GET]
+
+
+def test_update_datasets_needs_confirmation(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        automation_cmd.automation_update(
+            _inv(
+                "automation.update",
+                extra_args=["7"],
+                input_file=_write_doc(tmp_path, {"add_datasets": [13]}),
+                output="json",
+            )
+        )
+    assert excinfo.value.code == "confirmation_required"
+    assert fake_service.call_log == []

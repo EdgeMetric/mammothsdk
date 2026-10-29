@@ -53,6 +53,30 @@ async def test_add_task_sends_a_read_back_task_without_the_server_written_keys(
     assert sent["DATAVIEW_ID"] == 42
 
 
+async def test_update_task_sends_an_edited_sql_read_back_with_its_task_key(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    """A `view task get` copy of a SQL task, with the query edited, goes back whole (#353)."""
+    read_back = {
+        "SQL": {"QUERY": "SELECT 1 AS a"},
+        "TASK_KEY": "sql",
+        "EXECUTION_TIMESTAMP": "20261028091500",
+        "TASK_NAMESPACE": "abcde",
+    }
+    read_back["SQL"]["QUERY"] = "SELECT 2 AS a"
+
+    await client.pipeline.update_task(
+        dataview_id=42, task_id=7, task_spec=read_back, dataset_id=500
+    )
+
+    (patch,) = _body(server)["patches"]
+    sent = patch["value"]
+    assert "EXECUTION_TIMESTAMP" not in sent
+    assert "TASK_NAMESPACE" not in sent
+    assert sent["TASK_KEY"] == "sql"
+    assert sent["SQL"] == {"QUERY": "SELECT 2 AS a"}
+
+
 async def test_add_task_drops_the_keys_from_every_spec_of_a_list(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:

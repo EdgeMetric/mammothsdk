@@ -58,6 +58,7 @@ from mammoth_cli.services.dashboard_review import (
     review,
 )
 from mammoth_cli.services.dashboard_review import _profiles as _review_profiles
+from mammoth_cli.services.draft_report import with_each_reports, with_preview_cap
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.read_memo import forget, remember
 
@@ -213,6 +214,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
+        data = _with_draft_reports(invocation.command_id, service, positionals, kwargs, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
             data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
         if invocation.command_id in _VALUED_COMMANDS:
@@ -221,6 +223,48 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     if invocation.reveal_secrets and invocation.command_id in REVEAL_COMMANDS:
         data = Revealed(normalize(data, redact_secrets=False))
     return data, _meta(invocation, auth.workspace_id)
+
+
+#: Connector draft reads whose per-parent (``each``) sources are described as a sample.
+_EACH_REPORTED = frozenset({"connector.draft.get", "connector.draft.source.list"})
+_DRAFT_SOURCES_SYMBOL = "mammoth.api.connector_drafts.ConnectorDraftsAPI.sources"
+
+
+def _with_draft_reports(
+    command_id: str,
+    service: Any,
+    positionals: dict[str, Any],
+    kwargs: dict[str, Any],
+    data: Any,
+) -> Any:
+    """Add the sample reports of a connector draft read (see :mod:`...services.draft_report`).
+
+    A source preview that comes back short of its limit reads the draft's source list once to
+    tell a small source from a capped preview; a failed read leaves the answer as it was.
+    """
+    if command_id in _EACH_REPORTED:
+        return with_each_reports(_dump_model(data))
+    if command_id != "connector.draft.source.preview":
+        return data
+    requested = kwargs.get("limit")
+    data = _dump_model(data)
+    rows = data.get("rows") if isinstance(data, dict) else None
+    if not isinstance(requested, int) or not isinstance(rows, list) or len(rows) >= requested:
+        return data
+    try:
+        listed = _dump_model(service.call(_DRAFT_SOURCES_SYMBOL, draft_id=positionals["draft_id"]))
+    except Exception:  # noqa: BLE001 -- the cap note is advice; the preview stands without it
+        return data
+    sources = listed.get("sources") if isinstance(listed, dict) else None
+    source = next(
+        (
+            item
+            for item in sources or []
+            if isinstance(item, dict) and str(item.get("id")) == str(positionals["source_id"])
+        ),
+        None,
+    )
+    return with_preview_cap(data, requested, source)
 
 
 #: Board-building steps whose result carries the evaluated card/tile numbers.

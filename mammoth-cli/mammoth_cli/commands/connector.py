@@ -43,7 +43,12 @@ from mammoth_cli.runtime.confirm import (
     enforce_confirmation,
 )
 from mammoth_cli.runtime.invocation import Invocation
-from mammoth_cli.runtime.session import open_service, require_project, resolved_project
+from mammoth_cli.runtime.session import (
+    DEFAULT_MUTATION_JOB_TIMEOUT,
+    open_service,
+    require_project,
+    resolved_project,
+)
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
 _QUERY_OPTIONAL = ("table", "profile")
@@ -57,6 +62,12 @@ _SQL_WRITE_WORD = re.compile(
 
 
 _ACTIVE_CONNECTORS_SYMBOL = "mammoth.api.connectors.ConnectorsAPI.active_connectors"
+CODE_PROJECT_REQUIRED = "project_required"
+_PROJECTS_SYMBOL = "mammoth.api.projects.ProjectsAPI.list_all"
+_CONNECTIONS_SYMBOL = "mammoth.api.connectors.ConnectorsAPI.list_connections"
+_JOB_WAIT_SYMBOL = "mammoth.api.jobs.JobsAPI.wait_for_job"
+#: Fields of a listed connection that can hold the key the caller typed.
+_CONNECTION_KEY_FIELDS = ("connection_key", "key", "id", "name")
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -308,18 +319,93 @@ def connector_connection_delete(invocation: Invocation) -> HandlerResult:
 
 
 def connector_connection_get(invocation: Invocation) -> HandlerResult:
-    """Get one connection's details. Connector and connection keys are positional."""
-    project_id = require_project(invocation)
+    """Get one connection's details. Connector and connection keys are positional.
+
+    Without a project (``--project`` or the active one), the project is looked up: the one
+    project whose connections hold the key. A key found in none or in several is refused
+    with the projects named. A read that starts a platform job is waited for, so the answer
+    is the job's result and not its id.
+    """
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")
+    project_id = resolved_project(invocation)
     with open_service(invocation) as (service, auth):
+        if project_id is None:
+            project_id = _project_of_connection(service, connector_key, connection_key)
         data = service.call(
             _symbol(invocation),
             connector_key=connector_key,
             connection_key=connection_key,
             project_id=project_id,
         )
+        data = _settled_job(service, invocation, data)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _project_of_connection(service: Any, connector_key: str, connection_key: str) -> int:
+    """The one project whose ``connector_key`` connections include ``connection_key``.
+
+    Args:
+        service: The open service.
+        connector_key: The connector the connection belongs to.
+        connection_key: The connection to find.
+
+    Returns:
+        The project id.
+
+    Raises:
+        CliError: ``project_required`` when the key is in none of the caller's projects or
+            in more than one (the candidates are named).
+    """
+    holders: list[int] = []
+    for project in service.call(_PROJECTS_SYMBOL):
+        project_id = project.get("id") if isinstance(project, dict) else None
+        if not isinstance(project_id, int):
+            continue
+        try:
+            listed = service.call(
+                _CONNECTIONS_SYMBOL, connector_key=connector_key, project_id=project_id
+            )
+        except CliError:
+            continue
+        if any(_names_connection(item, connection_key) for item in listed or []):
+            holders.append(project_id)
+    if len(holders) == 1:
+        return holders[0]
+    where = f"projects {holders}" if holders else "none of your projects"
+    raise CliError(
+        code=CODE_PROJECT_REQUIRED,
+        message=(
+            f"Connection '{connection_key}' of connector '{connector_key}' is in {where}; "
+            "pass --project to say which."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="Set an active project or pass --project.",
+        recovery_commands=[
+            f"mammoth connector connection get {connector_key} {connection_key} --project {pid}"
+            for pid in holders
+        ]
+        or ["mammoth project list"],
+    )
+
+
+def _names_connection(item: Any, connection_key: str) -> bool:
+    """Whether the listed connection ``item`` is the one called ``connection_key``."""
+    return isinstance(item, dict) and any(
+        str(item.get(field)) == connection_key for field in _CONNECTION_KEY_FIELDS
+    )
+
+
+def _settled_job(service: Any, invocation: Invocation, data: Any) -> Any:
+    """The job's result when ``data`` is nothing but a job id, else ``data`` as it is."""
+    job_id = data.get("job_id") if isinstance(data, dict) and set(data) == {"job_id"} else None
+    if not isinstance(job_id, int):
+        return data
+    return service.call(
+        _JOB_WAIT_SYMBOL,
+        job_id=job_id,
+        timeout=invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT,
+    )
 
 
 def connector_connection_list(invocation: Invocation) -> HandlerResult:

@@ -1617,7 +1617,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export tableau` [external_effect/yes_always] -> mammoth.view.ViewExport.to_tableau
   example: mammoth view export tableau 123 456 --input /private/path/request.json --yes
 - `mammoth view export update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.update
-  example: mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes
+  example: mammoth view export update 123 456 --input '{"save_as_mode": "REPLACE_IN_DS"}' --yes
 - `mammoth view exportable-config apply` [reversible_pipeline/confirm_target] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
   example: mammoth view exportable-config apply 123 456 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123
 - `mammoth view exportable-config get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_exportable_config
