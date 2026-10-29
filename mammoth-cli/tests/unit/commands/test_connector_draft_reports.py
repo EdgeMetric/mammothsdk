@@ -70,7 +70,7 @@ def test_draft_read_describes_the_sample_behind_a_per_parent_table(
             {
                 "id": "s2",
                 "name": "invoices",
-                "each": {"source": "s1", "capped": True, "failed": 3, "read": 17, "total": 20},
+                "each": {"source_id": "s1", "capped": True, "failed": 3, "read": 17, "total": 20},
             },
         ],
     }

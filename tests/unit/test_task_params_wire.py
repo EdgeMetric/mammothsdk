@@ -187,7 +187,12 @@ def test_the_rebuilt_refusal_keeps_every_attribute_of_the_original() -> None:
         "endpoint",
     ):
         assert getattr(rebuilt, name) == getattr(original, name), name
-    assert rebuilt.details == original.details
+    assert rebuilt.details == {
+        **original.details,
+        "rejection_note": rebuilt.details["rejection_note"],
+        "rejected_task_keys": ["EXTRA", "MATH"],
+    }
+    assert "keys sent beyond those: ['EXTRA', 'MATH']" in rebuilt.details["rejection_note"]
     assert rebuilt.details["operation_state"] == "outcome_unknown"
     assert rebuilt.details["job_handle"] == 52618
     # The original is left as it was.
@@ -212,3 +217,29 @@ def test_a_refusal_that_is_not_the_type_message_is_returned_as_is() -> None:
     other = MammothAPIError("conflict", status_code=409)
 
     assert _task_params_rejection(other, {"MATH": {}}) is other
+
+
+def test_a_refusal_whose_text_is_only_in_the_response_body_names_the_keys() -> None:
+    """The server's real 400 says "Validation error"; the type message is in the body."""
+    original = MammothAPIError(
+        "API request failed: Validation error",
+        status_code=400,
+        response_body={
+            "message": "Validation error",
+            "details": {
+                "extra": [
+                    {
+                        "key": "patches.0",
+                        "message": "For path ItemTaskPatchPath.PARAMS, value must be of "
+                        "type AddTaskSpec",
+                    }
+                ]
+            },
+        },
+    )
+
+    rebuilt = _task_params_rejection(original, {"SQL": {}, "BOGUS_KEY": 1})
+
+    assert rebuilt is not original
+    assert "keys sent beyond those: ['BOGUS_KEY', 'SQL']" in rebuilt.message
+    assert rebuilt.details["rejected_task_keys"] == ["BOGUS_KEY", "SQL"]

@@ -369,7 +369,9 @@ def _automation_update_datasets(
     )
     with open_service(invocation) as (service, auth):
         current = service.call(_AUTOMATION_GET_SYMBOL, automation_id=automation_id)
-        patch, datasets = automation_datasets.dataset_patch(dict(current), add, remove)
+        patch, datasets = automation_datasets.dataset_patch(
+            automation_datasets.automation_record(current), add, remove
+        )
         data = service.call(_symbol(invocation), automation_id=automation_id, patch=patch)
     if isinstance(data, dict):
         data = {**data, "datasets": datasets}

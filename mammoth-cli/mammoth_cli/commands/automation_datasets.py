@@ -11,6 +11,9 @@ from mammoth_cli.errors.envelope import (
 )
 
 TASK_TYPE_REFRESH = "run_data_retrieval"
+CONDITION_SCHEDULE = "at_specific_time"
+CONDITION_RUN_CONFIG = "run_config"
+TRIGGER_MANUAL = "manual"
 ADD_FIELD = "add_datasets"
 REMOVE_FIELD = "remove_datasets"
 DATASET_FIELDS = (ADD_FIELD, REMOVE_FIELD)
@@ -68,6 +71,21 @@ def unknown_dataset_fields(document: dict[str, Any]) -> list[str]:
     return sorted(key for key in document if key not in (*DATASET_FIELDS, *_BOUND_FIELDS))
 
 
+def automation_record(result: Any) -> dict[str, Any]:
+    """The automation dict inside what ``automation get`` returns.
+
+    Args:
+        result: The SDK's answer, ``{"automation": {...}}``, or the automation itself.
+
+    Returns:
+        The automation dict (empty when ``result`` is not a dict).
+    """
+    if not isinstance(result, dict):
+        return {}
+    inner = result.get("automation")
+    return dict(inner) if isinstance(inner, dict) else dict(result)
+
+
 def current_dataset_ids(automation: dict[str, Any]) -> list[int]:
     """The datasets a data-refresh automation refreshes now.
 
@@ -94,8 +112,10 @@ def dataset_patch(
     """The ``details`` patch that adds and removes datasets, with the schedule kept.
 
     The backend applies a task change only together with the automation's conditions, so
-    those are sent back as read. ``start_now`` is set to false so the edit does not start
-    a refresh run by itself.
+    those are sent back as read. ``start_now`` is set to false so a recurring schedule does
+    not start a run. The server starts a refresh of every dataset on this edit when the
+    automation has no recurrence rule (empty or manual conditions): there is no way to
+    avoid it, so such an automation is refused.
 
     Args:
         automation: The automation as ``automation get`` returns it.
@@ -106,8 +126,9 @@ def dataset_patch(
         The patch list and the dataset ids the automation will refresh.
 
     Raises:
-        CliError: ``invalid_argument`` when the automation has no data-refresh task, the
-            change asks for nothing, or it would leave no dataset.
+        CliError: ``invalid_argument`` when the automation has no data-refresh task, has no
+            recurring schedule (the edit would start a refresh), the change asks for
+            nothing, or it would leave no dataset.
     """
     current = current_dataset_ids(automation)
     if not any(
@@ -115,6 +136,12 @@ def dataset_patch(
         for task in automation.get("tasks") or []
     ):
         raise _refused("This automation has no data-refresh (run_data_retrieval) task.")
+    if not _has_recurring_schedule(automation):
+        raise _refused(
+            "This automation has no recurring schedule (it is manual or has no timing "
+            "condition), and Mammoth starts a refresh of every dataset whenever such an "
+            "automation's datasets are edited. Nothing was changed."
+        )
     if not add and not remove:
         raise _refused("Give at least one dataset id in add_datasets or remove_datasets.")
     overlap = sorted(set(add) & set(remove))
@@ -133,9 +160,44 @@ def dataset_patch(
         ],
         "conditions": [_condition(item) for item in automation.get("conditions") or []],
     }
-    if automation.get("condition_mode"):
-        value["condition_mode"] = automation["condition_mode"]
+    mode = automation.get("condition_mode") or next(
+        (
+            item["condition_mode"]
+            for item in automation.get("conditions") or []
+            if isinstance(item, dict) and item.get("condition_mode")
+        ),
+        None,
+    )
+    if mode:
+        value["condition_mode"] = mode
     return [{"op": "replace", "path": "details", "value": value}], result
+
+
+def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
+    """Whether an edit of the automation's datasets starts no run.
+
+    Mammoth starts a run on such an edit unless a condition builds a recurrence rule and
+    no condition is a manual trigger.
+
+    Args:
+        automation: The automation as ``automation get`` returns it.
+
+    Returns:
+        True when an ``at_specific_time`` condition has a frequency and none is manual.
+    """
+    scheduled = False
+    for item in automation.get("conditions") or []:
+        if not isinstance(item, dict):
+            continue
+        details = item.get("details")
+        details = details if isinstance(details, dict) else {}
+        if item.get("condition_type") == CONDITION_RUN_CONFIG and (
+            details.get("trigger_type") == TRIGGER_MANUAL
+        ):
+            return False
+        if item.get("condition_type") == CONDITION_SCHEDULE and details.get("frequency"):
+            scheduled = True
+    return scheduled
 
 
 def _condition(item: Any) -> Any:

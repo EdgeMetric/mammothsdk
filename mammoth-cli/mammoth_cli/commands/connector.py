@@ -354,10 +354,12 @@ def _project_of_connection(service: Any, connector_key: str, connection_key: str
         The project id.
 
     Raises:
-        CliError: ``project_required`` when the key is in none of the caller's projects or
-            in more than one (the candidates are named).
+        CliError: ``project_required`` when the key is in none of the projects, in more than
+            one, or when a project could not be read (the candidates and the unreadable
+            projects are named).
     """
     holders: list[int] = []
+    unreadable: list[int] = []
     for project in service.call(_PROJECTS_SYMBOL):
         project_id = project.get("id") if isinstance(project, dict) else None
         if not isinstance(project_id, int):
@@ -367,17 +369,25 @@ def _project_of_connection(service: Any, connector_key: str, connection_key: str
                 _CONNECTIONS_SYMBOL, connector_key=connector_key, project_id=project_id
             )
         except CliError:
+            # One call per project; a project that cannot be read may be the holder, so
+            # the answer below is not a guess when it is named here.
+            unreadable.append(project_id)
             continue
         if any(_names_connection(item, connection_key) for item in listed or []):
             holders.append(project_id)
-    if len(holders) == 1:
+    if len(holders) == 1 and not unreadable:
         return holders[0]
-    where = f"projects {holders}" if holders else "none of your projects"
+    where = f"projects {holders}" if holders else "none of the projects that could be read"
+    skipped = (
+        f" Projects {unreadable} could not be read, so the connection may be in one of them."
+        if unreadable
+        else ""
+    )
     raise CliError(
         code=CODE_PROJECT_REQUIRED,
         message=(
-            f"Connection '{connection_key}' of connector '{connector_key}' is in {where}; "
-            "pass --project to say which."
+            f"Connection '{connection_key}' of connector '{connector_key}' is in {where}."
+            f"{skipped} Pass --project to say which."
         ),
         exit_status=EXIT_USAGE,
         hint="Set an active project or pass --project.",

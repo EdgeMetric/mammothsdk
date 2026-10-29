@@ -253,3 +253,34 @@ async def test_finish_keeps_polling_an_add_whose_first_read_is_short_of_the_batc
 
     assert report["rows_added"] == 4
     assert "append_pending" not in report
+
+
+async def test_finish_keeps_polling_a_replace_while_the_dataset_holds_more_than_the_batch(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    # The batch has 6 rows but the dataset still reads 10: the old rows are not gone yet.
+    # Replace needs exactly the batch's rows, so this must not settle on `rows >= batch`.
+    _script(server, batches=[OLD_BATCH, _counted(2, 6)], pending=[], mode="replace", rows=10)
+
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=0.3, poll_seconds=0.01
+    )
+
+    assert report.get("append_pending") is True
+
+
+async def test_finish_reads_the_dataset_again_before_it_settles_a_replace_without_counts(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    new_batch = {"id": 2, "name": "", "source": {"file_name": "orders.csv"}}
+    _script(server, batches=[OLD_BATCH, new_batch], pending=[], mode="replace")
+    reads_before = len([r for r in server.requests if r["path"] == DATASET])
+
+    report = await client.appends.finish(
+        _plan("replace"), ["orders.csv"], [900], wait_seconds=5, poll_seconds=0.01
+    )
+
+    reads = len([r for r in server.requests if r["path"] == DATASET]) - reads_before
+    assert "append_pending" not in report
+    # One read sees the batch listed; a settle needs one more after it.
+    assert reads >= 2

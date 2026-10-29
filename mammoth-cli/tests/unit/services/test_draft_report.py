@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.services.draft_report import with_each_reports, with_preview_cap
+from mammoth_cli.services.draft_report import _cap_note, with_each_reports
 
 
 def _draft(each: dict[str, Any], parent_rows: int | None = 76) -> dict[str, Any]:
@@ -12,7 +12,7 @@ def _draft(each: dict[str, Any], parent_rows: int | None = 76) -> dict[str, Any]
         "id": 9,
         "sources": [
             {"id": "s1", "name": "invoice_run", "row_count": parent_rows},
-            {"id": "s2", "name": "invoices", "each": {"source": "s1", **each}},
+            {"id": "s2", "name": "invoices", "each": {"source_id": "s1", **each}},
         ],
     }
 
@@ -38,7 +38,7 @@ def test_a_capped_each_with_no_known_parent_count_says_so() -> None:
 
 def test_an_each_that_names_no_known_parent_has_no_total() -> None:
     draft = _draft({"capped": True, "total": 20})
-    draft["sources"][1]["each"]["source"] = "elsewhere"
+    draft["sources"][1]["each"]["source_id"] = "elsewhere"
 
     each = with_each_reports(draft)["sources"][1]["each"]
 
@@ -47,7 +47,7 @@ def test_an_each_that_names_no_known_parent_has_no_total() -> None:
 
 def test_an_unrelated_each_value_equal_to_a_sibling_name_is_not_taken_for_the_parent() -> None:
     draft = _draft({"capped": True, "total": 20, "label": "invoice_run"})
-    draft["sources"][1]["each"]["source"] = "elsewhere"
+    draft["sources"][1]["each"]["source_id"] = "elsewhere"
 
     each = with_each_reports(draft)["sources"][1]["each"]
 
@@ -57,7 +57,7 @@ def test_an_unrelated_each_value_equal_to_a_sibling_name_is_not_taken_for_the_pa
 
 def test_a_key_that_contains_parent_names_the_parent() -> None:
     draft = _draft({"capped": True, "total": 20, "parent_source": "invoice_run"})
-    draft["sources"][1]["each"]["source"] = "elsewhere"
+    draft["sources"][1]["each"]["source_id"] = "elsewhere"
 
     each = with_each_reports(draft)["sources"][1]["each"]
 
@@ -83,7 +83,7 @@ def test_a_draft_without_each_is_returned_as_it_was() -> None:
 def test_a_preview_short_of_its_limit_on_a_bigger_source_is_marked_capped() -> None:
     preview = {"rows": [{}] * 10, "row_count": 10}
 
-    out = with_preview_cap(preview, 100, {"id": "s19", "row_count": 76})
+    out = _cap_note(preview, 100, {"id": "s19", "row_count": 76})
 
     assert out["capped"] is True
     assert out["limit_requested"] == 100
@@ -95,18 +95,29 @@ def test_a_preview_short_of_its_limit_on_a_bigger_source_is_marked_capped() -> N
 def test_a_preview_of_a_small_source_is_not_capped() -> None:
     preview = {"rows": [{}] * 10, "row_count": 10}
 
-    assert with_preview_cap(preview, 100, {"id": "s19", "row_count": 10}) == preview
-
-
-def test_a_preview_that_met_its_limit_or_asked_for_none_is_unchanged() -> None:
-    preview = {"rows": [{}] * 10}
-
-    assert with_preview_cap(preview, 10, {"row_count": 76}) == preview
-    assert with_preview_cap(preview, None, {"row_count": 76}) == preview
+    assert _cap_note(preview, 100, {"id": "s19", "row_count": 10}) == preview
 
 
 def test_has_more_marks_a_short_preview_capped_without_a_row_count() -> None:
-    out = with_preview_cap({"rows": [{}] * 10}, 100, {"has_more": True})
+    out = _cap_note({"rows": [{}] * 10}, 100, {"has_more": True})
 
     assert out["capped"] is True
     assert "source_row_count" not in out
+
+
+def test_a_parent_read_to_its_limit_gives_no_total() -> None:
+    """The server sets has_more on a source read to its limit; its row_count is a floor."""
+    draft = _draft({"capped": True, "failed": 3, "read": 17, "total": 20})
+    draft["sources"][0]["has_more"] = True
+
+    each = with_each_reports(draft)["sources"][1]["each"]
+
+    assert each["parents_total"] is None
+    assert each["summary"] == "capped at 20 parents, total unknown; 17 read, 3 failed"
+
+
+def test_a_parent_not_read_to_its_limit_keeps_its_total() -> None:
+    draft = _draft({"capped": True, "total": 20})
+    draft["sources"][0]["has_more"] = False
+
+    assert with_each_reports(draft)["sources"][1]["each"]["parents_total"] == 76

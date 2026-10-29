@@ -919,3 +919,22 @@ def test_connection_get_waits_for_the_job_it_started(fake_service: FakeMammothSe
     assert data == {"operation": "get_identity_config", "result": {"profiles": []}}
     assert fake_service.call_log[-1][0] == _JOB_WAIT
     assert fake_service.call_log[-1][1]["job_id"] == 77
+
+
+def test_connection_get_without_a_project_names_the_projects_it_could_not_read(
+    fake_service: FakeMammothService,
+) -> None:
+    def _list(log: list[tuple[str, dict[str, object]]]) -> list[dict[str, str]]:
+        if log[-1][1]["project_id"] == 5:
+            raise CliError(code="authorization_required", message="denied", exit_status=3)
+        return [{"connection_key": "KEY1"}]
+
+    fake_service.responses[_PROJECTS_LIST_ALL] = [{"id": 5}, {"id": 6}]
+    fake_service.responses[_CONNECTION_LIST] = _list
+
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_connection_get(_no_project_connection_get())
+
+    assert excinfo.value.code == "project_required"
+    assert "Projects [5] could not be read" in excinfo.value.message
+    assert all(symbol != _CONNECTION_GET for symbol, _ in fake_service.call_log)

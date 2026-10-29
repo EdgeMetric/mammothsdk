@@ -765,6 +765,8 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
         FieldSpec("end_of_pipeline", required=False, annotation=bool | None, default=None),
         FieldSpec("sequence", required=False, annotation=int | None, default=None),
         FieldSpec("run_immediately", required=False, annotation=bool | None, default=None),
+        FieldSpec("schedule", required=False, annotation=dict[str, Any] | None, default=None),
+        FieldSpec("send_window", required=False, annotation=dict[str, Any] | None, default=None),
     ),
     # The share password is read from this file by the handler (the SDK's own ``password``
     # is never an input: a password on the command line lands in shell history).

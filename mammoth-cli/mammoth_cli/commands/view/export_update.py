@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
+
 PATCH_OP_COMMAND = "command"
 PATCH_OP_REPLACE = "replace"
 PATCH_PATH_PARAMS = "params"
@@ -18,6 +20,8 @@ SHORTHAND_FIELDS = (
     "end_of_pipeline",
     "sequence",
     "run_immediately",
+    "schedule",
+    "send_window",
 )
 #: ``target_properties`` key holding the write mode of an export into a dataset.
 SAVE_AS_MODE_KEY = "SAVE_AS_DS_MODE"
@@ -28,10 +32,18 @@ _STORED_SPEC_FIELDS = (
     "additional_properties",
     "condition",
 )
+#: The server keeps the schedule and the send window inside ``additional_properties``
+#: but takes them back only from these top-level spec fields: it strips the stored keys and
+#: deregisters the export's ScheduleJob when a save carries neither field.
+SCHEDULE_FIELDS = ("schedule", "send_window")
+#: Written by the runs themselves (the held send of a send window); never sent back.
+_SERVER_OWNED_KEY = "send_window_pending_since"
 #: The fields of the server's export spec a caller may set (anything else in a copy of
 #: ``view export get``, such as ``id`` or ``status``, is read-only and left out).
 _SPEC_FIELDS = (
     *_STORED_SPEC_FIELDS,
+    *SCHEDULE_FIELDS,
+    "release_moved_schedule",
     "DATAVIEW_ID",
     "TRIGGER_ID",
     "run_immediately",
@@ -126,15 +138,51 @@ def merged_spec(stored: dict[str, Any], changes: Any, dataview_id: int) -> dict[
     for field in _SPEC_FIELDS:
         if field in given:
             spec[field] = given[field]
+    _carry_schedule(spec, stored, given)
     if "save_as_mode" in given:
         spec["target_properties"] = {
             **(spec.get("target_properties") or {}),
             SAVE_AS_MODE_KEY: given["save_as_mode"],
         }
     pinned = given.get("end_of_pipeline", stored.get("end_of_pipeline", True)) is not False
+    if pinned and given.get("sequence") is not None and "end_of_pipeline" not in given:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                "A sequence cannot be set on an export pinned to the end of the pipeline: "
+                "it would be ignored."
+            ),
+            exit_status=EXIT_USAGE,
+            hint='To pin the export at that task, send `"end_of_pipeline": false` with it.',
+        )
     spec["end_of_pipeline"] = pinned
     spec["sequence"] = None if pinned else given.get("sequence", stored.get("sequence"))
     return spec
+
+
+def _carry_schedule(spec: dict[str, Any], stored: dict[str, Any], given: dict[str, Any]) -> None:
+    """Put the schedule and send window into ``spec`` as top-level fields.
+
+    The caller's own ``schedule`` / ``send_window`` win; otherwise the ones the export
+    stores in ``additional_properties`` are sent back, so an edit does not drop them.
+
+    Args:
+        spec: The spec being built; changed in place.
+        stored: The export as ``view export get`` returns it.
+        given: The caller's partial spec.
+    """
+    properties = dict(spec.get("additional_properties") or {})
+    properties.pop(_SERVER_OWNED_KEY, None)
+    stored_properties = stored.get("additional_properties") or {}
+    for field in SCHEDULE_FIELDS:
+        # Kept from the caller's own properties, else from the stored ones: a caller who sets
+        # additional_properties without the schedule does not mean to remove it (a null
+        # ``schedule`` / ``send_window`` field does).
+        kept = properties.pop(field, None) or stored_properties.get(field)
+        if field not in given and kept is not None:
+            spec[field] = kept
+    if "additional_properties" in spec:
+        spec["additional_properties"] = properties
 
 
 def _is_params_replace(patch: Any) -> bool:
