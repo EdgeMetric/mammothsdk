@@ -197,7 +197,9 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         `appended_to`, the `update_method` it ran under, `rows_before`,
         `rows_after` and `rows_added`, and for "add" the `batch_ids` that
         `undo` with what="batch" removes; a "replace" has none to remove.
-        `append_pending` means the rows had not all landed yet: call again. A dataset that is ready carries `view_id`:
+        `append_pending` means the rows had not all landed yet: call again.
+        Those fields come only once Mammoth has read the files; until then the
+        status is `processing` and `next_step` says to call again. A dataset that is ready carries `view_id`:
         read, transform and build dashboards on that view. An item Mammoth cannot finish without the
         user carries `needs`: the `action`, the `next_step` to take, and
         whatever that step needs — the `sheets` to choose from, or the

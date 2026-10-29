@@ -301,7 +301,9 @@ async def add_transformations(
         The pipeline's state afterwards, as `get_pipeline` reports it. A join
         or a lookup added on its own also gets `join_check`: rows before and
         after, the columns added, `unmatched_rows` and `match_rate` over the
-        whole view, and notes to act on. When the run outlasts the call: the
+        whole view, and notes to act on. When Mammoth could not count the
+        matches, `join_check` has no `match_rate` and a note says why; the step
+        is in all the same, so do not add it again. When the run outlasts the call: the
         run's `job_id` and what to do next.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
