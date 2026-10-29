@@ -68,6 +68,16 @@ def _report(each: dict[str, Any], sampled: int, parents: int | None) -> dict[str
     }
 
 
+#: ``each`` keys that name the parent source (besides any key containing "parent").
+_PARENT_KEYS = frozenset({"source", "source_id", "from"})
+
+
+def _names_parent(key: str) -> bool:
+    """Whether the ``each`` key ``key`` is one that names the parent source."""
+    lowered = key.lower()
+    return "parent" in lowered or lowered in _PARENT_KEYS
+
+
 def _parents_total(each: dict[str, Any], siblings: list[Any]) -> int | None:
     """The row count of the parent source ``each`` points at, or None when it is not known."""
     by_ref = {
@@ -77,7 +87,9 @@ def _parents_total(each: dict[str, Any], siblings: list[Any]) -> int | None:
         for field in ("id", "name")
         if item.get(field) is not None
     }
-    for value in each.values():
+    for key, value in each.items():
+        if not _names_parent(key):
+            continue
         parent = by_ref.get(value) if isinstance(value, str) else None
         if parent is not None:
             count = parent.get("row_count")

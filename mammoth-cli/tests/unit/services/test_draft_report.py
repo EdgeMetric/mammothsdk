@@ -12,7 +12,7 @@ def _draft(each: dict[str, Any], parent_rows: int | None = 76) -> dict[str, Any]
         "id": 9,
         "sources": [
             {"id": "s1", "name": "invoice_run", "row_count": parent_rows},
-            {"id": "s2", "name": "invoices", "each": {"over": "s1", **each}},
+            {"id": "s2", "name": "invoices", "each": {"source": "s1", **each}},
         ],
     }
 
@@ -38,11 +38,30 @@ def test_a_capped_each_with_no_known_parent_count_says_so() -> None:
 
 def test_an_each_that_names_no_known_parent_has_no_total() -> None:
     draft = _draft({"capped": True, "total": 20})
-    draft["sources"][1]["each"]["over"] = "elsewhere"
+    draft["sources"][1]["each"]["source"] = "elsewhere"
 
     each = with_each_reports(draft)["sources"][1]["each"]
 
     assert each["summary"] == "capped at 20 parents, total unknown"
+
+
+def test_an_unrelated_each_value_equal_to_a_sibling_name_is_not_taken_for_the_parent() -> None:
+    draft = _draft({"capped": True, "total": 20, "label": "invoice_run"})
+    draft["sources"][1]["each"]["source"] = "elsewhere"
+
+    each = with_each_reports(draft)["sources"][1]["each"]
+
+    assert each["parents_total"] is None
+    assert each["summary"] == "capped at 20 parents, total unknown"
+
+
+def test_a_key_that_contains_parent_names_the_parent() -> None:
+    draft = _draft({"capped": True, "total": 20, "parent_source": "invoice_run"})
+    draft["sources"][1]["each"]["source"] = "elsewhere"
+
+    each = with_each_reports(draft)["sources"][1]["each"]
+
+    assert each["summary"] == "sampled 20 of 76 parents"
 
 
 def test_an_uncapped_each_reads_all_its_parents() -> None:
