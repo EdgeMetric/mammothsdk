@@ -93,6 +93,8 @@ JOB_POLL_SECONDS = 0.2
 # seen at once, and a long build is not checked several times a second.
 JOB_POLL_MAX_SECONDS = 2.0
 JOB_TIMEOUT_SECONDS = 60.0
+# A new export runs after the job that adds it: how often to look at it until it has.
+EXPORT_POLL_SECONDS = 1.0
 # How long one tool call may wait in all, over every job it waits on. A client
 # gives up on a call after about a minute, so the answer must come before then.
 TOOL_CALL_SECONDS = 45.0
@@ -1011,6 +1013,7 @@ class StepFields:
     RAN = "ran"
     RUN_FAILED = "run_failed"
     RUN_PENDING = "run_pending"
+    ADDED = "added"
     STAGED = "staged"
     PUT_BACK = "put_back"
     NOT_PUT_BACK = "not_put_back"
@@ -1023,6 +1026,8 @@ class ExportFields:
     STATUS = "status"
     SUSPENDED = "suspended"
     SUSPENDING = "suspending"
+    ADDED = "added"
+    EXECUTING = "executing"
     DESTINATION = "handler_type"
     SETTINGS = "target_properties"
     EXTRA = "additional_properties"
@@ -1043,6 +1048,22 @@ class ExportFields:
     EXPORT = "export"
     LAST_RUN = "last_run"
     RECENT_RUNS = "recent_runs"
+    WHICH_DATASET = "which_dataset"
+    DATASETS = "datasets"
+
+
+class DatasetExportFields:
+    """The settings of an export into a Mammoth dataset, as a model passes them."""
+
+    DATASET_NAME = "dataset_name"
+    TARGET_NAME = "target_dataset_name"
+    TARGET_ID = "target_ds_id"
+    MODE = "save_as_mode"
+    COLUMN_MAPPING = "column_mapping"
+    ONE_OF = (DATASET_NAME, TARGET_NAME, TARGET_ID)
+    OPTIONAL = (MODE, COLUMN_MAPPING)
+    APPEND = "append"
+    REPLACE = "replace"
 
 
 class PageFields:
