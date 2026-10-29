@@ -453,6 +453,37 @@ class ViewFields:
         "The view was created, but a step copied into it failed to run. Call"
         " get_pipeline on the new view to see which, and tell the user."
     )
+    GOES_WITH = "goes_with_them"
+    TRASHED_DATASET = "trashed_dataset"
+    DATASET = "dataset"
+    VIEWS = "views"
+    # What deleting a view takes with it, as Mammoth's impact route lists it,
+    # and what of each item tells the user what it is.
+    IMPACT_SCOPE = "view"
+    IMPACT_KINDS = ("exports", "dashboards", "views", "automations")
+    IMPACT_ITEM_FIELDS = ("id", "name", "handler_type", "destination", "project_id")
+
+
+class RenameFields:
+    """What `create_project` and `rename` take and report."""
+
+    PROJECT = "project"
+    DATASET = "dataset"
+    PROJECT_ID = "project_id"
+    DATASET_ID = "dataset_id"
+    VIEW_ID = "view_id"
+    RENAMED = "renamed"
+
+
+class DeletedFileFields:
+    """What `delete_file` reports, and where Mammoth names the dataset a file made."""
+
+    DELETED_FILE = "deleted_file"
+    DATASET_KEPT = "dataset_kept"
+    NEXT_STEP = "next_step"
+    FILE = "file"
+    ADDITIONAL_INFO = "additional_info"
+    FINAL_DATASET_ID = "final_ds_id"
 
 
 class TrashFields:

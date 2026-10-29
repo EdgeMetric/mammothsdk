@@ -27,6 +27,7 @@ from ..consts import (
     ApiFields,
     ApiPaths,
     ColumnFields,
+    DeletedFileFields,
     FilePatchFields,
     FileSettingsFields,
     InterpretationFields,
@@ -731,18 +732,37 @@ async def get_file(workspace_id: int, project_id: int, file_id: int) -> dict[str
 async def delete_file(workspace_id: int, project_id: int, file_id: int) -> dict[str, JsonValue]:
     """Delete a file from a project.
 
-    The dataset Mammoth made from the file is deleted with it. Ask the user
-    before calling this: it cannot be undone from here.
+    The dataset Mammoth made from the file stays, with its views. To delete it
+    too, use `delete_views` with `whole_dataset`. Ask the user before calling
+    this: the file cannot be brought back from here.
 
     Args:
         workspace_id: Which workspace the file is in.
         project_id: Which project the file is in.
         file_id: Which file to delete.
+
+    Returns:
+        `deleted_file`, and `dataset_kept`: the dataset made from it, when it made one.
     """
+    path = ApiPaths.FILE.format(workspace_id=workspace_id, project_id=project_id, file_id=file_id)
     async with build_client(workspace_id, project_id) as client:
-        started = await request_api(
-            client,
-            "DELETE",
-            ApiPaths.FILE.format(workspace_id=workspace_id, project_id=project_id, file_id=file_id),
-        )
-    return await wait_for_job(workspace_id, started)
+        found = await request_api(client, "GET", path, query={ApiFields.FIELDS: ApiFields.STANDARD})
+        started = await request_api(client, "DELETE", path)
+    await wait_for_job(workspace_id, started)
+    return {DeletedFileFields.DELETED_FILE: file_id, **_dataset_kept(found)}
+
+
+def _dataset_kept(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """The dataset a deleted file leaves behind, and how to delete it too."""
+    file = found.get(DeletedFileFields.FILE)
+    info = file.get(DeletedFileFields.ADDITIONAL_INFO) if isinstance(file, dict) else None
+    dataset_id = info.get(DeletedFileFields.FINAL_DATASET_ID) if isinstance(info, dict) else None
+    if dataset_id is None:
+        return {}
+    return {
+        DeletedFileFields.DATASET_KEPT: dataset_id,
+        DeletedFileFields.NEXT_STEP: (
+            f"Dataset {dataset_id}, made from the file, stays. To delete it too, ask the user,"
+            " then call delete_views with whole_dataset=true."
+        ),
+    }
