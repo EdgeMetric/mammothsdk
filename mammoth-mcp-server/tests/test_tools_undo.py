@@ -1,8 +1,11 @@
 """Taking a change back: restore what was trashed, or put a pipeline back as it was."""
 
+import asyncio
+import contextlib
 from typing import Any
 from unittest.mock import patch
 
+import httpx
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -258,6 +261,42 @@ class TestADatasetWithMoreViewsThanAPage:
             answer = call_tool("delete_views", dataset_id=DATASET, whole_dataset=True, **IDS)
 
         assert answer["goes_with_them"]["views"] == list(self.MANY)
+
+    def test_what_goes_with_the_views_is_read_side_by_side(self) -> None:
+        # Each impact answer waits for a second read in flight; read in turn, none comes.
+        seen = {"in_flight": 0, "most": 0}
+        two = asyncio.Event()
+        with a_fake_api() as api, as_caller():
+            self.many_views(api)
+            answer = api.handle
+
+            async def held(request: httpx.Request) -> httpx.Response:
+                if not request.url.path.endswith("/impact"):
+                    return answer(request)
+                seen["in_flight"] += 1
+                seen["most"] = max(seen["most"], seen["in_flight"])
+                if seen["in_flight"] > 1:
+                    two.set()
+                with contextlib.suppress(TimeoutError):
+                    await asyncio.wait_for(two.wait(), 0.2)
+                seen["in_flight"] -= 1
+                return answer(request)
+
+            api.handle = held  # type: ignore[method-assign]
+            call_tool("delete_views", dataset_id=DATASET, view_ids=list(self.MANY[:2]), **IDS)
+
+        assert seen["most"] > 1
+
+    def test_a_view_whose_impact_cannot_be_read_stops_the_delete_and_says_why(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.many_views(api)
+            api.answers[("GET", f"{VIEWS}/{self.MANY[1]}/impact")] = [
+                (502, {"message": "Bad gateway"})
+            ]
+            with pytest.raises(ToolError, match="Bad gateway"):
+                call_tool("delete_views", dataset_id=DATASET, view_ids=list(self.MANY[:3]), **IDS)
+
+        assert not [r for r in api.requests if r.method == "POST"]
 
 
 class TestListingTheTrash:

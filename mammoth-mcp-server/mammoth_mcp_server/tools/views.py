@@ -185,7 +185,13 @@ async def _what_goes_with(
             )
 
     # Read side by side: a dataset of many views would spend the call's time in turn.
-    impacts = await asyncio.gather(*(impact_of(view_id) for view_id in view_ids))
+    # A TaskGroup stops the other reads when one fails, before the client closes.
+    try:
+        async with asyncio.TaskGroup() as reads:
+            tasks = [reads.create_task(impact_of(view_id)) for view_id in view_ids]
+    except ExceptionGroup as failed:
+        raise failed.exceptions[0] from None
+    impacts = [task.result() for task in tasks]
     goes: dict[str, list[JsonValue]] = {}
     for view_id, impact in zip(view_ids, impacts, strict=True):
         for kind in ViewFields.IMPACT_KINDS:

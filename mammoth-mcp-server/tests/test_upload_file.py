@@ -214,7 +214,7 @@ class TestUploadingText:
         with (
             a_fake_api() as api,
             as_caller(),
-            patch("mammoth_mcp_server.upload_wait.seconds_left", return_value=0),
+            SHORT_CALL,
         ):
             an_upload(api)
             api.answer("GET", RESOURCES, {"resources": STILL_READING})

@@ -49,8 +49,8 @@ async def finish_upload(
             of the notes for a new dataset.
 
     Returns:
-        The report, and whether every file Mammoth took was read and none failed
-        to be: only then is there anything an append can report.
+        The report, and whether at least one file Mammoth took was read and none is
+        still going: only then is there anything an append can report.
     """
     workspace_id = int(str(ticket[UploadFields.WORKSPACE_ID]))
     try:
