@@ -59,6 +59,12 @@ DATASETS_PER_READ = 100
 ADDING_GOES_ON = (
     "Mammoth is still adding the export. Do not add it again: call list_exports later" " to see it."
 )
+NOT_LISTED_NOTE = (
+    "Mammoth took the export, but the view lists no new export: its first run may"
+    " have failed, after which Mammoth removes it, or it was never added. Tell the"
+    " user it is not there. Call list_exports to check, and check the settings"
+    ' against get_schema with kind="export" before adding it again.'
+)
 ADDED_NOTE = (
     "The export is added and nothing was sent. It runs when the view runs. To send the"
     ' rows now, ask the user first, then call edit_export with "run".'
@@ -153,7 +159,7 @@ async def first_run(
     if not new:
         if not run_now:
             raise ToolError("Mammoth answered, but the view has no new export.")
-        return await wait_for_first_run(client, ids, -1)
+        return outcome(ids, StepFields.NOT_LISTED, NOT_LISTED_NOTE, None, None)
     export = max(new, key=lambda added: int(str(added.get(ExportFields.ID))))
     if not run_now:
         return outcome(ids, StepFields.ADDED, ADDED_NOTE, export, None)
@@ -260,10 +266,8 @@ def dataset_target(
         target: The dataset the rows go into, or None for a new one. Its name
             goes too, or Mammoth records the run as written to "Result Dataset".
 
-    Raises:
-        ToolError: If the settings cannot work, as `check_dataset_settings` says.
+    The settings were checked with `check_dataset_settings` before the target was looked up.
     """
-    check_dataset_settings(settings)
     fields = DatasetExportFields
     mode = str(settings.get(fields.MODE) or fields.REPLACE)
     name = settings.get(fields.DATASET_NAME) if target is None else target.get(ListFields.NAME)

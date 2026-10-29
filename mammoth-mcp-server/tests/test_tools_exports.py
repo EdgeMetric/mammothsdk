@@ -127,6 +127,18 @@ class TestTheFirstRun:
         assert not api.sent("GET", RUNS)
         assert len(api.sent("GET", EXPORTS)) == 2
 
+    def test_no_new_export_listed_after_the_add_is_said_plainly_not_called_removed(self) -> None:
+        # Either its first run failed and Mammoth removed it, or it was never added:
+        # the tool cannot tell which, so it says so.
+        with a_fake_api() as api, as_caller(), QUICK_POLL:
+            a_view(api, [OLD], [OLD])
+            answer = call_tool("add_export", destination="sftp", settings=SFTP, **IDS)
+
+        assert answer["outcome"] == "not_listed"
+        assert answer["export"] is None
+        assert "list_exports" in answer["next_step"]
+        assert not api.sent("GET", RUNS)
+
 
 class TestSendingToADataset:
     def test_its_settings_are_listed(self) -> None:

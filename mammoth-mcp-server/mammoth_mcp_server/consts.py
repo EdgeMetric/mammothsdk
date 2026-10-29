@@ -1017,6 +1017,7 @@ class StepFields:
     RAN = "ran"
     RUN_FAILED = "run_failed"
     RUN_PENDING = "run_pending"
+    NOT_LISTED = "not_listed"
     ADDED = "added"
     STAGED = "staged"
     PUT_BACK = "put_back"
