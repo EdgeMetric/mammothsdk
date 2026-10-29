@@ -14,6 +14,9 @@ from mammoth_cli.services.schedule_dates import until_has_passed
 TASK_TYPE_REFRESH = "run_data_retrieval"
 CONDITION_SCHEDULE = "at_specific_time"
 CONDITION_RUN_CONFIG = "run_config"
+REASON_MANUAL = "manual"
+REASON_ENDED = "ended"
+REASON_NONE = "none"
 TRIGGER_MANUAL = "manual"
 ADD_FIELD = "add_datasets"
 REMOVE_FIELD = "remove_datasets"
@@ -137,9 +140,10 @@ def dataset_patch(
         for task in automation.get("tasks") or []
     ):
         raise _refused("This automation has no data-refresh (run_data_retrieval) task.")
-    if not _has_recurring_schedule(automation):
-        ended = _ended_until(automation)
-        if ended:
+    problem = _schedule_problem(automation)
+    if problem:
+        reason, ended = problem
+        if reason == REASON_ENDED:
             raise _refused(
                 f"This automation's schedule ended at {ended} (its `until` has passed), so "
                 "Mammoth starts a refresh of every dataset whenever its datasets are edited. "
@@ -182,20 +186,22 @@ def dataset_patch(
     return [{"op": "replace", "path": "details", "value": value}], result
 
 
-def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
-    """Whether an edit of the automation's datasets starts no run.
+def _schedule_problem(automation: dict[str, Any]) -> tuple[str, str | None] | None:
+    """Why an edit of the automation's datasets would start a run, or None when it would not.
 
-    Mammoth starts a run on such an edit unless a condition builds a recurrence rule and
-    no condition is a manual trigger.
+    Mammoth starts a run on such an edit unless a condition builds a recurrence rule that
+    has not ended and no condition is a manual trigger.
 
     Args:
         automation: The automation as ``automation get`` returns it.
 
     Returns:
-        True when an ``at_specific_time`` condition has a frequency that has not ended and
-        none is manual.
+        None when the schedule is recurring and live; ``(REASON_MANUAL, None)`` when a
+        condition is a manual trigger; ``(REASON_ENDED, until)`` when the only recurring
+        schedules have ended; ``(REASON_NONE, None)`` when there is no recurring schedule.
     """
-    scheduled = False
+    live = False
+    ended: str | None = None
     for item in automation.get("conditions") or []:
         if not isinstance(item, dict):
             continue
@@ -204,43 +210,15 @@ def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
         if item.get("condition_type") == CONDITION_RUN_CONFIG and (
             details.get("trigger_type") == TRIGGER_MANUAL
         ):
-            return False
-        if (
-            item.get("condition_type") == CONDITION_SCHEDULE
-            and details.get("frequency")
-            and not until_has_passed(details)
-        ):
-            scheduled = True
-    return scheduled
-
-
-def _ended_until(automation: dict[str, Any]) -> str | None:
-    """The ``until`` of an ended schedule that is the only reason for a refusal.
-
-    Args:
-        automation: The automation as ``automation get`` returns it.
-
-    Returns:
-        The ended ``until`` of a recurring schedule condition, or None when there is none
-        or a manual trigger is the cause (a manual trigger is reported as such).
-    """
-    ended = None
-    for item in automation.get("conditions") or []:
-        if not isinstance(item, dict):
-            continue
-        details = item.get("details")
-        details = details if isinstance(details, dict) else {}
-        if item.get("condition_type") == CONDITION_RUN_CONFIG and (
-            details.get("trigger_type") == TRIGGER_MANUAL
-        ):
-            return None
-        if (
-            item.get("condition_type") == CONDITION_SCHEDULE
-            and details.get("frequency")
-            and until_has_passed(details)
-        ):
-            ended = str(details.get("until"))
-    return ended
+            return REASON_MANUAL, None
+        if item.get("condition_type") == CONDITION_SCHEDULE and details.get("frequency"):
+            if until_has_passed(details):
+                ended = str(details.get("until"))
+            else:
+                live = True
+    if live:
+        return None
+    return (REASON_ENDED, ended) if ended else (REASON_NONE, None)
 
 
 def _condition(item: Any) -> Any:
