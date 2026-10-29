@@ -117,9 +117,10 @@ async def add_export(
 
     Returns:
         `outcome`: "ran", "run_failed", "run_pending" (still running when the call
-        ended), "added" (with run_now false) or "which_dataset" (more than one
+        ended), "added" (with run_now false), "not_listed" (the view lists no new export;
+        `export` is null) or "which_dataset" (more than one
         dataset has the name given: nothing was added, and `datasets` lists them).
-        `next_step`: what to tell the user. `export`: the new export. `last_run`:
+        `next_step`: what to tell the user. `export`: the new export, or null. `last_run`:
         how its first run went. `mammoth_url`: the view in Mammoth.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
