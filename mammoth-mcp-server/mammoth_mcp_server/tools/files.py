@@ -46,6 +46,11 @@ from ..upload_tickets import read_ticket
 from ..upload_wait import finish_upload
 from .folders import read_folders
 
+APPEND_NOT_YET = (
+    "The file is not in the dataset yet. Do not upload it again: call check_upload"
+    " with the same upload_id in a minute, and it reports what the file added."
+)
+
 type DateFormat = Literal["US", "UK"]
 type Delimiter = Literal[",", "\t", "|", ";"]
 type QuoteChar = Literal['"', "'", ""]
@@ -137,7 +142,8 @@ async def upload_file(
     }
     if folder_resource_id is not None:
         ticket[UploadFields.FOLDER_RESOURCE_ID] = folder_resource_id
-    return await finish_upload(ticket, started)
+    report, _ = await finish_upload(ticket, started)
+    return report
 
 
 async def wait_for_the_file(upload_id: str) -> Record:
@@ -213,9 +219,11 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         }
     # Read the job as the polling user, so Mammoth refuses an upload that is
     # not theirs exactly as it would refuse any other job of a stranger's.
-    report = await finish_upload(ticket, {JobFields.JOB_ID: job_id})
     plan = ticket.get(UploadFields.APPEND)
-    if plan:
+    report, landed = await finish_upload(
+        ticket, {JobFields.JOB_ID: job_id}, APPEND_NOT_YET if plan else None
+    )
+    if plan and landed:
         report.update(
             await finish_append(
                 int(ticket[UploadFields.WORKSPACE_ID]),

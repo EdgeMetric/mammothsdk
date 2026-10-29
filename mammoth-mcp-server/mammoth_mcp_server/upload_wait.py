@@ -10,7 +10,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .consts import UPLOAD_POLL_SECONDS, UploadFields
 from .deadline import seconds_left
-from .jobs import JobStillRunning, job_id_of, still_running, wait_for_job
+from .jobs import JobFailed, JobStillRunning, job_id_of, still_running, wait_for_job
 from .sdk import API_ERROR_PREFIX, JsonValue
 from .store import Record
 from .upload_report import report_upload
@@ -29,19 +29,30 @@ SOME_FAILED = (
 )
 
 
-async def finish_upload(ticket: Record, started: dict[str, JsonValue]) -> dict[str, JsonValue]:
+type Report = dict[str, JsonValue]
+
+
+async def finish_upload(
+    ticket: Record, started: dict[str, JsonValue], goes_on: str | None = None
+) -> tuple[Report, bool]:
     """What the upload made, once each file is read or the call's time is up.
 
     Args:
         ticket: Where the files went and when: `workspace_id`, `project_id`,
             `uploaded_at`, and `folder_resource_id` when they went to a folder.
         started: What the upload route answered: the job it started.
+        goes_on: What to tell the model while the upload is not over, in place
+            of the notes for a new dataset.
+
+    Returns:
+        The report, and whether every file Mammoth took was read and none failed
+        to be: only then is there anything an append can report.
     """
     workspace_id = int(str(ticket[UploadFields.WORKSPACE_ID]))
     try:
         upload = await wait_for_job(workspace_id, started)
     except JobStillRunning as outlasted:
-        return still_running(outlasted, UPLOAD_GOES_ON)
+        return still_running(outlasted, goes_on or UPLOAD_GOES_ON), False
     jobs = _file_jobs(upload)
     running, failed = await _wait_for_each_file(workspace_id, jobs)
     report, late = await _report(ticket, jobs, running, failed)
@@ -50,7 +61,7 @@ async def finish_upload(ticket: Record, started: dict[str, JsonValue]) -> dict[s
     if running:
         report[UploadFields.STATUS] = UploadFields.PROCESSING
         report[UploadFields.JOB_IDS] = list[JsonValue](running)
-        notes.append(STILL_READING)
+        notes.append(goes_on or STILL_READING)
     if failed:
         report[UploadFields.FAILED] = list[JsonValue](failed)
         notes.append(SOME_FAILED)
@@ -58,7 +69,7 @@ async def finish_upload(ticket: Record, started: dict[str, JsonValue]) -> dict[s
         report[UploadFields.NEXT_STEP] = " ".join(notes)
     if upload.get(UploadFields.ERRORS):
         report[UploadFields.REJECTED] = upload[UploadFields.ERRORS]
-    return report
+    return report, bool(jobs) and not running and len(failed) < len(jobs)
 
 
 async def _report(
@@ -66,7 +77,7 @@ async def _report(
     jobs: list[dict[str, JsonValue]],
     running: list[int],
     failed: list[dict[str, JsonValue]],
-) -> tuple[dict[str, JsonValue], list[int]]:
+) -> tuple[Report, list[int]]:
     """The report, and the jobs of files read whose dataset was not listed in time.
 
     It waits for the dataset only when a file was read and makes one: an append adds
@@ -77,15 +88,13 @@ async def _report(
         int(str(job[UploadFields.JOB_ID])) for job in jobs if job[UploadFields.JOB_ID] not in gone
     ]
     if read and not running and not ticket.get(UploadFields.APPEND):
-        report = await _report_once_read(ticket)
-        if report is not None:
-            return report, []
-        return await report_upload(ticket), read
+        report, in_time = await _report_once_read(ticket)
+        return report, [] if in_time else read
     return await report_upload(ticket), []
 
 
 def _file_jobs(started: dict[str, JsonValue]) -> list[dict[str, JsonValue]]:
-    """The job of each file the upload took, with its file. None when Mammoth refused them all."""
+    """The job of each file the upload took, with its file; empty when it took none."""
     jobs = started.get(UploadFields.JOB_IDS)
     found = [job for job in jobs if isinstance(job, dict)] if isinstance(jobs, list) else []
     return [
@@ -101,30 +110,32 @@ def _file_jobs(started: dict[str, JsonValue]) -> list[dict[str, JsonValue]]:
 async def _wait_for_each_file(
     workspace_id: int, jobs: list[dict[str, JsonValue]]
 ) -> tuple[list[int], list[dict[str, JsonValue]]]:
-    """Wait for each file's job: the ones still running when time ran out, and the ones that failed.
+    """Wait for each file's job: the ones not known to be over, and the ones that failed.
 
     One file that fails does not end the wait for the others: they land anyway,
-    and a report that leaves them out gets them uploaded twice.
+    and a report that leaves them out gets them uploaded twice. A job that could
+    not be read is not known to have failed, so it is reported as still going:
+    calling it failed would get a file that landed sent again.
     """
     running: list[int] = []
     failed: list[dict[str, JsonValue]] = []
     for job in jobs:
         try:
             await wait_for_job(workspace_id, job)
-        except JobStillRunning:
-            running.append(int(str(job[UploadFields.JOB_ID])))
-        except ToolError as why:
+        except JobFailed as why:
             reason = str(why).removeprefix(f"{API_ERROR_PREFIX}: ")
             failed.append({**job, UploadFields.ERROR: reason})
+        except ToolError:
+            running.append(int(str(job[UploadFields.JOB_ID])))
     return running, failed
 
 
-async def _report_once_read(ticket: Record) -> dict[str, JsonValue] | None:
-    """The report once Mammoth has made what the files hold; None when time ran out first."""
+async def _report_once_read(ticket: Record) -> tuple[Report, bool]:
+    """The report once Mammoth has made what the files hold, and whether that was in time."""
     while True:
         report = await report_upload(ticket)
         if report[UploadFields.STATUS] == UploadFields.DONE and report[UploadFields.FILES]:
-            return report
+            return report, True
         if seconds_left() <= UPLOAD_POLL_SECONDS:
-            return None
+            return report, False
         await asyncio.sleep(UPLOAD_POLL_SECONDS)

@@ -20,6 +20,24 @@ PROJECT_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}"
 FILES = f"{PROJECT_PATH}/files"
 RESOURCES = f"{PROJECT_PATH}/resources"
 VIEWS = f"{PROJECT_PATH}/datasets/{DATASET}/dataviews"
+DATASET_PATH = f"{PROJECT_PATH}/datasets/{DATASET}"
+BATCHES = f"{DATASET_PATH}/batches"
+OLD_BATCH = {"id": 1, "name": "", "source": {"file_name": "first.csv"}}
+# What `prepare_append` read of the target before the file went (the SDK's plan).
+PLAN = {
+    "target": DATASET,
+    "update_method": {"mode": "add", "effect": "Each new file adds its rows."},
+    "mode_changed": False,
+    "rows_before": 6,
+    "batch_ids_before": [1],
+    "held_back_before": [],
+}
+TARGET = {
+    "id": DATASET,
+    "status": "ready",
+    "stats": {"row_count": 7},
+    "configurations": {"schema_properties": {"data_addition_mode": "combine"}},
+}
 IDS = {"workspace_id": WORKSPACE, "project_id": PROJECT}
 UPLOAD = {**IDS, "file_name": "sales.csv", "content": "name,amount\na,1\n"}
 # What the upload job returns: one job per file (a dev server, 28 Oct 2026).
@@ -173,6 +191,36 @@ class TestUploadingText:
         assert report["job_id"] == 41
         assert "get_job" in report["note"]
 
+    def test_a_file_whose_job_could_not_be_read_is_not_called_failed(self) -> None:
+        # A 502 on the poll says nothing about the file: calling it failed gets it sent again.
+        two = {
+            "errors": {},
+            "job_ids": [*PER_FILE["job_ids"], {"job_id": 43, "file_object_id": 13}],
+        }
+        with a_fake_api() as api, as_caller():
+            an_upload(api, started=two)
+            api.answer("GET", "/jobs/43", {"message": "Bad gateway"}, status=502)
+            api.answer("GET", RESOURCES, {"resources": READ})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert "failed" not in report
+        assert report["status"] == "processing"
+        assert report["job_ids"] == [43]
+        assert "get_job" in report["next_step"]
+
+    def test_the_report_read_when_time_ran_out_is_not_read_again(self) -> None:
+        with (
+            a_fake_api() as api,
+            as_caller(),
+            patch("mammoth_mcp_server.upload_wait.seconds_left", return_value=0),
+        ):
+            an_upload(api)
+            api.answer("GET", RESOURCES, {"resources": STILL_READING})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert len(api.sent("GET", RESOURCES)) == 1
+        assert report["status"] == "processing"
+
 
 class TestCheckingAnUploadFromTheBrowser:
     def a_spent_ticket(self, append: dict[str, Any] | None = None) -> str:
@@ -204,22 +252,44 @@ class TestCheckingAnUploadFromTheBrowser:
         assert api.sent("GET", "/jobs/42"), "it did not wait for the file's own job"
         assert report["status"] == "done"
 
-    def test_an_upload_into_a_dataset_is_reported_by_the_append_not_waited_on(self) -> None:
+    def an_append(self, api: Any, per_file_job: dict[str, Any] | None = None) -> str:
+        """A link used to add sales.csv to dataset 21, which held batch 1 and 6 rows."""
+        upload_id = self.a_spent_ticket(append=PLAN)
+        an_upload(api, per_file_job=per_file_job)
+        api.answer("GET", RESOURCES, {"resources": []})
+        return upload_id
+
+    def test_an_upload_into_a_dataset_is_reported_by_the_real_append(self) -> None:
         # An append makes no new dataset, so waiting for one would only run out the clock.
-        appended = {"appended_to": DATASET, "rows_added": 1}
-        with (
-            a_fake_store(),
-            as_caller(token=GOOD_TOKEN),
-            a_fake_api() as api,
-            SHORT_CALL,
-            QUICK_POLL,
-            patch("mammoth_mcp_server.tools.files.finish_append", return_value=appended),
-        ):
-            upload_id = self.a_spent_ticket(append={"dataset_id": DATASET})
-            an_upload(api)
-            api.answer("GET", RESOURCES, {"resources": []})
+        new_batch = {"id": 2, "name": "", "source": {"file_name": "sales.csv"}}
+        with a_fake_store(), as_caller(token=GOOD_TOKEN), a_fake_api() as api:
+            upload_id = self.an_append(api)
+            api.answer("GET", DATASET_PATH, TARGET)
+            api.answer("GET", BATCHES, {"batches": [OLD_BATCH, new_batch], "pending_batches": []})
             report = run(check_upload(upload_id))
 
         assert len(api.sent("GET", RESOURCES)) == 1
         assert report["appended_to"] == DATASET
+        assert report["batch_ids"] == [2]
+        assert (report["rows_before"], report["rows_after"], report["rows_added"]) == (6, 7, 1)
         assert "job_ids" not in report
+
+    def test_an_append_whose_upload_job_outlasts_the_call_is_not_reported_yet(self) -> None:
+        with a_fake_store(), as_caller(token=GOOD_TOKEN), a_fake_api() as api, SHORT_CALL:
+            upload_id = self.an_append(api)
+            api.answers[("GET", "/jobs/41")] = [(200, {"job": {"id": 41, "status": "processing"}})]
+            report = run(check_upload(upload_id))
+
+        assert not api.sent("GET", DATASET_PATH), "it waited for rows that cannot land yet"
+        assert "appended_to" not in report
+        assert "check_upload" in report["note"]
+
+    def test_an_append_whose_only_file_failed_reports_the_failure_alone(self) -> None:
+        broken = {"job": {"id": 42, "status": "failure", "response": {"message": "Bad row 7"}}}
+        with a_fake_store(), as_caller(token=GOOD_TOKEN), a_fake_api() as api:
+            upload_id = self.an_append(api, per_file_job=broken)
+            report = run(check_upload(upload_id))
+
+        assert not api.sent("GET", DATASET_PATH), "it waited for rows that cannot land"
+        assert "appended_to" not in report
+        assert [failed["job_id"] for failed in report["failed"]] == [42]

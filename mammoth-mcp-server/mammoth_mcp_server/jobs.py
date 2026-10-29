@@ -27,6 +27,10 @@ from .sdk import (
 )
 
 
+class JobFailed(ToolError):
+    """Mammoth ran the job, and the job failed: not a job that could not be read."""
+
+
 class JobStillRunning(ToolError):
     """A job had not finished when the wait ran out. It keeps running."""
 
@@ -59,7 +63,8 @@ async def wait_for_job(
     Raises:
         JobStillRunning: If the job does not finish in time. It carries the job,
             for a tool that can report a build still going.
-        ToolError: If the job fails, or returns something other than an object.
+        JobFailed: If the job fails.
+        ToolError: If the job cannot be read, or returns something other than an object.
     """
     job_id = find_job_id(started)
     seconds = min(seconds, seconds_left())
@@ -75,7 +80,7 @@ async def wait_for_job(
             await asyncio.sleep(gap)
             gap = min(gap * 2, JOB_POLL_MAX_SECONDS)
     if job[JobFields.STATUS] != JobFields.SUCCESS:
-        raise ToolError(f"{API_ERROR_PREFIX}: {describe_job_failure(job)}")
+        raise JobFailed(f"{API_ERROR_PREFIX}: {describe_job_failure(job)}")
     result = job[JobFields.RESPONSE]
     if not isinstance(result, dict):
         raise ToolError(f"{API_ERROR_PREFIX}: the job returned no object to read")
