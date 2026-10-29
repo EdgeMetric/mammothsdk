@@ -9,6 +9,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_USAGE,
     CliError,
 )
+from mammoth_cli.services.schedule_dates import until_has_passed
 
 TASK_TYPE_REFRESH = "run_data_retrieval"
 CONDITION_SCHEDULE = "at_specific_time"
@@ -183,7 +184,8 @@ def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
         automation: The automation as ``automation get`` returns it.
 
     Returns:
-        True when an ``at_specific_time`` condition has a frequency and none is manual.
+        True when an ``at_specific_time`` condition has a frequency that has not ended and
+        none is manual.
     """
     scheduled = False
     for item in automation.get("conditions") or []:
@@ -195,7 +197,11 @@ def _has_recurring_schedule(automation: dict[str, Any]) -> bool:
             details.get("trigger_type") == TRIGGER_MANUAL
         ):
             return False
-        if item.get("condition_type") == CONDITION_SCHEDULE and details.get("frequency"):
+        if (
+            item.get("condition_type") == CONDITION_SCHEDULE
+            and details.get("frequency")
+            and not until_has_passed(details)
+        ):
             scheduled = True
     return scheduled
 

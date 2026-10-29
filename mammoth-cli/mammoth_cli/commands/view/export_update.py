@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
+from mammoth_cli.services.schedule_dates import until_has_passed
 
 PATCH_OP_COMMAND = "command"
 PATCH_OP_REPLACE = "replace"
@@ -180,9 +181,39 @@ def _carry_schedule(spec: dict[str, Any], stored: dict[str, Any], given: dict[st
         # ``schedule`` / ``send_window`` field does).
         kept = properties.pop(field, None) or stored_properties.get(field)
         if field not in given and kept is not None:
+            if isinstance(kept, dict) and until_has_passed(kept):
+                raise _ended_schedule(field, kept)
             spec[field] = kept
     if "additional_properties" in spec:
         spec["additional_properties"] = properties
+
+
+def _ended_schedule(field: str, stored: dict[str, Any]) -> CliError:
+    """The refusal for a stored ``schedule`` / ``send_window`` whose ``until`` has passed.
+
+    The server refuses to save a schedule whose ``until`` is not ahead, so sending the
+    stored one back would fail every edit of the export; dropping the ``until`` would
+    quietly start the schedule again.
+
+    Args:
+        field: ``schedule`` or ``send_window``.
+        stored: The stored value.
+
+    Returns:
+        An ``invalid_argument`` error that says how to go on.
+    """
+    return CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=(
+            f"The export's {field} ended at {stored.get('until')} (its `until`), and the server "
+            f"refuses to save a {field} whose `until` has passed."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            f'Send a new `until` with the edit, e.g. --input \'{{"{field}": {{...the stored '
+            f'{field}..., "until": "<a future UTC time>"}}}}\', or `"{field}": null` to remove it.'
+        ),
+    )
 
 
 def _is_params_replace(patch: Any) -> bool:

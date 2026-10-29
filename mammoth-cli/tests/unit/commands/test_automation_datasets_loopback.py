@@ -34,6 +34,10 @@ DAILY = {
     "condition_type": "at_specific_time",
     "details": {"frequency": "daily", "interval": 1, "start_at": "2027-01-01T02:00:00"},
 }
+ENDED = {
+    **DAILY,
+    "details": {**DAILY["details"], "start_now": True, "until": "2020-01-01T00:00:00"},
+}
 MANUAL = {
     "condition_mode": "and",
     "condition_type": "run_config",
@@ -86,7 +90,9 @@ def test_a_daily_automation_gets_the_dataset_with_start_now_false(
 
 
 @pytest.mark.parametrize(
-    "conditions", [(MANUAL,), (), (MANUAL, DAILY)], ids=["manual", "no conditions", "manual+daily"]
+    "conditions",
+    [(MANUAL,), (), (MANUAL, DAILY), (ENDED,)],
+    ids=["manual", "no conditions", "manual+daily", "ended"],
 )
 def test_an_automation_the_server_would_run_is_refused_and_nothing_is_sent(
     service: SdkMammothService, server: Recorder, conditions: tuple[dict[str, Any], ...]

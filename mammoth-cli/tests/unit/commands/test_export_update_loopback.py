@@ -40,7 +40,7 @@ SEND_WINDOW = {"frequency": "weekly", "interval": 1, "by_week_day": ["MO"]}
 
 
 def _stored(**extra: Any) -> dict[str, Any]:
-    """An export as ``view export get`` returns it, with its schedule kept in the properties."""
+    """A scheduled email export as ``view export get`` returns it (schedule in the properties)."""
     return {
         "id": EXPORT,
         "status": "executed",
@@ -49,15 +49,23 @@ def _stored(**extra: Any) -> dict[str, Any]:
         "end_of_pipeline": True,
         "sequence": 4,
         "target_properties": {"TO": ["a@example.com"]},
-        "additional_properties": {
-            "note": "kept",
-            "schedule": SCHEDULE,
-            "send_window": SEND_WINDOW,
-            "send_window_pending_since": "2026-10-28T00:00:00",
-        },
+        "additional_properties": {"note": "kept", "schedule": SCHEDULE},
         "condition": {},
         **extra,
     }
+
+
+def _windowed(**extra: Any) -> dict[str, Any]:
+    """An email export on a pipeline trigger with a send window (what the server accepts)."""
+    return _stored(
+        trigger_type="pipeline",
+        additional_properties={
+            "note": "kept",
+            "send_window": SEND_WINDOW,
+            "send_window_pending_since": "2026-10-28T00:00:00",
+        },
+        **extra,
+    )
 
 
 def _update(
@@ -65,6 +73,13 @@ def _update(
 ) -> dict[str, Any]:
     """Read the export, merge ``changes`` over it, send the edit; the value PATCHed."""
     server.answers[("GET", EXPORT_PATH)] = _stored(**stored)
+    return _update_stored(service, server, changes)
+
+
+def _update_stored(
+    service: SdkMammothService, server: Recorder, changes: dict[str, Any]
+) -> dict[str, Any]:
+    """Merge ``changes`` over the export the server already holds; the value PATCHed."""
     server.answers[("PATCH", EXPORT_PATH)] = {}
     export = service.call(
         "mammoth.api.exports.ExportsAPI.get",
@@ -91,15 +106,14 @@ def _update(
     return value
 
 
-def test_the_stored_schedule_and_send_window_go_back_as_top_level_fields(
+def test_the_stored_schedule_goes_back_as_a_top_level_field(
     service: SdkMammothService, server: Recorder
 ) -> None:
     value = _update(service, server, {"save_as_mode": "REPLACE_IN_DS"})
 
     assert value["schedule"] == SCHEDULE
-    assert value["send_window"] == SEND_WINDOW
-    # Not left inside additional_properties, where the server strips them; the held send
-    # state is the server's own and is not sent back.
+    assert "send_window" not in value
+    # Not left inside additional_properties, where the server strips it.
     assert value["additional_properties"] == {"note": "kept"}
     assert value["target_properties"]["SAVE_AS_DS_MODE"] == "REPLACE_IN_DS"
     assert value["trigger_type"] == "schedule"
@@ -114,7 +128,6 @@ def test_a_schedule_the_caller_gives_replaces_the_stored_one(
     value = _update(service, server, {"schedule": new} | {"end_of_pipeline": True})
 
     assert value["schedule"] == new
-    assert value["send_window"] == SEND_WINDOW
 
 
 def test_an_export_without_a_schedule_sends_none(
@@ -157,7 +170,6 @@ def test_additional_properties_given_without_a_schedule_keep_the_stored_one(
 
     assert value["additional_properties"] == {"note": "new"}
     assert value["schedule"] == SCHEDULE
-    assert value["send_window"] == SEND_WINDOW
 
 
 def test_a_null_schedule_from_the_caller_removes_it(
@@ -166,4 +178,61 @@ def test_a_null_schedule_from_the_caller_removes_it(
     value = _update(service, server, {"schedule": None})
 
     assert value["schedule"] is None
+
+
+def test_the_stored_send_window_goes_back_without_the_held_send_state(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    server.answers[("GET", EXPORT_PATH)] = _windowed()
+    value = _update_stored(service, server, {"save_as_mode": "REPLACE_IN_DS"})
+
     assert value["send_window"] == SEND_WINDOW
+    assert "schedule" not in value
+    assert value["additional_properties"] == {"note": "kept"}
+    assert value["trigger_type"] == "pipeline"
+
+
+def test_a_stored_schedule_that_has_ended_is_refused_not_resent(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    ended = {**SCHEDULE, "start_now": True, "until": "2020-01-01T00:00:00"}
+
+    with pytest.raises(CliError) as refused:
+        _update(
+            service,
+            server,
+            {"save_as_mode": "REPLACE_IN_DS"},
+            additional_properties={"schedule": ended},
+        )
+
+    assert refused.value.code == "invalid_argument"
+    assert "schedule" in str(refused.value) and "until" in str(refused.value)
+    assert server.bodies("PATCH", "/exports/") == []
+
+
+def test_a_new_until_from_the_caller_replaces_an_ended_one(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    ended = {**SCHEDULE, "start_now": True, "until": "2020-01-01T00:00:00"}
+    renewed = {**SCHEDULE, "start_now": True, "until": "2999-01-01T00:00:00"}
+
+    value = _update(
+        service, server, {"schedule": renewed}, additional_properties={"schedule": ended}
+    )
+
+    assert value["schedule"] == renewed
+
+
+def test_a_stored_schedule_with_a_future_until_is_still_carried(
+    service: SdkMammothService, server: Recorder
+) -> None:
+    open_ended = {**SCHEDULE, "start_now": True, "until": "2999-01-01T00:00:00"}
+
+    value = _update(
+        service,
+        server,
+        {"save_as_mode": "REPLACE_IN_DS"},
+        additional_properties={"schedule": open_ended},
+    )
+
+    assert value["schedule"] == open_ended
