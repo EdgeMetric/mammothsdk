@@ -33,12 +33,21 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Added (next mammoth-io)
 
+- SDK: `ConnectorDraftsAPI.spec(draft_id)` and `version_spec(connector_slug, version)` read an AI-built connector's spec: each table's request path, records path and paging, then the whole spec with secrets left out. They need the server release with mvc-service PR 7302; before it, a 404 reads "This server does not serve the connector spec read yet".
+
+### Added (next mammoth-cli)
+
+- CLI: `connector draft spec get DRAFT_ID` and `connector version spec get SLUG VERSION` show how a custom connector's tables are read: request path, records path, paging type and page size, and the whole spec, with credentials as references and anything that could be a secret redacted. They need the server release with mvc-service PR 7302.
+
+## mammoth-io 0.8.53, mammoth-cli 2.4.0 (2026-10-29)
+
+### Added (mammoth-io 0.8.53)
+
 - SDK: `DatasetsAPI.list` and `list_all` take `ids`, sent as the server's comma-separated `id` filter, to read only those datasets.
 - SDK: Repeat Rows. `view.repeat_rows(...)` adds a REPEAT step that repeats each row.
 - SDK: `view.math()` takes `{name}` in an expression to use a workspace or project parameter.
 - SDK: `json_extract` takes a key that is a path of keys and array indexes, not only a single key.
 - SDK: From URL. `ConnectorDraftsAPI.link_preview` previews a link, `DatasetsAPI.follow_link` follows or copies a link dataset, and `DatasetsAPI.links` lists the linked datasets.
-- SDK: `ConnectorDraftsAPI.spec(draft_id)` and `version_spec(connector_slug, version)` read an AI-built connector's spec: each table's request path, records path and paging, then the whole spec with secrets left out. They need the server release with mvc-service PR 7302; before it, a 404 reads "This server does not serve the connector spec read yet".
 - SDK: bulk download. `ExportsAPI.bulk_download_plan`, `bulk_download_url` and `bulk_download`.
 - SDK: project move. `SupportAPI.workspace_project_list`, `project_move_check`, `project_move_start`, `project_move_get` and `project_move_purge`. The server requires a tech admin.
 - SDK: `AIAPI.generate_sql` takes an optional `current_query`, the SQL the rule holds now, which the intent changes instead of writing a new query.
@@ -50,21 +59,19 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `mammoth.api.automations.build_automation_create_body` and `build_automation_patch_ops` are public. They validate and build the request body that `AutomationsAPI.create` and `update` send; the CLI's dry run uses them.
 - SDK: the project workflow-template catalog. New sub-client `client.workflow_templates` (`list`, `get`, `sample_result`, `rank`, `fit`, `preview`, `import_samples`, `build`) over `/workflow-templates` (#337).
 
-### Changed (next mammoth-io)
+### Changed (mammoth-io 0.8.53)
 
 - SDK: `DatasetsAPI.file_settings_update`: `delimiter`, `has_header`, `initial_skip_count` and `quotechar` are optional. A setting left out keeps the value the dataset stores, which the SDK reads first; if it cannot be read, the call raises `MammothValidationError`. Calls that pass all four are unchanged.
-- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs the next mammoth-io (the release raises the floor).
+- SDK: `AIAPI.generate_sql` takes `dataset_id` and `dataview_id` as required keyword arguments (`dataview_id` was optional). Without a view the server writes against its default view 4, so the job failed with `NoSuchTable` for a table that is not the caller's. A call without either is refused before it is sent. The CLI needs mammoth-io 0.8.53.
 
-
-### Added (next mammoth-cli)
+### Added (mammoth-cli 2.4.0)
 
 - CLI: `view transform repeat-rows` (Repeat Rows).
 - CLI: `view transform math` takes `{name}` in an expression for a workspace or project parameter; `view transform json-extract` takes a key path (keys and array indexes).
 - CLI: From URL: `dataset from-url preview`, `follow` and `links`.
-- CLI: `connector draft spec get DRAFT_ID` and `connector version spec get SLUG VERSION` show how a custom connector's tables are read: request path, records path, paging type and page size, and the whole spec, with credentials as references and anything that could be a secret redacted. They need the server release with mvc-service PR 7302.
 - CLI: bulk download: `dataset download` and `dataset download-plan`.
 - CLI: project move: `support workspace project list`, `move-check` and `move-start`, and `support project-move get` and `purge`. They are high-impact writes with `confirm_target`, like the other support writes. The five routes were internal-only before.
-- CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs the next mammoth-io (the release raises the floor).
+- CLI: `ai sql generate` takes `current_query` in its `--input` to refine a query. The CLI needs mammoth-io 0.8.53.
 - CLI: `dataset update-method get DATASET_ID` and `dataset update-method set DATASET_ID --input '{"mode": "replace"}'` (`mode` is `replace` or `add`; `schema_mapping` is optional). The setting stays on the dataset, and so does every later upload into it. A set reports `previous_mode`, and `history undo` sets the previous mode back.
 - CLI: `file upload` takes `mode` (`replace` or `add`) with `append_to_ds_id`, which sets the target's update method before the upload, and `sheets`, the sheet names to extract from a workbook that waits for a choice. If the upload then fails, the previous mode is set back. An append reports `update_method` (the mode it ran under, read from the dataset when no `mode` was given) and `batch_ids`, the new batches whose source is the uploaded file; a new batch that can't be tied to it is listed in `unmatched_batch_ids`. `--dry-run` with `mode` lists the mode change under `earlier_calls` beside the upload. `mode` with `wait_for_completion: false` is refused as a usage error (the mode is set only by the waiting append), and an append whose dataset ends in a failed status is an error (`job_failed`).
 - CLI: an upload that waits on a person says so. A workbook with several sheets returns `needs_sheet_choice` with a runnable `file extract-sheets` command; a password-protected file returns `needs_password` with a `file set-password` command. Each file that made no dataset is listed in `files`, and `verify.needs_user` is set for these uploads.
@@ -76,9 +83,9 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `dashboard share` shares a board with anyone who has its link and password: `--input '{"type_of_auth": "password", "password_file": "./pw.txt"}'`. The password is read from the file (8 to 128 characters) and never printed, shown in a dry run or kept in the history. Re-sharing as password without a file keeps the current password. It needs a Mammoth with password sharing (PRD-656). A Mammoth without it ignores the password: the CLI reads the share back, and when no password was stored it puts the earlier share back and fails with `unsupported_by_server` (exit 1, `details.share_restored` says whether the restore took). Until then `limitations` lists `dashboard-password-share`.
 - CLI: the project workflow-template catalog: `workflow template list`, `get`, `sample-result`, `rank`, `fit`, `preview`, `samples` and `build`; `schema find "workflow template"` finds them (#337).
 
+### Changed (mammoth-cli 2.4.0)
 
-### Changed (next mammoth-cli)
-
+- CLI: needs mammoth-io 0.8.53 or later: the update method, `client.appends` and the upload `files` are not in 0.8.52.
 - CLI: recipes carry a `version`, shown in `recipe list` and in the `recipe run` summary. `remove-duplicates` is version 2: it edits the named view in place, as version 1 did; pass `copy: true` to work on a copy and leave the original unchanged. The new optional `key_columns` makes only those columns decide a duplicate; without it whole rows are compared, as before. `summarize-by` is version 2: `group_by` takes one name (a string, as before) or a list of names, and the groups are ordered by `order_by` (default: largest result first). `blend-by-key`, `email-view`, `export-to-s3` and `dashboard-from-view` read the view's size first. New recipes: `filter-copy`, `create-projects`. `recipe run --dry-run` marks each previewed write as counted, an upper bound or not measured.
 - CLI: `view transform discard-duplicates` takes `key_columns` (the columns that make a row a duplicate; every other column is ignored). `recipe run` refuses an input only when it still holds that input's own `<name>` placeholder.
 - CLI: `history undo` of an append deletes the batch that upload added, and so its rows. It deletes nothing when the dataset's update method was replace (the old rows are gone) or could not be read, or when no new batch could be tied to the upload. It also refuses to delete a dataset's only batch (or all of them), and says why.
@@ -88,15 +95,18 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: `template list` (and the `template` group help) says it reads the legacy workspace templates and points to `workflow template list` for the catalog (#337).
 - CLI: with `-o json`, `ndjson` or `yaml` the error envelope goes to stdout, like a success, instead of stderr, so a script reading stdout no longer gets an empty reply; the exit status is unchanged and stderr keeps only human hints and progress.
 
-### Deprecated (next mammoth-cli)
+### Deprecated (mammoth-cli 2.4.0)
 
 - CLI: `file upload`'s `staging_dataset_ids` (the temporary dataset an append makes, which the backend deletes) will be removed in the next release. Read `appended_to` and `batch_ids` instead.
 
-### Removed (next mammoth-cli)
+### Removed (mammoth-cli 2.4.0)
 
 - CLI: the `mcp-task-edit` entry is removed from the limitations list.
 
-### Fixed (next mammoth-io)
+### Fixed (mammoth-io 0.8.53)
+
+- SDK: an upload into an existing dataset (`client.appends.finish`, so also the CLI and MCP uploads) no longer reports `rows_added: 0` when the rows landed. The batch can be listed before the dataset's row count moves, so the wait now checks the count against the new batch's own `row_count`: under add the dataset must hold at least the old rows plus the batch's, under replace exactly the batch's, and a batch of 0 rows is done at once. Without a batch count, add waits for the count to change and replace takes one more read after the batch is listed. A count that never fits ends as `append_pending`, not as a confident 0.
+- A refused task write now names the keys it sent beyond the transform key and the envelope. The server puts its "must be of type AddTaskSpec" refusal in the response body, which the check did not read, so the keys were never named (#353).
 
 - SDK: `jobs.wait_for_job` / `wait_for_jobs` re-label a poll that fails after the job id was returned as `outcome_unknown` (phase `polling`, `job_handle` set), not the read's `not_started`; a resubmit of an accepted write is no longer invited (#340). When the poll was refused for its credentials (401/403) the label is the same and `details["next_step"]` says to sign in again, then read the job.
 - SDK: `client.appends.append` / `finish` report a file the server held back for a schema mismatch as `append_failed` with `failure: "schema_mismatch"`, `reason`, `kept_dataset_ids` (its own dataset stays in the project) and `next_step`, read from the server's flag on the target's pending batches instead of reading as 0 rows added (#336).
@@ -104,8 +114,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `view task update` (`PipelineAPI.update_task`), `add_task` and `preview_task` drop the server-written `EXECUTION_TIMESTAMP` and `TASK_NAMESPACE` keys, so a task read from `view task list` can be edited and written back; a refusal that says only 'must be of type' now lists the keys sent (#341).
 - SDK: `view.sort_rows` (`view transform sort`) sends each direction as lowercase `asc`/`desc`, the type the server's SORT model declares, so the server no longer logs serialization warnings for it (#344).
 
-### Fixed (next mammoth-cli)
+### Fixed (mammoth-cli 2.4.0)
 
+- CLI `mammoth doctor` no longer reports "latest on PyPI" when the installed CLI is newer than PyPI. A source build now reads "<version> installed; ahead of PyPI <latest> (unreleased build)" (#304).
+- CLI: `view export update` keeps the export's end-of-pipeline pin. A whole `replace params` that carries the `sequence` or `end_of_pipeline` from `view export get` no longer unpins the send: the export is read first, your fields go over it, and it stays pinned unless you set `end_of_pipeline` to false. A `command` patch (`run`, `suspend`, `restore`, `discard`) needs no `value`. `--input '{"save_as_mode": "REPLACE_IN_DS"}'` (also `target_properties`, `additional_properties`, `condition`, `trigger_type`, `handler_type`, `end_of_pipeline`, `sequence`, `run_immediately`, `schedule`, `send_window`) edits the stored export without writing a patch list (#348). The export's `schedule` and `send_window` are sent back with the edit, so it no longer deletes a scheduled export's schedule or an email export's send window (the server drops them unless the request carries them). A `sequence` without `end_of_pipeline: false` on a pinned export is refused instead of being dropped. A stored `schedule` or `send_window` whose `until` has passed is refused with a message naming the key and how to set a new `until` (or `null`), because the server refuses to save one and would otherwise reject every later edit.
+- CLI: `automation update` takes `add_datasets` and `remove_datasets` (dataset ids) for a data-refresh automation. It reads the automation, works out the full dataset list and sends it with the conditions the server needs, without starting a run. It refuses to remove every dataset, and it refuses an automation with no recurring schedule (manual, or no timing condition): the server starts a refresh of every dataset whenever such an automation's datasets are edited (#328). A schedule whose `until` has passed counts as no schedule, and is refused with its own message naming the ended `until` and asking for a new one.
+- CLI: `connector connection get` no longer needs `--project`: it finds the project that holds the connection. When none or several do, it fails with `project_required`, naming them and the command to run for each; a project that cannot be read is named too, and the key is not guessed. A result that is only a job id waits for the job (#355).
+- CLI: `connector draft get` and `source list` explain the per-parent sample: `each.summary` reads "sampled 20 of 76 parents; 17 read, 3 failed" when the parent count is known and "capped at 20 parents, total unknown" when not, with `sampled` and `parents_total` beside the server's own counts (#357).
+- CLI: `connector draft source preview` marks a preview that came back shorter than `limit` while the source holds more: `capped`, `limit_requested`, `limit_applied` and `source_row_count`, with a hint that a preview is a sample. When the source list cannot be read the preview carries `cap_unchecked` with the reason, instead of passing for uncapped (#356). A parent source read to its limit (`has_more`) gives no parent total.
 - CLI: `dataset delete` is verified only when `dataset list` no longer shows the dataset (rechecked, then `delete_unverified` with `still_listed`); a dataset that still reads `deleting` is `delete_unverified`, not `delete_not_applied`; each check lists only that dataset id (#345)
 - CLI: a job poll that fails after a write was accepted reports `outcome_unknown` with the job id and `mammoth job get ID`, instead of `retryable_error` / "changed nothing" (#340). When the poll was refused for its credentials (401/403) the hint is to run `mammoth auth login` (or fix the profile's token) and then `mammoth job get ID`.
 - CLI: `file upload` into a dataset whose columns do not match fails with code `schema_mismatch` (exit 1, `rows_added` 0, `kept_dataset_ids`, a next step) instead of exiting 0 (#336).
@@ -121,6 +137,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - CLI: every create-type result and a waited `job wait`/`job get` carries its resource id at the top level as `<resource>_id` (`dataset_id`, `connection_id`, ...); the older keys stay.
 - CLI: `view delete` waits for the delete job the server accepts (202) before it reads the view back, so a delete that takes a few seconds no longer reports `delete_not_applied` (#333).
 - CLI: `view data compare` no longer refuses when a key is on one side only: it compares the shared keys and reports `only_in_first` / `only_in_second` with exact counts and the first 25 rows (#343).
+- `view task update` shows the keys the server refused (#353): the message ends with the keys sent beyond the transform key and the envelope. A task read with `view task get` goes back through `view task update` unchanged.
 
 ## mammoth-cli 2.3.1 (2026-10-26)
 

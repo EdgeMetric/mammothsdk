@@ -58,18 +58,21 @@ def _task_params_rejection(error: MammothAPIError, task_spec: Any) -> MammothAPI
     Returns:
         An error that names the keys sent, or ``error`` when it is not that refusal.
     """
-    if not isinstance(task_spec, dict) or "must be of type" not in str(error):
+    if not isinstance(task_spec, dict) or _TYPE_REFUSAL not in f"{error} {error.response_body}":
         return error
     keys = sorted(set(task_spec) - _TASK_ENVELOPE_KEYS)
-    message = f"{error} " + ERR_TASK_PARAMS_REJECTED.format(
+    note = ERR_TASK_PARAMS_REJECTED.format(
         envelope=", ".join(sorted(_TASK_ENVELOPE_KEYS - {"task_key"})), keys=keys
     )
+    message = f"{error} {note}"
     # A copy keeps the class and every attribute the request layer set
     # (operation_state, phase, job_handle, retry_after, ...); only the text changes.
     rejection = copy.copy(error)
     rejection.message = message
     rejection.args = (message,)
-    rejection.details = dict(error.details)
+    # ``rejection_note`` lets a caller that rebuilds the text from the response body
+    # (the CLI) still name the keys.
+    rejection.details = {**error.details, "rejection_note": note, "rejected_task_keys": keys}
     return rejection
 
 
@@ -133,6 +136,9 @@ _TASK_ENVELOPE_KEYS = frozenset(
         "USE_COLUMNS",
     }
 )
+# The server sends the refusal in the response body (``extra[].message``); the error's own
+# text is only "API request failed: Validation error".
+_TYPE_REFUSAL = "must be of type"
 ERR_TASK_PARAMS_REJECTED = (
     "The task params were rejected. A task spec holds exactly one transform key beside "
     "{envelope}; keys sent beyond those: {keys}."

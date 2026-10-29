@@ -103,7 +103,8 @@ def present_append(report: Mapping[str, JsonValue]) -> dict[str, JsonValue]:
         notes.append(
             "The dataset was still taking the rows in"
             + (f" (reading it failed: {reason})" if reason else "")
-            + ", so rows_added is what had landed. Call check_upload again, or get_dataset,"
+            + ", so rows_added is only what had landed and can read 0 while the rows are still"
+            " arriving. Call check_upload again, or get_dataset,"
             " before using it."
         )
     if failed:

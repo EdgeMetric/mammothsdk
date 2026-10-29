@@ -855,3 +855,86 @@ def test_building_an_ai_connector_finds_the_draft_builder_not_the_older_chat(que
 
     assert found[0] == "connector.draft.create"
     assert "connector.ai.chat" not in found
+
+
+# --- connection get: project lookup and job wait (issue #355) -------------
+
+_PROJECTS_LIST_ALL = "mammoth.api.projects.ProjectsAPI.list_all"
+_JOB_WAIT = "mammoth.api.jobs.JobsAPI.wait_for_job"
+
+
+def _no_project_connection_get() -> Invocation:
+    return Invocation(command_id="connector.connection.get", extra_args=["custom_code", "KEY1"])
+
+
+def test_connection_get_without_a_project_finds_the_one_that_holds_the_key(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_PROJECTS_LIST_ALL] = [{"id": 5}, {"id": 6}]
+    fake_service.responses[_CONNECTION_LIST] = lambda log: (
+        [{"connection_key": "KEY1"}] if log[-1][1]["project_id"] == 6 else [{"connection_key": "X"}]
+    )
+    fake_service.responses[_CONNECTION_GET] = {"connection_key": "KEY1", "name": "mine"}
+
+    data, meta = connector_cmd.connector_connection_get(_no_project_connection_get())
+
+    assert data == {"connection_key": "KEY1", "name": "mine"}
+    assert meta["project_id"] == 6
+    assert fake_service.call_log[-1] == (
+        _CONNECTION_GET,
+        {"connector_key": "custom_code", "connection_key": "KEY1", "project_id": 6},
+    )
+
+
+def test_connection_get_without_a_project_names_the_candidates_when_several_hold_the_key(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_PROJECTS_LIST_ALL] = [{"id": 5}, {"id": 6}]
+    fake_service.responses[_CONNECTION_LIST] = [{"connection_key": "KEY1"}]
+
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_connection_get(_no_project_connection_get())
+
+    assert excinfo.value.code == "project_required"
+    assert "[5, 6]" in excinfo.value.message
+    assert excinfo.value.recovery_commands[0].endswith("--project 5")
+    assert all(symbol != _CONNECTION_GET for symbol, _ in fake_service.call_log)
+
+
+def test_connection_get_waits_for_the_job_it_started(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_CONNECTION_GET] = {"job_id": 77}
+    fake_service.responses[_JOB_WAIT] = {
+        "operation": "get_identity_config",
+        "result": {"profiles": []},
+    }
+
+    data, _ = connector_cmd.connector_connection_get(
+        Invocation(
+            command_id="connector.connection.get",
+            extra_args=["custom_code", "KEY1"],
+            project=180,
+        )
+    )
+
+    assert data == {"operation": "get_identity_config", "result": {"profiles": []}}
+    assert fake_service.call_log[-1][0] == _JOB_WAIT
+    assert fake_service.call_log[-1][1]["job_id"] == 77
+
+
+def test_connection_get_without_a_project_names_the_projects_it_could_not_read(
+    fake_service: FakeMammothService,
+) -> None:
+    def _list(log: list[tuple[str, dict[str, object]]]) -> list[dict[str, str]]:
+        if log[-1][1]["project_id"] == 5:
+            raise CliError(code="authorization_required", message="denied", exit_status=3)
+        return [{"connection_key": "KEY1"}]
+
+    fake_service.responses[_PROJECTS_LIST_ALL] = [{"id": 5}, {"id": 6}]
+    fake_service.responses[_CONNECTION_LIST] = _list
+
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_connection_get(_no_project_connection_get())
+
+    assert excinfo.value.code == "project_required"
+    assert "Projects [5] could not be read" in excinfo.value.message
+    assert all(symbol != _CONNECTION_GET for symbol, _ in fake_service.call_log)

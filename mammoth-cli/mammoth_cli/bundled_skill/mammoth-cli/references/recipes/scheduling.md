@@ -48,6 +48,12 @@ mammoth automation create 'Nightly refresh' --yes --input '{
 }'
 ```
 
+To change which datasets a data-refresh automation refreshes, use
+`automation update ID --yes --input '{"add_datasets": [43], "remove_datasets": [42]}'`
+instead of a `patch`. It keeps the schedule, refuses to remove every dataset
+and refuses an automation with no recurring schedule (the server would start a
+refresh of every dataset).
+
 `run_data_retrieval` only refreshes a cloud-connected dataset. A dataset made
 from an uploaded file has no source to refresh from. A URL (`weburl`) dataset
 keeps its link and can be refreshed on demand (`dataset refresh DATASET_ID

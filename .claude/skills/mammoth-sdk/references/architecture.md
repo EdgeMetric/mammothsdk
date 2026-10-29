@@ -1,4 +1,4 @@
-# SDK Architecture (v0.8.52)
+# SDK Architecture (v0.8.53)
 
 ## File Layout
 
@@ -20,7 +20,7 @@ mammoth/
 │   ├── _text_ops.py         # text_transform, replace_values, bulk_replace, split, substring
 │   ├── _date_ops.py         # extract_date, date_diff, increment_date
 │   ├── _aggregate_ops.py    # pivot, window, crosstab
-│   ├── _row_ops.py          # fill_missing, limit_rows, discard_duplicates, unnest, sort_rows
+│   ├── _row_ops.py          # fill_missing, limit_rows, discard_duplicates, unnest, sort_rows, repeat_rows
 │   ├── _advanced_ops.py     # join, lookup, json_extract, gen_ai, sql
 │   └── _host.py             # typing host for the mixins
 ├── api/                     # 42 API sub-clients, one per MammothClient attribute
@@ -31,6 +31,7 @@ mammoth/
 │   ├── agents.py            # AgentsAPI
 │   ├── ai.py                # AIAPI — AI features
 │   ├── annotations.py       # AnnotationsAPI
+│   ├── appends.py           # AppendsAPI — add files to a dataset
 │   ├── automations.py       # AutomationsAPI
 │   ├── batches.py           # BatchesAPI
 │   ├── billing.py           # BillingAPI
@@ -66,6 +67,7 @@ mammoth/
 │   ├── webhooks.py          # WebhooksAPI
 │   ├── workflows.py         # WorkflowsAPI
 │   ├── workspace.py         # WorkspaceAPI
+│   ├── workflow_templates.py # WorkflowTemplatesAPI
 │   └── workspaces.py        # WorkspacesAPI
 ├── _pure/                   # Pure (no HTTP, no View) param builders/resolvers over plain column metadata
 ├── models/                  # Pydantic v2 models for API schemas

@@ -65,7 +65,8 @@ commands:
   known_restrictions: 'Changes a live automation (run, status, retention approval): read it first (`automation
     get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` +
     `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description,
-    tasks, conditions). Paths are details, run, status, approve_retention, reject_retention.'
+    tasks, conditions). Paths are details, run, status, approve_retention, reject_retention. On a data-refresh automation,
+    --input with add_datasets and remove_datasets (lists of dataset ids) changes its datasets without a patch list.'
   readback:
     command: automation.get
     ids:

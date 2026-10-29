@@ -56,6 +56,12 @@ mammoth file upload ./new.csv --input '{"append_to_ds_id": DATASET_ID}'
 Set it back with `{"mode": "add"}` before the next upload if the rows should be
 added again. The setting stays on the dataset, not on one file.
 
+If the file's columns do not match the dataset's, `file upload` exits 1 with
+`schema_mismatch` (`rows_added` 0, `kept_dataset_ids`, a next step): nothing was
+added and the file's own dataset stays in the project. Fix the columns or the
+dataset's `schema_mapping` (`dataset update-method set`); `override_target_schema`
+is allowed only under `replace`, with `append_to_ds_id` and the wait.
+
 ## Undo an append
 
 To take back the rows one upload added, list the dataset's batches and delete

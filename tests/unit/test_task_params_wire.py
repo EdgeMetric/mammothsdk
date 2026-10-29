@@ -53,6 +53,30 @@ async def test_add_task_sends_a_read_back_task_without_the_server_written_keys(
     assert sent["DATAVIEW_ID"] == 42
 
 
+async def test_update_task_sends_an_edited_sql_read_back_with_its_task_key(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    """A `view task get` copy of a SQL task, with the query edited, goes back whole (#353)."""
+    read_back = {
+        "SQL": {"QUERY": "SELECT 1 AS a"},
+        "TASK_KEY": "sql",
+        "EXECUTION_TIMESTAMP": "20261028091500",
+        "TASK_NAMESPACE": "abcde",
+    }
+    read_back["SQL"]["QUERY"] = "SELECT 2 AS a"
+
+    await client.pipeline.update_task(
+        dataview_id=42, task_id=7, task_spec=read_back, dataset_id=500
+    )
+
+    (patch,) = _body(server)["patches"]
+    sent = patch["value"]
+    assert "EXECUTION_TIMESTAMP" not in sent
+    assert "TASK_NAMESPACE" not in sent
+    assert sent["TASK_KEY"] == "sql"
+    assert sent["SQL"] == {"QUERY": "SELECT 2 AS a"}
+
+
 async def test_add_task_drops_the_keys_from_every_spec_of_a_list(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
@@ -163,7 +187,12 @@ def test_the_rebuilt_refusal_keeps_every_attribute_of_the_original() -> None:
         "endpoint",
     ):
         assert getattr(rebuilt, name) == getattr(original, name), name
-    assert rebuilt.details == original.details
+    assert rebuilt.details == {
+        **original.details,
+        "rejection_note": rebuilt.details["rejection_note"],
+        "rejected_task_keys": ["EXTRA", "MATH"],
+    }
+    assert "keys sent beyond those: ['EXTRA', 'MATH']" in rebuilt.details["rejection_note"]
     assert rebuilt.details["operation_state"] == "outcome_unknown"
     assert rebuilt.details["job_handle"] == 52618
     # The original is left as it was.
@@ -188,3 +217,29 @@ def test_a_refusal_that_is_not_the_type_message_is_returned_as_is() -> None:
     other = MammothAPIError("conflict", status_code=409)
 
     assert _task_params_rejection(other, {"MATH": {}}) is other
+
+
+def test_a_refusal_whose_text_is_only_in_the_response_body_names_the_keys() -> None:
+    """The server's real 400 says "Validation error"; the type message is in the body."""
+    original = MammothAPIError(
+        "API request failed: Validation error",
+        status_code=400,
+        response_body={
+            "message": "Validation error",
+            "details": {
+                "extra": [
+                    {
+                        "key": "patches.0",
+                        "message": "For path ItemTaskPatchPath.PARAMS, value must be of "
+                        "type AddTaskSpec",
+                    }
+                ]
+            },
+        },
+    )
+
+    rebuilt = _task_params_rejection(original, {"SQL": {}, "BOGUS_KEY": 1})
+
+    assert rebuilt is not original
+    assert "keys sent beyond those: ['BOGUS_KEY', 'SQL']" in rebuilt.message
+    assert rebuilt.details["rejected_task_keys"] == ["BOGUS_KEY", "SQL"]
