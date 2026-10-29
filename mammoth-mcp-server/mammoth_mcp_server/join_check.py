@@ -119,12 +119,29 @@ async def read_before(ids: dict[str, int]) -> dict[str, JsonValue]:
 
 
 async def measure(ids: dict[str, int], before: dict[str, JsonValue]) -> dict[str, JsonValue]:
-    """The join check of the step that ran since `before` was read."""
+    """The join check of the step that ran since `before` was read.
+
+    A read that fails here is reported in the check, never raised: the step has run.
+    """
     async with build_client(ids["workspace_id"], ids["project_id"]) as client:
-        after = await read_view(client, ids)
+        try:
+            after = await read_view(client, ids)
+        except ToolError as why:
+            return not_measured(before, str(why))
         added = list(added_columns(before, after))
         try:
             unmatched = await count_unmatched(client, ids, added) if added else None
         except ToolError as why:
             return join_check(before, after, None, not_counted=str(why))
     return join_check(before, after, unmatched)
+
+
+def not_measured(before: dict[str, JsonValue], why: str) -> dict[str, JsonValue]:
+    """The check of a step that ran on a view that could not be read after it.
+
+    Not an error: the step is in, and an error would read as a failed add.
+    """
+    return {
+        JoinCheckFields.ROWS_BEFORE: before.get(ViewShape.ROW_COUNT),
+        JoinCheckFields.NOTES: [JoinCheckFields.NOT_COUNTED_NOTE.format(why)],
+    }

@@ -117,3 +117,15 @@ class TestMeasuringTheView:
         [note] = check["notes"]
         assert "could not count" in note
         assert "get_data" in note
+
+    def test_a_view_that_could_not_be_read_after_the_step_is_not_measured(self) -> None:
+        # Same reason: the step is in, so an error here would get it added twice.
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", VIEW_PATH, {"message": "Bad gateway"}, status=502)
+            check = run(measure(IDS, a_view(40)))
+
+        assert check["rows_before"] == 40
+        assert "match_rate" not in check
+        assert "columns_added" not in check
+        [note] = check["notes"]
+        assert "could not count" in note
