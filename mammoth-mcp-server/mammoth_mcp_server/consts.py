@@ -151,6 +151,10 @@ class UploadFields:
     JOB_ID = "job_id"
     # What the upload job returns: one job per file, under this key.
     JOB_IDS = "job_ids"
+    # A file whose job failed: the job, the file, and why.
+    FAILED = "failed"
+    FILE_OBJECT_ID = "file_object_id"
+    ERROR = "error"
     FOLDER_RESOURCE_ID = "folder_resource_id"
     NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"

@@ -8,8 +8,10 @@ from typing import Any
 from unittest.mock import patch
 
 from mammoth_mcp_server.consts import DatasetStatus, FileStatus, ResourceTypes
+from mammoth_mcp_server.tools.files import check_upload
+from mammoth_mcp_server.upload_tickets import mint_ticket, spend_ticket
 
-from .helpers import WORKSPACE, a_fake_api, as_caller, call_tool
+from .helpers import GOOD_TOKEN, WORKSPACE, a_fake_api, a_fake_store, as_caller, call_tool, run
 
 PROJECT, FILE, DATASET, VIEW = 3, 12, 21, 9
 PROJECT_PATH = f"/workspaces/{WORKSPACE}/projects/{PROJECT}"
@@ -100,3 +102,64 @@ class TestUploadingText:
         assert report["status"] == "processing"
         assert report["job_ids"] == [42]
         assert "get_job" in report["next_step"]
+
+    def test_a_file_whose_job_fails_is_reported_beside_the_files_that_landed(self) -> None:
+        # Raising here dropped the report, so a retry made the landed files twice.
+        two = {
+            "errors": {},
+            "job_ids": [*PER_FILE["job_ids"], {"job_id": 43, "file_object_id": 13}],
+        }
+        broken = {"job": {"id": 43, "status": "failure", "response": {"message": "Bad row 7"}}}
+        with a_fake_api() as api, as_caller():
+            an_upload(api, started=two)
+            api.answer("GET", "/jobs/43", broken)
+            api.answer("GET", RESOURCES, {"resources": READ})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert report["failed"] == [{"job_id": 43, "file_object_id": 13, "error": "Bad row 7"}]
+        assert {item["kind"] for item in report["files"]} == {"dataset", "file"}
+        assert "again" in report["next_step"]
+
+    def test_a_dataset_not_listed_when_the_call_ends_is_reported_as_processing(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL, QUICK_POLL:
+            an_upload(api)
+            api.answer("GET", RESOURCES, {"resources": STILL_READING})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert report["status"] == "processing"
+        assert report["job_ids"] == [42]
+        assert "get_job" in report["next_step"]
+
+    def test_an_upload_job_that_outlasts_the_call_names_its_job(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            api.answer("POST", FILES, {"job": {"id": 41}})
+            api.answer("GET", "/jobs/41", {"job": {"id": 41, "status": "processing"}})
+            report = call_tool("upload_file", **UPLOAD)
+
+        assert report["status"] == "processing"
+        assert report["job_id"] == 41
+        assert "get_job" in report["note"]
+
+
+class TestCheckingAnUploadFromTheBrowser:
+    def test_it_waits_for_each_file_as_upload_file_does(self) -> None:
+        with a_fake_store(), as_caller(token=GOOD_TOKEN):
+            from mcp.server.auth.middleware.auth_context import get_access_token
+
+            caller = get_access_token()
+            assert caller is not None
+            upload_id = run(mint_ticket(caller, WORKSPACE, PROJECT))
+            from mammoth_mcp_server.upload_tickets import read_ticket
+
+            held = run(read_ticket(upload_id))
+            assert held is not None
+            run(
+                spend_ticket(upload_id, held, 41, ["sales.csv"], uploaded_at="2026-10-29T00:00:00Z")
+            )
+            with a_fake_api() as api:
+                an_upload(api)
+                api.answer("GET", RESOURCES, {"resources": READ})
+                report = run(check_upload(upload_id))
+
+        assert api.sent("GET", "/jobs/42"), "it did not wait for the file's own job"
+        assert report["status"] == "done"

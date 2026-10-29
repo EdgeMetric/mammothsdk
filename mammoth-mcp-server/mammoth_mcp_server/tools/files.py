@@ -42,7 +42,6 @@ from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
-from ..upload_report import report_upload
 from ..upload_tickets import read_ticket
 from ..upload_wait import finish_upload
 from .folders import read_folders
@@ -129,13 +128,14 @@ async def upload_file(
                 else None
             ),
         )
-    return await finish_upload(
-        workspace_id,
-        project_id,
-        since,
-        await wait_for_job(workspace_id, started),
-        folder_resource_id,
-    )
+    ticket: Record = {
+        UploadFields.UPLOADED_AT: since,
+        UploadFields.WORKSPACE_ID: workspace_id,
+        UploadFields.PROJECT_ID: project_id,
+    }
+    if folder_resource_id is not None:
+        ticket[UploadFields.FOLDER_RESOURCE_ID] = folder_resource_id
+    return await finish_upload(ticket, started)
 
 
 async def wait_for_the_file(upload_id: str) -> Record:
@@ -209,10 +209,7 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         }
     # Read the job as the polling user, so Mammoth refuses an upload that is
     # not theirs exactly as it would refuse any other job of a stranger's.
-    started = await wait_for_job(int(ticket[UploadFields.WORKSPACE_ID]), {JobFields.JOB_ID: job_id})
-    report = await report_upload(ticket)
-    if started.get(UploadFields.ERRORS):
-        report[UploadFields.REJECTED] = started[UploadFields.ERRORS]
+    report = await finish_upload(ticket, {JobFields.JOB_ID: job_id})
     plan = ticket.get(UploadFields.APPEND)
     if plan:
         report.update(
