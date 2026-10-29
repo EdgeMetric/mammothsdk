@@ -14,6 +14,8 @@ TASK_TYPE_REFRESH = "run_data_retrieval"
 ADD_FIELD = "add_datasets"
 REMOVE_FIELD = "remove_datasets"
 DATASET_FIELDS = (ADD_FIELD, REMOVE_FIELD)
+#: Keys the CLI itself binds from the positional argument; they are not the caller's.
+_BOUND_FIELDS = ("automation_id",)
 
 
 def wants_dataset_change(document: dict[str, Any]) -> bool:
@@ -61,9 +63,9 @@ def unknown_dataset_fields(document: dict[str, Any]) -> list[str]:
         document: The parsed ``--input`` document.
 
     Returns:
-        The keys other than ``add_datasets`` and ``remove_datasets``.
+        The keys other than ``add_datasets``, ``remove_datasets`` and the bound automation id.
     """
-    return sorted(key for key in document if key not in DATASET_FIELDS)
+    return sorted(key for key in document if key not in (*DATASET_FIELDS, *_BOUND_FIELDS))
 
 
 def current_dataset_ids(automation: dict[str, Any]) -> list[int]:
