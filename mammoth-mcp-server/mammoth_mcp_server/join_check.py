@@ -6,6 +6,7 @@ compare the key columns, before it builds on the result.
 """
 
 from mammoth.client import MammothClient
+from mcp.server.mcpserver.exceptions import ToolError
 
 from .consts import ApiFields, ColumnFields, JoinCheckFields, ViewShape
 from .sdk import JsonValue, build_client, read_sdk_errors
@@ -31,7 +32,10 @@ def added_columns(before: dict[str, JsonValue], after: dict[str, JsonValue]) -> 
 
 
 def join_check(
-    before: dict[str, JsonValue], after: dict[str, JsonValue], unmatched: int | None
+    before: dict[str, JsonValue],
+    after: dict[str, JsonValue],
+    unmatched: int | None,
+    not_counted: str | None = None,
 ) -> dict[str, JsonValue]:
     """The match check of one join or lookup.
 
@@ -39,7 +43,9 @@ def join_check(
         before: The view as `get_view` reads it, before the step.
         after: The view after the step ran.
         unmatched: Rows in which every added column is empty, counted over
-            the whole view; None when the step added no column.
+            the whole view; None when the step added no column, or when
+            they could not be counted.
+        not_counted: Why the rows could not be counted, when they could not.
     """
     rows_before, rows_after = before.get(ViewShape.ROW_COUNT), after.get(ViewShape.ROW_COUNT)
     check: dict[str, JsonValue] = {
@@ -53,7 +59,9 @@ def join_check(
         check[JoinCheckFields.MATCH_RATE] = round((rows_after - unmatched) / rows_after, 3)
         if unmatched:
             notes.append(JoinCheckFields.UNMATCHED_NOTE.format(unmatched, rows_after))
-    if unmatched is None:
+    if not_counted is not None:
+        notes.append(JoinCheckFields.NOT_COUNTED_NOTE.format(not_counted))
+    elif unmatched is None:
         notes.append(JoinCheckFields.NO_NEW_COLUMN_NOTE)
     if isinstance(rows_before, int) and isinstance(rows_after, int):
         if rows_after > rows_before:
@@ -78,7 +86,11 @@ async def read_view(client: MammothClient, ids: dict[str, int]) -> dict[str, Jso
 
 
 async def count_unmatched(client: MammothClient, ids: dict[str, int], added: list[str]) -> int:
-    """Rows of the whole view in which every one of `added` is empty."""
+    """Rows of the whole view in which every one of `added` is empty.
+
+    Raises:
+        ToolError: If Mammoth's answer holds no count. Zero would read as a full match.
+    """
     condition: dict[str, JsonValue] = {"AND": [{name: {"IS_EMPTY": True}} for name in added]}
     answer = await read_sdk_errors(
         client.dataviews.aggregate(
@@ -91,8 +103,10 @@ async def count_unmatched(client: MammothClient, ids: dict[str, int], added: lis
     )
     rows = answer.get("data")
     first = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else {}
-    count = first.get("agg_0", 0)
-    return int(count) if isinstance(count, int | float | str) and str(count).strip() else 0
+    count = first.get(JoinCheckFields.COUNT)
+    if not isinstance(count, int | float | str) or not str(count).strip():
+        raise ToolError(f"Mammoth's answer held no count of the unmatched rows: {answer}")
+    return int(float(count))
 
 
 async def read_before(ids: dict[str, int]) -> dict[str, JsonValue]:
@@ -106,5 +120,8 @@ async def measure(ids: dict[str, int], before: dict[str, JsonValue]) -> dict[str
     async with build_client(ids["workspace_id"], ids["project_id"]) as client:
         after = await read_view(client, ids)
         added = list(added_columns(before, after))
-        unmatched = await count_unmatched(client, ids, added) if added else None
+        try:
+            unmatched = await count_unmatched(client, ids, added) if added else None
+        except ToolError as why:
+            return join_check(before, after, None, not_counted=str(why))
     return join_check(before, after, unmatched)

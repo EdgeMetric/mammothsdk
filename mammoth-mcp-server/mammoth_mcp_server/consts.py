@@ -1106,10 +1106,17 @@ class JoinCheckFields:
     UNMATCHED_ROWS = "unmatched_rows"
     MATCH_RATE = "match_rate"
     NOTES = "notes"
+    # Where the aggregate route puts the one count asked for.
+    COUNT = "agg_0"
     UNMATCHED_NOTE = (
         "{} of {} rows found no match: every column the step brought in is empty."
         " If that is more than a few, compare the key columns of both views (type,"
         " case, spaces) before building on this, or tell the user."
+    )
+    NOT_COUNTED_NOTE = (
+        "The step ran, but Mammoth could not count the rows it matched ({}), so how"
+        " well it matched is not known. Do not add it again: read the rows with"
+        " get_data to check them."
     )
     NO_NEW_COLUMN_NOTE = (
         "The step added no column, so matched rows cannot be counted; read the rows"

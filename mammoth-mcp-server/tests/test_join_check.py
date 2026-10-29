@@ -2,7 +2,11 @@
 
 from typing import Any
 
-from mammoth_mcp_server.join_check import join_check, measure
+import pytest
+from mcp.server.mcpserver.exceptions import ToolError
+
+from mammoth_mcp_server.join_check import count_unmatched, join_check, measure
+from mammoth_mcp_server.sdk import build_client
 
 from .helpers import WORKSPACE, a_fake_api, as_caller, run
 
@@ -87,3 +91,28 @@ class TestMeasuringTheView:
 
         assert api.sent("POST", QUERY) == []
         assert "match_rate" not in check
+
+    @pytest.mark.parametrize(
+        "answer", [{}, {"data": []}, {"data": [{}]}, {"data": [{"agg_0": ""}]}]
+    )
+    def test_an_answer_with_no_count_is_not_read_as_zero(self, answer: dict[str, Any]) -> None:
+        async def count() -> int:
+            async with build_client(WORKSPACE, PROJECT) as client:
+                return await count_unmatched(client, IDS, ["column_2"])
+
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="no count"):
+            api.answer("POST", QUERY, answer)
+            run(count())
+
+    def test_a_join_that_could_not_be_counted_is_not_reported_as_a_full_match(self) -> None:
+        # The step is in: an error here would read as a failed add, and a retry adds it twice.
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", VIEW_PATH, a_view(40, MANAGER))
+            api.answer("POST", QUERY, {"data": []})
+            check = run(measure(IDS, a_view(40)))
+
+        assert "match_rate" not in check
+        assert "unmatched_rows" not in check
+        [note] = check["notes"]
+        assert "could not count" in note
+        assert "get_data" in note
