@@ -76,7 +76,7 @@ def test_a_daily_automation_gets_the_dataset_with_start_now_false(
 ) -> None:
     (body,) = _add(service, server, DAILY)
 
-    (patch,) = body["patches"]
+    (patch,) = body["patch"]
     value = patch["value"]
     assert [d["ds_id"] for d in value["tasks"][0]["details"]["ds_details"]] == [14223, 14226]
     (condition,) = value["conditions"]
