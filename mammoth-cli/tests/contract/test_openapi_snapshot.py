@@ -322,3 +322,87 @@ def test_unserved_operations_names_a_route_production_does_not_serve() -> None:
         assert sync_openapi.unserved_operations(with_extra, called) == []
     finally:
         sys.path.remove(str(scripts))
+
+
+class _SpecServer:
+    """A real local HTTP server that serves a spec to one bearer token, as production does."""
+
+    def __init__(self, token: str, spec: dict) -> None:
+        import http.server
+        import threading
+
+        outer = self
+        self.seen_paths: list[str] = []
+
+        class _Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802 (http.server API)
+                outer.seen_paths.append(self.path)
+                if self.headers.get("Authorization") != f"Bearer {token}":
+                    self.send_response(401)
+                    self.end_headers()
+                    return
+                body = json.dumps(spec).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_args: object) -> None:
+                return None
+
+        self._server = http.server.HTTPServer(("127.0.0.1", 0), _Handler)
+        self.url = f"http://127.0.0.1:{self._server.server_port}/support/openapi.json"
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+
+    def __enter__(self) -> _SpecServer:
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+
+
+def _sync_openapi():
+    scripts = CLI_ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        import sync_openapi
+    finally:
+        sys.path.remove(str(scripts))
+    return sync_openapi
+
+
+def test_fetch_sends_the_staff_token_and_returns_the_full_document(monkeypatch) -> None:
+    sync_openapi = _sync_openapi()
+    full = {"openapi": "3.1.0", "paths": {"/support/workspaces": {"get": {}}}}
+    with _SpecServer("mm_staff_token", full) as server:
+        monkeypatch.setattr(sync_openapi, "FETCH_URL", server.url)
+        monkeypatch.setenv(sync_openapi.TOKEN_ENV, "mm_staff_token")
+
+        _, document = sync_openapi.fetch_document()
+
+    assert document == full
+    assert server.seen_paths == ["/support/openapi.json"]
+
+
+def test_fetch_without_a_token_stops_before_any_request(monkeypatch) -> None:
+    sync_openapi = _sync_openapi()
+    with _SpecServer("mm_staff_token", {}) as server:
+        monkeypatch.setattr(sync_openapi, "FETCH_URL", server.url)
+        monkeypatch.delenv(sync_openapi.TOKEN_ENV, raising=False)
+
+        with pytest.raises(SystemExit, match="MAMMOTH_OPENAPI_TOKEN is not set"):
+            sync_openapi.fetch_document()
+
+    assert server.seen_paths == []
+
+
+def test_fetch_with_a_refused_token_says_so(monkeypatch) -> None:
+    sync_openapi = _sync_openapi()
+    with _SpecServer("mm_staff_token", {}) as server:
+        monkeypatch.setattr(sync_openapi, "FETCH_URL", server.url)
+        monkeypatch.setenv(sync_openapi.TOKEN_ENV, "mm_wrong")
+
+        with pytest.raises(SystemExit, match="answered 401"):
+            sync_openapi.fetch_document()

@@ -18,6 +18,11 @@ and some descriptions. This script does two things:
    projection across fetches to classify semantic differences before replacing
    the pinned snapshot.
 
+The public ``/docs/openapi.json`` no longer lists the staff routes (``/support/*``), and
+the CLI's ``support.*`` commands are built on them. The fetch therefore goes to the
+staff-only ``/support/openapi.json`` with a bearer token of a Mammoth super or tech admin
+in ``MAMMOTH_OPENAPI_TOKEN``. Without the token it stops before any request.
+
 Usage::
 
     python scripts/sync_openapi.py            # fetch, write snapshot + projection
@@ -44,14 +49,22 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+#: The spec's identity in the pinned metadata. The snapshot is the full document, the
+#: one this URL served before the staff routes left it.
 SOURCE_URL = "https://app.mammoth.io/api/v2/docs/openapi.json"
+#: Where the full document is fetched from: super and tech admins only.
+FETCH_URL = "https://app.mammoth.io/api/v2/support/openapi.json"
+#: Environment variable holding the bearer token for FETCH_URL.
+TOKEN_ENV = "MAMMOTH_OPENAPI_TOKEN"
 SPEC_DIR = Path(__file__).resolve().parent.parent / "spec" / "openapi"
 SNAPSHOT_PATH = SPEC_DIR / "openapi.json"
 METADATA_PATH = SPEC_DIR / "metadata.json"
@@ -116,10 +129,33 @@ def operation_inventory(document: dict[str, Any]) -> set[str]:
 
 
 def fetch_document() -> tuple[bytes, dict[str, Any]]:
-    """Fetch and decode the production document from the fixed source URL."""
-    request = urllib.request.Request(SOURCE_URL, headers={"User-Agent": "mammoth-cli-sync/0.1"})
-    with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 (fixed https host)
-        raw = response.read()
+    """Fetch and decode the full production document from the staff-only URL.
+
+    Raises:
+        SystemExit: ``MAMMOTH_OPENAPI_TOKEN`` is unset, or the server refused it.
+    """
+    token = os.environ.get(TOKEN_ENV, "").strip()
+    if not token:
+        raise SystemExit(
+            f"{TOKEN_ENV} is not set. The full OpenAPI document is staff-only: "
+            "set it to the API token of a Mammoth super or tech admin."
+        )
+    request = urllib.request.Request(
+        FETCH_URL,
+        headers={"User-Agent": "mammoth-cli-sync/0.1", "Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(
+            request, timeout=60
+        ) as response:  # noqa: S310 (fixed https host)
+            raw = response.read()
+    except urllib.error.HTTPError as error:
+        if error.code in {401, 403}:
+            raise SystemExit(
+                f"{FETCH_URL} answered {error.code}: {TOKEN_ENV} is expired, revoked, "
+                "or not a super or tech admin's token."
+            ) from error
+        raise
     return raw, json.loads(raw)
 
 
