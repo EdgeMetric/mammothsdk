@@ -960,8 +960,6 @@ commands:
     kind: delivery
   known_restrictions: Prohibit secret in CA bundle file.
 - command_id: view.export.update
-  agent_example: 'mammoth view export update 123 456 --input ''{"save_as_mode": "REPLACE_IN_DS"}''
-    --yes'
   known_restrictions: 'Merge-style: --input is the fields to change (save_as_mode, target_properties,
     additional_properties, condition, end_of_pipeline, sequence, run_immediately) or {"patches":
     [...]}. A replace of params keeps what it leaves out from the stored export and keeps the export
