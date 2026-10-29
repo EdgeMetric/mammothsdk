@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
+import contextlib
+import json
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
 from mammoth.exceptions import MammothAPIError
 
+from mammoth_cli import __version__
 from mammoth_cli.commands import completion as completion_cmd
 from mammoth_cli.commands import doctor as doctor_cmd
+from mammoth_cli.commands import upgrade
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
+from mammoth_cli.runtime import updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.testing import FakeMammothService
@@ -267,24 +275,82 @@ def test_doctor_checks_the_run_log_directory(
     assert str(isolated_run_log) in check["detail"]
 
 
-def test_doctor_reports_installed_vs_latest_version(
+def test_doctor_says_when_pypi_is_not_reachable(
     isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from mammoth_cli.runtime import updates
-
     monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
-    monkeypatch.setattr(updates, "_fetch_latest", lambda: "99.0.0")
-    data = doctor_cmd.doctor(_inv("doctor")).data
-    check = next(c for c in data["checks"] if c["name"] == "cli_version")
-    assert check["ok"] is True  # informational: an older CLI still works
-    assert "99.0.0 available" in check["detail"]
-    assert "mammoth upgrade --yes" in check["detail"]
-
     monkeypatch.setattr(updates, "_fetch_latest", lambda: None)
     data = doctor_cmd.doctor(_inv("doctor")).data
     check = next(c for c in data["checks"] if c["name"] == "cli_version")
     assert check["ok"] is True
     assert "not reachable" in check["detail"]
+
+
+@contextlib.contextmanager
+def _serve_pypi(version: str) -> Iterator[str]:
+    """Serve a PyPI JSON payload for one version on a local port.
+
+    Args:
+        version: The version the fake PyPI reports as latest.
+
+    Yields:
+        The URL of the fake PyPI JSON endpoint.
+    """
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            payload = json.dumps({"info": {"version": version}}).encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args: object) -> None:
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/pypi/mammoth-cli/json"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def _cli_version_detail(pypi_latest: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
+    monkeypatch.delenv("MAMMOTH_NO_UPDATE_CHECK", raising=False)
+    monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
+    with _serve_pypi(pypi_latest) as url:
+        monkeypatch.setattr(upgrade, "PYPI_JSON_URL", url)
+        data = doctor_cmd.doctor(_inv("doctor")).data
+    check = next(c for c in data["checks"] if c["name"] == "cli_version")
+    assert check["ok"] is True
+    return str(check["detail"])
+
+
+def test_doctor_cli_version_equal_to_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail(__version__, tmp_path, monkeypatch)
+    assert detail == f"{__version__} installed; latest on PyPI"
+
+
+def test_doctor_cli_version_ahead_of_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail("0.0.1", tmp_path, monkeypatch)
+    assert detail == f"{__version__} installed; ahead of PyPI 0.0.1 (unreleased build)"
+
+
+def test_doctor_cli_version_behind_pypi(
+    isolated_cli_config: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    detail = _cli_version_detail("999.0.0", tmp_path, monkeypatch)
+    assert "999.0.0 available" in detail
+    assert "mammoth upgrade --yes" in detail
+    assert "ahead" not in detail
 
 
 def test_doctor_names_a_disabled_update_check(
