@@ -9,7 +9,7 @@ from collections.abc import Awaitable
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ListFields, ViewFields
+from ..consts import LIST_LIMIT_DEFAULT, ListFields, ViewFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -129,16 +129,33 @@ async def delete_views(
         return await _trash_views(client, ids, targets)
 
 
+async def _every_view(client: MammothClient, ids: dict[str, int]) -> list[int]:
+    """The ids of every view of the dataset, page by page: one page is not all of them."""
+    every: list[int] = []
+    while True:
+        page = await read_sdk_errors(
+            client.browse.dataviews(
+                ids["dataset_id"],
+                project_id=ids["project_id"],
+                limit=LIST_LIMIT_DEFAULT,
+                offset=len(every),
+            )
+        )
+        views = page.get(ListFields.VIEWS, [])
+        every += [int(view[ListFields.ID]) for view in views]
+        if len(views) < LIST_LIMIT_DEFAULT:
+            return every
+
+
 async def _views_to_delete(
     client: MammothClient, ids: dict[str, int], view_ids: list[int] | None, whole: bool
 ) -> list[int]:
     """The views the call deletes, refused when they would take the dataset with them."""
     if not view_ids and not whole:
         raise ToolError("Name the views to delete in view_ids, or pass whole_dataset.")
-    page = await read_sdk_errors(
-        client.browse.dataviews(ids["dataset_id"], project_id=ids["project_id"])
-    )
-    every = [int(view[ListFields.ID]) for view in page.get(ListFields.VIEWS, [])]
+    if view_ids and whole:
+        raise ToolError("Name the views in view_ids, or pass whole_dataset: not both.")
+    every = await _every_view(client, ids)
     if whole:
         return every
     named = list(dict.fromkeys(view_ids or []))

@@ -206,6 +206,47 @@ class TestDeletingViews:
             with pytest.raises(ToolError, match="view_ids"):
                 call_tool("delete_views", dataset_id=DATASET, **IDS)
 
+    def test_whole_dataset_with_view_ids_is_refused_as_ambiguous(self) -> None:
+        with a_fake_api() as api, as_caller():
+            a_view(api)
+            with pytest.raises(ToolError, match="not both"):
+                call_tool(
+                    "delete_views", dataset_id=DATASET, view_ids=[VIEW], whole_dataset=True, **IDS
+                )
+
+        assert not api.sent("POST", f"{DATASET_PATH}/trash")
+
+
+class TestADatasetWithMoreViewsThanAPage:
+    # The views route answers 50 to a page unless asked for more.
+    MANY = tuple(range(1000, 1060))
+
+    def many_views(self, api: FakeApi) -> None:
+        api.answer("GET", VIEWS, {"dataviews": [{"id": view} for view in self.MANY[:50]]})
+        api.answer("GET", VIEWS, {"dataviews": [{"id": view} for view in self.MANY[50:]]})
+        for view in self.MANY:
+            api.answer("GET", f"{VIEWS}/{view}/impact", NO_IMPACT)
+            api.answer("POST", f"{VIEWS}/{view}/trash", STARTED)
+        api.answer("GET", JOB, done({}))
+
+    def test_views_on_the_first_page_are_not_taken_for_the_last_ones(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.many_views(api)
+            answer = call_tool(
+                "delete_views", dataset_id=DATASET, view_ids=list(self.MANY[:50]), **IDS
+            )
+
+        assert answer["deleted"] == list(self.MANY[:50])
+        [first, second] = api.sent("GET", VIEWS)
+        assert second.url.params["offset"] == first.url.params["limit"]
+
+    def test_a_whole_dataset_lists_every_view(self) -> None:
+        with a_fake_api() as api, as_caller():
+            self.many_views(api)
+            answer = call_tool("delete_views", dataset_id=DATASET, whole_dataset=True, **IDS)
+
+        assert answer["goes_with_them"]["views"] == list(self.MANY)
+
 
 class TestListingTheTrash:
     def test_what_can_be_restored_is_listed(self) -> None:
