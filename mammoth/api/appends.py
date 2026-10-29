@@ -221,7 +221,8 @@ class AppendsAPI:
 
         The upload job ends when its staging dataset is made; the rows reach the target
         after that, and the target can still read ready before it starts on them. So the
-        rows count as landed once the target is ready and lists a batch it did not have.
+        rows count as landed once the target is ready, lists a batch it did not have and
+        shows a row count other than the one before the upload (the batch can be listed first).
 
         Args:
             plan: What :meth:`prepare` returned before the files were sent.
@@ -280,7 +281,18 @@ class AppendsAPI:
                     )
                 except MammothError as failure:
                     batches_error = str(failure).strip() or type(failure).__name__
-                settled = bool(mismatched) or any(row["id"] not in before for row in after)
+                landed = any(row["id"] not in before for row in after)
+                # The batch can be listed before the dataset's row count moves, so the rows
+                # read above may be stale: keep polling (a fresh read each time) until the
+                # count differs from the one before the upload. A count that never changes
+                # ends the wait as append_pending, never as a confident rows_added of 0.
+                rows_before = plan.get("rows_before")
+                counted = (
+                    not isinstance(rows_before, int)
+                    or rows_after is None
+                    or rows_after != rows_before
+                )
+                settled = bool(mismatched) or (landed and counted)
             if settled or time.monotonic() >= give_up_at:
                 break
             await asyncio.sleep(gap)

@@ -96,6 +96,8 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Fixed (next mammoth-io)
 
+- SDK: an upload into an existing dataset (`client.appends.finish`, so also the CLI and MCP uploads) no longer reports `rows_added: 0` when the rows landed. The batch can be listed before the dataset's row count moves, so the wait now keeps reading the dataset until its count differs from the one before the upload. A count that never moves ends as `append_pending`, not as a confident 0.
+
 - SDK: `jobs.wait_for_job` / `wait_for_jobs` re-label a poll that fails after the job id was returned as `outcome_unknown` (phase `polling`, `job_handle` set), not the read's `not_started`; a resubmit of an accepted write is no longer invited (#340). When the poll was refused for its credentials (401/403) the label is the same and `details["next_step"]` says to sign in again, then read the job.
 - SDK: `client.appends.append` / `finish` report a file the server held back for a schema mismatch as `append_failed` with `failure: "schema_mismatch"`, `reason`, `kept_dataset_ids` (its own dataset stays in the project) and `next_step`, read from the server's flag on the target's pending batches instead of reading as 0 rows added (#336).
 - SDK: `client.appends.append` refuses `override_target_schema` unless the dataset's update method is `replace`; the server ignores it otherwise (#336).
