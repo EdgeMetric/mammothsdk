@@ -142,8 +142,10 @@ async def _every_view(client: MammothClient, ids: dict[str, int]) -> list[int]:
             )
         )
         views = page.get(ListFields.VIEWS, [])
-        every += [int(view[ListFields.ID]) for view in views]
-        if len(views) < LIST_LIMIT_DEFAULT:
+        new = [view_id for view in views if (view_id := int(view[ListFields.ID])) not in every]
+        every += new
+        # A short page is the last; a page with nothing new means the route ignores `offset`.
+        if len(views) < LIST_LIMIT_DEFAULT or not new:
             return every
 
 

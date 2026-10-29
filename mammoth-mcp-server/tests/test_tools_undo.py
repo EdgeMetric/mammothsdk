@@ -240,6 +240,18 @@ class TestADatasetWithMoreViewsThanAPage:
         [first, second] = api.sent("GET", VIEWS)
         assert second.url.params["offset"] == first.url.params["limit"]
 
+    def test_a_route_that_ignores_the_offset_does_not_loop_for_ever(self) -> None:
+        # The same full page every time: stop at the page that brings no new view.
+        with a_fake_api() as api, as_caller():
+            self.many_views(api)
+            api.answers[("GET", VIEWS)] = [
+                (200, {"dataviews": [{"id": view} for view in self.MANY[:50]]})
+            ]
+            answer = call_tool("delete_views", dataset_id=DATASET, whole_dataset=True, **IDS)
+
+        assert answer["goes_with_them"]["views"] == list(self.MANY[:50])
+        assert len(api.sent("GET", VIEWS)) == 2
+
     def test_a_whole_dataset_lists_every_view(self) -> None:
         with a_fake_api() as api, as_caller():
             self.many_views(api)
