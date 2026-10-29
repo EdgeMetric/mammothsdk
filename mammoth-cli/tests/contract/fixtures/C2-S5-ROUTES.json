@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 82,
+  "route_count": 84,
   "families": {
     "view_export": 30,
     "connector": 39,
@@ -4159,6 +4159,83 @@
       "wire": {
         "method": "GET",
         "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.draft.spec.get",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.spec",
+      "field_destinations": {
+        "draft_id": {
+          "source": "positional",
+          "destination": "draft_id",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/{draft_id}/spec",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.version.spec.get",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec",
+      "field_destinations": {
+        "connector_slug": {
+          "source": "positional",
+          "destination": "connector_slug",
+          "wire": "path_or_context"
+        },
+        "version": {
+          "source": "positional",
+          "destination": "version",
+          "wire": "path_or_context"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/versions/{connector_slug}/{version}/spec",
         "body": "none",
         "checks": [
           "method",

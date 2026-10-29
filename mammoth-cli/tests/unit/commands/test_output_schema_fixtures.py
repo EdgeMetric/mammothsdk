@@ -53,7 +53,11 @@ _BINARY_BODY = {
 
 #: Commands whose response is polymorphic in a way the sampler cannot build: the SDK's model
 #: rewrites the sampled branch's discriminating values, so the sample matches no branch.
-_UNSAMPLABLE = frozenset({"connector.ds-config.get"})
+#: The two connector spec reads have no operation in the pinned OpenAPI spec yet (they ship
+#: with the server release that adds the routes), so there is nothing to sample from.
+_UNSAMPLABLE = frozenset(
+    {"connector.ds-config.get", "connector.draft.spec.get", "connector.version.spec.get"}
+)
 
 #: Commands whose example cannot run to a result against sampled responses, each with the
 #: reason. Their declared schema is checked against a hand-built result instead

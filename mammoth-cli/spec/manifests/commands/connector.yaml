@@ -242,6 +242,28 @@ commands:
     `limit_requested`, `limit_applied` and `source_row_count`. A preview is a sample; save the draft
     to read every row.
   no_readback: returns the source's first rows itself; nothing is saved for a read to show
+- command_id: connector.draft.spec.get
+  output_schema:
+    type: object
+    required: [spec, tables]
+    properties:
+      spec:
+        type: object
+      tables:
+        type: array
+        items:
+          type: object
+- command_id: connector.version.spec.get
+  output_schema:
+    type: object
+    required: [spec, tables]
+    properties:
+      spec:
+        type: object
+      tables:
+        type: array
+        items:
+          type: object
 - command_id: connector.draft.update
   output_schema:
     ref: WriteResult

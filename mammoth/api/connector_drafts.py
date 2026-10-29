@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 from mammoth.exceptions import MammothAPIError, MammothValidationError
 
@@ -36,6 +37,16 @@ ERR_SAMPLE_TOO_BIG = (
 )
 ERR_SAMPLE_FILE = "The sample file {0} is not a readable local file."
 ERR_PREVIEW_LIMIT = "`limit` must be between 1 and 100, got {0}."
+#: A slug is lower-case letters, digits and ``_`` where the server writes it
+#: (``normalise_slug``); a ``/`` would be read as another path segment, so it is refused here.
+ERR_SPEC_SLUG = "`connector_slug` must be a name without '/', got {0!r}."
+ERR_SPEC_VERSION = "`version` must be a positive integer, got {0}."
+#: A 404 with no error code is the router saying the route does not exist; a spec or draft
+#: that is missing comes back with a code (``4CDFT004``, ``4CDFT001``).
+ERR_SPEC_NOT_SERVED = (
+    "This server does not serve the connector spec read yet. It arrives with the next "
+    "server release (mvc-service PR 7302)."
+)
 
 
 def _choice(field: str, value: str | None, allowed: tuple[str, ...]) -> None:
@@ -201,6 +212,69 @@ class ConnectorDraftsAPI:
         return await self._client._request_json(
             "POST", f"{self._base()}/link-preview", json={"url": url}
         )
+
+    async def _read_spec(self, path: str) -> dict[str, Any]:
+        try:
+            return await self._client._request_json("GET", path)
+        except MammothAPIError as exc:
+            body = exc.response_body if isinstance(exc.response_body, dict) else {}
+            if exc.status_code == 404 and not body.get("error_code"):
+                raise MammothAPIError(
+                    ERR_SPEC_NOT_SERVED,
+                    status_code=404,
+                    response_body=body,
+                    method="GET",
+                    operation_state="failed",
+                ) from exc
+            raise
+
+    async def spec(self, draft_id: int) -> dict[str, Any]:
+        """Read the spec an AI-built connector's draft is building, with secrets left out.
+
+        The spec says how each table is read: its request path, where its records sit in
+        the response and how pages are requested. A credential shows as a reference to
+        the field the sign-in form collected; anything that could be a secret reads
+        ``[redacted]``.
+
+        Args:
+            draft_id: ID of the draft.
+
+        Returns:
+            Dict with ``code_id``, ``connector_slug``, ``version``, ``status``,
+            ``is_active``, ``entrypoint``, ``spec_sha256``, ``allowed_hosts``,
+            ``created_at`` (ISO 8601), ``tables`` (each
+            ``{name, request_path, records_path, paging}``) and the whole ``spec``.
+            A literal that could be a secret, and a raw body's ``template`` or an
+            XML-RPC body's ``args``, read ``[redacted]``.
+
+        Raises:
+            MammothAPIError: 404 when the draft is not in the project or has no AI-built
+                connector yet, or when the server does not serve the read yet.
+        """
+        return await self._read_spec(f"{self._draft(draft_id)}/spec")
+
+    async def version_spec(self, connector_slug: str, version: int) -> dict[str, Any]:
+        """Read one stored version of the workspace's AI-built connector, secrets left out.
+
+        Args:
+            connector_slug: The connector's slug (the draft spec's ``connector_slug``).
+            version: The version number.
+
+        Returns:
+            The same dict as :meth:`spec`.
+
+        Raises:
+            MammothValidationError: ``connector_slug`` is empty or holds a ``/``, or
+                ``version`` is below 1.
+            MammothAPIError: 404 when the workspace has no such version, or when the
+                server does not serve the read yet.
+        """
+        if not connector_slug.strip() or "/" in connector_slug:
+            raise MammothValidationError(ERR_SPEC_SLUG.format(connector_slug))
+        if version <= 0:
+            raise MammothValidationError(ERR_SPEC_VERSION.format(version))
+        slug = quote(connector_slug, safe="")
+        return await self._read_spec(f"{self._base()}/versions/{slug}/{version}/spec")
 
     async def get(self, draft_id: int) -> dict[str, Any]:
         """Get one draft, with its target columns, sources and thread.

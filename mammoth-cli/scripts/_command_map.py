@@ -124,6 +124,9 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # mvc-service From URL (#7166, #7169): on origin/release, not on the pinned master.
     "POST /workspaces/{}/projects/{}/connector-drafts/link-preview": "origin/release (#7166)",
     "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
+    # mvc-service #7302: an AI-built connector's spec, on origin/release only.
+    "GET /workspaces/{}/projects/{}/connector-drafts/{}/spec": "origin/release (#7302)",
+    "GET /workspaces/{}/projects/{}/connector-drafts/versions/{}/{}/spec": "origin/release (#7302)",
     "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
     "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
     **{

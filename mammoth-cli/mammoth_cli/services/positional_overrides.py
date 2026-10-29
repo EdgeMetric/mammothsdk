@@ -297,6 +297,16 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="deals_2026-10.csv",
         ),
     ),
+    "connector.version.spec.get": (
+        PositionalSpec(
+            name="connector_slug",
+            type=str,
+            required=True,
+            help="The connector's slug, as 'connector draft spec get' shows it.",
+            example_value="isams_ab12cd34",
+        ),
+        PositionalSpec(name="version", type=int, required=True, help="The version number, from 1."),
+    ),
     "dashboard.chat.attachment.upload": (
         PositionalSpec(name="dashboard_id", type=int, required=True, help="ID of the dashboard."),
         PositionalSpec(

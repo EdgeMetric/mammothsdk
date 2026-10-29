@@ -296,6 +296,16 @@ Result: `ConnectorDraftSourcePreviewResult`; mutation `benign_mutation`, confirm
 
 Status on release: untried; no live run recorded.
 
+### `connector.draft.spec.get`
+
+Run: `mammoth connector draft spec get`. Exact input fields: `mammoth schema get connector.draft.spec.get`.
+
+Example: `mammoth connector draft spec get 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorDraftSpecGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `connector.draft.update`
 
 Run: `mammoth connector draft update`. Exact input fields: `mammoth schema get connector.draft.update`.
@@ -405,3 +415,13 @@ Example: `mammoth connector query status postgres prod-warehouse`. Placeholders 
 Result: `ConnectorQueryStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: observed blocker — blocked_missing_fixture: No real connector connection exists in workspace 4 (connector list shows all is_added:false; connector active returns []) and creating one requires externa. Re-check before relying on it.
+
+### `connector.version.spec.get`
+
+Run: `mammoth connector version spec get`. Exact input fields: `mammoth schema get connector.version.spec.get`.
+
+Example: `mammoth connector version spec get isams_ab12cd34 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorVersionSpecGetResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.

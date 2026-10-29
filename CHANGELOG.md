@@ -31,6 +31,14 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
+### Added (next mammoth-io)
+
+- SDK: `ConnectorDraftsAPI.spec(draft_id)` and `version_spec(connector_slug, version)` read an AI-built connector's spec: each table's request path, records path and paging, then the whole spec with secrets left out. They need the server release with mvc-service PR 7302; before it, a 404 reads "This server does not serve the connector spec read yet".
+
+### Added (next mammoth-cli)
+
+- CLI: `connector draft spec get DRAFT_ID` and `connector version spec get SLUG VERSION` show how a custom connector's tables are read: request path, records path, paging type and page size, and the whole spec, with credentials as references and anything that could be a secret redacted. They need the server release with mvc-service PR 7302.
+
 ## mammoth-io 0.8.53, mammoth-cli 2.4.0 (2026-10-29)
 
 ### Added (mammoth-io 0.8.53)

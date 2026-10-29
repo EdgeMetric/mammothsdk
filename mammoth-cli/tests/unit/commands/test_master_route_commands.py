@@ -316,6 +316,46 @@ def test_save_waits_for_its_job(fake_service: FakeMammothService) -> None:
     assert data == {"status": "success"}
 
 
+_SPEC_ANSWER = {
+    "tables": [
+        {
+            "name": "students",
+            "request_path": "/students",
+            "records_path": "$.students",
+            "paging": {"pagination_type": "page_number", "page_size": 50},
+        }
+    ],
+    "spec": {"transport": {"auth": {"token": {"credential": "token"}}}},
+}
+
+
+@pytest.mark.parametrize(
+    ("command_id", "extra_args", "symbol", "arguments"),
+    [
+        ("connector.draft.spec.get", ["9"], f"{_DRAFTS}.spec", {"draft_id": 9}),
+        (
+            "connector.version.spec.get",
+            ["isams_ab12cd34", "3"],
+            f"{_DRAFTS}.version_spec",
+            {"connector_slug": "isams_ab12cd34", "version": 3},
+        ),
+    ],
+)
+def test_the_spec_commands_read_with_their_ids_and_return_the_spec_untouched(
+    fake_service: FakeMammothService,
+    command_id: str,
+    extra_args: list[str],
+    symbol: str,
+    arguments: dict[str, Any],
+) -> None:
+    fake_service.responses[symbol] = _SPEC_ANSWER
+
+    data, _ = dashboard_generated.generated_dashboard(_inv(command_id, extra_args=extra_args))
+
+    assert fake_service.call_log == [(symbol, arguments)]
+    assert data == _SPEC_ANSWER
+
+
 def test_the_draft_vocabularies_match_the_sdk() -> None:
     assert FIELD_ENUMS["connector.draft.create"] == {
         "origin": sdk.DRAFT_ORIGINS,

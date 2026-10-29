@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 872.
+Total commands: 874.
 
 ## activity
 
@@ -1824,6 +1824,17 @@ Total commands: 872.
 - Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.preview_source`
 - Agent example: `mammoth connector draft source preview 123 resource-123 --input '{"limit": 20}'`
 
+### `mammoth connector draft spec get`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the draft.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.spec`
+- Agent example: `mammoth connector draft spec get 123`
+
 ### `mammoth connector draft update`
 
 **Arguments**
@@ -1951,6 +1962,18 @@ Total commands: 872.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.ai.AIAPI.status`
 - Agent example: `mammoth connector query status postgres prod-warehouse`
+
+### `mammoth connector version spec get`
+
+**Arguments**
+
+- `CONNECTOR_SLUG` (str, required) — The connector's slug, as 'connector draft spec get' shows it.
+- `VERSION` (int, required) — The version number, from 1.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec`
+- Agent example: `mammoth connector version spec get isams_ab12cd34 123`
 
 ## context
 

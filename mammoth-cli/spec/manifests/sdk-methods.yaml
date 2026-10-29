@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 911
+method_count: 913
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -2909,6 +2909,18 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.spec
+  implementation_origin: mammoth.api.connector_drafts.ConnectorDraftsAPI.spec
+  signature: 'spec(self, draft_id: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: connector.draft.spec.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.update
   implementation_origin: mammoth.api.connector_drafts.ConnectorDraftsAPI.update
   signature: 'update(self, draft_id: ''int'', *, title: ''str | None'' = None, target_columns: ''_list[dict[str,
@@ -2921,6 +2933,18 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
+  implementation_origin: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
+  signature: 'version_spec(self, connector_slug: ''str'', version: ''int'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: connector.version.spec.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
