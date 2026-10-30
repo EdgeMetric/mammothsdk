@@ -717,6 +717,11 @@ COMMAND_DISCOVERY_PURPOSES = {
         "build an AI connector custom connector for our own internal api or an unsupported "
         "source; sends the request to the builder agent"
     ),
+    "agent.access.today": (
+        "read the today page, the ask home page, its suggestions, today's blocks headline "
+        "numbers, is a new page being written, updating, writing, empty, check a deploy of "
+        "the today page"
+    ),
     "connector.draft.spec.get": (
         "read the spec of an AI connector draft, how a custom connector table is read, paging "
         "type page size, records path, request path, data root path, why a save repeats the "

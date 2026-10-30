@@ -1166,6 +1166,7 @@ _TARGETS: dict[str, str] = {
     "view.transform.window": "mammoth_cli.commands.view_ops.transforms:view_transform_window",
     # Operation-bound commands served by the manifest-driven generic handler.
     "agent.access.me": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "agent.access.today": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "agent.access.settings.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "agent.access.settings.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "agent.access.grant.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",

@@ -162,6 +162,16 @@ Result: `AgentAccessSettingsUpdateResult`; mutation `high_impact`, confirmation 
 
 Status on release: untried; no live run recorded.
 
+### `agent.access.today`
+
+Run: `mammoth agent access today`. Exact input fields: `mammoth schema get agent.access.today`.
+
+Example: `mammoth agent access today`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AgentAccessTodayResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `agent.access.tree`
 
 Run: `mammoth agent access tree`. Exact input fields: `mammoth schema get agent.access.tree`.

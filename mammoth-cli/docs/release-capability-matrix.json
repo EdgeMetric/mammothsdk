@@ -34,6 +34,18 @@
   },
   "unrouted_sdk_calls": [
     {
+      "method": "GET",
+      "path": "/agents/access/today",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.agents.AgentsAPI.access_today"
+      ],
+      "commands": [
+        "agent.access.today"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/agents/sessions/{}/runs/{}/{}",
       "state": "pending_server_release",

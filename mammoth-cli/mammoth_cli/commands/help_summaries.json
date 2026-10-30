@@ -23,6 +23,7 @@
   "agent.access.request.resolve": "Close a request. Owners, admins and the file's keeper.",
   "agent.access.settings.get": "Get the workspace's AI Agent controls. Managers only.",
   "agent.access.settings.update": "Change the workspace's AI Agent controls. Managers only.",
+  "agent.access.today": "Read the caller's Today page on the Ask home.",
   "agent.access.tree": "List the projects and files the Give access tree offers. Managers only.",
   "agent.action.delete": "Delete one object the chat created, by action id. Prompt or '--yes' required.",
   "agent.action.list": "List the changes one agent chat session made.",

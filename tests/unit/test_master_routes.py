@@ -221,6 +221,14 @@ CASES: list[tuple[str, Call, str, str, dict[str, str], object]] = [
         None,
     ),
     (
+        "agent-today",
+        lambda c: c.agents.access_today(),
+        "GET",
+        "/agents/access/today",
+        {},
+        None,
+    ),
+    (
         "draft-spec",
         lambda c: c.connector_drafts.spec(9),
         "GET",
