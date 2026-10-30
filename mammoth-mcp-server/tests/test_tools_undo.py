@@ -287,15 +287,41 @@ class TestADatasetWithMoreViewsThanAPage:
 
         assert seen["most"] > 1
 
-    def test_a_view_whose_impact_cannot_be_read_stops_the_delete_and_says_why(self) -> None:
+    def test_a_view_whose_impact_cannot_be_read_stops_the_delete_and_the_other_reads(
+        self,
+    ) -> None:
+        # The other reads are held until the failing one answers: they must be cancelled,
+        # not left running after the tool's client is closed.
+        failing = f"{VIEWS}/{self.MANY[1]}/impact"
+        held: list[str] = []
+        cancelled: list[str] = []
+        both_held = asyncio.Event()
         with a_fake_api() as api, as_caller():
             self.many_views(api)
-            api.answers[("GET", f"{VIEWS}/{self.MANY[1]}/impact")] = [
-                (502, {"message": "Bad gateway"})
-            ]
+            api.answers[("GET", failing)] = [(502, {"message": "Bad gateway"})]
+            answer = api.handle
+
+            async def holding(request: httpx.Request) -> httpx.Response:
+                path = request.url.path
+                if path == failing:
+                    await asyncio.wait_for(both_held.wait(), 1)
+                elif path.endswith("/impact"):
+                    held.append(path)
+                    if len(held) == 2:
+                        both_held.set()
+                    try:
+                        await asyncio.sleep(5)
+                    except asyncio.CancelledError:
+                        cancelled.append(path)
+                        raise
+                return answer(request)
+
+            api.handle = holding  # type: ignore[method-assign]
             with pytest.raises(ToolError, match="Bad gateway"):
                 call_tool("delete_views", dataset_id=DATASET, view_ids=list(self.MANY[:3]), **IDS)
 
+        assert sorted(cancelled) == sorted(held)
+        assert len(cancelled) == 2
         assert not [r for r in api.requests if r.method == "POST"]
 
 
