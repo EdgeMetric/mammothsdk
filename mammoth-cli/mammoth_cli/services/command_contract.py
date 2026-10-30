@@ -733,9 +733,8 @@ S7_COMMANDS = frozenset(
     }
     # The S7 ledger is a frozen 104-route cohort.  REL-480 was added later
     # and has its own focused contract tests; do not silently change this
-    # cohort denominator when new AI bindings land.  The Today page read (#364)
-    # came later too and is covered by test_master_route_commands.py.
-    and str(record["command_id"]) not in {"ai.retention.condition", "agent.access.today"}
+    # cohort denominator when new AI bindings land.
+    and str(record["command_id"]) != "ai.retention.condition"
 )
 
 # A small number of S7 SDK methods intentionally expose a ``**kwargs``
