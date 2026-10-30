@@ -1,6 +1,7 @@
 """Which tools a client is offered."""
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 
 from mammoth_mcp_server.server import mcp_server, register_tools
 
@@ -15,6 +16,8 @@ TOOLS = {
     "connect_source",
     "create_automation",
     "create_dashboard",
+    "create_folder",
+    "create_project",
     "create_view",
     "delete_automation",
     "delete_dashboard",
@@ -36,6 +39,7 @@ TOOLS = {
     "get_export",
     "get_file",
     "get_help",
+    "get_job",
     "get_pipeline",
     "get_schema",
     "get_view",
@@ -56,10 +60,11 @@ TOOLS = {
     "preview_query",
     "preview_transformation",
     "publish_dashboard",
+    "rename",
     "request_upload",
     "review_unreadable_rows",
     "run_pipeline",
-    "set_date_format",
+    "set_file_settings",
     "undo",
     "unlock_file",
     "update_automation",
@@ -87,6 +92,37 @@ def test_a_tool_that_builds_a_client_without_a_workspace_still_acts_as_the_calle
     assert request.headers["authorization"].startswith("Bearer mm_")
 
 
+def test_no_tool_takes_an_argument_it_does_not_name() -> None:
+    # A model that guesses a parameter must be told, not have it dropped while
+    # the call reports success.
+    register_tools()
+
+    for tool in run(mcp_server.list_tools()):
+        assert tool.input_schema.get("additionalProperties") is False, tool.name
+
+
+def test_an_unknown_argument_is_refused_with_the_accepted_ones_and_nothing_is_sent() -> None:
+    with a_fake_api() as api, as_caller():
+        api.answer("GET", f"/workspaces/{WORKSPACE}/projects", [])
+        with pytest.raises(ToolError) as refused:
+            call_tool("list_projects", workspace_id=WORKSPACE, append_to_ds_id=315779)
+
+    assert "append_to_ds_id" in str(refused.value)
+    assert "accepted: workspace_id" in str(refused.value)
+    assert api.sent("GET", f"/workspaces/{WORKSPACE}/projects") == []
+
+
+def test_a_known_argument_still_works_after_the_check() -> None:
+    register_tools()
+    register_tools()  # twice: the check must not stack or break the tools
+
+    with a_fake_api() as api, as_caller():
+        api.answer("GET", f"/workspaces/{WORKSPACE}", {"id": WORKSPACE, "name": "Home"})
+        listed = call_tool("list_workspaces")
+
+    assert listed["workspaces"] == [{"id": WORKSPACE, "name": "Home"}]
+
+
 READ_ONLY = {
     "aggregate_data",
     "check_upload",
@@ -100,6 +136,7 @@ READ_ONLY = {
     "get_export",
     "get_file",
     "get_help",
+    "get_job",
     "get_pipeline",
     "get_schema",
     "get_view",
@@ -195,6 +232,9 @@ def test_a_title_reads_as_a_label_not_a_sentence() -> None:
 # that loads tools by searching their words, and a model picking from a list,
 # find the rest only in the title and the description's first line.
 FOLDED_JOBS = {
+    "delete_views": ("views", "dataset"),
+    "rename": ("project", "dataset", "view"),
+    "set_file_settings": ("date format", "delimiter", "header"),
     "undo": ("trash", "roll back"),
     "get_pipeline": ("steps", "versions"),
     "get_schema": ("transformation", "export", "automation"),

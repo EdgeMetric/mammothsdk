@@ -132,6 +132,16 @@ class TestWhatIsRefused:
         assert "Site, Revenue, Order Date" in str(refused.value)
         assert not api.sent("POST", QUERY)
 
+    def test_a_condition_on_a_column_the_view_does_not_have_is_refused(self) -> None:
+        # Mammoth answers such a query with no rows, which reads as "none match".
+        with a_fake_api() as api, as_caller():
+            answers(api, [])
+            with pytest.raises(ToolError, match="no column 'Site'") as refused:
+                aggregate(aggregations=REVENUE_BY_SITE, condition={"Site": {"EQ": "a"}})
+
+        assert "Site = column_1" in str(refused.value)
+        assert api.sent("POST", QUERY) == []
+
     def test_ranking_by_a_name_that_is_not_a_result_names_the_ones_that_are(self) -> None:
         with a_fake_api() as api, as_caller():
             answers(api, [])

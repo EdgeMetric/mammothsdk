@@ -103,6 +103,7 @@ async def test_request_json_calls_a_route_with_the_clients_credentials() -> None
 def test_builders_are_public_under_their_own_names() -> None:
     assert builders.build_export_spec is private_builders.build_export_spec
     assert builders.build_filter_params is private_builders.build_filter_params
+    assert builders.build_branch_out_params is private_builders.build_branch_out_params
     contract = builders.export_contract(HandlerType.POSTGRES)
     assert contract is not None and "host" in contract.required
     assert set(builders.EXPORT_CONTRACTS) == set(private_builders._EXPORT_CONTRACTS)

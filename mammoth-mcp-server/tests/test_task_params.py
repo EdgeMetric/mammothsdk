@@ -65,6 +65,26 @@ def build(api: FakeApi, operation: dict, place: StepPlace | None = None) -> dict
         return typing.cast(dict, run(built()))
 
 
+class TestAMathExpressionThatNamesNoColumn:
+    """The parser says only "Unrecognized token at position 0"; the model is told which word."""
+
+    @pytest.mark.parametrize(
+        ("expression", "word"),
+        [("Price * 2", "Price"), ("Amount + Tax", "Tax"), ('"Unit Price" / 2', "Unit Price")],
+    )
+    def test_the_word_that_is_no_column_is_named_with_the_views_columns(
+        self, expression: str, word: str
+    ) -> None:
+        with a_fake_api() as api:
+            a_view(api, DATASET, VIEW, {"metadata": SALES})
+            with pytest.raises(MammothValidationError) as refused:
+                build(api, {"op": "math", "expression": expression, "new_column": "x"})
+
+        message = str(refused.value)
+        assert f"{word!r} is not a column of this view" in message
+        assert "Its columns: Region, Amount." in message
+
+
 class TestAStepBuiltFromTheViewsColumns:
     def test_a_column_is_named_by_its_display_name_and_sent_by_its_internal_one(self) -> None:
         with a_fake_api() as api:

@@ -94,6 +94,7 @@ def a_view(
     for steps in listings:
         api.answer("GET", TASKS, {"tasks": steps})
     api.answer("GET", PIPELINE, {"draft_mode": draft_mode, "execution_state": "idle"})
+    api.answer("GET", VIEW_PATH, {"id": VIEW, "metadata": []})
     for each in runs:
         api.answer("GET", RUN_JOB, each)
     api.answer("GET", CHANGE_JOB, CHANGE_MADE)

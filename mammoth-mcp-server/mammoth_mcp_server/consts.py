@@ -71,6 +71,8 @@ CONNECT_WAIT_SECONDS = 20.0
 CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
+# How many views' delete impact `delete_views` reads at once.
+IMPACT_READS_AT_ONCE = 8
 
 # Rows one `get_data` call returns. A model reads a sample to decide what to do
 # next; it does not read the table. The cap is the API's page limit.
@@ -93,6 +95,8 @@ JOB_POLL_SECONDS = 0.2
 # seen at once, and a long build is not checked several times a second.
 JOB_POLL_MAX_SECONDS = 2.0
 JOB_TIMEOUT_SECONDS = 60.0
+# A new export runs after the job that adds it: how often to look at it until it has.
+EXPORT_POLL_SECONDS = 1.0
 # How long one tool call may wait in all, over every job it waits on. A client
 # gives up on a call after about a minute, so the answer must come before then.
 TOOL_CALL_SECONDS = 45.0
@@ -147,6 +151,14 @@ class UploadFields:
     PROJECT_ID = "project_id"
     CALLER = "caller"
     JOB_ID = "job_id"
+    # What the upload job returns: one job per file, under this key.
+    JOB_IDS = "job_ids"
+    # A file whose job failed: the job, the file, and why.
+    FAILED = "failed"
+    FILE_OBJECT_ID = "file_object_id"
+    ERROR = "error"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
+    NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"
     # When the files were sent: what the upload made is what was created since.
     UPLOADED_AT = "uploaded_at"
@@ -315,7 +327,20 @@ class FileSettingsFields:
     DATE_COLUMNS = "editable_date_columns"
     AMBIGUOUS_COLUMNS = "date_columns"
     APPLIED = "applied"
-    KEPT = ("delimiter", "has_header", "initial_skip_count", "quotechar")
+    DELIMITER = "delimiter"
+    HAS_HEADER = "has_header"
+    SKIP_COUNT = "initial_skip_count"
+    QUOTE_CHAR = "quotechar"
+    KEPT = (DELIMITER, HAS_HEADER, SKIP_COUNT, QUOTE_CHAR)
+    SETTINGS = "settings"
+    # The settings as `set_file_settings` takes them, by the route's names.
+    SHOWN = {
+        "delimiter": DELIMITER,
+        "has_header": HAS_HEADER,
+        "skip_rows": SKIP_COUNT,
+        "quote_char": QUOTE_CHAR,
+        "date_format": DATE_FORMAT,
+    }
 
 
 class ApiPaths:
@@ -345,6 +370,8 @@ class ResourceTypes:
 
     FILE = "file_object"
     DATASET = "datasource"
+    # A folder is a label to the resources route: what it holds lists under it.
+    FOLDER = "label"
 
 
 class FileStatus:
@@ -438,16 +465,67 @@ class JobFields:
     SUCCESS = "success"
     # What a tool that answers before its job finished tells the model to do.
     NOTE = "note"
+    # What `get_job` reports of a finished job.
+    RESULT = "result"
 
 
 class ViewFields:
-    """What `delete_views` reports. The SDK names the fields it sends itself."""
+    """What `create_view` and `delete_views` report. The SDK names the fields it sends itself."""
 
     VIEW_ID = "view_id"
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
     NEXT_STEP = "next_step"
+    HAS_ERROR = "has_error"
+    COPY_FAILED = (
+        "The view was created, but a step copied into it failed to run. Call"
+        " get_pipeline on the new view to see which, and tell the user."
+    )
+    GOES_WITH = "goes_with_them"
+    TRASHED_DATASET = "trashed_dataset"
+    DATASET = "dataset"
+    VIEWS = "views"
+    # What deleting a view takes with it, as Mammoth's impact route lists it,
+    # and what of each item tells the user what it is.
+    IMPACT_SCOPE = "view"
+    IMPACT_KINDS = ("exports", "dashboards", "views", "automations")
+    IMPACT_ITEM_FIELDS = ("id", "name", "handler_type", "destination", "project_id")
+
+
+class RenameFields:
+    """What `create_project` and `rename` take and report."""
+
+    PROJECT = "project"
+    DATASET = "dataset"
+    PROJECT_ID = "project_id"
+    DATASET_ID = "dataset_id"
+    VIEW_ID = "view_id"
+    RENAMED = "renamed"
+
+
+class DeletedFileFields:
+    """What `delete_file` reports, and where Mammoth names the dataset a file made."""
+
+    DELETED_FILE = "deleted_file"
+    DATASET_KEPT = "dataset_kept"
+    NEXT_STEP = "next_step"
+    FILE = "file"
+    ADDITIONAL_INFO = "additional_info"
+    FINAL_DATASET_ID = "final_ds_id"
+
+
+class FolderFields:
+    """A project's folders, as the API lists them and this server reports them."""
+
+    FOLDERS = "folders"
+    FOLDER = "folder"
+    ID = "id"
+    RESOURCE_ID = "resource_id"
+    NAME = "name"
+    PARENT_ID = "parent_id"
+    FOLDER_ID = "folder_id"
+    FOLDER_RESOURCE_ID = "folder_resource_id"
 
 
 class TrashFields:
@@ -545,6 +623,12 @@ class DashboardFields:
 
     ID = "id"
     DASHBOARDS = "dashboards"
+    TRASHED = "trashed"
+    NEXT_STEP = "next_step"
+    IN_THE_TRASH = (
+        'The dashboard is in the trash. To bring it back, call undo with what="trash";'
+        " list_trash shows it, with how long the trash keeps it."
+    )
     TITLE = "title"
     TAGS = "tags"
     BOARD = "dashboard"
@@ -900,6 +984,8 @@ class StepFields:
     PARAMS = "params"
     # The columns a step reads: the ones the steps before it leave.
     COLUMNS_READ = "prev_metadata"
+    # For the web app: a join's key analysis, with the other view's columns it uses.
+    DISPLAY_INFO = "display_info"
     RUN_STATE = "transform_status"
     FAILED_STATES = frozenset({"ERROR", "REFERROR", "EXCEPTION"})
     REFERENCE_ERRORS = "reference_errors"
@@ -933,6 +1019,8 @@ class StepFields:
     RAN = "ran"
     RUN_FAILED = "run_failed"
     RUN_PENDING = "run_pending"
+    NOT_LISTED = "not_listed"
+    ADDED = "added"
     STAGED = "staged"
     PUT_BACK = "put_back"
     NOT_PUT_BACK = "not_put_back"
@@ -945,6 +1033,8 @@ class ExportFields:
     STATUS = "status"
     SUSPENDED = "suspended"
     SUSPENDING = "suspending"
+    ADDED = "added"
+    EXECUTING = "executing"
     DESTINATION = "handler_type"
     SETTINGS = "target_properties"
     EXTRA = "additional_properties"
@@ -965,6 +1055,22 @@ class ExportFields:
     EXPORT = "export"
     LAST_RUN = "last_run"
     RECENT_RUNS = "recent_runs"
+    WHICH_DATASET = "which_dataset"
+    DATASETS = "datasets"
+
+
+class DatasetExportFields:
+    """The settings of an export into a Mammoth dataset, as a model passes them."""
+
+    DATASET_NAME = "dataset_name"
+    TARGET_NAME = "target_dataset_name"
+    TARGET_ID = "target_ds_id"
+    MODE = "save_as_mode"
+    COLUMN_MAPPING = "column_mapping"
+    ONE_OF = (DATASET_NAME, TARGET_NAME, TARGET_ID)
+    OPTIONAL = (MODE, COLUMN_MAPPING)
+    APPEND = "append"
+    REPLACE = "replace"
 
 
 class PageFields:
@@ -985,8 +1091,64 @@ class ViewShape:
 
     KEPT = ("id", "name", "ds_id", "status", "row_count", "column_count", "updated_at")
     METADATA = "metadata"
+    ROW_COUNT = "row_count"
     COLUMN_KEPT = ("display_name", "internal_name", "type", "format", "min", "max")
     NUMERIC = "NUMERIC"
     DATE = "DATE"
     # The row identity Mammoth adds to every data page; the web app never shows it.
     SYSTEM_COLUMNS = frozenset({"hash"})
+
+
+class JoinCheckFields:
+    """What `add_transformations` reports about how a join or a lookup matched."""
+
+    JOIN_CHECK = "join_check"
+    ROWS_BEFORE = "rows_before"
+    ROWS_AFTER = "rows_after"
+    COLUMNS_ADDED = "columns_added"
+    UNMATCHED_ROWS = "unmatched_rows"
+    MATCH_RATE = "match_rate"
+    NOTES = "notes"
+    # Where the aggregate route puts the one count asked for.
+    COUNT = "agg_0"
+    UNMATCHED_NOTE = (
+        "{} of {} rows found no match: every column the step brought in is empty."
+        " If that is more than a few, compare the key columns of both views (type,"
+        " case, spaces) before building on this, or tell the user."
+    )
+    NOT_COUNTED_NOTE = (
+        "The step ran, but Mammoth could not count the rows it matched ({}), so how"
+        " well it matched is not known. Do not add it again: read the rows with"
+        " get_data to check them."
+    )
+    NO_NEW_COLUMN_NOTE = (
+        "The step added no column, so matched rows cannot be counted; read the rows"
+        " with get_data to check them."
+    )
+    ROWS_REPEAT_NOTE = (
+        "The join added {} rows: a key repeats in the other view, so the rows it"
+        " matches repeat too, and totals count them more than once. A lookup brings"
+        " in one value per key."
+    )
+    ROWS_DROPPED_NOTE = (
+        "{} rows found no match and were dropped (an INNER join keeps matched rows only)."
+    )
+    ALONE_NOTE = (
+        "Add a join or a lookup in a call of its own to get its join_check: with other"
+        " steps in the same call, its matches cannot be told apart."
+    )
+
+
+# A file-backed dataset has no source a refresh could pull from.
+_NOT_REFRESHABLE = (
+    "A dataset made from an uploaded file has no source to pull from, so it cannot be"
+    " refreshed or retrieved on a schedule. Upload the new file instead, or bring the"
+    " data in from a cloud or database connection (find_new_connection, then"
+    " add_dataset_from_connection): such a dataset refreshes on its own schedule."
+)
+# What to add to a refusal whose own words give no reason or way forward, by
+# Mammoth's error code.
+REFUSAL_HINTS: dict[object, str] = {
+    "4AUTO006": _NOT_REFRESHABLE,
+    "4DSET048": _NOT_REFRESHABLE,
+}

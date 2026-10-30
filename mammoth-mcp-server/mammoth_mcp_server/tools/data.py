@@ -5,8 +5,6 @@ arrives when the job finishes. The SDK waits, so the model gets its answer
 from one call and never has to poll for itself.
 """
 
-import asyncio
-
 from mcp.server.mcpserver.exceptions import ToolError
 
 from ..aggregate import Aggregation, DateGroup, build_query
@@ -19,7 +17,7 @@ from ..consts import (
 )
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..shape import not_found_message, read_rows
+from ..shape import check_internal_names, condition_columns, not_found_message, read_rows
 from ..tool_kinds import READS
 
 LIMIT_TOO_LOW = "`limit` must be at least 1."
@@ -32,7 +30,7 @@ async def get_data(
     dataset_id: int,
     view_id: int,
     limit: int = DATA_LIMIT_DEFAULT,
-    offset: int = 1,
+    offset: int = 0,
     columns: list[str] | None = None,
     condition: dict[str, JsonValue] | None = None,
 ) -> dict[str, JsonValue]:
@@ -59,7 +57,7 @@ async def get_data(
         dataset_id: Which dataset the view belongs to.
         view_id: Which view to read.
         limit: How many rows to return. At most 400.
-        offset: The first row to return, counting from 1.
+        offset: How many rows to skip, for paging: `next_offset`.
         columns: Internal column names to return, as `get_view` reports them.
             Omit for every column.
         condition: Filter the rows. One test reads
@@ -74,25 +72,27 @@ async def get_data(
     page_size = min(limit, DATA_LIMIT_MAX)
     missing = not_found_message(workspace_id, project_id, dataset_id, view_id)
     async with build_client(workspace_id) as client:
-        answer, view = await asyncio.gather(
-            read_sdk_errors(
-                client.dataviews.query_data(
-                    dataset_id,
-                    view_id,
-                    offset=offset,
-                    limit=page_size,
-                    columns=columns,
-                    condition=condition,
-                    project_id=project_id,
-                ),
-                missing,
+        # The view is read first: a column it does not have is named before any
+        # query, which the route would answer as a missing view.
+        view = await read_sdk_errors(
+            client.dataviews.get(
+                dataset_id, view_id, project_id=project_id, fields=ApiFields.STANDARD
             ),
-            read_sdk_errors(
-                client.dataviews.get(
-                    dataset_id, view_id, project_id=project_id, fields=ApiFields.STANDARD
-                ),
-                missing,
+            missing,
+        )
+        check_internal_names(view, [*(columns or []), *condition_columns(condition)])
+        answer = await read_sdk_errors(
+            client.dataviews.query_data(
+                dataset_id,
+                view_id,
+                # The route counts rows from 1.
+                offset=offset + 1,
+                limit=page_size,
+                columns=columns,
+                condition=condition,
+                project_id=project_id,
             ),
+            missing,
         )
     return read_rows(answer, view, offset, page_size, condition is not None)
 
@@ -149,6 +149,7 @@ async def aggregate_data(
             ),
             missing,
         )
+        check_internal_names(view, condition_columns(condition))
         query = build_query(view, aggregations, group_by or [])
         answer = await read_sdk_errors(
             client.dataviews.aggregate(

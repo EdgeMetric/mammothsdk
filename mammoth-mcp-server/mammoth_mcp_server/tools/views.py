@@ -4,9 +4,13 @@ A view is where transformations run, so a second view is the safe place to
 experiment: copy the view, change the copy, delete the copy.
 """
 
+import asyncio
+from collections.abc import Awaitable
+
+from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ListFields, ViewFields
+from ..consts import IMPACT_READS_AT_ONCE, LIST_LIMIT_DEFAULT, ListFields, ViewFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -14,8 +18,18 @@ from ..shape import view_url
 from ..tool_kinds import CHANGES, DESTRUCTIVE
 
 IN_THE_TRASH = (
-    'The views are in the trash. To bring one back, call undo with what="trash";'
+    'They are in the trash. To bring one back, call undo with what="trash";'
     " list_trash shows them, with how long the trash keeps them."
+)
+ASK = (
+    "Nothing was deleted yet. Tell the user what goes with them, under goes_with_them;"
+    " when they agree, call again with confirmed=true. A view other views or"
+    " automations depend on cannot go to the trash until those are removed."
+)
+LAST_VIEW = (
+    "These are all the views of dataset {dataset_id}, and Mammoth moves a dataset to the"
+    " trash with its last view. To delete the dataset, ask the user, then call again"
+    " with whole_dataset=true."
 )
 
 
@@ -43,7 +57,7 @@ async def create_view(
 
     Returns:
         The new view's id, under the key `dataview_id`, and `mammoth_url`, the
-        page in Mammoth it opens on.
+        page in Mammoth it opens on. `next_step` when a copied step failed.
     """
     # The SDK waits for the creation job itself, so the new view's id is
     # what comes back.
@@ -56,47 +70,159 @@ async def create_view(
                 project_id=project_id,
             )
         )
+    # The answer is the run that built the view, down to the machine it ran
+    # on; the model needs the view.
     view_id = created.get(ListFields.VIEW_ID)
-    return {**created, ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id)}
+    view: dict[str, JsonValue] = {
+        ListFields.VIEW_ID: view_id,
+        ListFields.MAMMOTH_URL: view_url(workspace_id, project_id, view_id),
+    }
+    if created.get(ViewFields.HAS_ERROR):
+        view[ViewFields.NEXT_STEP] = ViewFields.COPY_FAILED
+    return view
 
 
 @mcp_server.tool(title="Delete views", annotations=DESTRUCTIVE)
 async def delete_views(
-    workspace_id: int, project_id: int, dataset_id: int, view_ids: list[int]
+    workspace_id: int,
+    project_id: int,
+    dataset_id: int,
+    view_ids: list[int] | None = None,
+    whole_dataset: bool = False,
+    confirmed: bool = False,
 ) -> dict[str, JsonValue]:
-    """Move views of a dataset to the trash.
+    """Move views of a dataset, or the whole dataset, to the trash.
 
-    Ask the user before calling this. `undo` with what="trash" brings a view
-    back, with its transformations, until Mammoth empties the trash. A dataset
-    keeps at least one view, so its last view cannot be deleted.
+    Ask the user before calling this. `undo` with what="trash" brings a view or
+    a dataset back, with its transformations, until Mammoth empties the trash.
+    Mammoth moves a dataset to the trash with its last view, so deleting every
+    view of a dataset is refused: pass `whole_dataset` to delete the dataset.
+
+    The first call deletes nothing when something else goes too: the exports,
+    dashboards, views and automations built on the views, or the dataset. It
+    lists them under `goes_with_them`. Tell the user; when they agree, call
+    again with `confirmed` true.
 
     Args:
         workspace_id: Which workspace the dataset is in.
         project_id: Which project the dataset is in.
         dataset_id: Which dataset the views belong to.
-        view_ids: The views to delete.
+        view_ids: The views to delete. Omit with `whole_dataset`.
+        whole_dataset: Delete the dataset, with all its views.
+        confirmed: The user agreed to what `goes_with_them` listed.
 
     Returns:
-        `deleted`: the ids moved to the trash. `failed`: each id that was not,
-        with the reason. One failure does not stop the others. `next_step`:
-        how to bring them back.
+        `deleted`: the view ids moved to the trash, or `trashed_dataset`. `failed`:
+        each view that was not, with the reason; one failure does not stop the
+        others. `goes_with_them`, when nothing was deleted yet. `next_step`.
     """
+    async with build_client(workspace_id) as client:
+        ids = {"workspace_id": workspace_id, "project_id": project_id, "dataset_id": dataset_id}
+        targets = await _views_to_delete(client, ids, view_ids, whole_dataset)
+        goes = await _what_goes_with(client, ids, targets)
+        if whole_dataset:
+            goes = {ViewFields.DATASET: dataset_id, ViewFields.VIEWS: list(targets), **goes}
+        if goes and not confirmed:
+            return {ViewFields.DELETED: [], ViewFields.GOES_WITH: goes, ViewFields.NEXT_STEP: ASK}
+        if whole_dataset:
+            await _trash(workspace_id, client.datasets.trash(dataset_id, project_id=project_id))
+            return {ViewFields.TRASHED_DATASET: dataset_id, ViewFields.NEXT_STEP: IN_THE_TRASH}
+        return await _trash_views(client, ids, targets)
+
+
+async def _every_view(client: MammothClient, ids: dict[str, int]) -> list[int]:
+    """The ids of every view of the dataset, page by page: one page is not all of them."""
+    every: list[int] = []
+    while True:
+        page = await read_sdk_errors(
+            client.browse.dataviews(
+                ids["dataset_id"],
+                project_id=ids["project_id"],
+                limit=LIST_LIMIT_DEFAULT,
+                offset=len(every),
+            )
+        )
+        views = page.get(ListFields.VIEWS, [])
+        new = [view_id for view in views if (view_id := int(view[ListFields.ID])) not in every]
+        every += new
+        # A short page is the last; a page with nothing new means the route ignores `offset`.
+        if len(views) < LIST_LIMIT_DEFAULT or not new:
+            return every
+
+
+async def _views_to_delete(
+    client: MammothClient, ids: dict[str, int], view_ids: list[int] | None, whole: bool
+) -> list[int]:
+    """The views the call deletes, refused when they would take the dataset with them."""
+    if not view_ids and not whole:
+        raise ToolError("Name the views to delete in view_ids, or pass whole_dataset.")
+    if view_ids and whole:
+        raise ToolError("Name the views in view_ids, or pass whole_dataset: not both.")
+    every = await _every_view(client, ids)
+    if whole:
+        return every
+    named = list(dict.fromkeys(view_ids or []))
+    if every and set(every) <= set(named):
+        raise ToolError(LAST_VIEW.format(dataset_id=ids["dataset_id"]))
+    return named
+
+
+async def _what_goes_with(
+    client: MammothClient, ids: dict[str, int], view_ids: list[int]
+) -> dict[str, JsonValue]:
+    """What deleting the views takes with them, by kind, as Mammoth lists it."""
+    at_once = asyncio.Semaphore(IMPACT_READS_AT_ONCE)
+
+    async def impact_of(view_id: int) -> dict[str, JsonValue]:
+        async with at_once:
+            return await read_sdk_errors(
+                client.dataviews.delete_impact(
+                    ids["dataset_id"],
+                    view_id,
+                    ViewFields.IMPACT_SCOPE,
+                    project_id=ids["project_id"],
+                )
+            )
+
+    # Read side by side: a dataset of many views would spend the call's time in turn.
+    # A TaskGroup stops the other reads when one fails, before the client closes.
+    try:
+        async with asyncio.TaskGroup() as reads:
+            tasks = [reads.create_task(impact_of(view_id)) for view_id in view_ids]
+    except ExceptionGroup as failed:
+        raise failed.exceptions[0] from None
+    impacts = [task.result() for task in tasks]
+    goes: dict[str, list[JsonValue]] = {}
+    for view_id, impact in zip(view_ids, impacts, strict=True):
+        for kind in ViewFields.IMPACT_KINDS:
+            items = impact.get(kind)
+            for item in items if isinstance(items, list) else []:
+                if not isinstance(item, dict):
+                    continue
+                kept = {k: item[k] for k in ViewFields.IMPACT_ITEM_FIELDS if k in item}
+                goes.setdefault(kind, []).append({ViewFields.VIEW_ID: view_id, **kept})
+    return dict(goes)
+
+
+async def _trash(workspace_id: int, started: Awaitable[dict[str, JsonValue]]) -> None:
+    await wait_for_job(workspace_id, await read_sdk_errors(started))
+
+
+async def _trash_views(
+    client: MammothClient, ids: dict[str, int], view_ids: list[int]
+) -> dict[str, JsonValue]:
     deleted: list[JsonValue] = []
     failed: list[JsonValue] = []
-    # One client for the whole list: each one opens its own connections.
-    async with build_client(workspace_id) as client:
-        for view_id in view_ids:
-            try:
-                await wait_for_job(
-                    workspace_id,
-                    await read_sdk_errors(
-                        client.dataviews.trash(dataset_id, view_id, project_id=project_id)
-                    ),
-                )
-            except ToolError as error:
-                failed.append({ViewFields.VIEW_ID: view_id, ViewFields.ERROR: str(error)})
-            else:
-                deleted.append(view_id)
+    for view_id in view_ids:
+        try:
+            await _trash(
+                ids["workspace_id"],
+                client.dataviews.trash(ids["dataset_id"], view_id, project_id=ids["project_id"]),
+            )
+        except ToolError as error:
+            failed.append({ViewFields.VIEW_ID: view_id, ViewFields.ERROR: str(error)})
+        else:
+            deleted.append(view_id)
     return {
         ViewFields.DELETED: deleted,
         ViewFields.FAILED: failed,

@@ -10,13 +10,14 @@ link, and the browser sends it, so the bytes never enter the conversation.
 
 import asyncio
 import time
+from datetime import UTC, datetime
 from pathlib import PurePosixPath
 from typing import Literal
 
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..appends import NOT_AN_APPEND, Mode, append_file, finish_append
+from ..appends import NOT_AN_APPEND, NOT_IN_A_FOLDER, Mode, append_file, finish_append
 from ..consts import (
     DISCARD_READS,
     LIST_LIMIT_DEFAULT,
@@ -27,8 +28,10 @@ from ..consts import (
     ApiFields,
     ApiPaths,
     ColumnFields,
+    DeletedFileFields,
     FilePatchFields,
     FileSettingsFields,
+    FolderFields,
     InterpretationFields,
     JobFields,
     UnstructuredFields,
@@ -39,10 +42,18 @@ from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
-from ..upload_report import report_upload
 from ..upload_tickets import read_ticket
+from ..upload_wait import finish_upload
+from .folders import read_folders
+
+APPEND_NOT_YET = (
+    "The file is not in the dataset yet. Do not upload it again: call check_upload"
+    " with the same upload_id in a minute, and it reports what the file added."
+)
 
 type DateFormat = Literal["US", "UK"]
+type Delimiter = Literal[",", "\t", "|", ";"]
+type QuoteChar = Literal['"', "'", ""]
 
 
 @mcp_server.tool(title="Upload file", annotations=CHANGES)
@@ -53,6 +64,7 @@ async def upload_file(
     content: str,
     append_to_dataset_id: int | None = None,
     mode: Mode | None = None,
+    folder_resource_id: int | None = None,
 ) -> dict[str, JsonValue]:
     """Create a dataset in a project from text you have, or add the text to one it already has.
 
@@ -84,10 +96,19 @@ async def upload_file(
         mode: "add" or "replace", only together with `append_to_dataset_id`:
             the dataset's update method, set before the file goes in. If the
             upload fails the previous method is put back.
+        folder_resource_id: A folder of the project to put the file in, as
+            `list_files` or `create_folder` names it. A folder automation
+            picks up what lands there. Leave out for the project itself, and
+            for an upload into a dataset.
 
     Returns:
-        What Mammoth made of the file, including the dataset it created. For an
-        upload into a dataset: `appended_to`, the `update_method` it ran under
+        As `check_upload` reports it: `status`, and `files`, the file and the
+        dataset it made. A dataset that is ready carries `view_id`; one that
+        waits on the user carries `needs`. `processing`, with `job_ids`, when
+        Mammoth was still reading the file as the call ended. `rejected`: what
+        Mammoth refused. `failed`: each file Mammoth could not read, with its
+        `job_id`, `file_object_id` and `error`; the other files landed. For an
+        upload into a dataset instead: `appended_to`, the `update_method` it ran under
         (`mode`, `effect`, and `previous_mode` when this upload changed it),
         `rows_before`, `rows_after` and `rows_added`, and for "add" the
         `batch_ids` (`batch_id` when there is one) that `undo` with
@@ -95,18 +116,34 @@ async def upload_file(
     """
     if mode is not None and append_to_dataset_id is None:
         raise ToolError(NOT_AN_APPEND)
+    if folder_resource_id is not None and append_to_dataset_id is not None:
+        raise ToolError(NOT_IN_A_FOLDER)
     if append_to_dataset_id is not None:
         return await append_file(
             workspace_id, project_id, append_to_dataset_id, file_name, content.encode(), mode
         )
+    since = datetime.now(UTC).isoformat()
     async with build_client(workspace_id, project_id) as client:
         started = await request_api(
             client,
             "POST",
             ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
             upload=[(file_name, content.encode(), find_media_type(file_name))],
+            query=(
+                {UploadFields.FOLDER_RESOURCE_ID: folder_resource_id}
+                if folder_resource_id is not None
+                else None
+            ),
         )
-    return await wait_for_job(workspace_id, started)
+    ticket: Record = {
+        UploadFields.UPLOADED_AT: since,
+        UploadFields.WORKSPACE_ID: workspace_id,
+        UploadFields.PROJECT_ID: project_id,
+    }
+    if folder_resource_id is not None:
+        ticket[UploadFields.FOLDER_RESOURCE_ID] = folder_resource_id
+    report, _ = await finish_upload(ticket, started)
+    return report
 
 
 async def wait_for_the_file(upload_id: str) -> Record:
@@ -160,7 +197,9 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         `appended_to`, the `update_method` it ran under, `rows_before`,
         `rows_after` and `rows_added`, and for "add" the `batch_ids` that
         `undo` with what="batch" removes; a "replace" has none to remove.
-        `append_pending` means the rows had not all landed yet: call again. A dataset that is ready carries `view_id`:
+        `append_pending` means the rows had not all landed yet: call again.
+        Those fields come only once Mammoth has read the files; until then the
+        status is `processing` and `next_step` says to call again. A dataset that is ready carries `view_id`:
         read, transform and build dashboards on that view. An item Mammoth cannot finish without the
         user carries `needs`: the `action`, the `next_step` to take, and
         whatever that step needs — the `sheets` to choose from, or the
@@ -169,7 +208,9 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         without the user opening Mammoth. Put every one of them to the user in
         one message and wait for their answer — the choice is theirs, and
         guessing it spoils the data quietly. Several files can wait on
-        different things. `rejected`: files Mammoth refused.
+        different things. `rejected`: files Mammoth refused. `failed`: files
+        Mammoth took but could not read, each with its `job_id`, `file_object_id`
+        and `error`; the other files landed, so do not upload them again.
     """
     ticket = await wait_for_the_file(upload_id)
     job_id = ticket.get(UploadFields.JOB_ID)
@@ -180,12 +221,11 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         }
     # Read the job as the polling user, so Mammoth refuses an upload that is
     # not theirs exactly as it would refuse any other job of a stranger's.
-    started = await wait_for_job(int(ticket[UploadFields.WORKSPACE_ID]), {JobFields.JOB_ID: job_id})
-    report = await report_upload(ticket)
-    if started.get(UploadFields.ERRORS):
-        report[UploadFields.REJECTED] = started[UploadFields.ERRORS]
     plan = ticket.get(UploadFields.APPEND)
-    if plan:
+    report, landed = await finish_upload(
+        ticket, {JobFields.JOB_ID: job_id}, APPEND_NOT_YET if plan else None
+    )
+    if plan and landed:
         report.update(
             await finish_append(
                 int(ticket[UploadFields.WORKSPACE_ID]),
@@ -304,8 +344,9 @@ async def interpret_file(
 
     Call it with `apply` false first and show the user the rows it returns:
     only they can say whether the file now reads the way they meant. Then call
-    it again with the same instruction and `apply` true, and carry on with what
-    they originally asked for.
+    it again with the same instruction and `apply` true: that reads the whole
+    file the way the preview the user saw read it, with no new preview. Carry
+    on with what they originally asked for.
 
     Args:
         workspace_id: Which workspace the dataset is in.
@@ -317,9 +358,9 @@ async def interpret_file(
             false to see the first rows first.
 
     Returns:
-        `preview_rows`: the first rows as the dataset would hold them, the
-        header first. `total_row_count`: how many rows the whole file makes
-        this way. `applied`: whether the dataset was finished with it.
+        A preview: `preview_rows`, the first rows as the dataset would hold
+        them, the header first, and `total_row_count`, how many rows the whole
+        file makes this way. `applied`: whether the dataset was finished with it.
 
     Raises:
         ToolError: If Mammoth will not read the file that way, with its reason.
@@ -330,15 +371,15 @@ async def interpret_file(
         "project_id": project_id,
         "dataset_id": dataset_id,
     }
+    if apply:
+        # A new preview would save a new answer over the one the user approved.
+        await apply_interpretation(ids, instruction)
+        return {InterpretationFields.APPLIED: True}
     async with build_client(workspace_id) as client:
         preview = await read_sdk_errors(
             client.datasets.preview_interpretation(dataset_id, instruction, project_id=project_id)
         )
-    read = read_preview(preview)
-    if not apply:
-        return read
-    await apply_interpretation(ids, instruction)
-    return {**read, InterpretationFields.APPLIED: True}
+    return read_preview(preview)
 
 
 def read_preview(preview: dict[str, JsonValue]) -> dict[str, JsonValue]:
@@ -500,17 +541,26 @@ def read_unreadable_rows(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
     }
 
 
-@mcp_server.tool(title="Set date format", annotations=CHANGES)
-async def set_date_format(
+@mcp_server.tool(title="Set file settings and date format", annotations=CHANGES)
+async def set_file_settings(
     workspace_id: int,
     project_id: int,
     dataset_id: int,
     date_format: DateFormat | None = None,
     columns: dict[str, DateFormat] | None = None,
     for_the_whole_project: bool = False,
+    delimiter: Delimiter | None = None,
+    has_header: bool | None = None,
+    skip_rows: int | None = None,
+    quote_char: QuoteChar | None = None,
 ) -> dict[str, JsonValue]:
-    """Say which way round a file's dates read, and finish the dataset.
+    """Change how a file is read — delimiter, header, rows to skip, quotes — or its date format.
 
+    With nothing to change it reads the `settings` the file was read with, and
+    `date_columns`. A setting left out stays as it is. Mammoth reads the file
+    again with the new settings, so the dataset's rows change: tell the user.
+
+    The date format:
     For a dataset waiting on this: one `check_upload` reports as needing
     `ambiguous_date_format`, or one `get_dataset` shows with the status
     `need_action`. A date column whose every value fits both orders stops the
@@ -536,26 +586,36 @@ async def set_date_format(
         for_the_whole_project: Make this the project's own default too, so
             later uploads are never asked about it. Only with `date_format`,
             and only when the user says so: it outlives this file.
+        delimiter: What separates the columns: ",", "\\t", "|" or ";".
+        has_header: Whether the first row read is the header.
+        skip_rows: How many lines above the table to skip, such as a title.
+        quote_char: What quotes a value: '"', "'", or "" for none.
 
     Returns:
-        With no format, `date_columns` and `applied` false. Otherwise the
-        reread dataset, and `applied` true.
+        With nothing to change, `settings`, `date_columns` and `applied` false.
+        Otherwise the reread dataset, and `applied` true.
     """
     path = ApiPaths.FILE_SETTINGS.format(
         workspace_id=workspace_id, project_id=project_id, dataset_id=dataset_id
     )
     async with build_client(workspace_id, project_id) as client:
-        return await change_date_format(
+        return await change_file_settings(
             client,
             path,
             dataset_id,
             date_format=date_format,
             columns=columns,
             for_the_whole_project=for_the_whole_project,
+            reading={
+                FileSettingsFields.DELIMITER: delimiter,
+                FileSettingsFields.HAS_HEADER: has_header,
+                FileSettingsFields.SKIP_COUNT: skip_rows,
+                FileSettingsFields.QUOTE_CHAR: quote_char,
+            },
         )
 
 
-async def change_date_format(
+async def change_file_settings(
     client: MammothClient,
     path: str,
     dataset_id: int,
@@ -563,28 +623,49 @@ async def change_date_format(
     date_format: DateFormat | None,
     columns: dict[str, DateFormat] | None,
     for_the_whole_project: bool,
+    reading: dict[str, JsonValue],
 ) -> dict[str, JsonValue]:
-    """Report the date columns waiting to be told, or tell them and reread the file."""
+    """Report how the file is read, or change what was given and reread the file.
+
+    Args:
+        reading: The route's own settings to change, by its names; None for
+            one left as it is.
+    """
     settings = await read_file_settings(client, path, dataset_id)
     date_columns = find_date_columns(settings)
-    if date_format is None and not columns:
-        waiting: list[JsonValue] = [str(name) for name in sorted(date_columns)]
-        return {
-            FileSettingsFields.AMBIGUOUS_COLUMNS: waiting,
-            FileSettingsFields.APPLIED: False,
-        }
+    changed = {key: value for key, value in reading.items() if value is not None}
+    if date_format is None and not columns and not changed:
+        return report_file_settings(settings, date_columns)
     per_column: dict[str, JsonValue] = {
         **already_set(settings),
         **name_the_columns(columns, date_columns),
     }
     body: dict[str, JsonValue] = {key: settings.get(key) for key in FileSettingsFields.KEPT}
-    body[FileSettingsFields.DATE_FORMAT] = date_format
+    body.update(changed)
+    body[FileSettingsFields.DATE_FORMAT] = date_format or settings.get(
+        FileSettingsFields.DATE_FORMAT
+    )
     body[FileSettingsFields.DATE_FORMATS] = per_column or None
     body[FileSettingsFields.PROJECT_DEFAULT] = for_the_whole_project
     started = await request_api(client, "POST", path, body=body)
     return {
         **await wait_for_job(client.workspace_id, started),
         FileSettingsFields.APPLIED: True,
+    }
+
+
+def report_file_settings(
+    settings: dict[str, JsonValue], date_columns: dict[str, str]
+) -> dict[str, JsonValue]:
+    """How the file is read now, under the names the tool takes them by."""
+    waiting: list[JsonValue] = [str(name) for name in sorted(date_columns)]
+    shown: dict[str, JsonValue] = {
+        argument: settings.get(key) for argument, key in FileSettingsFields.SHOWN.items()
+    }
+    return {
+        FileSettingsFields.SETTINGS: shown,
+        FileSettingsFields.AMBIGUOUS_COLUMNS: waiting,
+        FileSettingsFields.APPLIED: False,
     }
 
 
@@ -683,7 +764,7 @@ async def list_files(
     limit: int = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
-    """List the files uploaded to a project.
+    """List the files uploaded to a project, and its folders.
 
     A file is what was uploaded; the dataset is what Mammoth made of it.
 
@@ -692,9 +773,13 @@ async def list_files(
         project_id: Which project to look in.
         limit: How many files to return.
         offset: How many files to skip, for paging.
+
+    Returns:
+        `files`, and `folders`: each folder's `folder_id`, `name`, `parent_id`
+        and `folder_resource_id`, which uploads and folder automations take.
     """
     async with build_client(workspace_id, project_id) as client:
-        return await request_api(
+        listed = await request_api(
             client,
             "GET",
             ApiPaths.FILES.format(workspace_id=workspace_id, project_id=project_id),
@@ -704,6 +789,8 @@ async def list_files(
                 "offset": offset,
             },
         )
+        folders = await read_folders(client, workspace_id, project_id)
+    return {**listed, FolderFields.FOLDERS: folders}
 
 
 @mcp_server.tool(title="Get file", annotations=READS)
@@ -731,18 +818,37 @@ async def get_file(workspace_id: int, project_id: int, file_id: int) -> dict[str
 async def delete_file(workspace_id: int, project_id: int, file_id: int) -> dict[str, JsonValue]:
     """Delete a file from a project.
 
-    The dataset Mammoth made from the file is deleted with it. Ask the user
-    before calling this: it cannot be undone from here.
+    The dataset Mammoth made from the file stays, with its views. To delete it
+    too, use `delete_views` with `whole_dataset`. Ask the user before calling
+    this: the file cannot be brought back from here.
 
     Args:
         workspace_id: Which workspace the file is in.
         project_id: Which project the file is in.
         file_id: Which file to delete.
+
+    Returns:
+        `deleted_file`, and `dataset_kept`: the dataset made from it, when it made one.
     """
+    path = ApiPaths.FILE.format(workspace_id=workspace_id, project_id=project_id, file_id=file_id)
     async with build_client(workspace_id, project_id) as client:
-        started = await request_api(
-            client,
-            "DELETE",
-            ApiPaths.FILE.format(workspace_id=workspace_id, project_id=project_id, file_id=file_id),
-        )
-    return await wait_for_job(workspace_id, started)
+        found = await request_api(client, "GET", path, query={ApiFields.FIELDS: ApiFields.STANDARD})
+        started = await request_api(client, "DELETE", path)
+    await wait_for_job(workspace_id, started)
+    return {DeletedFileFields.DELETED_FILE: file_id, **_dataset_kept(found)}
+
+
+def _dataset_kept(found: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """The dataset a deleted file leaves behind, and how to delete it too."""
+    file = found.get(DeletedFileFields.FILE)
+    info = file.get(DeletedFileFields.ADDITIONAL_INFO) if isinstance(file, dict) else None
+    dataset_id = info.get(DeletedFileFields.FINAL_DATASET_ID) if isinstance(info, dict) else None
+    if dataset_id is None:
+        return {}
+    return {
+        DeletedFileFields.DATASET_KEPT: dataset_id,
+        DeletedFileFields.NEXT_STEP: (
+            f"Dataset {dataset_id}, made from the file, stays. To delete it too, ask the user,"
+            " then call delete_views with whole_dataset=true."
+        ),
+    }
