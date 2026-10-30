@@ -783,6 +783,19 @@ class AgentsAPI:
         }
         return await self._client._request_json("GET", "/agents/access/me", params=params or None)
 
+    async def access_today(self) -> dict[str, Any]:
+        """Read the caller's Today page on the Ask home.
+
+        The server starts writing a new page when one is due, so the read can queue work;
+        it changes nothing the caller wrote.
+
+        Returns:
+            Dict with ``state`` (``page``, ``writing`` or ``empty``), ``updating`` (a newer
+            page is being written; the one shown stays until it is), ``blocks`` (the page,
+            each ``{id, about, shape, state, answer, ...}``), ``blocks_label`` and ``alerts``.
+        """
+        return await self._client._request_json("GET", "/agents/access/today")
+
     async def access_settings_get(self) -> dict[str, Any]:
         """Get the workspace's AI Agent controls. Managers only.
 

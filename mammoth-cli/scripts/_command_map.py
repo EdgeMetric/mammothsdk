@@ -127,6 +127,8 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # mvc-service #7302: an AI-built connector's spec, on origin/release only.
     "GET /workspaces/{}/projects/{}/connector-drafts/{}/spec": "origin/release (#7302)",
     "GET /workspaces/{}/projects/{}/connector-drafts/versions/{}/{}/spec": "origin/release (#7302)",
+    # The Today page read: on mvc-service master and release, in no pinned snapshot yet.
+    "GET /agents/access/today": "origin/release",
     "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
     "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
     **{

@@ -356,6 +356,26 @@ def test_the_spec_commands_read_with_their_ids_and_return_the_spec_untouched(
     assert data == _SPEC_ANSWER
 
 
+_TODAY_ANSWER = {
+    "state": "page",
+    "updating": True,
+    "blocks": [{"id": "b1", "about": "Sales this week", "shape": "headline", "state": "ready"}],
+}
+
+
+def test_the_today_command_prints_state_updating_and_blocks(
+    fake_service: FakeMammothService,
+) -> None:
+    symbol = "mammoth.api.agents.AgentsAPI.access_today"
+    fake_service.responses[symbol] = _TODAY_ANSWER
+
+    result = make_runner().invoke(["agent", "access", "today", "--output", "json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["data"] == _TODAY_ANSWER
+    assert fake_service.call_log == [(symbol, {})]
+
+
 def test_the_draft_vocabularies_match_the_sdk() -> None:
     assert FIELD_ENUMS["connector.draft.create"] == {
         "origin": sdk.DRAFT_ORIGINS,

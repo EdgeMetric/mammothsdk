@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 874.
+Total commands: 875.
 
 ## activity
 
@@ -208,6 +208,13 @@ Total commands: 874.
 - Confirmation: `confirm_target`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.access_settings_update`
 - Agent example: `mammoth agent access settings update --input '{"enabled": true}' --yes --confirm 123`
+
+### `mammoth agent access today`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.access_today`
+- Agent example: `mammoth agent access today`
 
 ### `mammoth agent access tree`
 

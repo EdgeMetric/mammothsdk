@@ -301,6 +301,8 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     # mvc-service #7302: on origin/release, in no pinned snapshot yet.
     "connector.draft.spec.get": {"operation_ids": [], "method": "GET"},
     "connector.version.spec.get": {"operation_ids": [], "method": "GET"},
+    # The Today page read: on mvc-service master and release, in no pinned snapshot yet.
+    "agent.access.today": {"operation_ids": [], "method": "GET"},
     # mvc-service #7203.
     "dataset.download": {"operation_ids": ["CreateDownload"], "method": "POST"},
     "dataset.download-plan": {"operation_ids": ["PlanDownload"], "method": "POST"},

@@ -380,6 +380,20 @@ commands:
     kind: object
 - command_id: agent.access.me
   output_schema: openapi
+- command_id: agent.access.today
+  output_schema:
+    type: object
+    required: [state, updating, blocks]
+    properties:
+      state:
+        type: string
+        enum: [page, writing, empty]
+      updating:
+        type: boolean
+      blocks:
+        type: array
+        items:
+          type: object
 - command_id: agent.access.people
   output_schema: openapi
   known_restrictions: Only a manager of the workspace's AI Agent settings can list the people.

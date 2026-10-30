@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S7 remaining-families",
-  "route_count": 227,
+  "route_count": 228,
   "families": {
     "activity": 2,
-    "agent": 44,
+    "agent": 45,
     "ai": 4,
     "automation": 13,
     "billing": 27,
@@ -8686,6 +8686,34 @@
         "method": "POST",
         "path": "/agents/access/saved-charts",
         "body": "json:SaveChartRequest",
+        "checks": [
+          "method",
+          "path",
+          "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s7_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "agent.access.today",
+      "operation_id": "GetAgentTodayPage",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.access_today",
+      "field_destinations": {},
+      "context_destinations": {},
+      "wire": {
+        "method": "GET",
+        "path": "/agents/access/today",
+        "body": "none",
         "checks": [
           "method",
           "path",

@@ -12,6 +12,14 @@ import os
 import sys
 from typing import Any
 
+_SDK_MISSING = (
+    "mammoth: the mammoth-io SDK cannot be imported ({error}).\n"
+    "This install is broken: mammoth-io is missing, or it was installed from a checkout "
+    "that no longer exists.\n"
+    "Reinstall the CLI, which brings its own mammoth-io: "
+    "pipx install --force mammoth-cli (or pip install --force-reinstall mammoth-cli).\n"
+)
+
 
 def main() -> Any:
     """Run the Mammoth CLI application.
@@ -30,11 +38,18 @@ def main() -> Any:
 
         sys.stdout.write(f"{__version__}\n")
         return 0
-    from mammoth_cli.app import app
-    from mammoth_cli.context import keyring_backend
+    try:
+        from mammoth_cli.app import app
+        from mammoth_cli.context import keyring_backend
 
-    keyring_backend.enable()
-    return app()
+        keyring_backend.enable()
+        return app()
+    except ModuleNotFoundError as exc:
+        # Commands import the SDK as they run, so the failure can surface inside app().
+        if exc.name is None or exc.name.split(".")[0] != "mammoth":
+            raise
+        sys.stderr.write(_SDK_MISSING.format(error=exc))
+        return 1
 
 
 if __name__ == "__main__":  # pragma: no cover
