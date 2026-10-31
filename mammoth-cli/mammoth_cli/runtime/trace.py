@@ -5,7 +5,7 @@ The server already logs every request it serves, with its path, status, latency,
 ``mammoth-cli/<version>``; this module adds a comment naming the command, so the log can
 answer which commands run, from which surface, by which agent, and how they end:
 
-    mammoth-cli/2.4.0 (cmd=view.data.get; inv=3f9c2a1b7d4e; surface=run; agent=claude-code)
+    mammoth-cli/2.4.1 (cmd=view.data.get; inv=3f9c2a1b7d4e; surface=run; agent=claude-code)
 
 ``inv`` is the invocation id: every request one command makes carries the same one, and the
 local run log (:mod:`mammoth_cli.runtime.runlog`) records it as its ``run_id``, so a local
