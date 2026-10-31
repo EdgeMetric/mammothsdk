@@ -56,6 +56,10 @@ Five tools fold into others, so the tool list a client sends with every request 
 - SDK: `ConnectorDraftsAPI.spec(draft_id)` and `version_spec(connector_slug, version)` read an AI-built connector's spec: each table's request path, records path and paging, then the whole spec with secrets left out. They need the server release with mvc-service PR 7302; before it, a 404 reads "This server does not serve the connector spec read yet".
 - SDK: `AgentsAPI.access_today()` reads the caller's Today page (`GET /agents/access/today`): `state`, `updating` and `blocks`. The server starts writing a new page when one is due.
 
+### Fixed (next mammoth-io)
+
+- `wait_for_job` polls again after a poll fails with a 429, 502, 503 or 504, or a dropped connection, while time remains, instead of ending the wait. When time runs out with the job never read, it raises that poll failure (`outcome_unknown`), not a timeout.
+
 ### Added (next mammoth-cli)
 
 - CLI: `connector draft spec get DRAFT_ID` and `connector version spec get SLUG VERSION` show how a custom connector's tables are read: request path, records path, paging type and page size, and the whole spec, with credentials as references and anything that could be a secret redacted. They need the server release with mvc-service PR 7302.
@@ -63,6 +67,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 
 ### Fixed (next mammoth-cli)
 
+- A follow-on job the CLI could not read (a 502 on a poll) is reported as `unfinished` with its job id and `resume`, not as `job_failed`. An embedder (`mammoth_cli.embed.invoke`) now retries reads on gateway errors like any other caller.
 - CLI: an install whose mammoth-io SDK cannot be imported (missing, or an editable install of a deleted checkout) now prints how to reinstall and exits 1, instead of a `ModuleNotFoundError: No module named 'mammoth'` traceback. A clean `pip install mammoth-cli` brings its own mammoth-io and was not affected.
 
 ## mammoth-io 0.8.53, mammoth-cli 2.4.0 (2026-10-29)

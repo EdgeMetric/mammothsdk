@@ -88,6 +88,20 @@ def _polling_failure(error: MammothAPIError, job_ids: list[int]) -> None:
         error.details["next_step"] = AUTH_POLL_NEXT.format(job_ids[0])
 
 
+_TRANSIENT_POLL_STATUSES = frozenset({429, 502, 503, 504})
+
+
+def _transient_poll_failure(error: MammothAPIError) -> bool:
+    """Whether a failed poll is a gateway/transport blip worth polling again.
+
+    A status of ``None`` with no ``protocol_error`` is a transport failure (dropped
+    connection, request timeout); a malformed answer is not retried.
+    """
+    if error.status_code is None:
+        return "protocol_error" not in error.details
+    return error.status_code in _TRANSIENT_POLL_STATUSES
+
+
 def _poll_delay(attempt: int, cap: float, elapsed: float = 0.0) -> float:
     """Gap before poll ``attempt + 1``: short first, growing, never above ``cap``.
 
@@ -214,6 +228,7 @@ class JobsAPI:
         deadline = time.monotonic() + timeout
         last_observed: dict[str, Any] | None = None
         attempt = 0
+        unread: MammothAPIError | None = None
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -226,7 +241,15 @@ class JobsAPI:
                 )
             except MammothAPIError as failure:
                 _polling_failure(failure, [job_id])
-                raise
+                left = max(0.0, deadline - time.monotonic())
+                if not _transient_poll_failure(failure) or left <= 0:
+                    raise
+                unread = failure
+                # One bad read says nothing about the job: poll again while time allows.
+                await asyncio.sleep(min(_poll_delay(attempt, poll_interval, timeout - left), left))
+                attempt += 1
+                continue
+            unread = None
 
             # Extract job from response
             if "job" in job_response:
@@ -276,6 +299,9 @@ class JobsAPI:
                 attempt += 1
 
         # Timeout reached
+        if unread is not None:
+            # The job was never read before time ran out: say that, not "still running".
+            raise unread
         timeout_phase = "polling"
         if last_observed is not None:
             candidate_phase = last_observed.get("phase") or last_observed.get("execution_phase")
