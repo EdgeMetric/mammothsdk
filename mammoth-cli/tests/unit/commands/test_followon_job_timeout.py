@@ -90,3 +90,17 @@ def test_the_row_count_and_the_pipeline_state_are_read_together(
         ]
         == 3
     )
+
+
+def test_an_unreadable_followon_job_is_unfinished_not_job_failed(
+    fake_service: FakeMammothService,
+) -> None:
+    def _raise(response: Any, **_kwargs: Any) -> Any:
+        raise CliError(code="retryable_error", message="unavailable", exit_status=7)
+
+    fake_service.wait_if_job = _raise  # type: ignore[method-assign]
+    error = wait_for_followon_job(fake_service, {"job_id": 9001})
+    assert error is not None
+    assert error["execution_state"] == "unfinished"
+    assert error["job_id"] == 9001
+    assert error["resume"] == "mammoth job wait 9001"

@@ -125,9 +125,10 @@ def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | N
     try:
         service.wait_if_job(write_result)
     except CliError as exc:
-        if exc.code == "timeout":
-            # Out of time is not a failed job: it is still running, the change was
-            # accepted, and replaying it would apply the step twice.
+        if exc.code in ("timeout", "retryable_error", "outcome_unknown"):
+            # Out of time, or a job the CLI could not read, is not a failed job: it may
+            # still be running or done, the change was accepted, and replaying it would
+            # apply the step twice.
             pending: dict[str, Any] = {
                 "execution_state": UNFINISHED_STATE,
                 "wait_error": exc.message,
@@ -135,6 +136,12 @@ def wait_for_followon_job(service: Any, write_result: Any) -> dict[str, Any] | N
             for key in ("job_id", "resume"):
                 if exc.details.get(key) is not None:
                     pending[key] = exc.details[key]
+            if "job_id" not in pending:
+                job_id = next(
+                    (write_result[k] for k in ("future_id", "job_id") if k in write_result), None
+                )
+                pending["job_id"] = job_id
+                pending.setdefault("resume", f"mammoth job wait {job_id}")
             return pending
         return {"execution_state": JOB_FAILED_STATE, "wait_error": exc.message}
     return None
