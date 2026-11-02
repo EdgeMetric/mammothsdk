@@ -391,3 +391,60 @@ def test_update_datasets_needs_confirmation(
         )
     assert excinfo.value.code == "confirmation_required"
     assert fake_service.call_log == []
+
+
+def test_update_refuses_patch_together_with_dataset_fields(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The dataset fields used to be dropped and the plain patch sent, reporting ok."""
+    payload = {
+        "patch": [{"op": "command", "path": "run", "value": {}}],
+        "add_datasets": [13],
+        "remove_datasets": [11],
+    }
+    with pytest.raises(CliError) as excinfo:
+        automation_cmd.automation_update(
+            _inv(
+                "automation.update",
+                extra_args=["7"],
+                input_file=_write_doc(tmp_path, payload),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "add_datasets, remove_datasets" in excinfo.value.message
+    assert "not both" in excinfo.value.message
+    assert fake_service.call_log == []
+
+
+def test_dry_run_of_a_dataset_change_previews_the_patch_it_would_send(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The dry run used to refuse with "`patch` must be a non-empty list"."""
+    from mammoth_cli.runtime.dryrun import DryRunStop, make_gate
+
+    fake_service.gate = make_gate("automation.update")
+    fake_service.responses[_GET] = _refresh_automation()
+    with pytest.raises(DryRunStop) as stop:
+        automation_cmd.automation_update(
+            _inv(
+                "automation.update",
+                extra_args=["7"],
+                input_file=_write_doc(tmp_path, {"add_datasets": [13], "remove_datasets": [11]}),
+                yes=True,
+            )
+        )
+    call = stop.value.record["would_call"]
+    assert call["sdk_symbol"] == _UPDATE
+    (patch,) = call["arguments"]["patch"]
+    ids = [d["ds_id"] for d in patch["value"]["tasks"][0]["details"]["ds_details"]]
+    assert ids == [12, 13]
+
+
+def test_dry_run_gate_accepts_a_dataset_change_that_has_no_patch_yet() -> None:
+    from mammoth_cli.runtime.dryrun import DryRunStop, make_gate
+
+    with pytest.raises(DryRunStop):
+        make_gate("automation.update")(_UPDATE, {"automation_id": 7, "add_datasets": [13]})
+    with pytest.raises(Exception, match="non-empty list of patch operations"):
+        make_gate("automation.update")(_UPDATE, {"automation_id": 7})

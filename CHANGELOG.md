@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (mammoth-cli)
+
+- `automation update` refuses `patch` given together with `add_datasets`/`remove_datasets` (`invalid_argument`, nothing sent). It used to send the plain patch, drop the dataset fields and report ok. `--dry-run` of a dataset change no longer trips the "`patch` must be a non-empty list" check.
+
 ## mammoth-cli 2.4.2 (2026-11-02)
 
 ### Added (mammoth-cli 2.4.2)
