@@ -1278,7 +1278,11 @@ class TestPipelineAPI:
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/pipeline/tasks/7")
         assert_json_body(
             client._request_json,
-            {"patches": [{"op": "replace", "path": "params", "value": {"MATH": {}}}]},
+            {
+                "patches": [
+                    {"op": "replace", "path": "params", "value": {"DATAVIEW_ID": 42, "MATH": {}}}
+                ]
+            },
         )
 
     async def test_delete_task(self, client: MammothClient):

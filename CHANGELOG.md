@@ -10,6 +10,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `automation create` takes `task_type: "run_exports"` (a Scheduled export) with `details.trigger_ids`, the export step ids to send. An empty or missing `trigger_ids` is refused before any request, as the server does.
 
+### Fixed (mammoth-io)
+
+- `pipeline.update_task` (and `view task update`) puts the view's `DATAVIEW_ID` into the new params when the caller left it out, as `add_task` does. A `DATAVIEW_ID` the caller gave is kept.
+
 ### Fixed (mammoth-cli)
 
 - `automation update` refuses `patch` given together with `add_datasets`/`remove_datasets` (`invalid_argument`, nothing sent). It used to send the plain patch, drop the dataset fields and report ok. `--dry-run` of a dataset change no longer trips the "`patch` must be a non-empty list" check.
