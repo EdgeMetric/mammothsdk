@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-cli)
+
+- `view data aggregate` takes `"function": "MEDIAN"` on a NUMERIC column, in a `metric` or in `aggregations` (with `group_by`, `order_by` and `top`). The backend has no MEDIAN, so the CLI reads one count per value of the column and takes the exact middle of the non-blank values. `median_note` says how many blank rows it left out. Before this, an agent paged sorted rows to find the middle, and the blank rows sorted last still counted (a support-ticket median of 657 minutes instead of 625). MEDIAN goes in a read of its own: mixing it with other functions, grouping it by a date `part` or a `truncate` of a TEXT date, or using it on a TEXT or DATE column is refused before any query.
+
 ## mammoth-mcp-server 0.2.9 (2026-11-02)
 
 ### Added (mammoth-mcp-server 0.2.9)
