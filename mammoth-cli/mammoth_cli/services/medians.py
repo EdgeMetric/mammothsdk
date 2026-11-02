@@ -49,8 +49,9 @@ def check(document: dict[str, Any], column_types: dict[str, str], text_date_grou
         )
     if text_date_groups:
         raise _fail(
-            "MEDIAN cannot be grouped by a month/year of a TEXT date.",
-            "Group by another column, or convert the date with 'view transform convert-type'.",
+            "MEDIAN cannot be grouped by a date 'part', or by a 'truncate' of a TEXT date.",
+            "Group by a DATE column with 'truncate', or convert the TEXT date with "
+            "'view transform convert-type'.",
         )
     for item in items:
         column = item.get("column")

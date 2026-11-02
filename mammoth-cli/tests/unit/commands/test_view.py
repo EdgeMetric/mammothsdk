@@ -3478,3 +3478,29 @@ def test_data_aggregate_median_it_cannot_answer_exactly_is_refused_before_any_qu
     assert excinfo.value.code == "invalid_arguments"
     assert "MEDIAN" in excinfo.value.message
     assert _DATA_AGGREGATE not in [name for name, _ in _without_meta(fake_service.call_log)]
+
+
+def test_data_aggregate_median_grouped_by_a_date_part_is_refused_before_any_query(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A 'part' on a real DATE column is bucketed in the CLI too, so MEDIAN refuses it."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            *_TICKETS["metadata"],
+            {"internal_name": "column_3", "display_name": "Opened", "type": "DATE"},
+        ]
+    }
+    doc = _doc(
+        tmp_path,
+        {
+            "group_by": [{"column": "Opened", "part": "weekday"}],
+            "aggregations": [{"column": "Reply minutes", "function": "MEDIAN"}],
+        },
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_data_aggregate(
+            _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+        )
+    assert excinfo.value.code == "invalid_arguments"
+    assert "date 'part'" in excinfo.value.message
+    assert _DATA_AGGREGATE not in [name for name, _ in _without_meta(fake_service.call_log)]
