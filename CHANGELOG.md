@@ -6,7 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-mcp-server)
+## mammoth-mcp-server 0.2.9 (2026-11-02)
+
+### Added (mammoth-mcp-server 0.2.9)
 
 - `undo` takes a change back. With what="trash" it restores views, datasets, dashboards and automations from the project's trash and reports which came back. With what="pipeline" it puts a view's pipeline back as one of its versions had it, and says when the view is still running again. The version list keeps the pipeline as it was just before, so a rollback can be taken back too.
 - `list_trash` lists what a project's trash holds, 50 to a page with `next_offset`: each item's type and id (what `undo` takes), name, and days left before Mammoth deletes it for good.
@@ -23,7 +25,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `get_job` reads a job by id. A tool call that ends before its job does now names the job, so the model reads it with `get_job` instead of starting it again.
 - `add_transformations` with a join or lookup on its own reports `join_check`: how many rows matched the other view. When Mammoth cannot count them, it says the match was not measured.
 
-### Changed (next mammoth-mcp-server)
+### Changed (mammoth-mcp-server 0.2.9)
 
 - `delete_views` moves views to the trash, as the web app does, instead of deleting them for good. `undo` brings them back.
 - `set_date_format` is now `set_file_settings`: it also sets the delimiter, header, rows to skip and quote character, and keeps any setting not named. With no settings it reports the file's `settings`. `get_file` reports them too, and `interpret_file` with apply=true applies the preview the user approved, with no new preview.
@@ -34,8 +36,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `create_view` answers with the new view, and `delete_dashboard` with the dashboard it trashed, not every one there is.
 - `get_pipeline` names a step's columns as the user sees them, and a join's other view by its own column names.
 - A tool refuses an argument it does not take, and names the ones it does. Before, an unknown argument was dropped and the call ran without it.
+- Needs mammoth-io 0.8.54 or later (was 0.8.47). The upload and batch tools run on `client.appends`, which 0.8.53 added, so with an older SDK they failed.
 
-### Removed (next mammoth-mcp-server)
+### Removed (mammoth-mcp-server 0.2.9)
 
 Five tools fold into others, so the tool list a client sends with every request is shorter:
 
@@ -43,7 +46,7 @@ Five tools fold into others, so the tool list a client sends with every request 
 - `list_dashboard_tags`: `list_dashboards` with `include_tags` lists the workspace's tags.
 - `set_dashboard_tags`: `edit_dashboard` with `tags` replaces a dashboard's tags. Like the embed settings, they apply at once.
 
-### Fixed (next mammoth-mcp-server)
+### Fixed (mammoth-mcp-server 0.2.9)
 
 - A column the view does not have is named, with the view's real columns, instead of being read as a missing view or as no rows. A word in a math expression that is no column is named the same way.
 - `get_data` `offset` counts rows to skip from 0, like every other paged tool.
