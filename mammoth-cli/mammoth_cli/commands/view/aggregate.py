@@ -35,7 +35,7 @@ from mammoth_cli.runtime.session import (
     open_service,
     require_project,
 )
-from mammoth_cli.services import read_queries
+from mammoth_cli.services import medians, read_queries
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.read_queries import ReadContext
 
@@ -198,6 +198,10 @@ def _run_aggregate(
         )
         kwargs[CONDITION_KWARG] = condition
     _forward_optional(document, kwargs, ("sequence",))
+    if medians.requested(document):
+        result = medians.aggregate(reads, fields, condition)
+        rows = read_queries.sort_locally(result["data"], sort)
+        return {**result, "data": rows[:limit] if limit else rows}
     if levels:
         response = read_queries.pivot_with_text_dates(
             reads,
@@ -222,7 +226,9 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     Read-only: computes and returns the aggregated result without adding a
     task to the view's pipeline or otherwise changing it. Pass exactly one of
     ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
-    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. An optional
+    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, MEDIAN.
+    MEDIAN is exact, over a NUMERIC column's non-blank values (``median_note`` says how many
+    blank rows it left out), and goes in a read of its own. An optional
     ``condition`` filters rows before aggregating, and ``sequence`` pins the
     read to a pipeline step (default: latest). ``order_by`` (result labels,
     ``"Total desc"``) with ``top`` ranks the groups on the backend (and adds
@@ -308,9 +314,13 @@ def aggregate_on(
     reads = source.reads
     column_types = reads.column_types
     display_to_internal = reads.display_to_internal
-    levels: dict[int, str] = {}
-    if "aggregations" in document or "group_by" in document:
-        levels = read_queries.text_date_group_levels(document.get("group_by"), column_types)
+    pivot = "aggregations" in document or "group_by" in document
+    levels: dict[int, str] = (
+        read_queries.text_date_group_levels(document.get("group_by"), column_types) if pivot else {}
+    )
+    if medians.requested(document):
+        medians.check(document, column_types, bool(levels))
+    if pivot:
         fields, as_map = _build_pivot_fields(
             _plain_text_date_groups(document, levels, column_types), display_to_internal
         )

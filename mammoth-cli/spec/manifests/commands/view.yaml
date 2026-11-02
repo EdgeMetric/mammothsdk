@@ -291,7 +291,8 @@ commands:
   known_restrictions: 'Read-only: computes and returns an aggregated result without adding a task to the
     view''s pipeline or otherwise changing it. Pass exactly one of ''aggregations'' (a PIVOT group-by;
     ''group_by'' is optional) or ''metric'' (a single METRIC value). ''function'' is one of SUM, COUNT,
-    AVG, MIN, MAX, STDDEV, DISTINCT_COUNT. A group_by item is a column name, or {"column": C, "truncate":
+    AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, MEDIAN. MEDIAN is exact over a NUMERIC column''s non-blank
+    values (median_note counts the blank rows left out) and goes in a read of its own. A group_by item is a column name, or {"column": C, "truncate":
     DAY|WEEK|MONTH|QUARTER|YEAR} to bucket a DATE (a trend over time), or {"column": C, "resolution":
     N} to bucket a NUMERIC; grouping by a raw date gives one row per day. A metric is a number: only COUNT
     and DISTINCT_COUNT work on a DATE or TEXT column. For one column''s trend, top values or spread, view

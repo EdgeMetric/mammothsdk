@@ -3361,3 +3361,120 @@ def test_view_list_without_dataset_id_raises_a_read_error_in_order(
     with pytest.raises(CliError) as excinfo:
         view_cmd.view_list(_inv("view.list", project=180, input_file=doc))
     assert excinfo.value.code == "resource_not_found"
+
+
+# ── view.data.aggregate MEDIAN ──────────────────────────────────────────────
+
+_TICKETS = {
+    "metadata": [
+        {"internal_name": "column_1", "display_name": "Priority", "type": "TEXT"},
+        {"internal_name": "column_2", "display_name": "Reply minutes", "type": "NUMERIC"},
+    ]
+}
+#: One COUNT per (Priority, Reply minutes) value, as the backend groups them;
+#: a blank reply time is a None group.
+_REPLY_COUNTS = {
+    "data": [
+        {"group_0": "Urgent", "group_1": 10, "agg_0": 1},
+        {"group_0": "Urgent", "group_1": 23, "agg_0": 1},
+        {"group_0": "Urgent", "group_1": 40, "agg_0": 1},
+        {"group_0": "Urgent", "group_1": None, "agg_0": 2},
+        {"group_0": "High", "group_1": 100, "agg_0": 1},
+        {"group_0": "High", "group_1": 161, "agg_0": 1},
+        {"group_0": "High", "group_1": None, "agg_0": 1},
+        {"group_0": "Normal", "group_1": None, "agg_0": 3},
+    ]
+}
+
+
+def _median_read(
+    fake_service: FakeMammothService, tmp_path: Path, payload: dict[str, object]
+) -> Any:
+    fake_service.responses[_DATAVIEW_GET] = _TICKETS
+    fake_service.responses[_DATA_AGGREGATE] = _REPLY_COUNTS
+    doc = _doc(tmp_path, payload)
+    return view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+
+
+def test_data_aggregate_median_per_group_leaves_blank_values_out(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Counting the 2 blank Urgent rows would put the middle at 40, not 23."""
+    data = _median_read(
+        fake_service,
+        tmp_path,
+        {
+            "group_by": ["Priority"],
+            "aggregations": [{"column": "Reply minutes", "function": "MEDIAN", "as_name": "Med"}],
+        },
+    )
+    assert data["data"] == [
+        {"Priority": "Urgent", "Med": 23},
+        {"Priority": "High", "Med": 130.5},
+        {"Priority": "Normal", "Med": None},
+    ]
+    assert "Med: 6" in data["median_note"]
+    (call,) = [c[1] for c in _without_meta(fake_service.call_log) if c[0] == _DATA_AGGREGATE]
+    assert call["aggregations"] == [{"function": "COUNT", "as_name": "n"}]
+    assert call["group_by"] == ["column_1", "column_2"]
+
+
+def test_data_aggregate_median_metric_covers_the_whole_view(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DATAVIEW_GET] = _TICKETS
+    fake_service.responses[_DATA_AGGREGATE] = {
+        "data": [
+            {"group_0": 161, "agg_0": 1},
+            {"group_0": None, "agg_0": 6},
+            {"group_0": 10, "agg_0": 2},
+            {"group_0": 40, "agg_0": 1},
+        ]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "Reply minutes", "function": "median"}})
+    data = view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )[0]
+    # 10, 10, 40, 161: the middle two average to 25; the 6 blank rows are left out.
+    assert data["data"] == [{"MEDIAN_Reply minutes": 25}]
+    (call,) = [c[1] for c in _without_meta(fake_service.call_log) if c[0] == _DATA_AGGREGATE]
+    assert call["group_by"] == ["column_2"]
+
+
+def test_data_aggregate_median_ranks_groups_locally(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    data = _median_read(
+        fake_service,
+        tmp_path,
+        {
+            "group_by": ["Priority"],
+            "aggregations": [{"column": "Reply minutes", "function": "MEDIAN", "as_name": "Med"}],
+            "order_by": ["Med desc"],
+            "top": 1,
+        },
+    )
+    assert data["data"] == [{"Priority": "High", "Med": 130.5}]
+
+
+@pytest.mark.parametrize(
+    "aggregations",
+    [
+        [
+            {"column": "Reply minutes", "function": "MEDIAN"},
+            {"column": "Reply minutes", "function": "AVG"},
+        ],
+        [{"column": "Priority", "function": "MEDIAN"}],
+    ],
+    ids=["mixed-with-avg", "text-column"],
+)
+def test_data_aggregate_median_it_cannot_answer_exactly_is_refused_before_any_query(
+    fake_service: FakeMammothService, tmp_path: Path, aggregations: list[dict[str, str]]
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _median_read(fake_service, tmp_path, {"aggregations": aggregations})
+    assert excinfo.value.code == "invalid_arguments"
+    assert "MEDIAN" in excinfo.value.message
+    assert _DATA_AGGREGATE not in [name for name, _ in _without_meta(fake_service.call_log)]
