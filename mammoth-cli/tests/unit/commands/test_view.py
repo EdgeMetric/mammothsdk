@@ -3504,3 +3504,34 @@ def test_data_aggregate_median_grouped_by_a_date_part_is_refused_before_any_quer
     assert excinfo.value.code == "invalid_arguments"
     assert "date 'part'" in excinfo.value.message
     assert _DATA_AGGREGATE not in [name for name, _ in _without_meta(fake_service.call_log)]
+
+
+def _metric_call(fake_service: FakeMammothService, tmp_path: Path, function: str) -> Any:
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [{"internal_name": "column_2", "display_name": "Spend", "type": "TEXT"}]
+    }
+    doc = _doc(tmp_path, {"metric": {"column": "Spend", "function": function}})
+    view_cmd.view_data_aggregate(
+        _inv("view.data.aggregate", project=180, extra_args=["7", "9"], input_file=doc)
+    )
+    return _without_meta(fake_service.call_log)[-1][1]["metric"]
+
+
+@pytest.mark.parametrize("spelling", ["COUNT_DISTINCT", "count_distinct", "Distinct_Count"])
+def test_data_aggregate_count_distinct_is_an_alias_of_distinct_count(
+    fake_service: FakeMammothService, tmp_path: Path, spelling: str
+) -> None:
+    metric = _metric_call(fake_service, tmp_path, spelling)
+    assert metric["function"] == "DISTINCT_COUNT"
+    assert metric["as_name"] == "DISTINCT_COUNT_Spend"
+
+
+def test_data_aggregate_refuses_an_unknown_function_before_any_call(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    with pytest.raises(CliError) as excinfo:
+        _metric_call(fake_service, tmp_path, "MODE")
+    assert excinfo.value.code == "invalid_arguments"
+    assert "'MODE'" in excinfo.value.message
+    assert "SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, MEDIAN" in (excinfo.value.hint or "")
+    assert not [c for c in fake_service.call_log if c[0] == _DATA_AGGREGATE]

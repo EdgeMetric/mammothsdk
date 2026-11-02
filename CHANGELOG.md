@@ -16,6 +16,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (mammoth-cli)
 
+- `view data aggregate` takes `COUNT_DISTINCT` (any case) as `DISTINCT_COUNT`, and refuses an unknown `function` before any call, listing SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT and MEDIAN. The server used to reject it only after the call, with a generic error.
+
 - `automation update` refuses `patch` given together with `add_datasets`/`remove_datasets` (`invalid_argument`, nothing sent). It used to send the plain patch, drop the dataset fields and report ok. `--dry-run` of a dataset change no longer trips the "`patch` must be a non-empty list" check.
 
 ## mammoth-cli 2.4.2 (2026-11-02)

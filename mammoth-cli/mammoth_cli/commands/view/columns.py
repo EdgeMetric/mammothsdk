@@ -15,6 +15,7 @@ from mammoth_cli.commands.view._common import (
     _SYSTEM_COLUMNS,
     apply_column_renames,
 )
+from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENTS, EXIT_USAGE, CliError
 from mammoth_cli.output.normalize import DataRows
 from mammoth_cli.services import read_queries
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
@@ -244,6 +245,48 @@ def _relabel_columns(
     return payload
 
 
+#: What ``view data aggregate`` accepts as ``function`` (MEDIAN is computed by the CLI).
+AGGREGATE_FUNCTIONS = ("SUM", "COUNT", "AVG", "MIN", "MAX", "STDDEV", "DISTINCT_COUNT", "MEDIAN")
+_FUNCTION_ALIASES = {"COUNT_DISTINCT": "DISTINCT_COUNT"}
+
+
+def normalized_function(function: Any) -> str:
+    """The canonical aggregate function name for ``function`` (any case; COUNT_DISTINCT ok).
+
+    Raises:
+        CliError: ``invalid_arguments`` naming the valid functions, for an unknown name.
+    """
+    name = str(function or "").strip().upper()
+    name = _FUNCTION_ALIASES.get(name, name)
+    if name and name not in AGGREGATE_FUNCTIONS:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENTS,
+            message=f"Unknown aggregate function {str(function)!r}.",
+            exit_status=EXIT_USAGE,
+            hint=f"Use one of: {', '.join(AGGREGATE_FUNCTIONS)} (COUNT_DISTINCT also works).",
+        )
+    return name
+
+
+def with_normalized_functions(document: dict[str, Any]) -> dict[str, Any]:
+    """``document`` with every ``metric``/``aggregations`` function canonical and checked."""
+    result = dict(document)
+    metric = document.get("metric")
+    if isinstance(metric, dict) and metric.get("function"):
+        result["metric"] = {**metric, "function": normalized_function(metric["function"])}
+    aggregations = document.get("aggregations")
+    if isinstance(aggregations, list):
+        result["aggregations"] = [
+            (
+                {**agg, "function": normalized_function(agg["function"])}
+                if isinstance(agg, dict) and agg.get("function")
+                else agg
+            )
+            for agg in aggregations
+        ]
+    return result
+
+
 def _resolved_aggregate_item(agg: dict[str, Any], column_map: dict[str, str]) -> dict[str, Any]:
     """Resolve one ``{column, function, as_name}`` input entry's column to its
     internal name and default its ``as_name``, ready to forward to the SDK.
@@ -253,7 +296,7 @@ def _resolved_aggregate_item(agg: dict[str, Any], column_map: dict[str, str]) ->
     envelope) — this only resolves the display name and computes the default
     label so the result can be relabeled below.
     """
-    function = str(agg.get("function") or "").upper()
+    function = normalized_function(agg.get("function"))
     column = agg.get("column")
     resolved: dict[str, Any] = {
         "function": function,
