@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-cli)
+
+- A change refused because the workspace has no active subscription (backend `4SUBS012`, for example a trial still waiting on checkout) now reads `plan_limit`, "This workspace has no active subscription, so Mammoth refuses changes in it.", with a hint to start a plan or trial from Billing or ask Mammoth support. It used to read "Mammoth denied access" and told the agent to check the ids and ask an administrator for permission, which no one in a trial can act on.
+
 ## mammoth-cli 2.4.2 (2026-11-02)
 
 ### Added (mammoth-cli 2.4.2)

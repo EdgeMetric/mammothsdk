@@ -726,6 +726,31 @@ def test_a_plan_or_quota_refusal_names_the_plan_not_the_ids(status: int) -> None
     assert "Check the ids" not in (mapped.hint or "")
 
 
+def test_an_inactive_subscription_names_the_subscription_not_an_administrator() -> None:
+    # 4SUBS012 (INVALID_SUBSCRIPTION) read "ask an administrator for permission" to an
+    # agent in a trial workspace stuck in pending_checkout, which no administrator fixes.
+    error = MammothAPIError(
+        "Forbidden",
+        status_code=403,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "error_code": "4SUBS012",
+            "name": "INVALID_SUBSCRIPTION",
+            "message": "Invalid subscription",
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "plan_limit"
+    assert mapped.authorization_required is False
+    assert mapped.retryable is False
+    assert "no active subscription" in mapped.message
+    assert "administrator" not in (mapped.hint or "")
+    assert "Check the ids" not in (mapped.hint or "")
+
+
 def test_feature_disabled_names_support_not_the_request() -> None:
     # 5GENR012 (FEATURE_DISABLED) read "correct the request" on `view export csv`.
     message = "This feature is disabled for the user-account combination, contact support"
