@@ -18,7 +18,6 @@ See ``CONTRACT-write-state.md`` (D-077) for the manifest shape this reads.
 from __future__ import annotations
 
 import dataclasses
-
 import json
 import time
 from typing import Any

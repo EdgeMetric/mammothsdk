@@ -1378,7 +1378,7 @@ class ViewExport:
         condition: Condition | CompoundCondition | NotCondition | None = None,
         timeout: int | None = None,
         target_project_id: int | None = None,
-        trigger_type: TriggerType | str = TriggerType.PIPELINE,
+        trigger_type: TriggerType = TriggerType.PIPELINE,
         run_immediately: bool = True,
     ) -> int:
         """Save this view's data as an internal Mammoth dataset (branch out).

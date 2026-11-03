@@ -6,6 +6,25 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `view.export.to_dataset` takes `trigger_type` and `run_immediately`. `trigger_type="none"` makes a one-off copy: it writes the dataset once and adds no step to the view's pipeline, so the copy does not change when the view re-runs. The copy is found by name in its target project. `run_immediately=False` (which would write nothing) and a `"schedule"` trigger are refused, each with what to pass instead. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
+
+### Fixed (next mammoth-cli)
+
+- `view export dataset` accepts `trigger_type` and `run_immediately`, which `schema get` already listed. With `trigger_type: "none"` the result reports `refreshes_on_pipeline_run: false`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
+- A cross-project `view export dataset` reads the new dataset back in the target project. Before, it read it in the source project and reported a good copy as `unreadable` and `verified: false`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 2)
+- Switching an export between REPLACE and APPEND now says how. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 3)
+  - `view export update` refuses `patches` given with shorthand fields such as `save_as_mode`. Before, those fields were dropped without a word.
+  - `view export dataset` with `APPEND_TO_DS` and no `target_ds_id` says to create the dataset first, then switch that export and run it.
+  - An export into a target the view already exports into with the other mode now hands back the commands to switch the mode and run the export, instead of "rerun the pipeline". A pipeline rerun does not run an edited export.
+  - `view export update --help` shows the switch and the run patch.
+- `join_check` lists `unmatched_keys` across the whole view. Before, the keys came from the first data page only, which can be all matches: 3,399 unmatched rows were reported with `[]`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 4)
+  - The key overlap of both join keys used to run only when `foreign_dataset_id` was given. It now looks up the other view's dataset, and it is read before the join writes.
+  - On an OUTER join, the rows added for keys only the other view has are reported as such. They are no longer reported as a key that repeats.
+- An empty `view data explore` or `view data aggregate` whose text condition matches rows when case is ignored now says so: `empty_result` gives the count, and `condition_ignoring_case` is the condition to re-run. Before, a `CONTAINS "vend"` against `VendBill` came back empty with no warning. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 5)
+- A refused condition carries the condition grammar with examples in `details.condition_grammar`. It no longer lists the command's input fields. The Explore card's filter keys (`include`, `exclude`, `contains`, `range`, `blanks`) are refused with the condition to write instead. `view data explore --help` says it takes the same grammar as `aggregate`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 6)
+
 ## mammoth-cli 2.4.2 (2026-11-02)
 
 ### Added (mammoth-cli 2.4.2)
