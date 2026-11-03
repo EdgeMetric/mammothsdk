@@ -115,6 +115,10 @@ def _env_auth(isolated_cli_config: Path) -> None:
 _META_LOOKUP_FIELDS = ("id,name,row_count", "id,name,stats")
 
 
+#: The read a download makes after writing, for the date formats it wrote (#15).
+_FORMATS_READ = (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": None})
+
+
 def _without_meta(
     call_log: list[tuple[str, dict[str, object]]],
 ) -> list[tuple[str, dict[str, object]]]:
@@ -2687,7 +2691,8 @@ def test_export_csv_passes_dataview_id_no_project(
     doc = _doc(tmp_path, {"dataset_id": 9})
     view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
-        (_EXPORT_CSV, {"dataview_id": 7, "dataset_id": 9})
+        (_EXPORT_CSV, {"dataview_id": 7, "dataset_id": 9}),
+        _FORMATS_READ,
     ]
 
 
@@ -2698,8 +2703,38 @@ def test_export_csv_forwards_output_path(fake_service: FakeMammothService, tmp_p
         (
             _EXPORT_CSV,
             {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60, "dataset_id": 9},
-        )
+        ),
+        _FORMATS_READ,
     ]
+
+
+def test_export_download_names_the_date_formats_it_wrote(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """NetSuite friction 11-03 (#15): an export wrote DATE columns as DD/MM/YYYY (their display
+    format) and a comparison against ISO aggregates silently matched 0 rows."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"display_name": "Term", "internal_name": "column_3", "type": "DATE"},
+            {"display_name": "Opened", "internal_name": "column_4", "type": "DATE"},
+            {"display_name": "Code", "internal_name": "column_5", "type": "TEXT"},
+        ],
+        "display_properties": {
+            "FORMAT_INFO": {
+                "column_3": {"date_format": "%d/%m/%Y"},
+                "column_4": {"date_format": "%Y-%m-%d"},
+                "column_5": {"date_format": "%d/%m/%Y"},
+            }
+        },
+    }
+    doc = _doc(tmp_path, {"dataset_id": 9, "output_path": str(tmp_path / "out.csv")})
+
+    result, _ = view_cmd.view_export_download(
+        _inv("view.export.download", extra_args=["7"], input_file=doc)
+    )
+
+    assert result["date_formats"] == {"Term": "%d/%m/%Y"}
+    assert "Term as %d/%m/%Y" in result["date_note"]
 
 
 def _enter_embedded_call() -> object:
