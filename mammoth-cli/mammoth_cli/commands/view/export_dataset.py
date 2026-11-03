@@ -77,10 +77,10 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
                 "Mammoth can't add an export to the applied pipeline while a draft is pending, "
                 "and turning auto-run on is ignored until the draft is resolved. Ask the view's "
                 f"owner to submit (mammoth view draft submit {dataview_id}) or discard (mammoth "
-                f"view draft discard {dataview_id}) the draft. To copy the rows without touching "
-                f"the draft, save its applied rows with mammoth view data query {dataview_id} -o csv "
-                "(page with limit/offset) and add the file with mammoth file upload; that copy "
-                "won't refresh."
+                f"view draft discard {dataview_id}) the draft. To copy the rows without "
+                "touching the draft, save its applied rows with mammoth view data query "
+                f"{dataview_id} -o csv (page with limit/offset) and add the file with mammoth "
+                "file upload; that copy won't refresh."
             ),
             details=details,
         )
