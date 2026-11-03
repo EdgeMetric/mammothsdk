@@ -25,6 +25,7 @@ def trashed_view(call: Call, project_id: int, view_id: int) -> dict[str, Any] | 
 
     Raises:
         CliError: When the trash cannot be read.
+        ValueError: When the trash answer carries no item list.
     """
     for page in range(_PAGES):
         listed = call(
@@ -36,7 +37,8 @@ def trashed_view(call: Call, project_id: int, view_id: int) -> dict[str, Any] | 
         )
         items = listed.get("items") if isinstance(listed, dict) else None
         if not isinstance(items, list):
-            return None
+            # An answer without items says nothing about the view: keep the original error.
+            raise ValueError("the trash list has no items")
         for item in items:
             if isinstance(item, dict) and item.get("id") == view_id:
                 return item

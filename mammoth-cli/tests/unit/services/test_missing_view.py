@@ -63,3 +63,10 @@ def test_an_unreadable_trash_keeps_the_original_error() -> None:
 def test_other_errors_are_not_touched() -> None:
     other = CliError(code="invalid_argument", message="bad", exit_status=2)
     assert explain_missing_view(_trash(_TRASHED), 4270, 151091, other) is other
+
+
+def test_a_trash_answer_without_items_keeps_the_original_error() -> None:
+    def call(symbol: str, **kwargs: Any) -> Any:
+        return {}
+
+    assert explain_missing_view(call, 4270, 151091, _NOT_FOUND) is _NOT_FOUND
