@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands import automation_datasets
+from mammoth_cli.commands import automation_datasets, automation_schedule
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -330,15 +330,20 @@ def automation_update(invocation: Invocation) -> HandlerResult:
 
     Automation id is positional. ``--input`` is a non-empty ``patch`` list or, for a
     data-refresh automation, ``{"add_datasets": [ids], "remove_datasets": [ids]}``: the
-    refreshed datasets are read, changed and written back with the schedule kept. Requires
-    ``--yes``.
+    refreshed datasets are read, changed and written back with the schedule kept; or
+    ``{"schedule": {"by_week_day": ["mo"], "start_at": "2026-11-09T07:00:00"}}``: the
+    fields given (frequency, interval, by_week_day, by_month_day, start_at, until) replace
+    the stored ones and the datasets are kept. Requires ``--yes``.
     """
     automation_id = _require_int_positional(invocation, "automation id")
     raw = invocation.load_input() or {}
     if automation_datasets.wants_dataset_change(raw):
         return _automation_update_datasets(invocation, automation_id, raw)
+    if automation_schedule.wants_schedule_change(raw):
+        return _automation_update_schedule(invocation, automation_id, raw)
     document = _bound_document(invocation)
     patch = _require_field(document, "patch")
+    automation_schedule.reject_conditions_without_tasks(patch)
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
@@ -346,6 +351,26 @@ def automation_update(invocation: Invocation) -> HandlerResult:
     )
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), automation_id=automation_id, patch=patch)
+    return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
+
+
+def _automation_update_schedule(
+    invocation: Invocation, automation_id: int, document: dict[str, Any]
+) -> HandlerResult:
+    """Change a data-refresh automation's schedule (see :func:`automation_update`)."""
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"change the schedule of automation {automation_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        current = service.call(_AUTOMATION_GET_SYMBOL, automation_id=automation_id)
+        patch, schedule = automation_schedule.schedule_patch(
+            automation_datasets.automation_record(current), document
+        )
+        data = service.call(_symbol(invocation), automation_id=automation_id, patch=patch)
+    if isinstance(data, dict):
+        data = {**data, "schedule": schedule}
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
