@@ -766,6 +766,7 @@ commands:
     command: view.data.get
     ids:
       view_id: result.view_id
+      project_id: result.project_id
     kind: data
   known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
     an existing target. Omit dataset_name unless the user gave one; the product default ''Result Dataset''
