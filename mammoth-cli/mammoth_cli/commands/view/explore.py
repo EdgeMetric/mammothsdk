@@ -204,6 +204,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if bucket_dates:
             range_columns.append(column_arg)
         data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
+        data = read_queries.with_case_hint(reads, data, document.get(CONDITION_KWARG))
         if document.get("range") and isinstance(data, dict):
             data = {**data, "range": _explore_range(reads, document, column_arg, bucket_dates)}
         data = read_queries.with_assumptions(reads, data)

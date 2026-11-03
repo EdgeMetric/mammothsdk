@@ -337,6 +337,7 @@ def aggregate_on(
     data = read_queries.with_observed_range(
         reads, data, _aggregate_range_columns(document, column_types), coverage=coverage
     )
+    data = read_queries.with_case_hint(reads, data, document.get(CONDITION_KWARG))
     data = read_queries.with_assumptions(reads, data)
     return _with_currency(data, _measures(document), source.currencies)
 

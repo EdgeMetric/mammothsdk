@@ -210,6 +210,59 @@ def test_a_plain_text_filter_column_gets_no_coverage_and_costs_no_query() -> Non
     assert "coverage" not in data and reads.service.calls == []
 
 
+# -- empty text matches that differ only in case (mammothsdk#381 item 5) -------
+
+
+def _text_reads(count: int) -> read_queries.ReadContext:
+    service = FakeMammothService()
+    service.responses[read_queries.AGGREGATE_SYMBOL] = {"data": [{"agg_0": count}]}
+    return read_queries.ReadContext(service, 1, 2, 3, {"Type": "column_1"}, {"Type": "TEXT"})
+
+
+def test_an_empty_contains_that_matches_ignoring_case_says_so_and_gives_the_condition() -> None:
+    reads = _text_reads(4216)
+    spec = {"column": "Type", "operator": "CONTAINS", "value": "vend"}
+
+    data = read_queries.with_case_hint(reads, {"data": []}, spec)
+
+    assert "4216 rows match when case is ignored" in data["empty_result"]
+    assert data["condition_ignoring_case"] == {**spec, "case_sensitive": False}
+    sent = reads.service.call_log[0][1]["condition"]
+    assert sent["STRING_PROP"] == {"CASE": "CASE-INSENSITIVE"}
+
+
+def test_an_empty_match_that_finds_nothing_ignoring_case_is_left_alone() -> None:
+    reads = _text_reads(0)
+    data = {"data": []}
+    spec = {"column": "Type", "operator": "EQ", "value": "zzz"}
+    assert read_queries.with_case_hint(reads, data, spec) == data
+
+
+def test_case_is_widened_inside_and_or_but_not_under_not() -> None:
+    reads = _text_reads(3)
+    spec = {
+        "and": [
+            {"column": "Type", "operator": "=", "value": "vendbill"},
+            {"not": {"column": "Type", "operator": "CONTAINS", "value": "x"}},
+        ]
+    }
+
+    widened = read_queries.with_case_hint(reads, {"data": []}, spec)["condition_ignoring_case"]
+
+    assert widened["and"][0]["case_sensitive"] is False
+    assert widened["and"][1] == spec["and"][1]
+
+
+def test_rows_found_numeric_columns_or_explicit_case_cost_no_query() -> None:
+    reads = _text_reads(9)
+    cased = {"column": "Type", "operator": "CONTAINS", "value": "v"}
+    read_queries.with_case_hint(reads, {"data": [{"group_0": "VendBill"}]}, cased)
+    read_queries.with_case_hint(reads, {"data": []}, {**cased, "case_sensitive": False})
+    read_queries.with_case_hint(reads, {"data": []}, {**cased, "column": "Amount"})
+    read_queries.with_case_hint(reads, {"data": []}, None)
+    assert reads.service.calls == []
+
+
 # -- explore: percentage_of "metric" and metric_* sorts -----------------------
 
 
