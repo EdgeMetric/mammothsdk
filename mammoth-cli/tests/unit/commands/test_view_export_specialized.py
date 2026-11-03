@@ -122,6 +122,32 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
     }
 
 
+def test_dataset_route_takes_a_one_off_copy_that_does_not_refresh(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 1: ``trigger_type``/``run_immediately`` were refused as unknown."""
+    fake_service.view_responses[(7, "to_dataset")] = 114
+    document = {
+        "dataset_name": "once",
+        "target_project_id": 57,
+        "trigger_type": "none",
+        "run_immediately": True,
+    }
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=58,
+            extra_args=["7", "9"],
+            input_file=_doc(tmp_path, document),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (7, "to_dataset", {"dataset_id": 9, **document}),
+    ]
+    assert data["refreshes_on_pipeline_run"] is False
+
+
 def test_dataset_route_reports_rows_after_for_a_new_dataset(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:

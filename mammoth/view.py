@@ -104,6 +104,11 @@ ERR_EXPORT_DATASET_WRITE_UNRESOLVED = (
 )
 
 # Export-method argument validation (raised before any API call).
+ERR_DATASET_COPY_NOT_RUN = (
+    "to_dataset with run_immediately=False would save a step and write no dataset; "
+    "omit run_immediately, or use trigger_type='none' for a one-off copy."
+)
+ERR_DATASET_COPY_TRIGGER = "to_dataset takes trigger_type 'pipeline' or 'none', not {value!r}."
 ERR_EMAIL_NO_RECIPIENTS = "to_email requires at least one recipient in `emails`."
 ERR_SFTP_KEY_REQUIRED = (
     "to_sftp with ssh_key_authentication=True requires a non-empty `private_key`."
@@ -503,8 +508,13 @@ class View(
         target_properties: dict[str, Any],
         timeout: int | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
+        trigger_type: TriggerType = TriggerType.PIPELINE,
     ) -> int:
         """Submit an internal-dataset export (crosstab / branch-out) and return the id.
+
+        With ``trigger_type`` ``NONE`` the server copies once and saves no trigger,
+        so there is no export to poll: the job's completion is the write, and a new
+        dataset is found by name and source view in the project it landed in.
 
         Both crosstab and branch-out materialise a dataset through the same
         ``internal_dataset`` export handler. *condition* is a typed condition
@@ -543,7 +553,7 @@ class View(
         spec = AddExportSpec(
             DATAVIEW_ID=self.id,
             handler_type=HandlerType.INTERNAL_DATASET,
-            trigger_type=TriggerType.PIPELINE,
+            trigger_type=trigger_type,
             target_properties=target_properties,
             additional_properties={},
             condition=self._build_condition(condition) or {},
@@ -552,20 +562,25 @@ class View(
             end_of_pipeline=True,
         )
         existing_id = target_properties.get("TARGET_DS_ID")
+        one_off = trigger_type == TriggerType.NONE
         # Snapshot the highest export id that already exists for this
         # dataview BEFORE submitting, so the write-confirmation poll below
         # can tell this call's own export apart from an earlier one already
         # sitting at EXECUTED against the same target.
-        floor = await self._highest_export_id() if existing_id is not None else None
+        floor = await self._highest_export_id() if existing_id is not None and not one_off else None
 
         result = await self._client.exports.create(self.id, spec, self.dataset_id)
         if isinstance(result, JobResponse):
             await self._client.jobs.wait_for_job(result.job.id, timeout)
 
+        if one_off:
+            return await self._resolve_one_off_dataset_id(target_properties, timeout)
         if existing_id is not None:
             await self._wait_for_dataset_export_write(int(existing_id), timeout, floor)
             return int(existing_id)
-        return await self._resolve_exported_dataset_id(target_properties["DS_NAME"], timeout)
+        return await self._resolve_exported_dataset_id(
+            target_properties["DS_NAME"], timeout, target_properties.get("project_id")
+        )
 
     async def _highest_export_id(self) -> int:
         """The highest existing internal-dataset export id for this dataview.
@@ -622,7 +637,7 @@ class View(
         return None
 
     async def _resolve_exported_dataset_id(
-        self, dataset_name: str, timeout: int | None = None
+        self, dataset_name: str, timeout: int | None = None, project_id: int | None = None
     ) -> int:
         """Resolve the id of the dataset a new internal-dataset export created.
 
@@ -637,7 +652,7 @@ class View(
             target_id = (export.target_properties or {}).get("TARGET_DS_ID")
             if target_id is not None:
                 return int(target_id)
-        landed = await self._find_exported_dataset(dataset_name)
+        landed = await self._find_exported_dataset(dataset_name, project_id)
         if landed is not None:
             return landed
         raise MammothExportError(
@@ -650,14 +665,39 @@ class View(
             },
         )
 
-    async def _find_exported_dataset(self, dataset_name: str) -> int | None:
+    async def _resolve_one_off_dataset_id(
+        self, target_properties: dict[str, Any], timeout: int | None
+    ) -> int:
+        """The dataset a one-off (``trigger_type`` NONE) copy wrote to."""
+        existing_id = target_properties.get("TARGET_DS_ID")
+        if existing_id is not None:
+            return int(existing_id)
+        name = target_properties["DS_NAME"]
+        landed = await self._find_exported_dataset(name, target_properties.get("project_id"))
+        if landed is not None:
+            return landed
+        raise MammothExportError(
+            ERR_EXPORT_DATASET_UNRESOLVED.format(name=name),
+            {
+                "dataset_name": name,
+                "timeout": timeout,
+                "source_view_id": self.id,
+                "export_pending": True,
+            },
+        )
+
+    async def _find_exported_dataset(
+        self, dataset_name: str, project_id: int | None = None
+    ) -> int | None:
         """The dataset an export of this view created, found by name and source view.
 
         An export's dataset records the view it came from (``additional_info
         .DATAVIEW_ID``), so a dataset that landed while the export trigger was
         still not listed as ``EXECUTED`` is found here. The newest match wins.
         """
-        listing = await self._client.datasets.list_all(fields="id,name,additional_info")
+        listing = await self._client.datasets.list_all(
+            project_id=project_id, fields="id,name,additional_info"
+        )
         found = [
             int(ds["id"])
             for ds in listing.get("datasets", [])
@@ -1338,6 +1378,8 @@ class ViewExport:
         condition: Condition | CompoundCondition | NotCondition | None = None,
         timeout: int | None = None,
         target_project_id: int | None = None,
+        trigger_type: TriggerType | str = TriggerType.PIPELINE,
+        run_immediately: bool = True,
     ) -> int:
         """Save this view's data as an internal Mammoth dataset (branch out).
 
@@ -1370,6 +1412,11 @@ class ViewExport:
                 dataset in when it is not this view's project. The export stays
                 a pipeline step of this view, so the copy is refreshed whenever
                 the pipeline re-runs -- a "parallel send" into another project.
+            trigger_type: ``"pipeline"`` (default) keeps the export as a step that
+                re-writes the dataset on every pipeline run; ``"none"`` copies once
+                and adds no step.
+            run_immediately: Must stay True: an export that does not run writes no
+                dataset to return.
 
         Returns:
             The id of the dataset written to (new when ``target_ds_id`` is None,
@@ -1379,7 +1426,16 @@ class ViewExport:
 
             new_id = await view.export.to_dataset("Sales snapshot")
             sent = await view.export.to_dataset("Sales feed", target_project_id=57)
+            once = await view.export.to_dataset("Copy", target_project_id=57, trigger_type="none")
         """
+        if not run_immediately:
+            raise MammothValidationError(ERR_DATASET_COPY_NOT_RUN)
+        try:
+            trigger = TriggerType(trigger_type)
+        except ValueError:
+            trigger = None
+        if trigger not in (TriggerType.PIPELINE, TriggerType.NONE):
+            raise MammothValidationError(ERR_DATASET_COPY_TRIGGER.format(value=trigger_type))
         cross_project: dict[str, Any] = {}
         if target_project_id is not None:
             profile = await self._client.user_profile.get()
@@ -1407,7 +1463,9 @@ class ViewExport:
             label_ids=label_ids,
             **cross_project,
         )
-        return await self._view._run_internal_dataset_export(target_properties, timeout, condition)
+        return await self._view._run_internal_dataset_export(
+            target_properties, timeout, condition, trigger
+        )
 
     async def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
         """Download dataview data as a local CSV file.

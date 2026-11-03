@@ -419,10 +419,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 "dataset_id": data,
                 "project_id": result_project_id,
                 "source_view_id": dataview_id,
-                # Every internal-dataset export is a pipeline trigger, not a
-                # one-shot copy: it re-runs (and re-writes its own rows) every
-                # time this view's pipeline runs.
-                "refreshes_on_pipeline_run": True,
+                # A pipeline export re-runs (and re-writes its own rows) every
+                # time this view's pipeline runs; trigger_type "none" copies once.
+                "refreshes_on_pipeline_run": kwargs.get("trigger_type", _PIPELINE_TRIGGER)
+                != "none",
             }
             # A read immediately after the write can catch the pipeline still
             # recomputing; wait for it to settle (bounded) before trusting
