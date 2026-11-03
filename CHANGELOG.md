@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (next mammoth-cli)
 
 - `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
+- `view analyze` gives each view a `lineage`: the other views its join and lookup steps read (`views_read`), each such step with its join type (`reads`), and a line in words ("joins view 107990 (step 1, LEFT)"). Mapping where 16 views got their data from took a task read per view; now it's one `view analyze` with every id. If the task list can't be read, the view is still analyzed, without `lineage`.
 
 ### Fixed (next mammoth-cli)
 
