@@ -101,6 +101,8 @@ def _validate_output(output: str) -> None:
 
 #: Error codes that mean "the --input document was wrong": the envelope then
 #: carries the command's input contract so the next call needs no ``schema get``.
+#: A condition refusal carries the condition grammar instead: the command's fields
+#: do not say how to write a condition.
 _INPUT_REJECTION_CODES = frozenset(
     {
         "unknown_input_field",
@@ -109,8 +111,6 @@ _INPUT_REJECTION_CODES = frozenset(
         "invalid_input",
         "invalid_input_document",
         "invalid_arguments",
-        "invalid_condition",
-        "invalid_condition_value",
         "invalid_rule",
     }
 )
