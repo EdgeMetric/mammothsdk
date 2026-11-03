@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-cli)
+
+- `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
+
+### Fixed (next mammoth-cli)
+
+- `view export dataset` on a view whose draft holds unapplied changes no longer says to turn auto-run on: the server ignores that until the draft is submitted or discarded, so the export was refused again. The refusal now says the draft is pending, names `view draft submit` and `view draft discard`, and gives a copy route that leaves the draft alone (`view data query -o csv`, then `file upload`). A draft with no changes keeps the auto-run recipe.
+
 ## mammoth-cli 2.4.2 (2026-11-02)
 
 ### Added (mammoth-cli 2.4.2)
