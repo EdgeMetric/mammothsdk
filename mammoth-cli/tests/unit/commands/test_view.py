@@ -635,6 +635,79 @@ def test_join_check_counts_the_whole_view_when_the_sample_all_matched() -> None:
     assert not any("first" in n for n in check["notes"])
 
 
+def _overlap(**fields: Any) -> dict[str, Any]:
+    """A join key-overlap preview that ran (``join_dry_run_preview``'s shape)."""
+    return {
+        "checked": True,
+        "unmatched_keys": [],
+        "right_rows_checked": 0,
+        "right_match_rate": None,
+        "right_unmatched_rows": 0,
+        "right_unmatched_key_count": 0,
+        "right_unmatched_keys": [],
+        **fields,
+    }
+
+
+def test_join_check_lists_unmatched_keys_past_the_first_page() -> None:
+    """mammothsdk#381 item 4: unmatched_keys was [] with 3,399 unmatched rows."""
+    before = {"row_count": 70000, "columns": {"column_1": "School"}, "rows": []}
+    after = {
+        "row_count": 70000,
+        "columns": {"column_1": "School", "column_9": "Region"},
+        "rows": [{"School": "S0001", "Region": "North"}],
+        "unmatched_total": 3399,
+    }
+    doc = {"join_type": "LEFT", "on": [{"left": "School", "right": "Code"}]}
+    right = _overlap(unmatched_keys=["S0150", "S0151"])
+    check = view_cmd.with_join_check({}, before, after, doc, right)["join_check"]
+    assert check["unmatched_rows"] == 3399
+    assert check["unmatched_keys"] == ["S0150", "S0151"]
+
+
+def test_outer_join_rows_from_keys_only_the_other_view_has_are_not_repeats() -> None:
+    """mammothsdk#381 item 4: OUTER's right-only rows were reported as a repeating key."""
+    cols = {"column_1": "k"}
+    doc = {"join_type": "OUTER", "on": [{"left": "k", "right": "k"}]}
+    only_right = view_cmd.with_join_check(
+        {},
+        {"row_count": 300, "columns": cols},
+        {"row_count": 320, "columns": cols},
+        doc,
+        _overlap(right_unmatched_rows=20, right_unmatched_key_count=20),
+    )["join_check"]
+    assert any(
+        "20 of the 20 added rows are keys only the other view has" in n for n in only_right["notes"]
+    )
+    assert not any("repeat" in n for n in only_right["notes"])
+    both = view_cmd.with_join_check(
+        {},
+        {"row_count": 300, "columns": cols},
+        {"row_count": 325, "columns": cols},
+        doc,
+        _overlap(right_unmatched_rows=20, right_unmatched_key_count=20),
+    )["join_check"]
+    assert any(n.startswith("5 rows come from a key that repeats") for n in both["notes"])
+
+
+def test_join_preview_looks_up_the_other_views_dataset(
+    fake_service: FakeMammothService,
+) -> None:
+    """mammothsdk#381 item 4: with foreign_view alone the overlap never ran."""
+    from mammoth_cli.commands.view_ops.transforms import _join_preview
+
+    fake_service.responses["mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"] = 55
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.aggregate"] = {
+        "data": [{"group_0": "S1", "agg_0": 2}]
+    }
+    doc = {"foreign_view": 707, "on": [{"left": "k", "right": "k"}]}
+    preview = _join_preview(fake_service, _inv("view.transform.join", project=180), 9, 7, doc)
+    assert preview["checked"] is True
+    assert ("mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview", {"dataview_id": 707}) in (
+        fake_service.call_log
+    )
+
+
 def test_join_check_flags_repeated_and_dropped_rows() -> None:
     cols = {"column_1": "k"}
     grew = view_cmd.with_join_check(
