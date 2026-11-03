@@ -362,7 +362,8 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     """Edit an export: a merge over the stored one, still pinned to the pipeline end.
 
     ``--input`` is ``{"patches": [...]}`` (``command`` patches need no ``value``) or, without
-    ``patches``, the fields to change, e.g. ``{"save_as_mode": "REPLACE_IN_DS"}``. A
+    ``patches``, the fields to change, e.g. ``{"save_as_mode": "APPEND_TO_DS"}`` (not both).
+    An edited export waits for a run: ``{"patches": [{"op": "command", "path": "run"}]}``. A
     ``replace`` of ``params`` keeps every field it leaves out from the stored export and keeps
     the export pinned to the end of the pipeline unless it sets ``end_of_pipeline: false``.
     Always requires ``--yes``.
@@ -371,6 +372,7 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     export_id = _require_int_positional_at(invocation, 1, "export id")
     document = invocation.load_input()
+    export_update.reject_patches_with_fields(document)
     if "patches" not in (document or {}) and export_update.has_shorthand(document):
         assert document is not None
         patches = export_update.shorthand_patches(document)

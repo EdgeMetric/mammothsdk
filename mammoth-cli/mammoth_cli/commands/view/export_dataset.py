@@ -182,6 +182,63 @@ def _hidden_column_names(
     return [str(names.get(column) or column) for column in hidden]
 
 
+_SAVE_AS_MODE_KEY = "SAVE_AS_DS_MODE"
+_REPLACE_MODE = "REPLACE_IN_DS"
+_APPEND_MODE = "APPEND_TO_DS"
+
+
+def _switch_mode_commands(dataview_id: int, export_id: Any, mode: str) -> list[str]:
+    """Switch an export's save mode, then run it: a pipeline rerun skips an edited export."""
+    update = f"mammoth view export update {dataview_id} {export_id} --input"
+    switch = shlex.quote(f'{{"save_as_mode": "{mode}"}}')
+    run = shlex.quote('{"patches": [{"op": "command", "path": "run"}]}')
+    return [f"{update} {switch} --yes", f"{update} {run} --yes"]
+
+
+def _switch_mode_instead(
+    dataview_id: int, target_ds_id: int, export_id: Any, requested_mode: str
+) -> CliError:
+    """An export into the target already exists with the other mode: change it, don't add one."""
+    return CliError(
+        code="export_already_exists",
+        message=(
+            f"View {dataview_id} already exports into dataset {target_ds_id} "
+            f"(export {export_id}), with the other save mode. A second export would be a "
+            f"second writer; switch export {export_id} to {requested_mode} instead."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "view export update changes the mode in place and keeps the rows already written; "
+            "then run the export (a pipeline rerun skips an edited export)."
+        ),
+        recovery_commands=_switch_mode_commands(dataview_id, export_id, requested_mode),
+        details={
+            "dataview_id": dataview_id,
+            "target_ds_id": target_ds_id,
+            "export_id": export_id,
+            "requested_save_as_mode": requested_mode,
+        },
+    )
+
+
+def reject_append_without_target(dataview_id: int, target_ds_id: Any, save_as_mode: Any) -> None:
+    """APPEND_TO_DS needs a dataset to append into: say how to get one, then append."""
+    if save_as_mode != _APPEND_MODE or target_ds_id is not None:
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENTS,
+        message="APPEND_TO_DS appends into an existing dataset, and no target_ds_id was given.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Export once without save_as_mode to create the dataset, then switch that "
+            "export to APPEND_TO_DS and run it: "
+            f"{' && '.join(_switch_mode_commands(dataview_id, 'EXPORT_ID', _APPEND_MODE))}. "
+            "Or pass target_ds_id to append into a dataset that exists."
+        ),
+        details={"dataview_id": dataview_id, "save_as_mode": save_as_mode},
+    )
+
+
 def reject_dataset_export_conflicts(
     service: Any,
     dataview_id: int,
@@ -215,26 +272,31 @@ def reject_dataset_export_conflicts(
     existing_export = _existing_internal_dataset_export(
         service, dataview_id, dataset_id, target_ds_id
     )
-    if existing_export is not None:
-        raise CliError(
-            code="export_already_exists",
-            message=(
-                f"View {dataview_id} already exports into dataset "
-                f"{target_ds_id} (export {existing_export.id}). This export "
-                f"re-runs on every pipeline run, and {save_as_mode or 'REPLACE_IN_DS'} "
-                "writes only its own rows -- a second export into the same target "
-                "duplicates rows instead of refreshing them."
-            ),
-            exit_status=EXIT_USAGE,
-            hint="Refresh the target by rerunning the pipeline, not by exporting again.",
-            recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
-            details={
-                "dataview_id": dataview_id,
-                "target_ds_id": target_ds_id,
-                "export_id": existing_export.id,
-                "requested_save_as_mode": save_as_mode,
-            },
-        )
+    if existing_export is None:
+        return
+    stored_mode = (existing_export.target_properties or {}).get(_SAVE_AS_MODE_KEY)
+    requested_mode = save_as_mode or _REPLACE_MODE
+    if stored_mode and stored_mode != requested_mode:
+        raise _switch_mode_instead(dataview_id, target_ds_id, existing_export.id, requested_mode)
+    raise CliError(
+        code="export_already_exists",
+        message=(
+            f"View {dataview_id} already exports into dataset "
+            f"{target_ds_id} (export {existing_export.id}). This export "
+            f"re-runs on every pipeline run, and {save_as_mode or 'REPLACE_IN_DS'} "
+            "writes only its own rows -- a second export into the same target "
+            "duplicates rows instead of refreshing them."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="Refresh the target by rerunning the pipeline, not by exporting again.",
+        recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
+        details={
+            "dataview_id": dataview_id,
+            "target_ds_id": target_ds_id,
+            "export_id": existing_export.id,
+            "requested_save_as_mode": save_as_mode,
+        },
+    )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"

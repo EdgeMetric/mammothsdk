@@ -2929,6 +2929,30 @@ def test_export_update_blocked_without_confirmation(
     assert _without_meta(fake_service.call_log) == []
 
 
+def test_export_update_refuses_patches_next_to_fields_it_would_drop(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: save_as_mode next to patches was dropped unread."""
+    doc = _doc(
+        tmp_path,
+        {
+            "patches": [{"op": "replace", "path": "params", "value": {}}],
+            "save_as_mode": "APPEND_TO_DS",
+        },
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_update(
+            _inv("view.export.update", project=180, extra_args=["7", "3"], input_file=doc, yes=True)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "'save_as_mode'" in excinfo.value.message
+    assert (
+        excinfo.value.hint
+        == """To change those fields, drop 'patches': --input '{"save_as_mode": "APPEND_TO_DS"}'."""
+    )
+    assert _without_meta(fake_service.call_log) == []
+
+
 def test_export_update_proceeds_with_yes(fake_service: FakeMammothService, tmp_path: Path) -> None:
     doc = _doc(
         tmp_path,

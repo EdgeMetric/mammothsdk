@@ -19,6 +19,7 @@ from mammoth_cli.commands.view.export_dataset import (
     _new_dataset_facts,
     _pending_dataset_export,
     _reject_append_schema_mismatch,
+    reject_append_without_target,
     reject_dataset_export_conflicts,
 )
 from mammoth_cli.commands.view.settle import (
@@ -358,6 +359,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
         if is_dataset_route:
+            reject_append_without_target(dataview_id, target_ds_id, save_as_mode)
             reject_dataset_export_conflicts(
                 service,
                 dataview_id,

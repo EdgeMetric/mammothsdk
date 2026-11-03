@@ -503,6 +503,61 @@ def test_second_append_export_names_the_requested_mode(
     assert error.value.details["requested_save_as_mode"] == "APPEND_TO_DS"
 
 
+def test_append_into_a_target_exported_with_replace_names_the_mode_switch(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: the refusal said "rerun" when the user wanted another mode."""
+    existing = _internal_dataset_export(42, 1545)
+    existing.target_properties = {"TARGET_DS_ID": 1545, "SAVE_AS_DS_MODE": "REPLACE_IN_DS"}
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(existing)
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "feed", "target_ds_id": 1545, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert error.value.code == "export_already_exists"
+    assert "switch export 42 to APPEND_TO_DS" in error.value.message
+    assert error.value.recovery_commands == [
+        """mammoth view export update 1758 42 --input '{"save_as_mode": "APPEND_TO_DS"}' --yes""",
+        "mammoth view export update 1758 42 --input "
+        """'{"patches": [{"op": "command", "path": "run"}]}' --yes""",
+    ]
+    assert fake_service.view_call_log == []
+
+
+def test_append_with_no_target_names_the_create_then_switch_route(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: APPEND with no target_ds_id was refused with no way forward."""
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(tmp_path, {"dataset_name": "hist", "save_as_mode": "APPEND_TO_DS"}),
+                yes=True,
+            )
+        )
+    assert error.value.code == "invalid_arguments"
+    assert error.value.hint.startswith(
+        "Export once without save_as_mode to create the dataset, then switch that export "
+        "to APPEND_TO_DS and run it: mammoth view export update 1758 EXPORT_ID --input "
+        """'{"save_as_mode": "APPEND_TO_DS"}' --yes && mammoth view export update 1758 """
+        """EXPORT_ID --input '{"patches": [{"op": "command", "path": "run"}]}' --yes."""
+    )
+    assert error.value.recovery_commands == []
+    assert fake_service.view_call_log == []
+
+
 def test_dataset_route_export_guard_matches_target_ds_id_as_int(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
