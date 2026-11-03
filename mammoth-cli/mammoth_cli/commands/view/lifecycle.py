@@ -49,6 +49,7 @@ from mammoth_cli.runtime.session import (
 from mammoth_cli.services import view_analysis
 from mammoth_cli.services.explore_cards import resolve_panel as resolve_explore_panel
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS
+from mammoth_cli.services.missing_view import explain_missing_view
 
 
 def view_preview(invocation: Invocation) -> HandlerResult:
@@ -189,6 +190,9 @@ def _analyze_views(
     results = dict(zip(reads, service.call_many(list(reads.values())), strict=True))
     for view_id, dataset_id in parents_of.items():
         outcomes[view_id] = _analysis_outcome(results, view_id, dataset_id)
+    for view_id, outcome in outcomes.items():
+        if isinstance(outcome, CliError):
+            outcomes[view_id] = explain_missing_view(service.call, project_id, view_id, outcome)
     return outcomes
 
 

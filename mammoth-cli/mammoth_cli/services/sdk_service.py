@@ -57,6 +57,7 @@ from mammoth_cli.services.coerce import InvalidArgumentValue, coerce_arguments
 from mammoth_cli.services.conditions import CONDITION_KWARG, compile_condition
 from mammoth_cli.services.dispatch import resolve_sdk_method
 from mammoth_cli.services.mapping import map_sdk_exception, with_dashboard_scope
+from mammoth_cli.services.missing_view import TRASH_LIST_SYMBOL, explain_missing_view
 from mammoth_cli.services.read_memo import ReadMemo
 
 #: Largest ``limit`` the projects route accepts (``4GENR007`` above it).
@@ -450,13 +451,29 @@ class SdkMammothService:
                 project_id=self._project_id,
                 workspace_id=self._workspace_id,
             ) from exc
-        raise map_sdk_exception(
+        mapped = map_sdk_exception(
             exc,
             profile=self._profile,
             project_id=self._project_id,
             workspace_id=self._workspace_id,
             non_member_project_id=self._non_member_project(exc, kwargs),
-        ) from exc
+        )
+        raise self._trashed_view_error(sdk_symbol, mapped, kwargs) from exc
+
+    def _trashed_view_error(
+        self, sdk_symbol: str, error: CliError, kwargs: dict[str, Any]
+    ) -> CliError:
+        """A view-scoped 404 whose view is in the trash says so; any other error is kept.
+
+        Only a hit replaces the error: a 404 on a sub-resource of a live view (an export,
+        a task) must not read as a missing view.
+        """
+        view_id = kwargs.get("dataview_id", kwargs.get("view_id"))
+        if error.code != CODE_RESOURCE_NOT_FOUND or sdk_symbol == TRASH_LIST_SYMBOL:
+            return error
+        project = kwargs.get("project_id") or self._client.project_id
+        explained = explain_missing_view(self.call, project, view_id, error)
+        return explained if (explained.details or {}).get("in_trash") else error
 
     def call_many(self, calls: Sequence[tuple[str, dict[str, Any]]]) -> list[Any]:
         """Run independent reads at once on the one loop; one result per call, in order.
@@ -549,7 +566,7 @@ class SdkMammothService:
         if "not found in any dataset" not in str(exc):
             return None
         project = self._client.project_id
-        return CliError(
+        miss = CliError(
             code=CODE_RESOURCE_NOT_FOUND,
             message=(
                 f"View {view_id} was not found in any dataset of project {project}; "
@@ -567,6 +584,7 @@ class SdkMammothService:
                 "mammoth dataset find NAME_SUBSTRING",
             ],
         )
+        return explain_missing_view(self.call, project, view_id, miss)
 
     @staticmethod
     def _coerce_call_arguments(method: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
