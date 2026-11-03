@@ -594,3 +594,42 @@ async def test_share_refuses_a_password_with_another_auth_type(
     with pytest.raises(MammothValidationError, match="only with type_of_auth `password`"):
         await client.dashboards.share(5, auth, password="long-enough-pw")
     assert server.requests == []
+
+
+async def test_duplicate_keeps_the_title_and_tags_when_asked(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    """mammothsdk#381 item 8: the copy came back as "Copy of ..." with no tags."""
+    server.answers["GET /dashboards/3"] = {"id": 3, "project_id": 40, "title": "School P&L"}
+    server.answers["GET /dashboards"] = {
+        "dashboards": [{"id": 2, "tags": ["Other"]}, {"id": 3, "tags": ["Finance", "Phase 1"]}]
+    }
+    server.answers["POST /dashboards/v3/3/duplicate"] = {"id": 9}
+    server.answers["PATCH /dashboards/9"] = {"id": 9}
+    server.answers["PUT /dashboards/9/tags"] = {"tags": ["Finance", "Phase 1"]}
+
+    copy = await client.dashboards.duplicate(3, title="School P&L", keep_tags=True)
+
+    calls = [(r["method"], r["path"], r["query"], r["body"]) for r in server.requests]
+    assert calls[1] == ("GET", "/dashboards", {"project_id": "40"}, None)
+    (patch,) = [c for c in calls if c[0] == "PATCH"]
+    assert patch[1] == "/dashboards/9" and "School P&L" in str(patch[3])
+    assert ("PUT", "/dashboards/9/tags", {}, {"tags": ["Finance", "Phase 1"]}) in calls
+    assert (copy.id, copy.title, copy.tags) == (9, "School P&L", ["Finance", "Phase 1"])
+
+
+async def test_duplicate_alone_still_makes_one_call(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers["POST /dashboards/v3/3/duplicate"] = {"id": 9}
+    copy = await client.dashboards.duplicate(3)
+    assert [r["path"] for r in server.requests] == ["/dashboards/v3/3/duplicate"]
+    assert copy.id == 9
+
+
+async def test_duplicate_refuses_a_blank_title_before_copying(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError, match="title"):
+        await client.dashboards.duplicate(3, title="  ")
+    assert server.requests == []
