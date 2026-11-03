@@ -33,6 +33,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.services import automation_summary
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.delete_check import ensure_deleted
 
@@ -190,12 +191,22 @@ def _is_gone(record: Any) -> bool:
 def automation_list(invocation: Invocation) -> HandlerResult:
     """List all automations in the active workspace/project.
 
-    Deleted and trashed automations are left out.
+    Deleted and trashed automations are left out. Each one carries ``summary``: when it runs
+    in words (``weekly on Tue at 07:00``), ``next_run`` (while active), how many ``datasets``
+    it refreshes or writes, ``last_run`` and, when the last run failed, ``last_failure``.
     """
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation))
     if isinstance(data, list):
-        data = [record for record in data if not _is_gone(record)]
+        data = [
+            (
+                {**record, "summary": automation_summary.summary(record)}
+                if isinstance(record, dict)
+                else record
+            )
+            for record in data
+            if not _is_gone(record)
+        ]
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
