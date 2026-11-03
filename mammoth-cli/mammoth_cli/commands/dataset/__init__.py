@@ -464,6 +464,14 @@ def dataset_data(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+#: mammothsdk#381 item 9: a project of 156 datasets was paged by hand after this refusal.
+_PAGING_HINT = (
+    "Every dataset's id and name in one call: --input '{\"names\": true}' (up to 500, "
+    "newest first, with total). For full rows, page with offset: "
+    '--input \'{"limit": 100, "offset": 100}\'.'
+)
+
+
 def _validate_paging(document: dict[str, Any]) -> None:
     """Refuse a ``limit`` outside 0..100 or a negative ``offset`` before any call is made."""
     for field, minimum, maximum in (("limit", 0, 100), ("offset", 0, None)):
@@ -479,6 +487,7 @@ def _validate_paging(document: dict[str, Any]) -> None:
                 code=CODE_INVALID_ARGUMENT,
                 message=f"'{field}' must be {bound}.",
                 exit_status=EXIT_USAGE,
+                hint=_PAGING_HINT if field == "limit" else "",
             )
 
 

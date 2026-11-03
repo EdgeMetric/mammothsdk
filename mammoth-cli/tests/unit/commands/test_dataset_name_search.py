@@ -52,3 +52,13 @@ def test_list_paging_is_refused_before_any_call(payload: dict[str, int]) -> None
 
 def test_limit_100_is_accepted() -> None:
     _validate_paging({"limit": 100, "offset": 0})
+
+
+def test_a_limit_over_100_names_the_one_call_that_lists_every_dataset() -> None:
+    """mammothsdk#381 item 9: the refusal gave no route, so 156 datasets were paged by hand."""
+    with pytest.raises(CliError) as caught:
+        _validate_paging({"limit": 200})
+    assert caught.value.hint.startswith(
+        """Every dataset's id and name in one call: --input '{"names": true}'"""
+    )
+    assert "offset" in caught.value.hint
