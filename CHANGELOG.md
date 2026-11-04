@@ -54,6 +54,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
 - `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
 
+### Fixed (next mammoth-mcp-server)
+
+- `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.
+
 ## mammoth-mcp-server 0.2.12 (2026-11-04)
 
 ### Fixed (mammoth-mcp-server 0.2.12)
