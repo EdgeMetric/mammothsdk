@@ -34,6 +34,7 @@ from ..consts import (
     FolderFields,
     InterpretationFields,
     JobFields,
+    UnlockedFileFields,
     UnstructuredFields,
     UploadFields,
 )
@@ -56,7 +57,7 @@ type Delimiter = Literal[",", "\t", "|", ";"]
 type QuoteChar = Literal['"', "'", ""]
 
 
-@mcp_server.tool(title="Upload file", annotations=CHANGES)
+@mcp_server.tool(title="Upload file", annotations=DESTRUCTIVE)
 async def upload_file(
     workspace_id: int,
     project_id: int,
@@ -178,9 +179,8 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
     """Wait for the user to upload their files, and report what came of them.
 
     Call this straight after `request_upload`. It waits while they find the
-    file, so do not end your turn asking them to tell you when they are done —
-    they already asked you to get on with it. The uploader in the chat calls it
-    too, before it tells you.
+    file, so the user does not need to say when they are done. The uploader in
+    the chat calls it too.
 
     `waiting` means they had not picked a file by the time the wait ran out.
     Call again if you have reason to think they are still coming; after a
@@ -271,11 +271,9 @@ async def unlock_file(
 
     Only for a file `check_upload` reports as needing `password_required`.
 
-    Give the user the choice first, in as many words: tell you the password
-    here, or open `mammoth_url` and enter it in Mammoth. Whatever they type
-    into this conversation is stored with it and read back by a model; what
-    they type into Mammoth is not. Never guess a password, never repeat one
-    back, and do not press them to use this rather than the web app.
+    Ask the user first: they can give the password here, or enter it at
+    `mammoth_url`. A password given here stays in the conversation; one entered
+    in Mammoth does not.
 
     A wrong password is refused and nothing changes, so it can be tried again.
 
@@ -284,14 +282,25 @@ async def unlock_file(
         project_id: Which project the file is in.
         file_id: The locked file, as `check_upload` reported it.
         password: The password, exactly as the user gave it.
+
+    Returns:
+        `file_id`, and `status`: "processing" while Mammoth reads the file,
+        "processed" when its datasets are made, "action_needed" when it still
+        waits on a step (a PDF needs its tables extracted in the Mammoth app).
     """
-    return await patch_file(
+    await patch_file(
         FilePatchFields.PASSWORD,
         password,
         workspace_id=workspace_id,
         project_id=project_id,
         file_id=file_id,
     )
+    path = ApiPaths.FILE.format(workspace_id=workspace_id, project_id=project_id, file_id=file_id)
+    async with build_client(workspace_id, project_id) as client:
+        found = await request_api(client, "GET", path)
+    file = found.get(DeletedFileFields.FILE)
+    status = file.get(UnlockedFileFields.STATUS) if isinstance(file, dict) else None
+    return {UnlockedFileFields.FILE_ID: file_id, UnlockedFileFields.STATUS: status}
 
 
 async def patch_file(
@@ -572,7 +581,7 @@ async def set_file_settings(
     waiting to be told, and changes nothing. Name them to the user and ask:
     only they know where the file came from, and the values cannot settle it —
     if they could, Mammoth would have read them already. Then call it again
-    with their answer and carry on with what they first asked for.
+    with their answer.
 
     Args:
         workspace_id: Which workspace the dataset is in.
