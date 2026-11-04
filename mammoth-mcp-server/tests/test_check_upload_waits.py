@@ -7,20 +7,25 @@ was in. Waiting here keeps the upload inside the turn they already asked for.
 """
 
 import asyncio
+import time
 from unittest.mock import patch
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
+from mammoth_mcp_server import model_watch
 from mammoth_mcp_server.consts import (
     BUILD_WAIT_SECONDS,
     CONNECT_WAIT_SECONDS,
     TOOL_CALL_SECONDS,
     UPLOAD_WAIT_SECONDS,
+    UPLOAD_WATCH_SECONDS,
     ConnectionFields,
+    ModelWatchFields,
     UploadFields,
 )
 from mammoth_mcp_server.deadline import seconds_left
+from mammoth_mcp_server.model_watch import model_is_polling, model_state, model_was_told
 from mammoth_mcp_server.tools import files
 from mammoth_mcp_server.tools.files import check_upload, wait_for_the_file
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket, spend_ticket
@@ -136,3 +141,60 @@ class TestWaitingForTheUser:
     def test_a_link_that_was_never_minted_is_refused_at_once(self) -> None:
         with as_caller(token=GOOD_TOKEN), pytest.raises(ToolError):
             run(check_upload("never-minted"))
+
+
+class TestTheModelKeepsItsTurn:
+    """A widget cannot start a turn, so the model polls until the file is in."""
+
+    def test_waiting_says_to_call_again(self) -> None:
+        report = run(check_upload(a_ticket()))
+
+        assert report["status"] == "waiting"
+        assert report["next_step"] == files.KEEP_WAITING
+
+    def test_the_polling_stops_after_the_watch(self) -> None:
+        ticket = a_ticket()
+        late = time.time() + UPLOAD_WATCH_SECONDS + 1
+
+        with patch.object(files.time, "time", return_value=late):
+            report = run(check_upload(ticket))
+
+        assert report["status"] == "waiting"
+        assert report["next_step"] == files.STOP_WAITING
+        assert run(model_state(ticket)) == ModelWatchFields.GONE
+
+    def test_the_uploader_sees_a_model_that_is_still_polling(self) -> None:
+        ticket = a_ticket()
+        run(check_upload(ticket))
+
+        report = run(check_upload(ticket, from_widget=True))
+
+        assert report[ModelWatchFields.MODEL] == ModelWatchFields.WATCHING
+
+    def test_the_uploader_alone_leaves_no_model_behind(self) -> None:
+        report = run(check_upload(a_ticket(), from_widget=True))
+
+        assert report[ModelWatchFields.MODEL] == ModelWatchFields.GONE
+
+    def test_a_model_that_has_not_polled_for_a_while_counts_as_gone(self) -> None:
+        ticket = a_ticket()
+        run(model_is_polling(ticket))
+        later = time.time() + ModelWatchFields.GAP_SECONDS + 1
+
+        with patch.object(model_watch.time, "time", return_value=later):
+            assert run(model_state(ticket)) == ModelWatchFields.GONE
+
+    def test_a_model_that_has_the_result_is_told(self) -> None:
+        ticket = a_ticket()
+        run(model_was_told(ticket))
+
+        assert run(model_state(ticket)) == ModelWatchFields.TOLD
+
+    def test_a_poll_leaves_the_ticket_alone(self, store: FakeRedis) -> None:
+        """A write back could undo the upload that spent the ticket mid-poll."""
+        ticket = a_ticket()
+        before = run(read_ticket(ticket))
+
+        run(check_upload(ticket))
+
+        assert run(read_ticket(ticket)) == before

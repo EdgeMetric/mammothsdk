@@ -25,6 +25,7 @@ from ..consts import (
     UPLOAD_MEDIA_TYPES,
     UPLOAD_POLL_SECONDS,
     UPLOAD_WAIT_SECONDS,
+    UPLOAD_WATCH_SECONDS,
     ApiFields,
     ApiPaths,
     ColumnFields,
@@ -34,13 +35,15 @@ from ..consts import (
     FolderFields,
     InterpretationFields,
     JobFields,
+    ModelWatchFields,
     UnlockedFileFields,
     UnstructuredFields,
     UploadFields,
 )
 from ..deadline import seconds_left
 from ..jobs import JobStillRunning, find_job_id, still_running, wait_for_job
-from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
+from ..model_watch import model_gave_up, model_is_polling, model_state, model_was_told
+from ..sdk import JsonValue, ListLimit, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
@@ -48,6 +51,15 @@ from ..upload_tickets import read_ticket
 from ..upload_wait import finish_upload
 from .folders import read_folders
 
+KEEP_WAITING = (
+    "The user has not picked a file yet. Call `check_upload` again now, and do not"
+    " end your turn: the uploader cannot start a new one, so the file would go"
+    " unnoticed until the user writes. Say nothing between calls."
+)
+STOP_WAITING = (
+    "No file in five minutes, so stop calling `check_upload`. Tell the user the"
+    " upload link still works for a while, and to say when the file is in."
+)
 APPEND_NOT_YET = (
     "The file is not in the dataset yet. Do not upload it again: call check_upload"
     " with the same upload_id in a minute, and it reports what the file added."
@@ -195,19 +207,18 @@ async def wait_for_the_file(upload_id: str) -> Record:
 
 
 @mcp_server.tool(title="Check upload", annotations=READS)
-async def check_upload(upload_id: str) -> dict[str, JsonValue]:
+async def check_upload(upload_id: str, from_widget: bool = False) -> dict[str, JsonValue]:
     """Wait for the user to upload their files, and report what came of them.
 
-    Call this straight after `request_upload`. It waits while they find the
-    file, so the user does not need to say when they are done. The uploader in
-    the chat calls it too.
-
-    `waiting` means they had not picked a file by the time the wait ran out.
-    Call again if you have reason to think they are still coming; after a
-    couple of rounds say you are waiting, rather than polling in silence.
+    Call this straight after `request_upload`, and keep your turn open until
+    it reports the files: a chat's uploader cannot start a turn for you, so a
+    turn that ends here leaves the user to say the file is in. Each call waits
+    up to 20 seconds. `waiting` means call again, and `next_step` says when to
+    stop, five minutes after `request_upload`.
 
     Args:
         upload_id: What `request_upload` returned.
+        from_widget: Set only by the uploader in the chat. Leave it out.
 
     Returns:
         `status`: `waiting` (nothing uploaded yet), `processing` (Mammoth is
@@ -232,12 +243,38 @@ async def check_upload(upload_id: str) -> dict[str, JsonValue]:
         Mammoth took but could not read, each with its `job_id`, `file_object_id`
         and `error`; the other files landed, so do not upload them again.
     """
+    if from_widget:
+        return {
+            **await read_upload_state(upload_id),
+            ModelWatchFields.MODEL: await model_state(upload_id),
+        }
+    await model_is_polling(upload_id)
+    report = await read_upload_state(upload_id)
+    if report.get(UploadFields.STATUS) == UploadFields.DONE:
+        await model_was_told(upload_id)
+    elif report.get(UploadFields.NEXT_STEP) == STOP_WAITING:
+        await model_gave_up(upload_id)
+    return report
+
+
+async def read_upload_state(upload_id: str) -> dict[str, JsonValue]:
+    """What came of the upload, once the user's file is in or the wait is up.
+
+    Args:
+        upload_id: What `request_upload` returned.
+
+    Returns:
+        What `check_upload` reports.
+    """
     ticket = await wait_for_the_file(upload_id)
     job_id = ticket.get(UploadFields.JOB_ID)
     if job_id is None:
+        started = float(ticket.get(UploadFields.STARTED, 0))
+        over = time.time() >= started + UPLOAD_WATCH_SECONDS
         return {
             UploadFields.STATUS: UploadFields.WAITING,
             UploadFields.FILE_NAMES: ticket.get(UploadFields.FILE_NAMES),
+            UploadFields.NEXT_STEP: STOP_WAITING if over else KEEP_WAITING,
         }
     # Read the job as the polling user, so Mammoth refuses an upload that is
     # not theirs exactly as it would refuse any other job of a stranger's.
@@ -794,7 +831,7 @@ def find_media_type(file_name: str) -> str:
 async def list_files(
     workspace_id: int,
     project_id: int,
-    limit: int = LIST_LIMIT_DEFAULT,
+    limit: ListLimit = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
     """List the files uploaded to a project, and its folders.
@@ -804,7 +841,7 @@ async def list_files(
     Args:
         workspace_id: Which workspace the project is in.
         project_id: Which project to look in.
-        limit: How many files to return.
+        limit: How many files to return, at most 100. Page with `offset`.
         offset: How many files to skip, for paging.
 
     Returns:

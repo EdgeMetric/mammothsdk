@@ -3,9 +3,10 @@
 `request_upload` names a `ui://` page, and a host with MCP Apps renders it in a
 sandboxed frame right under the tool call, so the user drops the file without
 leaving the conversation. The frame reads the link from the tool result, posts
-the files to the same upload route the standalone page uses, and then puts a
-turn in the chat itself (`ui/message`), so the model carries on without the
-user having to say "done".
+the files to the same upload route the standalone page uses. The model polls
+`check_upload` meanwhile and carries on by itself. If it has left, the frame
+offers a turn instead (`ui/message`): Claude puts that in the message box for
+the user to send, so it is the fallback, not the way the chat carries on.
 
 A client without MCP Apps ignores the page and shows `upload_url` instead, so
 the server does not need to know which kind it is talking to — which, being
@@ -29,6 +30,7 @@ from .consts import (
     UPLOAD_APP_URI,
     UPLOAD_FIELD,
     ErrorFields,
+    ModelWatchFields,
     UploadFields,
     UploadReportFields,
 )
@@ -157,20 +159,25 @@ async function waitForMammoth() {
     try {
       result = await ask("tools/call", {
         name: "check_upload",
-        arguments: { [FIELDS.id]: upload[FIELDS.id] },
+        arguments: { [FIELDS.id]: upload[FIELDS.id], [FIELDS.fromWidget]: true },
       });
     } catch (failed) {
       return null;
     }
     const checked = (result && result.structuredContent) || {};
     if (result && result.isError) return null;
-    if (checked[FIELDS.status] === FIELDS.done) return checked;
+    const over = checked[FIELDS.status] === FIELDS.done;
+    if (over && checked[FIELDS.model] !== FIELDS.watching) return checked;
     await new Promise(wake => setTimeout(wake, 3000));
   }
   return null;
 }
 
 async function handBack(names, checked) {
+  if (checked && checked[FIELDS.model] === FIELDS.told) {
+    say("done", "Done. The conversation carries on.");
+    return;
+  }
   const details = checked
     ? JSON.stringify(checked)
     : "Call check_upload with upload_id " + upload[FIELDS.id] + " to see them.";
@@ -187,7 +194,7 @@ async function handBack(names, checked) {
     : "I uploaded " + names + " to Mammoth. Carry on with it.";
   try {
     await ask("ui/message", { role: "user", content: [{ type: "text", text: turn }] });
-    say("done", "Done. The conversation carries on.");
+    say("done", "Done. If a message appears in the box below, send it to carry on.");
   } catch (refused) {
     say("done", "Done. Tell the assistant the files are in.");
   }
@@ -216,6 +223,10 @@ def render_app() -> str:
         "done": UploadFields.DONE,
         "files": UploadFields.FILES,
         "needs": UploadReportFields.NEEDS,
+        "fromWidget": ModelWatchFields.FROM_WIDGET,
+        "model": ModelWatchFields.MODEL,
+        "watching": ModelWatchFields.WATCHING,
+        "told": ModelWatchFields.TOLD,
         "file": UPLOAD_FIELD,
         "message": ErrorFields.MESSAGE,
     }
@@ -228,6 +239,13 @@ chat_apps.add_html_resource(
     name="Mammoth upload",
     description="Drop files from this machine into a Mammoth project.",
     csp=ResourceCsp(connect_domains=[UPLOAD_ORIGIN]),
+)
+
+
+PICK_A_FILE = (
+    "Tell the user to drop their file in the uploader, or give them `upload_url`"
+    " if none shows. Then call `check_upload` with `upload_id` at once: it waits"
+    " while they pick the file. Keep your turn open until it reports the file."
 )
 
 
@@ -285,7 +303,7 @@ async def request_upload(
 
     Returns:
         `upload_url`: the link to show the user. `upload_id`: what to call
-        `check_upload` with.
+        `check_upload` with. `next_step`: what to do now.
     """
     if mode is not None and append_to_dataset_id is None:
         raise ToolError(NOT_AN_APPEND)
@@ -306,4 +324,5 @@ async def request_upload(
     return {
         UploadFields.UPLOAD_URL: f"{MCP_UPLOAD_URL}?{UploadFields.TICKET}={upload_id}",
         UploadFields.UPLOAD_ID: upload_id,
+        UploadFields.NEXT_STEP: PICK_A_FILE,
     }

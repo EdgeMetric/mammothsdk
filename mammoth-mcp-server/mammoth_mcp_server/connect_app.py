@@ -4,8 +4,9 @@
 the call: one button that opens the connector in Mammoth, where the user signs
 in to the source. A sandboxed frame may not open a window itself, so it asks
 the host to (`ui/open-link`), and shows the link to copy when the host will not.
-It then keeps calling `find_new_connection` for the whole watch, and puts a turn
-in the chat (`ui/message`) once the connection is made, so nobody types "done".
+It then keeps calling `find_new_connection` for the whole watch, as the model
+does. A model still polling carries on by itself; if it has left, the frame
+offers a turn (`ui/message`), which Claude puts in the message box to be sent.
 
 A client without MCP Apps ignores the page and shows `mammoth_url` instead.
 
@@ -22,7 +23,14 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .chat_apps import chat_apps
 from .connection_watch import start_watch
-from .consts import CONNECT_APP_URI, MAMMOTH_DATA_URL, ApiPaths, ConnectorFields, ListFields
+from .consts import (
+    CONNECT_APP_URI,
+    MAMMOTH_DATA_URL,
+    ApiPaths,
+    ConnectorFields,
+    ListFields,
+    ModelWatchFields,
+)
 from .sdk import JsonValue, build_client, read_sdk_errors, request_api
 from .telemetry import Events, TelemetryFields, record
 from .tool_kinds import READS
@@ -120,14 +128,25 @@ async function watch(watchId, name) {
     try {
       result = await ask("tools/call", {
         name: "find_new_connection",
-        arguments: { [FIELDS.watchId]: watchId },
+        arguments: { [FIELDS.watchId]: watchId, [FIELDS.fromWidget]: true },
       });
     } catch (failed) {
       return;
     }
     if (!result || result.isError) return;
-    const status = (result.structuredContent || {})[FIELDS.status];
-    if (status === FIELDS.connected) return carryOn(name);
+    const found = result.structuredContent || {};
+    const status = found[FIELDS.status];
+    const model = found[FIELDS.model];
+    if (status === FIELDS.connected && model === FIELDS.told) {
+      go.disabled = true;
+      say("Connected. The conversation carries on.", false);
+      return;
+    }
+    if (status === FIELDS.connected && model !== FIELDS.watching) return carryOn(name);
+    if (status === FIELDS.connected) {
+      await new Promise(wake => setTimeout(wake, 3000));
+      continue;
+    }
     if (status !== FIELDS.waiting) {
       say("Not connected yet. Tell the assistant when it is.", false);
       return;
@@ -142,7 +161,7 @@ async function carryOn(name) {
       role: "user",
       content: [{ type: "text", text: "I connected " + name + " in Mammoth. Carry on with it." }],
     });
-    say("Connected. The conversation carries on.", false);
+    say("Connected. If a message appears in the box below, send it to carry on.", false);
   } catch (refused) {
     say("Connected. Tell the assistant it is done.", false);
   }
@@ -181,6 +200,10 @@ def render_app() -> str:
         "status": ConnectorFields.STATUS,
         "connected": ConnectorFields.CONNECTED,
         "waiting": ConnectorFields.WAITING,
+        "fromWidget": ModelWatchFields.FROM_WIDGET,
+        "model": ModelWatchFields.MODEL,
+        "watching": ModelWatchFields.WATCHING,
+        "told": ModelWatchFields.TOLD,
     }
     return CONNECT_APP.substitute(fields=json.dumps(fields))
 

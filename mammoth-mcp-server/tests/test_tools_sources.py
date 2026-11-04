@@ -226,6 +226,33 @@ class TestWatchingForTheNewConnection:
         assert found["status"] == "waiting"
         assert "find_new_connection" in found["next_step"]
 
+    def test_the_button_sees_a_model_that_is_still_polling(self) -> None:
+        watch = self.a_watch()
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD]})
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD, NEW]})
+            call_tool("find_new_connection", watch_id=watch)
+            found = call_tool("find_new_connection", watch_id=watch, from_widget=True)
+
+        assert found["status"] == "connected"
+        assert found["model"] == "told"
+
+    def test_the_button_alone_leaves_no_model_behind(self) -> None:
+        watch = self.a_watch()
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", connections_path("hubspot"), {"connections": [OLD, NEW]})
+            found = call_tool("find_new_connection", watch_id=watch, from_widget=True)
+
+        assert found["status"] == "connected"
+        assert found["model"] == "gone"
+
+    @pytest.mark.parametrize("limit", [0, 101, 200])
+    def test_a_limit_past_the_api_cap_is_refused_here(self, limit: int) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="limit"):
+            call_tool("list_connectors", limit=limit, **IDS)
+
+        assert not api.sent("GET", f"/workspaces/{WORKSPACE}/connectors")
+
     def test_after_five_minutes_it_stops_and_says_so(self, monkeypatch: pytest.MonkeyPatch) -> None:
         watch = self.a_watch()
         monkeypatch.setattr(sources, "CONNECT_WATCH_SECONDS", 0)

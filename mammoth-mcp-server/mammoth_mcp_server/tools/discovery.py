@@ -9,6 +9,7 @@ from ..appends import read_append_history
 from ..consts import LIST_LIMIT_DEFAULT, ApiFields, ApiPaths, BrowseFields, ListFields
 from ..sdk import (
     JsonValue,
+    ListLimit,
     build_client,
     own_projects,
     own_workspace,
@@ -41,7 +42,7 @@ async def list_workspaces() -> dict[str, JsonValue]:
 
 @mcp_server.tool(title="List projects", annotations=READS)
 async def list_projects(
-    workspace_id: int, limit: int = LIST_LIMIT_DEFAULT, offset: int = 0
+    workspace_id: int, limit: ListLimit = LIST_LIMIT_DEFAULT, offset: int = 0
 ) -> dict[str, JsonValue]:
     """List the projects in a workspace.
 
@@ -52,7 +53,7 @@ async def list_projects(
 
     Args:
         workspace_id: Which workspace to look in.
-        limit: How many projects to return.
+        limit: How many projects to return, at most 100. Page with `offset`.
         offset: How many projects to skip, for paging.
     """
     pinned = own_projects()
@@ -109,7 +110,7 @@ def _as_projects(rows: JsonValue) -> JsonValue:
 async def list_datasets(
     workspace_id: int,
     project_id: int,
-    limit: int = LIST_LIMIT_DEFAULT,
+    limit: ListLimit = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
     """List the datasets in a project.
@@ -121,7 +122,7 @@ async def list_datasets(
     Args:
         workspace_id: Which workspace the project is in.
         project_id: Which project to look in.
-        limit: How many datasets to return.
+        limit: How many datasets to return, at most 100. Page with `offset`.
         offset: How many datasets to skip, for paging.
     """
     async with build_client(workspace_id) as client:
@@ -194,7 +195,7 @@ async def list_views(
     workspace_id: int,
     project_id: int,
     dataset_id: int,
-    limit: int = LIST_LIMIT_DEFAULT,
+    limit: ListLimit = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
     """List the views of a dataset.
@@ -206,7 +207,7 @@ async def list_views(
         workspace_id: Which workspace the dataset is in.
         project_id: Which project the dataset is in.
         dataset_id: Which dataset the views belong to.
-        limit: How many views to return.
+        limit: How many views to return, at most 100. Page with `offset`.
         offset: How many views to skip, for paging.
     """
     async with build_client(workspace_id) as client:

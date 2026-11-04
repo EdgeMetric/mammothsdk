@@ -22,10 +22,12 @@ from ..consts import (
     ApiPaths,
     ConnectionFields,
     ConnectorFields,
+    ModelWatchFields,
     PageFields,
     UploadFields,
 )
-from ..sdk import JsonValue, build_client, request_api
+from ..model_watch import model_gave_up, model_is_polling, model_state, model_was_told
+from ..sdk import JsonValue, ListLimit, build_client, request_api
 from ..server import mcp_server
 from ..shape import tidy_page
 from ..store import Record
@@ -61,7 +63,7 @@ async def list_connectors(
     workspace_id: int,
     project_id: int,
     connected_only: bool = False,
-    limit: int = LIST_LIMIT_DEFAULT,
+    limit: ListLimit = LIST_LIMIT_DEFAULT,
     offset: int = 0,
 ) -> dict[str, JsonValue]:
     """List the sources Mammoth can bring data in from: databases, CRMs, ads, files.
@@ -71,7 +73,7 @@ async def list_connectors(
         project_id: Which project the data would go into.
         connected_only: Only the connectors the project already has a
             connection to.
-        limit: How many connectors to return.
+        limit: How many connectors to return, at most 100. Page with `offset`.
         offset: How many connectors to skip, for paging.
 
     Returns:
@@ -206,7 +208,7 @@ async def wait_for_new_datasets(ticket: dict[str, JsonValue]) -> dict[str, JsonV
 
 
 @mcp_server.tool(title="Find new connection", annotations=READS)
-async def find_new_connection(watch_id: str) -> dict[str, JsonValue]:
+async def find_new_connection(watch_id: str, from_widget: bool = False) -> dict[str, JsonValue]:
     """Wait for the connection the user makes in Mammoth after `connect_source`.
 
     Call it straight after giving the user the link. Each call waits up to 20
@@ -215,6 +217,7 @@ async def find_new_connection(watch_id: str) -> dict[str, JsonValue]:
 
     Args:
         watch_id: What `connect_source` returned.
+        from_widget: Set only by the button in the chat. Leave it out.
 
     Returns:
         `status`: `connected`, `waiting` or `gave_up`. `connector`: its key.
@@ -224,6 +227,8 @@ async def find_new_connection(watch_id: str) -> dict[str, JsonValue]:
     watch = await read_watch(watch_id)
     if watch is None:
         raise ToolError(NO_WATCH)
+    if not from_widget:
+        await model_is_polling(watch_id)
     new = await wait_for_new_connections(watch)
     status = watch_status(watch, new)
     connector = str(watch[ConnectorFields.CONNECTOR])
@@ -231,12 +236,19 @@ async def find_new_connection(watch_id: str) -> dict[str, JsonValue]:
         Events.SOURCE_CONNECTED,
         **{TelemetryFields.CONNECTOR: connector, TelemetryFields.STATUS: status},
     )
-    return {
+    found: dict[str, JsonValue] = {
         ConnectorFields.STATUS: status,
         ConnectorFields.CONNECTOR: connector,
         ConnectionFields.CONNECTIONS: list[JsonValue](new),
         ConnectorFields.NEXT_STEP: NEXT_STEPS[status],
     }
+    if from_widget:
+        found[ModelWatchFields.MODEL] = await model_state(watch_id)
+    elif status == ConnectorFields.CONNECTED:
+        await model_was_told(watch_id)
+    elif status == ConnectorFields.GAVE_UP:
+        await model_gave_up(watch_id)
+    return found
 
 
 async def wait_for_new_connections(watch: Record) -> list[dict[str, JsonValue]]:
