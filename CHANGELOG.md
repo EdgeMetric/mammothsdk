@@ -6,7 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed (next mammoth-mcp-server)
+## mammoth-mcp-server 0.2.10 (2026-11-04)
+
+### Changed (mammoth-mcp-server 0.2.10)
 
 - `upload_file` and `request_upload` are marked destructive, because `mode="replace"` throws a dataset's rows away for good. Clients now ask before running them.
 - `unlock_file` reports the file's `file_id` and `status`, so an unlocked PDF that still needs its tables extracted is told apart from a file that is done. It used to answer `{}`.
