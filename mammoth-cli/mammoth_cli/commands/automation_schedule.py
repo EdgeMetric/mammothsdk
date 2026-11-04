@@ -42,7 +42,7 @@ def schedule_patch(
 
     Raises:
         CliError: ``invalid_argument`` for other input keys, an unknown schedule field, an
-            automation that is not a data refresh, or one without exactly one timing
+            automation that is not a data refresh or has other task types, or one without exactly one timing
             condition.
     """
     stray = sorted(key for key in document if key not in (SCHEDULE_FIELD, *_BOUND_FIELDS))
@@ -54,7 +54,20 @@ def schedule_patch(
     unknown = sorted(key for key in changes if key not in SCHEDULE_KEYS)
     if unknown:
         raise _refused(f"'schedule' takes {', '.join(SCHEDULE_KEYS)}; not {unknown}.")
-    datasets = current_dataset_ids(automation)
+    others = sorted(
+        {
+            str(task.get("task_type"))
+            for task in automation.get("tasks") or []
+            if isinstance(task, dict) and task.get("task_type") != TASK_TYPE_REFRESH
+        }
+    )
+    if others:
+        raise _refused(
+            f"This automation also has {', '.join(others)} task(s). Mammoth applies a details "
+            "patch by its first task's type only, so they cannot be sent back with the new "
+            "schedule; nothing was changed. Use a 'patch' with the whole tasks and conditions."
+        )
+    datasets = _refresh_entries(automation)
     if not datasets:
         raise _refused(
             "Only a data-refresh (run_data_retrieval) automation's schedule can be changed "
@@ -81,7 +94,7 @@ def schedule_patch(
         "tasks": [
             {
                 "task_type": TASK_TYPE_REFRESH,
-                "details": {"ds_details": [{"ds_id": ds_id} for ds_id in datasets]},
+                "details": {"ds_details": datasets},
             }
         ],
         "conditions": written,
@@ -120,6 +133,21 @@ def reject_conditions_without_tasks(patch: Any) -> None:
                     "datasets are kept); otherwise send the tasks beside the conditions."
                 ),
             )
+
+
+def _refresh_entries(automation: dict[str, Any]) -> list[dict[str, Any]]:
+    """The refreshed datasets as stored, each with all its options, one per dataset id."""
+    wanted = current_dataset_ids(automation)
+    found: dict[int, dict[str, Any]] = {}
+    for task in automation.get("tasks") or []:
+        if not isinstance(task, dict) or task.get("task_type") != TASK_TYPE_REFRESH:
+            continue
+        for entry in task.get("details") or []:
+            nested = entry.get("ds_details") if isinstance(entry, dict) else None
+            record = nested if isinstance(nested, dict) else entry
+            if isinstance(record, dict) and record.get("ds_id") in wanted:
+                found.setdefault(record["ds_id"], dict(record))
+    return [found[ds_id] for ds_id in wanted]
 
 
 def _without_start(details: Any) -> Any:

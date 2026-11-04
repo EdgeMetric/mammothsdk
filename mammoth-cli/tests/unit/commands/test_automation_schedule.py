@@ -41,14 +41,16 @@ def _automation(*conditions: dict[str, Any]) -> dict[str, Any]:
                     "details": [{"ds_details": {"ds_id": 42}}, {"ds_details": {"ds_id": 43}}],
                 }
             ],
-            "conditions": list(conditions)
-            or [
-                {
-                    "condition_type": "at_specific_time",
-                    "condition_mode": "and",
-                    "details": dict(_WEEKLY_TUESDAY),
-                }
-            ],
+            "conditions": (
+                list(conditions)
+                or [
+                    {
+                        "condition_type": "at_specific_time",
+                        "condition_mode": "and",
+                        "details": dict(_WEEKLY_TUESDAY),
+                    }
+                ]
+            ),
         }
     }
 
@@ -95,6 +97,37 @@ def test_a_schedule_change_keeps_the_datasets_and_starts_no_run(
     }
     assert value["condition_mode"] == "and"
     assert data["schedule"]["by_week_day"] == ["mo"]
+
+
+def test_a_dataset_option_beyond_ds_id_survives_a_schedule_change(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    stored = _automation()
+    stored["automation"]["tasks"][0]["details"] = [
+        {"ds_details": {"ds_id": 42, "sheet": "Q4"}},
+        {"ds_details": {"ds_id": 43}},
+    ]
+    fake_service.responses[_GET] = stored
+    fake_service.responses[_UPDATE] = {"id": 574}
+    _update(tmp_path, {"schedule": {"by_week_day": ["mo"]}})
+    (sent,) = [kwargs for symbol, kwargs in fake_service.call_log if symbol == _UPDATE]
+    (task,) = sent["patch"][0]["value"]["tasks"]
+    assert task["details"]["ds_details"] == [{"ds_id": 42, "sheet": "Q4"}, {"ds_id": 43}]
+
+
+def test_a_refresh_and_export_automation_is_refused_not_stripped_of_the_export(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The old code wrote a refresh-only tasks list, dropping the export from the body."""
+    stored = _automation()
+    stored["automation"]["tasks"].append(
+        {"task_type": "run_exports", "details": {"trigger_ids": [12]}}
+    )
+    fake_service.responses[_GET] = stored
+    with pytest.raises(CliError) as caught:
+        _update(tmp_path, {"schedule": {"by_week_day": ["mo"]}})
+    assert "run_exports" in caught.value.message
+    assert _UPDATE not in fake_service.calls
 
 
 @pytest.mark.parametrize(
