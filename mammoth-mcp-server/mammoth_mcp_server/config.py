@@ -28,6 +28,9 @@ API_ROOT: str | None = os.environ.get("MAMMOTH_API_ROOT", "/api/v2") or None
 # is this URL plus `/mcp`: a client asks for a token for it.
 SERVER_URL = read("MCP_SERVER_URL", "https://mcp.mammoth.io").rstrip("/")
 MCP_PATH = "/mcp"
+# The token OpenAI's plugin portal issues to prove this host is ours. Public, not
+# a secret. The challenge path answers 404 while it is not set.
+OPENAI_APPS_CHALLENGE = read("MCP_OPENAI_APPS_CHALLENGE", "")
 MCP_RESOURCE_URL = f"{SERVER_URL}{MCP_PATH}"
 # Where a person reads about Mammoth, for the server card.
 DOCS_URL = "https://docs.mammoth.io"

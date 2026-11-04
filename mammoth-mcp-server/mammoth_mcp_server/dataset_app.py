@@ -23,7 +23,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from .chat_apps import chat_apps
 from .consts import DATASET_APP_URI, ConnectionFields
 from .sdk import JsonValue, build_client, read_sdk_errors
-from .tool_kinds import DESTRUCTIVE
+from .tool_kinds import DESTRUCTIVE_OUTSIDE
 
 NOT_A_DATABASE = (
     "Only a database connection can be read from here. For this source, use"
@@ -246,7 +246,9 @@ chat_apps.add_html_resource(
 )
 
 
-@chat_apps.tool(resource_uri=DATASET_APP_URI, title="Preview a query", annotations=DESTRUCTIVE)
+@chat_apps.tool(
+    resource_uri=DATASET_APP_URI, title="Preview a query", annotations=DESTRUCTIVE_OUTSIDE
+)
 async def preview_query(
     workspace_id: int,
     project_id: int,

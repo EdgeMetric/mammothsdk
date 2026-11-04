@@ -32,7 +32,7 @@ from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import view_url
 from ..step_names import with_display_names
-from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
+from ..tool_kinds import CHANGES_OUTSIDE, DESTRUCTIVE_OUTSIDE, READS
 from ..transform_operations import TransformOperation
 from .transformations import (
     FIX_A_FAILED_STEP,
@@ -155,7 +155,7 @@ async def read_versions(versions: PipelineVersionsAPI, ids: dict[str, int]) -> l
     ]
 
 
-@mcp_server.tool(title="Delete transformation step", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Delete transformation step", annotations=DESTRUCTIVE_OUTSIDE)
 async def delete_transformation_step(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int, step_id: int
 ) -> dict[str, JsonValue]:
@@ -216,7 +216,7 @@ async def preview_transformation(
         )
 
 
-@mcp_server.tool(title="Manage pipeline draft", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Manage pipeline draft", annotations=DESTRUCTIVE_OUTSIDE)
 async def manage_draft(
     workspace_id: int,
     project_id: int,
@@ -268,7 +268,7 @@ async def manage_draft(
 
 @mcp_server.tool(
     title="Add transformation steps",
-    annotations=CHANGES,
+    annotations=CHANGES_OUTSIDE,
     description=(
         "Add transformations to a view's pipeline and wait for them to run."
         " Pass one operation or several: several are run together, once, after"
@@ -337,7 +337,7 @@ async def add_transformations(
     return state
 
 
-@mcp_server.tool(title="Run pipeline", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Run pipeline", annotations=DESTRUCTIVE_OUTSIDE)
 async def run_pipeline(
     workspace_id: int, project_id: int, dataset_id: int, view_id: int
 ) -> dict[str, JsonValue]:
