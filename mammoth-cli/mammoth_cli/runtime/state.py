@@ -17,6 +17,7 @@ See ``CONTRACT-write-state.md`` (D-077) for the manifest shape this reads.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import time
 from typing import Any
@@ -161,6 +162,10 @@ def _build_state(
             name: _resolve_source(str(source), data, invocation)
             for name, source in ids_spec.items()
         }
+        # A write into another project (a cross-project export) is read back there.
+        landed_in = _as_int(resolved_ids.pop("project_id", None))
+        if landed_in is not None and landed_in != invocation.project:
+            invocation = dataclasses.replace(invocation, project=landed_in)
         missing = [name for name, value in resolved_ids.items() if value is None]
         if missing:
             raise ValueError(f"could not resolve id(s) {missing} from the write's result/input")

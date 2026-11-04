@@ -142,6 +142,37 @@ def test_kind_data_combines_view_get_and_view_data_get(monkeypatch: pytest.Monke
     }
 
 
+def test_a_write_into_another_project_is_read_back_there(monkeypatch: pytest.MonkeyPatch) -> None:
+    """mammothsdk#381 item 2: a cross-project copy was read in the source project."""
+    _patch_record(
+        monkeypatch,
+        {
+            "readback": {
+                "command": "view.data.get",
+                "ids": {"view_id": "result.view_id", "project_id": "result.project_id"},
+                "kind": "data",
+            }
+        },
+    )
+    read_in: list[int | None] = []
+
+    def view_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        read_in.append(invocation.project)
+        return {"id": 4401, "row_count": 3, "metadata": []}, {}
+
+    def view_data_get(invocation: Invocation) -> tuple[dict[str, Any], dict[str, Any]]:
+        read_in.append(invocation.project)
+        return {"data": []}, {}
+
+    _patch_handlers(monkeypatch, {"view.get": view_get, "view.data.get": view_data_get})
+    result = with_state(
+        _invocation("view.export.dataset"), {"view_id": 4401, "project_id": 57, "dataset_id": 9}
+    )
+
+    assert result["state"]["kind"] == "data"
+    assert read_in and set(read_in) == {57}
+
+
 def test_kind_data_discovers_view_from_dataset_id(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_record(
         monkeypatch,

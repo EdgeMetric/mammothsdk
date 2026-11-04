@@ -19,6 +19,7 @@ from mammoth_cli.commands.view.export_dataset import (
     _new_dataset_facts,
     _pending_dataset_export,
     _reject_append_schema_mismatch,
+    reject_append_without_target,
     reject_dataset_export_conflicts,
 )
 from mammoth_cli.commands.view.settle import (
@@ -358,6 +359,7 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
         if dataset_id is None:
             dataset_id = _resolve_dataset_id(service, invocation, dataview_id, document)
         if is_dataset_route:
+            reject_append_without_target(dataview_id, target_ds_id, save_as_mode)
             reject_dataset_export_conflicts(
                 service,
                 dataview_id,
@@ -419,10 +421,10 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 "dataset_id": data,
                 "project_id": result_project_id,
                 "source_view_id": dataview_id,
-                # Every internal-dataset export is a pipeline trigger, not a
-                # one-shot copy: it re-runs (and re-writes its own rows) every
-                # time this view's pipeline runs.
-                "refreshes_on_pipeline_run": True,
+                # A pipeline export re-runs (and re-writes its own rows) every
+                # time this view's pipeline runs; trigger_type "none" copies once.
+                "refreshes_on_pipeline_run": kwargs.get("trigger_type", _PIPELINE_TRIGGER)
+                != "none",
             }
             # A read immediately after the write can catch the pipeline still
             # recomputing; wait for it to settle (bounded) before trusting

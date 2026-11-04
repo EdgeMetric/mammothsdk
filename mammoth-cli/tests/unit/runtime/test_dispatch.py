@@ -17,6 +17,7 @@ from mammoth_cli.runtime.dispatch import (
     dispatch,
 )
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.conditions import compile_condition
 from mammoth_cli.services.mapping import map_sdk_exception
 
 
@@ -70,6 +71,19 @@ def test_an_input_rejection_carries_the_input_contract() -> None:
     outcome = dispatch(_request(rejected, command_id="project.create"))
     assert outcome.error is not None
     assert "input_contract" in outcome.error.details
+
+
+def test_a_condition_refusal_carries_the_grammar_not_the_command_fields() -> None:
+    """mammothsdk#381 item 6: the fields of `view data aggregate` say nothing about conditions."""
+
+    def rejected() -> tuple[Any, dict[str, Any]]:
+        compile_condition({"range": {"column": "Day", "min": 1, "max": 2}})
+        return {}, {}
+
+    outcome = dispatch(_request(rejected, command_id="view.data.aggregate"))
+    assert outcome.error is not None
+    assert "input_contract" not in outcome.error.details
+    assert "condition_grammar" in outcome.error.details
 
 
 def test_an_invalid_output_mode_refuses_before_the_handler() -> None:

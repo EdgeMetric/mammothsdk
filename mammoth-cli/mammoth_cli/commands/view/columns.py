@@ -71,6 +71,33 @@ def _column_currencies(info: dict[str, Any]) -> dict[str, str]:
     return currencies
 
 
+#: The format reads and aggregates return dates in; a DATE column formatted otherwise is
+#: written in its own format by an export download.
+ISO_DATE_FORMAT = "%Y-%m-%d"
+
+
+def column_date_formats(info: dict[str, Any]) -> dict[str, str]:
+    """Display name -> date format, for each DATE column whose display format isn't ISO
+    (``display_properties.FORMAT_INFO[internal].date_format``)."""
+    props = info.get("display_properties")
+    formats = props.get("FORMAT_INFO") if isinstance(props, dict) else None
+    if not isinstance(formats, dict):
+        return {}
+    dates: dict[str, str] = {}
+    for column in _metadata_of(info):
+        fmt = formats.get(column.get(_INTERNAL_NAME_KEY))
+        date_format = fmt.get("date_format") if isinstance(fmt, dict) else None
+        display = column.get(_DISPLAY_NAME_KEY)
+        if (
+            column.get("type") == "DATE"
+            and isinstance(date_format, str)
+            and date_format not in ("", ISO_DATE_FORMAT)
+            and isinstance(display, str)
+        ):
+            dates[display] = date_format
+    return dates
+
+
 #: A measure's currency comes only from its column's format; a count has none.
 _UNITLESS_FUNCTIONS = frozenset({"COUNT", "DISTINCT_COUNT"})
 _CURRENCY_SYMBOL_KEY = "currency_symbol"

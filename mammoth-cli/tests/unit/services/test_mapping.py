@@ -12,6 +12,7 @@ import threading
 from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -370,6 +371,35 @@ def test_unclassified_mutation_gateway_and_malformed_success_are_unknown() -> No
         assert mapped.code == "outcome_unknown"
         assert mapped.retryable is False
         assert "Do not replay" in mapped.hint
+
+
+@pytest.mark.parametrize(
+    ("details", "never_reached"),
+    [
+        ({"gateway_reply": True, "elapsed_ms": 2}, True),
+        ({"gateway_reply": True, "elapsed_ms": 4000}, False),  # the service may have worked
+        ({"elapsed_ms": 2}, False),  # the service itself answered
+    ],
+)
+def test_a_fast_gateway_page_on_a_write_says_it_most_likely_never_arrived(
+    details: dict[str, Any], never_reached: bool
+) -> None:
+    """NetSuite friction 11-03 (#11): a POST /datasets got nginx's 502 in 2 ms and the CLI only
+    said "outcome unknown"; finding out a retry was safe took a log search."""
+    error = MammothAPIError(
+        "gateway",
+        status_code=502,
+        method="POST",
+        operation_state="outcome_unknown",
+        details=details,
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert ("most likely never reached it" in mapped.message) is never_reached
+    assert ("Do not replay" in (mapped.hint or "")) is not never_reached
 
 
 @pytest.mark.parametrize("status", [500, 502, 504, 200])

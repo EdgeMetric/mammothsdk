@@ -34,7 +34,7 @@ from mammoth_cli.errors.envelope import (
 from mammoth_cli.output.normalize import DataRows
 from mammoth_cli.services import data_profile as dp
 from mammoth_cli.services import text_dates
-from mammoth_cli.services.conditions import CONDITION_KWARG, _resolve_operator
+from mammoth_cli.services.conditions import CONDITION_KWARG, _resolve_operator, compile_condition
 
 AGGREGATE_SYMBOL = "mammoth.api.dataviews.DataviewsAPI.aggregate"
 #: A stored string no date can equal: what a range that matches nothing compiles to.
@@ -674,6 +674,68 @@ def with_observed_range(
         else "No rows matched. The data covers, per filtered/date column:"
     )
     return {**data, "empty_result": message, "observed_range": ranges}
+
+
+#: Text operators whose match depends on case; ``case_sensitive: false`` widens them.
+_CASED_OPERATORS = frozenset({"EQ", "IN_LIST", "CONTAINS", "STARTS_WITH", "ENDS_WITH"})
+
+
+def _ignoring_case(ctx: ReadContext, spec: Any) -> tuple[Any, bool]:
+    """*spec* with every cased TEXT leaf made case-insensitive, and whether any was."""
+    if not isinstance(spec, dict):
+        return spec, False
+    for key in ("and", "or"):
+        if isinstance(spec.get(key), list):
+            pairs = [_ignoring_case(ctx, item) for item in spec[key]]
+            return {key: [p[0] for p in pairs]}, any(p[1] for p in pairs)
+    if "not" in spec:
+        # Widening a negated match narrows the result; leave it as the caller wrote it.
+        return spec, False
+    column, operator = spec.get("column"), spec.get("operator")
+    if (
+        not isinstance(column, str)
+        or not ctx.is_text(column)
+        or spec.get("case_sensitive") is False
+    ):
+        return spec, False
+    try:
+        name = _resolve_operator(operator)
+    except CliError:
+        return spec, False
+    if name not in _CASED_OPERATORS:
+        return spec, False
+    return {**spec, "case_sensitive": False}, True
+
+
+def with_case_hint(ctx: ReadContext, data: Any, spec: Any) -> Any:
+    """On an empty result, say when the same condition ignoring case would match rows.
+
+    Text conditions compare case-sensitively, so ``CONTAINS "total"`` on a column
+    holding ``Total`` returns nothing, with no error: the read looks like a real "none".
+    """
+    rows = data.get("data") if isinstance(data, dict) else None
+    if not isinstance(data, dict) or (rows != [] and not _is_zero_scalar(rows)):
+        return data
+    widened, changed = _ignoring_case(ctx, spec)
+    if not changed:
+        return data
+    condition = compile_condition(widened).build(
+        ctx.display_to_internal or None, ctx.column_types or None
+    )
+    counted = _rows(
+        ctx.query(aggregations=[{"function": "COUNT", "as_name": "n"}], condition=condition)
+    )
+    matches = int(counted[0].get("agg_0") or 0) if counted else 0
+    if not matches:
+        return data
+    return {
+        **data,
+        "empty_result": (
+            f"No rows matched, but {matches} rows match when case is ignored: text conditions "
+            "are case-sensitive. Re-run with the condition below."
+        ),
+        "condition_ignoring_case": widened,
+    }
 
 
 def with_assumptions(ctx: ReadContext, data: Any) -> Any:

@@ -115,6 +115,10 @@ def _env_auth(isolated_cli_config: Path) -> None:
 _META_LOOKUP_FIELDS = ("id,name,row_count", "id,name,stats")
 
 
+#: The read a download makes after writing, for the date formats it wrote (#15).
+_FORMATS_READ = (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": None})
+
+
 def _without_meta(
     call_log: list[tuple[str, dict[str, object]]],
 ) -> list[tuple[str, dict[str, object]]]:
@@ -633,6 +637,79 @@ def test_join_check_counts_the_whole_view_when_the_sample_all_matched() -> None:
     assert check["match_rate"] == 0.736
     assert any("53313 of 201910 rows found no match" in n for n in check["notes"])
     assert not any("first" in n for n in check["notes"])
+
+
+def _overlap(**fields: Any) -> dict[str, Any]:
+    """A join key-overlap preview that ran (``join_dry_run_preview``'s shape)."""
+    return {
+        "checked": True,
+        "unmatched_keys": [],
+        "right_rows_checked": 0,
+        "right_match_rate": None,
+        "right_unmatched_rows": 0,
+        "right_unmatched_key_count": 0,
+        "right_unmatched_keys": [],
+        **fields,
+    }
+
+
+def test_join_check_lists_unmatched_keys_past_the_first_page() -> None:
+    """mammothsdk#381 item 4: unmatched_keys was [] with 3,399 unmatched rows."""
+    before = {"row_count": 70000, "columns": {"column_1": "School"}, "rows": []}
+    after = {
+        "row_count": 70000,
+        "columns": {"column_1": "School", "column_9": "Region"},
+        "rows": [{"School": "S0001", "Region": "North"}],
+        "unmatched_total": 3399,
+    }
+    doc = {"join_type": "LEFT", "on": [{"left": "School", "right": "Code"}]}
+    right = _overlap(unmatched_keys=["S0150", "S0151"])
+    check = view_cmd.with_join_check({}, before, after, doc, right)["join_check"]
+    assert check["unmatched_rows"] == 3399
+    assert check["unmatched_keys"] == ["S0150", "S0151"]
+
+
+def test_outer_join_rows_from_keys_only_the_other_view_has_are_not_repeats() -> None:
+    """mammothsdk#381 item 4: OUTER's right-only rows were reported as a repeating key."""
+    cols = {"column_1": "k"}
+    doc = {"join_type": "OUTER", "on": [{"left": "k", "right": "k"}]}
+    only_right = view_cmd.with_join_check(
+        {},
+        {"row_count": 300, "columns": cols},
+        {"row_count": 320, "columns": cols},
+        doc,
+        _overlap(right_unmatched_rows=20, right_unmatched_key_count=20),
+    )["join_check"]
+    assert any(
+        "20 of the 20 added rows are keys only the other view has" in n for n in only_right["notes"]
+    )
+    assert not any("repeat" in n for n in only_right["notes"])
+    both = view_cmd.with_join_check(
+        {},
+        {"row_count": 300, "columns": cols},
+        {"row_count": 325, "columns": cols},
+        doc,
+        _overlap(right_unmatched_rows=20, right_unmatched_key_count=20),
+    )["join_check"]
+    assert any(n.startswith("5 rows come from a key that repeats") for n in both["notes"])
+
+
+def test_join_preview_looks_up_the_other_views_dataset(
+    fake_service: FakeMammothService,
+) -> None:
+    """mammothsdk#381 item 4: with foreign_view alone the overlap never ran."""
+    from mammoth_cli.commands.view_ops.transforms import _join_preview
+
+    fake_service.responses["mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"] = 55
+    fake_service.responses["mammoth.api.dataviews.DataviewsAPI.aggregate"] = {
+        "data": [{"group_0": "S1", "agg_0": 2}]
+    }
+    doc = {"foreign_view": 707, "on": [{"left": "k", "right": "k"}]}
+    preview = _join_preview(fake_service, _inv("view.transform.join", project=180), 9, 7, doc)
+    assert preview["checked"] is True
+    assert ("mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview", {"dataview_id": 707}) in (
+        fake_service.call_log
+    )
 
 
 def test_join_check_flags_repeated_and_dropped_rows() -> None:
@@ -2687,7 +2764,8 @@ def test_export_csv_passes_dataview_id_no_project(
     doc = _doc(tmp_path, {"dataset_id": 9})
     view_cmd.view_export_csv(_inv("view.export.csv", extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
-        (_EXPORT_CSV, {"dataview_id": 7, "dataset_id": 9})
+        (_EXPORT_CSV, {"dataview_id": 7, "dataset_id": 9}),
+        _FORMATS_READ,
     ]
 
 
@@ -2698,8 +2776,38 @@ def test_export_csv_forwards_output_path(fake_service: FakeMammothService, tmp_p
         (
             _EXPORT_CSV,
             {"dataview_id": 7, "output_path": "/tmp/out.csv", "timeout": 60, "dataset_id": 9},
-        )
+        ),
+        _FORMATS_READ,
     ]
+
+
+def test_export_download_names_the_date_formats_it_wrote(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """NetSuite friction 11-03 (#15): an export wrote DATE columns as DD/MM/YYYY (their display
+    format) and a comparison against ISO aggregates silently matched 0 rows."""
+    fake_service.responses[_DATAVIEW_GET] = {
+        "metadata": [
+            {"display_name": "Term", "internal_name": "column_3", "type": "DATE"},
+            {"display_name": "Opened", "internal_name": "column_4", "type": "DATE"},
+            {"display_name": "Code", "internal_name": "column_5", "type": "TEXT"},
+        ],
+        "display_properties": {
+            "FORMAT_INFO": {
+                "column_3": {"date_format": "%d/%m/%Y"},
+                "column_4": {"date_format": "%Y-%m-%d"},
+                "column_5": {"date_format": "%d/%m/%Y"},
+            }
+        },
+    }
+    doc = _doc(tmp_path, {"dataset_id": 9, "output_path": str(tmp_path / "out.csv")})
+
+    result, _ = view_cmd.view_export_download(
+        _inv("view.export.download", extra_args=["7"], input_file=doc)
+    )
+
+    assert result["date_formats"] == {"Term": "%d/%m/%Y"}
+    assert "Term as %d/%m/%Y" in result["date_note"]
 
 
 def _enter_embedded_call() -> object:
@@ -2926,6 +3034,30 @@ def test_export_update_blocked_without_confirmation(
             )
         )
     assert excinfo.value.code == "confirmation_required"
+    assert _without_meta(fake_service.call_log) == []
+
+
+def test_export_update_refuses_patches_next_to_fields_it_would_drop(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: save_as_mode next to patches was dropped unread."""
+    doc = _doc(
+        tmp_path,
+        {
+            "patches": [{"op": "replace", "path": "params", "value": {}}],
+            "save_as_mode": "APPEND_TO_DS",
+        },
+    )
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_update(
+            _inv("view.export.update", project=180, extra_args=["7", "3"], input_file=doc, yes=True)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert "'save_as_mode'" in excinfo.value.message
+    assert (
+        excinfo.value.hint
+        == """To change those fields, drop 'patches': --input '{"save_as_mode": "APPEND_TO_DS"}'."""
+    )
     assert _without_meta(fake_service.call_log) == []
 
 

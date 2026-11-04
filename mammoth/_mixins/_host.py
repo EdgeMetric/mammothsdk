@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from mammoth.condition import CompoundCondition, Condition, NotCondition
+    from mammoth.models.exports import TriggerType
     from mammoth.view import View
 
 
@@ -45,6 +46,7 @@ class ViewHost(Protocol):
         target_properties: dict[str, Any],
         timeout: int | None = None,
         condition: Condition | CompoundCondition | NotCondition | None = None,
+        trigger_type: TriggerType = ...,
     ) -> int: ...
 
     async def list_tasks(self) -> list[dict[str, Any]]: ...

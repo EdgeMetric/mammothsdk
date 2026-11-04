@@ -125,7 +125,7 @@ def _explore_range(
 
 
 def view_data_explore(invocation: Invocation) -> HandlerResult:
-    """Read one column's values: top values, distribution, trend over time, date range (read-only; this is not an Explore card, it opens and changes no card in the UI, that is ``view explore-panel set``): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first (include, exclude, blanks, range, contains; an exclude drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the values; to put it on a dashboard say it in words to 'dashboard chat edit'.
+    """Read one column's values: top values, distribution, trend over time, date range (read-only; this is not an Explore card, it opens and changes no card in the UI, that is ``view explore-panel set``): DATE counts per ``level`` bucket (AUTO, SECOND to MILLENNIUM), NUMERIC per power-of-10 ``level``, TEXT top values (``limit`` 20), each with ``count`` and ``percentage``; ``metric`` (a column plus SUM/AVG/MIN/MAX/STDDEV/COUNT/DISTINCT_COUNT) adds a per-bucket value, ``percentage_of`` "metric" shares by it, ``sort`` count_/value_/metric_ + asc/desc, ``condition`` filters first, the same grammar as ``view data aggregate`` (each leaf a column, an operator and a value; IN_LIST/NOT_IN_LIST/CONTAINS/IN_RANGE/IS_EMPTY, and/or/not; text compares case-sensitively unless ``case_sensitive`` is false; a NOT_IN_LIST drops blank rows the card keeps, so or it with IS_EMPTY; drill down = finer ``level`` + ``condition`` on the bucket), ``limit``/``offset`` page, ``range`` true adds the exact earliest and latest value, ``cumulative`` a running total; ``-o csv`` saves the values; to put it on a dashboard say it in words to 'dashboard chat edit'.
 
     Read-only: computes and returns the result without adding a task to the
     view's pipeline or otherwise changing it. Buckets by the column's type --
@@ -204,6 +204,7 @@ def view_data_explore(invocation: Invocation) -> HandlerResult:
         if bucket_dates:
             range_columns.append(column_arg)
         data = read_queries.with_observed_range(reads, data, list(dict.fromkeys(range_columns)))
+        data = read_queries.with_case_hint(reads, data, document.get(CONDITION_KWARG))
         if document.get("range") and isinstance(data, dict):
             data = {**data, "range": _explore_range(reads, document, column_arg, bucket_dates)}
         data = read_queries.with_assumptions(reads, data)

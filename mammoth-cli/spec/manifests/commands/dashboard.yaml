@@ -196,7 +196,9 @@ commands:
   known_restrictions: 'Copies the dashboard over the same dataset. Example: mammoth dashboard duplicate
     123 --input ''{"target_dataview_id": 456}''. With the target_dataview_id input field the copy is made
     in that view''s project and its data swap is queued: the command waits for that job and adds swap_state
-    and swap_result next to id and swap_job_id. project_id (optional) names the project for the copy.'
+    and swap_result next to id and swap_job_id. project_id (optional) names the project for the copy.
+    The copy is titled "Copy of <title>" with no tags unless the input sets title (e.g. the source''s
+    own title) and keep_tags true.'
 - command_id: dashboard.embed.config.get
   output_schema: openapi
 - command_id: dashboard.embed.config.set

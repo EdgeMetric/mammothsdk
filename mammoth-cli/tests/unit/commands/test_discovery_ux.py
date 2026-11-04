@@ -114,6 +114,9 @@ def test_schema_find_prioritizes_path_matches_and_caps_broad_results() -> None:
         ("propose changes workflow", "workflow.canvas"),
         ("suggest changes to a workflow", "workflow.canvas"),
         ("sketch a workflow", "workflow.canvas"),
+        # NetSuite friction 11-03 (#14): "rename a dataset" offered only column renames.
+        ("rename a dataset", "dataset.rename"),
+        ("change the dataset name", "dataset.rename"),
     ],
 )
 def test_schema_find_resolves_goal_phrasing_to_the_transform(query: str, command_id: str) -> None:

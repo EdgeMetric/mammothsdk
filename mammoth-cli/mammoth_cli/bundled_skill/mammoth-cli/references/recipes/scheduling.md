@@ -69,6 +69,13 @@ instead of a `patch`. It keeps the schedule, refuses to remove every dataset
 and refuses an automation with no recurring schedule (the server would start a
 refresh of every dataset).
 
+To move its schedule (another weekday or time), use
+`automation update ID --yes --input '{"schedule": {"by_week_day": ["mo"], "start_at": "2026-11-09T07:00:00"}}'`.
+Only the fields given change (frequency, interval, by_week_day, by_month_day,
+start_at, until); the datasets are kept and the edit starts no run. A `patch`
+whose `details` has `conditions` but no `tasks` is refused: Mammoth answers it
+with success and keeps the old schedule.
+
 `run_data_retrieval` only refreshes a cloud-connected dataset. A dataset made
 from an uploaded file has no source to refresh from. A URL (`weburl`) dataset
 keeps its link and can be refreshed on demand (`dataset refresh DATASET_ID

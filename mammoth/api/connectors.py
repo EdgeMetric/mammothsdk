@@ -47,6 +47,13 @@ ERR_DS_CONFIG_PATCH_PATH = (
     "Each patch op path must be one of "
     "{query, profile, on_refresh_action, unique_sequence_column}, got {0!r}."
 )
+#: Every path's value carries the dataset's query and id (the server's ``UpdateQuerySpec``).
+ERR_DS_CONFIG_PATCH_VALUE = (
+    "A ds_config patch value is an object with the dataset's 'query' and 'ds_id', e.g. "
+    '{{"op": "replace", "path": "query", "value": {{"query": "SELECT ...", "ds_id": 123}}}}; '
+    "got {0!r}. Read 'ds_id' and the current query first (get_ds_config; in the CLI, "
+    "connector ds-config get)."
+)
 
 
 def _encode_connector_key(connector_key: str) -> str:
@@ -505,8 +512,10 @@ class ConnectorsAPI:
 
         Raises:
             MammothValidationError: If ``patch`` is empty, any op is not
-                ``"replace"``, or any path is not a valid
-                :class:`~mammoth.models.connectors.DsConfigPatchPath` value.
+                ``"replace"``, any path is not a valid
+                :class:`~mammoth.models.connectors.DsConfigPatchPath` value, or a
+                value is not an object with ``query`` and ``ds_id`` (a bare query
+                string is refused by the server's validation).
         """
         if not patch:
             raise MammothValidationError(ERR_DS_CONFIG_PATCH_EMPTY)
@@ -517,6 +526,8 @@ class ConnectorsAPI:
             path_val = op.path.value if isinstance(op.path, DsConfigPatchPath) else op.path
             if path_val not in valid_paths:
                 raise MammothValidationError(ERR_DS_CONFIG_PATCH_PATH.format(path_val))
+            if not (isinstance(op.value, dict) and op.value.get("query") and op.value.get("ds_id")):
+                raise MammothValidationError(ERR_DS_CONFIG_PATCH_VALUE.format(op.value))
         ws = self._ws()
         proj = self._proj(project_id)
         body = {"patch": [{"op": p.op, "path": p.path.value, "value": p.value} for p in patch]}
