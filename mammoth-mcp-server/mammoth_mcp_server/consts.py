@@ -53,6 +53,9 @@ UPLOAD_SECONDS = 30 * 60
 # that follows.
 UPLOAD_WAIT_SECONDS = 20.0
 UPLOAD_POLL_SECONDS = 1.0
+# How long the model keeps calling `check_upload` from `request_upload`, as long
+# as `connect_source` watches for a connection. The link itself lasts longer.
+UPLOAD_WATCH_SECONDS = 5 * 60
 # How long an upload into an existing dataset waits for its rows to land: the
 # upload's job ends when the staging dataset is made, and the rows reach the
 # target after that, while it reads "processing".
@@ -74,6 +77,8 @@ CONNECT_WAIT_SECONDS = 20.0
 CONNECT_POLL_SECONDS = 10.0
 # Listing tools page by default, so one call cannot fill the model's context.
 LIST_LIMIT_DEFAULT = 50
+# The most the API's list routes return in one page; it refuses a larger `limit`.
+LIST_LIMIT_MAX = 100
 # How many views' delete impact `delete_views` reads at once.
 IMPACT_READS_AT_ONCE = 8
 
@@ -172,6 +177,8 @@ class UploadFields:
     FOLDER_RESOURCE_ID = "folder_resource_id"
     NEXT_STEP = "next_step"
     FILE_NAMES = "file_names"
+    # When the link was made: `check_upload` is polled from then.
+    STARTED = "started"
     # When the files were sent: what the upload made is what was created since.
     UPLOADED_AT = "uploaded_at"
     # Where the upload has got to. `waiting` until the user picks a file,
@@ -189,6 +196,22 @@ class UploadFields:
     APPEND_TO = "append_to_dataset_id"
     APPEND = "append"
     MODE = "mode"
+
+
+class ModelWatchFields:
+    """The note that says whether the model is waiting on a widget's work too."""
+
+    KIND = "model_watch"
+    POLLED_AT = "polled_at"
+    # What the widget is told, in `MODEL`, and passes `FROM_WIDGET` to hear.
+    MODEL = "model"
+    FROM_WIDGET = "from_widget"
+    TOLD = "told"
+    WATCHING = "watching"
+    GONE = "gone"
+    # The longest a model may take between two polls and still count as polling:
+    # a held call, then the time it takes to answer and call again.
+    GAP_SECONDS = 45.0
 
 
 class AppendFields:

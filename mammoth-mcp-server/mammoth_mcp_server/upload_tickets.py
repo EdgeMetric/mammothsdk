@@ -15,6 +15,7 @@ authorization code.
 """
 
 import secrets
+import time
 import typing
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -58,6 +59,7 @@ async def mint_ticket(
             UploadFields.WORKSPACE_ID: workspace_id,
             UploadFields.PROJECT_ID: project_id,
             UploadFields.STATUS: UploadFields.WAITING,
+            UploadFields.STARTED: time.time(),
             UploadFields.CALLER: seal(caller.model_dump(mode="json")),
             **(
                 {UploadFields.APPEND_TO: append_to_dataset_id, UploadFields.MODE: mode}

@@ -19,19 +19,21 @@ import asyncio
 from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
 from http.cookiejar import DefaultCookiePolicy
-from typing import TypeVar
+from typing import Annotated, TypeVar
 
 import httpx
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothError
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
+from pydantic import Field
 
 from . import __version__
 from .config import API_ROOT, API_URL
 from .consts import (
     JOB_POLL_SECONDS,
     JOB_TIMEOUT_SECONDS,
+    LIST_LIMIT_MAX,
     REFUSAL_HINTS,
     ROUTE_TIMEOUT_SECONDS,
     UPLOAD_FIELD,
@@ -40,6 +42,8 @@ from .consts import (
 from .deadline import seconds_left, start_the_clock
 
 type JsonValue = dict[str, "JsonValue"] | list["JsonValue"] | str | int | float | bool | None
+# In the tool's schema, so a model reads the API's cap before it asks for more.
+ListLimit = Annotated[int, Field(ge=1, le=LIST_LIMIT_MAX)]
 
 # One file in a multipart request: its name, its bytes and its media type.
 type FileUpload = tuple[str, bytes, str]

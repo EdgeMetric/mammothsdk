@@ -255,3 +255,16 @@ def test_a_tool_with_several_jobs_names_each_up_front(name: str) -> None:
     assert any(job in title for job in FOLDED_JOBS[name]), name
     for job in FOLDED_JOBS[name]:
         assert job in first_line, (name, job)
+
+
+@pytest.mark.parametrize(
+    "tool", ["list_connectors", "list_projects", "list_datasets", "list_views", "list_files"]
+)
+def test_a_list_tool_shows_the_api_cap_in_its_schema(tool: str) -> None:
+    """A model that cannot see the cap asks for more, and the API refuses it."""
+    register_tools()
+    listed = run(mcp_server.list_tools())
+    schema = next(one for one in listed if one.name == tool).input_schema
+
+    assert schema["properties"]["limit"]["maximum"] == 100
+    assert schema["properties"]["limit"]["minimum"] == 1

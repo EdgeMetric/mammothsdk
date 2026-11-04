@@ -72,6 +72,16 @@ class TestUploadApp:
         assert "ui/message" in page
         assert "ui/update-model-context" in page
 
+    def test_the_page_leaves_the_message_box_to_a_model_still_polling(self) -> None:
+        # Claude puts `ui/message` in the message box, so a model that already
+        # has the result would leave a stale "carry on" there.
+        page, _, _ = read_app(self.app_uri())
+
+        assert '"from_widget"' in page
+        assert '"model"' in page
+        assert '"watching"' in page
+        assert '"told"' in page
+
     def test_the_chat_is_told_when_the_upload_waits_on_a_choice(self) -> None:
         # The turn the page posts is what the model reads next: if it does not
         # say a choice is waiting, the upload looks finished.
