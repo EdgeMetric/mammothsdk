@@ -250,6 +250,12 @@ def _check_automation_update(arguments: dict[str, Any]) -> None:
     automation_id = arguments.get("automation_id")
     if isinstance(automation_id, int) and automation_id <= 0:
         raise MammothValidationError(ERR_AUTOMATION_ID_POSITIVE.format(automation_id))
+    if "patch" not in arguments and any(
+        field in arguments for field in ("add_datasets", "remove_datasets")
+    ):
+        # A dataset change: the command reads the automation and builds the patch itself, so
+        # there is nothing to validate until it has (the patch it builds is checked then).
+        return
     build_automation_patch_ops(arguments.get("patch") or [])
 
 

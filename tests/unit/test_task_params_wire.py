@@ -243,3 +243,35 @@ def test_a_refusal_whose_text_is_only_in_the_response_body_names_the_keys() -> N
     assert rebuilt is not original
     assert "keys sent beyond those: ['BOGUS_KEY', 'SQL']" in rebuilt.message
     assert rebuilt.details["rejected_task_keys"] == ["BOGUS_KEY", "SQL"]
+
+
+async def test_update_task_puts_the_view_id_in_params_when_the_caller_left_it_out(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.pipeline.update_task(
+        dataview_id=42, task_id=7, task_spec={"SQL": {"QUERY": "SELECT 1 AS a"}}, dataset_id=500
+    )
+    await client.pipeline.update_task(
+        dataview_id=42,
+        task_id=7,
+        patches=[{"op": "replace", "path": "params", "value": {"SQL": {"QUERY": "SELECT 2"}}}],
+        dataset_id=500,
+    )
+
+    first, second = (r["body"]["patches"][0]["value"] for r in server.requests[-2:])
+    assert first["DATAVIEW_ID"] == 42
+    assert second["DATAVIEW_ID"] == 42
+
+
+async def test_update_task_keeps_a_view_id_the_caller_gave(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    await client.pipeline.update_task(
+        dataview_id=42,
+        task_id=7,
+        task_spec={"DATAVIEW_ID": 99, "SQL": {"QUERY": "SELECT 1 AS a"}},
+        dataset_id=500,
+    )
+
+    (patch,) = _body(server)["patches"]
+    assert patch["value"]["DATAVIEW_ID"] == 99

@@ -66,6 +66,7 @@ from mammoth_cli.services.draft_report import (
 )
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.read_memo import forget, remember
+from mammoth_cli.services.unknown_outcome import settle_unknown_outcome
 
 #: Rules the SDK method enforces before sending, run by the handler too: a dry run stops
 #: at the SDK symbol, so without this it would accept input the real run refuses.
@@ -209,7 +210,20 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             enforce_confirmation(
                 invocation, policy=policy, action=action, target=str(auth.workspace_id)
             )
-        data = service.call(_symbol(invocation), **kwargs)
+        if invocation.command_id == "connector.draft.discard":
+            # Discarding twice is harmless, so a lost reply is settled by one read of the draft.
+            data = settle_unknown_outcome(
+                service,
+                lambda: service.call(_symbol(invocation), **kwargs),
+                noun="connector draft",
+                resource_id=positionals["draft_id"],
+                read_symbol=DRAFT_GET_SYMBOL,
+                read_kwargs={"draft_id": positionals["draft_id"]},
+                applied=lambda _record: False,  # a draft that still reads was not discarded
+                done_status="discarded",
+            )
+        else:
+            data = service.call(_symbol(invocation), **kwargs)
         handle = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
         data = _resolve_job(service, invocation, data)
         if invocation.command_id in _HANDLE_KEPT and isinstance(handle, dict):
@@ -250,6 +264,8 @@ def _with_draft_reports(
         )
     return data
 
+
+DRAFT_GET_SYMBOL = "mammoth.api.connector_drafts.ConnectorDraftsAPI.get"
 
 #: Board-building steps whose result carries the evaluated card/tile numbers.
 _VALUED_COMMANDS = frozenset({"dashboard.v3.generate", "dashboard.chat.edit"})

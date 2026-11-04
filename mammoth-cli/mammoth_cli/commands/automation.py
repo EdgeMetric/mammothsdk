@@ -335,6 +335,20 @@ def automation_update(invocation: Invocation) -> HandlerResult:
     """
     automation_id = _require_int_positional(invocation, "automation id")
     raw = invocation.load_input() or {}
+    dropped = automation_datasets.dropped_with_patch(raw)
+    if dropped:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=(
+                "Give 'patch' or add_datasets/remove_datasets, not both: "
+                f"{', '.join(dropped)} would be ignored next to 'patch'."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Send the dataset change on its own, then the patch in a second call. "
+                "Nothing was changed."
+            ),
+        )
     if automation_datasets.wants_dataset_change(raw):
         return _automation_update_datasets(invocation, automation_id, raw)
     document = _bound_document(invocation)
