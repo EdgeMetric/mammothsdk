@@ -385,6 +385,13 @@ class FileStatus:
     ACTION_NEEDED = "action_needed"
 
 
+class UnlockedFileFields:
+    """What `unlock_file` reports about the file."""
+
+    FILE_ID = "file_id"
+    STATUS = "status"
+
+
 class DatasetStatus:
     """The states a dataset moves through while Mammoth reads its file."""
 

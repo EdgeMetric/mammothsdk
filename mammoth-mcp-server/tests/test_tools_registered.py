@@ -171,10 +171,12 @@ DESTRUCTIVE = {
     "manage_draft",
     "preview_query",
     "publish_dashboard",
+    "request_upload",
     "review_unreadable_rows",
     "run_pipeline",
     "undo",
     "update_automation",
+    "upload_file",
 }
 
 

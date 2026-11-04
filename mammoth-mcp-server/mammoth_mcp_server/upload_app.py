@@ -33,7 +33,7 @@ from .consts import (
     UploadReportFields,
 )
 from .sdk import JsonValue, check_project, named_projects, only_project, own_projects
-from .tool_kinds import CHANGES
+from .tool_kinds import DESTRUCTIVE
 from .upload_tickets import mint_ticket
 
 # `$names` are filled by `render_app`; the script uses no `$` of its own.
@@ -231,7 +231,7 @@ chat_apps.add_html_resource(
 )
 
 
-@chat_apps.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=CHANGES)
+@chat_apps.tool(resource_uri=UPLOAD_APP_URI, title="Request upload", annotations=DESTRUCTIVE)
 async def request_upload(
     workspace_id: int,
     project_id: int | None = None,
@@ -246,16 +246,14 @@ async def request_upload(
     Mammoth, so its size and format do not matter and nothing is retyped here.
     For data in a database or an app, use `connect_source` instead.
 
-    If you can run shell commands and the file is already on this machine,
-    send it yourself rather than making the user open anything, then call
-    `check_upload` with `upload_id`. The link is the whole credential, so the
+    A client that can run shell commands can send a local file itself, then
+    call `check_upload` with `upload_id`. The link is the whole credential, so the
     post carries no header of its own, and the field must be named `data`:
     `curl -F "data=@/path/to/sales.csv" "<upload_url>"`.
 
-    Otherwise, hand the upload to the user and then call `check_upload`, which
-    waits for the file: do not end your turn asking them to tell you when it is
-    in. Many clients draw an uploader right under this call, so tell the user
-    to drop the file there; if none shows, give them `upload_url` to open.
+    Otherwise the user uploads the file and `check_upload` waits for it. Many
+    clients draw an uploader under this call, where the user drops the file;
+    where none shows, `upload_url` opens one.
 
     With `append_to_dataset_id` the file goes into that existing dataset
     instead of making a new one, and the dataset's update method decides what

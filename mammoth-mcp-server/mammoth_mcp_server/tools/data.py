@@ -42,9 +42,9 @@ async def get_data(
     the columns and their types. Ask for the columns you need rather than all
     of them.
 
-    Read rows to see what the data looks like. For a total, a count, an
-    average or a ranking, call `aggregate_data`: never add up these rows
-    yourself. One page holds at most 400 rows, and rows come in no set order.
+    Rows show what the data looks like. `aggregate_data` works out totals,
+    counts, averages and rankings. One page holds at most 400 rows, and rows
+    come in no set order.
 
     Returns:
         `data`: the rows. `paging`: `total` rows in the view when it is known,
@@ -112,9 +112,9 @@ async def aggregate_data(
 ) -> dict[str, JsonValue]:
     """Have Mammoth work out totals, counts, averages, lows and highs over a view.
 
-    Use this for every number you give the user. Mammoth reads every row of
-    the view, so the answer is exact; rows read with `get_data` are a page, not
-    the whole view. Nothing is added to the view's pipeline.
+    Mammoth reads every row of the view, so the answer is exact; rows read with
+    `get_data` are a page, not the whole view. Nothing is added to the view's
+    pipeline.
 
     Returns:
         `data`: one row per group, under the group columns' names and the
