@@ -370,7 +370,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth connector ds-config update`. Exact input fields: `mammoth schema get connector.ds-config.update`.
 
-Example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": {"query": "SELECT * FROM orders", "ds_id": 123}}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ConnectorDsConfigUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

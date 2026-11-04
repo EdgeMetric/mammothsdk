@@ -37,6 +37,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dashboard duplicate` takes `title` and `keep_tags`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
 - `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
 - `view analyze` gives each view a `lineage`: the other views its join and lookup steps read (`views_read`), each such step with its join type (`reads`), and a line in words ("joins view 107990 (step 1, LEFT)"). Mapping where 16 views got their data from took a task read per view; now it's one `view analyze` with every id. If the task list can't be read, the view is still analyzed, without `lineage`.
+- `view export download` and `view export csv` name each DATE column written in a non-ISO display format (`date_formats`, e.g. `{"Term": "%d/%m/%Y"}`) with a note, since `view data aggregate` returns ISO dates. Before this, a comparison of an export against an aggregate silently matched 0 rows.
+
+### Fixed (next mammoth-io, mammoth-cli)
+
+- `connector ds-config update`: the example now sends `value` as `{"query": ..., "ds_id": ...}`, the shape the server takes, and the SDK refuses a bare query string (or a value missing `query` or `ds_id`) before any request. The old example was refused in server validation.
+- A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
+- `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
 
 ## mammoth-cli 2.4.2 (2026-11-02)
 

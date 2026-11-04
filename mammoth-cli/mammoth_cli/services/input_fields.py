@@ -198,7 +198,13 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]
     },
     "connector.ds-config.update": {
-        "patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]
+        "patch": [
+            {
+                "op": "replace",
+                "path": "query",
+                "value": {"query": "SELECT * FROM orders", "ds_id": 123},
+            }
+        ]
     },
     "dashboard.qa.session.set-visibility": {"body": {"params": {"visibility": "shared"}}},
     "dashboard.style.default.set": {"body": {"params": {"styleId": "default"}}},

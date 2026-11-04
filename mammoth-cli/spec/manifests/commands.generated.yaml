@@ -8029,7 +8029,8 @@ commands:
   secret_fields: []
   human_example: mammoth connector ds-config update CONNECTOR_KEY CONNECTION_KEY DS_CONFIG_KEY --help
   agent_example: 'mammoth connector ds-config update postgres prod-warehouse orders-config --input ''{"patch":
-    [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}'' --yes'
+    [{"op": "replace", "path": "query", "value": {"query": "SELECT * FROM orders", "ds_id": 123}}]}''
+    --yes'
   unit_tests:
   - UT-CONNECTOR-DS-CONFIG-UPDATE
   contract_tests:
