@@ -41,14 +41,16 @@ def _automation(*conditions: dict[str, Any]) -> dict[str, Any]:
                     "details": [{"ds_details": {"ds_id": 42}}, {"ds_details": {"ds_id": 43}}],
                 }
             ],
-            "conditions": list(conditions)
-            or [
-                {
-                    "condition_type": "at_specific_time",
-                    "condition_mode": "and",
-                    "details": dict(_WEEKLY_TUESDAY),
-                }
-            ],
+            "conditions": (
+                list(conditions)
+                or [
+                    {
+                        "condition_type": "at_specific_time",
+                        "condition_mode": "and",
+                        "details": dict(_WEEKLY_TUESDAY),
+                    }
+                ]
+            ),
         }
     }
 
