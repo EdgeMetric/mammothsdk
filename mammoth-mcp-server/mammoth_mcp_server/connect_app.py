@@ -151,7 +151,7 @@ async function carryOn(name) {
 go.addEventListener("click", async () => {
   try {
     await ask("ui/open-link", { url: url });
-    say("Mammoth is open in a new tab. Come back here when the data is in.", false);
+    say("If Mammoth opened in a new tab, come back here when the data is in.", false);
   } catch (refused) {
     say("Open this link to connect it:", true);
   }

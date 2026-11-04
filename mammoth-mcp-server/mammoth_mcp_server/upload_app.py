@@ -239,10 +239,11 @@ async def request_upload(
     mode: Mode | None = None,
     folder_resource_id: int | None = None,
 ) -> dict[str, JsonValue]:
-    """Let the user upload files from their own machine.
+    """Upload a file from the user's computer into Mammoth.
 
-    Use this for any file you do not already hold as text: a spreadsheet, a
-    large CSV, anything binary. The browser sends the file straight to
+    Use this whenever the user wants a local file in Mammoth, even if they have
+    not said where it is: it gives them the place to pick it. It suits any file
+    you do not already hold as text: a spreadsheet, a large CSV, anything binary. The browser sends the file straight to
     Mammoth, so its size and format do not matter and nothing is retyped here.
     For data in a database or an app, use `connect_source` instead.
 

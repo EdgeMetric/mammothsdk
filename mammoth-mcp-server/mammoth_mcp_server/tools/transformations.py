@@ -19,7 +19,7 @@ from mammoth.exceptions import MammothColumnError, MammothValidationError
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
-from ..consts import JobFields, StepFields, TaskFields
+from ..consts import TOOL_CALL_SECONDS, JobFields, StepFields, TaskFields
 from ..jobs import wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..task_params import StepPlace, build_task_param
@@ -112,10 +112,12 @@ async def explain_build_errors(
 async def wait_for_change(workspace_id: int, answer: dict[str, JsonValue]) -> dict[str, JsonValue]:
     """Wait for a pipeline change and the run it started, and return the change.
 
-    In draft mode the change is staged and starts no run.
+    In draft mode the change is staged and starts no run. Staging may use the
+    whole call rather than a job's usual wait: a draft cannot be left half staged,
+    so a step that outlasts the wait costs the draft and every step before it.
     """
     if TaskFields.STATUS not in answer:
-        answer = await wait_for_job(workspace_id, answer)
+        answer = await wait_for_job(workspace_id, answer, TOOL_CALL_SECONDS)
     change = check_change(answer)
     run_id = change.get(TaskFields.RUN_ID)
     if run_id is None:

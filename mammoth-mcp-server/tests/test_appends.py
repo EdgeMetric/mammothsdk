@@ -5,17 +5,24 @@ are tested there (tests/unit/test_appends.py). What the API does with the mode, 
 the batch is for a live run.
 """
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, patch
 
 from mammoth.appends import NO_RECORD, NOT_ADDED, WOULD_EMPTY, refuse_batch_removal
 
 from mammoth_mcp_server.appends import (
     NOTHING_TO_REMOVE,
     UNDO_WITH,
+    append_file,
     batch_mode_key,
     present_append,
 )
-from mammoth_mcp_server.consts import AppendFields
+from mammoth_mcp_server.consts import APPEND_REPORT_SECONDS, TOOL_CALL_SECONDS, AppendFields
+
+from .helpers import run
 
 
 def a_report(mode: str | None = "add", **fields: Any) -> dict[str, Any]:
@@ -126,3 +133,21 @@ class TestWhenABatchMayBeRemoved:
 def test_a_batch_record_is_kept_per_workspace_dataset_and_batch() -> None:
     assert batch_mode_key(1, 2, 3) == "1:2:3"
     assert batch_mode_key(1, 2, 3) != batch_mode_key(1, 23, 0)
+
+
+def test_an_upload_into_a_dataset_leaves_the_call_time_to_report_its_batch() -> None:
+    # The two waits run in turn; the report that makes the batch undoable comes after both.
+    append = AsyncMock(return_value={})
+
+    @asynccontextmanager
+    async def a_client(*_ids: int) -> AsyncIterator[Any]:
+        yield SimpleNamespace(appends=SimpleNamespace(append=append))
+
+    with (
+        patch("mammoth_mcp_server.appends.build_client", a_client),
+        patch("mammoth_mcp_server.appends.report_append", AsyncMock(return_value={})),
+    ):
+        run(append_file(1, 2, 3, "a.csv", b"a", "add"))
+
+    waits = append.await_args.kwargs
+    assert waits["timeout"] + waits["wait_seconds"] <= TOOL_CALL_SECONDS - APPEND_REPORT_SECONDS

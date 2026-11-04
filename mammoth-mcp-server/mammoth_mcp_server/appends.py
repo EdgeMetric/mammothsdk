@@ -25,6 +25,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .consts import (
     APPEND_POLL_SECONDS,
+    APPEND_REPORT_SECONDS,
     APPEND_WAIT_SECONDS,
     BATCH_MODE_KIND,
     BATCH_MODE_SECONDS,
@@ -235,11 +236,16 @@ async def finish_append(
             client.appends.finish(
                 plan,
                 file_names,
-                wait_seconds=min(APPEND_WAIT_SECONDS, seconds_left()),
+                wait_seconds=min(APPEND_WAIT_SECONDS, _time_to_wait()),
                 poll_seconds=APPEND_POLL_SECONDS,
             )
         )
     return await report_append(workspace_id, report)
+
+
+def _time_to_wait() -> float:
+    """The seconds a wait may spend and still leave the call time to report the batch."""
+    return max(0.0, seconds_left() - APPEND_REPORT_SECONDS)
 
 
 async def append_file(
@@ -260,7 +266,10 @@ async def append_file(
     """
     upload = io.BytesIO(content)
     upload.name = file_name
-    timeout = max(1, int(seconds_left()))
+    # The upload's wait and the rows' wait run one after the other, so they share
+    # what is left.
+    each_wait = _time_to_wait() / 2
+    timeout = max(1, int(each_wait))
     try:
         async with build_client(workspace_id, project_id) as client:
             outcome = await read_sdk_errors(
@@ -269,7 +278,7 @@ async def append_file(
                     dataset_id,
                     mode,
                     timeout=timeout,
-                    wait_seconds=min(APPEND_WAIT_SECONDS, seconds_left()),
+                    wait_seconds=min(APPEND_WAIT_SECONDS, each_wait),
                     poll_seconds=APPEND_POLL_SECONDS,
                 )
             )

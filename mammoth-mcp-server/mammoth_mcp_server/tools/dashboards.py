@@ -37,13 +37,17 @@ from ..consts import (
     DashboardFields,
     JobFields,
 )
-from ..jobs import JobStillRunning, wait_for_job
+from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
 from .dashboard_embed import read_embed
 
 AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
+STILL_TRASHING = (
+    "Mammoth is still moving the dashboard to the trash. Do not delete it again: list_trash"
+    " shows it once it is done."
+)
 
 
 @mcp_server.tool(title="List dashboards and tags", annotations=READS)
@@ -222,11 +226,16 @@ async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, Js
         dashboard_id: Which dashboard.
 
     Returns:
-        `trashed`: the dashboard's id. `next_step`: how to bring it back.
+        `trashed`: the dashboard's id. `next_step`: how to bring it back. When the
+        move outlasts the call: the job's `job_id`, its `status` and a `note`
+        saying not to delete it again.
     """
     async with build_client(workspace_id) as client:
         started = await read_sdk_errors(client.dashboards.trash(dashboard_id))
-    await wait_for_job(workspace_id, started)
+    try:
+        await wait_for_job(workspace_id, started)
+    except JobStillRunning as running:
+        return still_running(running, STILL_TRASHING)
     return {
         DashboardFields.TRASHED: dashboard_id,
         DashboardFields.NEXT_STEP: DashboardFields.IN_THE_TRASH,

@@ -7,11 +7,20 @@ was in. Waiting here keeps the upload inside the turn they already asked for.
 """
 
 import asyncio
+from unittest.mock import patch
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
 
-from mammoth_mcp_server.consts import UploadFields
+from mammoth_mcp_server.consts import (
+    BUILD_WAIT_SECONDS,
+    CONNECT_WAIT_SECONDS,
+    TOOL_CALL_SECONDS,
+    UPLOAD_WAIT_SECONDS,
+    ConnectionFields,
+    UploadFields,
+)
+from mammoth_mcp_server.deadline import seconds_left
 from mammoth_mcp_server.tools import files
 from mammoth_mcp_server.tools.files import check_upload, wait_for_the_file
 from mammoth_mcp_server.upload_tickets import mint_ticket, read_ticket, spend_ticket
@@ -51,7 +60,39 @@ async def arrives(ticket_id: str, after: float) -> None:
     await spend_ticket(ticket_id, held, JOB, ["sales.csv"], uploaded_at="now")
 
 
+# What CloudFront allows between bytes (`OriginReadTimeout` on mcp.mammoth.io).
+EDGE_READ_SECONDS = 30.0
+
+
+@pytest.mark.parametrize(
+    "seconds",
+    [
+        TOOL_CALL_SECONDS,
+        UPLOAD_WAIT_SECONDS,
+        BUILD_WAIT_SECONDS,
+        CONNECT_WAIT_SECONDS,
+        ConnectionFields.PREVIEW_SECONDS,
+    ],
+)
+def test_no_silent_wait_reaches_the_edge_limit(seconds: float) -> None:
+    """A wait as long as the edge's limit comes back to the user as a dead server."""
+    assert seconds < EDGE_READ_SECONDS
+
+
 class TestWaitingForTheUser:
+    def test_the_hold_spends_from_the_call_deadline(self) -> None:
+        """The job wait after the hold gets what is left, not a clock of its own."""
+        ticket = a_ticket()
+
+        async def hold_then_ask() -> float:
+            await wait_for_the_file(ticket)
+            return seconds_left()
+
+        with patch("mammoth_mcp_server.deadline.TOOL_CALL_SECONDS", 0.2):
+            left = run(hold_then_ask())
+
+        assert left < 0.1
+
     def test_the_file_arriving_ends_the_wait(self) -> None:
         ticket = a_ticket()
 
