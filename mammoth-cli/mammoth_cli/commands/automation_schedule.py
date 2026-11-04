@@ -42,8 +42,8 @@ def schedule_patch(
 
     Raises:
         CliError: ``invalid_argument`` for other input keys, an unknown schedule field, an
-            automation that is not a data refresh or has other task types, or one without exactly one timing
-            condition.
+            automation that is not a data refresh or has other task types, or one without
+            exactly one timing condition.
     """
     stray = sorted(key for key in document if key not in (SCHEDULE_FIELD, *_BOUND_FIELDS))
     if stray:
@@ -65,7 +65,7 @@ def schedule_patch(
         raise _refused(
             f"This automation also has {', '.join(others)} task(s). Mammoth applies a details "
             "patch by its first task's type only, so they cannot be sent back with the new "
-            "schedule; nothing was changed. Use a 'patch' with the whole tasks and conditions."
+            "schedule; nothing was changed."
         )
     datasets = _refresh_entries(automation)
     if not datasets:
