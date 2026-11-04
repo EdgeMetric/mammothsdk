@@ -17,8 +17,9 @@ from mammoth_cli.errors.envelope import (
 )
 from mammoth_cli.services.listing import view_summary
 
-#: More ids than this in one call is a pasted list, not a lookup (same ceiling as ``schema get``).
-MAX_VIEW_IDS = 12
+#: Enough for every view a dashboard build traces in one call (mammothsdk#381 item 9: 16 views
+#: took two calls at 12); the reads per view run concurrently.
+MAX_VIEW_IDS = 50
 
 
 def view_ids(raw: str) -> list[int]:

@@ -9,6 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (next mammoth-io)
 
 - `view.export.to_dataset` takes `trigger_type` and `run_immediately`. `trigger_type="none"` makes a one-off copy: it writes the dataset once and adds no step to the view's pipeline, so the copy does not change when the view re-runs. The copy is found by name in its target project. `run_immediately=False` (which would write nothing) and a `"schedule"` trigger are refused, each with what to pass instead. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
+- `dashboards.duplicate` takes `title` and `keep_tags`. The server titles a copy "Copy of <title>" and gives it no tags; these two set both on the copy in the same call. `keep_tags` reads the source's tags from its project's dashboard list, the only read that carries them. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
 
 ### Fixed (next mammoth-cli)
 
@@ -24,6 +25,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - On an OUTER join, the rows added for keys only the other view has are reported as such. They are no longer reported as a key that repeats.
 - An empty `view data explore` or `view data aggregate` whose text condition matches rows when case is ignored now says so: `empty_result` gives the count, and `condition_ignoring_case` is the condition to re-run. Before, a `CONTAINS "vend"` against `VendBill` came back empty with no warning. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 5)
 - A refused condition carries the condition grammar with examples in `details.condition_grammar`. It no longer lists the command's input fields. The Explore card's filter keys (`include`, `exclude`, `contains`, `range`, `blanks`) are refused with the condition to write instead. `view data explore --help` says it takes the same grammar as `aggregate`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 6)
+- `automation update` refuses a `details` patch that has `conditions` but no `tasks`. Mammoth answered it with success and kept the old schedule. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
+- `view analyze` takes up to 50 view ids in one call, up from 12. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
+- `dataset list` with a `limit` over 100 now names `{"names": true}`, which returns every dataset's id and name in one call, and paging with `offset`. Before, the refusal gave no route. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
+- A view that is not found now says whether it is in the project's trash: who trashed it and when, the days until it is deleted for good, and the `view restore` command. This applies to any view-scoped not-found, a parent-discovery miss, and `view analyze`. A view that is not in the trash either is reported as deleted for good or in another project. Before, the error was "not found in any dataset" or "The requested Mammoth resource does not exist". ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 10)
+
+### Added (next mammoth-cli)
+
+- `automation update ID --input '{"schedule": {"by_week_day": ["mo"], "start_at": "..."}}'` moves a data-refresh automation's schedule. Only the fields given change (`frequency`, `interval`, `by_week_day`, `by_month_day`, `start_at`, `until`). The datasets are kept and the edit starts no run. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
+- `dashboard duplicate` takes `title` and `keep_tags`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
 
 ## mammoth-cli 2.4.2 (2026-11-02)
 
