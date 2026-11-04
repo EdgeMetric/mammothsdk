@@ -26,6 +26,7 @@ from mammoth.models.dashboards import (
     DashboardActionType,
     DashboardAuthType,
     DashboardPatchItem,
+    DashboardPatchOp,
     DashboardPatchPath,
     DashboardShareUser,
     DashboardTagsParams,
@@ -89,6 +90,7 @@ def _is_pdf_or_word(path: Path) -> bool:
     return False
 
 
+ERR_DUPLICATE_TITLE = "`title` must be a non-blank string."
 ERR_DASHBOARD_IDS_EMPTY = "`dashboard_ids` must be a non-empty list of dashboard ids."
 ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0}."
 ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
@@ -1457,26 +1459,36 @@ class DashboardsAPI:
         dashboard_id: int,
         project_id: int | None = None,
         target_dataview_id: int | None = None,
+        title: str | None = None,
+        keep_tags: bool = False,
     ) -> DuplicateDashboardResponse:
         """Duplicate a v3 dashboard, optionally onto another view.
 
         With *target_dataview_id* the copy is made in that view's project and a data-swap
         job is queued to re-point it; wait for ``swap_job_id`` with ``client.wait_if_job``.
+        The server titles the copy "Copy of <title>" and gives it no tags; *title* and
+        *keep_tags* set both on the copy in the same call.
 
         Args:
             dashboard_id: ID of the dashboard to copy (must be > 0).
             project_id: Project to copy into when no target view is given.
             target_dataview_id: View to re-point the copy at (must be > 0 when given).
+            title: Title for the copy, e.g. the source's own title (non-blank when given).
+            keep_tags: Give the copy the source dashboard's tags.
 
         Returns:
-            The new dashboard's ``id`` and ``swap_job_id`` (set only with a target view).
+            The new dashboard's ``id`` and ``swap_job_id`` (set only with a target view),
+            plus ``title`` and ``tags`` when they were set.
 
         Raises:
-            MammothValidationError: If an id is not a positive integer.
+            MammothValidationError: If an id is not a positive integer or *title* is blank.
         """
         _require_dashboard_id(dashboard_id)
         if target_dataview_id is not None:
             _require_attachment_view_id(target_dataview_id)
+        if title is not None and (not isinstance(title, str) or not title.strip()):
+            raise MammothValidationError(ERR_DUPLICATE_TITLE)
+        source_tags = await self._tags_of(dashboard_id) if keep_tags else None
         params = {
             key: value
             for key, value in {
@@ -1490,7 +1502,34 @@ class DashboardsAPI:
             f"/dashboards/v3/{dashboard_id}/duplicate",
             params=params or None,
         )
-        return DuplicateDashboardResponse.model_validate(response)
+        copy = DuplicateDashboardResponse.model_validate(response)
+        extra: dict[str, Any] = {}
+        if title is not None:
+            await self.update(
+                copy.id,
+                [
+                    DashboardPatchItem(
+                        op=DashboardPatchOp.REPLACE, path=DashboardPatchPath.TITLE, value=title
+                    )
+                ],
+            )
+            extra["title"] = title
+        if source_tags:
+            await self.set_tags(copy.id, source_tags)
+            extra["tags"] = source_tags
+        return copy.model_copy(update=extra) if extra else copy
+
+    async def _tags_of(self, dashboard_id: int) -> _list[str]:
+        """The tags of one dashboard: only the list route carries them, so list its project."""
+        details = await self.get(dashboard_id)
+        project_id = details.get("project_id") if isinstance(details, dict) else None
+        for board in await self.list(project_id=project_id):
+            if isinstance(board, dict) and board.get("id") == dashboard_id:
+                tags = board.get("tags") or []
+                return [
+                    str(tag.get("name", tag)) if isinstance(tag, dict) else str(tag) for tag in tags
+                ]
+        return []
 
     async def append_figure(
         self,

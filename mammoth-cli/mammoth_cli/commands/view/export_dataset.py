@@ -54,11 +54,36 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
     With auto-run off the view keeps new pipeline changes in a draft, so the
     export would only be staged and write nothing; the SDK then waits out its
     whole timeout for a write that cannot happen (eval T1-O-11).
+
+    A ``clean`` draft holds nothing yet: turning auto-run on leaves it, the export is added,
+    and turning auto-run off enters a fresh one. A ``dirty`` draft holds unapplied changes:
+    the server skips the auto-run switch then, and leaving the draft keeps those changes, so
+    only the view's owner can decide (ILG friction 11-03, #10).
     """
     pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=dataview_id, dataset_id=dataset_id)
     draft_mode = pipeline.get("draft_mode") if isinstance(pipeline, dict) else None
     if draft_mode in (None, "off"):
         return
+    details = {"dataview_id": dataview_id, "draft_mode": draft_mode}
+    if draft_mode == "dirty":
+        raise CliError(
+            code="view_in_draft",
+            message=(
+                f"View {dataview_id} has draft changes that aren't applied yet, so an export "
+                "added now would be staged with them and write nothing."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Mammoth can't add an export to the applied pipeline while a draft is pending, "
+                "and turning auto-run on is ignored until the draft is resolved. Ask the view's "
+                f"owner to submit (mammoth view draft submit {dataview_id}) or discard (mammoth "
+                f"view draft discard {dataview_id}) the draft. To copy the rows without "
+                "touching the draft, save its applied rows with mammoth view data query "
+                f"{dataview_id} -o csv (page with limit/offset) and add the file with mammoth "
+                "file upload; that copy won't refresh."
+            ),
+            details=details,
+        )
     raise CliError(
         code="view_in_draft",
         message=(
@@ -67,11 +92,12 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
         ),
         exit_status=EXIT_USAGE,
         hint=(
+            "The draft holds no changes, so nothing is lost. "
             f"Turn auto-run on with mammoth view draft auto-run {dataview_id} --input "
             "'{\"enabled\": true}', add the export, then turn auto-run off again if the "
             f"dataset should only update when asked (mammoth view pipeline rerun {dataview_id})."
         ),
-        details={"dataview_id": dataview_id, "draft_mode": draft_mode},
+        details=details,
     )
 
 
@@ -182,6 +208,63 @@ def _hidden_column_names(
     return [str(names.get(column) or column) for column in hidden]
 
 
+_SAVE_AS_MODE_KEY = "SAVE_AS_DS_MODE"
+_REPLACE_MODE = "REPLACE_IN_DS"
+_APPEND_MODE = "APPEND_TO_DS"
+
+
+def _switch_mode_commands(dataview_id: int, export_id: Any, mode: str) -> list[str]:
+    """Switch an export's save mode, then run it: a pipeline rerun skips an edited export."""
+    update = f"mammoth view export update {dataview_id} {export_id} --input"
+    switch = shlex.quote(f'{{"save_as_mode": "{mode}"}}')
+    run = shlex.quote('{"patches": [{"op": "command", "path": "run"}]}')
+    return [f"{update} {switch} --yes", f"{update} {run} --yes"]
+
+
+def _switch_mode_instead(
+    dataview_id: int, target_ds_id: int, export_id: Any, requested_mode: str
+) -> CliError:
+    """An export into the target already exists with the other mode: change it, don't add one."""
+    return CliError(
+        code="export_already_exists",
+        message=(
+            f"View {dataview_id} already exports into dataset {target_ds_id} "
+            f"(export {export_id}), with the other save mode. A second export would be a "
+            f"second writer; switch export {export_id} to {requested_mode} instead."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=(
+            "view export update changes the mode in place and keeps the rows already written; "
+            "then run the export (a pipeline rerun skips an edited export)."
+        ),
+        recovery_commands=_switch_mode_commands(dataview_id, export_id, requested_mode),
+        details={
+            "dataview_id": dataview_id,
+            "target_ds_id": target_ds_id,
+            "export_id": export_id,
+            "requested_save_as_mode": requested_mode,
+        },
+    )
+
+
+def reject_append_without_target(dataview_id: int, target_ds_id: Any, save_as_mode: Any) -> None:
+    """APPEND_TO_DS needs a dataset to append into: say how to get one, then append."""
+    if save_as_mode != _APPEND_MODE or target_ds_id is not None:
+        return
+    raise CliError(
+        code=CODE_INVALID_ARGUMENTS,
+        message="APPEND_TO_DS appends into an existing dataset, and no target_ds_id was given.",
+        exit_status=EXIT_USAGE,
+        hint=(
+            "Export once without save_as_mode to create the dataset, then switch that "
+            "export to APPEND_TO_DS and run it: "
+            f"{' && '.join(_switch_mode_commands(dataview_id, 'EXPORT_ID', _APPEND_MODE))}. "
+            "Or pass target_ds_id to append into a dataset that exists."
+        ),
+        details={"dataview_id": dataview_id, "save_as_mode": save_as_mode},
+    )
+
+
 def reject_dataset_export_conflicts(
     service: Any,
     dataview_id: int,
@@ -215,26 +298,31 @@ def reject_dataset_export_conflicts(
     existing_export = _existing_internal_dataset_export(
         service, dataview_id, dataset_id, target_ds_id
     )
-    if existing_export is not None:
-        raise CliError(
-            code="export_already_exists",
-            message=(
-                f"View {dataview_id} already exports into dataset "
-                f"{target_ds_id} (export {existing_export.id}). This export "
-                f"re-runs on every pipeline run, and {save_as_mode or 'REPLACE_IN_DS'} "
-                "writes only its own rows -- a second export into the same target "
-                "duplicates rows instead of refreshing them."
-            ),
-            exit_status=EXIT_USAGE,
-            hint="Refresh the target by rerunning the pipeline, not by exporting again.",
-            recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
-            details={
-                "dataview_id": dataview_id,
-                "target_ds_id": target_ds_id,
-                "export_id": existing_export.id,
-                "requested_save_as_mode": save_as_mode,
-            },
-        )
+    if existing_export is None:
+        return
+    stored_mode = (existing_export.target_properties or {}).get(_SAVE_AS_MODE_KEY)
+    requested_mode = save_as_mode or _REPLACE_MODE
+    if stored_mode and stored_mode != requested_mode:
+        raise _switch_mode_instead(dataview_id, target_ds_id, existing_export.id, requested_mode)
+    raise CliError(
+        code="export_already_exists",
+        message=(
+            f"View {dataview_id} already exports into dataset "
+            f"{target_ds_id} (export {existing_export.id}). This export "
+            f"re-runs on every pipeline run, and {save_as_mode or 'REPLACE_IN_DS'} "
+            "writes only its own rows -- a second export into the same target "
+            "duplicates rows instead of refreshing them."
+        ),
+        exit_status=EXIT_USAGE,
+        hint="Refresh the target by rerunning the pipeline, not by exporting again.",
+        recovery_commands=[f"mammoth view pipeline rerun {dataview_id}"],
+        details={
+            "dataview_id": dataview_id,
+            "target_ds_id": target_ds_id,
+            "export_id": existing_export.id,
+            "requested_save_as_mode": save_as_mode,
+        },
+    )
 
 
 _DATASET_GET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.get"

@@ -49,6 +49,7 @@ from mammoth_cli.runtime.session import (
 from mammoth_cli.services import view_analysis
 from mammoth_cli.services.explore_cards import resolve_panel as resolve_explore_panel
 from mammoth_cli.services.listing import DATASET_LIST_FIELDS
+from mammoth_cli.services.missing_view import explain_missing_view
 
 
 def view_preview(invocation: Invocation) -> HandlerResult:
@@ -143,10 +144,11 @@ def view_analyze(invocation: Invocation) -> HandlerResult:
     """List pipeline steps that can be dropped or moved without changing the result (read-only).
 
     ``VIEW_ID`` may be several ids joined by commas. Each result carries the
-    ``findings`` plus the view's name, dataset, rows, columns and state and its
-    pipeline ``steps`` count, all read concurrently: the reads that always followed
-    it. One id failing is an entry in ``errors``, not a failed call; a single id that
-    fails fails the command, as before.
+    ``findings`` plus the view's name, dataset, rows, columns and state, its pipeline
+    ``steps`` count, and ``lineage``: the other views its join and lookup steps read.
+    All of it is read concurrently: the reads that always followed it. One id failing is
+    an entry in ``errors``, not a failed call; a single id that fails fails the command,
+    as before.
     """
     project_id = require_project(invocation)
     if not invocation.extra_args:
@@ -170,6 +172,10 @@ def view_analyze(invocation: Invocation) -> HandlerResult:
     )
 
 
+#: Every step with its params: the only read that names a join's or lookup's other view.
+_TASK_LIST_SYMBOL = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+
+
 def _analyze_views(
     service: Any,
     invocation: Invocation,
@@ -189,6 +195,9 @@ def _analyze_views(
     results = dict(zip(reads, service.call_many(list(reads.values())), strict=True))
     for view_id, dataset_id in parents_of.items():
         outcomes[view_id] = _analysis_outcome(results, view_id, dataset_id)
+    for view_id, outcome in outcomes.items():
+        if isinstance(outcome, CliError):
+            outcomes[view_id] = explain_missing_view(service.call, project_id, view_id, outcome)
     return outcomes
 
 
@@ -203,6 +212,7 @@ def _analysis_reads(
         reads[("analysis", view_id)] = (_ANALYSIS_SYMBOL, with_project)
         reads[("view", view_id)] = (_DATAVIEW_GET_SYMBOL, with_project)
         reads[("steps", view_id)] = (_PIPELINE_ITEMS_ALL_SYMBOL, scope)
+        reads[("tasks", view_id)] = (_TASK_LIST_SYMBOL, scope)
         reads[("dataset", dataset_id)] = (
             _DATASET_GET_SYMBOL,
             {"dataset_id": dataset_id, "project_id": project_id, "fields": DATASET_LIST_FIELDS},
@@ -213,7 +223,10 @@ def _analysis_reads(
 def _analysis_outcome(
     results: dict[tuple[str, int], Any], view_id: int, dataset_id: int
 ) -> dict[str, Any] | CliError:
-    """One view's entry from its reads; the first failed read is the id's error."""
+    """One view's entry from its reads; the first failed read is the id's error.
+
+    The task list only adds ``lineage``: when it fails the entry is kept without it.
+    """
     keys = [("analysis", view_id), ("view", view_id), ("steps", view_id), ("dataset", dataset_id)]
     for key in keys:
         failed = results[key]
@@ -227,6 +240,7 @@ def _analysis_outcome(
         view if isinstance(view, dict) else {},
         {**record, "id": record.get("id", dataset_id)},
         view_analysis.step_count(results[("steps", view_id)]),
+        view_analysis.lineage(results[("tasks", view_id)]),
     )
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
@@ -62,6 +63,31 @@ def has_shorthand(document: dict[str, Any] | None) -> bool:
         True when any of :data:`SHORTHAND_FIELDS` is present.
     """
     return document is not None and any(field in document for field in SHORTHAND_FIELDS)
+
+
+def reject_patches_with_fields(document: dict[str, Any] | None) -> None:
+    """Refuse ``patches`` next to shorthand fields, which would otherwise be dropped unread.
+
+    Args:
+        document: The parsed ``--input`` document, or None.
+
+    Raises:
+        CliError: When ``patches`` and any of :data:`SHORTHAND_FIELDS` are both present.
+    """
+    if document is None or "patches" not in document or not has_shorthand(document):
+        return
+    fields = [field for field in SHORTHAND_FIELDS if field in document]
+    example = json.dumps({field: document[field] for field in fields})
+    raise CliError(
+        code=CODE_INVALID_ARGUMENT,
+        message=(
+            f"--input has both 'patches' and {', '.join(repr(f) for f in fields)}; "
+            "give one or the other, so no field is ignored."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=f"To change those fields, drop 'patches': --input '{example}'.",
+        details={"fields": fields},
+    )
 
 
 def needs_stored_export(patches: list[Any]) -> bool:

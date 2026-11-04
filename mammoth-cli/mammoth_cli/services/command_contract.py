@@ -749,6 +749,8 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     "automation.update": (
         FieldSpec("add_datasets", required=False, annotation=list[int] | None, default=None),
         FieldSpec("remove_datasets", required=False, annotation=list[int] | None, default=None),
+        # Instead of ``patch``: the schedule fields to change (``automation_schedule``).
+        FieldSpec("schedule", required=False, annotation=dict[str, Any] | None, default=None),
     ),
     # Instead of ``patches``: the fields to change on the stored export (``export_update``).
     "view.export.update": (

@@ -19,6 +19,7 @@ from mammoth_cli.commands.view._common import (
     _resolve_dataset_id,
     _symbol,
 )
+from mammoth_cli.commands.view.columns import ISO_DATE_FORMAT, _dataview_info, column_date_formats
 from mammoth_cli.commands.view.export_specialized import (
     _reject_unacknowledged_table_replace,
     _with_recurrence_note,
@@ -95,6 +96,8 @@ def view_export_download(invocation: Invocation) -> HandlerResult:
     Same as ``view export csv`` otherwise: ``--input '{"file_type": "xlsx", "output_path":
     "out.xlsx"}'``; the default name carries the format's extension; an existing file is not
     replaced unless ``--overwrite``; embedded, the signed download URL is returned instead.
+    A DATE column with a non-ISO display format is written in that format; the result names
+    each one in ``date_formats``.
     """
     return _download_dataview(
         invocation,
@@ -123,9 +126,29 @@ def _download_dataview(
         if target is not None:
             refuse_existing_file(invocation, target)
         data = service.call(_symbol(invocation), **kwargs)
+        date_formats = _written_date_formats(service, kwargs)
     # The SDK returns a Path; render it as a string so the written location is
     # visible in every output mode and serializes cleanly to JSON.
-    return {"output_path": str(data)}, _meta(invocation, auth.workspace_id, None)
+    result: dict[str, Any] = {"output_path": str(data)}
+    if date_formats:
+        result["date_formats"] = date_formats
+        result["date_note"] = (
+            "These DATE columns are written in their display format, not ISO "
+            f"({ISO_DATE_FORMAT}) as view data aggregate returns them: "
+            + ", ".join(f"{name} as {fmt}" for name, fmt in date_formats.items())
+            + ". Parse them with that format before comparing."
+        )
+    return result, _meta(invocation, auth.workspace_id, None)
+
+
+def _written_date_formats(service: Any, kwargs: dict[str, Any]) -> dict[str, str]:
+    """The non-ISO date formats a download wrote (NetSuite friction 11-03, #15: a DD/MM/YYYY
+    export compared against ISO aggregates silently matched 0 rows)."""
+    dataset_id = kwargs.get(_DATASET_ID_FIELD)
+    if not isinstance(dataset_id, int):
+        return {}
+    info = _dataview_info(service, dataset_id, kwargs["dataview_id"], None)
+    return column_date_formats(info)
 
 
 def _view_export_csv_embedded(
@@ -362,7 +385,8 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     """Edit an export: a merge over the stored one, still pinned to the pipeline end.
 
     ``--input`` is ``{"patches": [...]}`` (``command`` patches need no ``value``) or, without
-    ``patches``, the fields to change, e.g. ``{"save_as_mode": "REPLACE_IN_DS"}``. A
+    ``patches``, the fields to change, e.g. ``{"save_as_mode": "APPEND_TO_DS"}`` (not both).
+    An edited export waits for a run: ``{"patches": [{"op": "command", "path": "run"}]}``. A
     ``replace`` of ``params`` keeps every field it leaves out from the stored export and keeps
     the export pinned to the end of the pipeline unless it sets ``end_of_pipeline: false``.
     Always requires ``--yes``.
@@ -371,6 +395,7 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     dataview_id = _require_int_positional_at(invocation, 0, "dataview id")
     export_id = _require_int_positional_at(invocation, 1, "export id")
     document = invocation.load_input()
+    export_update.reject_patches_with_fields(document)
     if "patches" not in (document or {}) and export_update.has_shorthand(document):
         assert document is not None
         patches = export_update.shorthand_patches(document)

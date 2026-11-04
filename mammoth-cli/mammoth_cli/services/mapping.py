@@ -77,8 +77,9 @@ def _metadata(exc: MammothAPIError) -> dict[str, Any]:
     endpoint = getattr(exc, "endpoint", None)
     if endpoint is not None:
         details["endpoint"] = _CLIENT_KEY_SEGMENT.sub(r"\1{client_key}", str(endpoint))
-    for name in ("rejection_note", "rejected_task_keys"):
-        # A refused task write: the SDK named the keys the server cannot take.
+    for name in ("rejection_note", "rejected_task_keys", "elapsed_ms", "gateway_reply"):
+        # A refused task write: the SDK named the keys the server cannot take. A gateway
+        # page and its timing tell a write that never reached the service (#11).
         if name in exc.details:
             details[name] = exc.details[name]
     kept = exc.details.get("update_method_kept")
@@ -142,6 +143,34 @@ def _is_refused_poll(exc: BaseException) -> TypeGuard[MammothAPIError]:
         and exc.operation_state == CODE_OUTCOME_UNKNOWN
         and exc.phase == "polling"
         and exc.job_handle is not None
+    )
+
+
+#: A gateway page faster than this came back before Mammoth's service could have worked on
+#: the request: the service was down or restarting (NetSuite friction 11-03, #11).
+_FAST_GATEWAY_MS = 250
+
+
+def _uncertain_write_text(details: dict[str, Any]) -> tuple[str, str]:
+    """Message and hint for a write whose outcome is unknown.
+
+    A fast gateway page with no reply from the service means the write almost certainly never
+    reached it, so the text says so; the code stays ``outcome_unknown`` and the reads stay
+    first, because only a read proves it.
+    """
+    elapsed = details.get("elapsed_ms")
+    if details.get("gateway_reply") and isinstance(elapsed, int) and elapsed < _FAST_GATEWAY_MS:
+        return (
+            f"Mammoth's service sent no reply: the gateway answered in {elapsed} ms, which "
+            "means the service was down or restarting, so this request most likely never "
+            "reached it.",
+            "Confirm nothing was created or changed with the read below, then run the "
+            "command again.",
+        )
+    return (
+        "The request may have committed, but its outcome was not confirmed.",
+        "Do not replay this operation. Inspect the observed job/resource "
+        "and original request context before taking any further mutation.",
     )
 
 
@@ -366,6 +395,8 @@ class _Refusal:
 
     code: str
     hint: str
+    #: Replaces the backend's own words when they name no cause the user can act on.
+    message: str | None = None
 
 
 _PLAN_LIMIT_REFUSAL = _Refusal(
@@ -384,10 +415,22 @@ _FEATURE_DISABLED_REFUSAL = _Refusal(
         "the workspace admin to turn it on."
     ),
 )
-#: Backend codes that refuse an action because of the account (its plan, its AI quota, a
+_INACTIVE_SUBSCRIPTION_REFUSAL = _Refusal(
+    code=CODE_PLAN_LIMIT,
+    hint=(
+        "The workspace has no active subscription or trial, so Mammoth refuses every "
+        "change in it while reads still work; the ids and permissions are not the "
+        "problem. Do not retry or work around it: tell the user the workspace needs "
+        "an active plan or trial, which they can start from Billing or ask Mammoth "
+        "support about."
+    ),
+    message="This workspace has no active subscription, so Mammoth refuses changes in it.",
+)
+#: Backend codes that refuse an action because of the account (its subscription, plan, AI quota, a
 #: feature switched off), not the request or the user's permissions: no id or role change
 #: fixes them, and a retry gives the same answer.
 _BACKEND_REFUSALS: dict[str, _Refusal] = {
+    "4SUBS012": _INACTIVE_SUBSCRIPTION_REFUSAL,  # INVALID_SUBSCRIPTION
     "4SUBS101": _PLAN_LIMIT_REFUSAL,  # FEATURE_NOT_AVAILABLE_ON_PLAN
     "4SUBS102": _PLAN_LIMIT_REFUSAL,  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
     "4SUBS103": _PLAN_LIMIT_REFUSAL,  # PLAN_PAYMENT_REQUIRED
@@ -428,6 +471,8 @@ def _backend_refusal(body: Any, status: int | None) -> tuple[_Refusal, str] | No
     refusal = _BACKEND_REFUSALS.get(backend_code) if isinstance(backend_code, str) else None
     if refusal is None:
         return None
+    if refusal.message:
+        return refusal, refusal.message
     message = body.get("message")
     return refusal, message if isinstance(message, str) and message else str(backend_code)
 
@@ -765,12 +810,12 @@ def map_sdk_exception(
                 details.setdefault("workspace_id", workspace_id)
             if project_id is not None:
                 details.setdefault("project_id", project_id)
+            unknown_message, unknown_hint = _uncertain_write_text(details)
             return CliError(
                 code=CODE_OUTCOME_UNKNOWN,
-                message="The request may have committed, but its outcome was not confirmed.",
+                message=unknown_message,
                 exit_status=EXIT_RETRYABLE,
-                hint="Do not replay this operation. Inspect the observed job/resource "
-                "and original request context before taking any further mutation.",
+                hint=unknown_hint,
                 details=details,
                 request_id=request_id,
                 retryable=False,

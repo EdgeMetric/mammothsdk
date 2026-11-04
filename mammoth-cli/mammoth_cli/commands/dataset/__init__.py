@@ -58,6 +58,7 @@ from mammoth_cli.services.listing import (
     search_page,
 )
 from mammoth_cli.services.schema_diff import column_samples, schema_diff
+from mammoth_cli.services.unknown_outcome import settle_unknown_outcome, trashed_or_gone
 from mammoth_cli.services.update_method import describe as describe_update_method
 from mammoth_cli.services.update_method import parse_mode
 
@@ -464,6 +465,14 @@ def dataset_data(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+#: mammothsdk#381 item 9: a project of 156 datasets was paged by hand after this refusal.
+_PAGING_HINT = (
+    "Every dataset's id and name in one call: --input '{\"names\": true}' (up to 500, "
+    "newest first, with total). For full rows, page with offset: "
+    '--input \'{"limit": 100, "offset": 100}\'.'
+)
+
+
 def _validate_paging(document: dict[str, Any]) -> None:
     """Refuse a ``limit`` outside 0..100 or a negative ``offset`` before any call is made."""
     for field, minimum, maximum in (("limit", 0, 100), ("offset", 0, None)):
@@ -479,6 +488,7 @@ def _validate_paging(document: dict[str, Any]) -> None:
                 code=CODE_INVALID_ARGUMENT,
                 message=f"'{field}' must be {bound}.",
                 exit_status=EXIT_USAGE,
+                hint=_PAGING_HINT if field == "limit" else "",
             )
 
 
@@ -826,7 +836,17 @@ def dataset_trash(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        # Trashing twice is harmless, so a lost reply is settled by one read of the dataset.
+        data = settle_unknown_outcome(
+            service,
+            lambda: service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id),
+            noun="dataset",
+            resource_id=dataset_id,
+            read_symbol="mammoth.api.datasets.DatasetsAPI.get",
+            read_kwargs={"dataset_id": dataset_id, "project_id": project_id},
+            applied=lambda record: trashed_or_gone(record, dataset_id),
+            done_status="trashed",
+        )
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

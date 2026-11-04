@@ -11,6 +11,7 @@ Tests every public method on every API sub-client:
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -1278,7 +1279,11 @@ class TestPipelineAPI:
         assert_called_with_method_and_endpoint(client._request_json, "PATCH", "/pipeline/tasks/7")
         assert_json_body(
             client._request_json,
-            {"patches": [{"op": "replace", "path": "params", "value": {"MATH": {}}}]},
+            {
+                "patches": [
+                    {"op": "replace", "path": "params", "value": {"DATAVIEW_ID": 42, "MATH": {}}}
+                ]
+            },
         )
 
     async def test_delete_task(self, client: MammothClient):
@@ -1977,6 +1982,24 @@ class TestConnectorsAPI:
                 connection_key="conn1",
                 ds_config_key="dsc1",
                 patch=[],
+            )
+        client._request_json.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "value", ["SELECT * FROM orders", {"query": "SELECT * FROM orders"}, {"ds_id": 10}]
+    )
+    async def test_update_ds_config_refuses_a_value_without_query_and_ds_id(
+        self, client: MammothClient, value: Any
+    ):
+        """NetSuite friction 11-03 (#3): the CLI example sent a bare query string, which the
+        server refused in validation; four attempts went by before the shape was found."""
+        op = DsConfigPatchOp(op="replace", path=DsConfigPatchPath.QUERY, value=value)
+        with pytest.raises(MammothValidationError, match="'query' and 'ds_id'"):
+            await client.connectors.update_ds_config(
+                connector_key="netsuite",
+                connection_key="conn1",
+                ds_config_key="dsc1",
+                patch=[op],
             )
         client._request_json.assert_not_called()
 

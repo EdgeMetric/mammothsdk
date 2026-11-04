@@ -122,6 +122,32 @@ def test_dataset_route_names_the_written_dataset_and_its_project(
     }
 
 
+def test_dataset_route_takes_a_one_off_copy_that_does_not_refresh(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 1: ``trigger_type``/``run_immediately`` were refused as unknown."""
+    fake_service.view_responses[(7, "to_dataset")] = 114
+    document = {
+        "dataset_name": "once",
+        "target_project_id": 57,
+        "trigger_type": "none",
+        "run_immediately": True,
+    }
+    data, _meta = view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=58,
+            extra_args=["7", "9"],
+            input_file=_doc(tmp_path, document),
+            yes=True,
+        )
+    )
+    assert fake_service.view_call_log == [
+        (7, "to_dataset", {"dataset_id": 9, **document}),
+    ]
+    assert data["refreshes_on_pipeline_run"] is False
+
+
 def test_dataset_route_reports_rows_after_for_a_new_dataset(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
@@ -475,6 +501,61 @@ def test_second_append_export_names_the_requested_mode(
     assert "APPEND_TO_DS" in error.value.message
     assert "REPLACE_IN_DS" not in error.value.message
     assert error.value.details["requested_save_as_mode"] == "APPEND_TO_DS"
+
+
+def test_append_into_a_target_exported_with_replace_names_the_mode_switch(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: the refusal said "rerun" when the user wanted another mode."""
+    existing = _internal_dataset_export(42, 1545)
+    existing.target_properties = {"TARGET_DS_ID": 1545, "SAVE_AS_DS_MODE": "REPLACE_IN_DS"}
+    fake_service.responses[_EXPORTS_LIST] = _exports_page(existing)
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(
+                    tmp_path,
+                    {"dataset_name": "feed", "target_ds_id": 1545, "save_as_mode": "APPEND_TO_DS"},
+                ),
+                yes=True,
+            )
+        )
+    assert error.value.code == "export_already_exists"
+    assert "switch export 42 to APPEND_TO_DS" in error.value.message
+    assert error.value.recovery_commands == [
+        """mammoth view export update 1758 42 --input '{"save_as_mode": "APPEND_TO_DS"}' --yes""",
+        "mammoth view export update 1758 42 --input "
+        """'{"patches": [{"op": "command", "path": "run"}]}' --yes""",
+    ]
+    assert fake_service.view_call_log == []
+
+
+def test_append_with_no_target_names_the_create_then_switch_route(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#381 item 3: APPEND with no target_ds_id was refused with no way forward."""
+    with pytest.raises(CliError) as error:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["1758", "1544"],
+                input_file=_doc(tmp_path, {"dataset_name": "hist", "save_as_mode": "APPEND_TO_DS"}),
+                yes=True,
+            )
+        )
+    assert error.value.code == "invalid_arguments"
+    assert error.value.hint.startswith(
+        "Export once without save_as_mode to create the dataset, then switch that export "
+        "to APPEND_TO_DS and run it: mammoth view export update 1758 EXPORT_ID --input "
+        """'{"save_as_mode": "APPEND_TO_DS"}' --yes && mammoth view export update 1758 """
+        """EXPORT_ID --input '{"patches": [{"op": "command", "path": "run"}]}' --yes."""
+    )
+    assert error.value.recovery_commands == []
+    assert fake_service.view_call_log == []
 
 
 def test_dataset_route_export_guard_matches_target_ds_id_as_int(
@@ -892,4 +973,33 @@ def test_dataset_route_refuses_a_view_in_draft_mode_instead_of_waiting_on_it(
 
     assert caught.value.code == "view_in_draft"
     assert "mammoth view draft auto-run 7" in (caught.value.hint or "")
+    assert fake_service.view_call_log == []
+
+
+def test_dataset_route_on_a_view_with_pending_draft_changes_does_not_point_at_auto_run(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """ILG friction 11-03 (#10): with unapplied draft changes the server ignores auto-run on,
+    so the clean-draft recipe did nothing. The refusal says the draft is pending, names who
+    can resolve it, and the copy route that leaves the draft alone."""
+    fake_service.responses[_PIPELINE_GET] = {"draft_mode": "dirty", "auto_run": False}
+
+    with pytest.raises(CliError) as caught:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, {"dataset_name": "orders_copy"}),
+                yes=True,
+            )
+        )
+
+    hint = caught.value.hint or ""
+    assert caught.value.code == "view_in_draft"
+    assert "aren't applied yet" in caught.value.message
+    assert "auto-run 7" not in hint
+    assert "mammoth view draft submit 7" in hint and "mammoth view draft discard 7" in hint
+    assert "mammoth view data query 7 -o csv" in hint
+    assert caught.value.details["draft_mode"] == "dirty"
     assert fake_service.view_call_log == []

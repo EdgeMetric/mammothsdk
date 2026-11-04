@@ -843,6 +843,8 @@ COMMAND_DISCOVERY_PURPOSES = {
         "export for the user to review"
     ),
     "workflow.update": "rename name describe a workflow pipeline purpose notes summary",
+    # NetSuite friction 11-03 (#14): "rename a dataset" ranked the column rename first.
+    "dataset.rename": "rename a dataset change the dataset name title relabel source data",
     "workflow.create": "name an unnamed workflow pipeline from the root dataset new workflow",
     # From URL: a dataset made from a web link (CSV, Excel or JSON file).
     "dataset.from-url.preview": (

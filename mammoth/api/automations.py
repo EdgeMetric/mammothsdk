@@ -61,6 +61,9 @@ ERR_TASK_ALERT_FIELDS = (
     "task_type='send_an_alert' requires `details.alert_type`, "
     "`details.recipients`, and `details.subject`."
 )
+ERR_TASK_RUN_EXPORTS_FIELDS = (
+    "task_type='run_exports' requires a non-empty `details.trigger_ids` (export step ids)."
+)
 ERR_CONDITION_AT_SPECIFIC_TIME = (
     "condition_type='at_specific_time' requires `details.interval` (> 0) " "and `details.start_at`."
 )
@@ -157,6 +160,8 @@ def _validate_task(task: AutomationTaskSpec) -> None:
         raise MammothValidationError(ERR_TASK_ALERT_FIELDS)
     elif tt is AutomationTaskType.APPLY_RETENTION_POLICY:
         _validate_retention_policy(d)
+    elif tt is AutomationTaskType.RUN_EXPORTS and (not d or not d.trigger_ids):
+        raise MammothValidationError(ERR_TASK_RUN_EXPORTS_FIELDS)
 
 
 def _validate_retention_policy(d: TaskDetailsSpec | None) -> None:

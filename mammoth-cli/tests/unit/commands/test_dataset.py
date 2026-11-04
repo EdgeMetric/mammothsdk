@@ -1407,3 +1407,57 @@ def test_last_list_page_does_not_point_to_names_true(fake_service: FakeMammothSe
     fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "a"}]}
     result, _ = dataset_cmd.dataset_list(_inv("dataset.list", project=180))
     assert "names" not in result["note"]
+
+
+def _outcome_unknown() -> CliError:
+    return CliError(
+        code="outcome_unknown",
+        message="The request may have committed, but its outcome was not confirmed.",
+        exit_status=1,
+    )
+
+
+def test_trash_with_a_lost_reply_is_a_success_when_the_dataset_reads_as_trashed(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_TRASH] = _outcome_unknown()
+    fake_service.responses[_GET] = {"id": 7, "status": "trashed"}
+
+    data, _ = dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert data["status"] == "trashed"
+    assert data["confirmed_by_read_back"] is True
+    assert [name for name, _ in fake_service.call_log] == [_TRASH, _GET]
+
+
+def test_trash_with_a_lost_reply_stays_unknown_when_the_dataset_is_still_live(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_TRASH] = _outcome_unknown()
+    fake_service.responses[_GET] = {"id": 7, "status": "active"}
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert excinfo.value.code == "outcome_unknown"
+    assert [name for name, _ in fake_service.call_log] == [_TRASH, _GET]
+
+
+def test_trash_with_a_lost_reply_stays_unknown_when_the_read_back_fails(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_TRASH] = _outcome_unknown()
+    fake_service.responses[_GET] = CliError(code="api_error", message="boom", exit_status=1)
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert excinfo.value.code == "outcome_unknown"
+
+
+def test_trash_reads_nothing_back_when_the_write_succeeds(
+    fake_service: FakeMammothService,
+) -> None:
+    dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert [name for name, _ in fake_service.call_log] == [_TRASH]

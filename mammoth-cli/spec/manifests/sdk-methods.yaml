@@ -3701,7 +3701,7 @@ methods:
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.duplicate
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.duplicate
   signature: 'duplicate(self, dashboard_id: ''int'', project_id: ''int | None'' = None, target_dataview_id:
-    ''int | None'' = None) -> ''DuplicateDashboardResponse'''
+    ''int | None'' = None, title: ''str | None'' = None, keep_tags: ''bool'' = False) -> ''DuplicateDashboardResponse'''
   openapi_operation_ids: []
   canonical_command: dashboard.duplicate
   alias_of: null
@@ -11555,7 +11555,8 @@ methods:
     None, save_as_mode: ''SaveAsDatasetMode'' = <SaveAsDatasetMode.REPLACE: ''REPLACE_IN_DS''>, column_mapping:
     ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition |
     CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None, target_project_id:
-    ''int | None'' = None) -> ''int'''
+    ''int | None'' = None, trigger_type: ''TriggerType'' = <TriggerType.PIPELINE: ''pipeline''>, run_immediately:
+    ''bool'' = True) -> ''int'''
   openapi_operation_ids: []
   canonical_command: view.export.dataset
   alias_of: null
