@@ -366,6 +366,8 @@ class _Refusal:
 
     code: str
     hint: str
+    #: Replaces the backend's own words when they name no cause the user can act on.
+    message: str | None = None
 
 
 _PLAN_LIMIT_REFUSAL = _Refusal(
@@ -384,10 +386,22 @@ _FEATURE_DISABLED_REFUSAL = _Refusal(
         "the workspace admin to turn it on."
     ),
 )
-#: Backend codes that refuse an action because of the account (its plan, its AI quota, a
+_INACTIVE_SUBSCRIPTION_REFUSAL = _Refusal(
+    code=CODE_PLAN_LIMIT,
+    hint=(
+        "The workspace has no active subscription or trial, so Mammoth refuses every "
+        "change in it while reads still work; the ids and permissions are not the "
+        "problem. Do not retry or work around it: tell the user the workspace needs "
+        "an active plan or trial, which they can start from Billing or ask Mammoth "
+        "support about."
+    ),
+    message="This workspace has no active subscription, so Mammoth refuses changes in it.",
+)
+#: Backend codes that refuse an action because of the account (its subscription, plan, AI quota, a
 #: feature switched off), not the request or the user's permissions: no id or role change
 #: fixes them, and a retry gives the same answer.
 _BACKEND_REFUSALS: dict[str, _Refusal] = {
+    "4SUBS012": _INACTIVE_SUBSCRIPTION_REFUSAL,  # INVALID_SUBSCRIPTION
     "4SUBS101": _PLAN_LIMIT_REFUSAL,  # FEATURE_NOT_AVAILABLE_ON_PLAN
     "4SUBS102": _PLAN_LIMIT_REFUSAL,  # CONNECTOR_NOT_AVAILABLE_ON_PLAN
     "4SUBS103": _PLAN_LIMIT_REFUSAL,  # PLAN_PAYMENT_REQUIRED
@@ -428,6 +442,8 @@ def _backend_refusal(body: Any, status: int | None) -> tuple[_Refusal, str] | No
     refusal = _BACKEND_REFUSALS.get(backend_code) if isinstance(backend_code, str) else None
     if refusal is None:
         return None
+    if refusal.message:
+        return refusal, refusal.message
     message = body.get("message")
     return refusal, message if isinstance(message, str) and message else str(backend_code)
 

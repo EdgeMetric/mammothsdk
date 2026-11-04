@@ -6,21 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (mammoth-io)
+### Added (next mammoth-io)
 
 - `automation create` takes `task_type: "run_exports"` (a Scheduled export) with `details.trigger_ids`, the export step ids to send. An empty or missing `trigger_ids` is refused before any request, as the server does.
 
-### Fixed (mammoth-io)
+### Fixed (next mammoth-io)
 
 - `pipeline.update_task` (and `view task update`) puts the view's `DATAVIEW_ID` into the new params when the caller left it out, as `add_task` does. A `DATAVIEW_ID` the caller gave is kept.
 
-### Fixed (mammoth-cli)
+### Fixed (next mammoth-cli)
 
 - `dataset trash` and `connector draft discard` no longer report `outcome_unknown` when the write went through but its reply was lost. Both are safe to ask twice about, so the CLI reads the dataset (trashed?) or the draft (gone?) once and reports success, with `confirmed_by_read_back`, when the change is in place; otherwise the `outcome_unknown` error stays.
-
 - `view data aggregate` takes `COUNT_DISTINCT` (any case) as `DISTINCT_COUNT`, and refuses an unknown `function` before any call, listing SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT and MEDIAN. The server used to reject it only after the call, with a generic error.
-
 - `automation update` refuses `patch` given together with `add_datasets`/`remove_datasets` (`invalid_argument`, nothing sent). It used to send the plain patch, drop the dataset fields and report ok. `--dry-run` of a dataset change no longer trips the "`patch` must be a non-empty list" check.
+- A change refused because the workspace has no active subscription (backend `4SUBS012`, for example a trial still waiting on checkout) now reads `plan_limit`, "This workspace has no active subscription, so Mammoth refuses changes in it.", with a hint to start a plan or trial from Billing or ask Mammoth support. It used to read "Mammoth denied access" and told the agent to check the ids and ask an administrator for permission, which no one in a trial can act on.
 
 ## mammoth-cli 2.4.2 (2026-11-02)
 
