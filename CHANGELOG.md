@@ -54,7 +54,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
 - `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
 
-### Fixed (next mammoth-mcp-server)
+## mammoth-mcp-server 0.2.12 (2026-11-04)
+
+### Fixed (mammoth-mcp-server 0.2.12)
 
 - An upload in Claude now carries on by itself. `check_upload` told the model to stop after a couple of rounds, so its turn ended while the person was still picking a file, and the uploader cannot start a turn: Claude puts its message in the message box, with a warning, for the person to send. The model now keeps calling `check_upload` for five minutes from `request_upload`, as it does `find_new_connection`, and the uploader leaves the message box alone while the model is still there. That box is still the fallback once the five minutes are up. The connect button behaves the same way.
 - `limit` on `list_connectors`, `list_projects`, `list_datasets`, `list_views` and `list_files` now says in the tool's schema that it takes 1 to 100. A model that asked for 200 got a bare "Validation error" back from Mammoth.
