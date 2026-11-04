@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .config import HOST, MCP_PATH, PORT
 from .cors import McpCors
@@ -13,6 +14,30 @@ from .sdk import close_http_client
 from .server import mcp_server, register_tools
 from .store import cipher
 from .telemetry import write_events
+
+
+class SlashedMcpPath:
+    """ASGI middleware: `/mcp/` is the same endpoint as `/mcp`.
+
+    Behind TLS termination the server sees `http`, so the redirect Starlette
+    would send points at `http://`. A client that follows it either sends its
+    token in the clear or loses it, so `/mcp/` is served, not redirected.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Hand the request on, with `/mcp/` rewritten to `/mcp`.
+
+        Args:
+            scope: The ASGI connection scope.
+            receive: The ASGI receive channel.
+            send: The ASGI send channel.
+        """
+        if scope["type"] == "http" and scope["path"] == f"{MCP_PATH}/":
+            scope = {**scope, "path": MCP_PATH}
+        await self.app(scope, receive, send)
 
 
 def check_settings() -> None:
@@ -52,7 +77,9 @@ def create_app() -> Starlette:
         # another origin cannot send the bearer token: CORS preflight stops it.
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
+    app.router.redirect_slashes = False  # Every redirect it sends would point at `http://`.
     app.add_middleware(McpCors)
+    app.add_middleware(SlashedMcpPath)  # Added last, so it runs first: `/mcp/` gets CORS too.
     mcp_lifespan = app.router.lifespan_context
 
     @asynccontextmanager

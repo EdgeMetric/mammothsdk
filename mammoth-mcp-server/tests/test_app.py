@@ -50,6 +50,35 @@ class TestWhoMayCallTheMcpEndpoint:
         assert refused.status_code == 401
         assert "resource_metadata=" in refused.headers["www-authenticate"]
 
+    def test_the_path_with_a_trailing_slash_is_the_same_endpoint(self, server: TestClient) -> None:
+        with a_fake_api() as api:
+            knows_the_token(api)
+            answered = server.post("/mcp/", json=LIST_TOOLS, headers=AS_THE_USER)
+
+        assert answered.status_code == 200, answered.text
+        assert answered.json()["result"]["tools"]
+
+    def test_the_path_with_a_trailing_slash_asks_for_sign_in_and_allows_browsers(
+        self, server: TestClient
+    ) -> None:
+        refused = server.post("/mcp/", json=LIST_TOOLS, headers=JSON, follow_redirects=False)
+
+        assert refused.status_code == 401
+        assert "resource_metadata=" in refused.headers["www-authenticate"]
+        assert "www-authenticate" in refused.headers["access-control-expose-headers"].lower()
+
+    def test_a_browser_preflight_reaches_the_path_with_a_trailing_slash(
+        self, server: TestClient
+    ) -> None:
+        assert server.options("/mcp/").status_code == 204
+
+    @pytest.mark.parametrize("path", ["/upload/", "/.well-known/oauth-protected-resource/mcp/"])
+    def test_no_path_redirects_to_plain_http(self, server: TestClient, path: str) -> None:
+        answered = server.get(path, follow_redirects=False)
+
+        assert answered.status_code == 404
+        assert "location" not in answered.headers
+
     def test_a_browser_preflight_is_answered_without_a_token(self, server: TestClient) -> None:
         preflight = server.options(
             "/mcp",
