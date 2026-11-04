@@ -1359,11 +1359,13 @@ class MammothClient:
         )
 
         body: dict[str, Any] = {}
+        app_replied = False
         if not 200 <= response.status_code < 300:
             try:
                 parsed_body = response.json()
                 if isinstance(parsed_body, dict):
                     body = safe_response_body(parsed_body)
+                    app_replied = True
             except (ValueError, TypeError):
                 body = {}
 
@@ -1388,10 +1390,17 @@ class MammothClient:
         job_handle, resource_handle = observed_handles(body)
         observed_phase = body.get("phase") or body.get("execution_phase")
         phase = observed_phase if isinstance(observed_phase, str) else "response"
-        error_details = {
+        error_details: dict[str, Any] = {
             "response_body": body,
             "exception_type": None,
         }
+        if not 200 <= response.status_code < 300:
+            error_details["elapsed_ms"] = round((time.perf_counter() - started) * 1000)
+            # A 502/503 with no JSON body is the gateway's own page: Mammoth's service sent
+            # nothing back (NetSuite friction 11-03, #11: nginx answered a POST in 2 ms while
+            # the service restarted). The CLI weighs it with ``elapsed_ms``.
+            if response.status_code in (502, 503) and not app_replied:
+                error_details["gateway_reply"] = True
 
         if response.status_code == 401:
             detail = "Invalid API credentials"

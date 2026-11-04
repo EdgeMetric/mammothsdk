@@ -6,6 +6,54 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `automation create` takes `task_type: "run_exports"` (a Scheduled export) with `details.trigger_ids`, the export step ids to send. An empty or missing `trigger_ids` is refused before any request, as the server does.
+- `view.export.to_dataset` takes `trigger_type` and `run_immediately`. `trigger_type="none"` makes a one-off copy: it writes the dataset once and adds no step to the view's pipeline, so the copy does not change when the view re-runs. The copy is found by name in its target project. `run_immediately=False` (which would write nothing) and a `"schedule"` trigger are refused, each with what to pass instead. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
+- `dashboards.duplicate` takes `title` and `keep_tags`. The server titles a copy "Copy of <title>" and gives it no tags; these two set both on the copy in the same call. `keep_tags` reads the source's tags from its project's dashboard list, the only read that carries them. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
+
+### Fixed (next mammoth-io)
+
+- `pipeline.update_task` (and `view task update`) puts the view's `DATAVIEW_ID` into the new params when the caller left it out, as `add_task` does. A `DATAVIEW_ID` the caller gave is kept.
+
+### Added (next mammoth-cli)
+
+- `automation update ID --input '{"schedule": {"by_week_day": ["mo"], "start_at": "..."}}'` moves a data-refresh automation's schedule. Only the fields given change (`frequency`, `interval`, `by_week_day`, `by_month_day`, `start_at`, `until`). The datasets are kept and the edit starts no run. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
+- `dashboard duplicate` takes `title` and `keep_tags`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
+- `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
+- `view analyze` gives each view a `lineage`: the other views its join and lookup steps read (`views_read`), each such step with its join type (`reads`), and a line in words ("joins view 107990 (step 1, LEFT)"). Mapping where 16 views got their data from took a task read per view; now it's one `view analyze` with every id. If the task list can't be read, the view is still analyzed, without `lineage`.
+- `view export download` and `view export csv` name each DATE column written in a non-ISO display format (`date_formats`, e.g. `{"Term": "%d/%m/%Y"}`) with a note, since `view data aggregate` returns ISO dates. Before this, a comparison of an export against an aggregate silently matched 0 rows.
+
+### Fixed (next mammoth-cli)
+
+- `dataset trash` and `connector draft discard` no longer report `outcome_unknown` when the write went through but its reply was lost. Both are safe to ask twice about, so the CLI reads the dataset (trashed?) or the draft (gone?) once and reports success, with `confirmed_by_read_back`, when the change is in place; otherwise the `outcome_unknown` error stays.
+- `view data aggregate` takes `COUNT_DISTINCT` (any case) as `DISTINCT_COUNT`, and refuses an unknown `function` before any call, listing SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT and MEDIAN. The server used to reject it only after the call, with a generic error.
+- `automation update` refuses `patch` given together with `add_datasets`/`remove_datasets` (`invalid_argument`, nothing sent). It used to send the plain patch, drop the dataset fields and report ok. `--dry-run` of a dataset change no longer trips the "`patch` must be a non-empty list" check.
+- A change refused because the workspace has no active subscription (backend `4SUBS012`, for example a trial still waiting on checkout) now reads `plan_limit`, "This workspace has no active subscription, so Mammoth refuses changes in it.", with a hint to start a plan or trial from Billing or ask Mammoth support. It used to read "Mammoth denied access" and told the agent to check the ids and ask an administrator for permission, which no one in a trial can act on.
+- `view export dataset` accepts `trigger_type` and `run_immediately`, which `schema get` already listed. With `trigger_type: "none"` the result reports `refreshes_on_pipeline_run: false`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
+- A cross-project `view export dataset` reads the new dataset back in the target project. Before, it read it in the source project and reported a good copy as `unreadable` and `verified: false`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 2)
+- Switching an export between REPLACE and APPEND now says how. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 3)
+  - `view export update` refuses `patches` given with shorthand fields such as `save_as_mode`. Before, those fields were dropped without a word.
+  - `view export dataset` with `APPEND_TO_DS` and no `target_ds_id` says to create the dataset first, then switch that export and run it.
+  - An export into a target the view already exports into with the other mode now hands back the commands to switch the mode and run the export, instead of "rerun the pipeline". A pipeline rerun does not run an edited export.
+  - `view export update --help` shows the switch and the run patch.
+- `join_check` lists `unmatched_keys` across the whole view. Before, the keys came from the first data page only, which can be all matches: 3,399 unmatched rows were reported with `[]`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 4)
+  - The key overlap of both join keys used to run only when `foreign_dataset_id` was given. It now looks up the other view's dataset, and it is read before the join writes.
+  - On an OUTER join, the rows added for keys only the other view has are reported as such. They are no longer reported as a key that repeats.
+- An empty `view data explore` or `view data aggregate` whose text condition matches rows when case is ignored now says so: `empty_result` gives the count, and `condition_ignoring_case` is the condition to re-run. Before, a `CONTAINS "vend"` against `VendBill` came back empty with no warning. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 5)
+- A refused condition carries the condition grammar with examples in `details.condition_grammar`. It no longer lists the command's input fields. The Explore card's filter keys (`include`, `exclude`, `contains`, `range`, `blanks`) are refused with the condition to write instead. `view data explore --help` says it takes the same grammar as `aggregate`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 6)
+- `automation update` refuses a `details` patch that has `conditions` but no `tasks`. Mammoth answered it with success and kept the old schedule. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
+- `view analyze` takes up to 50 view ids in one call, up from 12. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
+- `dataset list` with a `limit` over 100 now names `{"names": true}`, which returns every dataset's id and name in one call, and paging with `offset`. Before, the refusal gave no route. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
+- A view that is not found now says whether it is in the project's trash: who trashed it and when, the days until it is deleted for good, and the `view restore` command. This applies to any view-scoped not-found, a parent-discovery miss, and `view analyze`. A view that is not in the trash either is reported as deleted for good or in another project. Before, the error was "not found in any dataset" or "The requested Mammoth resource does not exist". ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 10)
+- `view export dataset` on a view whose draft holds unapplied changes no longer says to turn auto-run on: the server ignores that until the draft is submitted or discarded, so the export was refused again. The refusal now says the draft is pending, names `view draft submit` and `view draft discard`, and gives a copy route that leaves the draft alone (`view data query -o csv`, then `file upload`). A draft with no changes keeps the auto-run recipe.
+
+### Fixed (next mammoth-io, mammoth-cli)
+
+- `connector ds-config update`: the example now sends `value` as `{"query": ..., "ds_id": ...}`, the shape the server takes, and the SDK refuses a bare query string (or a value missing `query` or `ds_id`) before any request. The old example was refused in server validation.
+- A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
+- `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
+
 ### Fixed (next mammoth-mcp-server)
 
 - An upload in Claude now carries on by itself. `check_upload` told the model to stop after a couple of rounds, so its turn ended while the person was still picking a file, and the uploader cannot start a turn: Claude puts its message in the message box, with a warning, for the person to send. The model now keeps calling `check_upload` for five minutes from `request_upload`, as it does `find_new_connection`, and the uploader leaves the message box alone while the model is still there. That box is still the fallback once the five minutes are up. The connect button behaves the same way.

@@ -15,6 +15,7 @@ from typing import Any
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
+    _view_parent_dataset_id,
     apply_column_renames,
 )
 from mammoth_cli.commands.view.columns import _dataview_metadata
@@ -625,8 +626,9 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
     preview: dict[str, Any] = {}
 
     def before(service: Any, dataset_id: int) -> Any:
-        if invocation.dry_run:
-            preview.update(_join_preview(service, dataset_id, view_id, document, project_id))
+        # Read before the write: an OUTER join fills this view's key column with the
+        # other view's keys, so an overlap read afterwards finds every key matched.
+        preview.update(_join_preview(service, invocation, dataset_id, view_id, document))
         return join_snapshot(service, dataset_id, view_id, project_id)
 
     def after(service: Any, dataset_id: int, state: Any, data: Any) -> Any:
@@ -638,7 +640,7 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
             state,
             join_after_snapshot(service, dataset_id, view_id, project_id, state),
             document,
-            _join_preview(service, dataset_id, view_id, document, project_id),
+            preview,
         )
 
     try:
@@ -650,15 +652,27 @@ def view_transform_join(invocation: Invocation) -> HandlerResult:
 
 
 def _join_preview(
-    service: Any, dataset_id: int, view_id: int, document: dict[str, Any], project_id: int | None
+    service: Any,
+    invocation: Invocation,
+    dataset_id: int,
+    view_id: int,
+    document: dict[str, Any],
 ) -> dict[str, Any]:
-    """The dry run's key overlap; the other view's dataset is ``foreign_dataset_id``."""
+    """The key overlap of both join keys, read whole; the other view's dataset is looked up
+    when ``foreign_dataset_id`` is left out (mammothsdk#381 item 4: without it the join
+    check fell back to the first page, and listed no unmatched keys past it)."""
     foreign, foreign_dataset = document.get("foreign_view"), document.get("foreign_dataset_id")
     if isinstance(foreign, dict):
         foreign_dataset = foreign_dataset or foreign.get("dataset_id")
         foreign = foreign.get("view_id", foreign.get("dataview_id", foreign.get("id")))
-    if not isinstance(foreign, int) or not isinstance(foreign_dataset, int):
-        return {"checked": False, "error": "foreign_view/foreign_dataset_id unknown"}
+    if not isinstance(foreign, int):
+        return {"checked": False, "error": "foreign_view unknown"}
+    if not isinstance(foreign_dataset, int):
+        try:
+            foreign_dataset = _view_parent_dataset_id(service, invocation, foreign)
+        except Exception as exc:  # noqa: BLE001 -- the check is advice; the join already ran
+            return {"checked": False, "error": f"{type(exc).__name__}: {exc}"}
+    project_id = invocation.project
     return join_dry_run_preview(
         service, (dataset_id, view_id), (foreign_dataset, foreign), document, project_id
     )

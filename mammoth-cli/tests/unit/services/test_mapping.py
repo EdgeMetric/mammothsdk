@@ -12,6 +12,7 @@ import threading
 from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -372,6 +373,35 @@ def test_unclassified_mutation_gateway_and_malformed_success_are_unknown() -> No
         assert "Do not replay" in mapped.hint
 
 
+@pytest.mark.parametrize(
+    ("details", "never_reached"),
+    [
+        ({"gateway_reply": True, "elapsed_ms": 2}, True),
+        ({"gateway_reply": True, "elapsed_ms": 4000}, False),  # the service may have worked
+        ({"elapsed_ms": 2}, False),  # the service itself answered
+    ],
+)
+def test_a_fast_gateway_page_on_a_write_says_it_most_likely_never_arrived(
+    details: dict[str, Any], never_reached: bool
+) -> None:
+    """NetSuite friction 11-03 (#11): a POST /datasets got nginx's 502 in 2 ms and the CLI only
+    said "outcome unknown"; finding out a retry was safe took a log search."""
+    error = MammothAPIError(
+        "gateway",
+        status_code=502,
+        method="POST",
+        operation_state="outcome_unknown",
+        details=details,
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "outcome_unknown"
+    assert mapped.retryable is False
+    assert ("most likely never reached it" in mapped.message) is never_reached
+    assert ("Do not replay" in (mapped.hint or "")) is not never_reached
+
+
 @pytest.mark.parametrize("status", [500, 502, 504, 200])
 def test_sdk_classified_ambiguous_mutation_is_unknown_regardless_of_status(status: int) -> None:
     error = MammothAPIError(
@@ -723,6 +753,31 @@ def test_a_plan_or_quota_refusal_names_the_plan_not_the_ids(status: int) -> None
     assert mapped.authorization_required is False
     assert mapped.message == message
     assert "ids" not in mapped.to_envelope()["error"]["summary"]
+    assert "Check the ids" not in (mapped.hint or "")
+
+
+def test_an_inactive_subscription_names_the_subscription_not_an_administrator() -> None:
+    # 4SUBS012 (INVALID_SUBSCRIPTION) read "ask an administrator for permission" to an
+    # agent in a trial workspace stuck in pending_checkout, which no administrator fixes.
+    error = MammothAPIError(
+        "Forbidden",
+        status_code=403,
+        method="POST",
+        operation_state="failed",
+        response_body={
+            "error_code": "4SUBS012",
+            "name": "INVALID_SUBSCRIPTION",
+            "message": "Invalid subscription",
+        },
+    )
+
+    mapped = map_sdk_exception(error)
+
+    assert mapped.code == "plan_limit"
+    assert mapped.authorization_required is False
+    assert mapped.retryable is False
+    assert "no active subscription" in mapped.message
+    assert "administrator" not in (mapped.hint or "")
     assert "Check the ids" not in (mapped.hint or "")
 
 

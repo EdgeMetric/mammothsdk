@@ -103,6 +103,7 @@ class TestCreate:
                     "threshold_unit": "daily",
                 },
             ),
+            (AutomationTaskType.RUN_EXPORTS, {"trigger_ids": [12, 15]}),
         ],
     )
     async def test_create_accepts_every_required_task_type(self, task_type, details_kwargs) -> None:
@@ -130,6 +131,40 @@ class TestCreate:
                     )
                 ],
             )
+
+
+class TestRunExports:
+    async def test_create_sends_trigger_ids(self) -> None:
+        api, mock_client = _make_api()
+        mock_client._request_json.return_value = {"id": 1}
+        await api.create(
+            name="Weekly export",
+            description="",
+            tasks=[
+                AutomationTaskSpec(
+                    task_type=AutomationTaskType.RUN_EXPORTS,
+                    details=TaskDetailsSpec(trigger_ids=[12, 15]),
+                )
+            ],
+        )
+        body = mock_client._request_json.call_args.kwargs["json"]
+        assert body["tasks"][0] == {
+            "task_type": "run_exports",
+            "details": {"trigger_ids": [12, 15]},
+        }
+
+    @pytest.mark.parametrize("details", [None, TaskDetailsSpec(), TaskDetailsSpec(trigger_ids=[])])
+    async def test_create_without_trigger_ids_raises(self, details) -> None:
+        api, mock_client = _make_api()
+        with pytest.raises(MammothValidationError, match="trigger_ids"):
+            await api.create(
+                name="x",
+                description="",
+                tasks=[
+                    AutomationTaskSpec(task_type=AutomationTaskType.RUN_EXPORTS, details=details)
+                ],
+            )
+        mock_client._request_json.assert_not_called()
 
 
 class TestGet:

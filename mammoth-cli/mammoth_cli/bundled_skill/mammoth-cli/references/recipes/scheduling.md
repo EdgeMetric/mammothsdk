@@ -6,8 +6,9 @@ request:
 
 - **`automation`** — the general-purpose recurring/triggered task engine.
   Use it for `run_data_retrieval` (refresh a cloud dataset), `append_data`
-  (add new rows from a folder or dataset), `send_an_alert` (email), and
-  `pull_cloud_files` (land new cloud files into a folder). Recurrence is one
+  (add new rows from a folder or dataset), `send_an_alert` (email),
+  `pull_cloud_files` (land new cloud files into a folder), and `run_exports`
+  (a Scheduled export: send existing export steps on a schedule). Recurrence is one
   of the automation's `conditions`, type `at_specific_time`, alongside the
   `tasks` it runs. This is what "schedule a daily refresh" almost always
   means.
@@ -48,11 +49,32 @@ mammoth automation create 'Nightly refresh' --yes --input '{
 }'
 ```
 
+A Scheduled export sends export steps that already exist on a view, by id
+(`mammoth view export list VIEW_ID DATASET_ID` shows them); `trigger_ids` must not be empty:
+
+```bash
+mammoth automation create 'Weekly export' --yes --input '{
+  "tasks": [{"task_type": "run_exports", "details": {"trigger_ids": [12, 15]}}],
+  "conditions": [
+    {"condition_type": "at_specific_time", "details": {
+      "frequency": "weekly", "interval": 1, "start_at": "2027-01-04T07:00:00Z"
+    }}
+  ]
+}'
+```
+
 To change which datasets a data-refresh automation refreshes, use
 `automation update ID --yes --input '{"add_datasets": [43], "remove_datasets": [42]}'`
 instead of a `patch`. It keeps the schedule, refuses to remove every dataset
 and refuses an automation with no recurring schedule (the server would start a
 refresh of every dataset).
+
+To move its schedule (another weekday or time), use
+`automation update ID --yes --input '{"schedule": {"by_week_day": ["mo"], "start_at": "2026-11-09T07:00:00"}}'`.
+Only the fields given change (frequency, interval, by_week_day, by_month_day,
+start_at, until); the datasets are kept and the edit starts no run. A `patch`
+whose `details` has `conditions` but no `tasks` is refused: Mammoth answers it
+with success and keeps the old schedule.
 
 `run_data_retrieval` only refreshes a cloud-connected dataset. A dataset made
 from an uploaded file has no source to refresh from. A URL (`weburl`) dataset

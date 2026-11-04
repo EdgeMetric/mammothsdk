@@ -1926,7 +1926,7 @@ Total commands: 875.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.update_ds_config`
-- Agent example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": "SELECT * FROM orders"}]}' --yes`
+- Agent example: `mammoth connector ds-config update postgres prod-warehouse orders-config --input '{"patch": [{"op": "replace", "path": "query", "value": {"query": "SELECT * FROM orders", "ds_id": 123}}]}' --yes`
 
 ### `mammoth connector get`
 

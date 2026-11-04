@@ -108,3 +108,33 @@ def test_condition_schema_enumerates_the_valid_operators() -> None:
 
     schema = json_schema(Condition)
     assert schema["oneOf"][0]["properties"]["operator"]["enum"] == list(OPERATOR_NAMES)
+
+
+@pytest.mark.parametrize(
+    ("key", "operator"),
+    [
+        ("range", "IN_RANGE"),
+        ("contains", "CONTAINS"),
+        ("include", "IN_LIST"),
+        ("exclude", "NOT_IN_LIST"),
+        ("blanks", "IS_EMPTY"),
+    ],
+)
+def test_an_explore_card_key_is_answered_with_the_leaf_that_does_it(
+    key: str, operator: str
+) -> None:
+    """mammothsdk#381 item 6: `{"range": ...}` said only "Unknown condition field(s)"."""
+    with pytest.raises(CliError) as caught:
+        compile_condition({key: ["x"]})
+    assert caught.value.code == "invalid_condition"
+    assert f'"operator": "{operator}"' in (caught.value.hint or "")
+    assert "condition_grammar" in caught.value.details
+
+
+def test_every_grammar_example_compiles() -> None:
+    from mammoth_cli.services.conditions import CONDITION_GRAMMAR
+
+    for name, example in CONDITION_GRAMMAR.items():
+        if name == "and":
+            example = {"and": example["and"][:1]}
+        compile_condition(example)

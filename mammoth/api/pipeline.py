@@ -105,6 +105,15 @@ PIPELINE_RUNNING_STATES = frozenset({"modifying", "modified", "running"})
 ERR_FROM_SEQUENCE_NON_NEGATIVE = "`from_sequence` must be >= 0, got {0}."
 ERR_SAMPLE_SIZE_RANGE = "`sample_size` must be an integer from 1 through 500, got {0!r}."
 PREVIEW_SAMPLE_SIZE_MAX = 500
+
+
+def _with_dataview_id(spec: Any, dataview_id: int) -> Any:
+    """``spec`` with ``DATAVIEW_ID`` set when the caller left it out (as ``add_task`` does)."""
+    if isinstance(spec, dict) and "DATAVIEW_ID" not in spec:
+        return {"DATAVIEW_ID": dataview_id, **spec}
+    return spec
+
+
 # Keys the server writes into a task's params; ``list_tasks`` returns them, and an
 # older server counts each as a second transform param and refuses the edit. They are
 # dropped before any task spec is sent, so a read -> edit -> write round-trips. The
@@ -457,9 +466,13 @@ class PipelineAPI:
         Returns:
             Updated task dict.
         """
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         operations = [
             (
-                {**patch, "value": strip_read_only_task_keys(patch.get("value"))}
+                {
+                    **patch,
+                    "value": _with_dataview_id(strip_read_only_task_keys(patch.get("value")), dv),
+                }
                 if patch.get("path") == "params"
                 else patch
             )
@@ -467,11 +480,14 @@ class PipelineAPI:
         ]
         if task_spec is not None:
             operations.append(
-                {"op": "replace", "path": "params", "value": strip_read_only_task_keys(task_spec)}
+                {
+                    "op": "replace",
+                    "path": "params",
+                    "value": _with_dataview_id(strip_read_only_task_keys(task_spec), dv),
+                }
             )
         if not operations:
             raise MammothValidationError("Provide `task_spec` or `patches` to update a task.")
-        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
         params = {"skip_validation": skip_validation} if skip_validation is not None else None
         try:
             response = await self._client._request_json(

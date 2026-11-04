@@ -16,6 +16,7 @@ A spec is one of:
 from __future__ import annotations
 
 import difflib
+import json
 from functools import cache, reduce
 from typing import Any
 
@@ -157,12 +158,50 @@ def _resolve_operator(raw: Any) -> str:
     )
 
 
-def _invalid(message: str) -> CliError:
+#: The whole condition grammar, shown with every refusal instead of the command's fields.
+CONDITION_GRAMMAR = {
+    "leaf": {"column": "Region", "operator": "IN_LIST", "value": ["West", "East"]},
+    "range": {
+        "column": "Order Date",
+        "operator": "IN_RANGE",
+        "value": ["2026-10-01", "2026-10-31"],
+    },
+    "text": {"column": "Type", "operator": "CONTAINS", "value": "Vend", "case_sensitive": False},
+    "blank": {"column": "Region", "operator": "IS_EMPTY"},
+    "and": {"and": [{"column": "Sales", "operator": ">=", "value": 100}, "..."]},
+    "not": {"not": {"column": "Region", "operator": "EQ", "value": "West"}},
+}
+
+#: Keys of the Explore card's filter (and other guesses) mapped to the leaf they mean.
+_CARD_KEYS = {
+    "include": "IN_LIST",
+    "exclude": "NOT_IN_LIST",
+    "contains": "CONTAINS",
+    "range": "IN_RANGE",
+    "blanks": "IS_EMPTY",
+}
+
+
+def _invalid(message: str, hint: str = "") -> CliError:
     return CliError(
         code="invalid_condition",
         message=message,
         exit_status=EXIT_USAGE,
-        hint='Use {"column","operator","value"}, or {"and"/"or":[...]}, or {"not":{...}}.',
+        hint=hint or 'Use {"column","operator","value"}, or {"and"/"or":[...]}, or {"not":{...}}.',
+        details={"condition_grammar": CONDITION_GRAMMAR},
+    )
+
+
+def _card_key_refusal(key: str) -> CliError:
+    """A card-style key (``{"range": ...}``) answered with the leaf that does the same."""
+    operator = _CARD_KEYS[key]
+    example: dict[str, Any] = {"column": "<column>", "operator": operator}
+    if operator != "IS_EMPTY":
+        example["value"] = ["<low>", "<high>"] if operator == "IN_RANGE" else ["<value>"]
+    return _invalid(
+        f"'{key}' is the Explore card's filter, not a condition.",
+        hint=f"Write it as {json.dumps(example)}; combine several with "
+        '{"and": [...]} or {"or": [...]}.',
     )
 
 
@@ -201,6 +240,9 @@ def compile_condition(spec: Any) -> _ConditionResult:
         return ~compile_condition(spec["not"])
 
     unknown = set(spec) - _LEAF_FIELDS
+    card_keys = sorted(unknown & set(_CARD_KEYS))
+    if card_keys:
+        raise _card_key_refusal(card_keys[0])
     if unknown:
         raise _invalid(f"Unknown condition field(s): {', '.join(sorted(unknown))}.")
     if "column" not in spec or "operator" not in spec:

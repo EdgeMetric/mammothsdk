@@ -244,6 +244,49 @@ _RIGHT_CHECK_FIELDS = (
 )
 
 
+def _unmatched_keys(
+    rows: list[dict[str, Any]], added: list[str], left_key: Any, right: dict[str, Any] | None
+) -> list[str]:
+    """Keys of this view with no partner: from the whole-view key overlap when it ran.
+
+    The first page alone can be all matches while thousands of rows further down
+    are not (mammothsdk#381 item 4: ``unmatched_keys`` was empty with 3,399
+    unmatched rows), so the page is only the fallback.
+    """
+    if right and right.get("checked") and isinstance(right.get("unmatched_keys"), list):
+        return list(right["unmatched_keys"])
+    missing = [r for r in rows if all(r.get(c) in (None, "") for c in added)]
+    keys = sorted({str(r.get(left_key)) for r in missing if left_key in r})
+    return keys[:_MAX_UNMATCHED_KEYS]
+
+
+def _growth_notes(grew: int, document: dict[str, Any], right: dict[str, Any] | None) -> list[str]:
+    """Why the join added rows. An OUTER join also keeps the other view's unmatched rows,
+    which are not repeats (mammothsdk#381 item 4)."""
+    repeat_note = (
+        "{n} rows come from a key that repeats in the other view, so matching rows "
+        "repeat. Totals over this view count them twice; use view transform lookup "
+        "for one value per key."
+    )
+    if str(document.get("join_type") or "").upper() != "OUTER":
+        return [f"The join added {grew} rows: " + repeat_note.format(n="these")]
+    if not (right and right.get("checked")):
+        return [
+            f"The join added {grew} rows: keys only the other view has (an OUTER join "
+            "keeps them), a key that repeats there, or both."
+        ]
+    right_only = int(right.get("right_unmatched_rows") or 0)
+    notes = []
+    if right_only:
+        notes.append(
+            f"{min(right_only, grew)} of the {grew} added rows are keys only the other view "
+            "has: an OUTER join keeps them, with this view's columns blank."
+        )
+    if grew > right_only:
+        notes.append(repeat_note.format(n=grew - right_only))
+    return notes
+
+
 def with_join_check(
     data: Any,
     before: Any,
@@ -289,9 +332,7 @@ def with_join_check(
             rows_checked=checked,
         )
         if unmatched:
-            missing = [r for r in rows if all(r.get(c) in (None, "") for c in added)]
-            keys = sorted({str(r.get(left_key)) for r in missing if left_key in r})
-            check["unmatched_keys"] = keys[:_MAX_UNMATCHED_KEYS]
+            check["unmatched_keys"] = _unmatched_keys(rows, added, left_key, right)
             notes.append(
                 f"{unmatched} of {checked} rows found no match. If that is more "
                 "than a few, compare the key columns in both views (type, case, "
@@ -302,11 +343,7 @@ def with_join_check(
     before_n, after_n = check["rows_before"], check["rows_after"]
     if isinstance(before_n, int) and isinstance(after_n, int):
         if after_n > before_n:
-            notes.append(
-                f"The join added {after_n - before_n} rows: a key repeats in the other "
-                "view, so matching rows repeat. Totals over this view count them twice; "
-                "use view transform lookup for one value per key."
-            )
+            notes.extend(_growth_notes(after_n - before_n, document, right))
         elif after_n < before_n:
             notes.append(
                 f"{before_n - after_n} rows had no match and were dropped "

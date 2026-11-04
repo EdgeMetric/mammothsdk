@@ -20,6 +20,7 @@ class _FlakyServer(HTTPServer):
     fail_first: int = 1
     fail_status: int = 502
     retry_after: str | None = None
+    gateway_page: bool = False
 
     def __init__(self) -> None:
         super().__init__(("127.0.0.1", 0), _Handler)
@@ -38,6 +39,11 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_response(self.server.fail_status if failing else 200)
         if failing and self.server.retry_after is not None:
             self.send_header("Retry-After", self.server.retry_after)
+        if failing and self.server.gateway_page:
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<html><body><h1>502 Bad Gateway</h1>nginx</body></html>")
+            return
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(json.dumps({"ok": not failing}).encode())
@@ -93,6 +99,23 @@ async def test_post_502_is_not_retried(server: _FlakyServer) -> None:
         await _client(server.server_port)._request("POST", "/things", json={"a": 1})
     assert excinfo.value.status_code == 502
     assert server.hits == ["POST"]
+
+
+async def test_a_gateway_page_on_a_write_is_marked_with_its_timing(server: _FlakyServer) -> None:
+    """NetSuite friction 11-03 (#11): nginx answered a POST in 2 ms while the service was down;
+    the error now says the reply was the gateway's own page and how fast it came."""
+    server.gateway_page = True
+    with pytest.raises(MammothAPIError) as excinfo:
+        await _client(server.server_port)._request("POST", "/things", json={"a": 1})
+    assert excinfo.value.details["gateway_reply"] is True
+    assert isinstance(excinfo.value.details["elapsed_ms"], int)
+
+
+async def test_a_json_502_from_the_service_is_not_a_gateway_page(server: _FlakyServer) -> None:
+    with pytest.raises(MammothAPIError) as excinfo:
+        await _client(server.server_port)._request("POST", "/things", json={"a": 1})
+    assert "gateway_reply" not in excinfo.value.details
+    assert isinstance(excinfo.value.details["elapsed_ms"], int)
 
 
 async def test_get_fails_after_bounded_attempts(server: _FlakyServer) -> None:

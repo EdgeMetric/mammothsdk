@@ -17,6 +17,7 @@ from mammoth.models.exports import (
     HttpMethod,
     OdbcType,
     RestAuthType,
+    TriggerType,
 )
 from mammoth.models.pipeline import ExportFileType, Operator, SaveAsDatasetMode
 from mammoth.view import (
@@ -671,10 +672,13 @@ class TestToDataset:
         """
         captured: dict[str, Any] = {}
 
-        async def fake_run(target_properties, timeout=None, condition=None) -> int:
+        async def fake_run(
+            target_properties, timeout=None, condition=None, trigger_type=TriggerType.PIPELINE
+        ) -> int:
             captured["target_properties"] = target_properties
             captured["timeout"] = timeout
             captured["condition"] = condition
+            captured["trigger_type"] = trigger_type
             return _RESOLVED_DS_ID
 
         view._run_internal_dataset_export = fake_run  # type: ignore[assignment]
@@ -800,6 +804,58 @@ class TestToDataset:
         # Branch-out carries no transform; the condition rides the spec, not it.
         assert spec.target_properties["TRANSFORM"] is None
         assert "CONDITION" not in spec.target_properties
+
+
+class TestToDatasetOneOffCopy:
+    """mammothsdk#381 item 1: a one-time copy, with no step left on the source view."""
+
+    async def test_trigger_none_reaches_the_export_and_pipeline_stays_the_default(
+        self, export_view
+    ):
+        captured = TestToDataset._capture_run(export_view)
+        await export_view.export.to_dataset("Copy", trigger_type="none", run_immediately=True)
+        assert captured["trigger_type"] is TriggerType.NONE
+        await export_view.export.to_dataset("Copy")
+        assert captured["trigger_type"] is TriggerType.PIPELINE
+
+    @pytest.mark.parametrize(
+        "kwargs", [{"run_immediately": False}, {"trigger_type": "schedule"}, {"trigger_type": "x"}]
+    )
+    async def test_a_copy_that_would_not_run_or_has_no_dataset_trigger_is_refused(
+        self, export_view, kwargs
+    ):
+        TestToDataset._capture_run(export_view)
+        with pytest.raises(MammothValidationError):
+            await export_view.export.to_dataset("Copy", **kwargs)
+
+    async def test_a_one_off_copy_is_found_in_the_target_project_without_polling_triggers(
+        self, export_view
+    ):
+        sent: dict[str, Any] = {}
+
+        async def fake_create(dataview_id, export_spec, dataset_id):
+            sent["spec"] = export_spec
+            return MagicMock()  # non-JobResponse: no job to wait for
+
+        export_view._client.exports = AsyncMock()
+        export_view._client.exports.create = fake_create
+        export_view._client.datasets = AsyncMock()
+        export_view._client.datasets.list_all.return_value = {
+            "datasets": [
+                {"id": 90, "name": "Copy", "additional_info": {"DATAVIEW_ID": 1}},
+                {"id": 91, "name": "Copy", "additional_info": {"DATAVIEW_ID": export_view.id}},
+            ]
+        }
+
+        new_id = await export_view._run_internal_dataset_export(
+            {"DS_NAME": "Copy", "TARGET_DS_ID": None, "project_id": 57},
+            trigger_type=TriggerType.NONE,
+        )
+
+        assert new_id == 91
+        assert sent["spec"].trigger_type == TriggerType.NONE
+        export_view._client.exports.list.assert_not_called()
+        assert export_view._client.datasets.list_all.call_args.kwargs["project_id"] == 57
 
 
 class TestExportedDatasetIdResolution:

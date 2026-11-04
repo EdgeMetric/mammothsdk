@@ -66,7 +66,10 @@ commands:
     get`). Needs --yes. Each patch item is op + path + value: `command` + `run` (run now), `replace` +
     `status` (`suspend` or `resume`), `replace` + `details` (an object with at least one of name, description,
     tasks, conditions). Paths are details, run, status, approve_retention, reject_retention. On a data-refresh automation,
-    --input with add_datasets and remove_datasets (lists of dataset ids) changes its datasets without a patch list.'
+    --input with add_datasets and remove_datasets (lists of dataset ids) changes its datasets without a patch list,
+    and --input {"schedule": {"by_week_day": ["mo"], "start_at": "2026-11-09T07:00:00"}} changes its schedule
+    (frequency, interval, by_week_day, by_month_day, start_at, until) with the datasets kept. A details patch
+    with conditions but no tasks is refused: Mammoth accepts it and keeps the old schedule.'
   readback:
     command: automation.get
     ids:

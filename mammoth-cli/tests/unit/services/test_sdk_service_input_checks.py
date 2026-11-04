@@ -432,3 +432,21 @@ def test_the_member_list_failing_leaves_the_error_unchanged(
         service, "_client", SimpleNamespace(projects=SimpleNamespace(list_all=listing))
     )
     assert service._non_member_project(_Forbidden(), {"project_id": 9}) is None
+
+
+def test_a_view_scoped_not_found_names_the_trash_only_when_the_view_is_there(
+    service: SdkMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """mammothsdk#381 item 10: a trashed view read back as a bare 404."""
+    from mammoth_cli.errors.envelope import CODE_RESOURCE_NOT_FOUND, EXIT_NOT_FOUND, CliError
+
+    monkeypatch.setattr(service, "_client", SimpleNamespace(project_id=180))
+    trash = {"items": [{"id": 7, "type": "dataview", "name": "Sales", "dataset_id": 3}]}
+    monkeypatch.setattr(service, "call", lambda symbol, **kwargs: trash)
+    bare = CliError(code=CODE_RESOURCE_NOT_FOUND, message="gone", exit_status=EXIT_NOT_FOUND)
+
+    explained = service._trashed_view_error("x.get", bare, {"dataview_id": 7})
+    assert explained.message.startswith("View 7 (Sales) is in project 180's trash")
+    assert explained.recovery_commands == ["mammoth view restore 7 3 --project 180"]
+    # Another view's 404 (or an export's under a live view) keeps its own error.
+    assert service._trashed_view_error("x.get", bare, {"dataview_id": 8}) is bare

@@ -191,7 +191,11 @@ def test_task_draft_and_math_routes_have_literal_wires(
             {
                 "op": "replace",
                 "path": "params",
-                "value": {"task_type": "MATH", "params": {"expression": "amount * 2"}},
+                "value": {
+                    "DATAVIEW_ID": VIEW,
+                    "task_type": "MATH",
+                    "params": {"expression": "amount * 2"},
+                },
             }
         ]
     }

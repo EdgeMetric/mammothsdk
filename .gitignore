@@ -65,3 +65,4 @@ site/
 # Transient STE text corpus
 mammoth-cli/build/
 
+uv.lock

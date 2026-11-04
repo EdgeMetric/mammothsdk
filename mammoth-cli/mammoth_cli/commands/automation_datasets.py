@@ -37,6 +37,20 @@ def wants_dataset_change(document: dict[str, Any]) -> bool:
     return "patch" not in document and any(field in document for field in DATASET_FIELDS)
 
 
+def dropped_with_patch(document: dict[str, Any]) -> list[str]:
+    """The dataset fields that a plain ``patch`` update would silently drop.
+
+    Args:
+        document: The parsed ``--input`` document.
+
+    Returns:
+        ``add_datasets`` / ``remove_datasets`` as present, when ``patch`` is present too.
+    """
+    if "patch" not in document:
+        return []
+    return [field for field in DATASET_FIELDS if field in document]
+
+
 def requested_ids(document: dict[str, Any], field: str) -> list[int]:
     """The dataset ids under ``field`` in ``document``.
 

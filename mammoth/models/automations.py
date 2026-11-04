@@ -198,6 +198,7 @@ class AutomationTaskType(str, Enum):
     SEND_AN_ALERT = "send_an_alert"
     PULL_CLOUD_FILES = "pull_cloud_files"
     APPLY_RETENTION_POLICY = "apply_retention_policy"
+    RUN_EXPORTS = "run_exports"
 
 
 class AutomationConditionType(str, Enum):
@@ -334,6 +335,11 @@ class TaskDetailsSpec(MammothModel):
     require_approval: bool = False
     action: Literal["delete", "suspend"] = "delete"
     timezone: str | None = None
+
+    # run_exports: the Scheduled export's export steps
+    trigger_ids: list[int] | None = Field(
+        default=None, description="Export step ids a Scheduled export sends (run_exports only)"
+    )
 
     # pdf_orchestration: one destination watches exactly one folder
     destination_dataset_id: int | None = Field(default=None, gt=0)

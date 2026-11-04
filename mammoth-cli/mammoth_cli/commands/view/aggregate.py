@@ -23,6 +23,7 @@ from mammoth_cli.commands.view.columns import (
     _relabel_columns,
     _resolved_aggregate_item,
     _with_currency,
+    with_normalized_functions,
 )
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENTS,
@@ -226,7 +227,8 @@ def view_data_aggregate(invocation: Invocation) -> HandlerResult:
     Read-only: computes and returns the aggregated result without adding a
     task to the view's pipeline or otherwise changing it. Pass exactly one of
     ``aggregations`` (a PIVOT; ``group_by`` is optional) or ``metric`` (a
-    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, MEDIAN.
+    METRIC). ``function`` is one of SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT, MEDIAN
+    (any case; COUNT_DISTINCT is accepted for DISTINCT_COUNT, any other name is refused).
     MEDIAN is exact, over a NUMERIC column's non-blank values (``median_note`` says how many
     blank rows it left out), and goes in a read of its own. An optional
     ``condition`` filters rows before aggregating, and ``sequence`` pins the
@@ -311,6 +313,7 @@ def aggregate_on(
     ``coverage`` False skips the date-coverage read on a non-empty result (a caller
     that already has it from an earlier aggregate over the same view).
     """
+    document = with_normalized_functions(document)
     reads = source.reads
     column_types = reads.column_types
     display_to_internal = reads.display_to_internal
@@ -337,6 +340,7 @@ def aggregate_on(
     data = read_queries.with_observed_range(
         reads, data, _aggregate_range_columns(document, column_types), coverage=coverage
     )
+    data = read_queries.with_case_hint(reads, data, document.get(CONDITION_KWARG))
     data = read_queries.with_assumptions(reads, data)
     return _with_currency(data, _measures(document), source.currencies)
 

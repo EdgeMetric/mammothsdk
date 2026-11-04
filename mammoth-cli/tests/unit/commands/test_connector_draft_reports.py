@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands.dashboard.generated import generated_dashboard
+from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -80,3 +81,42 @@ def test_draft_read_describes_the_sample_behind_a_per_parent_table(
     )
 
     assert data["sources"][1]["each"]["summary"] == "sampled 20 of 76 parents; 17 read, 3 failed"
+
+
+_DISCARD = "mammoth.api.connector_drafts.ConnectorDraftsAPI.discard"
+
+
+def _discard() -> Invocation:
+    return Invocation(command_id="connector.draft.discard", extra_args=["9"], project=180, yes=True)
+
+
+def _outcome_unknown() -> CliError:
+    return CliError(code="outcome_unknown", message="not confirmed", exit_status=1)
+
+
+def test_discard_with_a_lost_reply_is_a_success_when_the_draft_is_gone(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DISCARD] = _outcome_unknown()
+    fake_service.responses[_DRAFT] = CliError(
+        code="resource_not_found", message="gone", exit_status=4
+    )
+
+    data, _ = generated_dashboard(_discard())
+
+    assert data["status"] == "discarded"
+    assert data["confirmed_by_read_back"] is True
+    assert [name for name, _ in fake_service.call_log] == [_DISCARD, _DRAFT]
+
+
+def test_discard_with_a_lost_reply_stays_unknown_when_the_draft_still_reads(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses[_DISCARD] = _outcome_unknown()
+    fake_service.responses[_DRAFT] = {"id": 9, "title": "Orders"}
+
+    with pytest.raises(CliError) as excinfo:
+        generated_dashboard(_discard())
+
+    assert excinfo.value.code == "outcome_unknown"
+    assert [name for name, _ in fake_service.call_log] == [_DISCARD, _DRAFT]
