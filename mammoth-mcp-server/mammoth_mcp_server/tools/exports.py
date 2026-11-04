@@ -54,6 +54,10 @@ DESTINATIONS = ", ".join(sorted(h.value for h in HandlerType if h not in HIDDEN)
 _UNCHECKED = frozenset(HandlerType) - frozenset(EXPORT_CONTRACTS)
 # How many of an export's newest runs `get_export` shows.
 RECENT_RUNS = 5
+STILL_DELETING = (
+    "Mammoth is still deleting the export and running the view's pipeline again without it."
+    " Do not delete it again: list_exports shows what is left once it is done."
+)
 # How many datasets one read of a project lists, when looking one up by name.
 DATASETS_PER_READ = 100
 ADDING_GOES_ON = (
@@ -400,7 +404,9 @@ async def delete_export(
         export_id: The export's `id`, as `list_exports` lists it.
 
     Returns:
-        The view's exports afterwards, as `list_exports` reports them.
+        The view's exports afterwards, as `list_exports` reports them. When the
+        pipeline's run outlasts the call: the job's `job_id`, its `status` and a
+        `note` saying not to delete the export again.
     """
     ids = view_ids(workspace_id, project_id, dataset_id, view_id)
     async with build_client(workspace_id, project_id) as client:
@@ -410,7 +416,10 @@ async def delete_export(
         # The delete answers with the export when it is dropped outright, and
         # with a job when the pipeline has to run again without it.
         if JobFields.JOB in answer:
-            await wait_for_job(workspace_id, answer)
+            try:
+                await wait_for_job(workspace_id, answer)
+            except JobStillRunning as running:
+                return still_running(running, STILL_DELETING)
         return await read_exports(client, ids)
 
 

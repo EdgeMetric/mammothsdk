@@ -16,7 +16,14 @@ from typing import Literal
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import JobFields, ListFields, PipelineFields, StepFields, TaskFields
+from ..consts import (
+    TOOL_CALL_SECONDS,
+    JobFields,
+    ListFields,
+    PipelineFields,
+    StepFields,
+    TaskFields,
+)
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -291,7 +298,9 @@ async def send_change(
     if run_id is None:
         return {}
     try:
-        return await wait_for_job(ids["workspace_id"], {JobFields.JOB_ID: run_id})
+        return await wait_for_job(
+            ids["workspace_id"], {JobFields.JOB_ID: run_id}, TOOL_CALL_SECONDS
+        )
     except JobStillRunning:
         raise
     except ToolError as failed:

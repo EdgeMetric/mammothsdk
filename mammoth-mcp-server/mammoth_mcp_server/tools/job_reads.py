@@ -1,7 +1,7 @@
 """Read a job that outlasted the tool call that started it.
 
-A tool call ends at 45 s, and a big upload, an extract or a view copy can run
-longer. The tool names the job; this reads it, so the work is not started twice.
+A tool waits only seconds for a job, and a big upload, an extract or a view copy can
+run longer. The tool names the job; this reads it, so the work is not started twice.
 """
 
 from ..consts import JobFields

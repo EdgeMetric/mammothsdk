@@ -141,6 +141,18 @@ class TestDeletingViews:
         assert failed["view_id"] == 10
         assert "depend" in failed["error"]
 
+    def test_a_view_still_going_is_not_a_failure_and_the_rest_are_left(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_view(api, job=RUNNING)
+            answer = call_tool("delete_views", dataset_id=DATASET, view_ids=[VIEW, 10], **IDS)
+
+        assert answer["deleted"] == []
+        assert answer["failed"] == []
+        assert answer["still_going"] == {"view_id": VIEW, "job_id": 41}
+        assert answer["not_started"] == [10]
+        assert "undo" in answer["next_step"]
+        assert not api.sent("POST", f"{PROJECT_PATH}/datasets/{DATASET}/dataviews/10/trash")
+
     def test_a_datasets_last_view_is_refused_since_the_dataset_would_go_with_it(self) -> None:
         # Seen live: Mammoth moves a dataset to the trash with its last view.
         with a_fake_api() as api, as_caller():
@@ -202,6 +214,18 @@ class TestDeletingViews:
         assert not api.sent("POST", f"{VIEW_PATH}/trash")
         assert answer["trashed_dataset"] == DATASET
         assert "undo" in answer["next_step"]
+
+    def test_a_dataset_still_going_to_the_trash_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_view(api, views=(VIEW,), job=RUNNING)
+            api.answer("POST", f"{DATASET_PATH}/trash", STARTED)
+            answer = call_tool(
+                "delete_views", dataset_id=DATASET, whole_dataset=True, confirmed=True, **IDS
+            )
+
+        assert answer["status"] == "processing"
+        assert answer["job_id"] == 41
+        assert "Do not delete it again" in answer["note"]
 
     def test_no_views_and_no_whole_dataset_is_refused(self) -> None:
         with a_fake_api() as api, as_caller():

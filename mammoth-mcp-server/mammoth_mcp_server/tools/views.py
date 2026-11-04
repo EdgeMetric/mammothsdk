@@ -10,8 +10,8 @@ from collections.abc import Awaitable
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import IMPACT_READS_AT_ONCE, LIST_LIMIT_DEFAULT, ListFields, ViewFields
-from ..jobs import wait_for_job
+from ..consts import IMPACT_READS_AT_ONCE, LIST_LIMIT_DEFAULT, JobFields, ListFields, ViewFields
+from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import view_url
@@ -20,6 +20,10 @@ from ..tool_kinds import CHANGES, DESTRUCTIVE
 IN_THE_TRASH = (
     'They are in the trash. To bring one back, call undo with what="trash";'
     " list_trash shows them, with how long the trash keeps them."
+)
+STILL_TRASHING = (
+    "Mammoth is still moving the dataset to the trash. Do not delete it again: list_trash"
+    " shows it once it is done."
 )
 ASK = (
     "Nothing was deleted yet. Tell the user what goes with them, under goes_with_them;"
@@ -114,7 +118,12 @@ async def delete_views(
     Returns:
         `deleted`: the view ids moved to the trash, or `trashed_dataset`. `failed`:
         each view that was not, with the reason; one failure does not stop the
-        others. `goes_with_them`, when nothing was deleted yet. `next_step`.
+        others. `still_going`: the view whose move outlasted the call, with its
+        `job_id`, and `not_started`: the views after it, which are untouched, so
+        those are the ones to delete next. `goes_with_them`, when nothing was deleted
+        yet. `next_step`. With
+        `whole_dataset`, when the move outlasts the call: the job's `job_id`, its
+        `status` and a `note` saying not to delete it again.
     """
     async with build_client(workspace_id) as client:
         ids = {"workspace_id": workspace_id, "project_id": project_id, "dataset_id": dataset_id}
@@ -125,7 +134,10 @@ async def delete_views(
         if goes and not confirmed:
             return {ViewFields.DELETED: [], ViewFields.GOES_WITH: goes, ViewFields.NEXT_STEP: ASK}
         if whole_dataset:
-            await _trash(workspace_id, client.datasets.trash(dataset_id, project_id=project_id))
+            try:
+                await _trash(workspace_id, client.datasets.trash(dataset_id, project_id=project_id))
+            except JobStillRunning as running:
+                return still_running(running, STILL_TRASHING)
             return {ViewFields.TRASHED_DATASET: dataset_id, ViewFields.NEXT_STEP: IN_THE_TRASH}
         return await _trash_views(client, ids, targets)
 
@@ -213,12 +225,22 @@ async def _trash_views(
 ) -> dict[str, JsonValue]:
     deleted: list[JsonValue] = []
     failed: list[JsonValue] = []
-    for view_id in view_ids:
+    still_going: dict[str, JsonValue] = {}
+    not_started: list[JsonValue] = []
+    for place, view_id in enumerate(view_ids):
         try:
             await _trash(
                 ids["workspace_id"],
                 client.dataviews.trash(ids["dataset_id"], view_id, project_id=ids["project_id"]),
             )
+        except JobStillRunning as running:
+            # The call has no time left for the rest, and this one has not failed.
+            still_going = {
+                ViewFields.VIEW_ID: view_id,
+                JobFields.JOB_ID: running.job[JobFields.ID],
+            }
+            not_started = list(view_ids[place + 1 :])
+            break
         except ToolError as error:
             failed.append({ViewFields.VIEW_ID: view_id, ViewFields.ERROR: str(error)})
         else:
@@ -226,5 +248,7 @@ async def _trash_views(
     return {
         ViewFields.DELETED: deleted,
         ViewFields.FAILED: failed,
-        **({ViewFields.NEXT_STEP: IN_THE_TRASH} if deleted else {}),
+        **({ViewFields.STILL_GOING: still_going} if still_going else {}),
+        **({ViewFields.NOT_STARTED: not_started} if not_started else {}),
+        **({ViewFields.NEXT_STEP: IN_THE_TRASH} if deleted or still_going else {}),
     }

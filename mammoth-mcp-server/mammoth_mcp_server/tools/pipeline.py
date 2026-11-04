@@ -5,8 +5,10 @@ them. In draft mode, steps are staged without running until the draft is
 submitted.
 """
 
+import asyncio
+import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from mammoth.api.pipeline import PipelineAPI
@@ -16,6 +18,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from ..consts import (
     PREVIEW_ROWS_DEFAULT,
     PREVIEW_ROWS_MAX,
+    TOOL_CALL_SECONDS,
     JoinCheckFields,
     ListFields,
     PipelineFields,
@@ -44,6 +47,10 @@ from .transformations import (
 
 # What a tool tells the model when the run it started outlasts the call.
 RUN_GOES_ON = "The run is still going. Do not run it again: call get_pipeline later to see it end."
+STAGING_OUTLASTED = (
+    "Staging the steps took too long, so they were not run. Read the pipeline with"
+    " get_pipeline to see what is there before adding any again, a few at a time."
+)
 STEPS_RUN_ON = (
     "The steps were added and their run is still going. Do not add them again."
     " Call get_pipeline later; once the run is over, call manage_draft with"
@@ -62,6 +69,9 @@ STAGED_NOT_RUN = (
 
 type DraftAction = Literal["start", "run", "drop", "stop"]
 RUN_THE_DRAFT = "run"
+_log = logging.getLogger(__name__)
+# Kept until done: the event loop holds a task only weakly.
+_tidying: set[asyncio.Task[None]] = set()
 # What each action asks the draft-mode route to do. One route, one operation.
 DRAFT_ACTIONS: dict[str, str] = {
     "start": PipelineFields.DRAFT_ON,
@@ -407,21 +417,29 @@ async def run_in_one_draft(ids: dict[str, int], steps: list[TransformOperation])
     never take the place of that reason.
 
     A run that outlasts the tool call is left in draft mode: leaving it now
-    would land under the run.
+    would land under the run. Staging that outlasts it drops the draft like any
+    other step that cannot be added, so it is not reported as a run. A hard stop
+    drops it too, in the background: the stop must not wait on the tidying.
 
     Raises:
         JobStillRunning: If the run outlasts the tool call.
+        ToolError: If a step could not be added, or staging ran out of time.
     """
     await change_draft(ids, PipelineFields.DRAFT_ON)
     try:
         await stage_steps(ids, steps)
         submitted = await change_draft(ids, PipelineFields.DRAFT_SUBMIT)
+    except JobStillRunning as outlasted:
+        await tidy_up(ids, PipelineFields.DRAFT_DISCARD, PipelineFields.DRAFT_OFF)
+        raise ToolError(STAGING_OUTLASTED) from outlasted
+    except asyncio.CancelledError:
+        start_tidying(ids, PipelineFields.DRAFT_DISCARD, PipelineFields.DRAFT_OFF)
+        raise
     except Exception:
-        await tidy_up(ids, PipelineFields.DRAFT_DISCARD)
-        await tidy_up(ids, PipelineFields.DRAFT_OFF)
+        await tidy_up(ids, PipelineFields.DRAFT_DISCARD, PipelineFields.DRAFT_OFF)
         raise
     try:
-        finished = await wait_for_job(ids["workspace_id"], submitted)
+        finished = await wait_for_job(ids["workspace_id"], submitted, TOOL_CALL_SECONDS)
     except JobStillRunning:
         raise
     except Exception:
@@ -431,10 +449,42 @@ async def run_in_one_draft(ids: dict[str, int], steps: list[TransformOperation])
     check_run(finished, "The pipeline")
 
 
-async def tidy_up(ids: dict[str, int], operation: str) -> None:
-    """Put a view's draft mode back, without hiding why we are putting it back."""
-    with suppress(ToolError):
-        await change_draft(ids, operation)
+async def tidy_up(ids: dict[str, int], *operations: str) -> None:
+    """Put a view's draft mode back, without hiding why we are putting it back.
+
+    The call's hard stop must not leave a view half staged, so this finishes on
+    its own if the call is cut off around it.
+
+    Args:
+        ids: The view's path ids.
+        *operations: The draft operations to send, in order.
+    """
+    await asyncio.shield(start_tidying(ids, *operations))
+
+
+def start_tidying(ids: dict[str, int], *operations: str) -> asyncio.Task[None]:
+    """Send the draft operations in a task of their own, which a cancelled call leaves running.
+
+    Args:
+        ids: The view's path ids.
+        *operations: The draft operations to send, in order.
+
+    Returns:
+        The running task. It never raises.
+    """
+    tidying = asyncio.ensure_future(_send_draft_changes(ids, operations))
+    _tidying.add(tidying)
+    tidying.add_done_callback(_tidying.discard)
+    return tidying
+
+
+async def _send_draft_changes(ids: dict[str, int], operations: tuple[str, ...]) -> None:
+    """Send each draft operation, carrying on past one that fails."""
+    for operation in operations:
+        try:
+            await change_draft(ids, operation)
+        except Exception:
+            _log.warning("Could not send draft operation %s", operation, exc_info=True)
 
 
 async def stage_steps(ids: dict[str, int], steps: list[TransformOperation]) -> None:

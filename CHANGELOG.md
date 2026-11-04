@@ -6,6 +6,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-mcp-server)
+
+- `check_upload` no longer fails with "server isn't responding" while the user is still choosing a file. It held the call for 30 seconds, which is where the edge in front of `mcp.mammoth.io` cuts a silent response off, so Claude told the user the server was down. The hold is now 20 seconds and spends from the call's deadline, and job waits now stop after 10 seconds. A job still going comes back as `job_id` and `status` for `get_job`, as the CLI's `job get` does. `delete_dashboard`, `delete_export` and `delete_file` now report a slow job that way rather than as an error. Steps of a pipeline, dashboard edits and step edits keep the whole call to finish.
+- A tool call that runs past 28 seconds answers that its outcome is unknown, rather than being cut off and reported as a dead server. This covers routes that answer with a result rather than a job, such as `preview_query`, which now gives the database 25 seconds, down from 30.
+- `add_transformations` no longer says the steps were added when staging them ran out of time and the draft was dropped. It says they were not run, and the view leaves draft mode even if the call is cut off.
+- `delete_views` no longer lists a view as failed while it is still going to the trash, and stops at that view, so the ones after it are left alone. It reports `still_going` and `not_started`.
+- An upload into an existing dataset keeps enough of the call to report its batch, so `undo` can still remove it.
+- The connect button no longer says Mammoth opened when the user cancelled the link dialog.
+
+### Changed (next mammoth-mcp-server)
+
+- `request_upload` says it is how a file on the user's computer reaches Mammoth, so Claude offers it on a plain "upload a CSV".
+
 ## mammoth-mcp-server 0.2.10 (2026-11-04)
 
 ### Changed (mammoth-mcp-server 0.2.10)
