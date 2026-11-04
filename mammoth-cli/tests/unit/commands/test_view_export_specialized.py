@@ -974,3 +974,32 @@ def test_dataset_route_refuses_a_view_in_draft_mode_instead_of_waiting_on_it(
     assert caught.value.code == "view_in_draft"
     assert "mammoth view draft auto-run 7" in (caught.value.hint or "")
     assert fake_service.view_call_log == []
+
+
+def test_dataset_route_on_a_view_with_pending_draft_changes_does_not_point_at_auto_run(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """ILG friction 11-03 (#10): with unapplied draft changes the server ignores auto-run on,
+    so the clean-draft recipe did nothing. The refusal says the draft is pending, names who
+    can resolve it, and the copy route that leaves the draft alone."""
+    fake_service.responses[_PIPELINE_GET] = {"draft_mode": "dirty", "auto_run": False}
+
+    with pytest.raises(CliError) as caught:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "9"],
+                input_file=_doc(tmp_path, {"dataset_name": "orders_copy"}),
+                yes=True,
+            )
+        )
+
+    hint = caught.value.hint or ""
+    assert caught.value.code == "view_in_draft"
+    assert "aren't applied yet" in caught.value.message
+    assert "auto-run 7" not in hint
+    assert "mammoth view draft submit 7" in hint and "mammoth view draft discard 7" in hint
+    assert "mammoth view data query 7 -o csv" in hint
+    assert caught.value.details["draft_mode"] == "dirty"
+    assert fake_service.view_call_log == []

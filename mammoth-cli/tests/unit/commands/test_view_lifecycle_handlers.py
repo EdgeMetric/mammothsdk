@@ -208,6 +208,52 @@ def test_a_failed_read_of_a_found_view_is_that_ids_error(service: FakeMammothSer
     assert out["error"]["message"] == "boom"
 
 
+_TASKS = "mammoth.api.pipeline.PipelineAPI.list_tasks"
+
+
+def test_analyze_names_the_views_each_one_joins_and_looks_up(
+    service: FakeMammothService,
+) -> None:
+    """ILG friction 11-03 (#1): the source map of 16 views needed a task read per view."""
+    _analysis_world(service)
+    tasks = {
+        7: [
+            {"sequence": 2, "params": {"DATAVIEW_ID": 7, "LOOKUP": {"DATAVIEW_ID": 31}}},
+            {
+                "sequence": 1,
+                "params": {"DATAVIEW_ID": 7, "JOIN": {"DATAVIEW_ID": 30, "TYPE": "LEFT"}},
+            },
+            {"sequence": 3, "params": {"DATAVIEW_ID": 7, "FILTER": {"CONDITION": None}}},
+        ],
+        8: [{"sequence": 1, "params": {"DATAVIEW_ID": 8, "SORT": [{"COLUMN": "a"}]}}],
+    }
+    service.responses[_TASKS] = lambda log: {"tasks": tasks[log[-1][1]["dataview_id"]], "next": ""}
+    code, out = _run(["view", "analyze", "7,8"])
+    assert code == 0, out
+    first, second = out["data"]["analyses"]
+    assert first["lineage"] == {
+        "views_read": [30, 31],
+        "reads": [
+            {"step": 1, "op": "join", "view_id": 30, "join_type": "LEFT"},
+            {"step": 2, "op": "lookup", "view_id": 31},
+        ],
+        "text": "joins view 30 (step 1, LEFT); looks up view 31 (step 2)",
+    }
+    assert second["lineage"]["views_read"] == []
+    assert second["lineage"]["text"] == "reads no other view"
+
+
+def test_a_failed_task_read_keeps_the_analysis_without_lineage(
+    service: FakeMammothService,
+) -> None:
+    _analysis_world(service)
+    service.responses[_TASKS] = CliError(code="api_error", message="boom", exit_status=1)
+    code, out = _run(["view", "analyze", "7"])
+    assert code == 0, out
+    assert out["data"]["steps"] == 2
+    assert "lineage" not in out["data"]
+
+
 def test_analyze_needs_a_view_id() -> None:
     code, out = _run(["view", "analyze"])
     assert code == 2

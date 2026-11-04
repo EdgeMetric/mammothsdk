@@ -54,11 +54,36 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
     With auto-run off the view keeps new pipeline changes in a draft, so the
     export would only be staged and write nothing; the SDK then waits out its
     whole timeout for a write that cannot happen (eval T1-O-11).
+
+    A ``clean`` draft holds nothing yet: turning auto-run on leaves it, the export is added,
+    and turning auto-run off enters a fresh one. A ``dirty`` draft holds unapplied changes:
+    the server skips the auto-run switch then, and leaving the draft keeps those changes, so
+    only the view's owner can decide (ILG friction 11-03, #10).
     """
     pipeline = service.call(_PIPELINE_GET_SYMBOL, dataview_id=dataview_id, dataset_id=dataset_id)
     draft_mode = pipeline.get("draft_mode") if isinstance(pipeline, dict) else None
     if draft_mode in (None, "off"):
         return
+    details = {"dataview_id": dataview_id, "draft_mode": draft_mode}
+    if draft_mode == "dirty":
+        raise CliError(
+            code="view_in_draft",
+            message=(
+                f"View {dataview_id} has draft changes that aren't applied yet, so an export "
+                "added now would be staged with them and write nothing."
+            ),
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Mammoth can't add an export to the applied pipeline while a draft is pending, "
+                "and turning auto-run on is ignored until the draft is resolved. Ask the view's "
+                f"owner to submit (mammoth view draft submit {dataview_id}) or discard (mammoth "
+                f"view draft discard {dataview_id}) the draft. To copy the rows without "
+                "touching the draft, save its applied rows with mammoth view data query "
+                f"{dataview_id} -o csv (page with limit/offset) and add the file with mammoth "
+                "file upload; that copy won't refresh."
+            ),
+            details=details,
+        )
     raise CliError(
         code="view_in_draft",
         message=(
@@ -67,11 +92,12 @@ def _reject_export_into_draft(service: Any, dataview_id: int, dataset_id: int) -
         ),
         exit_status=EXIT_USAGE,
         hint=(
+            "The draft holds no changes, so nothing is lost. "
             f"Turn auto-run on with mammoth view draft auto-run {dataview_id} --input "
             "'{\"enabled\": true}', add the export, then turn auto-run off again if the "
             f"dataset should only update when asked (mammoth view pipeline rerun {dataview_id})."
         ),
-        details={"dataview_id": dataview_id, "draft_mode": draft_mode},
+        details=details,
     )
 
 

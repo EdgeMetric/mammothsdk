@@ -1706,8 +1706,9 @@ commands:
   known_restrictions: 'Read-only. Lists pipeline steps that can be dropped or moved without changing the
     result: findings of {rule, seqs, detail, proposed_order, safe}. Rules: drop_suspended, drop_duplicate,
     drop_noop_filter, hoist_filter. Only a safe finding is applied by view optimize. Also returns the
-    view (name, dataset, rows, columns, state) and its pipeline step count, so no view get or task list
-    follows. VIEW_ID may be several ids joined by commas: one result with an analysis per id, and an entry
+    view (name, dataset, rows, columns, state), its pipeline step count, and lineage: the other views
+    its join and lookup steps read (views_read, reads of {step, op, view_id, join_type}, and text in
+    words), so no view get or task list follows. VIEW_ID may be several ids joined by commas: one result with an analysis per id, and an entry
     in errors for an id that failed.'
   readback:
     command: view.analyze

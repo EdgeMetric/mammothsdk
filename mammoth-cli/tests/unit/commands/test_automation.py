@@ -84,7 +84,9 @@ def test_list_keeps_suspended_and_every_live_automation(
         {"id": 2, "status": "suspended"},
         {"id": 3},
     ]
-    assert _listed(fake_service, rows) == rows
+    listed = _listed(fake_service, rows)
+    assert [{k: v for k, v in r.items() if k != "summary"} for r in listed] == rows
+    assert all(r["summary"]["runs"] == "manually" for r in listed)
 
 
 def test_list_of_an_unexpected_shape_is_passed_through(

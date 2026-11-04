@@ -29,11 +29,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `view analyze` takes up to 50 view ids in one call, up from 12. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
 - `dataset list` with a `limit` over 100 now names `{"names": true}`, which returns every dataset's id and name in one call, and paging with `offset`. Before, the refusal gave no route. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 9)
 - A view that is not found now says whether it is in the project's trash: who trashed it and when, the days until it is deleted for good, and the `view restore` command. This applies to any view-scoped not-found, a parent-discovery miss, and `view analyze`. A view that is not in the trash either is reported as deleted for good or in another project. Before, the error was "not found in any dataset" or "The requested Mammoth resource does not exist". ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 10)
+- `view export dataset` on a view whose draft holds unapplied changes no longer says to turn auto-run on: the server ignores that until the draft is submitted or discarded, so the export was refused again. The refusal now says the draft is pending, names `view draft submit` and `view draft discard`, and gives a copy route that leaves the draft alone (`view data query -o csv`, then `file upload`). A draft with no changes keeps the auto-run recipe.
 
 ### Added (next mammoth-cli)
 
 - `automation update ID --input '{"schedule": {"by_week_day": ["mo"], "start_at": "..."}}'` moves a data-refresh automation's schedule. Only the fields given change (`frequency`, `interval`, `by_week_day`, `by_month_day`, `start_at`, `until`). The datasets are kept and the edit starts no run. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
 - `dashboard duplicate` takes `title` and `keep_tags`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
+- `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
+- `view analyze` gives each view a `lineage`: the other views its join and lookup steps read (`views_read`), each such step with its join type (`reads`), and a line in words ("joins view 107990 (step 1, LEFT)"). Mapping where 16 views got their data from took a task read per view; now it's one `view analyze` with every id. If the task list can't be read, the view is still analyzed, without `lineage`.
 
 ## mammoth-cli 2.4.2 (2026-11-02)
 
