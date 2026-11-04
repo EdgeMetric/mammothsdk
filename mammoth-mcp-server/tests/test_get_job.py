@@ -45,14 +45,32 @@ class TestReadingAJob:
 
 
 class TestAToolCallThatEndsFirst:
-    def test_the_error_names_the_job_and_says_it_keeps_running(self) -> None:
-        # delete_file is one of the tools that answered with no job id.
+    def test_a_slow_delete_is_reported_as_going_not_as_failed(self) -> None:
         with a_fake_api() as api, as_caller(), SHORT_CALL:
             api.answer("GET", FILE_PATH, {"file": {"id": FILE}})
             api.answer("DELETE", FILE_PATH, {"job": {"id": 41}})
             api.answer("GET", "/jobs/41", RUNNING)
+            answer = call_tool(
+                "delete_file", workspace_id=WORKSPACE, project_id=PROJECT, file_id=FILE
+            )
+
+        assert answer["job_id"] == 41
+        assert answer["status"] == "processing"
+        assert "deleted_file" not in answer
+
+    def test_the_error_names_the_job_and_says_it_keeps_running(self) -> None:
+        # unlock_file is one of the tools that answered with no job id.
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            api.answer("PATCH", FILE_PATH, {"job": {"id": 41}})
+            api.answer("GET", "/jobs/41", RUNNING)
             with pytest.raises(ToolError) as refused:
-                call_tool("delete_file", workspace_id=WORKSPACE, project_id=PROJECT, file_id=FILE)
+                call_tool(
+                    "unlock_file",
+                    workspace_id=WORKSPACE,
+                    project_id=PROJECT,
+                    file_id=FILE,
+                    password="secret",
+                )
 
         said = str(refused.value)
         assert "job 41" in said

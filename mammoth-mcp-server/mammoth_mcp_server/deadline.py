@@ -1,9 +1,10 @@
 """The one deadline every wait in a tool call shares.
 
-A client gives up on a tool call after about a minute. A call that waits on two
-jobs of a minute each would answer nobody, and the model, told nothing, would
-make the call again. So the clock starts with the call's first client, and every
-wait in the call spends from it.
+A tool call has under 30 seconds to answer: past that CloudFront cuts it off and
+the client reports the server as down. A call that waits on two jobs would answer
+nobody, and the model, told nothing, would make the call again. So the clock
+starts with the call's first client, or its first wait if that comes sooner, and
+every wait in the call spends from it.
 """
 
 import time

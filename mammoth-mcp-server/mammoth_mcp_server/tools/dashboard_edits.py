@@ -19,7 +19,7 @@ from mammoth.models.dashboard_generated import ChatEditParams, ChatEditSpec
 from mammoth.models.dashboards import DashboardPatchItem, DashboardPatchOp, DashboardPatchPath
 from mcp.server.mcpserver.exceptions import ToolError
 
-from ..consts import ENGINE_V3, DashboardFields, JobFields
+from ..consts import ENGINE_V3, TOOL_CALL_SECONDS, DashboardFields, JobFields
 from ..jobs import JobStillRunning, read_job, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
@@ -251,7 +251,7 @@ async def wait_for_edit(workspace_id: int, started: dict[str, JsonValue]) -> dic
     It waits as long as the tool call may, not the shorter wait of a build: the
     edit's result is in its job alone, and no tool reads the job afterwards.
     """
-    edited = await wait_for_job(workspace_id, started)
+    edited = await wait_for_job(workspace_id, started, TOOL_CALL_SECONDS)
     edit = {field: edited[field] for field in DashboardFields.EDITED if field in edited}
     missed: list[JsonValue] = list(not_done(edited))
     if missed and edit.get(DashboardFields.CHANGED) is True:

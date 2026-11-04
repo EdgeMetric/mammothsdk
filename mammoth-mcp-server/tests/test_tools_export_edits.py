@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError
@@ -35,6 +36,8 @@ TO_SFTP: dict[str, Any] = {
     "additional_properties": {},
     "condition": {},
 }
+SHORT_CALL = patch("mammoth_mcp_server.deadline.TOOL_CALL_SECONDS", 0.05)
+RUNNING = {"job": {"id": 41, "status": "processing", "response": None}}
 STARTED = {"job": {"id": 41}}
 DONE = {"job": {"id": 41, "status": "success", "response": {}}}
 SENT = {"id": 7, "status": "success", "rows_exported": 4, "triggered_by": "manual"}
@@ -401,3 +404,15 @@ class TestReadingAnExport:
         assert asked.url.params["limit"] == "5"
         assert [run["status"] for run in answer["recent_runs"]] == ["failed", "success"]
         assert answer["recent_runs"][0]["error_message"] == "Authentication failed"
+
+
+class TestDeletingAnExport:
+    def test_a_delete_whose_run_outlasts_the_call_names_the_job(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            a_view(api, [TO_SFTP], job=RUNNING)
+            api.answer("DELETE", EXPORT, STARTED)
+            answer = call_tool("delete_export", export_id=EXPORT_ID, **IDS)
+
+        assert answer["status"] == "processing"
+        assert answer["job_id"] == 41
+        assert "Do not delete it again" in answer["note"]

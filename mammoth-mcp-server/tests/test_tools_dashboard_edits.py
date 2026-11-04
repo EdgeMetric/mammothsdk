@@ -405,3 +405,19 @@ def test_a_rename_alone_uses_one_client() -> None:
     assert opened.call_count == 1
     assert len(api.sent("GET", DASHBOARD)) == 2
     assert "publish_dashboard" in answer["next_step"]
+
+
+class TestDeletingADashboard:
+    def test_a_move_to_the_trash_still_going_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), SHORT_CALL:
+            api.answer("POST", f"{DASHBOARD}/trash", {"job": {"id": 41}})
+            api.answer(
+                "GET", "/jobs/41", {"job": {"id": 41, "status": "processing", "response": None}}
+            )
+            answer = call_tool(
+                "delete_dashboard", workspace_id=WORKSPACE, dashboard_id=DASHBOARD_ID
+            )
+
+        assert answer["status"] == "processing"
+        assert answer["job_id"] == 41
+        assert "Do not delete it again" in answer["note"]

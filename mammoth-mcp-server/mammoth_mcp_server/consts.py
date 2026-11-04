@@ -48,14 +48,17 @@ OLDER_ENGINE_ROUTE = "dashboard"
 UPLOAD_SECONDS = 30 * 60
 # How long `check_upload` holds the call while the user is still picking their
 # file. Answering at once ends the model's turn, and a turn that has ended
-# needs the user to start another one just to say the file is in. Short enough
-# to leave `TOOL_CALL_SECONDS` room for the job wait that follows.
-UPLOAD_WAIT_SECONDS = 30.0
+# needs the user to start another one just to say the file is in. It spends
+# from `TOOL_CALL_SECONDS`, and is short enough to leave room for the job wait
+# that follows.
+UPLOAD_WAIT_SECONDS = 20.0
 UPLOAD_POLL_SECONDS = 1.0
 # How long an upload into an existing dataset waits for its rows to land: the
 # upload's job ends when the staging dataset is made, and the rows reach the
 # target after that, while it reads "processing".
 APPEND_WAIT_SECONDS = 20.0
+# Left of a call after an append's waits: without the report's batch ids, `undo` refuses.
+APPEND_REPORT_SECONDS = 2.0
 APPEND_POLL_SECONDS = 1.0
 # The mode each batch was added under is kept this long, per batch. A batch
 # whose record has gone is refused by `undo`, never guessed at.
@@ -94,17 +97,26 @@ JOB_POLL_SECONDS = 0.2
 # A wait between checks doubles from `JOB_POLL_SECONDS` up to this: a short job is
 # seen at once, and a long build is not checked several times a second.
 JOB_POLL_MAX_SECONDS = 2.0
-JOB_TIMEOUT_SECONDS = 60.0
+# Most jobs finish well inside this (95% of a live run of every tool). One that
+# does not comes back as a `job_id` for `get_job`, which waits this long again,
+# so polling paces itself: the model has no way to sleep between calls.
+JOB_TIMEOUT_SECONDS = 10.0
 # A new export runs after the job that adds it: how often to look at it until it has.
 EXPORT_POLL_SECONDS = 1.0
-# How long one tool call may wait in all, over every job it waits on. A client
-# gives up on a call after about a minute, so the answer must come before then.
-TOOL_CALL_SECONDS = 45.0
+# How long one tool call may wait in all, over every job it waits on. CloudFront
+# cuts a response off after `OriginReadTimeout` (30s on mcp.mammoth.io) of
+# silence, and the client then reports the server as down, so the answer must
+# come before then.
+TOOL_CALL_SECONDS = 25.0
+# The most a tool call may take at all. The waits above stop themselves, but one
+# request to Mammoth can run for `ROUTE_TIMEOUT_SECONDS`, and CloudFront would cut
+# it off first. Past this the call answers that its outcome is unknown.
+CALL_HARD_STOP_SECONDS = 28.0
 # How long to wait on an AI dashboard build before answering "still building".
-# Shorter than the rest: a build outlasts any wait worth making, and a client
+# No longer than the rest: a build outlasts any wait worth making, and a client
 # that gives up first never sees the answer at all — so the model is told
 # nothing, assumes nothing was built, and starts a second, paid-for build.
-BUILD_WAIT_SECONDS = 25.0
+BUILD_WAIT_SECONDS = 10.0
 
 # How long one API route may take before a tool gives up on it. A route that
 # never answers would hold this worker until gunicorn kills it, which drops every
@@ -483,6 +495,8 @@ class ViewFields:
     ERROR = "error"
     DELETED = "deleted"
     FAILED = "failed"
+    STILL_GOING = "still_going"
+    NOT_STARTED = "not_started"
     NEXT_STEP = "next_step"
     HAS_ERROR = "has_error"
     COPY_FAILED = (
@@ -805,7 +819,7 @@ class ConnectionFields:
     COLUMNS = "columns"
     ROWS_SHOWN = 20
     # Seconds the database has to answer a preview, inside one tool call.
-    PREVIEW_SECONDS = 30.0
+    PREVIEW_SECONDS = 25.0
     # How `datasets.create` takes a dataset from a connection.
     CREATION_TYPE = "cloud"
     CONNECTOR_KEY = "connector_key"

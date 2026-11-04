@@ -38,7 +38,8 @@ from ..consts import (
     UnstructuredFields,
     UploadFields,
 )
-from ..jobs import find_job_id, wait_for_job
+from ..deadline import seconds_left
+from ..jobs import JobStillRunning, find_job_id, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
 from ..store import Record
@@ -50,6 +51,22 @@ from .folders import read_folders
 APPEND_NOT_YET = (
     "The file is not in the dataset yet. Do not upload it again: call check_upload"
     " with the same upload_id in a minute, and it reports what the file added."
+)
+
+SHEETS_GO_ON = (
+    "The sheets are still coming in. Do not ask for them again: call check_upload with"
+    " the same upload_id in a minute."
+)
+REREAD_GOES_ON = (
+    "The new settings are saved and Mammoth is still rereading the file. Do not change"
+    " them again: read the job with get_job."
+)
+DELETE_GOES_ON = (
+    "The file is still being deleted. Do not delete it again: read the job with get_job."
+)
+ADD_GOES_ON = (
+    "The file is still going into the dataset. Do not upload it again: read the job"
+    " with get_job, then read_append_history for what it added."
 )
 
 type DateFormat = Literal["US", "UK"]
@@ -120,9 +137,12 @@ async def upload_file(
     if folder_resource_id is not None and append_to_dataset_id is not None:
         raise ToolError(NOT_IN_A_FOLDER)
     if append_to_dataset_id is not None:
-        return await append_file(
-            workspace_id, project_id, append_to_dataset_id, file_name, content.encode(), mode
-        )
+        try:
+            return await append_file(
+                workspace_id, project_id, append_to_dataset_id, file_name, content.encode(), mode
+            )
+        except JobStillRunning as running:
+            return still_running(running, ADD_GOES_ON)
     since = datetime.now(UTC).isoformat()
     async with build_client(workspace_id, project_id) as client:
         started = await request_api(
@@ -164,7 +184,7 @@ async def wait_for_the_file(upload_id: str) -> Record:
     Raises:
         ToolError: If the link was never minted, or has expired.
     """
-    give_up_at = time.monotonic() + UPLOAD_WAIT_SECONDS
+    give_up_at = time.monotonic() + min(UPLOAD_WAIT_SECONDS, seconds_left())
     while True:
         ticket = await read_ticket(upload_id)
         if ticket is None:
@@ -254,13 +274,16 @@ async def extract_sheets(
         sheets: The names of the sheets to bring in.
     """
     named: list[JsonValue] = list(sheets)
-    return await patch_file(
-        FilePatchFields.EXTRACT_SHEETS,
-        {FilePatchFields.SHEETS: named},
-        workspace_id=workspace_id,
-        project_id=project_id,
-        file_id=file_id,
-    )
+    try:
+        return await patch_file(
+            FilePatchFields.EXTRACT_SHEETS,
+            {FilePatchFields.SHEETS: named},
+            workspace_id=workspace_id,
+            project_id=project_id,
+            file_id=file_id,
+        )
+    except JobStillRunning as running:
+        return still_running(running, SHEETS_GO_ON)
 
 
 @mcp_server.tool(title="Unlock file", annotations=CHANGES)
@@ -657,10 +680,11 @@ async def change_file_settings(
     body[FileSettingsFields.DATE_FORMATS] = per_column or None
     body[FileSettingsFields.PROJECT_DEFAULT] = for_the_whole_project
     started = await request_api(client, "POST", path, body=body)
-    return {
-        **await wait_for_job(client.workspace_id, started),
-        FileSettingsFields.APPLIED: True,
-    }
+    try:
+        reread = await wait_for_job(client.workspace_id, started)
+    except JobStillRunning as running:
+        return still_running(running, REREAD_GOES_ON)
+    return {**reread, FileSettingsFields.APPLIED: True}
 
 
 def report_file_settings(
@@ -843,7 +867,10 @@ async def delete_file(workspace_id: int, project_id: int, file_id: int) -> dict[
     async with build_client(workspace_id, project_id) as client:
         found = await request_api(client, "GET", path, query={ApiFields.FIELDS: ApiFields.STANDARD})
         started = await request_api(client, "DELETE", path)
-    await wait_for_job(workspace_id, started)
+    try:
+        await wait_for_job(workspace_id, started)
+    except JobStillRunning as running:
+        return still_running(running, DELETE_GOES_ON)
     return {DeletedFileFields.DELETED_FILE: file_id, **_dataset_kept(found)}
 
 

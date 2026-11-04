@@ -77,7 +77,8 @@ async def wait_for_job(
                 break
             if time.monotonic() > deadline:
                 raise JobStillRunning(job, seconds)
-            await asyncio.sleep(gap)
+            # Never past the deadline: what follows the wait needs the time.
+            await asyncio.sleep(max(0.0, min(gap, deadline - time.monotonic())))
             gap = min(gap * 2, JOB_POLL_MAX_SECONDS)
     if job[JobFields.STATUS] != JobFields.SUCCESS:
         raise JobFailed(f"{API_ERROR_PREFIX}: {describe_job_failure(job)}")

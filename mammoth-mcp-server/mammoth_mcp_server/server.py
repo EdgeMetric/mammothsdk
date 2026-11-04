@@ -14,6 +14,7 @@ from pydantic import BaseModel, model_validator
 
 # Importing them binds their tools to `chat_apps` before the server takes it.
 from . import connect_app, dataset_app, upload_app  # noqa: F401
+from .call_limit import CallLimit
 from .chat_apps import chat_apps
 from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
 from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
@@ -30,7 +31,7 @@ mcp_server = MCPServer(
     # One JSON line per call, so the launch can be measured. It records which
     # tool ran and never what it ran on.
     # The limit runs before the record, so a refused write is recorded as one.
-    middleware=[Telemetry(), ReadOnly()],
+    middleware=[CallLimit(), Telemetry(), ReadOnly()],
     token_verifier=token_verifier,
     # The two URLs are validated from their text, which keeps a URL as it was
     # written. A client compares an issuer letter for letter.

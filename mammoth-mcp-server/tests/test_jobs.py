@@ -102,8 +102,8 @@ class TestReadingWhatARouteStarted:
 
 class TestOneDeadlinePerToolCall:
     def test_every_wait_in_a_tool_call_spends_from_one_deadline(self) -> None:
-        # A client gives up on a call after about a minute: two waits of a
-        # minute each would answer nobody.
+        # CloudFront cuts a call off after 30 seconds of silence: two waits
+        # with a clock each would answer nobody.
         async def two_waits() -> None:
             await wait_for_job(WORKSPACE, {"job_id": 11})
             await wait_for_job(WORKSPACE, {"job_id": 12})
@@ -122,3 +122,23 @@ class TestOneDeadlinePerToolCall:
 
         # The second wait got what the first left, not a minute of its own.
         assert time.monotonic() - started < 5
+
+
+def test_a_wait_does_not_sleep_past_its_deadline() -> None:
+    naps: list[float] = []
+
+    async def nap(seconds: float) -> None:
+        naps.append(seconds)
+
+    running = {"job": {"id": 7, "status": JobFields.PROCESSING, "response": {}}}
+    with (
+        a_fake_api() as api,
+        as_caller(),
+        patch("mammoth_mcp_server.jobs.asyncio.sleep", nap),
+        patch("mammoth_mcp_server.jobs.JOB_POLL_SECONDS", 2.0),
+    ):
+        api.answer("GET", "/jobs/7", running)
+        with pytest.raises(JobStillRunning):
+            run(wait_for_job(WORKSPACE, {"job": {"id": 7}}, 0.3))
+
+    assert naps and max(naps) <= 0.3
