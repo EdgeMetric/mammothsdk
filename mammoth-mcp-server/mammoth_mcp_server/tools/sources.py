@@ -147,10 +147,9 @@ async def read_every_connector(workspace_id: int, project_id: int) -> list[JsonV
 async def find_new_datasets(workspace_id: int, project_id: int, since: str) -> dict[str, JsonValue]:
     """Find the datasets a project gained since a time: what the user brought in from a source.
 
-    Call this straight after giving the user the link. It waits while they
-    connect the source, so do not end your turn asking them to say when they
-    are done. `waiting` means nothing came in before the wait ran out: call
-    again if they are still at it; after a couple of rounds say you are waiting.
+    Call this after giving the user the link. It waits while they connect the
+    source, so the user does not need to say when they are done. `waiting` means
+    nothing came in before the wait ran out, and it can be called again.
 
     Only the datasets the user made are listed, not a teammate's. Mammoth
     records who made a dataset by name, so a teammate with the same name

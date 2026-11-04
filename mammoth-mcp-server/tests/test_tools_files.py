@@ -272,6 +272,7 @@ class TestChangingOneThingAboutAFile:
         with a_fake_api() as api, as_caller():
             api.answer("PATCH", FILE_PATH, {"job": {"id": 1}})
             a_finished_job(api, 1)
+            api.answer("GET", FILE_PATH, {"file": {"status": "processed"}})
             run(call)
         [sent] = api.sent("PATCH", FILE_PATH)
         [change] = api.body(sent)[FilePatchFields.PATCH]
@@ -287,6 +288,17 @@ class TestChangingOneThingAboutAFile:
         assert change[FilePatchFields.OP] == FilePatchFields.REPLACE
         assert change[FilePatchFields.PATH] == FilePatchFields.PASSWORD
         assert change[FilePatchFields.VALUE] == "let me in"
+
+    def test_an_unlocked_file_reports_where_it_stands(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("PATCH", FILE_PATH, {"job": {"id": 1}})
+            a_finished_job(api, 1)
+            api.answer("GET", FILE_PATH, {"file": {"status": "action_needed"}})
+            report = run(
+                unlock_file(workspace_id=WORKSPACE, project_id=PROJECT, file_id=FILE, password="x")
+            )
+
+        assert report == {"file_id": FILE, "status": "action_needed"}
 
     def test_sheets_are_named_under_a_key_of_their_own(self) -> None:
         # A workbook's sheets are wrapped and a password is not: the two tools

@@ -54,6 +54,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
 - `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
 
+## mammoth-mcp-server 0.2.10 (2026-11-04)
+
+### Changed (mammoth-mcp-server 0.2.10)
+
+- `upload_file` and `request_upload` are marked destructive, because `mode="replace"` throws a dataset's rows away for good. Clients now ask before running them.
+- `unlock_file` reports the file's `file_id` and `status`, so an unlocked PDF that still needs its tables extracted is told apart from a file that is done. It used to answer `{}`.
+- Tool descriptions say what a tool does rather than how the model should behave, to meet Claude's connector directory rules. Asks before sending data out or publishing stay.
+
 ## mammoth-cli 2.4.2 (2026-11-02)
 
 ### Added (mammoth-cli 2.4.2)

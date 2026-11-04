@@ -263,10 +263,9 @@ async def preview_query(
 
     Many clients draw a form under this call, with the query, the name, the
     schedule and the refresh filled in, and a button that makes the dataset.
-    Tell the user to check it and press Create: the form tells you when the
-    dataset is made. If none shows, ask about all three in one message, with
-    the defaults filled in (pull once, now; a refresh replaces the rows), and
-    skip what the user already said. Never ask one by one.
+    The form reports when the dataset is made. Where none shows, the same
+    choices go to `add_dataset_from_connection`; the defaults are to pull once,
+    now, and for a refresh to replace the rows.
 
     Args:
         workspace_id: Which workspace the project is in.
