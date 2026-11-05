@@ -3,7 +3,8 @@
 :func:`mammoth_cli.runtime.usage.send_in_background` starts this once the CLI has work for it.
 It waits so a burst of commands goes out together, sends what it finds, and exits. It is not a
 daemon: nothing runs while the CLI is idle. Lines it cannot deliver go back to the spool until
-they age out. If it is killed mid-send its claim stays for a later sender, which sends it again.
+they age out. A later sender takes a claim over and sends it again once it is 5 minutes old,
+whether its sender was killed or is still sending.
 """
 
 from __future__ import annotations

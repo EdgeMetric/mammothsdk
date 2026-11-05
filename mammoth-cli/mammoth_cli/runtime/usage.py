@@ -164,12 +164,13 @@ def release_lock() -> None:
 
 
 def take() -> Claim:
-    """Claim every waiting line, for this process alone.
+    """Claim every waiting line.
 
-    The rename is the claim, so two senders can never hold the same line. The claim stays on
-    disk until :func:`settle`, and one left by a killed sender is taken over once the lock it
-    held would have expired. A taken-over claim holds what was already delivered too, so a
-    killed sender's lines can go out twice, and ``inv`` tells the copies apart.
+    The rename is the claim, and the claim stays on disk until :func:`settle`. A claim older
+    than ``LOCK_TTL_SECONDS`` is taken over, whether its sender was killed or is still sending,
+    so two senders can hold the same line. A taken-over claim holds what was already delivered
+    too, so a line can go out more than once. No line is lost, and ``inv`` is the same on every
+    copy, so anything counting these events has to dedupe on it.
 
     Returns:
         The claim. Unreadable lines are left out.

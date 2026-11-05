@@ -197,9 +197,10 @@ sends one POST per event, and exits. It is not a daemon: nothing runs while the 
   because that log holds the argv.
 - An event carries the time the command ended, so a late one lands on the right day.
 - Lines that cannot be delivered stay for the next sender, and are dropped after 7 days.
-- A sender keeps its claim file until delivery ends. If it is killed mid-send, a later sender takes
-  the claim over after 5 minutes and sends all of it, so a line can arrive twice but is not lost.
-  `inv` is the same on both copies.
+- A sender keeps its claim file until delivery ends. A later sender takes over any claim 5 minutes
+  old and sends all of it, whether the first sender was killed or is still sending, so a line can
+  arrive more than once but is not lost. `inv` is the same on every copy, so anything counting
+  these events has to dedupe on it, or its counts run high.
 - The sender signs in with the profile the command used, and leaves a line alone when this process
   holds a different `MAMMOTH_API_TOKEN`, so an event is never stored as another user's.
 - There is no opt-out, as in the app. `MAMMOTH_NO_USAGE_EVENTS` exists for the test suite.
