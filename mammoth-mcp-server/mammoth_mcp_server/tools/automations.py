@@ -28,7 +28,7 @@ from pydantic import ValidationError
 from ..consts import AutomationFields
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..tool_kinds import DESTRUCTIVE, READS
+from ..tool_kinds import DESTRUCTIVE, DESTRUCTIVE_OUTSIDE, READS
 
 # The task and condition types the create route takes. Its own enums carry
 # every type Mammoth runs, including ones no client may ask for, so these come
@@ -39,7 +39,7 @@ CONDITION_TYPES = ", ".join(sorted(condition.value for condition in AutomationCo
 
 @mcp_server.tool(
     title="Create automation",
-    annotations=DESTRUCTIVE,
+    annotations=DESTRUCTIVE_OUTSIDE,
     description=(
         "Create an automation in a project and return it. Task types:"
         f" {TASK_TYPES}. Condition types: {CONDITION_TYPES}. Call"
@@ -146,7 +146,7 @@ async def get_automation(
     return typing.cast(dict[str, JsonValue], found[AutomationFields.AUTOMATION])
 
 
-@mcp_server.tool(title="Update automation", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Update automation", annotations=DESTRUCTIVE_OUTSIDE)
 async def update_automation(
     workspace_id: int,
     project_id: int,

@@ -11,13 +11,15 @@ from typing import Any
 from mcp.server import MCPServer
 from mcp.server.auth.settings import AuthSettings
 from pydantic import BaseModel, model_validator
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, Response
 
 # Importing them binds their tools to `chat_apps` before the server takes it.
 from . import connect_app, dataset_app, upload_app  # noqa: F401
 from .call_limit import CallLimit
 from .chat_apps import chat_apps
-from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH
-from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME
+from .config import MCP_OAUTH_URL, MCP_RESOURCE_URL, MCP_UPLOAD_PATH, OPENAI_APPS_CHALLENGE
+from .consts import MCP_INSTRUCTIONS, MCP_SERVER_NAME, OPENAI_CHALLENGE_PATH
 from .read_only import ReadOnly
 from .server_card import SERVER_CARD_MCP_PATH, SERVER_CARD_PATH, serve_server_card
 from .telemetry import Telemetry
@@ -52,6 +54,20 @@ mcp_server.custom_route(MCP_UPLOAD_PATH, methods=["GET", "POST"])(upload)
 # What a client or a crawler reads before it connects: public, no token.
 for card_path in (SERVER_CARD_PATH, SERVER_CARD_MCP_PATH):
     mcp_server.custom_route(card_path, methods=["GET", "OPTIONS"])(serve_server_card)
+
+
+async def serve_openai_challenge(_: Request) -> Response:
+    """Answer OpenAI's domain check with the bare token, or 404 while none is set.
+
+    Returns:
+        The token as plain text: OpenAI refuses JSON or anything around it.
+    """
+    if not OPENAI_APPS_CHALLENGE:
+        return Response(status_code=404)
+    return PlainTextResponse(OPENAI_APPS_CHALLENGE)
+
+
+mcp_server.custom_route(OPENAI_CHALLENGE_PATH, methods=["GET"])(serve_openai_challenge)
 
 
 class _OnlyNamedArguments(BaseModel):

@@ -208,6 +208,21 @@ class TestWhoMayCallTheMcpEndpoint:
         assert api.sent("POST", f"/workspaces/{WORKSPACE}/mm-ue")  # still measured
 
 
+class TestOpenAisDomainCheck:
+    PATH = "/.well-known/openai-apps-challenge"
+
+    def test_no_token_set_answers_not_found(self, server: TestClient) -> None:
+        assert server.get(self.PATH).status_code == 404
+
+    def test_the_token_is_answered_bare_and_needs_no_sign_in(self, server: TestClient) -> None:
+        with patch("mammoth_mcp_server.server.OPENAI_APPS_CHALLENGE", "the-token"):
+            answered = server.get(self.PATH)
+
+        assert answered.status_code == 200
+        assert answered.text == "the-token"
+        assert answered.headers["content-type"].startswith("text/plain")
+
+
 class TestTheUploadPage:
     @staticmethod
     def a_ticket(folder_resource_id: int | None = None) -> str:

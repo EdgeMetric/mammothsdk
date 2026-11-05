@@ -28,7 +28,7 @@ from ..export_runs import (
 from ..jobs import JobStillRunning, job_id_of, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..tool_kinds import DESTRUCTIVE
+from ..tool_kinds import DESTRUCTIVE_OUTSIDE
 from .exports import build_export
 from .pipeline import view_ids
 
@@ -50,7 +50,7 @@ SUSPENDED_NOTE = "The export no longer runs when the view runs. Tell the user."
 RESTORED_NOTE = "The export runs again when the view runs. Tell the user."
 
 
-@mcp_server.tool(title="Edit export", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Edit export", annotations=DESTRUCTIVE_OUTSIDE)
 async def edit_export(
     workspace_id: int,
     project_id: int,

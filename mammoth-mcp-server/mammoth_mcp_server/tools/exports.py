@@ -37,7 +37,7 @@ from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..shape import dataset_url
-from ..tool_kinds import DESTRUCTIVE, READS
+from ..tool_kinds import DESTRUCTIVE, DESTRUCTIVE_OUTSIDE, READS
 from .pipeline import view_ids
 
 # csv_file copies the file to a path on the Mammoth server, so no user can
@@ -85,7 +85,7 @@ SAVE_AS = {
 
 @mcp_server.tool(
     title="Add export",
-    annotations=DESTRUCTIVE,
+    annotations=DESTRUCTIVE_OUTSIDE,
     description=(
         "Add an export to a view's pipeline and wait for its first run, so the"
         " view's rows reach the destination. Destinations:"
