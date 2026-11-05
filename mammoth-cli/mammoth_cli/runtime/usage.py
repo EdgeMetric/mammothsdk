@@ -38,6 +38,7 @@ MAX_SPOOL_BYTES = 1024 * 1024
 _SPOOL_NAME = "pending.jsonl"
 _LOCK_NAME = "sender.lock"
 _CLAIMED_GLOB = "sending-*.jsonl"
+_DELIVERED_SUFFIX = ".delivered"
 
 
 @dataclass(frozen=True)
@@ -166,11 +167,12 @@ def release_lock() -> None:
 def take() -> Claim:
     """Claim every waiting line.
 
-    The rename is the claim, and the claim stays on disk until :func:`settle`. A claim older
-    than ``LOCK_TTL_SECONDS`` is taken over, whether its sender was killed or is still sending,
-    so two senders can hold the same line. A taken-over claim holds what was already delivered
-    too, so a line can go out more than once. No line is lost, and ``inv`` is the same on every
-    copy, so anything counting these events has to dedupe on it.
+    The rename is the claim, and the claim stays on disk until :func:`settle`. A sender refreshes
+    its claim with every line through :func:`mark_delivered`, so only a claim that went quiet for
+    ``LOCK_TTL_SECONDS`` is taken over, and without the lines marked delivered. A line can still
+    go out twice if a sender dies after sending it but before marking it, or after returning it
+    to the spool but before dropping the claim. No line is lost, and ``inv`` is the same on every
+    copy.
 
     Returns:
         The claim. Unreadable lines are left out.
@@ -190,11 +192,36 @@ def take() -> Claim:
                 continue
             # From here its age is this sender's, not the last command's.
             os.utime(path)
-            lines.extend(_read(path))
+            delivered = _delivered_ids(path)
+            lines.extend(line for line in _read(path) if line.get("inv") not in delivered)
         except OSError:
             continue
         paths.append(path)
     return Claim(lines, paths)
+
+
+def mark_delivered(claim: Claim, line: dict[str, Any]) -> None:
+    """Note that *line* arrived and that the claim's sender is alive. A failure costs a repeat.
+
+    Args:
+        claim: What this sender holds.
+        line: The line just delivered.
+    """
+    for path in claim.paths:
+        try:
+            with open(path.with_suffix(_DELIVERED_SUFFIX), "a", encoding="utf-8") as file:
+                file.write(f"{line.get('inv')}\n")
+            os.utime(path)
+        except OSError:
+            continue
+
+
+def _delivered_ids(path: Path) -> set[str]:
+    """The ``inv`` of each line marked delivered from the claim at *path*."""
+    try:
+        return set(path.with_suffix(_DELIVERED_SUFFIX).read_text(encoding="utf-8").splitlines())
+    except OSError:
+        return set()
 
 
 def _read(path: Path) -> list[dict[str, Any]]:
@@ -224,6 +251,7 @@ def settle(claim: Claim, undelivered: list[dict[str, Any]]) -> None:
     for path in claim.paths:
         try:
             path.unlink(missing_ok=True)
+            path.with_suffix(_DELIVERED_SUFFIX).unlink(missing_ok=True)
         except OSError:
             continue
 

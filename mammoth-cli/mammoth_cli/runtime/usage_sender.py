@@ -3,8 +3,8 @@
 :func:`mammoth_cli.runtime.usage.send_in_background` starts this once the CLI has work for it.
 It waits so a burst of commands goes out together, sends what it finds, and exits. It is not a
 daemon: nothing runs while the CLI is idle. Lines it cannot deliver go back to the spool until
-they age out. A later sender takes a claim over and sends it again once it is 5 minutes old,
-whether its sender was killed or is still sending.
+they age out. A sender marks each line it delivers, which also keeps its claim fresh, so a later
+sender takes over only a claim that went quiet for 5 minutes, and sends what was not marked.
 """
 
 from __future__ import annotations
@@ -57,16 +57,17 @@ def drain() -> bool:
     claim = usage.take()
     lines = [line for line in claim.lines if float(line["ts"]) > oldest]
     batch, later = lines[:MAX_BATCH], lines[MAX_BATCH:]
-    undelivered = _send(batch)
+    undelivered = _send(batch, claim)
     usage.settle(claim, undelivered + later)
     return len(undelivered) < len(batch)
 
 
-def _send(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _send(lines: list[dict[str, Any]], claim: usage.Claim) -> list[dict[str, Any]]:
     """Deliver lines per login.
 
     Args:
         lines: The lines to deliver.
+        claim: The claim holding them.
 
     Returns:
         The lines that were not delivered.
@@ -77,15 +78,16 @@ def _send(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
         logins.setdefault(key, []).append(line)
     undelivered: list[dict[str, Any]] = []
     for login_lines in logins.values():
-        undelivered.extend(_send_login(login_lines))
+        undelivered.extend(_send_login(login_lines, claim))
     return undelivered
 
 
-def _send_login(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _send_login(lines: list[dict[str, Any]], claim: usage.Claim) -> list[dict[str, Any]]:
     """Deliver the lines of one login, stopping at its first failure.
 
     Args:
         lines: Lines that share a profile and environment token.
+        claim: The claim holding them.
 
     Returns:
         The lines that were not delivered.
@@ -107,6 +109,7 @@ def _send_login(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
         with closing(SdkMammothService(auth, timeout=_SEND_TIMEOUT_SECONDS)) as service:
             for line in lines:
                 service.send_user_event(_user_event(line, auth))
+                usage.mark_delivered(claim, line)
                 sent += 1
     except Exception:
         return lines[sent:]

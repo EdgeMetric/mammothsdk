@@ -272,8 +272,49 @@ def test_a_sender_killed_mid_send_loses_nothing(service: type[_Service]) -> None
     assert len(service.sent) == 1
     _age_claims()
     assert usage_sender.drain() is True
-    assert {event["additional_info"]["inv"] for event in service.sent} == set(commands)
+    assert sorted(_sent_commands(service)) == sorted(commands)
     assert _claims() == []
+
+
+def test_a_sender_still_sending_is_not_taken_over() -> None:
+    for _ in range(2):
+        _record()
+    claim = usage.take()
+    _age_claims()
+
+    usage.mark_delivered(claim, claim.lines[0])
+
+    assert usage.take().lines == []
+
+
+def test_a_taken_over_claim_holds_only_what_was_not_delivered() -> None:
+    for _ in range(2):
+        _record()
+    claim = usage.take()
+    usage.mark_delivered(claim, claim.lines[0])
+    _age_claims()
+
+    assert usage.take().lines == claim.lines[1:]
+
+
+def test_a_line_with_no_id_is_not_lost_in_a_takeover() -> None:
+    _record()
+    line = json.loads(_spool().read_text(encoding="utf-8"))
+    line["inv"] = None
+    _spool().write_text(json.dumps(line) + "\n", encoding="utf-8")
+    claim = usage.take()
+    usage.mark_delivered(claim, claim.lines[0])
+    _age_claims()
+
+    assert usage.take().lines == claim.lines
+
+
+def test_a_finished_claim_leaves_no_delivered_marks(service: type[_Service]) -> None:
+    _record()
+    usage_sender.drain()
+
+    assert service.sent
+    assert sorted(path.suffix for path in _spool().parent.iterdir()) in ([], [".lock"])
 
 
 def test_a_settled_claim_leaves_nothing_but_the_undelivered_lines(
