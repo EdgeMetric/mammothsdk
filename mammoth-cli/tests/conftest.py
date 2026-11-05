@@ -93,6 +93,8 @@ def isolated_run_log(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # The daily update check must never reach PyPI from a test, nor read the
     # developer's real cache; tests of the check itself re-enable it.
     monkeypatch.setenv("MAMMOTH_NO_UPDATE_CHECK", "1")
+    # A test must never start the detached usage sender either.
+    monkeypatch.setenv("MAMMOTH_NO_USAGE_EVENTS", "1")
     monkeypatch.setenv("MAMMOTH_UPDATE_CACHE", str(tmp_path / "update-check.json"))
     # Session defaults from the developer's shell must not leak into tests.
     for name in (

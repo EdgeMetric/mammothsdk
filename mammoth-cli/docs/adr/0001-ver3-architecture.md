@@ -135,7 +135,7 @@ delete the old path.
 
 ### Telemetry: reuse `measures.request_log`, build nothing new
 
-The backend already logs every API v2 request in `measures.request_log`:
+The backend already logs every API v2 request except GETs in `measures.request_log`:
 
 - path, method, status and latency;
 - user and workspace;
@@ -171,10 +171,46 @@ WHERE user_agent LIKE 'mammoth-cli/%' AND received_at > now() - interval '7 days
 GROUP BY 1 ORDER BY invocations DESC;
 ```
 
-Not covered: failures that never reach the server (usage errors, local validation, crashes before
-the first request). `user_events` (`/workspaces/{id}/mm-ue`) could carry them later. It is
-left out for now: it forwards to June and fires milestone events, so it would need a backend opt-out
-for CLI events.
+`request_log` is for debugging one command. It cannot count usage: `is_loggable_request` skips GETs
+on both API stacks, so reads never appear, nor do failures that never reach the server.
+
+### Usage: one `user_events` row per command, sent by a detached process
+
+Each surface writes one row per command or tool call, so one table answers which surface is used:
+
+| Surface | `event_origin` | Event | Written by |
+|---------|----------------|-------|------------|
+| App | browser's own | app events | the browser |
+| MCP | `mcp` | `mcp_tool_called` | the server, in a background task |
+| CLI in a terminal or a coding agent | `cli` | `cli_command_run` | a detached sender |
+| CLI inside the in-product agent | `agent` | `agent_command_run` | mvc-service, directly |
+
+`agent=` in a `cli` event is an outside coding agent, such as Claude Code. `event_origin='agent'` is
+Mammoth's own agent. An embedded call sends nothing, so nothing counts twice.
+
+A command never waits on this. It appends one line to `usage/pending.jsonl` beside the run logs and
+starts `mammoth_cli.runtime.usage_sender` when no sender holds the lock. The start cost 0.55 ms
+(median of 50, on a laptop, with a stand-in child). The sender waits 60 s so a burst goes out together,
+sends one POST per event, and exits. It is not a daemon: nothing runs while the CLI is idle.
+
+- The spool holds only the fields `usage.record` names. The sender does not read the run log,
+  because that log holds the argv.
+- An event carries the time the command ended, so a late one lands on the right day.
+- Lines that cannot be delivered stay for the next sender, and are dropped after 7 days.
+- A sender keeps its claim file until delivery ends and marks each line it delivers, which also
+  keeps the claim fresh. A later sender takes over only a claim that went quiet for 5 minutes, and
+  sends what was not marked. No line is lost. A line can still arrive twice if a sender dies after
+  sending it but before marking it, or after returning lines to the spool but before dropping the
+  claim. `inv` is the same on both copies.
+- The sender signs in with the profile the command used, and leaves a line alone when this process
+  holds a different `MAMMOTH_API_TOKEN`, so an event is never stored as another user's.
+- There is no opt-out, as in the app. `MAMMOTH_NO_USAGE_EVENTS` exists for the test suite.
+
+`mm-ue` forwards every event to PostHog. Milestone events fire for five event names, and
+`cli_command_run` is not one of them.
+
+Not covered: errors before a command dispatches (a mistyped command), and hosts that kill the child
+when the main process ends, such as some CI jobs, where the spool is thrown away with the machine.
 
 ### Conditional reads: use every ETag the API gives (done)
 
