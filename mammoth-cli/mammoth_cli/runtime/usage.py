@@ -19,6 +19,7 @@ import os
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,19 @@ MAX_SPOOL_BYTES = 1024 * 1024
 _SPOOL_NAME = "pending.jsonl"
 _LOCK_NAME = "sender.lock"
 _CLAIMED_GLOB = "sending-*.jsonl"
+
+
+@dataclass(frozen=True)
+class Claim:
+    """The lines one sender holds, and the files that keep them until :func:`settle`.
+
+    Attributes:
+        lines: The lines, oldest first.
+        paths: The claim files. A sender killed mid-send leaves them behind.
+    """
+
+    lines: list[dict[str, Any]]
+    paths: list[Path]
 
 
 def enabled() -> bool:
@@ -149,32 +163,37 @@ def release_lock() -> None:
         return
 
 
-def take() -> list[dict[str, Any]]:
+def take() -> Claim:
     """Claim every waiting line, for this process alone.
 
-    The rename is the claim, so two senders can never hold the same line. A claim left by a
-    sender that crashed is taken over once the lock it held would have expired.
+    The rename is the claim, so two senders can never hold the same line. The claim stays on
+    disk until :func:`settle`, and one left by a killed sender is taken over once the lock it
+    held would have expired. A taken-over claim holds what was already delivered too, so a
+    killed sender's lines can go out twice, and ``inv`` tells the copies apart.
 
     Returns:
-        The lines, oldest first. Unreadable lines are dropped.
+        The claim. Unreadable lines are left out.
     """
     directory = _directory()
-    claimed = directory / f"sending-{os.getpid()}.jsonl"
+    own = directory / f"sending-{os.getpid()}-{time.time_ns()}.jsonl"
     try:
-        os.replace(directory / _SPOOL_NAME, claimed)
+        os.replace(directory / _SPOOL_NAME, own)
     except OSError:
         pass
     now = time.time()
     lines: list[dict[str, Any]] = []
+    paths: list[Path] = []
     for path in sorted(directory.glob(_CLAIMED_GLOB)):
         try:
-            if path != claimed and now - path.stat().st_mtime < LOCK_TTL_SECONDS:
+            if path != own and now - path.stat().st_mtime < LOCK_TTL_SECONDS:
                 continue
+            # From here its age is this sender's, not the last command's.
+            os.utime(path)
             lines.extend(_read(path))
-            path.unlink(missing_ok=True)
         except OSError:
             continue
-    return lines
+        paths.append(path)
+    return Claim(lines, paths)
 
 
 def _read(path: Path) -> list[dict[str, Any]]:
@@ -185,22 +204,44 @@ def _read(path: Path) -> list[dict[str, Any]]:
             line = json.loads(raw)
         except ValueError:
             continue
-        if isinstance(line, dict):
+        # A kept claim must never hold a line the sender would raise on.
+        if isinstance(line, dict) and isinstance(line.get("ts"), int | float):
             lines.append(line)
     return lines
 
 
-def give_back(lines: list[dict[str, Any]]) -> None:
-    """Return lines the sender could not deliver, for a later sender.
+def settle(claim: Claim, undelivered: list[dict[str, Any]]) -> None:
+    """Return the undelivered lines for a later sender, then drop the claim.
 
     Args:
-        lines: The undelivered lines.
+        claim: What this sender held.
+        undelivered: The lines it did not deliver. While they cannot be written back the
+            claim stays, so they go out again rather than being lost.
+    """
+    if not _give_back(undelivered):
+        return
+    for path in claim.paths:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            continue
+
+
+def _give_back(lines: list[dict[str, Any]]) -> bool:
+    """Append *lines* to the spool.
+
+    Args:
+        lines: The lines to return.
+
+    Returns:
+        True when they are safe in the spool.
     """
     if not lines:
-        return
+        return True
     text = "".join(json.dumps(line, separators=(",", ":")) + "\n" for line in lines)
     try:
         with open(_directory() / _SPOOL_NAME, "a", encoding="utf-8") as file:
             file.write(text)
     except OSError:
-        return
+        return False
+    return True

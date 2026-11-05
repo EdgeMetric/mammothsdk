@@ -2,8 +2,8 @@
 
 :func:`mammoth_cli.runtime.usage.send_in_background` starts this once the CLI has work for it.
 It waits so a burst of commands goes out together, sends what it finds, and exits. It is not a
-daemon: nothing runs while the CLI is idle. Lines it cannot deliver stay in the spool until they
-age out.
+daemon: nothing runs while the CLI is idle. Lines it cannot deliver go back to the spool until
+they age out. If it is killed mid-send its claim stays for a later sender, which sends it again.
 """
 
 from __future__ import annotations
@@ -53,10 +53,11 @@ def drain() -> bool:
         True when at least one event was delivered.
     """
     oldest = time.time() - MAX_AGE_SECONDS
-    lines = [line for line in usage.take() if float(line.get("ts") or 0) > oldest]
+    claim = usage.take()
+    lines = [line for line in claim.lines if float(line["ts"]) > oldest]
     batch, later = lines[:MAX_BATCH], lines[MAX_BATCH:]
     undelivered = _send(batch)
-    usage.give_back(undelivered + later)
+    usage.settle(claim, undelivered + later)
     return len(undelivered) < len(batch)
 
 

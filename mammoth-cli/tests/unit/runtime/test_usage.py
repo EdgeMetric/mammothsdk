@@ -16,11 +16,12 @@ import typer
 from mammoth_cli import __version__
 from mammoth_cli.context.resolver import ResolvedAuth
 from mammoth_cli.errors.envelope import CliError
-from mammoth_cli.runtime import embedded, executor, runlog, trace, usage, usage_sender
+from mammoth_cli.runtime import embedded, executor, linecapture, runlog, trace, usage, usage_sender
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.sdk_service import SdkMammothService
 
 SECRET_ARG = "customer-secret-value"
+FAILED_READ_BACK = {"verify": {"outcome": "failed"}}
 AUTH = ResolvedAuth(None, None, 42, "https://app.mammoth.io/api/v2", api_token="mm_x")
 
 
@@ -51,6 +52,20 @@ def _lines() -> list[dict[str, Any]]:
     return [json.loads(line) for line in _spool().read_text().splitlines()]
 
 
+def _claims() -> list[Path]:
+    return sorted(_spool().parent.glob("sending-*.jsonl"))
+
+
+def _age_claims() -> None:
+    stale = time.time() - usage.LOCK_TTL_SECONDS - 1
+    for path in _claims():
+        os.utime(path, (stale, stale))
+
+
+def _sent_commands(service: type[_Service]) -> list[str]:
+    return [event["additional_info"]["inv"] for event in service.sent]
+
+
 def _record(invocation: Invocation | None = None, command_id: str = "view.data.get") -> None:
     with trace.begin(command_id):
         usage.record(
@@ -61,17 +76,24 @@ def _record(invocation: Invocation | None = None, command_id: str = "view.data.g
         )
 
 
+class _Killed(BaseException):
+    """The process ends here: nothing after this line of the sender runs."""
+
+
 class _Service:
     """Stands in for the SDK service: takes events until told to fail."""
 
     sent: list[dict[str, Any]]
     fail_after: int | None = None
+    kill_after: int | None = None
     closed = 0
 
     def __init__(self, auth: ResolvedAuth, *, timeout: float) -> None:
         self.auth = auth
 
     def send_user_event(self, event: dict[str, Any]) -> None:
+        if _Service.kill_after is not None and len(_Service.sent) >= _Service.kill_after:
+            raise _Killed
         if _Service.fail_after is not None and len(_Service.sent) >= _Service.fail_after:
             raise OSError("no route")
         _Service.sent.append(event)
@@ -85,6 +107,7 @@ def service(monkeypatch: pytest.MonkeyPatch) -> type[_Service]:
     """Send through :class:`_Service`, signed in as ``AUTH``."""
     _Service.sent = []
     _Service.fail_after = None
+    _Service.kill_after = None
     _Service.closed = 0
     monkeypatch.setattr(usage_sender, "SdkMammothService", _Service)
     monkeypatch.setattr(usage_sender, "resolve_auth", lambda invocation: AUTH)
@@ -208,26 +231,89 @@ def test_a_failed_start_leaves_the_lock_free(
 
 def test_a_second_claim_finds_nothing() -> None:
     _record()
-    assert len(usage.take()) == 1
-    assert usage.take() == []
+    assert len(usage.take().lines) == 1
+    assert usage.take().lines == []
 
 
 def test_a_crashed_senders_claim_is_taken_over() -> None:
     _record()
     orphan = _spool().parent / "sending-1.jsonl"
     _spool().rename(orphan)
-    assert usage.take() == []
-    stale = time.time() - usage.LOCK_TTL_SECONDS - 1
-    os.utime(orphan, (stale, stale))
-    assert len(usage.take()) == 1
+    assert usage.take().lines == []
+    _age_claims()
+    claim = usage.take()
+    assert len(claim.lines) == 1
+    assert orphan.exists()
+    usage.settle(claim, [])
     assert not orphan.exists()
+
+
+def test_a_live_senders_claim_is_safe_however_old_its_lines_are() -> None:
+    _record()
+    stale = time.time() - usage.LOCK_TTL_SECONDS - 1
+    os.utime(_spool(), (stale, stale))
+    assert len(usage.take().lines) == 1
+    assert usage.take().lines == []
+
+
+def test_a_sender_killed_mid_send_loses_nothing(service: type[_Service]) -> None:
+    for _ in range(3):
+        _record()
+    commands = [line["inv"] for line in _lines()]
+    service.kill_after = 1
+
+    with pytest.raises(_Killed):
+        usage_sender.drain()
+
+    assert len(_claims()) == 1
+    assert not _spool().exists()
+    service.kill_after = None
+    usage_sender.drain()
+    assert len(service.sent) == 1
+    _age_claims()
+    assert usage_sender.drain() is True
+    assert {event["additional_info"]["inv"] for event in service.sent} == set(commands)
+    assert _claims() == []
+
+
+def test_a_settled_claim_leaves_nothing_but_the_undelivered_lines(
+    service: type[_Service],
+) -> None:
+    service.fail_after = 1
+    for _ in range(3):
+        _record()
+    usage_sender.drain()
+    assert _claims() == []
+    assert len(_lines()) == 2
+
+
+def test_a_claim_that_cannot_be_given_back_stays(
+    service: type[_Service], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def no_disk(*args: Any, **kwargs: Any) -> None:
+        raise OSError("read-only file system")
+
+    service.fail_after = 0
+    _record()
+    monkeypatch.setattr(usage, "open", no_disk, raising=False)
+    usage_sender.drain()
+    assert len(_claims()) == 1
+
+
+def test_a_line_with_no_usable_time_never_wedges_a_claim(service: type[_Service]) -> None:
+    _record()
+    with _spool().open("a") as file:
+        file.write(json.dumps({"ts": "soon"}) + "\n")
+    assert usage_sender.drain() is True
+    assert len(service.sent) == 1
+    assert _claims() == []
 
 
 def test_an_unreadable_line_is_dropped() -> None:
     _record()
     with _spool().open("a") as file:
         file.write("not json\n[1]\n")
-    assert len(usage.take()) == 1
+    assert len(usage.take().lines) == 1
 
 
 def test_a_delivered_event_keeps_the_time_the_command_ended(
@@ -416,6 +502,121 @@ def test_a_failed_command_is_spooled_with_its_code(spawned: list[dict[str, Any]]
     assert line["error_code"] == "not_found"
     assert line["exit_status"] == 4
     assert len(spawned) == 1
+
+
+def test_two_env_tokens_under_one_profile_never_share_a_login(
+    service: type[_Service], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    invocation = Invocation(command_id="project.list", profile="work", profile_is_default=True)
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_alice")
+    _record(invocation)
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_bob")
+    _record(invocation)
+    alice, bob = (line["inv"] for line in _lines())
+
+    usage_sender.drain()
+    assert _sent_commands(service) == [bob]
+
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_alice")
+    usage_sender.drain()
+    assert _sent_commands(service) == [bob, alice]
+
+
+def test_an_explicit_profile_is_sent_whatever_token_the_sender_holds(
+    service: type[_Service], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_alice")
+    _record(Invocation(command_id="project.list", profile="work"))
+    monkeypatch.setenv("MAMMOTH_API_TOKEN", "mm_bob")
+
+    assert usage_sender.drain() is True
+    assert len(service.sent) == 1
+
+
+def test_the_lines_of_a_run_share_a_session_and_leave_the_sender_to_the_run(
+    service: type[_Service], spawned: list[dict[str, Any]]
+) -> None:
+    invocation = Invocation(command_id="project.list", profile="work")
+    with trace.begin("run") as run, linecapture.capturing():
+        for _ in range(2):
+            executor.run("project.list", "json", lambda: ([], {}), invocation=invocation)
+
+    assert spawned == []
+    usage_sender.drain()
+    assert [event["session_identifier"] for event in service.sent] == [run.group] * 2
+    assert len(set(_sent_commands(service))) == 2
+
+
+def test_a_command_outside_a_run_is_its_own_session(service: type[_Service]) -> None:
+    _record()
+    command = _lines()[0]["inv"]
+    usage_sender.drain()
+    assert service.sent[0]["session_identifier"] == command
+
+
+def test_the_service_gets_how_long_the_command_ran(
+    service: type[_Service], spawned: list[dict[str, Any]]
+) -> None:
+    def slow() -> tuple[list[Any], dict[str, Any]]:
+        time.sleep(0.03)
+        return [], {}
+
+    invocation = Invocation(command_id="project.list", profile="work")
+    executor.run("project.list", "json", slow, invocation=invocation, interceptors=())
+
+    usage_sender.drain()
+    assert service.sent[0]["additional_info"]["duration_ms"] >= 30
+
+
+def test_a_command_that_exits_non_zero_with_no_error_reaches_the_service_failed(
+    service: type[_Service], spawned: list[dict[str, Any]]
+) -> None:
+    invocation = Invocation(command_id="project.update", profile="work")
+    with pytest.raises(typer.Exit):
+        executor.run(
+            "project.update",
+            "json",
+            lambda: (FAILED_READ_BACK, {}),
+            invocation=invocation,
+            interceptors=(),
+        )
+
+    usage_sender.drain()
+    info = service.sent[0]["additional_info"]
+    assert info["exit_status"] != 0
+    assert info["error_code"] is None
+    assert info["outcome"] == "failed"
+
+
+def test_the_sender_waits_before_it_sends(
+    service: type[_Service], monkeypatch: pytest.MonkeyPatch, spawned: list[dict[str, Any]]
+) -> None:
+    waits: list[tuple[float, int]] = []
+    monkeypatch.setattr(
+        usage_sender.time, "sleep", lambda seconds: waits.append((seconds, len(service.sent)))
+    )
+    _record()
+    usage.send_in_background()
+
+    usage_sender.main()
+
+    assert waits == [(usage_sender.WAIT_SECONDS, 0)]
+    assert len(service.sent) == 1
+
+
+def test_a_sender_drains_twice_before_it_exits(
+    service: type[_Service], monkeypatch: pytest.MonkeyPatch, spawned: list[dict[str, Any]]
+) -> None:
+    monkeypatch.setattr(usage_sender, "WAIT_SECONDS", 0)
+    monkeypatch.setattr(usage_sender, "MAX_BATCH", 2)
+    for _ in range(3):
+        _record()
+    usage.send_in_background()
+
+    usage_sender.main()
+
+    assert len(service.sent) == 3
+    assert not _spool().exists()
 
 
 def test_the_service_posts_the_encoded_event_to_this_workspace() -> None:
