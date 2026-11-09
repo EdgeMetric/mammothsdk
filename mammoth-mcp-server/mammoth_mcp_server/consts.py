@@ -3,6 +3,7 @@
 from .config import APP_URL, DASHBOARD_DOMAIN
 
 MCP_SERVER_NAME = "Mammoth Analytics"
+OPENAI_CHALLENGE_PATH = "/.well-known/openai-apps-challenge"
 # The name, title and description the registry entry (`server.json`) and the
 # server card both carry; a test holds `server.json` to these.
 REGISTRY_NAME = "io.mammoth/mcp"

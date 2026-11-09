@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-mcp-server)
+
+- `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
+
+### Changed (next mammoth-mcp-server)
+
+- Every tool now sets `readOnlyHint`, `destructiveHint` and `openWorldHint` explicitly. `openWorldHint` is true for the 15 tools that can reach a system outside the workspace.
+
 ### Fixed (next mammoth-mcp-server)
 
 - `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.

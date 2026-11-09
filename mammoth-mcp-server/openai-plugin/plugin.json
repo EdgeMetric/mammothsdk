@@ -1,0 +1,37 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "mammoth-analytics",
+  "version": "1.0.0",
+  "description": "Explore, clean, transform and export your Mammoth Analytics data.",
+  "author": {
+    "name": "Mammoth Analytics",
+    "email": "hello@mammoth.io",
+    "url": "https://mammoth.io"
+  },
+  "homepage": "https://mammoth.io/docs/agents/mcp/",
+  "keywords": ["data", "analytics", "data cleaning", "dashboards", "pipelines"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Mammoth Analytics",
+        "shortDescription": "Clean and analyze your data",
+        "longDescription": "Mammoth Analytics turns messy data into clean datasets, views and dashboards.\n\nUpload a file or connect a database, look through your datasets, clean and transform them with repeatable pipelines, get exact totals, build dashboards, and send the results where they need to go.\n\nYou need a Mammoth account. Every action runs as you, with your own permissions, and Mammoth asks you before anything is sent out or published.",
+        "developerName": "Mammoth Analytics",
+        "category": "Data & Analytics",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://mammoth.io",
+        "supportURL": "https://mammoth.io/support/",
+        "privacyPolicyURL": "https://mammoth.io/privacy/",
+        "termsOfServiceURL": "https://mammoth.io/terms/",
+        "defaultPrompt": [
+          "List my Mammoth datasets and tell me which needs cleaning.",
+          "Combine two of my datasets and total revenue by region.",
+          "Build a dashboard from one of my Mammoth views."
+        ],
+        "brandColor": "#12855D",
+        "composerIcon": "./assets/icon.svg",
+        "logo": "./assets/logo.svg"
+      }
+    }
+  }
+}

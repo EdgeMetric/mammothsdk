@@ -44,6 +44,7 @@ through the API, as the SDK does. The server imports no backend code.
 | `MAMMOTH_OAUTH_URL` | `MAMMOTH_APP_URL` + `/api/v2` | Mammoth's authorization server (its issuer), where a client signs the user in. |
 | `MCP_REDIS_URL` | `redis://localhost:6379/0` | Where upload tickets are kept. |
 | `MCP_ENCRYPTION_KEY` | none | A Fernet key. The caller's token in an upload ticket is sealed with it. Required. |
+| `MCP_OPENAI_APPS_CHALLENGE` | none | The token OpenAI's plugin portal issues. `/.well-known/openai-apps-challenge` answers it as plain text, and 404 while it is not set. |
 | `MCP_STORE_PREFIX` | `mammoth_mcp` | Keeps this deployment's records apart in a shared Redis. |
 | `MCP_HOST`, `MCP_PORT` | `127.0.0.1`, `8270` | Where the server listens. |
 

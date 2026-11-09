@@ -32,7 +32,7 @@ from ..consts import AppendFields, PageFields, PipelineFields, TrashFields, Vers
 from ..jobs import JobStillRunning, job_id_of, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..tool_kinds import DESTRUCTIVE, READS
+from ..tool_kinds import DESTRUCTIVE_OUTSIDE, READS
 from .pipeline import get_pipeline
 
 type TrashKind = Literal["dataview", "dataset", "dashboard", "automation"]
@@ -127,7 +127,7 @@ async def list_trash(
     }
 
 
-@mcp_server.tool(title="Undo: trash, pipeline or batch", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Undo: trash, pipeline or batch", annotations=DESTRUCTIVE_OUTSIDE)
 async def undo(
     workspace_id: int,
     project_id: int,

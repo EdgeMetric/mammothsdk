@@ -18,7 +18,7 @@ from ..dataset_app import NOT_A_DATABASE, check_query
 from ..jobs import JobStillRunning, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors, request_api
 from ..server import mcp_server
-from ..tool_kinds import DESTRUCTIVE, READS
+from ..tool_kinds import DESTRUCTIVE_OUTSIDE, READS, READS_OUTSIDE
 
 type Json = dict[str, JsonValue]
 type Repeat = Literal["once", "hourly", "daily", "weekly", "monthly"]
@@ -66,7 +66,7 @@ async def list_connections(
     return {ConnectionFields.CONNECTIONS: list[JsonValue](listed)}
 
 
-@mcp_server.tool(title="List tables", annotations=READS)
+@mcp_server.tool(title="List tables", annotations=READS_OUTSIDE)
 async def list_tables(
     workspace_id: int,
     project_id: int,
@@ -157,7 +157,7 @@ def values_of(items: JsonValue) -> list[str]:
     return [str(one[ConnectionFields.VALUE]) for one in listed if isinstance(one, dict)]
 
 
-@mcp_server.tool(title="Add a dataset from a connection", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Add a dataset from a connection", annotations=DESTRUCTIVE_OUTSIDE)
 async def add_dataset_from_connection(
     workspace_id: int,
     project_id: int,

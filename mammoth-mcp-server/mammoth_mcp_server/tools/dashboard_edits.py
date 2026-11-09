@@ -23,7 +23,7 @@ from ..consts import ENGINE_V3, TOOL_CALL_SECONDS, DashboardFields, JobFields
 from ..jobs import JobStillRunning, read_job, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..tool_kinds import DESTRUCTIVE
+from ..tool_kinds import DESTRUCTIVE_OUTSIDE
 from .dashboard_embed import EmbedMode, change_embed, check_embed_change
 from .dashboards import read_dashboard
 
@@ -60,7 +60,7 @@ STILL_EDITING = (
 )
 
 
-@mcp_server.tool(title="Edit dashboard, tags or embed", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Edit dashboard, tags or embed", annotations=DESTRUCTIVE_OUTSIDE)
 async def edit_dashboard(
     workspace_id: int,
     dashboard_id: int,

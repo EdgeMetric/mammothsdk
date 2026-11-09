@@ -185,6 +185,33 @@ def offered() -> dict[str, object]:
     return {tool.name: tool for tool in run(mcp_server.list_tools())}
 
 
+OUTSIDE_THE_WORKSPACE = {
+    "add_dataset_from_connection",
+    "add_export",
+    "add_transformations",
+    "create_automation",
+    "delete_transformation_step",
+    "edit_dashboard",
+    "edit_export",
+    "edit_transformation_step",
+    "list_tables",
+    "manage_draft",
+    "preview_query",
+    "publish_dashboard",
+    "run_pipeline",
+    "undo",
+    "update_automation",
+}
+
+
+def test_every_tool_sets_every_hint_a_directory_requires() -> None:
+    for name, tool in offered().items():
+        annotations = tool.annotations  # type: ignore[attr-defined]
+        assert isinstance(annotations.read_only_hint, bool), name
+        assert isinstance(annotations.destructive_hint, bool), name
+        assert annotations.open_world_hint == (name in OUTSIDE_THE_WORKSPACE), name
+
+
 def test_every_tool_says_whether_it_changes_anything() -> None:
     # A client treats a tool with no annotations as one that may do anything.
     for name, tool in offered().items():

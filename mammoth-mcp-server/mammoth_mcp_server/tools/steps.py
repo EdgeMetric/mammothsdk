@@ -28,7 +28,7 @@ from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..task_params import StepPlace
-from ..tool_kinds import DESTRUCTIVE
+from ..tool_kinds import DESTRUCTIVE_OUTSIDE
 from .pipeline import read_pipeline, read_steps, view_ids
 from .transformations import build_param, check_change, failing_ids, problems_of, read_operation
 
@@ -77,7 +77,7 @@ NOT_PUT_BACK_NOTE = (
 )
 
 
-@mcp_server.tool(title="Edit transformation step", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Edit transformation step", annotations=DESTRUCTIVE_OUTSIDE)
 async def edit_transformation_step(
     workspace_id: int,
     project_id: int,

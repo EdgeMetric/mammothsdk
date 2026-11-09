@@ -40,7 +40,7 @@ from ..consts import (
 from ..jobs import JobStillRunning, still_running, wait_for_job
 from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
-from ..tool_kinds import CHANGES, DESTRUCTIVE, READS
+from ..tool_kinds import CHANGES, DESTRUCTIVE, DESTRUCTIVE_OUTSIDE, READS
 from .dashboard_embed import read_embed
 
 AUDIENCES = ", ".join(audience.value for audience in DashboardAuthType)
@@ -242,7 +242,7 @@ async def delete_dashboard(workspace_id: int, dashboard_id: int) -> dict[str, Js
     }
 
 
-@mcp_server.tool(title="Publish dashboard", annotations=DESTRUCTIVE)
+@mcp_server.tool(title="Publish dashboard", annotations=DESTRUCTIVE_OUTSIDE)
 async def publish_dashboard(
     workspace_id: int,
     dashboard_id: int,
