@@ -1,6 +1,6 @@
 ---
 name: release-sync
-description: Check that every release surface of mammoth-io (SDK), mammoth-cli and mammoth-mcp-server matches main, then fix what lags — PyPI, tags, GitHub releases, CHANGELOG, uv.lock, MCP registry, the mm-ai-docs skill/contract and docs.mammoth.io, the mm-website changelog — and verify it all again. Use for "is everything released?", "are sdk/cli/mcp published?", "release sync", "do the releases", "update the registry", or after merging a version bump.
+description: Check that every release surface of mammoth-io (SDK), mammoth-cli and mammoth-mcp-server matches main, then fix what lags — PyPI, tags, GitHub releases, CHANGELOG, uv.lock, MCP registry, the mm-ai-docs skill/contract and mammoth.io/docs, the mm-website changelog — and verify it all again. Use for "is everything released?", "are sdk/cli/mcp published?", "release sync", "do the releases", "update the registry", or after merging a version bump.
 ---
 
 # release-sync
@@ -38,7 +38,7 @@ Work in this order: later rows depend on earlier ones. **Ask before every step m
 | ⚠ MCP registry | Check the "live server card" row first: publish only a version that is deployed. `cd mammoth-mcp-server`, log in with the DNS key (`~/.config/mammoth/mcp-registry-key.pem`, recipe in mm-ai-docs `deploy/README.md`, step 5), `mcp-publisher validate`, `mcp-publisher publish`. A version publishes once. |
 | MCP server deployed | Deploy is outside this skill (`mammoth-mcp-server/deploy`). Tell the user. |
 | mm-ai-docs main skill version | The row names the `auto/cli-contract-<ver>` PR when it exists. Verify it before merging: in a worktree of the PR, install the published CLI in a fresh venv and run `MAMMOTH_CLI=<venv>/bin/mammoth npm run -s docs:capabilities:check` and `<venv>/bin/python ai_backend/scripts/sync_skill.py --from-package --check`. A digest-only drift of `mammoth-cli.tar.gz` with identical extracted contents is gzip bytes, not content. No PR: run the "Regenerate CLI contract" workflow in mm-ai-docs. ⚠ Merge. |
-| docs.mammoth.io skill version | Deploy is the user's (mm-ai-docs `deploy/README.md`). Ask them, then re-check. |
+| mammoth.io/docs skill version | docs.mammoth.io redirects to mammoth.io/docs, served by mm-website from static files. After the mm-ai-docs contract PR merges, copy `vitepress-site/src/public/.well-known/{agent-skills,skills}/` into mm-website `public/docs/.well-known/`, point the archive `url` in `agent-skills/index.json` at `https://mammoth.io/docs/...`, check the index digest equals the archive's sha256, and open twin PRs to `release` and `main` (`release` carries other unshipped work). ⚠ Merge. |
 | mm-website changelog (warn) | Entries go in `content/changelog/data.json` on a branch off `release`, PR to `release`, then `release` → `main`. Write user-facing lines like the existing `SDK & CLI` entries; no version numbers. Draft them and show the user before opening the PR. |
 
 ### PRs and merging

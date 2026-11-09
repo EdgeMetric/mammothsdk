@@ -14,7 +14,7 @@ And once each:
   - mammoth-cli/uv.lock pins the repo's mammoth-cli and mammoth-io
   - the CLI installer URLs answer without a login
   - the MCP registry's latest io.mammoth/mcp and the live server card equal server.json
-  - mm-ai-docs main and docs.mammoth.io serve the published CLI version
+  - mm-ai-docs main and mammoth.io/docs serve the published CLI version
   - the mm-website changelog was generated on or after the CLI's PyPI upload
 
 Needs ``git`` and an authenticated ``gh``. Exit status 1 when any row fails.
@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REPO = "EdgeMetric/mammothsdk"
 DOCS_REPO = "EdgeMetric/mm-ai-docs"
 WEBSITE_REPO = "EdgeMetric/mm-website"
-DOCS_URL = "https://docs.mammoth.io"
+DOCS_URL = "https://mammoth.io/docs"  # docs.mammoth.io redirects here (308)
 MCP_CARD_URL = "https://mcp.mammoth.io/.well-known/mcp/server-card.json"
 REGISTRY_URL = (
     "https://registry.modelcontextprotocol.io/v0/servers/io.mammoth%2Fmcp/versions/latest"
@@ -333,10 +333,12 @@ def check_docs(cli: dict[str, Any]) -> None:
     if live:
         live_version = live["skills"][0].get("metadata", {}).get("version")
     add(
-        "docs.mammoth.io skill version",
+        "mammoth.io/docs skill version",
         live_version == published,
         f"live {live_version}, CLI {published}",
-        f"deploy {DOCS_REPO} main (deploy/README.md)",
+        "copy public/.well-known/{agent-skills,skills} from mm-ai-docs vitepress-site/src "
+        "to mm-website public/docs/.well-known (archive URL on mammoth.io/docs), "
+        "PRs to release and main",
     )
 
 
