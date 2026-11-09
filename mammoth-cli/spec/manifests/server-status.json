@@ -41,6 +41,156 @@
         "POST /workspaces/{}/projects/{}/connector-drafts/link-preview"
       ]
     },
+    "workflow.after.loops": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/after"
+      ]
+    },
+    "workflow.after.set": {
+      "server_status": "pending",
+      "routes": [
+        "PUT /workspaces/{}/projects/{}/workflows/{}/after"
+      ]
+    },
+    "workflow.before-after": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/before-after"
+      ]
+    },
+    "workflow.describe.build": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/describe/build"
+      ]
+    },
+    "workflow.describe.check": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/describe/check"
+      ]
+    },
+    "workflow.describe.fed-by": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/describe/fed-by/{}"
+      ]
+    },
+    "workflow.describe.get": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/describe/{}"
+      ]
+    },
+    "workflow.describe.sample": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/describe/samples"
+      ]
+    },
+    "workflow.describe.start": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/describe"
+      ]
+    },
+    "workflow.describe.wait": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/describe/{}"
+      ]
+    },
+    "workflow.held.check": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/holds/check"
+      ]
+    },
+    "workflow.link.create": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/link"
+      ]
+    },
+    "workflow.link.remove": {
+      "server_status": "pending",
+      "routes": [
+        "DELETE /workspaces/{}/projects/{}/workflows/{}/link"
+      ]
+    },
+    "workflow.page.start": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflow-pages/{}/start"
+      ]
+    },
+    "workflow.repeat-counts": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/repeat-counts"
+      ]
+    },
+    "workflow.run.list": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/runs"
+      ]
+    },
+    "workflow.run.wait": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/runs"
+      ]
+    },
+    "workflow.schedule.set": {
+      "server_status": "pending",
+      "routes": [
+        "PUT /workspaces/{}/projects/{}/workflows/{}/schedule"
+      ]
+    },
+    "workflow.sentence.dismiss-ask": {
+      "server_status": "pending",
+      "routes": [
+        "DELETE /workspaces/{}/projects/{}/workflows/{}/sentence/ask"
+      ]
+    },
+    "workflow.sentence.read": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/sentence"
+      ]
+    },
+    "workflow.step-lines": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/step-lines"
+      ]
+    },
+    "workflow.swap.apply": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/swap"
+      ]
+    },
+    "workflow.swap.cancel": {
+      "server_status": "pending",
+      "routes": [
+        "DELETE /workspaces/{}/projects/{}/workflows/{}/swap"
+      ]
+    },
+    "workflow.swap.fit": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/swap/fit"
+      ]
+    },
+    "workflow.swap.undo": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflows/{}/swap/undo"
+      ]
+    },
     "workflow.template.build": {
       "server_status": "pending",
       "routes": [
@@ -51,6 +201,12 @@
       "server_status": "pending",
       "routes": [
         "POST /workspaces/{}/projects/{}/workflow-templates/{}/fit"
+      ]
+    },
+    "workflow.template.fits": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workspaces/{}/projects/{}/workflow-templates/fits"
       ]
     },
     "workflow.template.get": {
@@ -87,6 +243,12 @@
       "server_status": "pending",
       "routes": [
         "POST /workspaces/{}/projects/{}/workflow-templates/{}/samples"
+      ]
+    },
+    "workflow.values": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/workflows/{}/views/{}/values"
       ]
     },
     "workspace.segment.list": {

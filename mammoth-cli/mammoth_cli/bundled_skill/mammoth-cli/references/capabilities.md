@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 875 commands. 705 of them bind one of the 769 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 261 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
+The CLI publishes 903 commands. 741 of them bind one of the 1001 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 259 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -20,12 +20,12 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 | `dashboard` | 166 | 81 | 1 | 84 |
 | `support` | 117 | 9 | 0 | 108 |
 | `view` | 71 | 58 | 0 | 13 |
-| `agent` | 41 | 1 | 0 | 40 |
+| `workflow` | 56 | 9 | 0 | 47 |
+| `agent` | 42 | 1 | 0 | 41 |
 | `connector` | 39 | 3 | 0 | 36 |
-| `workspace` | 27 | 7 | 0 | 20 |
+| `dataset` | 30 | 12 | 0 | 18 |
 | `billing` | 26 | 4 | 0 | 22 |
-| `dataset` | 26 | 12 | 0 | 14 |
-| `workflow` | 23 | 9 | 0 | 14 |
+| `workspace` | 25 | 5 | 0 | 20 |
 | `collection` | 21 | 0 | 0 | 21 |
 | `project` | 18 | 15 | 0 | 3 |
 | `parameter` | 14 | 7 | 0 | 7 |

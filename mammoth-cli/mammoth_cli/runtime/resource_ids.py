@@ -119,6 +119,8 @@ CREATE_RESOURCES: dict[str, Created | None] = {
     "webhook.create": Created("webhook"),
     "workflow.create": Created("workflow"),
     "workflow.duplicate": Created("workflow"),
+    # The secret link is stored as an automation; the reply names it `automation_id`.
+    "workflow.link.create": Created("automation"),
     "workspace.create": Created("workspace"),
     "workspace.oauth-client.create": None,
 }

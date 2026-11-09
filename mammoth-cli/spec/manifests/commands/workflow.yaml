@@ -257,3 +257,222 @@ commands:
   known_restrictions: 'Input: {inputs, matches, destination_name, settings?, destination_emails?} as in
     workflow template preview; the server refuses a build whose own preview could not run. Answers while
     the Save runs: follow it with workflow get WORKFLOW_ID (canvas_state.save_run).'
+- command_id: workflow.template.fits
+  output_schema:
+    type: object
+    required: [fits]
+    properties:
+      fits:
+        type: array
+        items:
+          type: object
+  known_restrictions: 'Input (all optional): {dataset_ids: [up to 200 dataset ids], focus: DATASET_ID}.
+    Judges tables by column names and types alone; each fit names the table that fills each input, and
+    sure is false when a match is a guess.'
+- command_id: workflow.page.start
+  no_readback: returns the read-back on the page's sample tables; no workflow is built
+  output_schema:
+    type: object
+  undo:
+    strategy: manual
+    command: dataset.delete
+    note: Delete each sample dataset the page imported; a second start finds the same tables again.
+  known_restrictions: Imports the workflow page's sample tables once and reads its workflow back on them.
+    Nothing is built; use workflow template fits and workflow template build for your own tables.
+- command_id: workflow.run.start
+  output_schema:
+    type: object
+    required: [run_id, already_running]
+  undo:
+    strategy: irreversible
+    reason: Starts a run; its result replaces the earlier result and the emails it sends cannot be unsent.
+  readback:
+    command: workflow.run.list
+    ids:
+      workflow_id: positional.0
+    kind: object
+  known_restrictions: 'Runs the workflow on the server now, as its clock would; a workflow already running
+    is not started twice (already_running: true names the run in flight). Input (optional): {wait: true,
+    timeout: SECONDS} follows Recent runs until the run ends; result is running when the wait ran out.'
+- command_id: workflow.run.wait
+  output_schema:
+    type: object
+- command_id: workflow.run.list
+  output_schema:
+    type: object
+    required: [runs]
+    properties:
+      runs:
+        type: array
+        items:
+          type: object
+- command_id: workflow.schedule.set
+  output_schema:
+    type: object
+    required: [automation_id]
+  undo:
+    strategy: manual
+    command: automation.delete
+    note: Remove the clock by the automation_id the result names (automation pause stops it for now).
+  readback:
+    command: automation.get
+    ids:
+      automation_id: result.automation_id
+    kind: object
+  known_restrictions: 'Input: {frequency: hourly|daily|weekly|monthly, interval?: 1-366, by_week_day?:
+    [mo..su], by_month_day?: [1-31], start_at?: ISO 8601 UTC, start_now?: true, until?: ISO 8601}. Replaces
+    the clock the workflow has.'
+- command_id: workflow.after.set
+  output_schema:
+    type: object
+    required: [automation_id]
+  undo:
+    strategy: manual
+    command: automation.delete
+    note: Remove the trigger by the automation_id the result names.
+  readback:
+    command: automation.get
+    ids:
+      automation_id: result.automation_id
+    kind: object
+  known_restrictions: 'Runs WORKFLOW_ID each time SOURCE_WORKFLOW_ID finishes. Input (optional): {only_when_ok:
+    false} starts it after a failed run too. The server refuses a loop; workflow after loops names them.'
+- command_id: workflow.after.loops
+  output_schema:
+    type: object
+    required: [would_loop]
+- command_id: workflow.link.create
+  no_readback: the secret is shown only in this reply; `workflow get` does not return it
+  output_schema:
+    type: object
+  undo:
+    strategy: manual
+    command: workflow.link.remove
+    note: Turn the link off with workflow link remove WORKFLOW_ID.
+  known_restrictions: Makes the workflow's secret run link; anyone with it can start the workflow with a
+    POST and no sign-in. A new link replaces the old one, and the secret is shown only in this answer.
+- command_id: workflow.link.remove
+  no_readback: the server answers 204; the link stops working at once
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: The secret is not kept; workflow link create makes a new link with a new secret.
+- command_id: workflow.describe.start
+  output_schema:
+    type: object
+    required: [draft, state]
+  known_restrictions: 'Input: {text: 3-2000 characters, dataset_ids?: [up to 10], name?, answers?: [{question,
+    answer}], samples?: [kept file ids]}. Returns a draft id at once; read it with workflow describe wait
+    DRAFT. Nothing is built.'
+- command_id: workflow.describe.get
+  output_schema:
+    type: object
+- command_id: workflow.describe.wait
+  output_schema:
+    type: object
+  known_restrictions: 'Input (optional): {timeout: SECONDS} (default 120). state is still running when the
+    wait ran out.'
+- command_id: workflow.describe.check
+  output_schema:
+    type: object
+  known_restrictions: 'Input: {spec: the read-back spec, edited; samples?: [kept file ids]}. No model call.'
+- command_id: workflow.describe.build
+  output_schema:
+    ref: WriteResult
+  undo:
+    strategy: manual
+    command: workflow.delete
+    note: Delete the workflow the build created, or undo its Save with workflow save-undo.
+  readback:
+    command: workflow.get
+    ids:
+      workflow_id: result.workflow.id
+    kind: object
+  known_restrictions: 'Input: {spec: the read-back spec, destination_name, destination_emails?, schedule?:
+    as workflow schedule set takes it, samples?}. Waits for the Save that builds the steps (--job-timeout)
+    and fails, naming the reasons, when the Save does not build every step.'
+- command_id: workflow.describe.sample
+  no_readback: returns the kept file's id; there is no read for kept samples
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: Keeps the file only for trying drafts; it is not a dataset and no command removes it.
+  known_restrictions: 'Input: {file: LOCAL_PATH} (a receipt, an invoice). Pass the returned id in samples.'
+- command_id: workflow.describe.fed-by
+  output_schema:
+    type: object
+- command_id: workflow.step-lines
+  output_schema:
+    type: object
+  known_restrictions: 'Input: {view_ids: [1 to 200 view ids], match_keys?: true}. pending is true while
+    the lines are still being written; run it again.'
+- command_id: workflow.repeat-counts
+  output_schema:
+    type: object
+- command_id: workflow.before-after
+  output_schema:
+    type: object
+  known_restrictions: 'Input: {keys: [pending change keys]}. Runs the drafted steps on up to 5,000 rows
+    per view and changes nothing.'
+- command_id: workflow.values
+  output_schema:
+    type: object
+    required: [exact, near, rows, truncated]
+  known_restrictions: 'Input: {column: DISPLAY_NAME, text: VALUE}. Reads up to 20,000 rows of the column.'
+- command_id: workflow.held.check
+  no_readback: returns what the check found; the held rows are not readable by id
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: Settles held changes from what is in Mammoth; nothing is built or deleted, so nothing to reverse.
+- command_id: workflow.sentence.read
+  no_readback: returns the proposed steps; they stay unsaved changes until a Save builds them
+  output_schema:
+    type: object
+  undo:
+    strategy: manual
+    command: workflow.save-undo
+    note: Read the earlier sentence back with workflow sentence read, or undo a Save that built the steps; proposed steps stay unsaved changes until a Save builds them.
+  known_restrictions: 'Input: {text: the edited sentence, answers?: [{question, answer}]}. outcome is same,
+    change (steps proposed as unsaved changes), ask (answer asks and read again) or unclear (why).'
+- command_id: workflow.sentence.dismiss-ask
+  no_readback: returns the sentence without the dismissed question
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: The question is dropped; reading the sentence again asks it again.
+- command_id: workflow.swap.fit
+  output_schema:
+    type: object
+    required: [fits]
+  known_restrictions: 'Input: {dataset_ids: [1 to 200 dataset ids]}. Each table fits, is renamed, has a
+    column to_pick or is too_different.'
+- command_id: workflow.swap.apply
+  no_readback: returns the workflow with the step's new table; read it again with `workflow get`
+  output_schema:
+    type: object
+  undo:
+    strategy: manual
+    command: workflow.swap.undo
+    note: Run workflow swap undo WORKFLOW_ID once the swap is done; a held swap is cancelled with workflow
+      swap cancel.
+  known_restrictions: 'Input (optional): {picks: {MISSING_COLUMN: TABLE_COLUMN}}. Held while a column is
+    still to pick (canvas_state.swap status held); else runs in the background.'
+- command_id: workflow.swap.cancel
+  no_readback: returns the workflow with the pending swap dropped
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: Drops the held swap; run workflow swap apply again to hold a new one.
+- command_id: workflow.swap.undo
+  no_readback: returns the workflow with the earlier table back
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: Puts the steps back on the earlier table and trashes the view the swap made; swap again to redo.

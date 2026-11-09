@@ -38,6 +38,10 @@ PROTOCOL_ONLY: dict[str, str] = {
     "Create": "Mammoth user-event telemetry ingest (mm-ue).",
     "TrackHeartbeat": "Published-dashboard viewer telemetry.",
     "TrackView": "Published-dashboard viewer telemetry.",
+    "PostWorkflowLinkCall": (
+        "Inbound call of a workflow's secret link: other systems POST it with no sign-in; "
+        "'workflow link create' makes the link and 'workflow run start' runs it from here."
+    ),
 }
 
 # --- Server routes that exist for the web app, not for a CLI user ----------
@@ -92,6 +96,10 @@ INTERNAL_ONLY: dict[str, str] = {
         "arrives sooner than polling for task previews, and 'job wait' already follows the "
         "same job to its end, so a command would add nothing."
     ),
+    "PostWorkflowRun": (
+        "Web canvas records a run the browser itself performed (Recent runs); a terminal "
+        "starts the run on the server with 'workflow run start' instead."
+    ),
     "StartToolClaim": (
         "Public web sign-up step of an emailed Open tables link: makes an account for a "
         "visitor with none and returns a one-time browser sign-in URL; CLI users are "
@@ -108,6 +116,7 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # The SDK posts every run verb through one helper whose last path segment is a
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
     "POST /agents/sessions/{}/runs/{}/{}": "origin/master@154ddb559a",
+    "POST /workspaces/{}/projects/{}/workflows/{}/run": "mvc-service feat/workflow-run-route",
 }
 
 # --- Operations that alias another command (identical behavior) ------------

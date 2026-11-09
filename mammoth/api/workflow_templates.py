@@ -18,6 +18,8 @@ ERR_INPUT_EMPTY = "`input_key` must be a non-empty input key of the template."
 ERR_DATASET_IDS = "`dataset_ids` must be 1 to 200 positive dataset ids, got {0!r}."
 ERR_INPUTS = "`inputs` must map each input key to a positive dataset id, got {0!r}."
 ERR_DESTINATION = "`destination_name` must be 1 to 120 characters."
+ERR_FOCUS = "`focus` must be a positive dataset id, got {0!r}."
+ERR_SLUG = "`slug` must be a non-empty workflow page slug."
 _DATASET_IDS_MAX = 200
 _DESTINATION_MAX = 120
 
@@ -269,4 +271,66 @@ class WorkflowTemplatesAPI:
         body["destination"] = {"name": name, "emails": destination_emails or []}
         return await self._client._request_json(
             "POST", self._template_path(key, project_id, "/build"), json=body
+        )
+
+    async def fits(
+        self,
+        dataset_ids: _list[int] | None = None,
+        *,
+        focus: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Find the templates the project's tables already fit (columns only).
+
+        Args:
+            dataset_ids: The tables to try (at most 200); the server's choice when
+                omitted.
+            focus: Only templates that would use this table.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            ``{"fits": [...]}``, one ``{key, sure, tables}`` per template that fits:
+            ``tables`` maps each input key to the dataset id that fills it, ``sure`` is
+            false when a match is a guess. The backend answers with a bare JSON array,
+            which is wrapped.
+
+        Raises:
+            MammothValidationError: If an id is not positive or there are too many.
+        """
+        body: dict[str, Any] = {}
+        if dataset_ids is not None:
+            bad = not isinstance(dataset_ids, list) or len(dataset_ids) > _DATASET_IDS_MAX
+            if bad or any(
+                not isinstance(i, int) or isinstance(i, bool) or i <= 0 for i in dataset_ids
+            ):
+                raise MammothValidationError(ERR_DATASET_IDS.format(dataset_ids))
+            body["dataset_ids"] = dataset_ids
+        if focus is not None:
+            if isinstance(focus, bool) or not isinstance(focus, int) or focus <= 0:
+                raise MammothValidationError(ERR_FOCUS.format(focus))
+            body["focus"] = focus
+        fits = await self._client._request_list("POST", f"{self._base(project_id)}/fits", json=body)
+        return {"fits": fits}
+
+    async def start_page(self, slug: str, project_id: int | None = None) -> dict[str, Any]:
+        """Open a workflow page's workflow on its sample tables (nothing is built).
+
+        Imports the page's sample exports into the project once and reads the workflow
+        back on them, so it can be tried before your own tables are matched.
+
+        Args:
+            slug: The workflow page's slug (from its mammoth.io URL).
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            The read-back on the samples, as the server describes it.
+
+        Raises:
+            MammothValidationError: If *slug* is empty.
+        """
+        if not isinstance(slug, str) or not slug.strip():
+            raise MammothValidationError(ERR_SLUG)
+        base = self._base(project_id).removesuffix("/workflow-templates")
+        return await self._client._request_json(
+            "POST", f"{base}/workflow-pages/{quote(slug.strip(), safe='')}/start"
         )

@@ -1781,10 +1781,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## workflow
 
+- `mammoth workflow after loops` [read/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops
+  example: mammoth workflow after loops 123
+- `mammoth workflow after set` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set
+  example: mammoth workflow after set 123 456
 - `mammoth workflow archive` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.set_archived
   example: mammoth workflow archive 123 --input '{"archived": true}'
 - `mammoth workflow attach-dataset` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.attach_dataset
   example: mammoth workflow attach-dataset 123 456
+- `mammoth workflow before-after` [read/none] -> mammoth.api.workflows.WorkflowsAPI.before_after
+  example: mammoth workflow before-after 123 --input '{"keys": ["Status"]}'
 - `mammoth workflow block add` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.block_add
   example: mammoth workflow block add 123 --input '{"block_type": "source"}'
 - `mammoth workflow block auth` [benign_mutation/confirm_target] -> mammoth.api.workflows.WorkflowsAPI.block_auth
@@ -1801,6 +1807,20 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow create 'Revenue report'
 - `mammoth workflow delete` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.delete
   example: mammoth workflow delete 123 --yes
+- `mammoth workflow describe build` [benign_mutation/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.build
+  example: mammoth workflow describe build --input '{"spec": {"name": "Status"}, "destination_name": "Revenue report"}'
+- `mammoth workflow describe check` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.check
+  example: mammoth workflow describe check --input '{"spec": {"name": "Status"}}'
+- `mammoth workflow describe fed-by` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by
+  example: mammoth workflow describe fed-by 123
+- `mammoth workflow describe get` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.draft
+  example: mammoth workflow describe get d-3f2a
+- `mammoth workflow describe sample` [benign_mutation/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample
+  example: mammoth workflow describe sample --input '{"file": "./sales.csv"}'
+- `mammoth workflow describe start` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.start
+  example: mammoth workflow describe start --input '{"text": "Quarterly revenue summary"}'
+- `mammoth workflow describe wait` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.wait
+  example: mammoth workflow describe wait d-3f2a
 - `mammoth workflow duplicate` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.duplicate
   example: mammoth workflow duplicate 123 --input '{"name": "Revenue report", "dataset_ids": [1]}'
 - `mammoth workflow from-template` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.from_template
@@ -1809,20 +1829,54 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow get 123
 - `mammoth workflow graph` [read/none] -> mammoth.api.workflows.WorkflowsAPI.graph
   example: mammoth workflow graph
+- `mammoth workflow held check` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.holds_check
+  example: mammoth workflow held check 123
+- `mammoth workflow link create` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
+  example: mammoth workflow link create 123
+- `mammoth workflow link remove` [destructive/prompt_or_yes] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
+  example: mammoth workflow link remove 123 --yes
 - `mammoth workflow list` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list
   example: mammoth workflow list
+- `mammoth workflow page start` [benign_mutation/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page
+  example: mammoth workflow page start stripe-payout-reconciliation
+- `mammoth workflow repeat-counts` [read/none] -> mammoth.api.workflows.WorkflowsAPI.repeat_counts
+  example: mammoth workflow repeat-counts
 - `mammoth workflow resolve-held` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.resolve_held
   example: mammoth workflow resolve-held 123 Status --input '{"built": true}'
+- `mammoth workflow run list` [read/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs
+  example: mammoth workflow run list 123
+- `mammoth workflow run start` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
+  example: mammoth workflow run start 123
+- `mammoth workflow run wait` [read/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run
+  example: mammoth workflow run wait 123 resource-123
 - `mammoth workflow save` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.save
   example: mammoth workflow save 123
 - `mammoth workflow save-cancel-step` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cancel_save_step
   example: mammoth workflow save-cancel-step 123 resource-123 456
 - `mammoth workflow save-undo` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.undo_save
   example: mammoth workflow save-undo 123 resource-123 --yes
+- `mammoth workflow schedule set` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set
+  example: mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'
+- `mammoth workflow sentence dismiss-ask` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss
+  example: mammoth workflow sentence dismiss-ask 123
+- `mammoth workflow sentence read` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.sentence_read
+  example: mammoth workflow sentence read 123 --input '{"text": "Quarterly revenue summary"}'
+- `mammoth workflow step-lines` [read/none] -> mammoth.api.workflows.WorkflowsAPI.step_lines
+  example: mammoth workflow step-lines 123 --input '{"view_ids": [1]}'
+- `mammoth workflow swap apply` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.swap
+  example: mammoth workflow swap apply 123 456 789
+- `mammoth workflow swap cancel` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.swap_cancel
+  example: mammoth workflow swap cancel 123
+- `mammoth workflow swap fit` [read/none] -> mammoth.api.workflows.WorkflowsAPI.swap_fit
+  example: mammoth workflow swap fit 123 456 --input '{"dataset_ids": [1]}'
+- `mammoth workflow swap undo` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.swap_undo
+  example: mammoth workflow swap undo 123
 - `mammoth workflow template build` [benign_mutation/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
   example: mammoth workflow template build bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'
 - `mammoth workflow template fit` [read/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit
   example: mammoth workflow template fit bank-reconciliation --input '{"inputs": {"main": 101}}'
+- `mammoth workflow template fits` [read/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits
+  example: mammoth workflow template fits
 - `mammoth workflow template get` [read/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.get
   example: mammoth workflow template get bank-reconciliation
 - `mammoth workflow template list` [read/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.list
@@ -1837,6 +1891,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow template samples bank-reconciliation
 - `mammoth workflow update` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.update
   example: mammoth workflow update 123
+- `mammoth workflow values` [read/none] -> mammoth.api.workflows.WorkflowsAPI.view_values
+  example: mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
   example: mammoth workflow workspace-datasets
 - `mammoth workflow workspace-exports` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_exports

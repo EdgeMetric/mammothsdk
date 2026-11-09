@@ -8,10 +8,14 @@ OPENAI_CHALLENGE_PATH = "/.well-known/openai-apps-challenge"
 # server card both carry; a test holds `server.json` to these.
 REGISTRY_NAME = "io.mammoth/mcp"
 REGISTRY_DESCRIPTION = (
-    "Explore, clean, transform and export your Mammoth Analytics data from an AI client."
+    "Explore, clean and transform your data in Mammoth Analytics, and automate it as workflows."
 )
 MCP_INSTRUCTIONS = (
-    "Mammoth Analytics lets you explore, clean, transform and export data. "
+    "Mammoth Analytics lets you explore, clean, transform and export data, and "
+    "automate that work as workflows: find a ready-made one with "
+    "`find_workflow_template` or describe one to `draft_workflow`, then "
+    "`build_workflow`, `run_workflow` and `set_workflow_trigger` to run it on a "
+    "clock, after another workflow, or by link. "
     "Data is organised as workspace > project > dataset > view; a view is a "
     "pipeline of transformation tasks over a dataset. Every tool acts as the "
     "signed-in user, with that user's permissions. "

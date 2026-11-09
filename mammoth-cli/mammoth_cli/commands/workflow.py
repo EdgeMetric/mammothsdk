@@ -506,6 +506,36 @@ def _await_save_run(
     return data
 
 
+#: Commands whose answer is ``{"workflow": ...}`` with the Save that builds it still running.
+SAVE_AWAITED = frozenset({"workflow.template.build", "workflow.describe.build"})
+
+
+def await_built_workflow(invocation: Invocation, service: Any, data: Any) -> Any:
+    """Wait for the Save a build started, and fail when it did not build every step.
+
+    Args:
+        invocation: The build command's invocation (its project and ``--job-timeout``).
+        service: The open Mammoth service.
+        data: The build's answer, ``{"workflow": {...}}`` with ``canvas_state.save_run``.
+
+    Returns:
+        The answer with ``workflow`` replaced by the workflow once its Save ended.
+
+    Raises:
+        CliError: ``timeout`` when the Save outlives the budget, ``job_failed`` when it
+            ended without building every step.
+    """
+    workflow = data.get("workflow") if isinstance(data, dict) else None
+    if not isinstance(workflow, dict) or not isinstance(workflow.get("id"), int):
+        return data
+    project_id = require_project(invocation)
+    budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
+    workflow = _await_save_run(service, workflow, workflow["id"], project_id, budget, "save")
+    if (failure := _save_failure(workflow)) is not None:
+        raise failure
+    return {**data, "workflow": workflow}
+
+
 def workflow_save(invocation: Invocation) -> HandlerResult:
     """Save a workflow's unsaved canvas changes and wait for the run. Workflow id is positional.
 

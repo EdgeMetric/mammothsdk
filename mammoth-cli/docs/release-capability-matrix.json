@@ -27,11 +27,11 @@
   },
   "mapping_counts": {
     "alias": 2,
-    "cli_and_sdk_mapped": 716,
-    "internal_only": 38,
-    "protocol_only": 11,
+    "cli_and_sdk_mapped": 741,
+    "internal_only": 39,
+    "protocol_only": 12,
     "removed_on_server": 15,
-    "unmapped": 219
+    "unmapped": 192
   },
   "unrouted_sdk_calls": [
     {
@@ -43,6 +43,18 @@
         "mammoth.api.agents.AgentsAPI._run_action"
       ],
       "commands": []
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/run",
+      "state": "pending_server_release",
+      "pending_in": "mvc-service feat/workflow-run-route",
+      "sdk_symbols": [
+        "mammoth.api.workflow_triggers.WorkflowTriggersAPI.run"
+      ],
+      "commands": [
+        "workflow.run.start"
+      ]
     },
     {
       "method": "GET",
@@ -20635,8 +20647,8 @@
       "schema_id": null,
       "sdk_symbol": null,
       "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "mapping_state": "protocol_only",
+      "mapping_gap_reason": "Inbound call of a workflow's secret link: other systems POST it with no sign-in; 'workflow link create' makes the link and 'workflow run start' runs it from here.",
       "evidence": null,
       "evidence_version": null
     },
@@ -21467,12 +21479,14 @@
       "operation_id": "StartWorkflowPage",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflow-pages/{slug}/start",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.page.start",
+      "schema_id": "workflow.page.start",
+      "sdk_symbol": "mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page",
+      "bound_commands": [
+        "workflow.page.start"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21505,12 +21519,14 @@
       "operation_id": "FitsCatalogTemplates",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflow-templates/fits",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.template.fits",
+      "schema_id": "workflow.template.fits",
+      "sdk_symbol": "mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits",
+      "bound_commands": [
+        "workflow.template.fits"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21663,12 +21679,14 @@
       "operation_id": "DescribeWorkflow",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.start",
+      "schema_id": "workflow.describe.start",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.start",
+      "bound_commands": [
+        "workflow.describe.start"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21681,12 +21699,14 @@
       "operation_id": "BuildDescribedWorkflow",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe/build",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.build",
+      "schema_id": "workflow.describe.build",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.build",
+      "bound_commands": [
+        "workflow.describe.build"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21699,12 +21719,14 @@
       "operation_id": "CheckDescribedSpec",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe/check",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.check",
+      "schema_id": "workflow.describe.check",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.check",
+      "bound_commands": [
+        "workflow.describe.check"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21717,12 +21739,14 @@
       "operation_id": "WorkflowFeedingBoard",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe/fed-by/{view_id}",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.fed-by",
+      "schema_id": "workflow.describe.fed-by",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by",
+      "bound_commands": [
+        "workflow.describe.fed-by"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21735,12 +21759,14 @@
       "operation_id": "KeepDescribeSample",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe/samples",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.sample",
+      "schema_id": "workflow.describe.sample",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample",
+      "bound_commands": [
+        "workflow.describe.sample"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21753,12 +21779,15 @@
       "operation_id": "DescribedWorkflow",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/describe/{draft}",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.describe.get",
+      "schema_id": "workflow.describe.get",
+      "sdk_symbol": "mammoth.api.workflow_describe.WorkflowDescribeAPI.draft",
+      "bound_commands": [
+        "workflow.describe.get",
+        "workflow.describe.wait"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21771,12 +21800,14 @@
       "operation_id": "GetWorkflowRepeatCounts",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/repeat-counts",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.repeat-counts",
+      "schema_id": "workflow.repeat-counts",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.repeat_counts",
+      "bound_commands": [
+        "workflow.repeat-counts"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21789,12 +21820,14 @@
       "operation_id": "GetWorkflowAfterLoops",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/after",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.after.loops",
+      "schema_id": "workflow.after.loops",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops",
+      "bound_commands": [
+        "workflow.after.loops"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21807,12 +21840,14 @@
       "operation_id": "PutWorkflowAfter",
       "method": "PUT",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/after",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.after.set",
+      "schema_id": "workflow.after.set",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set",
+      "bound_commands": [
+        "workflow.after.set"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21825,12 +21860,14 @@
       "operation_id": "WorkflowBeforeAfter",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/before-after",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.before-after",
+      "schema_id": "workflow.before-after",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.before_after",
+      "bound_commands": [
+        "workflow.before-after"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21843,12 +21880,14 @@
       "operation_id": "CheckHeldChanges",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/holds/check",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.held.check",
+      "schema_id": "workflow.held.check",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.holds_check",
+      "bound_commands": [
+        "workflow.held.check"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21861,12 +21900,14 @@
       "operation_id": "DeleteWorkflowLink",
       "method": "DELETE",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/link",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.link.remove",
+      "schema_id": "workflow.link.remove",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove",
+      "bound_commands": [
+        "workflow.link.remove"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21879,12 +21920,14 @@
       "operation_id": "PostWorkflowLink",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/link",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.link.create",
+      "schema_id": "workflow.link.create",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create",
+      "bound_commands": [
+        "workflow.link.create"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21897,12 +21940,15 @@
       "operation_id": "GetWorkflowRuns",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/runs",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.run.list",
+      "schema_id": "workflow.run.list",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs",
+      "bound_commands": [
+        "workflow.run.list",
+        "workflow.run.wait"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21919,8 +21965,8 @@
       "schema_id": null,
       "sdk_symbol": null,
       "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "mapping_state": "internal_only",
+      "mapping_gap_reason": "Web canvas records a run the browser itself performed (Recent runs); a terminal starts the run on the server with 'workflow run start' instead.",
       "evidence": null,
       "evidence_version": null
     },
@@ -21933,12 +21979,14 @@
       "operation_id": "PutWorkflowSchedule",
       "method": "PUT",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/schedule",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.schedule.set",
+      "schema_id": "workflow.schedule.set",
+      "sdk_symbol": "mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set",
+      "bound_commands": [
+        "workflow.schedule.set"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21951,12 +21999,14 @@
       "operation_id": "ReadSentence",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/sentence",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.sentence.read",
+      "schema_id": "workflow.sentence.read",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.sentence_read",
+      "bound_commands": [
+        "workflow.sentence.read"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21969,12 +22019,14 @@
       "operation_id": "DismissSentenceAsk",
       "method": "DELETE",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/sentence/ask",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.sentence.dismiss-ask",
+      "schema_id": "workflow.sentence.dismiss-ask",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss",
+      "bound_commands": [
+        "workflow.sentence.dismiss-ask"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -21987,12 +22039,14 @@
       "operation_id": "GetWorkflowStepLines",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/step-lines",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.step-lines",
+      "schema_id": "workflow.step-lines",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.step_lines",
+      "bound_commands": [
+        "workflow.step-lines"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -22005,12 +22059,14 @@
       "operation_id": "CancelSwap",
       "method": "DELETE",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/swap",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.swap.cancel",
+      "schema_id": "workflow.swap.cancel",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.swap_cancel",
+      "bound_commands": [
+        "workflow.swap.cancel"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -22023,12 +22079,14 @@
       "operation_id": "SwapTable",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/swap",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.swap.apply",
+      "schema_id": "workflow.swap.apply",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.swap",
+      "bound_commands": [
+        "workflow.swap.apply"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -22041,12 +22099,14 @@
       "operation_id": "WorkflowSwapFit",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/swap/fit",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.swap.fit",
+      "schema_id": "workflow.swap.fit",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.swap_fit",
+      "bound_commands": [
+        "workflow.swap.fit"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -22059,12 +22119,14 @@
       "operation_id": "UndoSwap",
       "method": "POST",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/swap/undo",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.swap.undo",
+      "schema_id": "workflow.swap.undo",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.swap_undo",
+      "bound_commands": [
+        "workflow.swap.undo"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },
@@ -22077,12 +22139,14 @@
       "operation_id": "ViewColumnValues",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/workflows/{workflow_id}/views/{view_id}/values",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "workflow.values",
+      "schema_id": "workflow.values",
+      "sdk_symbol": "mammoth.api.workflows.WorkflowsAPI.view_values",
+      "bound_commands": [
+        "workflow.values"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },

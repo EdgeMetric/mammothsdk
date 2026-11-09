@@ -7,6 +7,7 @@ from typing import Any
 
 from mammoth.api import agents as agents_api
 from mammoth.api import dashboards as dashboards_api
+from mammoth.api import workflow_describe, workflow_triggers
 from mammoth.exceptions import MammothValidationError
 from pydantic import ValidationError
 
@@ -19,6 +20,7 @@ from mammoth_cli.commands.dashboard._common import (
 )
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view.upload import view_profiles
+from mammoth_cli.commands.workflow import SAVE_AWAITED, await_built_workflow
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -68,9 +70,20 @@ from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.read_memo import forget, remember
 from mammoth_cli.services.unknown_outcome import settle_unknown_outcome
 
+#: The fields of a workflow clock (``workflow schedule set`` input, ``schedule`` of a build).
+_SCHEDULE_FIELDS = (
+    "frequency",
+    "interval",
+    "by_week_day",
+    "by_month_day",
+    "start_at",
+    "start_now",
+    "until",
+)
+
 #: Rules the SDK method enforces before sending, run by the handler too: a dry run stops
 #: at the SDK symbol, so without this it would accept input the real run refuses.
-_SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
+_SDK_RULES: dict[str, Callable[[dict[str, Any]], object]] = {
     "agent.access.grant.give": lambda k: agents_api.check_grant_give(
         k.get("emails") or [], str(k.get("level") or ""), k.get("items") or []
     ),
@@ -88,6 +101,15 @@ _SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
         str(k.get("rating") or ""), k.get("comment")
     ),
     "dashboard.embed.lifetime.set": lambda k: dashboards_api.check_token_ttl(k.get("token_ttl")),
+    "workflow.schedule.set": lambda k: workflow_triggers.schedule_body(
+        **{f: k[f] for f in _SCHEDULE_FIELDS if f in k}
+    ),
+    "workflow.describe.start": lambda k: workflow_describe.describe_body(
+        str(k.get("text") or ""), dataset_ids=k.get("dataset_ids")
+    ),
+    "workflow.describe.build": lambda k: workflow_describe.build_body(
+        k.get("spec"), str(k.get("destination_name") or ""), schedule=k.get("schedule")
+    ),
 }
 
 
@@ -230,6 +252,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             # The job's results are keyed by descriptor id; the handle says which
             # descriptor is the rows, the count or the drilled level, so keep both.
             data = {**handle, **data} if isinstance(data, dict) else data
+        if invocation.command_id in SAVE_AWAITED:
+            data = await_built_workflow(invocation, service, data)
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)

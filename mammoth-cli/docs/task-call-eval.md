@@ -48,6 +48,8 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 | `replace-data` | yes | 2 | 4 | 8 | 1 | 2 |
 | `pick-sheet` | yes | 1 | 2 | 4 | 1 | 2 |
 | `fix-heading-row` | yes | 1 | 3 | 6 | 1 | 2 |
-| **37 tasks** | | 83 | **131** | **257** | **37** | **70** |
+| `workflow-from-template` | yes | 3 | 8 | 16 | 1 | 2 |
+| `workflow-from-description` | yes | 4 | 5 | 10 | 1 | 2 |
+| **39 tasks** | | 90 | **144** | **283** | **39** | **74** |
 
-With the recipe and a preview the 37 tasks take 70 calls. Step by step they take 131 (257 with lookups). 32 tasks need fewer calls and 5 the same.
+With the recipe and a preview the 39 tasks take 74 calls. Step by step they take 144 (283 with lookups). 34 tasks need fewer calls and 5 the same.
