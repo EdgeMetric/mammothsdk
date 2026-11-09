@@ -152,13 +152,29 @@ def test_create_uses_positional_name(fake_service: FakeMammothService) -> None:
     assert fake_service.call_log == [(_CREATE, {"name": "Docs", "project_id": 180})]
 
 
-def test_create_forwards_parent(fake_service: FakeMammothService, tmp_path: Path) -> None:
+def test_create_puts_the_folder_inside_its_parent(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The parent is the id ``folder list`` shows; the API is sent the label id it
+    reads as ``parent_folder_id`` (sent as ``parent_resource_id``, it was dropped
+    unread and every folder landed at the root)."""
     doc = tmp_path / "in.json"
-    doc.write_text(json.dumps({"name": "Docs", "parent_resource_id": "r1"}), encoding="utf-8")
+    doc.write_text(json.dumps({"name": "Docs", "parent_resource_id": 707}), encoding="utf-8")
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
     folder_cmd.folder_create(_inv("folder.create", project=180, input_file=str(doc)))
-    assert fake_service.call_log == [
-        (_CREATE, {"name": "Docs", "project_id": 180, "parent_resource_id": "r1"})
-    ]
+    assert (
+        _CREATE,
+        {"name": "Docs", "project_id": 180, "parent_folder_id": 7},
+    ) in fake_service.call_log
+
+
+def test_create_at_the_root_names_no_parent(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"name": "Docs", "parent_resource_id": "root"}), encoding="utf-8")
+    folder_cmd.folder_create(_inv("folder.create", project=180, input_file=str(doc)))
+    assert fake_service.call_log[0] == (_CREATE, {"name": "Docs", "project_id": 180})
 
 
 def test_update_requires_name(fake_service: FakeMammothService) -> None:
