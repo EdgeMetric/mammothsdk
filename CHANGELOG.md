@@ -6,25 +6,40 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-io)
+### Added (next mammoth-mcp-server)
+
+- `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
+
+### Changed (next mammoth-mcp-server)
+
+- Every tool now sets `readOnlyHint`, `destructiveHint` and `openWorldHint` explicitly. `openWorldHint` is true for the 15 tools that can reach a system outside the workspace.
+
+### Fixed (next mammoth-mcp-server)
+
+- `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.
+
+## mammoth-io 0.8.55, mammoth-cli 2.4.3 (2026-11-09)
+
+### Added (mammoth-io 0.8.55)
 
 - `automation create` takes `task_type: "run_exports"` (a Scheduled export) with `details.trigger_ids`, the export step ids to send. An empty or missing `trigger_ids` is refused before any request, as the server does.
 - `view.export.to_dataset` takes `trigger_type` and `run_immediately`. `trigger_type="none"` makes a one-off copy: it writes the dataset once and adds no step to the view's pipeline, so the copy does not change when the view re-runs. The copy is found by name in its target project. `run_immediately=False` (which would write nothing) and a `"schedule"` trigger are refused, each with what to pass instead. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 1)
 - `dashboards.duplicate` takes `title` and `keep_tags`. The server titles a copy "Copy of <title>" and gives it no tags; these two set both on the copy in the same call. `keep_tags` reads the source's tags from its project's dashboard list, the only read that carries them. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
 
-### Fixed (next mammoth-io)
+### Fixed (mammoth-io 0.8.55)
 
 - `pipeline.update_task` (and `view task update`) puts the view's `DATAVIEW_ID` into the new params when the caller left it out, as `add_task` does. A `DATAVIEW_ID` the caller gave is kept.
 
-### Added (next mammoth-cli)
+### Added (mammoth-cli 2.4.3)
 
 - `automation update ID --input '{"schedule": {"by_week_day": ["mo"], "start_at": "..."}}'` moves a data-refresh automation's schedule. Only the fields given change (`frequency`, `interval`, `by_week_day`, `by_month_day`, `start_at`, `until`). The datasets are kept and the edit starts no run. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 7)
 - `dashboard duplicate` takes `title` and `keep_tags`. ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 8)
 - `automation list` gives each automation a `summary`: when it runs in words ("weekly on Tue at 07:00", "monthly on the last day at 08:00", "when a file lands in its folder", "manually"), its next run (none while suspended), how many datasets it refreshes, its last run, and the reason of its last failure. Before this, the weekday and dataset count had to be dug out of `conditions` and `tasks` by hand.
 - `view analyze` gives each view a `lineage`: the other views its join and lookup steps read (`views_read`), each such step with its join type (`reads`), and a line in words ("joins view 107990 (step 1, LEFT)"). Mapping where 16 views got their data from took a task read per view; now it's one `view analyze` with every id. If the task list can't be read, the view is still analyzed, without `lineage`.
 - `view export download` and `view export csv` name each DATE column written in a non-ISO display format (`date_formats`, e.g. `{"Term": "%d/%m/%Y"}`) with a note, since `view data aggregate` returns ISO dates. Before this, a comparison of an export against an aggregate silently matched 0 rows.
+- Each finished command is stored in Mammoth's user events as `cli_command_run` (`event_origin` `cli`): the command id, invocation id, surface, coding agent, outcome, exit status, error code and duration. Never an argument value, a path or any data. A command does not wait for this: it appends one line to a local spool and a short-lived detached process sends the lines about a minute later, with the time each command ended. An embedded call sends nothing.
 
-### Fixed (next mammoth-cli)
+### Fixed (mammoth-cli 2.4.3)
 
 - `dataset trash` and `connector draft discard` no longer report `outcome_unknown` when the write went through but its reply was lost. Both are safe to ask twice about, so the CLI reads the dataset (trashed?) or the draft (gone?) once and reports success, with `confirmed_by_read_back`, when the change is in place; otherwise the `outcome_unknown` error stays.
 - `view data aggregate` takes `COUNT_DISTINCT` (any case) as `DISTINCT_COUNT`, and refuses an unknown `function` before any call, listing SUM, COUNT, AVG, MIN, MAX, STDDEV, DISTINCT_COUNT and MEDIAN. The server used to reject it only after the call, with a generic error.
@@ -48,23 +63,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A view that is not found now says whether it is in the project's trash: who trashed it and when, the days until it is deleted for good, and the `view restore` command. This applies to any view-scoped not-found, a parent-discovery miss, and `view analyze`. A view that is not in the trash either is reported as deleted for good or in another project. Before, the error was "not found in any dataset" or "The requested Mammoth resource does not exist". ([#381](https://github.com/EdgeMetric/mammothsdk/issues/381) item 10)
 - `view export dataset` on a view whose draft holds unapplied changes no longer says to turn auto-run on: the server ignores that until the draft is submitted or discarded, so the export was refused again. The refusal now says the draft is pending, names `view draft submit` and `view draft discard`, and gives a copy route that leaves the draft alone (`view data query -o csv`, then `file upload`). A draft with no changes keeps the auto-run recipe.
 
-### Fixed (next mammoth-io, mammoth-cli)
+### Fixed (mammoth-io 0.8.55, mammoth-cli 2.4.3)
 
 - `connector ds-config update`: the example now sends `value` as `{"query": ..., "ds_id": ...}`, the shape the server takes, and the SDK refuses a bare query string (or a value missing `query` or `ds_id`) before any request. The old example was refused in server validation.
 - A write answered by the gateway's own 502/503 page in under 250 ms now says Mammoth's service was down or restarting, so the request most likely never reached it. It is still `outcome_unknown`, with the same read-back commands. The SDK records `elapsed_ms` on every error response and `gateway_reply` when the 502/503 had no JSON body.
 - `schema find "rename a dataset"` lists `dataset rename` first; it ranked the column rename above it.
-
-### Added (next mammoth-mcp-server)
-
-- `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
-
-### Changed (next mammoth-mcp-server)
-
-- Every tool now sets `readOnlyHint`, `destructiveHint` and `openWorldHint` explicitly. `openWorldHint` is true for the 15 tools that can reach a system outside the workspace.
-
-### Fixed (next mammoth-mcp-server)
-
-- `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.
 
 ## mammoth-mcp-server 0.2.12 (2026-11-04)
 

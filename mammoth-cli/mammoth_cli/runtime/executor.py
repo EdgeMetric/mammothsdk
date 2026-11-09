@@ -12,6 +12,7 @@ generic one behave identically for machine output, error shape, and exit code.
 from __future__ import annotations
 
 import sys
+import time
 import traceback
 from collections.abc import Sequence
 
@@ -19,7 +20,7 @@ import typer
 
 from mammoth_cli.output.emit import emit_error, emit_success
 from mammoth_cli.output.policy import MACHINE_OUTPUTS, VALID_OUTPUTS
-from mammoth_cli.runtime import embedded, linecapture, trace, updates
+from mammoth_cli.runtime import embedded, linecapture, trace, updates, usage
 from mammoth_cli.runtime.dispatch import (
     INTERCEPTORS,
     Interceptor,
@@ -108,6 +109,7 @@ def _run(
         or output == "yaml"
         or (output not in VALID_OUTPUTS and (agent_mode or not sys.stdout.isatty()))
     )
+    started = time.monotonic()
     run_log = _open_run_log(command_id, invocation)
     request = Request(command_id, output, producer, invocation=invocation, profile=profile)
     outcome = dispatch(request, interceptors)
@@ -123,6 +125,7 @@ def _run(
         if run_log is not None:
             error.log_ref = run_log.ref
             run_log.finish(error.exit_status, error_code=error.code, exception=outcome.cause)
+        _record_usage(invocation, started, error.exit_status, error.code, in_line=in_line)
         cause = outcome.cause
         if cause is not None and invocation is not None and invocation.debug:
             sys.stderr.write(
@@ -132,11 +135,37 @@ def _run(
         raise typer.Exit(error.exit_status)
     if run_log is not None:
         run_log.finish(outcome.exit_status)
+    _record_usage(invocation, started, outcome.exit_status, None, in_line=in_line)
     if not in_line:
         updates.refresh_in_background(command_id)
         _sync_skill_installs(command_id, output)
     if outcome.exit_status:
         raise typer.Exit(outcome.exit_status)
+
+
+def _record_usage(
+    invocation: Invocation | None,
+    started: float,
+    exit_status: int,
+    error_code: str | None,
+    *,
+    in_line: bool,
+) -> None:
+    """Spool the finished command; a ``mammoth run`` line leaves the sender to the run itself.
+
+    Args:
+        invocation: The command's resolved global options, if any.
+        started: When the command started, from ``time.monotonic``.
+        exit_status: The exit status it ends with.
+        error_code: The CLI error code of a failed command, or None.
+        in_line: Whether this is a line of a ``mammoth run``.
+    """
+    duration_ms = round((time.monotonic() - started) * 1000)
+    usage.record(
+        invocation, exit_status=exit_status, error_code=error_code, duration_ms=duration_ms
+    )
+    if not in_line:
+        usage.send_in_background()
 
 
 def _emit_outcome(command_id: str, output: str, outcome: Outcome, *, in_line: bool) -> None:

@@ -15,8 +15,10 @@ synchronous code.
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import inspect
+import json
 import os
 import re
 import threading
@@ -1140,6 +1142,21 @@ class SdkMammothService:
             code=CODE_SDK_SYMBOL_UNRESOLVED,
             message=f"View {view_id} has no public method '{method}'.",
             exit_status=EXIT_USAGE,
+        )
+
+    def send_user_event(self, event: dict[str, Any]) -> None:
+        """Store one event in Mammoth's user events, as this login's own.
+
+        Args:
+            event: The event, in the shape ``/mm-ue`` decodes.
+        """
+        encoded = base64.b64encode(json.dumps(event).encode()).decode()
+        self._run(
+            self._client.request_json(
+                "POST",
+                f"/workspaces/{self._workspace_id}/mm-ue",
+                json={"encoded_data": encoded},
+            )
         )
 
     def check_connection(self) -> dict[str, Any]:
