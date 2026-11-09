@@ -810,7 +810,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth view export update`. Exact input fields: `mammoth schema get view.export.update`.
 
-Example: `mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth view export update 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `ViewExportUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

@@ -227,10 +227,16 @@ def folder_create(invocation: Invocation) -> HandlerResult:
             hint="Pass the name as a positional argument or a 'name' input field.",
         )
     kwargs: dict[str, Any] = {"name": name, "project_id": project_id}
-    _forward_optional(document, kwargs, ("parent_resource_id",))
+    parent = document.get("parent_resource_id")
     with open_service(invocation) as (service, auth):
+        folders = FolderIds(service)
+        if parent not in (None, "", "root"):
+            # The id `folder list` shows, turned into the label id the API reads.
+            kwargs["parent_folder_id"] = folders.label(
+                project_id, _folder_id(parent, "parent_resource_id")
+            )
         created = service.call(_symbol(invocation), **kwargs)
-        data = FolderIds(service).open_folder(project_id, created)
+        data = folders.open_folder(project_id, created)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

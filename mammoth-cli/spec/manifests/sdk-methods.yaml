@@ -7152,7 +7152,7 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.folders.FoldersAPI.create
   implementation_origin: mammoth.api.folders.FoldersAPI.create
-  signature: 'create(self, name: ''str'', parent_resource_id: ''str | None'' = None, workspace_id: ''int
+  signature: 'create(self, name: ''str'', parent_folder_id: ''int | None'' = None, workspace_id: ''int
     | None'' = None, project_id: ''int | None'' = None) -> ''FolderSchema'''
   openapi_operation_ids: []
   canonical_command: folder.create

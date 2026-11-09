@@ -29990,7 +29990,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth view export update DATAVIEW_ID EXPORT_ID --help
-  agent_example: 'mammoth view export update 123 456 --input ''{"patches": [{"name": "Status"}]}'' --yes'
+  agent_example: mammoth view export update 123 456 --yes
   unit_tests:
   - UT-VIEW-EXPORT-UPDATE
   contract_tests:

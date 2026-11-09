@@ -11,7 +11,7 @@ condition and expanding upload positionals.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from types import MappingProxyType
 from typing import Any, Literal, cast
@@ -743,7 +743,19 @@ S7_COMMANDS = frozenset(
 # accepts.  Keeping the declarations here makes schema generation, strict
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
+#: The SDK field the additional fields above stand in for. Listed as required, it told
+#: callers to send ``patch`` beside ``add_datasets`` — which the handler then refuses —
+#: so it is shown as optional wherever an alternative exists.
+_REPLACED_BY_ADDITIONAL: dict[str, str] = {
+    "automation.update": "patch",
+    "view.export.update": "patches",
+}
+
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # The parent as ``folder list`` shows it; the handler turns it into the label id.
+    "folder.create": (
+        FieldSpec("parent_resource_id", required=False, annotation=int | str | None, default=None),
+    ),
     # Instead of ``patch``: the handler reads the automation and writes the changed dataset
     # list back as a ``details`` patch (``automation update`` docstring).
     "automation.update": (
@@ -1003,6 +1015,12 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     additional_fields = _S7_ADDITIONAL_INPUT_FIELDS.get(command_id, ())
     declared_names = {field.name for field in fields}
     fields += tuple(field for field in additional_fields if field.name not in declared_names)
+    replaced = _REPLACED_BY_ADDITIONAL.get(command_id)
+    if replaced is not None:
+        fields = tuple(
+            replace(field, required=False) if field.name == replaced else field
+            for field in fields
+        )
     bindings = MappingProxyType({field.name: field.name for field in fields})
     # Positionals fill SDK parameters only when they are not dual-sourced.  A
     # fallback positional stays an input binding and is overlaid by ``bind``
