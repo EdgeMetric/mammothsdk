@@ -99,42 +99,15 @@ INTERNAL_ONLY: dict[str, str] = {
     ),
 }
 
-# The project workflow-template catalog (list, get, sample-result, rank, fit, preview, samples,
-# build): served by origin/release, in no pinned snapshot yet.
-_WORKFLOW_CATALOG_ROUTES = (
-    ("GET", ""),
-    ("GET", "/{}"),
-    ("GET", "/{}/sample-result"),
-    ("POST", "/{}/rank"),
-    ("POST", "/{}/fit"),
-    ("POST", "/{}/preview"),
-    ("POST", "/{}/samples"),
-    ("POST", "/{}/build"),
-)
-
 # --- Routes the SDK calls that the server on master does not serve yet ------
 # Keyed by ``METHOD /normalised/path`` (placeholders as ``{}``); value names the
 # unmerged server branch that adds the route. An entry stops mattering once the
-# route is on master and the SDK call matches a real operation. The master-20261021
-# pin (origin/master@29fe5d1ab8) serves every earlier entry, so they are gone.
+# route is on master and the SDK call matches a real operation. The master-20261109
+# pin (origin/master@154ddb559a) serves every earlier entry, so they are gone.
 PENDING_SERVER_RELEASE: dict[str, str] = {
     # The SDK posts every run verb through one helper whose last path segment is a
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
-    "POST /agents/sessions/{}/runs/{}/{}": "origin/master@29fe5d1ab8",
-    # mvc-service From URL (#7166, #7169): on origin/release, not on the pinned master.
-    "POST /workspaces/{}/projects/{}/connector-drafts/link-preview": "origin/release (#7166)",
-    "GET /workspaces/{}/projects/{}/datasets/links": "origin/release (#7169)",
-    # mvc-service #7302: an AI-built connector's spec, on origin/release only.
-    "GET /workspaces/{}/projects/{}/connector-drafts/{}/spec": "origin/release (#7302)",
-    "GET /workspaces/{}/projects/{}/connector-drafts/versions/{}/{}/spec": "origin/release (#7302)",
-    # The Today page read: on mvc-service master and release, in no pinned snapshot yet.
-    "GET /agents/access/today": "origin/release",
-    "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",
-    "POST /workspaces/{}/projects/{}/downloads/plan": "origin/release (#7203)",
-    **{
-        f"{method} /workspaces/{{}}/projects/{{}}/workflow-templates{tail}": "origin/release"
-        for method, tail in _WORKFLOW_CATALOG_ROUTES
-    },
+    "POST /agents/sessions/{}/runs/{}/{}": "origin/master@154ddb559a",
 }
 
 # --- Operations that alias another command (identical behavior) ------------
@@ -885,7 +858,7 @@ OVERRIDES: dict[str, str] = {
     "CancelHeldChange": "billing.stripe.held-change.cancel",
     "ListAllConnections": "connector.connection.list-all",
     "TestConnection": "connector.connection.test",
-    # Server master only (master-20261021); not in the production snapshot yet.
+    # Server master only (pinned in master-20261021); not in the production snapshot yet.
     # Dashboard v3: drill, rows behind a mark, describe-a-chart, workspace chart types.
     "FigureDrill": "dashboard.figure.drill",
     "FigureDrillByUrl": "dashboard.published.drill",
