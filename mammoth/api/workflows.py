@@ -18,6 +18,7 @@ ERR_RUN_ID_EMPTY = "`run_id` must be a non-empty string."
 ERR_STEP_NEGATIVE = "`step` must be an integer >= 0, got {0!r}."
 ERR_DUPLICATE_NAME = "`name` must be 1 to 255 characters."
 ERR_DUPLICATE_DATASETS = "`dataset_ids` must be a non-empty list of positive dataset ids."
+ERR_CALLBACK_URL_EMPTY = "`callback_url` must be a non-empty URL when given."
 _NAME_MAX = 255
 
 
@@ -782,4 +783,140 @@ class WorkflowsAPI:
             "POST",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/held/resolve",
             json=body,
+        )
+
+    # --- Workflows API: run a workflow and read how the run went ---------------------------
+
+    async def list_runnable(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+        """List the workflows you can run, newest first.
+
+        Only workflows whose every table you can see are listed.
+
+        Args:
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            List of dicts with ``workflow_id``, ``name``, ``purpose``, ``running`` and
+            ``last_run`` (a run status, or None if it never ran).
+
+        Raises:
+            MammothValidationError: If *project_id* <= 0.
+        """
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_list(
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/runnable"
+        )
+
+    async def start_run(
+        self,
+        workflow_id: int,
+        callback_url: str | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Start a whole workflow run, as its Run button does.
+
+        Live tables are read again, then every step runs. Answers at once (202); follow the
+        run with :meth:`run_status`, or pass *callback_url* to be told when it ends. Mammoth
+        refuses (429) more than six starts of one workflow a minute.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            callback_url: Optional public https URL. When the run ends Mammoth POSTs a small
+                signed JSON there; check it with :func:`mammoth.verify_callback` and the
+                returned ``callback_secret``.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with ``run_id``, ``already_running`` (True: the workflow was running, and
+            ``run_id`` is that run, with no callback set up) and ``callback_secret`` (shown
+            only in this answer; None without *callback_url*).
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0, *project_id* <= 0, or
+                *callback_url* is empty.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        if callback_url is not None and not callback_url.strip():
+            raise MammothValidationError(ERR_CALLBACK_URL_EMPTY)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        body: dict[str, Any] = {}
+        if callback_url is not None:
+            body["callback_url"] = callback_url
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/start",
+            json=body,
+        )
+
+    async def run_status(
+        self,
+        workflow_id: int,
+        run_id: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow run's status.
+
+        ``status`` is ``running`` until the run settles, then ``success`` or ``failure``
+        (with ``reason`` and ``explanation``). A run id just returned by :meth:`start_run`
+        can answer 404 for a few seconds, until its run begins.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: The run's id, from :meth:`start_run` or :meth:`list_runnable`.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with ``run_id``, ``workflow_id``, ``trigger``, ``status``, ``started_at``,
+            ``finished_at``, ``seconds``, ``reason``, ``explanation``, ``rows_out`` and
+            ``summary``.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_run_id(run_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/runs/{run_id}"
+        )
+
+    async def run_result(
+        self,
+        workflow_id: int,
+        run_id: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow run's result: its status, its report and the tables it ends in.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: The run's id.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            The :meth:`run_status` fields plus ``report_lines`` (what the run read, changed and
+            produced), ``report`` (its counts) and ``outputs`` (each with ``view_id``,
+            ``dataset_id``, ``name``, ``app_url`` and ``data_path``).
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_run_id(run_id)
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/runs/{run_id}/result",
         )

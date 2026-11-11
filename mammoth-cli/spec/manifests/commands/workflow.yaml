@@ -257,3 +257,79 @@ commands:
   known_restrictions: 'Input: {inputs, matches, destination_name, settings?, destination_emails?} as in
     workflow template preview; the server refuses a build whose own preview could not run. Answers while
     the Save runs: follow it with workflow get WORKFLOW_ID (canvas_state.save_run).'
+- command_id: workflow.runnable
+  output_schema:
+    type: array
+    items:
+      type: object
+  known_restrictions: Lists only the workflows whose every table you can see, newest first, each with
+    running and last_run. 'workflow list' lists every workflow of the project instead.
+- command_id: workflow.run
+  output_schema:
+    type: object
+  undo:
+    strategy: irreversible
+    reason: Runs every step again on the latest data; the earlier output is not kept.
+  acceptance_evidence: contract_only_no_disposable_fixture
+  readback:
+    command: workflow.status
+    ids:
+      workflow_id: positional.0
+      run_id: result.run_id
+    kind: object
+  live_test: null
+  live_exemption_reason: Starts a real workflow run; contract and unit tests cover it.
+  secret_fields: [callback_secret]
+  agent_example: mammoth workflow run 123
+  known_restrictions: 'Waits for the run to end (--job-timeout, default 300 s); --no-wait returns once
+    it starts. A failed run exits 1 naming why. Input (optional): {callback_url: public https URL}. Mammoth
+    POSTs a signed JSON there when the run ends; the callback_secret is masked unless --reveal (shown
+    only once). Mammoth refuses more than six starts of one workflow a minute (429).'
+- command_id: workflow.status
+  output_schema:
+    type: object
+  agent_example: mammoth workflow status 123 resource-123
+  known_restrictions: status is running until the run settles, then success or failure (reason,
+    explanation). A run just started can answer 404 for a few seconds.
+- command_id: workflow.result
+  output_schema:
+    type: object
+  agent_example: mammoth workflow result 123 resource-123
+  known_restrictions: Each output table has app_url (opens it in Mammoth) and data_path (read its rows
+    through the API).
+- command_id: workflow.verify-callback
+  output_schema:
+    type: object
+    required: [valid, reason]
+  command_path: workflow verify-callback
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.workflow.verify_callback_file
+  sdk_conversion: Call mammoth_cli.commands.workflow.verify_callback_file with validated request fields.
+  request_model: WorkflowVerifyCallbackRequest
+  result_model: WorkflowVerifyCallbackResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local signature check of a saved request; no network call.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: [secret]
+  human_example: mammoth workflow verify-callback --help
+  agent_example: 'mammoth workflow verify-callback --input ''{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'''
+  unit_tests:
+  - UT-WORKFLOW-VERIFY-CALLBACK
+  contract_tests:
+  - CT-WORKFLOW-VERIFY-CALLBACK-LOCAL
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Input: {header: X-Mammoth-Signature value, body_file: the raw body as received,
+    secret_file or secret: the run''s callback_secret, tolerance?: seconds (default 300, 0 skips)}. Exits
+    1 with invalid_signature when the signature does not hold.'
+  reviewed_by: primary

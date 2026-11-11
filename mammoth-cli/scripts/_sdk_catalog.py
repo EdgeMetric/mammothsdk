@@ -318,6 +318,11 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "workflow.template.preview": {"operation_ids": ["PreviewCatalogTemplate"], "method": "POST"},
     "workflow.template.samples": {"operation_ids": ["ImportCatalogSamples"], "method": "POST"},
     "workflow.template.build": {"operation_ids": ["BuildCatalogTemplate"], "method": "POST"},
+    # The Workflows API (mvc-service workflows-feature-improvements): in no pinned snapshot yet.
+    "workflow.runnable": {"operation_ids": ["ListRunnableWorkflows"], "method": "GET"},
+    "workflow.run": {"operation_ids": ["PostWorkflowStart"], "method": "POST"},
+    "workflow.status": {"operation_ids": ["GetWorkflowRunStatus"], "method": "GET"},
+    "workflow.result": {"operation_ids": ["GetWorkflowRunResult"], "method": "GET"},
 }
 
 # CLI-only commands: no OpenAPI operation and no Mammoth transport. They are

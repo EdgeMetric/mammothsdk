@@ -196,6 +196,54 @@
       "commands": [
         "workflow.template.samples"
       ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/runnable",
+      "state": "pending_server_release",
+      "pending_in": "origin/workflows-feature-improvements",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.list_runnable"
+      ],
+      "commands": [
+        "workflow.runnable"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/runs/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/workflows-feature-improvements",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.run_status"
+      ],
+      "commands": [
+        "workflow.status"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/runs/{}/result",
+      "state": "pending_server_release",
+      "pending_in": "origin/workflows-feature-improvements",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.run_result"
+      ],
+      "commands": [
+        "workflow.result"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/start",
+      "state": "pending_server_release",
+      "pending_in": "origin/workflows-feature-improvements",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.start_run"
+      ],
+      "commands": [
+        "workflow.run"
+      ]
     }
   ],
   "commands_without_route": [
@@ -231,6 +279,7 @@
     "view.data.forecast",
     "view.explore-panel.get",
     "view.pipeline.items-all",
+    "workflow.verify-callback",
     "workspace.user.get"
   ],
   "rows": [

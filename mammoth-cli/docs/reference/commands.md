@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.3.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 875.
+Total commands: 880.
 
 ## activity
 
@@ -8602,6 +8602,36 @@ Total commands: 875.
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.resolve_held`
 - Agent example: `mammoth workflow resolve-held 123 Status --input '{"built": true}'`
 
+### `mammoth workflow result`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `RUN_ID` (str, required) — ID of the run.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.run_result`
+- Agent example: `mammoth workflow result 123 resource-123`
+
+### `mammoth workflow run`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.start_run`
+- Agent example: `mammoth workflow run 123`
+
+### `mammoth workflow runnable`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.list_runnable`
+- Agent example: `mammoth workflow runnable`
+
 ### `mammoth workflow save`
 
 **Arguments**
@@ -8637,6 +8667,18 @@ Total commands: 875.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.undo_save`
 - Agent example: `mammoth workflow save-undo 123 resource-123 --yes`
+
+### `mammoth workflow status`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `RUN_ID` (str, required) — ID of the run.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.run_status`
+- Agent example: `mammoth workflow status 123 resource-123`
 
 ### `mammoth workflow template build`
 
@@ -8732,6 +8774,13 @@ Total commands: 875.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.update`
 - Agent example: `mammoth workflow update 123`
+
+### `mammoth workflow verify-callback`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.workflow.verify_callback_file`
+- Agent example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'`
 
 ### `mammoth workflow workspace-datasets`
 

@@ -33929,6 +33929,133 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: workflow.result
+  command_path: workflow result
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkflowRunResult
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_result
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.run_result with validated request fields.
+  request_model: WorkflowResultRequest
+  result_model: WorkflowResultResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-RESULT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow result WORKFLOW_ID RUN_ID --help
+  agent_example: mammoth workflow result 123 resource-123
+  unit_tests:
+  - UT-WORKFLOW-RESULT
+  contract_tests:
+  - CT-WORKFLOW-RESULT-HUMAN
+  - CT-WORKFLOW-RESULT-JSON
+  - CT-WORKFLOW-RESULT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: The run's status, its report lines and the tables it ends in, each with app_url
+    and data_path.
+  reviewed_by: primary
+- command_id: workflow.run
+  command_path: workflow run
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PostWorkflowStart
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.start_run
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.start_run with validated request fields.
+  request_model: WorkflowRunRequest
+  result_model: WorkflowRunResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: start_or_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-RUN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow run WORKFLOW_ID --help
+  agent_example: mammoth workflow run 123
+  unit_tests:
+  - UT-WORKFLOW-RUN
+  contract_tests:
+  - CT-WORKFLOW-RUN-HUMAN
+  - CT-WORKFLOW-RUN-JSON
+  - CT-WORKFLOW-RUN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Starts the whole workflow (202) and, in the CLI, waits for the run; 429 past six
+    starts of one workflow a minute.
+  reviewed_by: primary
+- command_id: workflow.runnable
+  command_path: workflow runnable
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListRunnableWorkflows
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.list_runnable
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.list_runnable with validated request fields.
+  request_model: WorkflowRunnableRequest
+  result_model: WorkflowRunnableResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-RUNNABLE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow runnable --help
+  agent_example: mammoth workflow runnable
+  unit_tests:
+  - UT-WORKFLOW-RUNNABLE
+  contract_tests:
+  - CT-WORKFLOW-RUNNABLE-HUMAN
+  - CT-WORKFLOW-RUNNABLE-JSON
+  - CT-WORKFLOW-RUNNABLE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: The workflows you can run (every table visible to you), newest first, each with
+    `running` and its latest run.
+  reviewed_by: primary
 - command_id: workflow.save
   command_path: workflow save
   disposition: command
@@ -34079,6 +34206,53 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: workflow.status
+  command_path: workflow status
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - GetWorkflowRunStatus
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  - name: run_id
+    type: str
+    required: true
+    metavar: RUN_ID
+    falls_back_to_field: null
+    help: ID of the run.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_status
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.run_status with validated request fields.
+  request_model: WorkflowStatusRequest
+  result_model: WorkflowStatusResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-STATUS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow status WORKFLOW_ID RUN_ID --help
+  agent_example: mammoth workflow status 123 resource-123
+  unit_tests:
+  - UT-WORKFLOW-STATUS
+  contract_tests:
+  - CT-WORKFLOW-STATUS-HUMAN
+  - CT-WORKFLOW-STATUS-JSON
+  - CT-WORKFLOW-STATUS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: running until the run settles, then success or failure with why. A just-started
+    run can read 404 for a few seconds.
   reviewed_by: primary
 - command_id: workflow.template.build
   command_path: workflow template build

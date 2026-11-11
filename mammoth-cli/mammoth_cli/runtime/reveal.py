@@ -5,7 +5,7 @@
 redaction masks both (``secret``, ``token``), which leaves a rotation with no
 usable secret. They stay masked by default, so a log or a shared transcript
 never holds them; ``--reveal`` prints them, the way ``client-app create`` shows
-its token.
+its token. ``workflow run`` returns the run's ``callback_secret`` the same way.
 """
 
 from __future__ import annotations
@@ -17,5 +17,7 @@ REVEAL_COMMANDS = frozenset(
     {
         "dashboard.embed.secret.rotate",
         "dashboard.embed.preview-token.create",
+        # The run's callback_secret, shown only in the answer that started the run.
+        "workflow.run",
     }
 )

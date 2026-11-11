@@ -221,6 +221,8 @@ def _representative_string(field_name: str) -> str:
         "version": "1",
         "as": "Total revenue",
         "timezone": "UTC",
+        # A workflow run callback's X-Mammoth-Signature value.
+        "header": "t=1731230000,v1=ab12",
     }
     if name in exact:
         return exact[name]

@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- SDK: the Workflows API. `WorkflowsAPI.list_runnable`, `start_run` (with an optional `callback_url`), `run_status` and `run_result` over `/workflows/runnable`, `/workflows/{id}/start` and `/workflows/{id}/runs/{run_id}[/result]`. `mammoth.verify_callback(secret, header, body, tolerance=300)` checks a run callback's `X-Mammoth-Signature`. Needs a Mammoth with the Workflows API (mvc-service `workflows-feature-improvements`).
+
+### Added (next mammoth-cli)
+
+- CLI: `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run WORKFLOW_ID` starts a whole run and waits for it to end (`--job-timeout`, default 300 s; status reads back off from 2 s to 30 s); `--no-wait` returns once it starts, and a failed run exits 1 naming why. `--input '{"callback_url": "https://..."}'` asks for a signed callback; its `callback_secret` is masked unless `--reveal`. `workflow status` and `workflow result WORKFLOW_ID RUN_ID` read a run. `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
+
 ### Added (next mammoth-mcp-server)
 
 - `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.

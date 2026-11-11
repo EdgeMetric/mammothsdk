@@ -197,6 +197,7 @@ ERROR_SUMMARIES: dict[str, str] = {
     "workspace_mismatch": "The sign-in names a different workspace from its token.",
     "skipped": "This step wasn't run because an earlier step failed.",
     "job_failed": "A background task didn't finish successfully.",
+    "invalid_signature": "The signature doesn't match the body and secret, or is too old.",
     "schema_mismatch": "The file's columns don't line up with the dataset's, so nothing was added.",
     "keyring_unavailable": _S_SETUP,
     "keyring_unresponsive": _S_SETUP,

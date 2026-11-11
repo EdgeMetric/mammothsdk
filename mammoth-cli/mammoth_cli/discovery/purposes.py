@@ -939,4 +939,23 @@ COMMAND_DISCOVERY_PURPOSES = {
         "legacy workspace templates (older API), not the workflow template catalog; for "
         "ready-made workflows use workflow template list"
     ),
+    # The Workflows API: run a whole workflow and follow the run.
+    "workflow.runnable": (
+        "which workflows can I run, list runnable workflows with whether each is running "
+        "and its last run status"
+    ),
+    "workflow.run": (
+        "run a workflow now, start a workflow run, trigger rerun execute the whole workflow "
+        "and wait for it to finish, callback webhook url when the run ends"
+    ),
+    "workflow.status": (
+        "status of a workflow run, is the run still running, succeeded or failed, failure reason"
+    ),
+    "workflow.result": (
+        "result of a workflow run, run report output tables links rows produced by the run"
+    ),
+    "workflow.verify-callback": (
+        "verify check validate the signature of a workflow run callback webhook, "
+        "X-Mammoth-Signature HMAC callback_secret"
+    ),
 }
