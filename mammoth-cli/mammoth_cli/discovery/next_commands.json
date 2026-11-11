@@ -37,6 +37,9 @@
     ],
     "workflow.template.build": [
       "mammoth workflow get {workflow.id}"
+    ],
+    "workflow.run": [
+      "mammoth workflow result {arg.workflow_id|workflow_id} {run_id}"
     ]
   }
 }

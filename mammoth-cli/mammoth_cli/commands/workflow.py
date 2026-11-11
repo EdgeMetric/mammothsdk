@@ -12,7 +12,11 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
+
+from mammoth.workflow_callbacks import DEFAULT_TOLERANCE, callback_problem
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
@@ -20,6 +24,7 @@ from mammoth_cli.errors.envelope import (
     CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_API,
     EXIT_RETRYABLE,
@@ -27,6 +32,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime.confirm import (
     POLICY_CONFIRM_TARGET,
     POLICY_PROMPT_OR_YES,
@@ -38,6 +44,7 @@ from mammoth_cli.runtime.session import (
     open_service,
     require_project,
 )
+from mammoth_cli.services.secret_files import read_secret_file
 
 
 def _graph_projection(raw: Any) -> dict[str, Any]:
@@ -653,3 +660,238 @@ def workflow_resolve_held(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+# --- The Workflows API: run a workflow and follow the run -----------------------------------
+
+#: ``workflow run`` returns as soon as the run starts instead of waiting for it.
+NO_WAIT_FLAG = "--no-wait"
+_RUN_STATUS_SYMBOL = "mammoth.api.workflows.WorkflowsAPI.run_status"
+#: Gaps between status reads: 2 s, growing by half each time, at most 30 s.
+RUN_POLL_FIRST_S = 2.0
+RUN_POLL_GROWTH = 1.5
+RUN_POLL_CAP_S = 30.0
+#: A run id just returned by a start can read 404 until its run begins.
+RUN_NOT_FOUND_GRACE_S = 30.0
+_RUN_RUNNING = "running"
+CODE_INVALID_SIGNATURE = "invalid_signature"
+
+
+def run_poll_delays(
+    first: float = RUN_POLL_FIRST_S, growth: float = RUN_POLL_GROWTH, cap: float = RUN_POLL_CAP_S
+) -> Iterator[float]:
+    """Endless gaps between status reads: ``first``, then each ``growth`` times longer,
+    never more than ``cap``."""
+    delay = first
+    while True:
+        yield min(delay, cap)
+        delay *= growth
+
+
+def await_run(
+    read_status: Callable[[], Any],
+    budget: float,
+    *,
+    sleep: Callable[[float], None] | None = None,
+    clock: Callable[[], float] | None = None,
+    grace: float = RUN_NOT_FOUND_GRACE_S,
+) -> tuple[dict[str, Any] | None, bool]:
+    """Read a run's status until it is no longer ``running`` or ``budget`` seconds pass.
+
+    A ``resource_not_found`` answer within the first ``grace`` seconds counts as "not
+    started yet"; after that it is raised.
+
+    Returns:
+        ``(status, finished)``: the last status read (None if the run never appeared) and
+        whether the run settled before the budget ran out.
+    """
+    sleep = sleep or time.sleep
+    clock = clock or time.monotonic
+    start = clock()
+    delays = run_poll_delays()
+    status: dict[str, Any] | None = None
+    while True:
+        try:
+            read = read_status()
+            status = read if isinstance(read, dict) else {"status": read}
+        except CliError as error:
+            if error.code != CODE_RESOURCE_NOT_FOUND or clock() - start >= grace:
+                raise
+        if status is not None and status.get("status") != _RUN_RUNNING:
+            return status, True
+        left = budget - (clock() - start)
+        if left <= 0:
+            return status, False
+        sleep(min(next(delays), left))
+
+
+def _run_failure(run: dict[str, Any]) -> CliError | None:
+    """The error for a run that ended in failure, naming why; None for any other status."""
+    if run.get("status") != "failure":
+        return None
+    why = run.get("explanation") or run.get("reason")
+    message = f"Workflow run {run.get('run_id')} failed."
+    if why:
+        message += f" {why}"
+    return CliError(
+        code=CODE_JOB_FAILED,
+        message=message,
+        exit_status=EXIT_API,
+        hint=(
+            f"Read what it did with 'mammoth workflow result {run.get('workflow_id')} "
+            f"{run.get('run_id')}'."
+        ),
+        details={"run": {k: v for k, v in run.items() if k != "callback_secret"}},
+    )
+
+
+def workflow_run(invocation: Invocation) -> HandlerResult:
+    """Start a whole workflow run and wait until it ends. Workflow id is positional.
+
+    ``callback_url`` (``--input``) has Mammoth POST a signed JSON there when the run ends;
+    the ``callback_secret`` it is signed with is shown only with ``--reveal``. ``--no-wait``
+    returns as soon as the run starts. A failed run exits non-zero, naming why.
+    """
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    wait = NO_WAIT_FLAG not in invocation.extra_args
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {"workflow_id": workflow_id, "project_id": project_id}
+    _forward_optional(document, kwargs, ("callback_url",))
+    budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
+    with open_service(invocation) as (service, auth):
+        started = service.call(_symbol(invocation), **kwargs)
+        data: dict[str, Any] = dict(started) if isinstance(started, dict) else {"run": started}
+        run_id = data.get("run_id")
+        if wait and run_id:
+            status, finished = await_run(
+                lambda: service.call(
+                    _RUN_STATUS_SYMBOL,
+                    workflow_id=workflow_id,
+                    run_id=run_id,
+                    project_id=project_id,
+                ),
+                budget,
+            )
+            data.update(status or {"run_id": run_id, "status": _RUN_RUNNING})
+            if not finished:
+                resume = f"mammoth workflow status {workflow_id} {run_id}"
+                if not invocation.return_running:
+                    raise CliError(
+                        code="timeout",
+                        message=(
+                            f"Workflow run {run_id} was still running after {budget:.0f} seconds."
+                        ),
+                        exit_status=EXIT_RETRYABLE,
+                        hint=f"Check it with '{resume}', or wait longer with --job-timeout.",
+                        retryable=True,
+                        details={"run_id": run_id, "workflow_id": workflow_id},
+                    )
+                data["resume"] = resume
+    if (failure := _run_failure(data)) is not None:
+        raise failure
+    if invocation.reveal_secrets:
+        data = Revealed(normalize(data, redact_secrets=False))
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_runnable(invocation: Invocation) -> HandlerResult:
+    """List the workflows you can run in the active project, each with its latest run."""
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id)
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _run_read(invocation: Invocation) -> HandlerResult:
+    """Read one run of a workflow; the workflow id and run id are positional."""
+    project_id = require_project(invocation)
+    workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    run_id = _require_positional_str(invocation, "run_id", "run id")
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation), workflow_id=workflow_id, run_id=run_id, project_id=project_id
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def workflow_status(invocation: Invocation) -> HandlerResult:
+    """Read a workflow run's status: running, success or failure (with why)."""
+    return _run_read(invocation)
+
+
+def workflow_result(invocation: Invocation) -> HandlerResult:
+    """Read a workflow run's result: its status, report and output tables with links."""
+    return _run_read(invocation)
+
+
+def verify_callback_file(
+    header: str,
+    body_file: str,
+    secret: str | None = None,
+    secret_file: str | None = None,
+    tolerance: int = DEFAULT_TOLERANCE,
+) -> dict[str, Any]:
+    """Check a workflow run callback's ``X-Mammoth-Signature`` against the saved body.
+
+    Args:
+        header: The ``X-Mammoth-Signature`` header value (``t=...,v1=...``).
+        body_file: Path to the request body exactly as received.
+        secret: The run's ``callback_secret``.
+        secret_file: Path to a file holding the secret, in place of ``secret``.
+        tolerance: Most seconds the timestamp may be from now (0 skips the check).
+
+    Returns:
+        ``{"valid": bool, "reason": str | None}``.
+
+    Raises:
+        CliError: Usage errors: neither or both secrets, a bad tolerance, an unreadable file.
+    """
+    if (secret is None) == (secret_file is None):
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="Pass exactly one of 'secret' and 'secret_file'.",
+            exit_status=EXIT_USAGE,
+            hint="Prefer secret_file, so the secret stays out of the shell history.",
+        )
+    if isinstance(tolerance, bool) or not isinstance(tolerance, int) or tolerance < 0:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"'tolerance' must be whole seconds, 0 or more, got {tolerance!r}.",
+            exit_status=EXIT_USAGE,
+        )
+    key = secret if secret is not None else read_secret_file(str(secret_file), field="secret_file")
+    try:
+        body = Path(body_file).expanduser().read_bytes()
+    except OSError as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"body_file {body_file!r} cannot be read: {type(exc).__name__}.",
+            exit_status=EXIT_USAGE,
+            details={"field": "body_file", "path": body_file},
+        ) from exc
+    reason = callback_problem(key, header, body, tolerance=tolerance or None)
+    return {"valid": reason is None, "reason": reason}
+
+
+def workflow_verify_callback(invocation: Invocation) -> HandlerResult:
+    """Check a saved workflow run callback's signature locally. Exits non-zero when invalid."""
+    document = invocation.load_input() or {}
+    kwargs: dict[str, Any] = {
+        "header": _require_field(document, "header"),
+        "body_file": _require_field(document, "body_file"),
+    }
+    _forward_optional(document, kwargs, ("secret", "secret_file", "tolerance"))
+    data = verify_callback_file(**kwargs)
+    if not data["valid"]:
+        raise CliError(
+            code=CODE_INVALID_SIGNATURE,
+            message=f"The callback signature is not valid: {data['reason']}.",
+            exit_status=EXIT_API,
+            hint=(
+                "Check that the body file holds the raw bytes as received, the header is the "
+                "X-Mammoth-Signature value, and the secret is that run's callback_secret."
+            ),
+            details=data,
+        )
+    return data, {"profile": invocation.profile}

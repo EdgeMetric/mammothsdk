@@ -112,6 +112,8 @@ _WORKFLOW_CATALOG_ROUTES = (
     ("POST", "/{}/build"),
 )
 
+_WORKFLOWS_API_BRANCH = "origin/workflows-feature-improvements"
+
 # --- Routes the SDK calls that the server on master does not serve yet ------
 # Keyed by ``METHOD /normalised/path`` (placeholders as ``{}``); value names the
 # unmerged server branch that adds the route. An entry stops mattering once the
@@ -135,6 +137,11 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
         f"{method} /workspaces/{{}}/projects/{{}}/workflow-templates{tail}": "origin/release"
         for method, tail in _WORKFLOW_CATALOG_ROUTES
     },
+    # The Workflows API: list runnable workflows, start a run, its status and result.
+    "GET /workspaces/{}/projects/{}/workflows/runnable": _WORKFLOWS_API_BRANCH,
+    "POST /workspaces/{}/projects/{}/workflows/{}/start": _WORKFLOWS_API_BRANCH,
+    "GET /workspaces/{}/projects/{}/workflows/{}/runs/{}": _WORKFLOWS_API_BRANCH,
+    "GET /workspaces/{}/projects/{}/workflows/{}/runs/{}/result": _WORKFLOWS_API_BRANCH,
 }
 
 # --- Operations that alias another command (identical behavior) ------------

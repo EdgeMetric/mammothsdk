@@ -1813,12 +1813,20 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow list
 - `mammoth workflow resolve-held` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.resolve_held
   example: mammoth workflow resolve-held 123 Status --input '{"built": true}'
+- `mammoth workflow result` [read/none] -> mammoth.api.workflows.WorkflowsAPI.run_result
+  example: mammoth workflow result 123 resource-123
+- `mammoth workflow run` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.start_run
+  example: mammoth workflow run 123
+- `mammoth workflow runnable` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list_runnable
+  example: mammoth workflow runnable
 - `mammoth workflow save` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.save
   example: mammoth workflow save 123
 - `mammoth workflow save-cancel-step` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cancel_save_step
   example: mammoth workflow save-cancel-step 123 resource-123 456
 - `mammoth workflow save-undo` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.undo_save
   example: mammoth workflow save-undo 123 resource-123 --yes
+- `mammoth workflow status` [read/none] -> mammoth.api.workflows.WorkflowsAPI.run_status
+  example: mammoth workflow status 123 resource-123
 - `mammoth workflow template build` [benign_mutation/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
   example: mammoth workflow template build bank-reconciliation --input '{"inputs": {"main": 101}, "matches": {"main": {"amount": {"column": "Amount"}}}, "destination_name": "Bank reconciliation"}'
 - `mammoth workflow template fit` [read/none] -> mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit
@@ -1837,6 +1845,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow template samples bank-reconciliation
 - `mammoth workflow update` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.update
   example: mammoth workflow update 123
+- `mammoth workflow verify-callback` [read/none] -> mammoth_cli.commands.workflow.verify_callback_file
+  example: mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
   example: mammoth workflow workspace-datasets
 - `mammoth workflow workspace-exports` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_exports

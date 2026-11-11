@@ -65,6 +65,8 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
     "schema.find": frozenset({"--unsupported", FULL_FLAG}),
     # A once-shown credential is masked unless --reveal asks for it.
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
+    # Return once the run starts instead of waiting for it to end.
+    "workflow.run": frozenset({"--no-wait", REVEAL_FLAG}),
 }
 
 CODE_UNKNOWN_OPTION = "unknown_option"

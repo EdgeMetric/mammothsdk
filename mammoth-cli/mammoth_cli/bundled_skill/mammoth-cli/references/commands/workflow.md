@@ -162,6 +162,36 @@ Result: `WorkflowResolveHeldResult`; mutation `benign_mutation`, confirmation `n
 
 Status on release: untried; no live run recorded.
 
+### `workflow.result`
+
+Run: `mammoth workflow result`. Exact input fields: `mammoth schema get workflow.result`.
+
+Example: `mammoth workflow result 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowResultResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.run`
+
+Run: `mammoth workflow run`. Exact input fields: `mammoth schema get workflow.run`.
+
+Example: `mammoth workflow run 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowRunResult`; mutation `benign_mutation`, confirmation `none`, wait policy `start_or_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.runnable`
+
+Run: `mammoth workflow runnable`. Exact input fields: `mammoth schema get workflow.runnable`.
+
+Example: `mammoth workflow runnable`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowRunnableResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.save`
 
 Run: `mammoth workflow save`. Exact input fields: `mammoth schema get workflow.save`.
@@ -189,6 +219,16 @@ Run: `mammoth workflow save-undo`. Exact input fields: `mammoth schema get workf
 Example: `mammoth workflow save-undo 123 resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `WorkflowSaveUndoResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.status`
+
+Run: `mammoth workflow status`. Exact input fields: `mammoth schema get workflow.status`.
+
+Example: `mammoth workflow status 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -281,6 +321,16 @@ Example: `mammoth workflow update 123`. Placeholders are illustrative; resolve I
 Result: `WorkflowUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Updated notes field; response reflects change and bumped updated_at. Single invocation only.
+
+### `workflow.verify-callback`
+
+Run: `mammoth workflow verify-callback`. Exact input fields: `mammoth schema get workflow.verify-callback`.
+
+Example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowVerifyCallbackResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `workflow.workspace-datasets`
 
