@@ -113,10 +113,10 @@ def a_fake_api() -> Generator[FakeApi]:
         yield api
 
 
-def call_tool(name: str, **arguments: object) -> Any:
+def call_tool(tool: str, /, **arguments: object) -> Any:
     """Call one tool through the MCP server, as a client does, and return its result."""
     register_tools()
-    result = run(mcp_server.call_tool(name, dict(arguments)))
+    result = run(mcp_server.call_tool(tool, dict(arguments)))
     assert result.structured_content is not None
     return dict(result.structured_content)
 

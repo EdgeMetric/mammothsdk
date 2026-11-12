@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-mcp-server)
+
+- Workflow tools that change a workflow as its canvas does:
+  - `create_workflow` starts a workflow from a table, or copies one onto other tables and waits a bounded time for the copy.
+  - `delete_workflow` deletes one (ask the user first).
+  - `propose_workflow_changes` stages canvas changes (add, update or remove a step, a view, a join, an export, ...) and returns what is unsaved.
+  - `save_workflow` saves the unsaved changes, undoes the last Save or cancels a Save step, and waits a bounded time for the Save run (ask the user first).
+
 ## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
 
 ### Added (mammoth-io 0.8.56)
