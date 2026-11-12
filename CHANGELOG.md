@@ -11,6 +11,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth bench COMMAND... --concurrency N --repeat R [--warmup W]` runs one read command N at a time for R rounds in one process, with one login and one keep-alive connection pool. Each round's calls start together on a barrier. It reports the p50, p95 and max of every HTTP request's logged `duration_ms` and of every command, with status and error counts. Write commands are refused.
 - A global `--workspace ID` replaces the profile's workspace for one command (and for `mammoth run` lines). A workspace other than the profile's drops the profile's saved project, so pass `--project` with it.
 
+### Added (next mammoth-mcp-server)
+
+- Workflow tools that change a workflow as its canvas does:
+  - `create_workflow` starts a workflow from a table, or copies one onto other tables and waits a bounded time for the copy.
+  - `delete_workflow` deletes one (ask the user first).
+  - `propose_workflow_changes` stages canvas changes (add, update or remove a step, a view, a join, an export, ...). It returns the keys it `added` and everything unsaved.
+  - `save_workflow` builds the unsaved changes named by `keys`, undoes the Save named by `run_id` (which a save returns), or cancels a Save step. It waits a bounded time for the Save run (ask the user first). It never builds other people's proposals or undoes their Save unless they are named.
+
 ## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
 
 ### Added (mammoth-io 0.8.56)

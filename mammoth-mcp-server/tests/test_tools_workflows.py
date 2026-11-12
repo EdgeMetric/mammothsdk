@@ -24,8 +24,8 @@ SALES = {"key": "sales-by-month", "name": "Sales by month", "words": ["sales", "
 INVOICES = {"key": "late-invoices", "name": "Chase late invoices", "words": ["invoice"]}
 
 
-def _call(name: str, **arguments: object) -> Any:
-    return call_tool(name, workspace_id=WORKSPACE, project_id=PROJECT, **arguments)
+def _call(tool: str, /, **arguments: object) -> Any:
+    return call_tool(tool, workspace_id=WORKSPACE, project_id=PROJECT, **arguments)
 
 
 @pytest.fixture(autouse=True)
@@ -314,3 +314,186 @@ def test_list_workflows_wraps_the_list() -> None:
         listed = _call("list_workflows")
 
     assert listed == {"workflows": [{"id": 41, "name": "Bank"}]}
+
+
+class TestCreateWorkflow:
+    def test_a_new_workflow_starts_from_a_table(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows", {"id": 42, "name": "Ledger"}, 201)
+            made = _call("create_workflow", name="Ledger", seed_dataset_id=9)
+
+        [request] = api.sent("POST", f"{BASE}/workflows")
+        assert api.body(request) == {"name": "Ledger", "shape": "blank", "seed_datasource_id": 9}
+        assert made == {"workflow": {"id": 42, "name": "Ledger"}}
+
+    def test_a_copy_waits_for_its_job_and_names_the_new_workflow(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows/duplicate", {"job_id": 77}, 202)
+            api.answer(
+                "GET", "/jobs/77", {"id": 77, "status": "success", "response": {"workflow_id": 43}}
+            )
+            copied = _call("create_workflow", name="Copy", copy_of_workflow_id=41, dataset_ids=[9])
+
+        [request] = api.sent("POST", f"{BASE}/workflows/duplicate")
+        assert api.body(request) == {"name": "Copy", "dataset_ids": [9], "source_workflow_id": 41}
+        assert copied == {"job_id": 77, "status": "done", "workflow_id": 43}
+
+    def test_a_copy_that_outlasts_the_call_returns_its_job(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(workflows, "_wait_seconds", lambda: 0.05)
+        monkeypatch.setattr("mammoth.api.jobs._POLL_FIRST_DELAY", 0.01)
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows/duplicate", {"job_id": 77}, 202)
+            api.answer("GET", "/jobs/77", {"id": 77, "status": "processing"})
+            copied = _call("create_workflow", name="Copy", copy_of_workflow_id=41, dataset_ids=[9])
+
+        assert api.sent("GET", "/jobs/77")
+        assert copied == {"job_id": 77, "status": "running"}
+
+    def test_a_copy_the_server_gives_no_job_for_returns_its_answer(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows/duplicate", {"workflow_id": 43}, 201)
+            copied = _call("create_workflow", name="Copy", copy_of_workflow_id=41, dataset_ids=[9])
+
+        assert copied == {"copy": {"workflow_id": 43}}
+
+    @pytest.mark.parametrize(
+        ("arguments", "said"),
+        [({"copy_of_workflow_id": 41}, "dataset_ids"), ({"dataset_ids": [9]}, "copy_of")],
+    )
+    def test_a_copy_needs_its_tables_and_only_a_copy_takes_them(
+        self, arguments: dict[str, object], said: str
+    ) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match=said):
+            _call("create_workflow", name="X", **arguments)
+
+        assert api.requests == []
+
+
+def test_delete_workflow_deletes_it() -> None:
+    with a_fake_api() as api, as_caller():
+        api.answer("DELETE", WORKFLOW, {})
+        gone = _call("delete_workflow", workflow_id=41)
+
+    assert len(api.sent("DELETE", WORKFLOW)) == 1
+    assert gone == {"deleted": 41}
+
+
+class TestProposeWorkflowChanges:
+    def test_changes_are_sent_as_proposals_and_the_unsaved_changes_come_back(self) -> None:
+        change = {"op": "remove_step", "view_id": 5, "task_id": 6}
+        theirs = {"key": "k0", "kind": "add_view", "by": 7}
+        pending = [theirs, {"key": "k1", "kind": "remove_step"}]
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": [theirs]}})
+            api.answer(
+                "PATCH",
+                f"{WORKFLOW}/canvas",
+                {"id": 41, "canvas_state": {"pending_changes": pending, "version": 3}},
+            )
+            proposed = _call("propose_workflow_changes", workflow_id=41, changes=[change])
+
+        [request] = api.sent("PATCH", f"{WORKFLOW}/canvas")
+        assert api.body(request) == {"canvas_state": {"proposed_changes": [change]}}
+        assert proposed == {"added": ["k1"], "unsaved": pending, "version": 3}
+
+    def test_a_proposal_that_lands_between_the_read_and_the_patch_is_not_ours(self) -> None:
+        """The server stamps one `at` per PATCH: an earlier stamp is someone else's."""
+        mine = {"key": "k1", "kind": "remove_step", "at": "2026-11-12T15:00:02+00:00", "by": 3}
+        also_mine = {"key": "k3", "kind": "add_view", "at": "2026-11-12T15:00:02+00:00", "by": 3}
+        theirs = {"key": "k2", "kind": "add_view", "by": 7, "at": "2026-11-12T15:00:01+00:00"}
+        pending = [mine, theirs, also_mine]
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": []}})
+            api.answer(
+                "PATCH", f"{WORKFLOW}/canvas", {"canvas_state": {"pending_changes": pending}}
+            )
+            proposed = _call(
+                "propose_workflow_changes", workflow_id=41, changes=[{"op": "x"}, {"op": "y"}]
+            )
+
+        assert proposed["added"] == ["k1", "k3"]
+
+    def test_a_change_this_call_rewrites_is_its_own(self) -> None:
+        old = {"key": "k1", "kind": "add_step", "label": "Old"}
+        new = {"key": "k1", "kind": "add_step", "label": "New"}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": [old]}})
+            api.answer("PATCH", f"{WORKFLOW}/canvas", {"canvas_state": {"pending_changes": [new]}})
+            proposed = _call("propose_workflow_changes", workflow_id=41, changes=[{"op": "x"}])
+
+        assert proposed["added"] == ["k1"]
+
+    def test_no_changes_is_refused(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="change"):
+            _call("propose_workflow_changes", workflow_id=41, changes=[])
+
+        assert api.requests == []
+
+
+def _saving(status: str, run_id: str = "s-1") -> dict[str, object]:
+    steps = [{"label": "Filter", "status": status}]
+    return {
+        "id": 41,
+        "canvas_state": {"save_run": {"id": run_id, "status": status, "steps": steps}},
+    }
+
+
+class TestSaveWorkflow:
+    def test_a_save_builds_the_chosen_changes_and_waits_for_them(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{WORKFLOW}/save", _saving("running"))
+            api.answer("GET", WORKFLOW, _saving("done"))
+            saved = _call("save_workflow", workflow_id=41, keys=["k1"])
+
+        [request] = api.sent("POST", f"{WORKFLOW}/save")
+        assert api.body(request) == {"keys": ["k1"]}
+        assert saved["saved"] == "done"
+        assert saved["run_id"] == "s-1"
+        assert saved["steps"] == [{"label": "Filter", "status": "done"}]
+
+    @pytest.mark.parametrize(
+        ("arguments", "field"),
+        [
+            ({}, "keys"),
+            ({"keys": []}, "keys"),
+            ({"action": "undo"}, "run_id"),
+            ({"action": "cancel_step", "run_id": "s-1"}, "step"),
+        ],
+    )
+    def test_each_action_needs_its_field(self, arguments: dict[str, object], field: str) -> None:
+        """No save builds everyone's proposals, no undo takes back someone else's Save."""
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match=field):
+            _call("save_workflow", workflow_id=41, **arguments)
+
+        assert api.requests == []
+
+    def test_undo_takes_back_the_named_save(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{WORKFLOW}/save/s-9/undo", _saving("done", run_id="u-1"))
+            undone = _call("save_workflow", workflow_id=41, action="undo", run_id="s-9")
+
+        assert len(api.sent("POST", f"{WORKFLOW}/save/s-9/undo")) == 1
+        assert api.sent("GET", WORKFLOW) == []
+        assert (undone["saved"], undone["run_id"]) == ("done", "u-1")
+
+    def test_cancel_step_cancels_that_step_of_the_named_run(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{WORKFLOW}/save/s-1/steps/2/cancel", _saving("cancelled"))
+            _call("save_workflow", workflow_id=41, action="cancel_step", run_id="s-1", step=2)
+
+        assert len(api.sent("POST", f"{WORKFLOW}/save/s-1/steps/2/cancel")) == 1
+
+    def test_cancel_step_without_a_run_cancels_in_the_latest(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, _saving("running", run_id="s-9"))
+            api.answer("POST", f"{WORKFLOW}/save/s-9/steps/0/cancel", _saving("cancelled"))
+            _call("save_workflow", workflow_id=41, action="cancel_step", step=0)
+
+        assert len(api.sent("POST", f"{WORKFLOW}/save/s-9/steps/0/cancel")) == 1
+
+    def test_cancel_step_without_any_save_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="no Save run"):
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {}})
+            _call("save_workflow", workflow_id=41, action="cancel_step", step=0)
