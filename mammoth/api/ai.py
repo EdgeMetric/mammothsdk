@@ -165,6 +165,7 @@ class AIAPI:
         dataset_id: int,
         dataview_id: int,
         current_query: str | None = None,
+        task_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         """Generate SQL from natural language intent.
 
@@ -181,6 +182,9 @@ class AIAPI:
             current_query: The SQL the rule holds now. When given, the intent asks to change
                 this query rather than write a new one; its ``{param}`` and ``{{snippet}}``
                 tokens are kept.
+            task_ids: Consecutive rules the query will replace. The server reads their
+                exact settings and result columns, and writes the query against the
+                input of the first rule (``sequence_number`` is then ignored).
 
         Returns:
             Dict with generated SQL and metadata.
@@ -191,6 +195,8 @@ class AIAPI:
         sql_params: dict[str, Any] = {"intent": intent, "sequence_number": sequence_number}
         if current_query is not None:
             sql_params["current_query"] = current_query
+        if task_ids is not None:
+            sql_params["task_ids"] = task_ids
         response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/sql_generation",

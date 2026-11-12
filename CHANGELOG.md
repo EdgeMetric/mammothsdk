@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `PipelineAPI.plan_sql_conversion` and `PipelineAPI.convert_to_sql` (with `View.plan_sql_conversion` and `View.convert_to_sql`) plan and save the replacement of consecutive rules by SQL rules, every group in one pipeline version. `AiAPI.generate_sql` takes `task_ids`: the server writes the query from those rules' exact settings.
+
+### Added (next mammoth-cli)
+
+- `view task convert-plan`, `view task convert-generate` and `view task convert` replace consecutive rules with one SQL rule. Rules are named by number (`--input '{"rules": "1-8"}'`). The plan shows groups and cuts in rule numbers, each cut with its reason. `convert-generate` writes the SQL of each group from a text, previews the SQL rule's result, changes nothing, and returns the ready `convert` command with those queries. `convert` saves every group in one pipeline version. It is a destructive write (prompt or `--yes`), refuses a blank text before any request, and on a server without the route says "does not support convert-to-sql yet". The bundled skill says never to delete rules one by one to replace them.
+
+### Added (next mammoth-mcp-server)
+
+- `plan_convert_to_sql`, `generate_convert_sql` and `convert_to_sql` replace consecutive rules of a view with one SQL rule. The plan says in rule numbers where Mammoth cuts and why. The generate step writes the SQL of each group from a text the model writes, with a preview, and changes nothing. The convert step saves every group in one pipeline version, refuses a blank text before any request, and on a server without the route says so and does not fall back to deleting rules one by one.
+
 ## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
 
 ### Added (mammoth-io 0.8.56)

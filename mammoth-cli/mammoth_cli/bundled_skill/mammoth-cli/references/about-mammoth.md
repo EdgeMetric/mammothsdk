@@ -111,6 +111,7 @@ Checkpoint Alert are the `view data-check` and `view checkpoint` families.
 | Read fields out of a JSON column | Extract JSON | `json-extract` |
 | Classify, tag or summarise rows with AI | Generative AI | `ai` |
 | One SQL query over the view | AI SQL Query | `add-sql` (replaces the view's columns), `generate-sql` (writes the query from plain words; apply it with `add-sql`) |
+| Replace many rules with one SQL rule | AI SQL Query | `view task convert-plan`, `convert-generate`, `convert` (one save, one pipeline version; the server picks the cuts) |
 | Copy rows into another dataset, refreshed with the pipeline | Send to Dataset | `view export dataset` (not a `view transform`) |
 
 `join` or `lookup`: `join` adds the chosen columns from every matching row

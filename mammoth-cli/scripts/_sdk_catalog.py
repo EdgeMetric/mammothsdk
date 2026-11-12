@@ -301,6 +301,10 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     # mvc-service #7302: on origin/release, in no pinned snapshot yet.
     "connector.draft.spec.get": {"operation_ids": [], "method": "GET"},
     "connector.version.spec.get": {"operation_ids": [], "method": "GET"},
+    # Convert rules to one SQL rule: in no pinned snapshot yet.
+    "view.task.convert-plan": {"operation_ids": [], "method": "GET"},
+    # The nearest pinned operation: the save adds one SQL task (and removes the rules it replaces).
+    "view.task.convert": {"operation_ids": ["AddTask"], "method": "POST"},
     # The Today page read: on mvc-service master and release, in no pinned snapshot yet.
     "agent.access.today": {"operation_ids": [], "method": "GET"},
     # mvc-service #7203.
@@ -353,6 +357,13 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
 # CLI-only commands: no OpenAPI operation and no Mammoth transport. They are
 # handled locally (auth, config, context, diagnostics, discovery, skill).
 CLI_ONLY_COMMANDS: dict[str, dict[str, Any]] = {
+    "view.task.convert-generate": {
+        "sdk_symbol": "mammoth_cli.commands.view.convert_to_sql.view_task_convert_generate",
+        "mutation_class": "read",
+        "live_exemption_reason": (
+            "Composes ai sql generate with task_ids and view task preview; changes nothing."
+        ),
+    },
     "auth.login": {
         "sdk_symbol": "mammoth_cli.context.auth.login",
         "mutation_class": "benign_mutation",

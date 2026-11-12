@@ -30773,6 +30773,133 @@ commands:
   undo_test: LT-VIEW-TASK-ADD-UNDO
   known_restrictions: Strict task discriminated union only.
   reviewed_by: primary
+- command_id: view.task.convert
+  command_path: view task convert
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - AddTask
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.convert_to_sql
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.convert_to_sql with validated request fields.
+  request_model: ViewTaskConvertRequest
+  result_model: ViewTaskConvertResult
+  mutation_class: destructive
+  edits_target: true
+  undo:
+    strategy: irreversible
+    reason: Deletes the view task permanently; Mammoth keeps no copy to restore.
+  confirmation: prompt_or_yes
+  wait_policy: always_wait
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-VIEW-TASK-CONVERT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task convert DATAVIEW_ID --help
+  agent_example: 'mammoth view task convert 123 --input ''{"groups": [{"rules": "1-8", "text": "Keep rows
+    where Price is above 100 and add Total.", "query": "SELECT *, \"Price\" * \"Qty\" AS \"Total\" FROM
+    \"view:123\" WHERE \"Price\" > 100"}]}'' --yes'
+  unit_tests:
+  - UT-VIEW-TASK-CONVERT
+  contract_tests:
+  - CT-VIEW-TASK-CONVERT-HUMAN
+  - CT-VIEW-TASK-CONVERT-JSON
+  - CT-VIEW-TASK-CONVERT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Replaces the rules of each group by one SQL rule, for good. Prompt or --yes. Refuses
+    a blank text.
+  reviewed_by: primary
+- command_id: view.task.convert-generate
+  command_path: view task convert-generate
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  options: []
+  sdk_symbol: mammoth_cli.commands.view.convert_to_sql.view_task_convert_generate
+  sdk_conversion: Call mammoth_cli.commands.view.convert_to_sql.view_task_convert_generate with validated
+    request fields.
+  request_model: ViewTaskConvertGenerateRequest
+  result_model: ViewTaskConvertGenerateResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Composes ai sql generate with task_ids and view task preview; changes nothing.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task convert-generate DATAVIEW_ID --help
+  agent_example: 'mammoth view task convert-generate 123 --input ''{"groups": [{"rules": "1-8", "text":
+    "Keep rows where Price is above 100 and add Total."}]}'''
+  unit_tests:
+  - UT-VIEW-TASK-CONVERT-GENERATE
+  contract_tests:
+  - CT-VIEW-TASK-CONVERT-GENERATE-HUMAN
+  - CT-VIEW-TASK-CONVERT-GENERATE-JSON
+  - CT-VIEW-TASK-CONVERT-GENERATE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: null
+  reviewed_by: primary
+- command_id: view.task.convert-plan
+  command_path: view task convert-plan
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: dataview_id
+    type: int
+    required: true
+    metavar: DATAVIEW_ID
+    falls_back_to_field: null
+    help: ID of the dataview.
+  options: []
+  sdk_symbol: mammoth.api.pipeline.PipelineAPI.plan_sql_conversion
+  sdk_conversion: Call mammoth.api.pipeline.PipelineAPI.plan_sql_conversion with validated request fields.
+  request_model: ViewTaskConvertPlanRequest
+  result_model: ViewTaskConvertPlanResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-VIEW-TASK-CONVERT-PLAN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth view task convert-plan DATAVIEW_ID --help
+  agent_example: 'mammoth view task convert-plan 123 --input ''{"rules": "1-8"}'''
+  unit_tests:
+  - UT-VIEW-TASK-CONVERT-PLAN
+  contract_tests:
+  - CT-VIEW-TASK-CONVERT-PLAN-HUMAN
+  - CT-VIEW-TASK-CONVERT-PLAN-JSON
+  - CT-VIEW-TASK-CONVERT-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Takes rule numbers; the CLI turns them into task ids. The server decides the cuts.
+  reviewed_by: primary
 - command_id: view.task.delete
   command_path: view task delete
   disposition: command

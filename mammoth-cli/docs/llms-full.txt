@@ -1659,6 +1659,12 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view task add` [reversible_pipeline/none] -> mammoth.api.pipeline.PipelineAPI.add_task
   example: mammoth view task add 123 --input '{"task_spec": {"DATAVIEW_ID": 123, "SEQUENCE_NUMBER": 1, "COPY": [{"SOURCE": "column_1", "AS": {"COLUMN": "Copy of column 1", "TYPE": "TEXT", "INTERNAL_NAME": "column_9"}}], "VERSION": 2}}'
   agent note: illustrative low-level envelope, not a guaranteed executable task; prefer typed view transform commands because task_spec fields are not fully discoverable.
+- `mammoth view task convert` [destructive/prompt_or_yes] -> mammoth.api.pipeline.PipelineAPI.convert_to_sql
+  example: mammoth view task convert 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total.", "query": "SELECT *, \"Price\" * \"Qty\" AS \"Total\" FROM \"view:123\" WHERE \"Price\" > 100"}]}' --yes
+- `mammoth view task convert-generate` [read/none] -> mammoth_cli.commands.view.convert_to_sql.view_task_convert_generate
+  example: mammoth view task convert-generate 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total."}]}'
+- `mammoth view task convert-plan` [read/none] -> mammoth.api.pipeline.PipelineAPI.plan_sql_conversion
+  example: mammoth view task convert-plan 123 --input '{"rules": "1-8"}'
 - `mammoth view task delete` [destructive/prompt_or_yes] -> mammoth.api.pipeline.PipelineAPI.delete_task
   example: mammoth view task delete 123 456 --yes
 - `mammoth view task get` [read/none] -> mammoth.api.pipeline.PipelineAPI.get_task

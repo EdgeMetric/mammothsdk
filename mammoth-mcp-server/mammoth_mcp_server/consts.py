@@ -648,6 +648,34 @@ class SqlGenerationFields:
     SUCCESS = "SQ01"
 
 
+class ConvertFields:
+    """Converting rules to one SQL rule: what the plan route says and the save route takes."""
+
+    GROUPS = "groups"
+    CUTS = "cuts"
+    TASK_IDS = "task_ids"
+    FIRST_SEQUENCE = "first_sequence"
+    LAST_SEQUENCE = "last_sequence"
+    SEQUENCE = "sequence"
+    TASK_ID = "task_id"
+    REASON = "reason"
+    SQL = "SQL"
+    USER_QUERY = "USER_QUERY"
+    INTENT = "INTENT"
+    SEQUENCE_NUMBER = "SEQUENCE_NUMBER"
+    # Why the plan keeps a rule, or a place, as it is.
+    GATE = "gate_between_rules"
+    REASON_WORDS = {
+        "rule_type_not_supported": (
+            "it is a join, lookup, GenAI, metric or pivot rule, which SQL cannot replace"
+        ),
+        "rule_not_active": "it is suspended",
+        "single_rule": "it stands alone: one rule alone gains nothing from being SQL",
+        "not_selected": "it was not in the rules you asked about",
+        GATE: "a checkpoint, data check or export sits right after it, and rules are not merged across one",
+    }
+
+
 class AutomationFields:
     """The body `POST automations` accepts, and the patches that change one."""
 

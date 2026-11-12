@@ -1003,6 +1003,11 @@ _TARGETS: dict[str, str] = {
     "view.pipeline.wait": "mammoth_cli.commands.view.pipeline:view_pipeline_wait",
     "view.task.add": "mammoth_cli.commands.view.pipeline:view_task_add",
     "view.task.delete": "mammoth_cli.commands.view.pipeline:view_task_delete",
+    "view.task.convert-plan": "mammoth_cli.commands.view.convert_to_sql:view_task_convert_plan",
+    "view.task.convert-generate": (
+        "mammoth_cli.commands.view.convert_to_sql:view_task_convert_generate"
+    ),
+    "view.task.convert": "mammoth_cli.commands.view.convert_to_sql:view_task_convert",
     "view.task.get": "mammoth_cli.commands.view.pipeline:view_task_get",
     "view.task.list": "mammoth_cli.commands.view.pipeline:view_task_list",
     "view.task.preview": "mammoth_cli.commands.view.pipeline:view_task_preview",

@@ -986,6 +986,36 @@ Result: `ViewTaskAddResult`; mutation `reversible_pipeline`, confirmation `none`
 
 Status on release: ran once on CLI 2.0.40 — golden-data check golden-20260919 (CLI 2.0.18): typed transforms bulk-replace, convert-type, discard-duplicates, filter, join, pivot, set-values, text each run once on an owned fixture on release and read back with view data get against a known answer (values…
 
+### `view.task.convert`
+
+Run: `mammoth view task convert`. Exact input fields: `mammoth schema get view.task.convert`.
+
+Example: `mammoth view task convert 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total.", "query": "SELECT *, \"Price\" * \"Qty\" AS \"Total\" FROM \"view:123\" WHERE \"Price\" > 100"}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `ViewTaskConvertResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
+
+Status on release: untried; no live run recorded.
+
+### `view.task.convert-generate`
+
+Run: `mammoth view task convert-generate`. Exact input fields: `mammoth schema get view.task.convert-generate`.
+
+Example: `mammoth view task convert-generate 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total."}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTaskConvertGenerateResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `view.task.convert-plan`
+
+Run: `mammoth view task convert-plan`. Exact input fields: `mammoth schema get view.task.convert-plan`.
+
+Example: `mammoth view task convert-plan 123 --input '{"rules": "1-8"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ViewTaskConvertPlanResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `view.task.delete`
 
 Run: `mammoth view task delete`. Exact input fields: `mammoth schema get view.task.delete`.

@@ -57,6 +57,18 @@ def test_a_flat_view_record_is_named_and_read_with_its_dataset_and_project(
     assert _calls(svc, dt.DATAVIEW_GET) == [{"dataview_id": 5, "dataset_id": 7, "project_id": 180}]
 
 
+def test_converting_rules_to_sql_names_the_view_whose_rules_change(
+    svc: FakeMammothService,
+) -> None:
+    svc.responses[dt.DATAVIEW_GET] = {"id": 5, "name": "Q1 view"}
+    got = _targets(
+        svc,
+        "view.task.convert",
+        arguments={"dataview_id": 5, "dataset_id": 7, "groups": [{"task_ids": [1, 2]}]},
+    )
+    assert got == [{"type": "view", "id": 5, "name": "Q1 view"}]
+
+
 def test_a_view_without_a_known_parent_dataset_is_unresolvable_before_any_read(
     svc: FakeMammothService,
 ) -> None:

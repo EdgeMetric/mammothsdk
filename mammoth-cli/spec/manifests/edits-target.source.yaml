@@ -247,6 +247,7 @@ edits_target_commands:
 - view.pipeline.edit
 - view.restore
 - view.task.add
+- view.task.convert
 - view.task.delete
 - view.task.update
 - view.transform.add-column

@@ -117,6 +117,13 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
     "POST /agents/sessions/{}/runs/{}/{}": "origin/master@154ddb559a",
     "POST /workspaces/{}/projects/{}/workflows/{}/run": "mvc-service feat/workflow-run-route",
+    # Convert rules to one SQL rule: on the mvc-service branch, in no pinned snapshot yet.
+    "GET /workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql/plan": (
+        "mvc-service convert-rules-to-sql"
+    ),
+    "POST /workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql": (
+        "mvc-service convert-rules-to-sql"
+    ),
 }
 
 # --- Operations that alias another command (identical behavior) ------------

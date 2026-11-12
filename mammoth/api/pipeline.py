@@ -504,6 +504,60 @@ class PipelineAPI:
             raise rejection from exc
         return await self._client._wait_if_job(response)
 
+    async def plan_sql_conversion(
+        self,
+        dataview_id: int,
+        task_ids: list[int] | None = None,
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Split rules into groups that can each become one SQL rule.
+
+        The server decides the cuts: a checkpoint, data check or export between
+        rules, a rule that cannot be written as SQL (join, lookup, GenAI, metric,
+        pivot), a suspended rule, a rule not selected, or a group of one rule.
+
+        Args:
+            dataview_id: ID of the dataview.
+            task_ids: The rules to consider; ``None`` means the whole pipeline.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            ``{"groups": [{"task_ids", "first_sequence", "last_sequence"}],
+            "cuts": [{"sequence", "task_id", "reason"}]}``.
+        """
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        params = {"task_ids": task_ids} if task_ids is not None else None
+        return await self._client._request_json(
+            "GET", f"{self._base_url(ws, proj, ds, dv)}/tasks/convert-to-sql/plan", params=params
+        )
+
+    async def convert_to_sql(
+        self,
+        dataview_id: int,
+        groups: list[dict[str, Any]],
+        dataset_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Replace each group of consecutive rules by one SQL rule.
+
+        All groups change in one pipeline draft: one pipeline version and one
+        rerun. In a view in draft mode the change joins the open draft.
+
+        Args:
+            dataview_id: ID of the dataview.
+            groups: ``[{"task_ids": [...], "SQL": {"USER_QUERY": ..., "INTENT": ...}}]``.
+            dataset_id: Dataset ID (auto-detected if not provided).
+
+        Returns:
+            The finished rerun job, or the modification response in draft mode.
+        """
+        ws, proj, ds, dv = await self._resolve_ids(dataview_id, dataset_id)
+        response = await self._client._request_json(
+            "POST",
+            f"{self._base_url(ws, proj, ds, dv)}/tasks/convert-to-sql",
+            json={"groups": groups},
+        )
+        return await self._client._wait_if_job(response)
+
     async def delete_task(
         self, dataview_id: int, task_id: int, dataset_id: int | None = None
     ) -> dict[str, Any]:

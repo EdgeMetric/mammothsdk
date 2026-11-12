@@ -388,6 +388,16 @@ COMMAND_DISCOVERY_PURPOSES = {
     "dataset.delete": "delete remove permanently dataset uploaded file csv",
     "view.list": "list all views",
     "view.task.delete": "undo remove the last step task from the pipeline revert a transformation",
+    "view.task.convert-plan": (
+        "clean up my rules fewer rules replace rules with one rule merge rules combine rules "
+        "into one sql rule"
+    ),
+    "view.task.convert-generate": (
+        "write the merged sql for rules replace rules 1 to 8 with one rule"
+    ),
+    "view.task.convert": (
+        "replace rules with one sql rule save the merged rule clean up my rules into fewer rules"
+    ),
     "view.data.query": "query rows with a filter condition sort columns and get rows back",
     "batch.create": "append add new data to an existing dataset",
     "auth.login": "log in sign in login authenticate token workspace",
