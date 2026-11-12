@@ -24,6 +24,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `step_lines`, `repeat_counts`, `before_after`, `view_values`, `holds_check`.
   - `sentence_read` and `sentence_ask_dismiss`.
   - `swap_fit`, `swap`, `swap_cancel` and `swap_undo` change a step's table.
+  - `wait_for_save` reads a workflow until its Save run ends, with a bounded `timeout`. `save_run()` and `save_is_running()` read the Save from a workflow record. The CLI and MCP server wait through it.
 
 ### Added (next mammoth-cli)
 

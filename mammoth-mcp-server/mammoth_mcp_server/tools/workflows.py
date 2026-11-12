@@ -20,6 +20,7 @@ import re
 import typing
 from typing import Literal
 
+from mammoth.api.workflows import save_run
 from mammoth.client import MammothClient
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -30,7 +31,6 @@ from ..tool_kinds import DESTRUCTIVE_OUTSIDE, READS
 
 # What a draft or a Save keeps back of the call's deadline, to answer in.
 ANSWER_SECONDS = 3.0
-SAVE_POLL_SECONDS = 2.0
 TEMPLATES_SHOWN = 10
 RUNS_SHOWN = 10
 RUNNING = "running"
@@ -301,11 +301,8 @@ async def build_workflow(
 
 
 def _save_status(workflow: dict[str, JsonValue]) -> JsonValue:
-    state = workflow.get("canvas_state")
-    run = state.get("save_run") if isinstance(state, dict) else None
-    if not isinstance(run, dict):
-        return "done"
-    return run.get("status") or "done"
+    run = save_run(workflow)
+    return (run.get("status") if run else None) or "done"
 
 
 async def _await_save(
@@ -313,10 +310,13 @@ async def _await_save(
 ) -> dict[str, JsonValue]:
     """Read the workflow until its Save ends or the call's time runs out."""
     workflow_id = typing.cast(int, workflow["id"])
-    while _save_status(workflow) == RUNNING and _wait_seconds() > SAVE_POLL_SECONDS:
-        await asyncio.sleep(SAVE_POLL_SECONDS)
-        workflow = await read_sdk_errors(client.workflows.get(workflow_id))
-    return workflow
+    return await read_sdk_errors(
+        client.workflows.wait_for_save(
+            workflow_id,
+            workflow=typing.cast(dict[str, typing.Any], workflow),
+            timeout=_wait_seconds(),
+        )
+    )
 
 
 @mcp_server.tool(

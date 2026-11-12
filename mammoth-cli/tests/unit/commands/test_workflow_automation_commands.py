@@ -215,8 +215,10 @@ def _workflow(status: str, steps: list[dict[str, Any]] | None = None) -> dict[st
 class _Service:
     def __init__(self, reads: list[dict[str, Any]]) -> None:
         self.reads = reads
+        self.calls: list[tuple[str, dict[str, Any]]] = []
 
     def call(self, symbol: str, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append((symbol, kwargs))
         return self.reads.pop(0)
 
 
@@ -226,7 +228,6 @@ class _Invocation:
 
 
 def test_both_builds_wait_for_their_save(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("mammoth_cli.commands.workflow._SAVE_POLL_SECONDS", 0.0)
     monkeypatch.setattr("mammoth_cli.commands.workflow.require_project", lambda inv: 25654)
     service = _Service([_workflow("done")])
 
@@ -236,6 +237,23 @@ def test_both_builds_wait_for_their_save(monkeypatch: pytest.MonkeyPatch) -> Non
 
     assert SAVE_AWAITED == {"workflow.template.build", "workflow.describe.build"}
     assert data["workflow"]["canvas_state"]["save_run"]["status"] == "done"
+    [(symbol, kwargs)] = service.calls
+    assert symbol == "mammoth.api.workflows.WorkflowsAPI.wait_for_save"
+    assert kwargs["workflow_id"] == 41 and kwargs["timeout"] == 30.0
+
+
+def test_a_save_still_running_after_the_wait_is_a_retryable_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("mammoth_cli.commands.workflow.require_project", lambda inv: 25654)
+    service = _Service([_workflow("running")])
+
+    with pytest.raises(CliError) as caught:
+        await_built_workflow(
+            _Invocation(), service, {"workflow": _workflow("running")}  # type: ignore[arg-type]
+        )
+
+    assert caught.value.code == "timeout" and caught.value.retryable
 
 
 def test_a_build_whose_save_left_steps_unbuilt_fails(monkeypatch: pytest.MonkeyPatch) -> None:

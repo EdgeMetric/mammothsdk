@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -21,8 +23,39 @@ ERR_DUPLICATE_DATASETS = "`dataset_ids` must be a non-empty list of positive dat
 ERR_IDS = "`{0}` must be a non-empty list of at most 200 positive ids, got {1!r}."
 ERR_TEXT_EMPTY = "`{0}` must be a non-empty string."
 ERR_ID_POSITIVE = "`{0}` must be a positive integer, got {1!r}."
+ERR_TIMEOUT = "`timeout` must be a number of seconds >= 0, got {0!r}."
 _NAME_MAX = 255
 _IDS_MAX = 200
+#: The ``save_run.status`` of a Save that is still building.
+SAVE_RUNNING = "running"
+_SAVE_POLL_SECONDS = 2.0
+
+
+def save_run(workflow: Any) -> dict[str, Any] | None:
+    """Read the Save run a workflow record carries.
+
+    Args:
+        workflow: A workflow record, as ``WorkflowsAPI.get`` or a build returns it.
+
+    Returns:
+        The record's ``canvas_state.save_run``, or None when it carries none.
+    """
+    state = workflow.get("canvas_state") if isinstance(workflow, dict) else None
+    run = state.get("save_run") if isinstance(state, dict) else None
+    return run if isinstance(run, dict) else None
+
+
+def save_is_running(workflow: Any) -> bool:
+    """Tell whether a workflow record's Save run is still building.
+
+    Args:
+        workflow: A workflow record.
+
+    Returns:
+        True when its ``save_run.status`` is ``running``.
+    """
+    run = save_run(workflow)
+    return run is not None and run.get("status") == SAVE_RUNNING
 
 
 class WorkflowsAPI:
@@ -149,6 +182,48 @@ class WorkflowsAPI:
         return await self._client._request_json(
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
         )
+
+    async def wait_for_save(
+        self,
+        workflow_id: int,
+        *,
+        workflow: dict[str, Any] | None = None,
+        timeout: float = 120.0,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow until its Save run ends, or *timeout* passes.
+
+        A build, ``save`` and ``undo_save`` answer at once and build in the background;
+        the Save run in ``canvas_state.save_run`` is the only proof of what was built.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            workflow: The record the build or save returned; read first when omitted.
+                A record whose Save is not running is returned without a read.
+            timeout: Seconds to wait; ``0`` returns the first record.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            The latest workflow record; its ``save_run.status`` is still ``running``
+            when the wait ended first.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *timeout*
+                is negative.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        check_timeout(timeout)
+        deadline = time.monotonic() + timeout
+        current = workflow
+        if current is None:
+            current = await self.get(workflow_id, project_id=project_id)
+        while True:
+            left = deadline - time.monotonic()
+            if not save_is_running(current) or left <= 0:
+                return current
+            await asyncio.sleep(min(_SAVE_POLL_SECONDS, left))
+            current = await self.get(workflow_id, project_id=project_id)
 
     async def update(
         self,
@@ -789,12 +864,7 @@ class WorkflowsAPI:
         )
 
     def _path(self, workflow_id: int, project_id: int | None, tail: str) -> str:
-        self._check_workflow_id(workflow_id)
-        self._check_project_id(project_id)
-        return (
-            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}"
-            f"/workflows/{workflow_id}/{tail}"
-        )
+        return workflow_path(self._client, workflow_id, project_id, tail)
 
     async def step_lines(
         self,
@@ -896,7 +966,7 @@ class WorkflowsAPI:
         Raises:
             MammothValidationError: If an id is not positive or *column* is empty.
         """
-        _check_id("view_id", view_id)
+        check_positive_id("view_id", view_id)
         if not isinstance(column, str) or not column:
             raise MammothValidationError(ERR_TEXT_EMPTY.format("column"))
         return await self._client._request_json(
@@ -1000,7 +1070,7 @@ class WorkflowsAPI:
         Raises:
             MammothValidationError: If an id is not positive or *dataset_ids* is empty.
         """
-        _check_id("view_id", view_id)
+        check_positive_id("view_id", view_id)
         _check_ids("dataset_ids", dataset_ids)
         return await self._client._request_json(
             "POST",
@@ -1037,8 +1107,8 @@ class WorkflowsAPI:
         Raises:
             MammothValidationError: If an id is not positive.
         """
-        _check_id("view_id", view_id)
-        _check_id("dataset_id", dataset_id)
+        check_positive_id("view_id", view_id)
+        check_positive_id("dataset_id", dataset_id)
         body: dict[str, Any] = {"view_id": view_id, "dataset_id": dataset_id}
         if picks:
             body["picks"] = picks
@@ -1084,9 +1154,58 @@ class WorkflowsAPI:
         )
 
 
-def _check_id(name: str, value: int) -> None:
+def check_positive_id(name: str, value: int) -> None:
+    """Refuse an id that is not a positive integer (a bool is not an id).
+
+    Args:
+        name: The argument's name, for the message.
+        value: The id to check.
+
+    Raises:
+        MammothValidationError: If *value* is not a positive integer.
+    """
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise MammothValidationError(ERR_ID_POSITIVE.format(name, value))
+
+
+def check_timeout(timeout: float) -> None:
+    """Refuse a wait that is not a number of seconds >= 0 (a bool is not a number).
+
+    Args:
+        timeout: The wait in seconds.
+
+    Raises:
+        MammothValidationError: If *timeout* is not a number >= 0.
+    """
+    if isinstance(timeout, bool) or not isinstance(timeout, int | float) or timeout < 0:
+        raise MammothValidationError(ERR_TIMEOUT.format(timeout))
+
+
+def workflow_path(
+    client: MammothClient, workflow_id: int, project_id: int | None, tail: str
+) -> str:
+    """Build the path of a route under one workflow.
+
+    Args:
+        client: The client whose workspace (and default project) the path uses.
+        workflow_id: ID of the workflow (must be > 0).
+        project_id: Project ID, or None for the client's default project.
+        tail: The route below the workflow, e.g. ``run`` or ``swap/fit``.
+
+    Returns:
+        ``/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/{tail}``.
+
+    Raises:
+        MammothValidationError: If *workflow_id* or *project_id* is not a positive integer.
+        ValueError: If no project is given and the client has no default project.
+    """
+    check_positive_id("workflow_id", workflow_id)
+    if project_id is not None:
+        check_positive_id("project_id", project_id)
+    proj = project_id if project_id is not None else getattr(client, "project_id", None)
+    if proj is None:
+        raise ValueError("project_id must be set on the client using client.set_project_id()")
+    return f"/workspaces/{client.workspace_id}/projects/{proj}/workflows/{workflow_id}/{tail}"
 
 
 def _check_ids(name: str, values: _list[int]) -> None:

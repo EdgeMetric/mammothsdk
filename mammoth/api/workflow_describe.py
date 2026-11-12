@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
 from mammoth.api.workflow_triggers import schedule_body
+from mammoth.api.workflows import check_timeout
 from mammoth.exceptions import MammothValidationError
 
 if TYPE_CHECKING:
@@ -23,7 +24,6 @@ ERR_DRAFT = "`draft` must be the non-empty draft id `start` returned."
 ERR_SPEC = "`spec` must be the read-back's spec (a dict)."
 ERR_DESTINATION = "`destination_name` must be 1 to 120 characters."
 ERR_VIEW_ID = "`view_id` must be a positive integer, got {0!r}."
-ERR_TIMEOUT = "`timeout` must be a number of seconds >= 0, got {0!r}."
 ERR_FILE = "File not found: {0}"
 ERR_SCHEDULE = "`schedule` must be a clock: {frequency, interval?, by_week_day?, ...}."
 _TEXT_MIN, _TEXT_MAX = 3, 2000
@@ -133,8 +133,7 @@ class WorkflowDescribeAPI:
         Raises:
             MammothValidationError: If *draft* is empty or *timeout* is negative.
         """
-        if isinstance(timeout, bool) or not isinstance(timeout, int | float) or timeout < 0:
-            raise MammothValidationError(ERR_TIMEOUT.format(timeout))
+        check_timeout(timeout)
         deadline = time.monotonic() + timeout
         while True:
             state = await self.draft(draft, project_id=project_id)

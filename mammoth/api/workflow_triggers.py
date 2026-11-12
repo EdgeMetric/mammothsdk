@@ -6,18 +6,16 @@ import asyncio
 import time
 from typing import TYPE_CHECKING, Any
 
+from mammoth.api.workflows import check_positive_id, check_timeout, workflow_path
 from mammoth.exceptions import MammothValidationError
 
 if TYPE_CHECKING:
     from mammoth.client import MammothClient
 
-ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
-ERR_WORKFLOW_ID_POSITIVE = "`{0}` must be a positive integer, got {1!r}."
 ERR_FREQUENCY = "`frequency` must be one of hourly, daily, weekly, monthly; got {0!r}."
 ERR_INTERVAL = "`interval` must be an integer from 1 to 366, got {0!r}."
 ERR_WEEK_DAYS = "`by_week_day` must be a list of mo, tu, we, th, fr, sa, su; got {0!r}."
 ERR_MONTH_DAYS = "`by_month_day` must be a list of days 1 to 31, got {0!r}."
-ERR_TIMEOUT = "`timeout` must be a number of seconds >= 0, got {0!r}."
 FREQUENCIES = ("hourly", "daily", "weekly", "monthly")
 WEEK_DAYS = ("mo", "tu", "we", "th", "fr", "sa", "su")
 #: How a run ends, as Recent runs says it.
@@ -43,14 +41,7 @@ class WorkflowTriggersAPI:
         self._client = client
 
     def _path(self, workflow_id: int, project_id: int | None, tail: str) -> str:
-        _check_id("workflow_id", workflow_id)
-        if project_id is not None and project_id <= 0:
-            raise MammothValidationError(ERR_PROJECT_ID_POSITIVE.format(project_id))
-        proj = project_id if project_id is not None else getattr(self._client, "project_id", None)
-        if proj is None:
-            raise ValueError("project_id must be set on the client using client.set_project_id()")
-        ws = self._client.workspace_id
-        return f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/{tail}"
+        return workflow_path(self._client, workflow_id, project_id, tail)
 
     async def run(
         self,
@@ -79,6 +70,9 @@ class WorkflowTriggersAPI:
         Raises:
             MammothValidationError: If an id is not positive or *timeout* is negative.
         """
+        # Checked before the POST: a refused wait must not leave a run started.
+        if wait:
+            check_timeout(timeout)
         started = await self._client._request_json(
             "POST", self._path(workflow_id, project_id, "run")
         )
@@ -113,8 +107,7 @@ class WorkflowTriggersAPI:
         Raises:
             MammothValidationError: If *timeout* is negative.
         """
-        if isinstance(timeout, bool) or not isinstance(timeout, int | float) or timeout < 0:
-            raise MammothValidationError(ERR_TIMEOUT.format(timeout))
+        check_timeout(timeout)
         deadline = time.monotonic() + timeout
         while True:
             rows = (await self.runs(workflow_id, project_id=project_id))["runs"]
@@ -212,7 +205,7 @@ class WorkflowTriggersAPI:
         Raises:
             MammothValidationError: If an id is not positive.
         """
-        _check_id("source_workflow_id", source_workflow_id)
+        check_positive_id("source_workflow_id", source_workflow_id)
         return await self._client._request_json(
             "PUT",
             self._path(workflow_id, project_id, "after"),
@@ -319,8 +312,3 @@ def schedule_body(
     if until is not None:
         body["until"] = until
     return body
-
-
-def _check_id(name: str, value: int) -> None:
-    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-        raise MammothValidationError(ERR_WORKFLOW_ID_POSITIVE.format(name, value))

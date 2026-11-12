@@ -45,18 +45,6 @@
       "commands": []
     },
     {
-      "method": "POST",
-      "path": "/workspaces/{}/projects/{}/workflows/{}/run",
-      "state": "pending_server_release",
-      "pending_in": "mvc-service feat/workflow-run-route",
-      "sdk_symbols": [
-        "mammoth.api.workflow_triggers.WorkflowTriggersAPI.run"
-      ],
-      "commands": [
-        "workflow.run.start"
-      ]
-    },
-    {
       "method": "GET",
       "path": "/workspaces/{}/split-segments",
       "state": "removed_on_server",
@@ -113,6 +101,7 @@
     "view.data.forecast",
     "view.explore-panel.get",
     "view.pipeline.items-all",
+    "workflow.run.start",
     "workspace.user.get"
   ],
   "rows": [

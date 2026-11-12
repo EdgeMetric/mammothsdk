@@ -30,7 +30,7 @@ def _call(name: str, **arguments: object) -> Any:
 
 @pytest.fixture(autouse=True)
 def _no_waiting(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(workflows, "SAVE_POLL_SECONDS", 0.0)
+    monkeypatch.setattr("mammoth.api.workflows._SAVE_POLL_SECONDS", 0.0)
     monkeypatch.setattr(workflows, "ANSWER_SECONDS", 0.0)
     monkeypatch.setattr("mammoth.api.workflow_triggers._POLL_SECONDS", 0.0)
     monkeypatch.setattr("mammoth.api.workflow_describe._POLL_SECONDS", 0.0)

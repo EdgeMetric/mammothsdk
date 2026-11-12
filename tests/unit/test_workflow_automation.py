@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from mammoth.api import workflow_describe, workflow_triggers
+from mammoth.api import workflow_describe, workflow_triggers, workflows
 from mammoth.client import SUB_CLIENTS, MammothClient
 from mammoth.exceptions import MammothValidationError
 
@@ -67,6 +67,25 @@ async def test_a_wait_that_ends_first_says_running(
     assert (done["run"], done["result"]) == (None, "running")
 
 
+@pytest.mark.parametrize("timeout", [-1, True, "5"])
+async def test_run_refuses_a_bad_wait_before_it_starts_a_run(
+    server: RecordingServer, client: MammothClient, timeout: Any  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError):
+        await client.workflow_triggers.run(41, wait=True, timeout=timeout)
+    assert server.requests == []
+
+
+async def test_triggers_and_workflows_refuse_a_bad_id_with_the_same_message(
+    client: MammothClient,  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError) as from_triggers:
+        await client.workflow_triggers.run(0)
+    with pytest.raises(MammothValidationError) as from_workflows:
+        await client.workflows.holds_check(0)
+    assert str(from_triggers.value) == str(from_workflows.value)
+
+
 async def test_wait_for_run_polls_until_the_row_is_no_longer_running(
     client: MammothClient, monkeypatch: pytest.MonkeyPatch  # noqa: F811
 ) -> None:
@@ -85,6 +104,56 @@ async def test_wait_for_run_polls_until_the_row_is_no_longer_running(
     monkeypatch.setattr(client.workflow_triggers, "runs", runs)
     row = await client.workflow_triggers.wait_for_run(41, "r-1", timeout=5)
     assert row == {"id": "r-1", "result": "failure", "reason": "boom"}
+
+
+def _saving(status: str) -> dict[str, Any]:
+    return {"id": 41, "canvas_state": {"save_run": {"status": status}}}
+
+
+async def test_wait_for_save_reads_the_workflow_until_its_save_ends(
+    client: MammothClient, monkeypatch: pytest.MonkeyPatch  # noqa: F811
+) -> None:
+    reads = iter([_saving("running"), _saving("partial")])
+
+    async def get(workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        return next(reads)
+
+    monkeypatch.setattr(workflows, "_SAVE_POLL_SECONDS", 0.0)
+    monkeypatch.setattr(client.workflows, "get", get)
+    done = await client.workflows.wait_for_save(41, workflow=_saving("running"), timeout=5)
+    assert workflows.save_run(done) == {"status": "partial"}
+    assert next(reads, None) is None
+
+
+async def test_wait_for_save_returns_a_finished_record_without_a_read(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    done = await client.workflows.wait_for_save(41, workflow=_saving("done"), timeout=5)
+    assert done == _saving("done")
+    assert server.requests == []
+
+
+async def test_wait_for_save_reads_first_when_given_no_record_and_says_running_at_timeout(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers[f"GET {_WF}"] = _saving("running")
+    done = await client.workflows.wait_for_save(41, timeout=0)
+    assert workflows.save_is_running(done)
+    assert _routes(server) == [("GET", _WF)]
+
+
+@pytest.mark.parametrize("timeout", [-1, True, "5"])
+async def test_wait_for_save_refuses_a_bad_timeout(
+    client: MammothClient, timeout: Any  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError):
+        await client.workflows.wait_for_save(41, timeout=timeout)
+
+
+def test_save_run_reads_only_a_mapping() -> None:
+    assert workflows.save_run({"canvas_state": {"save_run": "x"}}) is None
+    assert workflows.save_run(None) is None
+    assert not workflows.save_is_running({"canvas_state": {}})
 
 
 async def test_schedule_after_and_link_use_their_routes(

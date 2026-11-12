@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 943
+method_count: 944
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -11085,6 +11085,19 @@ methods:
   - ViewColumnValues
   canonical_command: workflow.values
   alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  signature: 'wait_for_save(self, workflow_id: ''int'', *, workflow: ''dict[str, Any] | None'' = None,
+    timeout: ''float'' = 120.0, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: workflow.get
   no_command_reason: null
   mutation_class: read
   wait_policy: not_async

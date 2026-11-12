@@ -5400,6 +5400,14 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  canonical_command: null
+  alias_of: workflow.get
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Read-only: repeats workflow get until canvas_state.save_run ends or the wait runs out; the CLI's builds, save and save-undo wait through it."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.graph
   canonical_command: workflow.graph
   alias_of: null
