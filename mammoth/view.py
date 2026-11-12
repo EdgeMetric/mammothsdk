@@ -900,6 +900,33 @@ class View(
         await self.refresh()
         return result
 
+    async def plan_sql_conversion(self, task_ids: list[int] | None = None) -> dict[str, Any]:
+        """Split rules into groups that can each become one SQL rule.
+
+        Args:
+            task_ids: The rules to consider; ``None`` means the whole pipeline.
+
+        Returns:
+            ``{"groups": [...], "cuts": [...]}``; see
+            :meth:`mammoth.api.pipeline.PipelineAPI.plan_sql_conversion`.
+        """
+        return await self._client.pipeline.plan_sql_conversion(self.id, task_ids, self.dataset_id)
+
+    async def convert_to_sql(self, groups: list[dict[str, Any]]) -> dict[str, Any]:
+        """Replace each group of consecutive rules by one SQL rule, in one version.
+
+        Args:
+            groups: ``[{"task_ids": [...], "SQL": {"USER_QUERY": ..., "INTENT": ...}}]``.
+                ``INTENT`` is the rule's text the user sees; write what the rules do.
+
+        Returns:
+            The rerun job, or the modification response in draft mode.
+        """
+        result = await self._client.pipeline.convert_to_sql(self.id, groups, self.dataset_id)
+        await self._client.pipeline.wait_for_pipeline(self.id, self.dataset_id)
+        await self.refresh()
+        return result
+
     async def preview_task(self, task_spec: dict[str, Any]) -> dict[str, Any]:
         """Preview the result of a task without applying it to the pipeline.
 
@@ -1155,7 +1182,7 @@ class View(
         )
 
     def __repr__(self) -> str:
-        return f"View(id={self.id}, name={self.name!r}, " f"columns={len(self.display_names)})"
+        return f"View(id={self.id}, name={self.name!r}, columns={len(self.display_names)})"
 
 
 class ViewExport:
