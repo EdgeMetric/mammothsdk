@@ -1371,4 +1371,27 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
         )
         for verb in ("get", "sample-result", "rank", "fit", "preview", "samples", "build")
     },
+    # A workflow page is addressed by the slug of its mammoth.io page, a describe draft by the
+    # id ``workflow describe start`` returned; neither name reads as an identity field.
+    "workflow.page.start": (
+        PositionalSpec(
+            name="slug",
+            type=str,
+            required=True,
+            help="Workflow page slug, from its mammoth.io/workflows URL.",
+            example_value="stripe-payout-reconciliation",
+        ),
+    ),
+    **{
+        f"workflow.describe.{verb}": (
+            PositionalSpec(
+                name="draft",
+                type=str,
+                required=True,
+                help="Draft id, from 'workflow describe start'.",
+                example_value="d-3f2a",
+            ),
+        )
+        for verb in ("get", "wait")
+    },
 }

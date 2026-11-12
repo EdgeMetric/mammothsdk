@@ -123,6 +123,12 @@ POSITIVES: tuple[tuple[str, str], ...] = (
     ("the first two rows of my csv are a title, skip them", "fix-heading-row"),
     ("wrong heading row after the upload", "fix-heading-row"),
     ("my file's header is on row three", "fix-heading-row"),
+    ("i want to do a bank reconciliation with a ready-made workflow", "workflow-from-template"),
+    ("which workflow templates fit my tables", "workflow-from-template"),
+    ("build a workflow from the template catalog", "workflow-from-template"),
+    ("describe a workflow in plain words and build it", "workflow-from-description"),
+    ("draft a workflow from my description", "workflow-from-description"),
+    ("turn this sentence into a workflow", "workflow-from-description"),
 )
 
 NEGATIVES: tuple[str, ...] = (

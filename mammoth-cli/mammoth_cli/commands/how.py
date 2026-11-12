@@ -244,6 +244,8 @@ _STAGE = {
     "export-csv": 4,
     "filter-export-csv": 4,
     "export-xlsx": 4,
+    "workflow-from-template": 4,
+    "workflow-from-description": 4,
     "export-to-s3": 4,
     "email-view": 4,
     "export-powerbi": 4,

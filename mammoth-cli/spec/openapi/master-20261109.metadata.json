@@ -1,0 +1,12 @@
+{
+  "api_version": "0.1.0",
+  "artifact": "mammoth-cli-server-openapi-snapshot",
+  "generation_method": "litestar app.openapi_schema.to_schema() exported from a detached worktree of origin/master (apiv2.main:app imported on py3.14 with litestar 2.22.0 as pinned; tableauhyperapi, tableauserverclient, OpenSSL and dkim import-stubbed, no network; examples encoded with the app's serializer)",
+  "openapi_version": "3.1.0",
+  "operation_count": 986,
+  "path_count": 748,
+  "schema_count": 1808,
+  "sha256": "099d3dd2aa8900c4e2bed1085e98bac7e40065c272bd9a32e9070241d5e5bed6",
+  "source_ref": "origin/master",
+  "source_sha": "154ddb559a8b3d33087cf18677f1b6548c740f2d"
+}

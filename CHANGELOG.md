@@ -6,8 +6,46 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `client.workflow_triggers` controls what starts a workflow:
+  - `run` runs it now on the server, with an optional bounded `wait`. A workflow already running is not started twice. Needs the mvc-service `POST .../workflows/{id}/run` route.
+  - `wait_for_run` and `runs` follow its runs.
+  - `schedule_set` puts it on a clock, and `after_set` runs it after another workflow. `after_loops` names the workflows that would make a loop.
+  - `link_create` and `link_remove` manage its secret link.
+  - A clock or an `after` is stored as an automation, by the `automation_id` returned.
+- `client.workflow_describe` turns a description into a workflow:
+  - `start`, `draft`, `wait` and `describe` produce the read-back.
+  - `check` and `build` build it, optionally with a clock.
+  - `keep_sample` keeps a sample file, and `fed_by` shows what feeds a view.
+  - `describe_body` and `build_body` check a request before anything is sent.
+- `workflow_templates.fits` finds the templates the project's tables already fit. `workflow_templates.start_page` opens a workflow page on its sample tables.
+- New `workflows` methods:
+  - `step_lines`, `repeat_counts`, `before_after`, `view_values`, `holds_check`.
+  - `sentence_read` and `sentence_ask_dismiss`.
+  - `swap_fit`, `swap`, `swap_cancel` and `swap_undo` change a step's table.
+  - `wait_for_save` reads a workflow until its Save run ends, with a bounded `timeout`. `save_run()` and `save_is_running()` read the Save from a workflow record. The CLI and MCP server wait through it.
+
+### Added (next mammoth-cli)
+
+- 28 workflow commands, each taking `--input` JSON and supporting `--dry-run`:
+  - `workflow template fits` and `workflow page start`.
+  - `workflow run start|wait|list`, `workflow schedule set`, `workflow after set|loops` and `workflow link create|remove`.
+  - `workflow describe start|get|wait|check|build|sample|fed-by`.
+  - `workflow step-lines`, `repeat-counts`, `before-after`, `values`, `held check`, `sentence read|dismiss-ask` and `swap fit|apply|cancel|undo`.
+- `workflow template build` and `workflow describe build` wait for the build's Save and fail when it fails. Before this, they returned while the Save was still running.
+- Two recipes in the bundled skill, `workflow-from-template` and `workflow-from-description` (`references/recipes/workflows.md`).
+
 ### Added (next mammoth-mcp-server)
 
+- Seven workflow tools present Mammoth as a workflow automation tool, as well as a place to work on data:
+  - `find_workflow_template` finds a catalog template for what the user wants done, and names the user's tables it fits.
+  - `draft_workflow` drafts one from a template (matches and a preview) or from a description (the read-back). It builds nothing.
+  - `build_workflow` builds the draft and waits for its Save within the call.
+  - `run_workflow` runs it now.
+  - `set_workflow_trigger` runs it on a clock, after another workflow, or by a secret link.
+  - `list_workflows` and `get_workflow` show workflows, with the build state and the latest runs.
+- The registry description and server instructions now name workflows.
 - `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
 
 ### Changed (next mammoth-mcp-server)

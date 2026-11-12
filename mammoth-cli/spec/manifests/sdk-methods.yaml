@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 914
+method_count: 944
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -10319,6 +10319,118 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.build
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.build
+  signature: 'build(self, spec: ''dict[str, Any]'', destination_name: ''str'', *, destination_emails:
+    ''list[str] | None'' = None, schedule: ''dict[str, Any] | None'' = None, samples: ''list[str] | None''
+    = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - BuildDescribedWorkflow
+  canonical_command: workflow.describe.build
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.check
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.check
+  signature: 'check(self, spec: ''dict[str, Any]'', *, samples: ''list[str] | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - CheckDescribedSpec
+  canonical_command: workflow.describe.check
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.describe
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.describe
+  signature: 'describe(self, text: ''str'', *, dataset_ids: ''list[int] | None'' = None, name: ''str |
+    None'' = None, answers: ''list[dict[str, str]] | None'' = None, wait: ''bool'' = True, timeout: ''float''
+    = 120.0, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: null
+  no_command_reason: SDK-only helper; no reviewed CLI command.
+  mutation_class: null
+  wait_policy: null
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.draft
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.draft
+  signature: 'draft(self, draft: ''str'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - DescribedWorkflow
+  canonical_command: workflow.describe.get
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by
+  signature: 'fed_by(self, view_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - WorkflowFeedingBoard
+  canonical_command: workflow.describe.fed-by
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample
+  signature: 'keep_sample(self, file: ''str | Path'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - KeepDescribeSample
+  canonical_command: workflow.describe.sample
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.start
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.start
+  signature: 'start(self, text: ''str'', *, dataset_ids: ''list[int] | None'' = None, name: ''str | None''
+    = None, answers: ''list[dict[str, str]] | None'' = None, samples: ''list[str] | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - DescribeWorkflow
+  canonical_command: workflow.describe.start
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.wait
+  implementation_origin: mammoth.api.workflow_describe.WorkflowDescribeAPI.wait
+  signature: 'wait(self, draft: ''str'', *, timeout: ''float'' = 120.0, project_id: ''int | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - DescribedWorkflow
+  canonical_command: workflow.describe.wait
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
   implementation_origin: mammoth.api.workflow_templates.WorkflowTemplatesAPI.build
   signature: 'build(self, key: ''str'', inputs: ''dict[str, int]'', matches: ''dict[str, dict[str, dict[str,
@@ -10341,6 +10453,20 @@ methods:
   openapi_operation_ids:
   - FitCatalogTemplate
   canonical_command: workflow.template.fit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits
+  implementation_origin: mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits
+  signature: 'fits(self, dataset_ids: ''_list[int] | None'' = None, *, focus: ''int | None'' = None, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - FitsCatalogTemplates
+  canonical_command: workflow.template.fits
   alias_of: null
   no_command_reason: null
   mutation_class: read
@@ -10429,6 +10555,131 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page
+  implementation_origin: mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page
+  signature: 'start_page(self, slug: ''str'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - StartWorkflowPage
+  canonical_command: workflow.page.start
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops
+  signature: 'after_loops(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - GetWorkflowAfterLoops
+  canonical_command: workflow.after.loops
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set
+  signature: 'after_set(self, workflow_id: ''int'', source_workflow_id: ''int'', *, only_when_ok: ''bool''
+    = True, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - PutWorkflowAfter
+  canonical_command: workflow.after.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
+  signature: 'link_create(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - PostWorkflowLink
+  canonical_command: workflow.link.create
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
+  signature: 'link_remove(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - DeleteWorkflowLink
+  canonical_command: workflow.link.remove
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
+  signature: 'run(self, workflow_id: ''int'', *, wait: ''bool'' = False, timeout: ''float'' = 600.0, project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.run.start
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs
+  signature: 'runs(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetWorkflowRuns
+  canonical_command: workflow.run.list
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set
+  signature: 'schedule_set(self, workflow_id: ''int'', frequency: ''str'', *, interval: ''int'' = 1, by_week_day:
+    ''list[str] | None'' = None, by_month_day: ''list[int] | None'' = None, start_at: ''str | None'' =
+    None, start_now: ''bool'' = True, until: ''str | None'' = None, project_id: ''int | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - PutWorkflowSchedule
+  canonical_command: workflow.schedule.set
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run
+  signature: 'wait_for_run(self, workflow_id: ''int'', run_id: ''str'', *, timeout: ''float'' = 600.0,
+    project_id: ''int | None'' = None) -> ''dict[str, Any] | None'''
+  openapi_operation_ids:
+  - GetWorkflowRuns
+  canonical_command: workflow.run.wait
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.attach_dataset
   signature: 'attach_dataset(self, workflow_id: ''int'', datasource_id: ''int'', project_id: ''int | None''
@@ -10438,6 +10689,20 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.before_after
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.before_after
+  signature: 'before_after(self, workflow_id: ''int'', keys: ''_list[str]'', project_id: ''int | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - WorkflowBeforeAfter
+  canonical_command: workflow.before-after
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -10609,6 +10874,20 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.holds_check
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.holds_check
+  signature: 'holds_check(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - CheckHeldChanges
+  canonical_command: workflow.held.check
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.list
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.list
   signature: 'list(self, project_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
@@ -10619,6 +10898,19 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.repeat_counts
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.repeat_counts
+  signature: 'repeat_counts(self, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetWorkflowRepeatCounts
+  canonical_command: workflow.repeat-counts
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.resolve_held
@@ -10647,12 +10939,110 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss
+  signature: 'sentence_ask_dismiss(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - DismissSentenceAsk
+  canonical_command: workflow.sentence.dismiss-ask
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.sentence_read
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.sentence_read
+  signature: 'sentence_read(self, workflow_id: ''int'', text: ''str'', *, answers: ''_list[dict[str, str]]
+    | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - ReadSentence
+  canonical_command: workflow.sentence.read
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.set_archived
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.set_archived
   signature: 'set_archived(self, workflow_id: ''int'', archived: ''bool'', dataset_ids: ''_list[int] |
     None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workflow.archive
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.step_lines
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.step_lines
+  signature: 'step_lines(self, workflow_id: ''int'', view_ids: ''_list[int]'', *, match_keys: ''bool''
+    = False, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetWorkflowStepLines
+  canonical_command: workflow.step-lines
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.swap
+  signature: 'swap(self, workflow_id: ''int'', view_id: ''int'', dataset_id: ''int'', *, picks: ''dict[str,
+    str] | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - SwapTable
+  canonical_command: workflow.swap.apply
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_cancel
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.swap_cancel
+  signature: 'swap_cancel(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - CancelSwap
+  canonical_command: workflow.swap.cancel
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_fit
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.swap_fit
+  signature: 'swap_fit(self, workflow_id: ''int'', view_id: ''int'', dataset_ids: ''_list[int]'', project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - WorkflowSwapFit
+  canonical_command: workflow.swap.fit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_undo
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.swap_undo
+  signature: 'swap_undo(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - UndoSwap
+  canonical_command: workflow.swap.undo
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
@@ -10685,6 +11075,33 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.view_values
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.view_values
+  signature: 'view_values(self, workflow_id: ''int'', view_id: ''int'', column: ''str'', text: ''str'',
+    project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - ViewColumnValues
+  canonical_command: workflow.values
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  signature: 'wait_for_save(self, workflow_id: ''int'', *, workflow: ''dict[str, Any] | None'' = None,
+    timeout: ''float'' = 120.0, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: workflow.get
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.workspace_datasets
