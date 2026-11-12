@@ -424,6 +424,8 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "dataset.broken-rows.resolve": ("dataset", "dataset_id"),
     "view.delete": ("view", "view_id"),
     "view.bulk-delete": ("view", "dataview_ids"),
+    # Replaces rules of the view with SQL rules: the view is what changes.
+    "view.task.convert": ("view", "dataview_id"),
     "batch.delete": ("batch", "batch_id"),
     "batch.bulk-delete": ("batch", "ids"),
     "file.delete": ("file", "file_id"),
