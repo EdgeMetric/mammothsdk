@@ -899,6 +899,7 @@ DEPENDENT_IDS: dict[str, tuple[str, ...]] = {
     "view.delete": ("view_id",),
     "view.bulk-delete": ("dataview_ids",),
     "view.task.delete": ("dataview_id", "view_id"),
+    "view.task.convert": ("dataview_id", "view_id"),
     "view.transform.delete-columns": ("dataview_id", "view_id"),
 }
 _DEPENDENCIES_SYMBOL = "mammoth.api.projects.ProjectsAPI.resource_dependencies"

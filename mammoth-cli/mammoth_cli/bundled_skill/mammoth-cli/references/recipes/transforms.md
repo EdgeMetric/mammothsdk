@@ -250,6 +250,53 @@ guessing names. Verify exact display names, join multiplicity, math values and
 remote task/pipeline readback. Draft submit is not proof all tasks persisted:
 discover draft enter/status/submit/discard schemas and reconcile IDs/parents.
 
+## Replace rules with one SQL rule
+
+Use this for "clean up my rules", "replace rules 1 to 8 with one rule" and
+"into fewer rules". A rule number is the number the user sees in the web app
+(the `sequence` in `view task list`).
+
+Never delete the rules one by one and add a SQL rule: that makes one version
+per step and loses the text. Use the three commands below. The server decides
+where to cut. Do not pick the groups yourself.
+
+1. Plan. Pass the rules the user named, or none for the whole pipeline:
+
+```bash
+mammoth view task convert-plan VIEW_ID --project PROJECT_ID --input '{"dataset_id":DATASET_ID,"rules":"1-8"}'
+```
+
+   The answer lists `groups` and `cuts` in rule numbers. Each cut has a
+   `reason` and a `why` in plain words. Show both to the user. A join, lookup,
+   GenAI, metric or pivot rule, a suspended rule, a lone rule, a rule the user
+   did not select, and a checkpoint, data check or export between rules each
+   cut a group. If the user asked for "one rule" and the plan has cuts, say
+   which cuts and why. Stop if the plan has no group.
+2. Write one text per group. The text says what the rules do, in order: what
+   they filter, add, change and rename. Read the rules first (`view task get`).
+   The text is kept on the SQL rule and must not be blank.
+3. Generate and preview. This changes nothing:
+
+```bash
+mammoth view task convert-generate VIEW_ID --project PROJECT_ID \
+  --input '{"dataset_id":DATASET_ID,"groups":[{"rules":"1-3","text":"Keep rows where Price is above 100, then add Total = Price * Qty."}]}'
+```
+
+   Each group returns `sql` and a `preview` of the SQL rule's result. Compare
+   the preview with the view's data now. Show the user each text, the SQL and
+   the preview.
+4. Get approval. Then run the `convert` command from the answer. It holds the
+   exact queries you previewed. It is a write: add `--yes` only after approval.
+   One request saves every group: one pipeline version. In a view in draft
+   mode the change joins the open draft.
+5. Read back: `view task list VIEW_ID` and `view data get`. The group's rules
+   are now one SQL rule. Tell the user how to go back: apply the earlier
+   pipeline version (`view version list`, `view version apply`).
+
+`convert` and `convert-plan` answer "this server does not support
+convert-to-sql yet" on a server without the route. Report it. Do not fall
+back to deleting rules.
+
 ## Pipeline, checkpoint and raw task routes
 
 These routes forward release patch bodies that `schema get` shows only as

@@ -127,6 +127,13 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # mvc-service #7302: an AI-built connector's spec, on origin/release only.
     "GET /workspaces/{}/projects/{}/connector-drafts/{}/spec": "origin/release (#7302)",
     "GET /workspaces/{}/projects/{}/connector-drafts/versions/{}/{}/spec": "origin/release (#7302)",
+    # Convert rules to one SQL rule: the server routes are not in any pinned snapshot yet.
+    "GET /workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql/plan": (
+        "origin/release"
+    ),
+    "POST /workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql": (
+        "origin/release"
+    ),
     # The Today page read: on mvc-service master and release, in no pinned snapshot yet.
     "GET /agents/access/today": "origin/release",
     "POST /workspaces/{}/projects/{}/downloads": "origin/release (#7203)",

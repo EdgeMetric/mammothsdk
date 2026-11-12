@@ -28,7 +28,7 @@ _VIEW_PIPELINE_MUTATION_CLASS = "reversible_pipeline"
 #: Pipeline writes outside that class that can still drop or rename a column
 #: a saved export reads: deleting a step, renaming, editing the pipeline.
 _EXPORT_BREAKING_COMMANDS = frozenset(
-    {"view.task.delete", "view.transform.rename-columns", "view.pipeline.edit"}
+    {"view.task.delete", "view.task.convert", "view.transform.rename-columns", "view.pipeline.edit"}
 )
 
 _EXPORTS_LIST_SYMBOL = "mammoth.api.exports.ExportsAPI.list"

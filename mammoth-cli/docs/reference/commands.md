@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.3.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 875.
+Total commands: 878.
 
 ## activity
 
@@ -7780,6 +7780,39 @@ Total commands: 875.
   `view.transform.substring`), and inspect one with
   `mammoth schema get view.transform.filter` before composing a
   transformation.
+
+### `mammoth view task convert`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.convert_to_sql`
+- Agent example: `mammoth view task convert 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total.", "query": "SELECT *, \"Price\" * \"Qty\" AS \"Total\" FROM \"view:123\" WHERE \"Price\" > 100"}]}' --yes`
+
+### `mammoth view task convert-generate`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.view.convert_to_sql.view_task_convert_generate`
+- Agent example: `mammoth view task convert-generate 123 --input '{"groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total."}]}'`
+
+### `mammoth view task convert-plan`
+
+**Arguments**
+
+- `DATAVIEW_ID` (int, required) — ID of the dataview.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.pipeline.PipelineAPI.plan_sql_conversion`
+- Agent example: `mammoth view task convert-plan 123 --input '{"rules": "1-8"}'`
 
 ### `mammoth view task delete`
 

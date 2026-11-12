@@ -76,6 +76,7 @@ _EXEMPT: dict[str, str] = {
     "history.undo": "needs a journaled write to undo; test_history.py runs it",
     "history.resume": "needs a journaled run to resume; test_history.py runs it",
     "dataset.download": "queues a server file job and writes a local file the sample never serves",
+    "view.task.convert": "its rules and queries come from convert-plan and convert-generate",
     "dataset.update-method.set": (
         "the sample server keeps no schema_settings, so the read-back sees no change"
     ),
@@ -858,6 +859,7 @@ _EXEMPT_RESULTS: dict[str, dict[str, Any]] = {
     "dataset.update-method.set": {"mode": "replace", "previous_mode": "add", "verify": _VERIFY},
     "schedule.create": {"id": 3, "verify": _VERIFY},
     "view.export.dataset": {"dataset_id": 9, "verify": _VERIFY},
+    "view.task.convert": {"status": "done", "verify": _VERIFY},
     "view.draft.auto-run": {"auto_run": True, "verify": _VERIFY},
     "history.undo": {
         "id": "g1",

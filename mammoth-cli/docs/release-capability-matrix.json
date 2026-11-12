@@ -81,6 +81,30 @@
     },
     {
       "method": "POST",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.pipeline.PipelineAPI.convert_to_sql"
+      ],
+      "commands": [
+        "view.task.convert"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/datasets/{}/dataviews/{}/pipeline/tasks/convert-to-sql/plan",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.pipeline.PipelineAPI.plan_sql_conversion"
+      ],
+      "commands": [
+        "view.task.convert-plan"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/workspaces/{}/projects/{}/downloads",
       "state": "pending_server_release",
       "pending_in": "origin/release (#7203)",
@@ -11745,6 +11769,7 @@
       "sdk_symbol": "mammoth.api.pipeline.PipelineAPI.add_task",
       "bound_commands": [
         "view.task.add",
+        "view.task.convert",
         "view.transform.add-column",
         "view.transform.add-sql",
         "view.transform.ai",

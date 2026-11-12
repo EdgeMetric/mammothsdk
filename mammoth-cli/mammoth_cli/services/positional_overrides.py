@@ -471,6 +471,9 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Optional parent dataset ID; resolved from the view when omitted.",
         ),
     ),
+    "view.task.convert-generate": (
+        PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
+    ),
     "view.pipeline.items-all": (
         PositionalSpec(name="dataview_id", type=int, required=True, help="ID of the dataview."),
         PositionalSpec(

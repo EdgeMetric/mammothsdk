@@ -413,6 +413,16 @@ _VIEW_UPDATE_COLUMN_FIELDS = (
 # view.transform.batch: each step is {"op", "input"}; ``input`` is that op's own document, bound
 # by the op's contract, so it is not repeated here.
 _VIEW_TRANSFORM_BATCH_FIELDS = (FieldSpec("steps", required=True, annotation=list[dict[str, Any]]),)
+# view.task.convert-plan and convert-generate: rules are named by number (the CLI turns them
+# into the task ids the server takes), so the SDK's ``task_ids`` is not an input of the plan.
+_VIEW_TASK_CONVERT_PLAN_FIELDS = (
+    FieldSpec("rules", required=False, annotation=Any, default=None),
+    FieldSpec("dataset_id", required=False, annotation=int | None, default=None),
+)
+_VIEW_TASK_CONVERT_GENERATE_FIELDS = (
+    FieldSpec("groups", required=True, annotation=list[dict[str, Any]]),
+    FieldSpec("dataset_id", required=False, annotation=int | None, default=None),
+)
 _VIEW_FIRST_NAME_FIELDS = (
     FieldSpec("column", required=True, annotation=str),
     FieldSpec("new_column", required=False, annotation=str | None, default=None),
@@ -961,6 +971,10 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
         special_fields = _VIEW_UPDATE_COLUMN_FIELDS
     elif command_id == "view.transform.first-name":
         special_fields = _VIEW_FIRST_NAME_FIELDS
+    elif command_id == "view.task.convert-plan":
+        special_fields = _VIEW_TASK_CONVERT_PLAN_FIELDS
+    elif command_id == "view.task.convert-generate":
+        special_fields = _VIEW_TASK_CONVERT_GENERATE_FIELDS
     elif command_id == "view.transform.batch":
         special_fields = _VIEW_TRANSFORM_BATCH_FIELDS
     elif command_id == "dashboard.filter.add":

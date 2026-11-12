@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 914
+method_count: 918
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -1206,7 +1206,8 @@ methods:
 - sdk_symbol: mammoth.api.ai.AIAPI.generate_sql
   implementation_origin: mammoth.api.ai.AIAPI.generate_sql
   signature: 'generate_sql(self, intent: ''str'', sequence_number: ''int'' = 0, *, dataset_id: ''int'',
-    dataview_id: ''int'', current_query: ''str | None'' = None) -> ''dict[str, Any]'''
+    dataview_id: ''int'', current_query: ''str | None'' = None, task_ids: ''list[int] | None'' = None)
+    -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: ai.sql.generate
   alias_of: null
@@ -7672,6 +7673,19 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.convert_to_sql
+  implementation_origin: mammoth.api.pipeline.PipelineAPI.convert_to_sql
+  signature: 'convert_to_sql(self, dataview_id: ''int'', groups: ''list[dict[str, Any]]'', dataset_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.task.convert
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.delete_task
   implementation_origin: mammoth.api.pipeline.PipelineAPI.delete_task
   signature: 'delete_task(self, dataview_id: ''int'', task_id: ''int'', dataset_id: ''int | None'' = None)
@@ -7829,6 +7843,19 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.plan_sql_conversion
+  implementation_origin: mammoth.api.pipeline.PipelineAPI.plan_sql_conversion
+  signature: 'plan_sql_conversion(self, dataview_id: ''int'', task_ids: ''list[int] | None'' = None, dataset_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: view.task.convert-plan
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_cancel
@@ -11311,6 +11338,18 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.view.View.convert_to_sql
+  implementation_origin: mammoth.view.View.convert_to_sql
+  signature: 'convert_to_sql(self, groups: ''list[dict[str, Any]]'') -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: view.task.convert
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: always_wait
+  pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.view.View.data
   implementation_origin: mammoth.view.View.data
   signature: 'data(self, limit: ''int'' = 400, offset: ''int'' = 1, columns: ''list[str] | None'' = None,
@@ -11420,6 +11459,18 @@ methods:
   mutation_class: read
   wait_policy: not_async
   pagination_policy: single_page
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.view.View.plan_sql_conversion
+  implementation_origin: mammoth.view.View.plan_sql_conversion
+  signature: 'plan_sql_conversion(self, task_ids: ''list[int] | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: view.task.convert-plan
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.view.View.preview_task

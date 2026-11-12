@@ -3930,6 +3930,22 @@ sdk_methods:
   openapi_operation_ids: []
   notes: single_page until B5; no --all until continuation is proven. Requires the exact parent dataset_id
     through --input; do not rely on implicit parent discovery for saved-task reads.
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.plan_sql_conversion
+  canonical_command: view.task.convert-plan
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: Takes rule numbers; the CLI turns them into task ids. The server decides the cuts.
+- sdk_symbol: mammoth.api.pipeline.PipelineAPI.convert_to_sql
+  canonical_command: view.task.convert
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: Replaces the rules of each group by one SQL rule, for good. Prompt or --yes. Refuses a blank text.
 - sdk_symbol: mammoth.api.pipeline.PipelineAPI.preview_cancel
   canonical_command: view.task.preview-cancel
   alias_of: null
@@ -5815,6 +5831,22 @@ sdk_methods:
   pagination_policy: single_page
   openapi_operation_ids: []
   notes: Pagination is offset only after B5 is resolved; currently single_page. B2, B4, B5, B8.
+- sdk_symbol: mammoth.view.View.plan_sql_conversion
+  canonical_command: null
+  alias_of: view.task.convert-plan
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: Alias of view task convert-plan VIEW_ID [--input FILE|-].
+- sdk_symbol: mammoth.view.View.convert_to_sql
+  canonical_command: null
+  alias_of: view.task.convert
+  mutation_class: destructive
+  wait_policy: always_wait
+  pagination_policy: null
+  openapi_operation_ids: []
+  notes: Alias of view task convert VIEW_ID --input FILE|- [--yes].
 - sdk_symbol: mammoth.view.View.delete_task
   canonical_command: null
   alias_of: view.task.delete

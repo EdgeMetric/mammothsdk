@@ -450,6 +450,20 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "dataview_id": 123,
     },
     "view.ai.profile": {"dataset_id": 456, "action": "insights"},
+    # Rules are named by the number the user sees; the text says what the rules do.
+    "view.task.convert-plan": {"rules": "1-8"},
+    "view.task.convert-generate": {
+        "groups": [{"rules": "1-8", "text": "Keep rows where Price is above 100 and add Total."}]
+    },
+    "view.task.convert": {
+        "groups": [
+            {
+                "rules": "1-8",
+                "text": "Keep rows where Price is above 100 and add Total.",
+                "query": 'SELECT *, "Price" * "Qty" AS "Total" FROM "view:123" WHERE "Price" > 100',
+            }
+        ]
+    },
     "connector.query.generate": {"query": "Total sales for January"},
     # One rule over many columns; the create response and ``conditional-format
     # list`` carry the generated rule_id that delete-all needs.
