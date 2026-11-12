@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-mcp-server)
 
+- `plan_convert_to_sql`, `generate_convert_sql` and `convert_to_sql` replace consecutive rules of a view with one SQL rule. The plan says in rule numbers where Mammoth cuts and why. The generate step writes the SQL of each group from a text the model writes, with a preview, and changes nothing. The convert step saves every group in one pipeline version, refuses a blank text before any request, and on a server without the route says so and does not fall back to deleting rules one by one.
 - `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
 
 ### Changed (next mammoth-mcp-server)
