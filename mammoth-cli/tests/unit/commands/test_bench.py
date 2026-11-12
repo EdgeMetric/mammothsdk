@@ -7,9 +7,11 @@ import threading
 import time
 from typing import Any
 
+import httpx
 import pytest
 
 from mammoth_cli.commands import bench
+from mammoth_cli.context import resolver
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
@@ -19,16 +21,6 @@ _HTTP = logging.getLogger("mammoth.http")
 
 def _inv(*args: str) -> Invocation:
     return Invocation(command_id="bench", extra_args=list(args))
-
-
-def _log_request(duration_ms: int, status: int = 200) -> None:
-    """Log one request the way the SDK's client does."""
-    _HTTP.info(
-        "http GET /x outcome=ok status=%s elapsed_ms=%s",
-        status,
-        duration_ms,
-        extra={"mammoth": {"event": "http", "status": status, "duration_ms": duration_ms}},
-    )
 
 
 def test_flags_are_read_from_anywhere_on_the_line() -> None:
@@ -97,45 +89,87 @@ def test_a_round_starts_together_even_when_its_threads_start_slowly(
     assert max(end for _, end in first) <= min(began for began, _ in second)
 
 
-def test_bench_reports_the_logged_request_durations(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The percentiles come from the SDK's logged duration_ms, warm-up excluded."""
-    calls: list[list[str]] = []
-    lock = threading.Lock()
+class _Server:
+    """Answers the SDK's requests after a pause; the n-th project list gets a 404."""
 
-    def invoke(argv: list[str], **options: Any) -> dict[str, Any]:
-        with lock:
-            calls.append(argv)
-            number = len(calls)
-        assert options["project_id"] == 3
-        assert options["runtime"] is not None
-        if number <= 2:  # the warm-up round
-            _log_request(10_000)
-            return {"data": [], "meta": {"elapsed_ms": 10_000}}
-        _log_request(number * 10, status=200 if number < 6 else 503)
-        if number == 6:
-            return {"error": {"code": "server_error", "elapsed_ms": 70}}
-        return {"data": [], "meta": {"elapsed_ms": number * 10 + 5}}
+    def __init__(self, *, pause: float, missing: int) -> None:
+        self.pause = pause
+        self.missing = missing
+        self.requests: list[httpx.Request] = []
+        self.lock = threading.Lock()
 
-    monkeypatch.setattr(bench.embed, "invoke", invoke)
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        with self.lock:
+            self.requests.append(request)
+            number = sum(r.url.path.endswith("/projects") for r in self.requests)
+        time.sleep(self.pause)
+        if request.url.path.endswith("/projects") and number == self.missing:
+            return httpx.Response(404, json={"message": "Not found"})
+        return httpx.Response(200, json={"projects": [], "limit": 100, "offset": 0, "next": ""})
+
+
+def test_bench_reports_the_durations_the_sdk_logs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Only the network is faked: the real embed.invoke and SDK log the requests bench reads."""
+    server = _Server(pause=0.02, missing=3)  # the warm-up round lists twice
+    real = httpx.AsyncClient
     monkeypatch.setattr(
-        bench, "_login", lambda _: ExplicitLogin(api_key=None, api_secret=None, workspace_id=4)
+        httpx, "AsyncClient", lambda **kw: real(**{**kw, "transport": httpx.MockTransport(server)})
     )
+    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_: 4)
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, workspace_id=4, api_token="mm_x", server_prefix="box"
+    )
+    monkeypatch.setattr(bench, "_login", lambda _: login)
     monkeypatch.setattr(bench, "resolved_project", lambda _: 3)
 
-    data, meta = bench.bench(_inv("project", "list", "--concurrency", "2", "--repeat", "2"))
+    data, meta = bench.bench(
+        _inv("project", "list", "--concurrency", "2", "--repeat", "2", "--warmup", "1")
+    )
 
-    assert calls == [["project", "list"]] * 6
+    http = data["http"]
     assert meta == {"workspace_id": 4}
-    assert (data["calls"], data["errors"], data["error_codes"]) == (4, 1, {"server_error": 1})
-    assert data["http"] == {
-        "requests": 4,
-        "status": {"200": 3, "503": 1},
-        "p50_ms": 40.0,
-        "p95_ms": 60.0,
-        "max_ms": 60.0,
-    }
-    assert data["command_ms"] == {"p50_ms": 45.0, "p95_ms": 70.0, "max_ms": 70.0}
+    assert data["timing"] == "client"
+    assert (data["calls"], data["errors"]) == (4, 1)
+    # Every measured request is counted, the warm-up round's are not.
+    assert 4 <= http["requests"] < len(server.requests)
+    assert http["status"] == {"200": http["requests"] - 1, "404": 1}
+    assert http["p50_ms"] >= 20
+    assert http["max_ms"] >= http["p95_ms"] >= http["p50_ms"]
+    assert data["command_ms"]["p50_ms"] >= http["p50_ms"]
     assert not any(isinstance(h, bench._Durations) for h in _HTTP.handlers)
+
+
+def test_a_call_that_raises_is_an_error_not_a_clean_call() -> None:
+    def call() -> dict[str, Any]:
+        raise RuntimeError("boom")
+
+    envelopes = bench.run_rounds(call, concurrency=2, rounds=1)
+
+    assert [e["error"]["code"] for e in envelopes] == ["bench_call_failed"] * 2
+    assert envelopes[0]["error"]["message"] == "RuntimeError: boom"
+    summary = bench.summarize(envelopes, [])
+    assert (summary["calls"], summary["errors"]) == (2, 2)
+    assert summary["error_codes"] == {"bench_call_failed": 2}
+
+
+def test_a_broken_barrier_is_reported_as_each_calls_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(bench, "_BARRIER_TIMEOUT", 0.01)
+    started = threading.Event()
+    real_start = threading.Thread.start
+
+    def start_one_late(thread: threading.Thread) -> None:
+        if started.is_set():
+            time.sleep(0.2)
+        started.set()
+        real_start(thread)
+
+    monkeypatch.setattr(threading.Thread, "start", start_one_late)
+    envelopes = bench.run_rounds(lambda: {"data": [], "meta": {}}, concurrency=2, rounds=1)
+
+    assert all(e["error"]["code"] == "bench_call_failed" for e in envelopes)
+    assert "BrokenBarrierError" in envelopes[0]["error"]["message"]
 
 
 @pytest.mark.parametrize("command", [["project", "create", "x"], ["bench"], ["nope"]])

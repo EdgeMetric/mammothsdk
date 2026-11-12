@@ -786,9 +786,10 @@ schemas:
     $ref: '#/$defs/Run'
   Bench:
     type: object
-    required: [command, argv, concurrency, repeat, warmup, wall_ms, calls, errors, error_codes, http, command_ms]
+    required: [command, argv, concurrency, repeat, warmup, wall_ms, timing, calls, errors, error_codes, http, command_ms]
     properties:
       command: {type: string}
+      timing: {type: string, enum: [client], description: "Where the durations are measured: client-side, each HTTP attempt's round trip as the SDK logs it."}
       argv: {type: array, items: {type: string}}
       concurrency: {type: integer}
       repeat: {type: integer}

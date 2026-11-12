@@ -12,7 +12,9 @@ connections first.
 It reports the 50th and 95th percentile and the maximum of the request duration the SDK
 already logs for every HTTP request (``duration_ms`` of the ``mammoth.http`` log), and of
 the whole command as the caller sees it, with the status counts and the error codes of
-the calls that failed.
+the calls that failed. Both are measured on this side (``timing: client``): one HTTP
+attempt's round trip, timed by the SDK from just before the send. The server sends no
+timing of its own (no ``Server-Timing`` header), so server time is not reported.
 
 Only a ``read`` command can be benched: running a write N x R times is not a measurement.
 """
@@ -43,6 +45,11 @@ from mammoth_cli.runtime.session import resolved_project
 
 CODE_INVALID_BENCH = "invalid_bench"
 CODE_BENCH_COMMAND_REFUSED = "bench_command_refused"
+#: The error code of a call that never returned an envelope (it raised, or its round's
+#: barrier broke); counted as an error, never as a clean call.
+CODE_BENCH_CALL_FAILED = "bench_call_failed"
+#: Where the durations are measured: on this side, around each HTTP attempt.
+TIMING = "client"
 
 #: The flags ``bench`` reads itself, each taking a whole number, and their defaults.
 BENCH_FLAGS: dict[str, int] = {"--concurrency": 1, "--repeat": 1, "--warmup": 1}
@@ -176,8 +183,16 @@ def _round(call: Call, concurrency: int) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = [{} for _ in range(concurrency)]
 
     def worker(slot: int) -> None:
-        barrier.wait(timeout=_BARRIER_TIMEOUT)
-        results[slot] = call()
+        try:
+            barrier.wait(timeout=_BARRIER_TIMEOUT)
+            results[slot] = call()
+        except Exception as failure:  # noqa: BLE001 - reported as this call's error
+            results[slot] = {
+                "error": {
+                    "code": CODE_BENCH_CALL_FAILED,
+                    "message": f"{type(failure).__name__}: {failure}",
+                }
+            }
 
     threads = [threading.Thread(target=worker, args=(slot,)) for slot in range(concurrency)]
     for thread in threads:
@@ -324,6 +339,7 @@ def bench(invocation: Invocation) -> HandlerResult:
         "repeat": args.repeat,
         "warmup": args.warmup,
         "wall_ms": wall_ms,
+        "timing": TIMING,
         **summarize(envelopes, http.requests),
     }
     return data, {"workspace_id": login.workspace_id}

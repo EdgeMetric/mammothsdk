@@ -468,7 +468,8 @@ _BENCH_HELP_NOTE = (
     "--concurrency N calls start together on a barrier, for --repeat R measured rounds, "
     "after --warmup W unmeasured rounds (default 1). One process, one login and one "
     "keep-alive connection pool. Reports p50, p95 and max of each HTTP request's logged "
-    "duration_ms and of each command, with status and error counts. "
+    "duration_ms and of each command, with status and error counts. Times are client-side "
+    "(timing: client): each HTTP attempt's round trip; the server sends no timing. "
     "Example: mammoth bench view list --concurrency 8 --repeat 5"
 )
 _RUN_HELP_NOTE = (
