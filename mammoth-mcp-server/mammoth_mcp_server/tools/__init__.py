@@ -23,6 +23,7 @@ from . import (
     transformations,
     undo,
     views,
+    workflows,
 )
 
 __all__ = [
@@ -48,4 +49,5 @@ __all__ = [
     "transformations",
     "undo",
     "views",
+    "workflows",
 ]

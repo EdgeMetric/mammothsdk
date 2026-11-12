@@ -36,7 +36,17 @@
       "mammoth workflow template get {templates.0.key}"
     ],
     "workflow.template.build": [
+      "mammoth workflow run start {workflow.id}",
       "mammoth workflow get {workflow.id}"
+    ],
+    "workflow.template.fits": [
+      "mammoth workflow template get {fits.0.key}"
+    ],
+    "workflow.describe.start": [
+      "mammoth workflow describe wait {draft}"
+    ],
+    "workflow.describe.build": [
+      "mammoth workflow run start {workflow.id}"
     ]
   }
 }

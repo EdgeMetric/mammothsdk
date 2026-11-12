@@ -440,6 +440,7 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "schedule.delete": ("schedule", "schedule_id"),
     "workflow.delete": ("workflow", "workflow_id"),
     "workflow.save-undo": ("workflow", "workflow_id"),
+    "workflow.link.remove": ("workflow", "workflow_id"),
     "dashboard.delete": ("dashboard", "dashboard_id"),
     "project.delete": ("project", "project_id"),
     "project.bulk-delete": ("project", "project_ids"),

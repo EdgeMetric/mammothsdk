@@ -610,7 +610,9 @@ if TYPE_CHECKING:
     from mammoth.api.user_profile import UserProfileAPI
     from mammoth.api.users import UsersAPI
     from mammoth.api.webhooks import WebhooksAPI
+    from mammoth.api.workflow_describe import WorkflowDescribeAPI
     from mammoth.api.workflow_templates import WorkflowTemplatesAPI
+    from mammoth.api.workflow_triggers import WorkflowTriggersAPI
     from mammoth.api.workflows import WorkflowsAPI
     from mammoth.api.workspace import WorkspaceAPI
     from mammoth.api.workspaces import WorkspacesAPI
@@ -662,7 +664,9 @@ SUB_CLIENTS: dict[str, tuple[str, str]] = {
     "templates": ("mammoth.api.templates", "TemplatesAPI"),
     "trash": ("mammoth.api.trash", "TrashAPI"),
     "users": ("mammoth.api.users", "UsersAPI"),
+    "workflow_describe": ("mammoth.api.workflow_describe", "WorkflowDescribeAPI"),
     "workflow_templates": ("mammoth.api.workflow_templates", "WorkflowTemplatesAPI"),
+    "workflow_triggers": ("mammoth.api.workflow_triggers", "WorkflowTriggersAPI"),
     "workflows": ("mammoth.api.workflows", "WorkflowsAPI"),
     # ``workspaces`` (WorkspaceAPI) is the current-workspace CRUD seam kept
     # for backward compatibility; ``workspace`` (WorkspacesAPI) exposes the
@@ -733,7 +737,9 @@ class MammothClient:
         templates: TemplatesAPI
         trash: TrashAPI
         users: UsersAPI
+        workflow_describe: WorkflowDescribeAPI
         workflow_templates: WorkflowTemplatesAPI
+        workflow_triggers: WorkflowTriggersAPI
         workflows: WorkflowsAPI
         workspace: WorkspacesAPI
 

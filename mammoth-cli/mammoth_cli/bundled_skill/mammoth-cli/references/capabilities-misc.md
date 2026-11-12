@@ -132,6 +132,6 @@ Ran once: `workflow.create`, `workflow.delete`, `workflow.get`, `workflow.graph`
 
 ## `workspace`
 
-Ran once: `workspace.app-usage`, `workspace.get`, `workspace.list`, `workspace.segment.list`, `workspace.segment.update`, `workspace.storage-breakdown`, `workspace.user.list`
+Ran once: `workspace.app-usage`, `workspace.get`, `workspace.list`, `workspace.storage-breakdown`, `workspace.user.list`
 
 Evidence collected on CLI releases 1.1.5 through 2.0.40; each row's release is recorded in `docs/release-capability-matrix.json` (`evidence_version`). A row that ran on an older release has not been re-run since unless its note says so. Details: `docs/capability-evidence/` in the repository.

@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `PipelineAPI.plan_sql_conversion` and `PipelineAPI.convert_to_sql` (with `View.plan_sql_conversion` and `View.convert_to_sql`) plan and save the replacement of consecutive rules by SQL rules, every group in one pipeline version. `AiAPI.generate_sql` takes `task_ids`: the server writes the query from those rules' exact settings.
+
 ### Added (next mammoth-cli)
 
 - `view task convert-plan`, `view task convert-generate` and `view task convert` replace consecutive rules with one SQL rule. Rules are named by number (`--input '{"rules": "1-8"}'`). The plan shows groups and cuts in rule numbers, each cut with its reason. `convert-generate` writes the SQL of each group from a text, previews the SQL rule's result, changes nothing, and returns the ready `convert` command with those queries. `convert` saves every group in one pipeline version. It is a destructive write (prompt or `--yes`), refuses a blank text before any request, and on a server without the route says "does not support convert-to-sql yet". The bundled skill says never to delete rules one by one to replace them.
@@ -13,13 +17,56 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added (next mammoth-mcp-server)
 
 - `plan_convert_to_sql`, `generate_convert_sql` and `convert_to_sql` replace consecutive rules of a view with one SQL rule. The plan says in rule numbers where Mammoth cuts and why. The generate step writes the SQL of each group from a text the model writes, with a preview, and changes nothing. The convert step saves every group in one pipeline version, refuses a blank text before any request, and on a server without the route says so and does not fall back to deleting rules one by one.
+
+## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
+
+### Added (mammoth-io 0.8.56)
+
+- `client.workflow_triggers` controls what starts a workflow:
+  - `run` runs it now on the server, with an optional bounded `wait`. A workflow already running is not started twice. Needs the mvc-service `POST .../workflows/{id}/run` route.
+  - `wait_for_run` and `runs` follow its runs.
+  - `schedule_set` puts it on a clock, and `after_set` runs it after another workflow. `after_loops` names the workflows that would make a loop.
+  - `link_create` and `link_remove` manage its secret link.
+  - A clock or an `after` is stored as an automation, by the `automation_id` returned.
+- `client.workflow_describe` turns a description into a workflow:
+  - `start`, `draft`, `wait` and `describe` produce the read-back.
+  - `check` and `build` build it, optionally with a clock.
+  - `keep_sample` keeps a sample file, and `fed_by` shows what feeds a view.
+  - `describe_body` and `build_body` check a request before anything is sent.
+- `workflow_templates.fits` finds the templates the project's tables already fit. `workflow_templates.start_page` opens a workflow page on its sample tables.
+- New `workflows` methods:
+  - `step_lines`, `repeat_counts`, `before_after`, `view_values`, `holds_check`.
+  - `sentence_read` and `sentence_ask_dismiss`.
+  - `swap_fit`, `swap`, `swap_cancel` and `swap_undo` change a step's table.
+  - `wait_for_save` reads a workflow until its Save run ends, with a bounded `timeout`. `save_run()` and `save_is_running()` read the Save from a workflow record. The CLI and MCP server wait through it.
+
+### Added (mammoth-cli 2.4.4)
+
+- 28 workflow commands, each taking `--input` JSON and supporting `--dry-run`:
+  - `workflow template fits` and `workflow page start`.
+  - `workflow run start|wait|list`, `workflow schedule set`, `workflow after set|loops` and `workflow link create|remove`.
+  - `workflow describe start|get|wait|check|build|sample|fed-by`.
+  - `workflow step-lines`, `repeat-counts`, `before-after`, `values`, `held check`, `sentence read|dismiss-ask` and `swap fit|apply|cancel|undo`.
+- `workflow template build` and `workflow describe build` wait for the build's Save and fail when it fails. Before this, they returned while the Save was still running.
+- Two recipes in the bundled skill, `workflow-from-template` and `workflow-from-description` (`references/recipes/workflows.md`).
+
+### Added (mammoth-mcp-server 0.2.13)
+
+- Seven workflow tools present Mammoth as a workflow automation tool, as well as a place to work on data:
+  - `find_workflow_template` finds a catalog template for what the user wants done, and names the user's tables it fits.
+  - `draft_workflow` drafts one from a template (matches and a preview) or from a description (the read-back). It builds nothing.
+  - `build_workflow` builds the draft and waits for its Save within the call.
+  - `run_workflow` runs it now.
+  - `set_workflow_trigger` runs it on a clock, after another workflow, or by a secret link.
+  - `list_workflows` and `get_workflow` show workflows, with the build state and the latest runs.
+- The registry description and server instructions now name workflows.
 - `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
 
-### Changed (next mammoth-mcp-server)
+### Changed (mammoth-mcp-server 0.2.13)
 
 - Every tool now sets `readOnlyHint`, `destructiveHint` and `openWorldHint` explicitly. `openWorldHint` is true for the 15 tools that can reach a system outside the workspace.
 
-### Fixed (next mammoth-mcp-server)
+### Fixed (mammoth-mcp-server 0.2.13)
 
 - `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.
 

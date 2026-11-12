@@ -36,6 +36,7 @@ _PROTECTED_INPUT_PATH = "/private/path/request.json"
 # second id, an optional-but-central input field, or two views to compare.
 _FIXED_EXAMPLES: dict[str, tuple[tuple[str, ...], dict[str, Any]]] = {
     "view.optimize": (("123",), {}),
+    "workflow.schedule.set": (("123",), {"frequency": "weekly", "by_week_day": ["mo"]}),
     "view.transform.batch": (
         ("123",),
         {

@@ -183,7 +183,9 @@ def test_capability_entries_carry_the_status() -> None:
     entries = capability.capability_entries()
     by_command = {e["canonical_command"]: e for e in entries}
     assert by_command[SERVED]["server_status"] == "served"
-    assert all(e["server_status"] in {None, "served"} for e in entries)
+    # Every entry is a prod operation, so none is pending; one the master snapshot dropped
+    # ahead of a release (workspace.segment) is removed_on_server.
+    assert all(e["server_status"] in {None, "served", "removed_on_server"} for e in entries)
 
 
 # --- embed opt-in --------------------------------------------------------------

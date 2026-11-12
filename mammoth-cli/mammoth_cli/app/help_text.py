@@ -249,6 +249,15 @@ _SUBGROUP_DESCRIPTIONS = {
     "view variants": "Create view variants.",
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
+    "workflow after": "Run a workflow each time another one finishes.",
+    "workflow describe": "Describe a workflow in words, read it back as steps, then build it.",
+    "workflow held": "Check the rows a workflow held back.",
+    "workflow link": "Turn on or off a secret link that starts a workflow.",
+    "workflow page": "Try a workflow page's workflow on its sample tables.",
+    "workflow run": "Run a workflow on the server now and follow its runs.",
+    "workflow schedule": "Run a workflow on a clock.",
+    "workflow sentence": "Change a workflow by editing the sentence that describes it.",
+    "workflow swap": "Point a workflow step at another table, or undo that.",
     "workflow template": (
         "Browse the workflow template catalog, match it to your tables, preview and build it."
     ),

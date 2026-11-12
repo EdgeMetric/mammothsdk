@@ -949,4 +949,61 @@ COMMAND_DISCOVERY_PURPOSES = {
         "legacy workspace templates (older API), not the workflow template catalog; for "
         "ready-made workflows use workflow template list"
     ),
+    # Workflow automation: run, triggers, describe and editing.
+    "workflow.template.fits": (
+        "which workflow templates fit my tables, what can I automate with my data, suggest a "
+        "ready-made workflow for these datasets, i want to do a reconciliation"
+    ),
+    "workflow.page.start": (
+        "open a workflow page from mammoth.io on its sample data, try a workflow page"
+    ),
+    "workflow.run.start": (
+        "run a workflow now, start a workflow on the server, trigger a workflow run, run it " "once"
+    ),
+    "workflow.run.wait": ("wait for a workflow run to finish, did the workflow run succeed"),
+    "workflow.run.list": (
+        "workflow run history, recent runs of a workflow, last run result, did it fail"
+    ),
+    "workflow.schedule.set": (
+        "run a workflow on a schedule, every day every week every month hourly, schedule a "
+        "workflow, automate a workflow on a clock"
+    ),
+    "workflow.after.set": (
+        "run a workflow after another workflow finishes, chain workflows, trigger on " "completion"
+    ),
+    "workflow.after.loops": ("which workflows would make a loop if chained"),
+    "workflow.link.create": (
+        "run a workflow from another system, webhook url to trigger a workflow, secret run " "link"
+    ),
+    "workflow.link.remove": ("turn off a workflow's run link, revoke the webhook url"),
+    "workflow.describe.start": (
+        "describe a workflow in words, build a workflow from a description, tell mammoth what "
+        "to automate, ask build mode"
+    ),
+    "workflow.describe.get": ("read a described workflow draft and its read-back"),
+    "workflow.describe.wait": ("wait for the read-back of a described workflow"),
+    "workflow.describe.check": ("check an edited workflow spec on my tables again"),
+    "workflow.describe.build": (
+        "build the described workflow, create the workflow from its read-back and schedule it"
+    ),
+    "workflow.describe.sample": (
+        "keep a receipt or invoice file to try a workflow of files that arrive"
+    ),
+    "workflow.describe.fed-by": ("which workflow feeds this board or view"),
+    "workflow.step-lines": (
+        "what does each step of a workflow do in plain words, explain a workflow's steps"
+    ),
+    "workflow.repeat-counts": ("which workflows repeat steps, duplicated work in workflows"),
+    "workflow.before-after": ("rows before and after a drafted workflow step, preview a change"),
+    "workflow.values": ("check a filter value exists in a column, near values typo"),
+    "workflow.held.check": ("check the changes a workflow save held back"),
+    "workflow.sentence.read": ("change what a workflow does by editing its sentence"),
+    "workflow.sentence.dismiss-ask": ("dismiss the question about a workflow's sentence"),
+    "workflow.swap.fit": ("which tables could replace the table a workflow reads"),
+    "workflow.swap.apply": (
+        "use another table in a workflow, swap the input table, point the workflow at a new "
+        "dataset"
+    ),
+    "workflow.swap.cancel": ("cancel a held table swap"),
+    "workflow.swap.undo": ("undo the last table swap of a workflow"),
 }

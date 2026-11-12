@@ -62,6 +62,16 @@ _UNSAMPLABLE = frozenset(
         "connector.draft.spec.get",
         "connector.version.spec.get",
         "agent.access.today",
+        # Workflow automation routes on server master, not yet in the pinned prod spec;
+        # workflow.run.start's route ships with mvc-service feat/workflow-run-route.
+        "workflow.after.loops",
+        "workflow.after.set",
+        "workflow.describe.start",
+        "workflow.run.start",
+        "workflow.run.wait",
+        "workflow.schedule.set",
+        "workflow.swap.fit",
+        "workflow.values",
     }
 )
 
@@ -82,8 +92,9 @@ _EXEMPT: dict[str, str] = {
     ),
 }
 
-#: Commands left out of the dry-run check: they wait on a background job the sample never ends.
-_DRY_RUN_SKIPPED = frozenset({"view.export.dataset"})
+#: Commands left out of the dry-run check: they wait on a background job the sample never ends,
+#: or (workflow.run.start) name no operation until their route reaches the pinned spec.
+_DRY_RUN_SKIPPED = frozenset({"view.export.dataset", "workflow.run.start"})
 
 _AGENT_SCOPE = '{"scope": {"type": "workspace", "workspace_id": 4}}'
 

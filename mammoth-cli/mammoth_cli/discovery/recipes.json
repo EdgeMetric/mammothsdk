@@ -4859,6 +4859,341 @@
           }
         }
       ]
+    },
+    {
+      "id": "workflow-from-template",
+      "version": 1,
+      "title": "Build a ready-made workflow from the template catalog and run it on a schedule",
+      "goals": [
+        "i want to do a bank reconciliation",
+        "use a workflow template",
+        "build a workflow from a template",
+        "automate a reconciliation",
+        "set up a ready-made workflow",
+        "which workflow templates fit my data"
+      ],
+      "keywords": [
+        "workflow",
+        "template",
+        "catalog",
+        "reconciliation",
+        "ready-made",
+        "automate",
+        "automation",
+        "schedule",
+        "build",
+        "match",
+        "report"
+      ],
+      "intent": [
+        [
+          "workflow",
+          "workflows",
+          "template",
+          "templates",
+          "catalog",
+          "ready-made",
+          "reconciliation",
+          "reconcile"
+        ],
+        [
+          "build",
+          "use",
+          "set",
+          "automate",
+          "run",
+          "do",
+          "create",
+          "fit",
+          "fits",
+          "start"
+        ]
+      ],
+      "doc": "references/recipes/workflows.md",
+      "steps": [
+        {
+          "command_id": "workflow.template.fits",
+          "purpose": "Find the templates the project's tables already fit, and which table fills each input.",
+          "example": "mammoth workflow template fits",
+          "key_flags": []
+        },
+        {
+          "command_id": "workflow.template.get",
+          "purpose": "Read the chosen template's inputs, roles and settings.",
+          "example": "mammoth workflow template get KEY",
+          "key_flags": []
+        },
+        {
+          "command_id": "workflow.template.fit",
+          "purpose": "Propose the column for every role of the chosen tables.",
+          "example": "mammoth workflow template fit KEY --input '{\"inputs\": {\"main\": DATASET_ID}}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.template.preview",
+          "purpose": "Run it on the first rows and run its checks; show the result before building.",
+          "example": "mammoth workflow template preview KEY --input '{\"inputs\": {\"main\": DATASET_ID}, \"matches\": {\"main\": {\"amount\": {\"column\": \"Amount\"}}}}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.template.build",
+          "purpose": "Build it and wait for the Save; the answer's workflow.id is the workflow.",
+          "example": "mammoth workflow template build KEY --input '{\"inputs\": {\"main\": DATASET_ID}, \"matches\": {\"main\": {\"amount\": {\"column\": \"Amount\"}}}, \"destination_name\": \"Result\"}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.get",
+          "purpose": "Read the workflow back: its steps, its last Save and its triggers.",
+          "example": "mammoth workflow get WORKFLOW_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "workflow.schedule.set",
+          "purpose": "Run it on a clock.",
+          "example": "mammoth workflow schedule set WORKFLOW_ID --input '{\"frequency\": \"weekly\", \"by_week_day\": [\"mo\"]}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.run.start",
+          "purpose": "Run it once now and wait for the result.",
+          "example": "mammoth workflow run start WORKFLOW_ID --input '{\"wait\": true}'",
+          "key_flags": [
+            "--input"
+          ]
+        }
+      ],
+      "notes": [
+        "No tables yet: 'workflow template samples KEY' imports the template's sample tables.",
+        "To undo the build: 'workflow delete WORKFLOW_ID'; to remove the clock: 'automation delete AUTOMATION_ID'."
+      ],
+      "inputs": {
+        "key": {
+          "type": "string",
+          "required": true,
+          "example": "bank-reconcile",
+          "help": "The template's key (workflow template fits or list)."
+        },
+        "inputs": {
+          "type": "object",
+          "required": true,
+          "example": {
+            "main": 1
+          },
+          "help": "Each template input's key and the dataset id that fills it."
+        },
+        "matches": {
+          "type": "object",
+          "required": true,
+          "example": {
+            "main": {
+              "amount": {
+                "column": "Amount"
+              }
+            }
+          },
+          "help": "Each input's roles and the column playing each (workflow template fit proposes them)."
+        },
+        "destination_name": {
+          "type": "string",
+          "required": true,
+          "example": "Reconciled",
+          "help": "What to call the result table."
+        },
+        "frequency": {
+          "type": "string",
+          "required": false,
+          "default": null,
+          "example": "weekly",
+          "help": "hourly, daily, weekly or monthly to run it on a clock; skipped when empty."
+        }
+      },
+      "run": [
+        {
+          "name": "preview",
+          "cmd": "workflow template preview",
+          "args": [
+            "{{inputs.key}}"
+          ],
+          "input": {
+            "inputs": "{{inputs.inputs}}",
+            "matches": "{{inputs.matches}}"
+          }
+        },
+        {
+          "name": "build",
+          "cmd": "workflow template build",
+          "args": [
+            "{{inputs.key}}"
+          ],
+          "input": {
+            "inputs": "{{inputs.inputs}}",
+            "matches": "{{inputs.matches}}",
+            "destination_name": "{{inputs.destination_name}}"
+          }
+        },
+        {
+          "name": "schedule",
+          "cmd": "workflow schedule set",
+          "when": {
+            "present": "{{inputs.frequency}}"
+          },
+          "args": [
+            "{{steps.build.data.workflow.id}}"
+          ],
+          "input": {
+            "frequency": "{{inputs.frequency}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "workflow get",
+          "args": [
+            "{{steps.build.data.workflow.id}}"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "workflow-from-description",
+      "version": 1,
+      "title": "Describe a workflow in words, check the read-back, build it and schedule it",
+      "goals": [
+        "describe a workflow in words",
+        "build a workflow from a description",
+        "draft a workflow from a sentence",
+        "turn my description into a workflow"
+      ],
+      "keywords": [
+        "workflow",
+        "describe",
+        "description",
+        "words",
+        "automate",
+        "automation",
+        "build",
+        "schedule",
+        "draft"
+      ],
+      "intent": [
+        [
+          "workflow",
+          "workflows",
+          "automate",
+          "automated",
+          "automation"
+        ],
+        [
+          "describe",
+          "description",
+          "words",
+          "say",
+          "sentence",
+          "draft"
+        ]
+      ],
+      "doc": "references/recipes/workflows.md",
+      "steps": [
+        {
+          "command_id": "workflow.describe.start",
+          "purpose": "Hand the description and its tables to Mammoth; returns a draft id at once.",
+          "example": "mammoth workflow describe start --input '{\"text\": \"...\", \"dataset_ids\": [DATASET_ID]}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.describe.wait",
+          "purpose": "Wait for the read-back: sentence, steps, result on your rows, at most two asks.",
+          "example": "mammoth workflow describe wait DRAFT",
+          "key_flags": []
+        },
+        {
+          "command_id": "workflow.describe.build",
+          "purpose": "Build the read-back's steps, set the clock and wait for the Save.",
+          "example": "mammoth workflow describe build --input '{\"spec\": {\"status\": \"ready\"}, \"destination_name\": \"Result\"}'",
+          "key_flags": [
+            "--input"
+          ]
+        },
+        {
+          "command_id": "workflow.get",
+          "purpose": "Read the workflow back: its steps, its last Save and its triggers.",
+          "example": "mammoth workflow get WORKFLOW_ID",
+          "key_flags": []
+        },
+        {
+          "command_id": "workflow.run.list",
+          "purpose": "Check how its runs ended.",
+          "example": "mammoth workflow run list WORKFLOW_ID",
+          "key_flags": []
+        }
+      ],
+      "notes": [
+        "When the read-back sets template_key, use 'workflow-from-template' instead.",
+        "Answer its asks by starting again with the same text and 'answers'."
+      ],
+      "inputs": {
+        "text": {
+          "type": "string",
+          "required": true,
+          "example": "Total sales by region every Monday",
+          "help": "What the workflow should do, in words (3 to 2000 characters)."
+        },
+        "dataset_ids": {
+          "type": "array",
+          "required": true,
+          "example": [
+            1
+          ],
+          "help": "The tables it reads (at most 10 dataset ids)."
+        },
+        "destination_name": {
+          "type": "string",
+          "required": true,
+          "example": "Sales by region",
+          "help": "What to call the result table."
+        }
+      },
+      "run": [
+        {
+          "name": "start",
+          "cmd": "workflow describe start",
+          "input": {
+            "text": "{{inputs.text}}",
+            "dataset_ids": "{{inputs.dataset_ids}}"
+          }
+        },
+        {
+          "name": "draft",
+          "cmd": "workflow describe wait",
+          "args": [
+            "{{steps.start.data.draft}}"
+          ]
+        },
+        {
+          "name": "build",
+          "cmd": "workflow describe build",
+          "input": {
+            "spec": "{{steps.draft.data.read_back.spec}}",
+            "destination_name": "{{inputs.destination_name}}"
+          }
+        },
+        {
+          "name": "readback",
+          "cmd": "workflow get",
+          "args": [
+            "{{steps.build.data.workflow.id}}"
+          ]
+        }
+      ]
     }
   ]
 }

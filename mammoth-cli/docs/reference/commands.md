@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.4.3.
+Generated from the reviewed command manifests for mammoth-cli 2.4.4.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 878.
+Total commands: 906.
 
 ## activity
 
@@ -8466,6 +8466,29 @@ Total commands: 878.
 
 ## workflow
 
+### `mammoth workflow after loops`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops`
+- Agent example: `mammoth workflow after loops 123`
+
+### `mammoth workflow after set`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `SOURCE_WORKFLOW_ID` (int, required) — ID of the source workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set`
+- Agent example: `mammoth workflow after set 123 456`
+
 ### `mammoth workflow archive`
 
 **Arguments**
@@ -8488,6 +8511,17 @@ Total commands: 878.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.attach_dataset`
 - Agent example: `mammoth workflow attach-dataset 123 456`
+
+### `mammoth workflow before-after`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.before_after`
+- Agent example: `mammoth workflow before-after 123 --input '{"keys": ["Status"]}'`
 
 ### `mammoth workflow block add`
 
@@ -8576,6 +8610,67 @@ Total commands: 878.
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete`
 - Agent example: `mammoth workflow delete 123 --yes`
 
+### `mammoth workflow describe build`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.build`
+- Agent example: `mammoth workflow describe build --input '{"spec": {"name": "Status"}, "destination_name": "Revenue report"}'`
+
+### `mammoth workflow describe check`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.check`
+- Agent example: `mammoth workflow describe check --input '{"spec": {"name": "Status"}}'`
+
+### `mammoth workflow describe fed-by`
+
+**Arguments**
+
+- `VIEW_ID` (int, required) — ID of the view.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by`
+- Agent example: `mammoth workflow describe fed-by 123`
+
+### `mammoth workflow describe get`
+
+**Arguments**
+
+- `DRAFT` (str, required) — Draft id, from 'workflow describe start'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.draft`
+- Agent example: `mammoth workflow describe get d-3f2a`
+
+### `mammoth workflow describe sample`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample`
+- Agent example: `mammoth workflow describe sample --input '{"file": "./sales.csv"}'`
+
+### `mammoth workflow describe start`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.start`
+- Agent example: `mammoth workflow describe start --input '{"text": "Quarterly revenue summary"}'`
+
+### `mammoth workflow describe wait`
+
+**Arguments**
+
+- `DRAFT` (str, required) — Draft id, from 'workflow describe start'.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_describe.WorkflowDescribeAPI.wait`
+- Agent example: `mammoth workflow describe wait d-3f2a`
+
 ### `mammoth workflow duplicate`
 
 **Arguments**
@@ -8616,12 +8711,63 @@ Total commands: 878.
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.graph`
 - Agent example: `mammoth workflow graph`
 
+### `mammoth workflow held check`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.holds_check`
+- Agent example: `mammoth workflow held check 123`
+
+### `mammoth workflow link create`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create`
+- Agent example: `mammoth workflow link create 123`
+
+### `mammoth workflow link remove`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove`
+- Agent example: `mammoth workflow link remove 123 --yes`
+
 ### `mammoth workflow list`
 
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.list`
 - Agent example: `mammoth workflow list`
+
+### `mammoth workflow page start`
+
+**Arguments**
+
+- `SLUG` (str, required) — Workflow page slug, from its mammoth.io/workflows URL.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page`
+- Agent example: `mammoth workflow page start stripe-payout-reconciliation`
+
+### `mammoth workflow repeat-counts`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.repeat_counts`
+- Agent example: `mammoth workflow repeat-counts`
 
 ### `mammoth workflow resolve-held`
 
@@ -8634,6 +8780,40 @@ Total commands: 878.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.resolve_held`
 - Agent example: `mammoth workflow resolve-held 123 Status --input '{"built": true}'`
+
+### `mammoth workflow run list`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs`
+- Agent example: `mammoth workflow run list 123`
+
+### `mammoth workflow run start`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.run`
+- Agent example: `mammoth workflow run start 123`
+
+### `mammoth workflow run wait`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `RUN_ID` (str, required) — ID of the run.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run`
+- Agent example: `mammoth workflow run wait 123 resource-123`
 
 ### `mammoth workflow save`
 
@@ -8671,6 +8851,97 @@ Total commands: 878.
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.undo_save`
 - Agent example: `mammoth workflow save-undo 123 resource-123 --yes`
 
+### `mammoth workflow schedule set`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set`
+- Agent example: `mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'`
+
+### `mammoth workflow sentence dismiss-ask`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss`
+- Agent example: `mammoth workflow sentence dismiss-ask 123`
+
+### `mammoth workflow sentence read`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.sentence_read`
+- Agent example: `mammoth workflow sentence read 123 --input '{"text": "Quarterly revenue summary"}'`
+
+### `mammoth workflow step-lines`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.step_lines`
+- Agent example: `mammoth workflow step-lines 123 --input '{"view_ids": [1]}'`
+
+### `mammoth workflow swap apply`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `VIEW_ID` (int, required) — ID of the view.
+- `DATASET_ID` (int, required) — ID of the dataset.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.swap`
+- Agent example: `mammoth workflow swap apply 123 456 789`
+
+### `mammoth workflow swap cancel`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.swap_cancel`
+- Agent example: `mammoth workflow swap cancel 123`
+
+### `mammoth workflow swap fit`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `VIEW_ID` (int, required) — ID of the view.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.swap_fit`
+- Agent example: `mammoth workflow swap fit 123 456 --input '{"dataset_ids": [1]}'`
+
+### `mammoth workflow swap undo`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.swap_undo`
+- Agent example: `mammoth workflow swap undo 123`
+
 ### `mammoth workflow template build`
 
 **Arguments**
@@ -8692,6 +8963,13 @@ Total commands: 878.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.fit`
 - Agent example: `mammoth workflow template fit bank-reconciliation --input '{"inputs": {"main": 101}}'`
+
+### `mammoth workflow template fits`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits`
+- Agent example: `mammoth workflow template fits`
 
 ### `mammoth workflow template get`
 
@@ -8765,6 +9043,18 @@ Total commands: 878.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.update`
 - Agent example: `mammoth workflow update 123`
+
+### `mammoth workflow values`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `VIEW_ID` (int, required) — ID of the view.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.view_values`
+- Agent example: `mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'`
 
 ### `mammoth workflow workspace-datasets`
 

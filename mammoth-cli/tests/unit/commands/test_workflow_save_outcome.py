@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from mammoth_cli.commands.workflow import _save_failure, _save_is_running
+from mammoth.api.workflows import save_is_running
+
+from mammoth_cli.commands.workflow import _save_failure
 from mammoth_cli.errors.envelope import CODE_JOB_FAILED
 
 
@@ -40,6 +42,6 @@ def test_a_save_that_built_everything_is_not_an_error() -> None:
 
 
 def test_a_running_save_is_waited_on_and_a_finished_one_is_not() -> None:
-    assert _save_is_running(_workflow(status="running", steps=[])) is True
-    assert _save_is_running(_workflow(status="partial", steps=[])) is False
-    assert _save_is_running({"id": 405, "canvas_state": None}) is False
+    assert save_is_running(_workflow(status="running", steps=[])) is True
+    assert save_is_running(_workflow(status="partial", steps=[])) is False
+    assert save_is_running({"id": 405, "canvas_state": None}) is False

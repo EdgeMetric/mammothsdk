@@ -11,8 +11,9 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
-import time
 from typing import Any
+
+from mammoth.api.workflows import save_is_running, save_run
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
@@ -437,20 +438,7 @@ def workflow_block_type(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-_GET_SYMBOL = "mammoth.api.workflows.WorkflowsAPI.get"
-_SAVE_POLL_SECONDS = 2.0
-
-
-def _save_run(workflow: Any) -> dict[str, Any] | None:
-    """The Save the workflow's record holds, or None when the response carries none."""
-    state = workflow.get("canvas_state") if isinstance(workflow, dict) else None
-    run = state.get("save_run") if isinstance(state, dict) else None
-    return run if isinstance(run, dict) else None
-
-
-def _save_is_running(workflow: Any) -> bool:
-    run = _save_run(workflow)
-    return run is not None and run.get("status") == "running"
+_WAIT_SAVE_SYMBOL = "mammoth.api.workflows.WorkflowsAPI.wait_for_save"
 
 
 def _save_failure(workflow: Any, what: str = "save") -> CliError | None:
@@ -461,7 +449,7 @@ def _save_failure(workflow: Any, what: str = "save") -> CliError | None:
     else (``partial``) left some unbuilt, each with the reason it gives. ``what`` names
     the run in the message: ``save``, or ``undo`` for the run an undo starts.
     """
-    run = _save_run(workflow)
+    run = save_run(workflow)
     if run is None or run.get("status") in ("running", "done"):
         return None
     reasons = [
@@ -490,20 +478,55 @@ def _save_failure(workflow: Any, what: str = "save") -> CliError | None:
 def _await_save_run(
     service: Any, data: Any, workflow_id: int, project_id: int, budget: float, what: str
 ) -> Any:
-    """Poll the workflow until its Save run is no longer running; return the final workflow."""
-    deadline = time.monotonic() + budget
-    while _save_is_running(data):
-        if time.monotonic() >= deadline:
-            raise CliError(
-                code="timeout",
-                message=f"The workflow {what} was still running after {budget:.0f} seconds.",
-                exit_status=EXIT_RETRYABLE,
-                hint=f"Check it with 'mammoth workflow get {workflow_id}'.",
-                retryable=True,
-            )
-        time.sleep(_SAVE_POLL_SECONDS)
-        data = service.call(_GET_SYMBOL, workflow_id=workflow_id, project_id=project_id)
+    """Wait (in the SDK) until the workflow's Save run is no longer running; return it."""
+    if not save_is_running(data):
+        return data
+    data = service.call(
+        _WAIT_SAVE_SYMBOL,
+        workflow_id=workflow_id,
+        workflow=data if isinstance(data, dict) else None,
+        timeout=budget,
+        project_id=project_id,
+    )
+    if save_is_running(data):
+        raise CliError(
+            code="timeout",
+            message=f"The workflow {what} was still running after {budget:.0f} seconds.",
+            exit_status=EXIT_RETRYABLE,
+            hint=f"Check it with 'mammoth workflow get {workflow_id}'.",
+            retryable=True,
+        )
     return data
+
+
+#: Commands whose answer is ``{"workflow": ...}`` with the Save that builds it still running.
+SAVE_AWAITED = frozenset({"workflow.template.build", "workflow.describe.build"})
+
+
+def await_built_workflow(invocation: Invocation, service: Any, data: Any) -> Any:
+    """Wait for the Save a build started, and fail when it did not build every step.
+
+    Args:
+        invocation: The build command's invocation (its project and ``--job-timeout``).
+        service: The open Mammoth service.
+        data: The build's answer, ``{"workflow": {...}}`` with ``canvas_state.save_run``.
+
+    Returns:
+        The answer with ``workflow`` replaced by the workflow once its Save ended.
+
+    Raises:
+        CliError: ``timeout`` when the Save outlives the budget, ``job_failed`` when it
+            ended without building every step.
+    """
+    workflow = data.get("workflow") if isinstance(data, dict) else None
+    if not isinstance(workflow, dict) or not isinstance(workflow.get("id"), int):
+        return data
+    project_id = require_project(invocation)
+    budget = invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT
+    workflow = _await_save_run(service, workflow, workflow["id"], project_id, budget, "save")
+    if (failure := _save_failure(workflow)) is not None:
+        raise failure
+    return {**data, "workflow": workflow}
 
 
 def workflow_save(invocation: Invocation) -> HandlerResult:
