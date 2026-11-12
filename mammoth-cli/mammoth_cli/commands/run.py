@@ -112,6 +112,7 @@ OWNED_FLAGS = frozenset(
 INHERITED_FLAGS: tuple[tuple[str, str], ...] = (
     ("--profile", "profile"),
     ("--project", "project"),
+    ("--workspace", "workspace"),
     ("--session", "session"),
     ("--timeout", "timeout"),
     ("--job-timeout", "job_timeout"),

@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.4.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 903.
+Total commands: 904.
 
 ## activity
 
@@ -857,6 +857,19 @@ Total commands: 903.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.batches.BatchesAPI.update`
 - Agent example: `mammoth batch update 123 --input '{"patch": {"name": "Status"}}'`
+
+## bench
+
+### `mammoth bench`
+
+**Arguments**
+
+- `COMMAND` (str, required) — The read command to bench, as words or one quoted string; the bench flags go after it.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.bench.bench`
+- Agent example: `mammoth bench 'project list'`
 
 ## billing
 

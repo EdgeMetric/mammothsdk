@@ -87,6 +87,7 @@
   "batch.get": "Get one batch by id for a dataset in the active project.",
   "batch.list": "List batches for a dataset in the active project.",
   "batch.update": "Apply patch operations to a dataset's batches. 'patch' is required.",
+  "bench": "Run one read command N at a time for R rounds and report its latency.",
   "billing.chargebee-plan": "Get the workspace's Chargebee plan details.",
   "billing.hosted-page": "Get a Chargebee hosted-page URL. Object type is positional or an input field.",
   "billing.invoice.charge": "Charge the workspace's outstanding invoice. '--yes --confirm WS' required.",

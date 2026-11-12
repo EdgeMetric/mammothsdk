@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-cli)
+
+- `mammoth bench COMMAND... --concurrency N --repeat R [--warmup W]` runs one read command N at a time for R rounds in one process, with one login and one keep-alive connection pool. Each round's calls start together on a barrier. It reports the p50, p95 and max of every HTTP request's logged `duration_ms` and of every command, with status and error counts. Write commands are refused.
+- A global `--workspace ID` replaces the profile's workspace for one command (and for `mammoth run` lines). A workspace other than the profile's drops the profile's saved project, so pass `--project` with it.
+
 ## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
 
 ### Added (mammoth-io 0.8.56)

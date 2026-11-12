@@ -203,6 +203,11 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth batch update` [benign_mutation/none] -> mammoth.api.batches.BatchesAPI.update
   example: mammoth batch update 123 --input '{"patch": {"name": "Status"}}'
 
+## bench
+
+- `mammoth bench` [read/none] -> mammoth_cli.commands.bench.bench
+  example: mammoth bench 'project list'
+
 ## billing
 
 - `mammoth billing chargebee-plan` [read/none] -> mammoth.api.billing.BillingAPI.chargebee_plan

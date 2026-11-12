@@ -784,6 +784,35 @@ schemas:
       truncated: {type: boolean}
   Run:
     $ref: '#/$defs/Run'
+  Bench:
+    type: object
+    required: [command, argv, concurrency, repeat, warmup, wall_ms, calls, errors, error_codes, http, command_ms]
+    properties:
+      command: {type: string}
+      argv: {type: array, items: {type: string}}
+      concurrency: {type: integer}
+      repeat: {type: integer}
+      warmup: {type: integer}
+      wall_ms: {type: integer}
+      calls: {type: integer}
+      errors: {type: integer}
+      error_codes: {type: object}
+      http:
+        type: object
+        required: [requests, status, p50_ms, p95_ms, max_ms]
+        properties:
+          requests: {type: integer}
+          status: {type: object}
+          p50_ms: {type: [number, "null"]}
+          p95_ms: {type: [number, "null"]}
+          max_ms: {type: [number, "null"]}
+      command_ms:
+        type: object
+        required: [p50_ms, p95_ms, max_ms]
+        properties:
+          p50_ms: {type: [number, "null"]}
+          p95_ms: {type: [number, "null"]}
+          max_ms: {type: [number, "null"]}
   SchemaFind:
     type: object
     required: [query, matches]

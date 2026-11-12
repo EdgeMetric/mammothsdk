@@ -462,6 +462,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.logout",
         "auth.status",
         "calc",
+        "bench",
         "capabilities",
         "capability.find",
         "capability.get",

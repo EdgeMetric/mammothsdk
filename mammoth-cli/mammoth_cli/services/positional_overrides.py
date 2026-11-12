@@ -776,6 +776,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="commands.jsonl",
         ),
     ),
+    "bench": (
+        PositionalSpec(
+            name="command",
+            type=str,
+            required=True,
+            help=(
+                "The read command to bench, as words or one quoted string;"
+                " the bench flags go after it."
+            ),
+            example_value="project list",
+        ),
+    ),
     "calc": (
         PositionalSpec(
             name="expression",

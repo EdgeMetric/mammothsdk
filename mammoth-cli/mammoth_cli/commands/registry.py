@@ -306,6 +306,7 @@ _TARGETS: dict[str, str] = {
     "resolve": "mammoth_cli.commands.resolve:resolve",
     "how": "mammoth_cli.commands.how:how",
     "run": "mammoth_cli.commands.run:run",
+    "bench": "mammoth_cli.commands.bench:bench",
     "capabilities": "mammoth_cli.commands.capabilities:capabilities",
     "completion.show": "mammoth_cli.commands.completion:completion_show",
     "completion.install": "mammoth_cli.commands.completion:completion_install",
