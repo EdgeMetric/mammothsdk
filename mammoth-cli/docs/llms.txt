@@ -31,6 +31,7 @@
 - `auth` (5 commands)
 - `automation` (13 commands)
 - `batch` (7 commands)
+- `bench` (1 commands)
 - `billing` (27 commands)
 - `browse` (9 commands)
 - `calc` (1 commands)

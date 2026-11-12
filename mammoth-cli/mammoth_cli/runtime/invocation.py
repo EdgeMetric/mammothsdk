@@ -58,6 +58,7 @@ class Invocation:
     # named none, rather than a ``--profile`` / ``MAMMOTH_PROFILE`` the user gave.
     profile_is_default: bool = field(default=False, repr=False, compare=False)
     project: int | None = None
+    workspace: int | None = None
     session: str | None = None
     timeout: float | None = None
     job_timeout: float | None = None
