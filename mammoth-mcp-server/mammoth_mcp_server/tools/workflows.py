@@ -636,7 +636,7 @@ async def propose_workflow_changes(
     state = workflow.get("canvas_state")
     state = state if isinstance(state, dict) else {}
     return {
-        "added": _added_by_this_call(before, after),
+        "added": typing.cast(JsonValue, _added_by_this_call(before, after)),
         "unsaved": typing.cast(JsonValue, state.get("pending_changes") or []),
         "version": state.get("version"),
     }
