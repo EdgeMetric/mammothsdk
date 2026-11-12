@@ -57,7 +57,7 @@ ERR_COPY_NEEDS_TABLES = "A copy needs `dataset_ids`: the workflow's tables to co
 ERR_TABLES_ONLY_FOR_COPY = "`dataset_ids` is only for a copy: give `copy_of_workflow_id` too."
 ERR_NO_CHANGES = "Give at least one change in `changes`."
 ERR_SAVE_FIELDS = "`{action}` needs `{field}`."
-ERR_NO_SAVE_TO_UNDO = "This workflow has no Save to undo."
+ERR_NO_SAVE_RUN = "This workflow has no Save run to cancel a step of."
 SAVE_ACTIONS = Literal["save", "undo", "cancel_step"]
 
 
@@ -524,7 +524,8 @@ async def create_workflow(
 
     Returns:
         `workflow` for a new one. For a copy: `workflow_id` once the copy is done,
-        or `job_id` and `status` `running` while it is still copying.
+        or `job_id` and `status` `running` while it is still copying, or `copy` (the
+        server's answer as is) when the server gives no job to follow.
     """
     if copy_of_workflow_id is None:
         if dataset_ids:
@@ -598,7 +599,9 @@ async def delete_workflow(
         " {task_spec} or {patches}}; remove_step is {op, view_id, task_id}. An op that"
         " adds a view, table or step may name it with `ref`, and a later change in the"
         " same call uses `view_ref` or `dataset_ref` in place of the id. A change the"
-        " server cannot use is refused with what it expects."
+        " server cannot use is refused with what it expects. `added` lists the keys of"
+        " the changes this call made: pass them to save_workflow. `unsaved` holds"
+        " everyone's unsaved changes, other people's proposals included."
     ),
 )
 async def propose_workflow_changes(
@@ -616,22 +619,37 @@ async def propose_workflow_changes(
         changes: The changes, each an object with `op`.
 
     Returns:
-        `unsaved`: every unsaved change the workflow now holds, each with its `key`
-        (save_workflow can build only some, by key), and `version`.
+        `added`: the keys of the unsaved changes this call added or changed, for
+        save_workflow's `keys`; `unsaved`: every unsaved change the workflow now
+        holds, anyone's, each with its `key`; and `version`.
     """
     if not changes:
         raise ToolError(ERR_NO_CHANGES)
     async with build_client(workspace_id, project_id) as client:
+        before = _pending_by_key(await read_sdk_errors(client.workflows.get(workflow_id)))
         workflow = await read_sdk_errors(
             client.workflows.canvas(
                 workflow_id, {"proposed_changes": typing.cast(typing.Any, changes)}
             )
         )
+    after = _pending_by_key(workflow)
     state = workflow.get("canvas_state")
     state = state if isinstance(state, dict) else {}
     return {
+        "added": [key for key, change in after.items() if before.get(key) != change],
         "unsaved": typing.cast(JsonValue, state.get("pending_changes") or []),
         "version": state.get("version"),
+    }
+
+
+def _pending_by_key(workflow: dict[str, JsonValue]) -> dict[str, JsonValue]:
+    """The workflow's unsaved changes by their key."""
+    state = workflow.get("canvas_state")
+    pending = state.get("pending_changes") if isinstance(state, dict) else None
+    return {
+        str(change["key"]): change
+        for change in (pending if isinstance(pending, list) else [])
+        if isinstance(change, dict) and change.get("key")
     }
 
 
@@ -639,8 +657,10 @@ async def propose_workflow_changes(
     title="Save workflow",
     annotations=DESTRUCTIVE_OUTSIDE,
     description=(
-        "Build a workflow's unsaved changes (`save`; `keys` builds only those), undo its"
-        " latest Save (`undo`), or cancel one step of the Save that is running"
+        "Build unsaved changes (`save` with `keys`: the `added` keys"
+        " propose_workflow_changes returned; other people's proposals are built only when"
+        " the user names them), undo a Save this conversation made (`undo` with the"
+        " `run_id` its save returned), or cancel one step of the Save that is running"
         " (`cancel_step` with `step`, the step's index). Ask the user first: a Save"
         " changes the tables' views and runs them, and a view's exports run with it."
         " It waits for the Save to end; `saved` is `running` when it outlasts this"
@@ -663,30 +683,31 @@ async def save_workflow(
         project_id: Which project the workflow is in.
         workflow_id: Which workflow.
         action: `save`, `undo` or `cancel_step`.
-        keys: For `save`: build only these unsaved changes (and what they need).
-        run_id: For `undo` and `cancel_step`: the Save run; the workflow's latest
-            when left out.
+        keys: For `save` (required): the unsaved changes to build (and what they need).
+        run_id: For `undo` (required): the Save run to undo, as `save` returned it.
+            For `cancel_step`: the running Save; the workflow's latest when left out.
         step: For `cancel_step`: the index of the step to cancel.
 
     Returns:
-        `workflow`, `saved` (done, running, or how it failed) and `steps`: each
-        step of the Save run with its status.
+        `workflow`, `run_id` (the Save run, for a later `undo`), `saved` (done,
+        running, or how it failed) and `steps`: each step of the Save run with its
+        status.
     """
-    if action == "cancel_step" and step is None:
-        raise ToolError(ERR_SAVE_FIELDS.format(action=action, field="step"))
+    needs = {"save": ("keys", keys), "undo": ("run_id", run_id), "cancel_step": ("step", step)}
+    field, given = needs[action]
+    if given is None or given == []:
+        raise ToolError(ERR_SAVE_FIELDS.format(action=action, field=field))
     async with build_client(workspace_id, project_id) as client:
         workflows_api = client.workflows
         if action == "save":
             started = await read_sdk_errors(workflows_api.save(workflow_id, keys=keys))
+        elif action == "undo":
+            assert run_id is not None
+            started = await read_sdk_errors(workflows_api.undo_save(workflow_id, run_id))
         else:
+            assert step is not None
             run = run_id or await _latest_run_id(client, workflow_id)
-            if action == "undo":
-                started = await read_sdk_errors(workflows_api.undo_save(workflow_id, run))
-            else:
-                assert step is not None
-                started = await read_sdk_errors(
-                    workflows_api.cancel_save_step(workflow_id, run, step)
-                )
+            started = await read_sdk_errors(workflows_api.cancel_save_step(workflow_id, run, step))
         record = started if isinstance(started.get("canvas_state"), dict) else None
         workflow = await read_sdk_errors(
             workflows_api.wait_for_save(workflow_id, workflow=record, timeout=_wait_seconds())
@@ -694,15 +715,16 @@ async def save_workflow(
     run_now = save_run(workflow) or {}
     return {
         "workflow": workflow,
+        "run_id": run_now.get("id"),
         "saved": _save_status(workflow),
         "steps": typing.cast(JsonValue, run_now.get("steps") or []),
     }
 
 
 async def _latest_run_id(client: MammothClient, workflow_id: int) -> str:
-    """The id of the workflow's latest Save run."""
+    """The id of the workflow's latest Save run, for cancelling one of its steps."""
     workflow = await read_sdk_errors(client.workflows.get(workflow_id))
     run = save_run(workflow)
     if not run or not run.get("id"):
-        raise ToolError(ERR_NO_SAVE_TO_UNDO)
+        raise ToolError(ERR_NO_SAVE_RUN)
     return str(run["id"])

@@ -338,6 +338,26 @@ class TestCreateWorkflow:
         assert api.body(request) == {"name": "Copy", "dataset_ids": [9], "source_workflow_id": 41}
         assert copied == {"job_id": 77, "status": "done", "workflow_id": 43}
 
+    def test_a_copy_that_outlasts_the_call_returns_its_job(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(workflows, "_wait_seconds", lambda: 0.05)
+        monkeypatch.setattr("mammoth.api.jobs._POLL_FIRST_DELAY", 0.01)
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows/duplicate", {"job_id": 77}, 202)
+            api.answer("GET", "/jobs/77", {"id": 77, "status": "processing"})
+            copied = _call("create_workflow", name="Copy", copy_of_workflow_id=41, dataset_ids=[9])
+
+        assert api.sent("GET", "/jobs/77")
+        assert copied == {"job_id": 77, "status": "running"}
+
+    def test_a_copy_the_server_gives_no_job_for_returns_its_answer(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("POST", f"{BASE}/workflows/duplicate", {"workflow_id": 43}, 201)
+            copied = _call("create_workflow", name="Copy", copy_of_workflow_id=41, dataset_ids=[9])
+
+        assert copied == {"copy": {"workflow_id": 43}}
+
     @pytest.mark.parametrize(
         ("arguments", "said"),
         [({"copy_of_workflow_id": 41}, "dataset_ids"), ({"dataset_ids": [9]}, "copy_of")],
@@ -363,8 +383,10 @@ def test_delete_workflow_deletes_it() -> None:
 class TestProposeWorkflowChanges:
     def test_changes_are_sent_as_proposals_and_the_unsaved_changes_come_back(self) -> None:
         change = {"op": "remove_step", "view_id": 5, "task_id": 6}
-        pending = [{"key": "k1", "kind": "remove_step"}]
+        theirs = {"key": "k0", "kind": "add_view", "by": 7}
+        pending = [theirs, {"key": "k1", "kind": "remove_step"}]
         with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": [theirs]}})
             api.answer(
                 "PATCH",
                 f"{WORKFLOW}/canvas",
@@ -374,7 +396,17 @@ class TestProposeWorkflowChanges:
 
         [request] = api.sent("PATCH", f"{WORKFLOW}/canvas")
         assert api.body(request) == {"canvas_state": {"proposed_changes": [change]}}
-        assert proposed == {"unsaved": pending, "version": 3}
+        assert proposed == {"added": ["k1"], "unsaved": pending, "version": 3}
+
+    def test_a_change_this_call_rewrites_is_its_own(self) -> None:
+        old = {"key": "k1", "kind": "add_step", "label": "Old"}
+        new = {"key": "k1", "kind": "add_step", "label": "New"}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": [old]}})
+            api.answer("PATCH", f"{WORKFLOW}/canvas", {"canvas_state": {"pending_changes": [new]}})
+            proposed = _call("propose_workflow_changes", workflow_id=41, changes=[{"op": "x"}])
+
+        assert proposed["added"] == ["k1"]
 
     def test_no_changes_is_refused(self) -> None:
         with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="change"):
@@ -401,16 +433,33 @@ class TestSaveWorkflow:
         [request] = api.sent("POST", f"{WORKFLOW}/save")
         assert api.body(request) == {"keys": ["k1"]}
         assert saved["saved"] == "done"
+        assert saved["run_id"] == "s-1"
         assert saved["steps"] == [{"label": "Filter", "status": "done"}]
 
-    def test_undo_takes_back_the_latest_save_when_no_run_is_named(self) -> None:
+    @pytest.mark.parametrize(
+        ("arguments", "field"),
+        [
+            ({}, "keys"),
+            ({"keys": []}, "keys"),
+            ({"action": "undo"}, "run_id"),
+            ({"action": "cancel_step", "run_id": "s-1"}, "step"),
+        ],
+    )
+    def test_each_action_needs_its_field(self, arguments: dict[str, object], field: str) -> None:
+        """No save builds everyone's proposals, no undo takes back someone else's Save."""
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match=field):
+            _call("save_workflow", workflow_id=41, **arguments)
+
+        assert api.requests == []
+
+    def test_undo_takes_back_the_named_save(self) -> None:
         with a_fake_api() as api, as_caller():
-            api.answer("GET", WORKFLOW, _saving("done", run_id="s-9"))
             api.answer("POST", f"{WORKFLOW}/save/s-9/undo", _saving("done", run_id="u-1"))
-            undone = _call("save_workflow", workflow_id=41, action="undo")
+            undone = _call("save_workflow", workflow_id=41, action="undo", run_id="s-9")
 
         assert len(api.sent("POST", f"{WORKFLOW}/save/s-9/undo")) == 1
-        assert undone["saved"] == "done"
+        assert api.sent("GET", WORKFLOW) == []
+        assert (undone["saved"], undone["run_id"]) == ("done", "u-1")
 
     def test_cancel_step_cancels_that_step_of_the_named_run(self) -> None:
         with a_fake_api() as api, as_caller():
@@ -419,13 +468,15 @@ class TestSaveWorkflow:
 
         assert len(api.sent("POST", f"{WORKFLOW}/save/s-1/steps/2/cancel")) == 1
 
-    def test_cancel_step_needs_the_step(self) -> None:
-        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="step"):
-            _call("save_workflow", workflow_id=41, action="cancel_step", run_id="s-1")
+    def test_cancel_step_without_a_run_cancels_in_the_latest(self) -> None:
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, _saving("running", run_id="s-9"))
+            api.answer("POST", f"{WORKFLOW}/save/s-9/steps/0/cancel", _saving("cancelled"))
+            _call("save_workflow", workflow_id=41, action="cancel_step", step=0)
 
-        assert api.requests == []
+        assert len(api.sent("POST", f"{WORKFLOW}/save/s-9/steps/0/cancel")) == 1
 
-    def test_undo_without_any_save_says_so(self) -> None:
-        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="no Save"):
+    def test_cancel_step_without_any_save_says_so(self) -> None:
+        with a_fake_api() as api, as_caller(), pytest.raises(ToolError, match="no Save run"):
             api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {}})
-            _call("save_workflow", workflow_id=41, action="undo")
+            _call("save_workflow", workflow_id=41, action="cancel_step", step=0)
