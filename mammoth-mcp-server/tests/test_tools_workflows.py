@@ -398,6 +398,19 @@ class TestProposeWorkflowChanges:
         assert api.body(request) == {"canvas_state": {"proposed_changes": [change]}}
         assert proposed == {"added": ["k1"], "unsaved": pending, "version": 3}
 
+    def test_a_proposal_that_lands_between_the_read_and_the_patch_is_not_ours(self) -> None:
+        """The server stamps one `at` per PATCH: an earlier stamp is someone else's."""
+        mine = {"key": "k1", "kind": "remove_step", "at": "2026-11-12T15:00:02+00:00"}
+        theirs = {"key": "k2", "kind": "add_view", "by": 7, "at": "2026-11-12T15:00:01+00:00"}
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", WORKFLOW, {"id": 41, "canvas_state": {"pending_changes": []}})
+            api.answer(
+                "PATCH", f"{WORKFLOW}/canvas", {"canvas_state": {"pending_changes": [theirs, mine]}}
+            )
+            proposed = _call("propose_workflow_changes", workflow_id=41, changes=[{"op": "x"}])
+
+        assert proposed["added"] == ["k1"]
+
     def test_a_change_this_call_rewrites_is_its_own(self) -> None:
         old = {"key": "k1", "kind": "add_step", "label": "Old"}
         new = {"key": "k1", "kind": "add_step", "label": "New"}

@@ -636,10 +636,35 @@ async def propose_workflow_changes(
     state = workflow.get("canvas_state")
     state = state if isinstance(state, dict) else {}
     return {
-        "added": [key for key, change in after.items() if before.get(key) != change],
+        "added": _added_by_this_call(before, after),
         "unsaved": typing.cast(JsonValue, state.get("pending_changes") or []),
         "version": state.get("version"),
     }
+
+
+def _added_by_this_call(before: dict[str, JsonValue], after: dict[str, JsonValue]) -> list[str]:
+    """The keys this call's PATCH added or changed.
+
+    A change that differs from the read before the PATCH may also be someone else's,
+    made between the two requests. The server stamps every change of one PATCH with
+    the same `at`, under a row lock, so this call's changes are the ones stamped with
+    the newest `at`; an earlier stamp is another proposal's.
+
+    Args:
+        before: The unsaved changes by key, read before the PATCH.
+        after: The unsaved changes by key, as the PATCH returned them.
+
+    Returns:
+        The keys of the changes this call made, in the server's order.
+    """
+    changed = {key: change for key, change in after.items() if before.get(key) != change}
+    stamps = {
+        key: str(change.get("at") or "")
+        for key, change in changed.items()
+        if isinstance(change, dict)
+    }
+    newest = max(stamps.values(), default="")
+    return [key for key in changed if stamps.get(key, "") == newest]
 
 
 def _pending_by_key(workflow: dict[str, JsonValue]) -> dict[str, JsonValue]:
