@@ -163,9 +163,10 @@ def test_triggers(live: Live, built: int) -> None:
 def test_run_once_and_not_twice(live: Live, built: int) -> None:
     first = live.tool("run_workflow", workflow_id=built)
     assert first["run_id"]
-    if first["result"] == "running":
-        second = live.tool("run_workflow", workflow_id=built)
-        assert (second["run_id"], second["already_running"]) == (first["run_id"], True)
+    # The first run may end between the two calls: then the second starts a new run.
+    second = live.tool("run_workflow", workflow_id=built)
+    if second["already_running"]:
+        assert second["run_id"] == first["run_id"]
 
     deadline = time.monotonic() + _RUN_SECONDS
     row = first["run"]
