@@ -67,6 +67,9 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
 }
 
+#: Commands whose trailing tokens are another command line, checked when that command runs.
+PASSTHROUGH_COMMANDS = frozenset({"bench"})
+
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
 SCHEMA_GET = "schema.get"
@@ -146,6 +149,8 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
             :func:`mammoth_cli.services.positionals.resolve_positionals`), so a
             surplus id is refused instead of silently ignored.
     """
+    if command_id in PASSTHROUGH_COMMANDS:
+        return
     flags = COMMAND_FLAGS.get(command_id, frozenset())
     tokens = [token for token in extra_args if token not in flags]
     for token in tokens:

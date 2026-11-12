@@ -28,6 +28,8 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "completion.install",
         # Reads a JSON Lines file or the host's stdin.
         "run",
+        # Runs many calls at once in the host's process, as one login.
+        "bench",
         # Read or write the host's profile, run log or install state.
         "auth.status",
         "config.get",

@@ -463,6 +463,15 @@ def _sdk_backed(command_id: str) -> bool:
 _RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
 
 
+_BENCH_HELP_NOTE = (
+    "COMMAND is any read command, as words or one quoted string; the flags go after it. "
+    "--concurrency N calls start together on a barrier, for --repeat R measured rounds, "
+    "after --warmup W unmeasured rounds (default 1). One process, one login and one "
+    "keep-alive connection pool. Reports p50, p95 and max of each HTTP request's logged "
+    "duration_ms and of each command, with status and error counts. Times are client-side "
+    "(timing: client): each HTTP attempt's round trip; the server sends no timing. "
+    "Example: mammoth bench view list --concurrency 8 --repeat 5"
+)
 _RUN_HELP_NOTE = (
     'One command per line: {"cmd": "view task list", "args": ["290"], "input": {}, '
     '"flags": {"project": 1}, "id": "a"}. cmd is the command path, args its positionals, '
@@ -479,6 +488,7 @@ _RUN_HELP_NOTE = (
 
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,
+    "bench": _BENCH_HELP_NOTE,
     "view.data.get": _RAW_NOTE,
     "view.data.query": _RAW_NOTE,
     "view.export.dataset": (
@@ -629,6 +639,11 @@ _ROOT_LEAF_HELP: dict[str, str] = {
         "Run many commands in one process: JSON Lines of cmd, args, input and flags."
         f"\n\n{_RUN_HELP_NOTE}"
         "\n\nExample: mammoth run commands.jsonl"
+    ),
+    "bench": (
+        "Run one read command N at a time for R rounds and report its latency."
+        f"\n\n{_BENCH_HELP_NOTE}"
+        "\n\nExample: mammoth bench 'project list'"
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."

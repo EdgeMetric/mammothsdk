@@ -16,7 +16,7 @@ import hashlib
 import os
 import sys
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
@@ -210,16 +210,36 @@ def resolve_auth(
     Inside a ``mammoth run`` the answer is kept per profile (see
     :func:`mammoth_cli.runtime.shared.remembering_auth`): the keyring, the profile file
     and the environment token are read once for all the lines, not once per line. An
-    explicit login and an embedded call are never kept.
+    explicit login and an embedded call are never kept. ``--workspace`` replaces the
+    resolved workspace id after the memo, so one line's ``--workspace`` never reaches the next.
     """
     memo = AUTH_MEMO.get()
     if memo is None or explicit_login is not None or embedded.active():
-        return _resolve_auth(invocation, explicit_login)
+        return _in_workspace(invocation, _resolve_auth(invocation, explicit_login))
     key = (invocation.profile, invocation.profile_is_default)
     if key not in memo:
         memo[key] = _resolve_auth(invocation, None)
     remembered: ResolvedAuth = memo[key]
-    return remembered
+    return _in_workspace(invocation, remembered)
+
+
+def _in_workspace(invocation: Invocation, auth: ResolvedAuth) -> ResolvedAuth:
+    """``auth`` in the ``--workspace`` of ``invocation``, when one was given.
+
+    Args:
+        invocation: The current command's resolved global options.
+        auth: The credentials and endpoint resolved from the login or profile.
+
+    Returns:
+        ``auth`` with ``--workspace`` as its workspace id, or ``auth`` unchanged.
+
+    Raises:
+        CliError: ``invalid_workspace_id`` when ``--workspace`` is not positive.
+    """
+    if invocation.workspace is None:
+        return auth
+    workspace_id = _require_positive_workspace(invocation.workspace, source="--workspace")
+    return replace(auth, workspace_id=workspace_id)
 
 
 def _resolve_auth(
@@ -308,6 +328,9 @@ def resolve_project(invocation: Invocation, profile: ProfileRecord | None) -> in
     """
     if invocation.project is not None:
         return invocation.project
-    if profile is not None:
-        return profile.project_id
-    return None
+    if profile is None:
+        return None
+    if invocation.workspace is not None and invocation.workspace != profile.workspace_id:
+        # The saved project is in the profile's workspace, not the one asked for.
+        return None
+    return profile.project_id

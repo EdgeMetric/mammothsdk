@@ -19,6 +19,7 @@ from mammoth_cli.context.resolver import (
 )
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.shared import remembering_auth
 
 
 def _invocation(**overrides: object) -> Invocation:
@@ -105,6 +106,46 @@ def test_resolve_project_falls_back_to_profile() -> None:
 
 def test_resolve_project_none_when_nothing_set() -> None:
     assert resolve_project(_invocation(), None) is None
+
+
+def test_workspace_flag_overrides_the_profile_workspace(isolated_cli_config: Path) -> None:
+    profiles.save_profile(
+        profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
+    )
+    credentials.store_credentials("default", "profile-key", "profile-secret", storage="file")
+    assert resolve_auth(_invocation(workspace=9)).workspace_id == 9
+    assert resolve_auth(_invocation()).workspace_id == 4
+
+
+def test_one_lines_workspace_does_not_reach_the_next(isolated_cli_config: Path) -> None:
+    """Inside 'mammoth run' the auth is remembered per profile; --workspace is not."""
+    profiles.save_profile(
+        profiles.ProfileRecord(name="default", workspace_id=4, server_prefix="release")
+    )
+    credentials.store_credentials("default", "profile-key", "profile-secret", storage="file")
+    with remembering_auth():
+        assert resolve_auth(_invocation(workspace=9)).workspace_id == 9
+        assert resolve_auth(_invocation()).workspace_id == 4
+
+
+def test_workspace_flag_overrides_an_explicit_login() -> None:
+    explicit = ExplicitLogin(api_key="k", api_secret="s", workspace_id=1)
+    assert resolve_auth(_invocation(workspace=2), explicit_login=explicit).workspace_id == 2
+
+
+def test_workspace_flag_must_be_positive(isolated_cli_config: Path) -> None:
+    explicit = ExplicitLogin(api_key="k", api_secret="s", workspace_id=1)
+    with pytest.raises(CliError) as excinfo:
+        resolve_auth(_invocation(workspace=0), explicit_login=explicit)
+    assert excinfo.value.code == "invalid_workspace_id"
+
+
+def test_another_workspace_drops_the_saved_project() -> None:
+    """The saved project belongs to the profile's workspace, not the one asked for."""
+    record = profiles.ProfileRecord(name="default", workspace_id=1, project_id=7)
+    assert resolve_project(_invocation(workspace=2), record) is None
+    assert resolve_project(_invocation(workspace=1), record) == 7
+    assert resolve_project(_invocation(workspace=2, project=5), record) == 5
 
 
 def test_resolve_auth_uses_the_ci_token_from_the_environment(

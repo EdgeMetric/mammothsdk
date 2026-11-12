@@ -145,6 +145,9 @@ ERROR_SUMMARIES: dict[str, str] = {
         "A line used a result from an earlier line that wasn't there, so it wasn't run."
     ),
     "run_command_refused": "That command can't be run from a list of commands.",
+    "invalid_bench": "The benchmark settings couldn't be used, so nothing was run.",
+    "bench_command_refused": "Only a command that reads can be benchmarked.",
+    "bench_call_failed": "One benchmarked call failed before it returned a result.",
     "history_not_found": "No recorded change has that id.",
     "journal_off": "Change history is switched off, so there is nothing to show or undo.",
     "nothing_to_resume": "Every line of that run finished.",
