@@ -270,13 +270,9 @@ def _detail_message(body: object) -> str | None:
     """
     if not isinstance(body, dict):
         return None
-    for key in ("details", "detail"):
-        details = body.get(key)
-        if isinstance(details, dict):
-            reason = details.get("message")
-            if isinstance(reason, str) and reason.strip():
-                return reason.strip()
-    return None
+    details = body.get("details")
+    reason = details.get("message") if isinstance(details, dict) else None
+    return reason.strip() if isinstance(reason, str) and reason.strip() else None
 
 
 async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T:
