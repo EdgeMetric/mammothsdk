@@ -486,7 +486,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-mcp-server"
-version = "0.2.14"
+version = "0.2.15"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

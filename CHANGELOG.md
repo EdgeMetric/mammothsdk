@@ -6,7 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed (next mammoth-mcp-server)
+## mammoth-mcp-server 0.2.15 (2026-11-13)
+
+### Fixed (mammoth-mcp-server 0.2.15)
 
 - A refusal whose message says "see details" (a step change `propose_workflow_changes` sends that Mammoth cannot use, for one) now carries the reason from the response's `details`, so the model can correct the change instead of guessing.
 
