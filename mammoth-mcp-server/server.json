@@ -3,7 +3,7 @@
   "name": "io.mammoth/mcp",
   "title": "Mammoth Analytics",
   "description": "Explore, clean and transform your data in Mammoth Analytics, and automate it as workflows.",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "websiteUrl": "https://mammoth.io",
   "repository": {
     "url": "https://github.com/EdgeMetric/mammothsdk",
