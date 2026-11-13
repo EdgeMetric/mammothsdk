@@ -255,6 +255,26 @@ def client_with(bearer: str, job_timeout: float = JOB_TIMEOUT_SECONDS) -> Mammot
 T = TypeVar("T")
 
 
+def _detail_message(body: object) -> str | None:
+    """The reason a refusal carries in its `details`, beside its headline.
+
+    Some refusals say only "see details" in `message` and put the reason in
+    `details.message` (a step change Mammoth cannot use, for one). The SDK's error
+    text keeps the headline alone, so without this the reason never reaches the model.
+
+    Args:
+        body: The parsed response body of the failed request.
+
+    Returns:
+        The reason, or None when the body carries none.
+    """
+    if not isinstance(body, dict):
+        return None
+    details = body.get("details")
+    reason = details.get("message") if isinstance(details, dict) else None
+    return reason.strip() if isinstance(reason, str) and reason.strip() else None
+
+
 async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T:
     """Await an SDK call, and turn a refusal into words the model can use.
 
@@ -278,6 +298,9 @@ async def read_sdk_errors(work: Awaitable[T], not_found: str | None = None) -> T
         body = getattr(refused, "response_body", None)
         code = body.get("error_code") if isinstance(body, dict) else None
         said = str(refused).strip() or UNREADABLE_API_ERROR
+        reason = _detail_message(body)
+        if reason and reason not in said:
+            said = f"{said.rstrip('.')}. {reason}"
         if code in REFUSAL_HINTS:
             said = f"{said.rstrip('.')}. {REFUSAL_HINTS[code]}"
         raise ToolError(f"{API_ERROR_PREFIX}: {said}") from refused
