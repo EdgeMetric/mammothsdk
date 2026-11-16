@@ -916,6 +916,18 @@ def test_rename_refuses_two_different_names(
     assert fake_service.call_log == []
 
 
+def test_rename_accepts_the_same_name_given_twice(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write(tmp_path, {"name": "New"})
+    dataset_cmd.dataset_rename(
+        _inv("dataset.rename", project=180, extra_args=["7", "New"], input_file=input_file)
+    )
+    assert fake_service.call_log == [
+        (_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180, "unique": True})
+    ]
+
+
 def test_rename_name_flag_is_a_declared_flag_of_the_command() -> None:
     assert "--name" in COMMAND_FLAGS["dataset.rename"]
     assert [spec.name for spec in resolve_positionals("dataset.rename")] == ["dataset_id", "name"]

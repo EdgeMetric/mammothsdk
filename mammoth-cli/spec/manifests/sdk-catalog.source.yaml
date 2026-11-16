@@ -5990,7 +5990,7 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
-  notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing target. REPLACE_IN_DS (the default) does not empty the target: it drops the batches the trigger of this export added on earlier runs (mvc-service shepherd.py drop_data_condition) and adds the new rows, so rows from other views stay. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
+  notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing target. REPLACE_IN_DS (the default) is destructive on an existing target: the backend drops earlier batches before it adds the new rows (mvc-service shepherd.py drop_data_condition). Which earlier rows it drops (only the rows this export sent, or others too) is not yet verified against a server, so assume rows already in the target can be lost. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
 - sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
   canonical_command: view.export.elasticsearch
   alias_of: null
