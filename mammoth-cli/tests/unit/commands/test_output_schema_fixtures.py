@@ -867,6 +867,12 @@ _VERIFY = {
     "outcome": "settled",
 }
 _EXEMPT_RESULTS: dict[str, dict[str, Any]] = {
+    "connector.draft.credentials": {
+        "draft_id": 12,
+        "session_id": "s-1",
+        "widget_id": "w-1",
+        "outcome": "saved",
+    },
     "dataset.download": {"output_path": "orders.csv"},
     "dataset.update": {"verify": _VERIFY},
     "dataset.update-method.set": {"mode": "replace", "previous_mode": "add", "verify": _VERIFY},
