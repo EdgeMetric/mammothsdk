@@ -89,6 +89,9 @@ _EXEMPT: dict[str, str] = {
     "dataset.update-method.set": (
         "the sample server keeps no schema_settings, so the read-back sees no change"
     ),
+    "connector.draft.credentials": (
+        "reads the credentials from a private file the sample run does not have"
+    ),
 }
 
 #: Commands left out of the dry-run check: they wait on a background job the sample never ends,

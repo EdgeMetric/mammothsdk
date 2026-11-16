@@ -82,8 +82,9 @@ def test_create_blank_refuses_a_bad_mode_before_any_request(
     payload = {"params": {"dataview_id": 42}, "mode": "sepia"}
     with pytest.raises(CliError) as excinfo:
         dashboard_generated.generated_dashboard(_inv("dashboard.create-blank", tmp_path, payload))
-    assert excinfo.value.code == "invalid_argument"
-    assert "light, dark" in excinfo.value.message
+    # the manifest's mode enum refuses it before the command runs
+    assert excinfo.value.code == "invalid_input_field_type"
+    assert "dark" in excinfo.value.message
     assert fake_service.call_log == []
 
 
@@ -138,13 +139,16 @@ def test_update_style_only_failure_is_an_error(
         )
 
 
-@pytest.mark.parametrize("payload", [{"mode": "blue"}, {"style_id": "  "}])
+@pytest.mark.parametrize(
+    ("payload", "code"),
+    [({"mode": "blue"}, "invalid_input_field_type"), ({"style_id": "  "}, "invalid_argument")],
+)
 def test_update_refuses_bad_style_input_before_any_request(
-    fake_service: FakeMammothService, tmp_path: Path, payload: dict[str, object]
+    fake_service: FakeMammothService, tmp_path: Path, payload: dict[str, object], code: str
 ) -> None:
     with pytest.raises(CliError) as excinfo:
         dashboard_cmd.dashboard_update(
             _inv("dashboard.update", tmp_path, payload, extra_args=["7"])
         )
-    assert excinfo.value.code == "invalid_argument"
+    assert excinfo.value.code == code
     assert fake_service.call_log == []
