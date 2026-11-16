@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 
 from mammoth_cli.commands import BESPOKE
 from mammoth_cli.commands import auth as auth_cmd
-from mammoth_cli.context import credentials, profiles
+from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.errors.envelope import EXIT_USAGE, CliError
 from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.runtime.invocation import Invocation
@@ -983,3 +983,110 @@ def test_status_with_no_profile_given_still_reports_signed_out_state(
     result = make_runner().invoke(["auth", "status", "-o", "json"], env={})
     assert result.exit_code == 0, result.stderr
     assert json.loads(result.stdout)["data"]["has_credentials"] is False
+
+
+# -- mammothsdk#350: a login must not move the selected profile -------------------------
+
+
+def _oauth_login_args(*extra: str) -> list[str]:
+    return [
+        "auth",
+        "login",
+        "--method",
+        "oauth",
+        "--no-browser",
+        "--storage",
+        "file",
+        "--output",
+        "json",
+        "--no-input",
+        *extra,
+    ]
+
+
+@pytest.fixture
+def oauth_login_stubbed(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(oauth, "browser_login", lambda *a, **k: _oauth_session())
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "W"}
+
+
+def test_login_for_another_profile_keeps_the_selected_profile(
+    oauth_login_stubbed: None,
+) -> None:
+    _saved_login()
+    result = make_runner().invoke(_oauth_login_args("--profile", "orion"), env={})
+    assert result.exit_code == 0, result.stderr
+    assert profiles.get_selected() == "default"
+    assert profiles.get_profile("orion") is not None
+    assert json.loads(result.stdout)["data"]["selected"] is False
+    assert 'the active profile stays "default"' in result.stderr
+
+
+def test_login_with_select_makes_the_profile_active_and_says_so(
+    oauth_login_stubbed: None,
+) -> None:
+    _saved_login()
+    result = make_runner().invoke(_oauth_login_args("--profile", "orion", "--select"), env={})
+    assert result.exit_code == 0, result.stderr
+    assert profiles.get_selected() == "orion"
+    assert json.loads(result.stdout)["data"]["selected"] is True
+    assert 'Active profile is now "orion" (was "default")' in result.stderr
+
+
+def test_first_login_selects_its_profile_when_nothing_is_selected(
+    oauth_login_stubbed: None,
+) -> None:
+    result = make_runner().invoke(_oauth_login_args("--profile", "orion"), env={})
+    assert result.exit_code == 0, result.stderr
+    assert profiles.get_selected() == "orion"
+
+
+def test_token_login_for_another_profile_keeps_the_selected_profile(
+    isolated_cli_config: Path, fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    _saved_login()
+    doc = _write_login_doc(tmp_path, api_token=_TOKEN)
+    result = make_runner().invoke(
+        ["auth", "login", "--input", str(doc), "--storage", "file", "--profile", "orion"],
+        env={},
+    )
+    assert result.exit_code == 0, result.stderr
+    assert profiles.get_selected() == "default"
+
+
+# -- mammothsdk#303: settle the credential store before the device code is shown --------
+
+
+def test_device_login_without_a_keyring_falls_back_to_the_file_with_a_notice(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: False)
+    monkeypatch.setattr(oauth, "device_login", lambda *a, **k: _oauth_session())
+    fake_service.responses[_WORKSPACE_GET] = {"id": 4, "name": "W"}
+    result = make_runner().invoke(
+        ["auth", "login", "--device", "--output", "json", "--no-input"], env={}
+    )
+    assert result.exit_code == 0, result.stderr
+    assert json.loads(result.stdout)["data"]["storage"] == "file"
+    assert "No OS keyring is available" in result.stderr
+
+
+def test_device_login_asking_for_a_missing_keyring_fails_before_the_code_is_shown(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    started: list[bool] = []
+    monkeypatch.setattr(credentials, "_keyring_available", lambda: False)
+    monkeypatch.setattr(oauth, "device_login", lambda *a, **k: started.append(True))
+    result = make_runner().invoke(
+        ["auth", "login", "--device", "--storage", "keyring", "--output", "json", "--no-input"],
+        env={},
+    )
+    assert result.exit_code != 0
+    assert started == []
+    assert json.loads(result.stdout)["error"]["code"] == "keyring_unavailable"

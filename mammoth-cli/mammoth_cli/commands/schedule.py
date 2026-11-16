@@ -163,7 +163,11 @@ def schedule_list(invocation: Invocation) -> HandlerResult:
     raise not_available_error(
         "schedule list",
         web_path="the web app, which opens a schedule from the dataset or automation that owns it",
-        instead="`schedule get SCHEDULE_ID` reads one schedule by an id you already have.",
+        instead=(
+            "A dataset refreshes on a clock through an automation: `mammoth automation list` "
+            "shows them, with each one's run_data_retrieval datasets and its last run. "
+            "`schedule get SCHEDULE_ID` reads one schedule by an id you already have."
+        ),
     )
 
 

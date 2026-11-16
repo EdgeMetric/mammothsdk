@@ -9,6 +9,14 @@ Each round starts on a barrier: the ``N`` calls are released together, so the se
 sees ``N`` requests at once. ``W`` unmeasured warm-up rounds (default 1) open the
 connections first.
 
+Every HTTP attempt is counted, not only the last of a call: ``http.attempts`` is all of
+them, ``http.requests`` the ones that ended a call, ``http.retries`` the attempts the SDK
+retried (a 429/502/503/504 read), ``http.attempt_status`` the status of every attempt,
+``http.status`` the status of the final ones and ``http.retry_wait_ms`` the backoff slept
+between attempts. That wait is part of ``command_ms`` and never of the per-attempt
+``http`` durations. ``--no-retry`` sends each request once, so a gateway error is measured as
+what it is (mammothsdk#431).
+
 It reports the 50th and 95th percentile and the maximum of the request duration the SDK
 already logs for every HTTP request (``duration_ms`` of the ``mammoth.http`` log), and of
 the whole command as the caller sees it, with the status counts and the error codes of
@@ -59,6 +67,8 @@ _LIMITS: dict[str, tuple[int, int]] = {
     "--repeat": (1, 100),
     "--warmup": (0, 10),
 }
+#: The flag that sends each request once (mammothsdk#431).
+NO_RETRY_FLAG = "--no-retry"
 #: Seconds a call may wait at the round's barrier for the others.
 _BARRIER_TIMEOUT = 60.0
 _HTTP_LOGGER = "mammoth.http"
@@ -75,12 +85,14 @@ class BenchArgs:
         concurrency: The calls released together in each round.
         repeat: The measured rounds.
         warmup: The unmeasured rounds before them.
+        no_retry: Send every request once, with no SDK retry (mammothsdk#431).
     """
 
     command: tuple[str, ...]
     concurrency: int
     repeat: int
     warmup: int
+    no_retry: bool = False
 
 
 def parse_args(tokens: Sequence[str]) -> BenchArgs:
@@ -98,8 +110,12 @@ def parse_args(tokens: Sequence[str]) -> BenchArgs:
     """
     values = dict(BENCH_FLAGS)
     command: list[str] = []
+    no_retry = False
     rest = iter(tokens)
     for token in rest:
+        if token == NO_RETRY_FLAG:
+            no_retry = True
+            continue
         name, sep, inline = token.partition("=")
         if name not in BENCH_FLAGS:
             # A command given as one quoted string ("project list") is its words.
@@ -114,6 +130,7 @@ def parse_args(tokens: Sequence[str]) -> BenchArgs:
         concurrency=values["--concurrency"],
         repeat=values["--repeat"],
         warmup=values["--warmup"],
+        no_retry=no_retry,
     )
 
 
@@ -202,17 +219,46 @@ def _round(call: Call, concurrency: int) -> list[dict[str, Any]]:
     return results
 
 
+@dataclass(frozen=True)
+class Attempt:
+    """One HTTP attempt, as the SDK logged it (mammothsdk#431).
+
+    Attributes:
+        duration_ms: The attempt's round trip.
+        status: The response status as text, or ``None`` when none came.
+        outcome: ``retry`` when the SDK sent the request again, else how the call ended.
+        retry_wait_ms: The backoff slept after this attempt, in milliseconds.
+    """
+
+    duration_ms: float
+    status: str
+    outcome: str = "ok"
+    retry_wait_ms: int = 0
+
+    @property
+    def retried(self) -> bool:
+        """Whether the SDK sent this request again after this attempt."""
+        return self.outcome == "retry"
+
+
 class _Durations(logging.Handler):
-    """Keeps the ``duration_ms`` and status of every logged HTTP request."""
+    """Keeps every logged HTTP attempt: its duration, status, outcome and retry wait."""
 
     def __init__(self) -> None:
         super().__init__(level=logging.INFO)
-        self.requests: list[tuple[float, str]] = []
+        self.requests: list[Attempt] = []
 
     def emit(self, record: logging.LogRecord) -> None:
         fields = getattr(record, "mammoth", None)
         if isinstance(fields, dict) and fields.get("event") == "http":
-            self.requests.append((float(fields["duration_ms"]), str(fields.get("status"))))
+            self.requests.append(
+                Attempt(
+                    duration_ms=float(fields["duration_ms"]),
+                    status=str(fields.get("status")),
+                    outcome=str(fields.get("outcome") or "ok"),
+                    retry_wait_ms=int(fields.get("retry_wait_ms") or 0),
+                )
+            )
 
 
 @contextmanager
@@ -231,18 +277,18 @@ def _http_durations() -> Iterator[_Durations]:
         logger.setLevel(level)
 
 
-def summarize(
-    envelopes: Sequence[dict[str, Any]], requests: Sequence[tuple[float, str]]
-) -> dict[str, Any]:
+def summarize(envelopes: Sequence[dict[str, Any]], attempts: Sequence[Attempt]) -> dict[str, Any]:
     """The bench result: call and request counts, errors, and duration percentiles.
 
     Args:
         envelopes: Every measured call's envelope.
-        requests: Every measured HTTP request's ``duration_ms`` and status.
+        attempts: Every measured HTTP attempt, retried ones included.
 
     Returns:
-        ``calls``, ``errors``, ``error_codes``, ``http`` (requests, status counts and
-        duration percentiles) and ``command_ms`` (the per-call ``elapsed_ms`` percentiles).
+        ``calls``, ``errors``, ``error_codes``, ``http`` (attempts, requests that ended a call,
+        retries, the retry wait, the status of every attempt and of the final ones, and the
+        per-attempt duration percentiles) and ``command_ms`` (the per-call ``elapsed_ms``
+        percentiles).
     """
     errors = Counter(
         str(envelope["error"].get("code")) for envelope in envelopes if "error" in envelope
@@ -253,14 +299,19 @@ def summarize(
         if isinstance(body := envelope.get("error", envelope.get("meta")), dict)
         and "elapsed_ms" in body
     ]
+    final = [a for a in attempts if not a.retried]
     return {
         "calls": len(envelopes),
         "errors": sum(errors.values()),
         "error_codes": dict(errors),
         "http": {
-            "requests": len(requests),
-            "status": dict(Counter(status for _, status in requests)),
-            **percentiles([duration for duration, _ in requests]),
+            "attempts": len(attempts),
+            "requests": len(final),
+            "retries": len(attempts) - len(final),
+            "retry_wait_ms": sum(a.retry_wait_ms for a in attempts),
+            "attempt_status": dict(Counter(a.status for a in attempts)),
+            "status": dict(Counter(a.status for a in final)),
+            **percentiles([a.duration_ms for a in attempts]),
         },
         "command_ms": percentiles(elapsed),
     }
@@ -325,6 +376,7 @@ def bench(invocation: Invocation) -> HandlerResult:
                 project_id=project_id,
                 timeout=invocation.timeout,
                 runtime=runtime,
+                no_retry=args.no_retry,
             )
 
         run_rounds(call, concurrency=pool, rounds=args.warmup)
@@ -340,6 +392,7 @@ def bench(invocation: Invocation) -> HandlerResult:
         "warmup": args.warmup,
         "wall_ms": wall_ms,
         "timing": TIMING,
+        "no_retry": args.no_retry,
         **summarize(envelopes, http.requests),
     }
     return data, {"workspace_id": login.workspace_id}

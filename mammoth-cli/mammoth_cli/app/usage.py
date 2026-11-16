@@ -164,29 +164,101 @@ def missing_argument_hint(tokens: Sequence[str]) -> str:
     return generic
 
 
-def _corrected_command(tokens: Sequence[str]) -> str | None:
-    """Rebuild an invocation with leading global options moved after the command.
+def _option_decls() -> dict[str, str]:
+    """Map every global option spelling to its canonical (first-declared) spelling."""
+    canonical: dict[str, str] = {}
+    for param in _shared_option_params():
+        decls: list[str] = []
+        for meta in getattr(param.annotation, "__metadata__", ()):
+            first = getattr(meta, "default", None)
+            if isinstance(first, str) and first.startswith("-"):
+                decls.append(first)
+            decls.extend(d for d in getattr(meta, "param_decls", None) or () if d.startswith("-"))
+        for decl in decls:
+            canonical[decl] = decls[0]
+    return canonical
 
-    ``mammoth --profile prod doctor`` becomes ``mammoth doctor --profile prod``.
-    Returns None when there is nothing to move or nothing to move it behind.
+
+def _split_option(
+    token: str, canonical: dict[str, str], valued: frozenset[str]
+) -> tuple[str, str | None, bool] | None:
+    """Recognize one global option token.
+
+    Args:
+        token: A command-line token.
+        canonical: Spelling to canonical spelling, from :func:`_option_decls`.
+        valued: The spellings that take a value.
+
+    Returns:
+        ``(canonical name, inline value or None, takes a separate value)``, or None when the
+        token is not a global option. Handles ``--name=value`` and the attached short form
+        ``-ovalue``.
     """
-    every, valued = _global_option_flags()
-    leading: list[str] = []
+    name, equals, inline = token.partition("=")
+    if name in canonical:
+        return canonical[name], (inline if equals else None), (not equals and name in valued)
+    if not token.startswith("--") and len(token) > 2 and token[:2] in valued:
+        return canonical[token[:2]], token[2:], False
+    return None
+
+
+def hoist_global_options(tokens: Sequence[str]) -> list[str]:
+    """Move global options written before the command to after it.
+
+    ``mammoth --profile prod project list`` runs as ``mammoth project list --profile prod``:
+    every leaf command declares the global options itself, so the position is the only
+    difference. Giving one option on both sides with different values is a usage error.
+
+    Args:
+        tokens: The command line after the program name.
+
+    Returns:
+        The tokens with the leading global options moved behind the command (before a ``--``
+        terminator), or the tokens unchanged when there is no leading option or no command.
+
+    Raises:
+        UsageError: An option appears before and after the command with different values.
+    """
+    valued = _global_option_flags()[1]
+    canonical = _option_decls()
+    leading: list[tuple[str, str | None]] = []
+    moved: list[str] = []
     index = 0
     while index < len(tokens):
-        token = tokens[index]
-        name = token.split("=", 1)[0]
-        if name not in every:
+        parsed = _split_option(tokens[index], canonical, valued)
+        if parsed is None:
             break
-        leading.append(token)
+        name, value, separate = parsed
+        moved.append(tokens[index])
         index += 1
-        if "=" not in token and name in valued and index < len(tokens):
-            leading.append(tokens[index])
+        if separate and index < len(tokens):
+            value = tokens[index]
+            moved.append(tokens[index])
             index += 1
+        leading.append((name, value))
     rest = list(tokens[index:])
     if not leading or not rest:
-        return None
-    return " ".join(["mammoth", *rest, *leading])
+        return list(tokens)
+    seen: dict[str, str | None] = {}
+    position = 0
+    while position < len(rest) and rest[position] != "--":
+        parsed = _split_option(rest[position], canonical, valued)
+        position += 1
+        if parsed is None:
+            continue
+        name, value, separate = parsed
+        if separate and position < len(rest):
+            value = rest[position]
+            position += 1
+        seen[name] = value
+    for name, value in leading:
+        if name in seen and seen[name] != value:
+            raise _typer_click_exceptions.UsageError(
+                f"Option '{name}' is given before and after the command with different values "
+                f"({value!r} and {seen[name]!r}); give it once."
+            )
+    terminator = rest.index("--") if "--" in rest else len(rest)
+    return [*rest[:terminator], *moved, *rest[terminator:]]
 
 
 def _parent_words(context: Any) -> list[str]:
@@ -304,16 +376,11 @@ def _usage_error_report(error: Any, tokens: Sequence[str]) -> CliError | None:
             hint=f"Run '{path} --help' to list its subcommands.",
             details={"option": name, "command_path": path},
         )
-    corrected = _corrected_command(tokens)
+    # The leading options were already moved behind the command, so only a missing command is left.
     return CliError(
         code="usage_error",
-        message=f"Global option '{name}' must come after the command, not before it.",
+        message=f"Global option '{name}' needs a command after it.",
         exit_status=EXIT_USAGE,
-        hint=(
-            f"Try: {corrected}"
-            if corrected
-            else "Every command declares the global options itself, so they follow the command."
-        ),
+        hint="Run 'mammoth --help' to list the available commands.",
         details={"option": name},
-        recovery_commands=[corrected] if corrected else [],
     )

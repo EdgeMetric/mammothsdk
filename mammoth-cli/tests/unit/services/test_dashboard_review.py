@@ -77,9 +77,12 @@ def test_blanks_are_reported_for_the_columns_the_board_shows() -> None:
     assert blanks == ["segment", "qty"]
 
 
-def test_an_empty_board_lists_every_blank_column() -> None:
-    blanks = [w["column"] for w in review(_doc([{"id": "p1"}])) if w["issue"] == "blank_values"]
-    assert blanks == ["segment", "qty", "price"]
+def test_an_empty_board_lists_every_blank_column_in_one_warning() -> None:
+    # mammothsdk#405: a board that reads no column gets one table-level record, not one each.
+    blanks = [w for w in review(_doc([{"id": "p1"}])) if w["issue"] == "blank_values"]
+    assert len(blanks) == 1
+    assert blanks[0]["columns"] == ["segment", "qty", "price"]
+    assert "column" not in blanks[0]
 
 
 def test_zeros_are_reported_as_zeros_and_never_as_blank() -> None:

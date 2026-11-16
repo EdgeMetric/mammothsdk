@@ -423,11 +423,22 @@ REFRESH_FILE_DATASET_HINT = (
     "recompute); or connect a cloud source (`mammoth connector connection create`) and "
     "automate that dataset's data retrieval with `mammoth automation create`."
 )
+#: ``schedule create``: a connector dataset is the usual case, so it comes first; the upload
+#: advice read as if every dataset were a file (mammothsdk#323).
+SCHEDULE_CREATE_HINT = (
+    "Schedules are retired: refresh a connector dataset with an automation, a "
+    "run_data_retrieval task and an at_specific_time condition: `mammoth automation create "
+    'NAME --input \'{"tasks": [{"task_type": "run_data_retrieval", "details": '
+    '{"ds_details": [{"ds_id": DATASET_ID}]}}], "conditions": [{"condition_type": '
+    '"at_specific_time", "details": {"frequency": "daily", "interval": 1, '
+    '"start_at": "2027-01-01T02:00:00Z"}}]}\'`; `mammoth automation list` shows the ones '
+    "that exist. " + REFRESH_FILE_DATASET_HINT
+)
 FEATURE_UNAVAILABLE_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "schedule.create": (
         "Creating a schedule is not implemented by the Mammoth backend (5GENR011 NOT_IMPLEMENTED).",
-        REFRESH_FILE_DATASET_HINT,
-        ["mammoth schema get file.upload", "mammoth schema get automation.create"],
+        SCHEDULE_CREATE_HINT,
+        ["mammoth schema get automation.create", "mammoth automation list"],
     ),
 }
 

@@ -27,8 +27,8 @@
   },
   "mapping_counts": {
     "alias": 2,
-    "cli_and_sdk_mapped": 741,
-    "internal_only": 39,
+    "cli_and_sdk_mapped": 742,
+    "internal_only": 38,
     "protocol_only": 12,
     "removed_on_server": 15,
     "unmapped": 192
@@ -14182,12 +14182,14 @@
       "operation_id": "TestAgentCredentialCard",
       "method": "POST",
       "path": "/agents/sessions/{session_id}/credential-test",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "internal_only",
-      "mapping_gap_reason": "Web chat panel: tests the credentials typed into a chat card.",
+      "canonical_command": "connector.draft.credentials",
+      "schema_id": "connector.draft.credentials",
+      "sdk_symbol": "mammoth.api.agents.AgentsAPI.session_credential_test",
+      "bound_commands": [
+        "connector.draft.credentials"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },

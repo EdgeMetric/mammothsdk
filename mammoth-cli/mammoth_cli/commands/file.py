@@ -12,6 +12,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -369,6 +370,8 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # A finished upload job does not mean a usable dataset: a CSV with an
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
+        if not data and not outcome.get("errors"):
+            data = _follow_extracted_sheets(service, outcome.get("files"))
         result = _upload_result(
             data,
             lambda dataset_id: _dataset_status(service, dataset_id),
@@ -734,6 +737,76 @@ _NO_DATASET_MESSAGE = (
     "as action_needed until its tables are extracted; do that in the Mammoth app. Do not "
     "upload the file again."
 )
+_NO_DATASET_OTHER = (
+    "The file was uploaded but no dataset was made from it yet. Check 'mammoth file list' "
+    "and 'mammoth dataset list' in a minute. Do not upload the file again."
+)
+
+#: Workbooks the server extracts itself when they hold one sheet (mammothsdk#374).
+_EXCEL_SUFFIXES = (".xlsx", ".xlsm", ".xls")
+_FILE_LIST_SYMBOL = "mammoth.api.files.FilesAPI.list"
+#: How long to follow a one-sheet workbook's extraction: tries, seconds apart.
+_EXTRACT_TRIES = 10
+_EXTRACT_PAUSE = 3.0
+
+
+def _follow_extracted_sheets(service: Any, files: Any) -> list[int]:
+    """The datasets a one-sheet workbook's extraction made, followed for a short while.
+
+    The upload job ends before the server extracts a one-sheet workbook's only sheet, so
+    the upload read as ``no_dataset`` while the dataset appeared seconds later on a second
+    file item's ``final_ds_id`` (mammothsdk#374).
+
+    Args:
+        service: The session service.
+        files: ``upload_result``'s ``files`` (uploads that made no dataset). An item of the
+            same name counts only when its id is at least the upload's own file id.
+
+    Returns:
+        The dataset ids found, or an empty list when none appeared in time.
+    """
+    uploaded = {
+        str(item["name"]): int(item["file_id"])
+        for item in (files if isinstance(files, list) else [])
+        if isinstance(item, dict)
+        and isinstance(item.get("file_id"), int)
+        and not item.get("action_needed")
+        and str(item.get("name") or "").lower().endswith(_EXCEL_SUFFIXES)
+    }
+    if not uploaded:
+        return []
+    names = sorted(uploaded)
+    for attempt in range(_EXTRACT_TRIES):
+        if attempt:
+            time.sleep(_EXTRACT_PAUSE)
+        try:
+            listed = service.call(_FILE_LIST_SYMBOL, names=names, limit=50)
+        except CliError:
+            return []
+        listed = listed.model_dump(mode="json") if hasattr(listed, "model_dump") else listed
+        found = sorted(
+            {
+                int(item["additional_info"]["final_ds_id"])
+                for item in (listed or {}).get("files") or []
+                if isinstance(item, dict)
+                # Only an item made after this upload's own file: an earlier upload of
+                # the same name carries its own final_ds_id.
+                and isinstance(item.get("id"), int)
+                and item["id"] >= uploaded.get(str(item.get("name")), item["id"] + 1)
+                and isinstance(item.get("additional_info"), dict)
+                and isinstance(item["additional_info"].get("final_ds_id"), int)
+            }
+        )
+        if found:
+            return found
+    return []
+
+
+def _no_dataset_message(waiting: list[dict[str, Any]]) -> str:
+    """The PDF advice only when a PDF made no dataset; plain advice otherwise."""
+    pdf = any(str(item.get("name") or "").lower().endswith(".pdf") for item in waiting)
+    return _NO_DATASET_MESSAGE if pdf or not waiting else _NO_DATASET_OTHER
+
 
 #: Words in a ``need_action`` ``status_info`` that point at a header or title-row problem
 #: rather than an ambiguous date: ``interpretation preview`` shows how the rows would read.
@@ -865,7 +938,7 @@ def _upload_result(
             result["next_command"] = chosen["next_command"]
         else:
             result["status"] = NO_DATASET_STATUS
-            result["message"] = _NO_DATASET_MESSAGE
+            result["message"] = _no_dataset_message(waiting)
             result["next_command"] = "mammoth file list"
     return result
 

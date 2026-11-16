@@ -15,6 +15,7 @@ import shlex
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from mammoth_cli.services.dashboard_pages import own_table
 from mammoth_cli.services.dashboard_review import _profiles
 from mammoth_cli.services.suggest import nearest_one
 
@@ -121,7 +122,17 @@ def canvas_figure_problems(canvas_doc: Any) -> list[dict[str, Any]]:
     source = canvas.get("dataset")
     view_id = source.get("dataview_id") if isinstance(source, Mapping) else None
     problems: list[dict[str, Any]] = []
-    containers = [canvas, *[p for p in canvas.get("pages") or [] if isinstance(p, Mapping)]]
+    root = source if isinstance(source, Mapping) else {}
+    # The profile is the board's own table; a page reading another table
+    # (``pages[].dataset``) cannot be checked against it (mammothsdk#406).
+    containers = [
+        canvas,
+        *[
+            p
+            for p in canvas.get("pages") or []
+            if isinstance(p, Mapping) and not own_table(p, root)
+        ],
+    ]
     for container in containers:
         label = container.get("title") or container.get("id")
         figures = [*(container.get("added") or [])]

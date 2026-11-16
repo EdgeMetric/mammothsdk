@@ -608,3 +608,52 @@ def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(document))
     return doc
+
+
+def test_a_one_sheet_workbook_follows_its_extraction_to_the_dataset(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # mammothsdk#374: the upload job ended before the server extracted the only sheet, so
+    # the result said no_dataset (with PDF advice) while the dataset appeared seconds later.
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    monkeypatch.setattr(file_cmd, "_EXTRACT_PAUSE", 0.0)
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processed"}],
+    }
+    pages = iter(
+        [
+            {"files": [{"id": 50, "name": "dates.xlsx", "additional_info": {}}]},
+            {
+                "files": [
+                    # An earlier upload of the same name is not this one's dataset.
+                    {"id": 12, "name": "dates.xlsx", "additional_info": {"final_ds_id": 3}},
+                    {"id": 50, "name": "dates.xlsx", "additional_info": {}},
+                    {"id": 51, "name": "dates.xlsx", "additional_info": {"final_ds_id": 77}},
+                ]
+            },
+        ]
+    )
+    fake_service.responses[_LIST] = lambda _log: next(pages)
+    fake_service.responses[_DATASET_GET] = {"dataset": {"id": 77, "status": "ready"}}
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"]))
+    assert data["dataset_ids"] == [77]
+    assert data["status"] == "ready"
+
+
+def test_a_workbook_that_made_no_dataset_gets_no_pdf_advice(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    monkeypatch.setattr(file_cmd, "_EXTRACT_PAUSE", 0.0)
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processing"}],
+    }
+    fake_service.responses[_LIST] = {"files": []}
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"]))
+    assert data["status"] == "no_dataset"
+    assert "PDF" not in data["message"]
+    assert len([call for call in fake_service.call_log if call[0] == _LIST]) == 10

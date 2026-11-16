@@ -769,11 +769,11 @@ operations:
   response_schemas:
   - CredentialTestResponse
   deprecated: false
-  disposition: internal_only
-  disposition_reason: 'Web chat panel: tests the credentials typed into a chat card.'
-  canonical_command: null
+  disposition: command
+  disposition_reason: User-initiated production operation.
+  canonical_command: connector.draft.credentials
   alias_of: null
-  sdk_symbol: null
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
   reviewed_by: primary
 - identity: GET /agents/sessions/{session_id}/feedback
   method: GET

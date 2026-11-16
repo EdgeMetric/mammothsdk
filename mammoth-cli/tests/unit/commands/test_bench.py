@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 import pytest
+from mammoth import client as sdk_client
 
 from mammoth_cli.commands import bench
 from mammoth_cli.context import resolver
@@ -26,6 +27,8 @@ def _inv(*args: str) -> Invocation:
 def test_flags_are_read_from_anywhere_on_the_line() -> None:
     args = bench.parse_args(["--concurrency=8", "view", "list", "--repeat", "3", "290"])
     assert args == bench.BenchArgs(("view", "list", "290"), concurrency=8, repeat=3, warmup=1)
+    assert bench.parse_args(["project", "list", "--no-retry"]).no_retry is True
+    assert args.no_retry is False
 
 
 @pytest.mark.parametrize(
@@ -183,3 +186,81 @@ def test_a_command_given_as_one_quoted_string_is_its_words() -> None:
     args = bench.parse_args(["view list 290", "--repeat=2"])
     assert args.command == ("view", "list", "290")
     assert args.repeat == 2
+
+
+class _Gateway:
+    """Answers the first `bad` project lists with a 502 from a CDN, then 200."""
+
+    def __init__(self, bad: int) -> None:
+        self.bad = bad
+        self.requests: list[httpx.Request] = []
+        self.lock = threading.Lock()
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        with self.lock:
+            self.requests.append(request)
+            number = len(self.requests)
+        if number <= self.bad:
+            return httpx.Response(502, json={}, headers={"X-Cache": "Error from cloudfront"})
+        return httpx.Response(200, json={"projects": [], "limit": 100, "offset": 0, "next": ""})
+
+
+def _bench_through(
+    monkeypatch: pytest.MonkeyPatch, server: _Gateway, *flags: str
+) -> dict[str, Any]:
+    """Run `bench project list` once-per-round against `server` and return its data."""
+    real = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx, "AsyncClient", lambda **kw: real(**{**kw, "transport": httpx.MockTransport(server)})
+    )
+    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_: 4)
+    monkeypatch.setattr(sdk_client, "_RETRY_BACKOFF_S", 0.01)
+    login = ExplicitLogin(
+        api_key=None, api_secret=None, workspace_id=4, api_token="mm_x", server_prefix="box"
+    )
+    monkeypatch.setattr(bench, "_login", lambda _: login)
+    monkeypatch.setattr(bench, "resolved_project", lambda _: 3)
+    data, _meta = bench.bench(_inv("project", "list", "--repeat", "2", "--warmup", "0", *flags))
+    return data
+
+
+def test_a_retried_502_is_counted_as_an_attempt_not_hidden(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _Gateway(bad=1)
+    data = _bench_through(monkeypatch, server)
+    http = data["http"]
+    assert (data["calls"], data["errors"]) == (2, 0)  # the retry made the call succeed
+    assert http["attempts"] == len(server.requests) == 3
+    assert (http["requests"], http["retries"]) == (2, 1)
+    assert http["attempt_status"] == {"502": 1, "200": 2}
+    assert http["status"] == {"200": 2}
+    assert http["retry_wait_ms"] == 10
+    assert data["no_retry"] is False
+
+
+def test_no_retry_sends_each_request_once_and_reports_the_502(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _Gateway(bad=1)
+    data = _bench_through(monkeypatch, server, "--no-retry")
+    http = data["http"]
+    assert len(server.requests) == 2  # one request per call: nothing was sent again
+    assert (http["attempts"], http["requests"], http["retries"]) == (2, 2, 0)
+    assert http["retry_wait_ms"] == 0
+    assert http["status"] == {"502": 1, "200": 1}
+    assert data["errors"] == 1
+    assert data["no_retry"] is True
+
+
+def test_summarize_separates_final_statuses_from_every_attempt() -> None:
+    attempts = [
+        bench.Attempt(100.0, "502", "retry", 250),
+        bench.Attempt(120.0, "502", "retry", 500),
+        bench.Attempt(90.0, "200", "ok"),
+    ]
+    http = bench.summarize([{"meta": {"elapsed_ms": 1000}}], attempts)["http"]
+    assert http["attempts"] == 3 and http["requests"] == 1 and http["retries"] == 2
+    assert http["attempt_status"] == {"502": 2, "200": 1}
+    assert http["status"] == {"200": 1}
+    assert http["retry_wait_ms"] == 750

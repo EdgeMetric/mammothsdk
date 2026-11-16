@@ -798,12 +798,17 @@ schemas:
       calls: {type: integer}
       errors: {type: integer}
       error_codes: {type: object}
+      no_retry: {type: boolean}
       http:
         type: object
         required: [requests, status, p50_ms, p95_ms, max_ms]
         properties:
           requests: {type: integer}
           status: {type: object}
+          attempts: {type: integer}
+          retries: {type: integer}
+          retry_wait_ms: {type: integer}
+          attempt_status: {type: object}
           p50_ms: {type: [number, "null"]}
           p95_ms: {type: [number, "null"]}
           max_ms: {type: [number, "null"]}

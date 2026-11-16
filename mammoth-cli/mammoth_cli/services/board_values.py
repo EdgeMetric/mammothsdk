@@ -139,6 +139,31 @@ def _pages(canvas_doc: Mapping[str, Any]) -> list[tuple[str, Mapping[str, Any]]]
     return pages
 
 
+def pages_without_values(
+    canvas_doc: Mapping[str, Any], bindings: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """The pages that have cards or tiles but no figure bound to a descriptor.
+
+    Values used to cover the first page only on a two-page board, with nothing saying the
+    second was left out (mammothsdk#442).
+
+    Args:
+        canvas_doc: The ``canvas get`` payload.
+        bindings: :func:`figure_bindings` of it.
+
+    Returns:
+        ``{"page", "title"}`` for each such page, in canvas order.
+    """
+    bound = {str(binding["figure"]).split(":")[0] for binding in bindings}
+    skipped: list[dict[str, Any]] = []
+    for page_id, page in _pages(canvas_doc):
+        focus = page.get("focus")
+        has_cards = isinstance(focus, Mapping) and bool(focus.get("kpis"))
+        if (has_cards or page.get("added")) and page_id not in bound:
+            skipped.append({"page": page_id, "title": page.get("title")})
+    return skipped
+
+
 def _tile_axes(canvas_doc: Mapping[str, Any]) -> dict[str, tuple[str, frozenset[str]]]:
     """``figure id -> (axis field, measure names)`` for each tile grouped by a date or a
     dimension: what an evaluated row must carry besides its numbers to be drawn."""
@@ -258,6 +283,25 @@ def attach_values(
     return values
 
 
+def board_style(canvas_doc: Any) -> dict[str, Any] | None:
+    """The board's theme and light/dark mode from its canvas, or None when it names neither.
+
+    The theme was readable only from a screenshot of the editor (mammothsdk#419).
+
+    Args:
+        canvas_doc: The canvas read (``{"canvas": {...}}`` or the canvas itself).
+
+    Returns:
+        ``{"style_id", "mode"}`` with what the canvas carries, or None.
+    """
+    if not isinstance(canvas_doc, Mapping):
+        return None
+    inner = canvas_doc.get("canvas")
+    canvas = inner if isinstance(inner, Mapping) else canvas_doc
+    style = {key: canvas.get(key) for key in ("style_id", "mode") if canvas.get(key)}
+    return style or None
+
+
 def board_values(service: Any, dashboard_id: int) -> dict[str, Any]:
     """The evaluated KPI and tile numbers of ``dashboard_id`` (one descriptor-data call).
 
@@ -267,9 +311,13 @@ def board_values(service: Any, dashboard_id: int) -> dict[str, Any]:
     """
     try:
         canvas_doc = _dump(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        style = board_style(canvas_doc)
         bindings = figure_bindings(canvas_doc if isinstance(canvas_doc, Mapping) else {})
         if not bindings:
-            return {"unavailable": "the canvas has no KPI or tile bound to a descriptor"}
+            unbound: dict[str, Any] = {
+                "unavailable": "the canvas has no KPI or tile bound to a descriptor"
+            }
+            return {**unbound, "style": style} if style else unbound
         ids = sorted({did for binding in bindings for did in binding["descriptors"].values()})
         body = {"params": {"descriptor_ids": ids}}
         evaluated = service.wait_if_job(
@@ -278,6 +326,17 @@ def board_values(service: Any, dashboard_id: int) -> dict[str, Any]:
         results = results_of(evaluated)
         if results is None:
             return {"unavailable": "descriptor-data returned no results"}
-        return {"values": attach_values(bindings, results)}
+        out: dict[str, Any] = {"values": attach_values(bindings, results)}
+        if style:
+            out["style"] = style
+        skipped = pages_without_values(canvas_doc, bindings)
+        if skipped:
+            out["pages_not_evaluated"] = skipped
+            out["note"] = (
+                "These pages have cards or tiles but the bake bound none of them to a "
+                "number, so their values are not shown. Read them in the app, or run "
+                f"mammoth dashboard get {dashboard_id} again once the page has baked."
+            )
+        return out
     except Exception as exc:  # noqa: BLE001 -- the write already succeeded
         return {"unavailable": getattr(exc, "message", None) or str(exc)}

@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 944
+method_count: 946
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -600,8 +600,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_give
   implementation_origin: mammoth.api.agents.AgentsAPI.access_grant_give
-  signature: 'access_grant_give(self, emails: ''list[str]'', level: ''str'', items: ''list[dict[str, Any]]'')
-    -> ''dict[str, Any]'''
+  signature: 'access_grant_give(self, emails: ''list[str]'', level: ''str'', items: ''list[dict[str, Any]]'',
+    can_download: ''bool | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.access.grant.give
   alias_of: null
@@ -626,7 +626,7 @@ methods:
 - sdk_symbol: mammoth.api.agents.AgentsAPI.access_grant_update
   implementation_origin: mammoth.api.agents.AgentsAPI.access_grant_update
   signature: 'access_grant_update(self, grant_id: ''int'', level: ''str | None'' = None, items: ''list[dict[str,
-    Any]] | None'' = None) -> ''dict[str, Any]'''
+    Any]] | None'' = None, can_download: ''bool | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.access.grant.update
   alias_of: null
@@ -775,8 +775,8 @@ methods:
   implementation_origin: mammoth.api.agents.AgentsAPI.access_settings_update
   signature: 'access_settings_update(self, enabled: ''bool | None'' = None, can_make_changes: ''bool |
     None'' = None, downloads: ''bool | None'' = None, viewers_explore: ''bool | None'' = None, managers:
-    ''list[str] | None'' = None, role_exceptions: ''list[dict[str, Any]] | None'' = None) -> ''dict[str,
-    Any]'''
+    ''list[str] | None'' = None, role_exceptions: ''list[dict[str, Any]] | None'' = None, ask_mode: ''bool
+    | None'' = None, monthly_question_limit: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.access.settings.update
   alias_of: null
@@ -1058,6 +1058,20 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
+  implementation_origin: mammoth.api.agents.AgentsAPI.session_credential_test
+  signature: 'session_credential_test(self, session_id: ''str'', widget_id: ''str'', credentials: ''dict[str,
+    Any]'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - TestAgentCredentialCard
+  canonical_command: connector.draft.credentials
+  alias_of: null
+  no_command_reason: null
+  mutation_class: external_effect
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -3159,13 +3173,13 @@ methods:
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_connection
   implementation_origin: mammoth.api.connectors.ConnectorsAPI.update_connection
   signature: 'update_connection(self, connector_key: ''str'', connection_key: ''str'', credentials: ''dict[str,
-    Any]'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+    Any]'', project_id: ''int | None'' = None, name: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: connector.connection.update
   alias_of: null
   no_command_reason: null
   mutation_class: external_effect
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
@@ -6034,6 +6048,19 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_source
+  implementation_origin: mammoth.api.datasets.DatasetsAPI.refresh_source
+  signature: 'refresh_source(self, dataset_id: ''int'', source_type: ''str'', source_id: ''int | None''
+    = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids: []
+  canonical_command: null
+  alias_of: dataset.refresh
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
   implementation_origin: mammoth.api.datasets.DatasetsAPI.remove_definition
   signature: 'remove_definition(self, dataset_id: ''int'', definition_id: ''str'', workspace_id: ''int
@@ -6148,7 +6175,7 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
@@ -11973,7 +12000,8 @@ methods:
     ''dict[str, str] | None'' = None, label_ids: ''list[int] | None'' = None, condition: ''Condition |
     CompoundCondition | NotCondition | None'' = None, timeout: ''int | None'' = None, target_project_id:
     ''int | None'' = None, trigger_type: ''TriggerType'' = <TriggerType.PIPELINE: ''pipeline''>, run_immediately:
-    ''bool'' = True) -> ''int'''
+    ''bool'' = True, columns: ''list[str] | None'' = None, drop_columns: ''list[str] | None'' = None)
+    -> ''int'''
   openapi_operation_ids: []
   canonical_command: view.export.dataset
   alias_of: null

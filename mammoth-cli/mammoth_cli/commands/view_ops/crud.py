@@ -12,6 +12,7 @@ from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import (
     _DATAVIEW_GET_SYMBOL,
     _FIND_DATASET_SYMBOL,
+    _view_parent_dataset_id,
     apply_column_renames,
 )
 from mammoth_cli.commands.view.columns import _display_name_map
@@ -277,18 +278,26 @@ def _view_payload(value: Any) -> Any:
 def view_delete(invocation: Invocation) -> HandlerResult:
     """Permanently delete one view by id. Prompt or ``--yes`` required.
 
-    ``dataset_id`` is required: the trailing positional, the structured input
-    field, or a typed resource reference must name the exact parent. It is
-    forwarded to the SDK so deletion uses exactly that parent endpoint and
-    never performs a project-wide parent probe before a destructive call.
+    ``dataset_id`` is optional (mammothsdk#403): the trailing positional, the
+    structured input field, or a typed resource reference may name the exact
+    parent. When none does, the parent is read from the view's own record (as
+    ``view get`` does), never guessed by probing other datasets. Either way it
+    is forwarded to the SDK so deletion uses exactly that parent endpoint.
     """
     view_id = _view_id(invocation)
     enforce_confirmation(invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete view {view_id}")
     document = invocation.load_input() or {}
-    dataset_id = _resolve_exact_dataset_id(invocation, view_id, document, required=True)
-    context: dict[str, Any] = {"view_id": view_id, "dataset_id": dataset_id}
-    kwargs = bind_command_inputs(invocation.command_id, document, **context)
+    explicit_dataset_id = _resolve_exact_dataset_id(
+        invocation, view_id, document, allow_missing=True
+    )
     with open_service(invocation) as (service, auth):
+        dataset_id = (
+            explicit_dataset_id
+            if explicit_dataset_id is not None
+            else _view_parent_dataset_id(service, invocation, view_id)
+        )
+        context: dict[str, Any] = {"view_id": view_id, "dataset_id": dataset_id}
+        kwargs = bind_command_inputs(invocation.command_id, document, **context)
         data = service.call(_symbol(invocation), **kwargs)
         # The server answers 202 with the job that deletes the view; the view is still
         # readable until that job finishes, so wait for it before reading the view back.

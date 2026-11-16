@@ -6,6 +6,64 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- `view.export.to_dataset` takes `columns` (send only these) or `drop_columns` (send all but these), applied through the export's column mapping, so personal columns can be left out of a send without a copied view. An unknown column, both lists at once, nothing left to send, or a rename of a column that isn't sent is refused before anything is sent (mammothsdk#404).
+- `DatasetsAPI.refresh_source` pulls a webhook or connector dataset in again from its source (mammothsdk#372).
+- `ConnectorsAPI.update_connection` takes `name`, sent with the credentials, to rename a connection whose connector model has a name (custom REST/code connectors) (mammothsdk#413).
+- `AgentsAPI.access_grant_give` and `access_grant_update` take `can_download`; `access_settings_update` takes `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `AgentsAPI.session_credential_test` answers an agent chat's credential card (mammothsdk#319).
+
+### Added (next mammoth-cli)
+
+- `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332).
+- `view export dataset` accepts `columns` and `drop_columns` (mammothsdk#404); the append schema check compares only the columns actually sent.
+- `webhook create`, `webhook get` and `webhook update` take `--reveal` to print a secure webhook's secret. Without it the masked result carries `secret_redacted: true` and the command that reveals it (mammothsdk#373).
+
+- `connector connection update` takes `name` beside `credentials` to rename a connection (custom REST/code connectors), and waits for the save job (mammothsdk#413).
+- `agent access grant give` and `grant update` accept `can_download`; `agent access settings update` accepts `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `dashboard get` shows the board's theme and light/dark mode as `style: {style_id, mode}`, and `dashboard create-blank` and `dashboard update` take `style_id` and `mode` (`light`/`dark`) input fields to set them (mammothsdk#419).
+- `connector draft credentials DRAFT_ID --input @FILE --yes` answers the draft chat's open key card ("Test and connect"), so many accounts of one source can be connected from a script. Credentials come from a file or stdin; inline JSON is refused (mammothsdk#319).
+- `mammoth bench` counts every HTTP attempt (`http.attempts`, `retries`, `attempt_status`, `retry_wait_ms`), so a retried 502 no longer looks like a clean run, and `--no-retry` sends each request once (mammothsdk#431).
+- `dataset rename` takes the new name as a second argument or `--name`, as well as the `name` input field (mammothsdk#322).
+
+### Changed (next mammoth-io)
+
+- The HTTP log line of a retried or failed request carries the attempt, the retry wait and the Server, Via, X-Cache, X-Amz-Cf-Id and Retry-After response headers (mammothsdk#431).
+
+### Changed (next mammoth-cli)
+
+- Global options such as `--profile`, `--project`, `--output` and `--timeout` now work before the subcommand as well as after it (`mammoth --profile X project list`). Giving the same option on both sides with different values is a usage error (mammothsdk#303).
+- `dataset find` no longer lists every project first when the search results already name their projects: one request instead of a dozen on large accounts (mammothsdk#436).
+- `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350).
+- `view delete VIEW` no longer needs the dataset id: it reads the view's parent dataset itself (mammothsdk#403).
+
+### Fixed (next mammoth-io, mammoth-cli)
+
+- `agent chat` with `wait` keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and prints the final message (mammothsdk#417).
+
+### Fixed (next mammoth-cli)
+
+- `view data query` reads the view and its dataset once per command instead of re-reading the view (mammothsdk#400).
+- `dataset refresh` pulls a webhook or connector dataset from its own source instead of always asking for a URL refresh, which failed for anything not loaded from a URL (mammothsdk#372, mammothsdk#414).
+- `dataset create` for a cloud database with a `query` and no `schedule_properties` sends a one-off pull (`moment`, `now`, `replace`) and turns `query_properties.table` into `table_name`, and says so in `input_adjusted`; the server failed the job instead (mammothsdk#382).
+- `view data aggregate` accepts display names, internal names and loosely spelled names alike; an unknown column is named with the valid ones instead of failing as "Job failed" (mammothsdk#438).
+- The `view export dataset` help no longer says the default mode empties the target first: it replaces its rows, and `APPEND_TO_DS` adds a full copy on every run (mammothsdk#329).
+- `schedule create` and `schedule list` are marked retired and point to `automation create` and `automation list`, not the web app (mammothsdk#323, mammothsdk#437).
+- `auth login --device` and `--method oauth` check the credential store before showing the sign-in code, and use the owner-only file with a notice when there is no OS keyring, so an approval is no longer lost (mammothsdk#303).
+- `dashboard edit` and the other dashboard authoring commands give one blank-column warning per table, listing the columns, when the board's figures read none of the sparse columns, instead of one warning per column (mammothsdk#405).
+
+- `automation schedule set` clears the weekday (or month day) of the old frequency when the frequency changes, so weekly to daily no longer keeps running on one weekday (mammothsdk#439).
+- `dataset delete` reports success when the read-back after the delete answers 403, as dashboard delete already did (mammothsdk#352).
+- `dataset trash` waits for its job instead of exiting 0 with `processing`. A trash refused because an automation uses the dataset exits with `has_dependents` and names the automation (mammothsdk#365).
+- `view export dataset` refuses `blank_columns` that name no column the append leaves blank, instead of ignoring them; to leave columns out, use `drop_columns` (mammothsdk#402).
+- `dashboard pages add` refuses page keys the server would drop (a page-level `dataview_id` among them) in the dry run as in the real run. Its help shows `"dataset": {"dataview_id": V}` and `date_field` (mammothsdk#441).
+- `dashboard pages add` no longer checks a page on its own table against the board's table, so its columns no longer read as unknown. It also waits for the bake, and a bake still running reads as `bake: pending`, not `bake_ok: false` (mammothsdk#406).
+- `dashboard figure add` with an `intent` saves the figure the intent resolved; the server route only resolved it. When it can't save, the result says `saved: false` and names the command (mammothsdk#406).
+- `file upload` of a one-sheet workbook follows the server's sheet extraction to the dataset it makes, instead of reporting `no_dataset` with PDF advice (mammothsdk#374).
+- The values of `dashboard v3 generate` and `dashboard chat edit` name the pages they could not evaluate (`pages_not_evaluated`) instead of silently showing the first page only (mammothsdk#442).
+- The blank-board help and the dashboards recipe no longer say a board reads one table: each page can read its own (mammothsdk#440).
+
 ## mammoth-mcp-server 0.2.15 (2026-11-13)
 
 ### Fixed (mammoth-mcp-server 0.2.15)

@@ -477,6 +477,8 @@ def _reject_append_schema_mismatch(
     dataset_id: int | None,
     target_ds_id: int,
     column_mapping: Any,
+    keep: Any = None,
+    drop: Any = None,
 ) -> tuple[list[str], list[str]]:
     """Refuse an ``APPEND_TO_DS``/``REPLACE_IN_DS`` export into an existing target
     whose source has a column the target
@@ -495,8 +497,15 @@ def _reject_append_schema_mismatch(
     Returns the target-only column names (present in the target schema, not
     in the source, not a ``column_mapping`` destination) and the type
     warnings for mapped pairs -- both allowed, but worth a warning.
+
+    ``keep``/``drop`` are the export's ``columns``/``drop_columns`` selection: only the
+    columns sent are checked against the target (mammothsdk#404).
     """
     source_names = _source_column_names(service, dataview_id, dataset_id)
+    if isinstance(keep, list):
+        source_names = source_names & {str(name) for name in keep}
+    elif isinstance(drop, list):
+        source_names = source_names - {str(name) for name in drop}
     target_schema = _target_dataset_schema(service, target_ds_id)
     target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}

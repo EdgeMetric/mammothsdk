@@ -46,6 +46,13 @@ from mammoth_cli.runtime.verify import export_wait_budget, read_export_ids, wait
 from mammoth_cli.services.append_blank_columns import (
     BLANK_COLUMNS_FIELD,
     acknowledged_blank_columns,
+    reject_unused_blank_columns,
+)
+
+#: How to keep source columns out of a dataset export, for a misused ``blank_columns``.
+_DROP_HINT = (
+    'To keep source columns out of the target, pass "drop_columns": [names] (or '
+    '"columns": [names] to keep only those); drop it from the input otherwise.'
 )
 
 # The SDK exposes these destinations as typed helpers on ``View.export``.  A
@@ -389,10 +396,17 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 dataset_id,
                 int(target_ds_id),
                 kwargs.get("column_mapping"),
+                keep=kwargs.get("columns"),
+                drop=kwargs.get("drop_columns"),
+            )
+            reject_unused_blank_columns(
+                int(target_ds_id), target_only_columns, blank_columns, drop_hint=_DROP_HINT
             )
             blank_warnings = acknowledged_blank_columns(
                 int(target_ds_id), target_only_columns, blank_columns
             )
+        elif is_dataset_route:
+            reject_unused_blank_columns(None, [], blank_columns, drop_hint=_DROP_HINT)
         waits_for_run = _waits_for_export_run(invocation.command_id, kwargs)
         known_exports = (
             read_export_ids(service, dataview_id, dataset_id) if waits_for_run else set()

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from mammoth.condition import Condition
-from mammoth.exceptions import MammothExportError, MammothValidationError
+from mammoth.exceptions import MammothColumnError, MammothExportError, MammothValidationError
 from mammoth.models.exports import (
     BigQueryExportType,
     ExportStatus,
@@ -753,6 +753,117 @@ class TestToDataset:
             "col_b": "renamed_b",
             "col_c": "col_c",
         }
+
+    async def test_drop_columns_sends_every_other_column(self, mock_client):
+        # mammothsdk#404: leaving personal columns out of a send needed a copied view.
+        view = View(
+            mock_client,
+            {
+                "id": 2001,
+                "name": "Multi Col View",
+                "properties": {
+                    "columns": [
+                        {
+                            "display_name": "col_a",
+                            "internal_name": "column_aaa",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_b",
+                            "internal_name": "column_bbb",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_c",
+                            "internal_name": "column_ccc",
+                            "type": "TEXT",
+                        },
+                    ],
+                },
+            },
+            501,
+        )
+        captured = self._capture_run(view)
+        await view.export.to_dataset("New DS", drop_columns=["col_b"])
+        assert captured["target_properties"]["COLUMN_MAPPING"] == {
+            "col_a": "col_a",
+            "col_c": "col_c",
+        }
+
+    async def test_columns_keeps_only_those_with_renames(self, mock_client):
+        view = View(
+            mock_client,
+            {
+                "id": 2001,
+                "name": "Multi Col View",
+                "properties": {
+                    "columns": [
+                        {
+                            "display_name": "col_a",
+                            "internal_name": "column_aaa",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_b",
+                            "internal_name": "column_bbb",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_c",
+                            "internal_name": "column_ccc",
+                            "type": "TEXT",
+                        },
+                    ],
+                },
+            },
+            501,
+        )
+        captured = self._capture_run(view)
+        await view.export.to_dataset(
+            "New DS", columns=["col_c", "col_a"], column_mapping={"col_a": "a"}
+        )
+        assert captured["target_properties"]["COLUMN_MAPPING"] == {"col_c": "col_c", "col_a": "a"}
+
+    @pytest.mark.parametrize(
+        ("kwargs", "error"),
+        [
+            ({"columns": ["col_a"], "drop_columns": ["col_b"]}, MammothValidationError),
+            ({"drop_columns": ["nope"]}, MammothColumnError),
+            ({"drop_columns": ["col_a", "col_b", "col_c"]}, MammothValidationError),
+            ({"columns": ["col_a"], "column_mapping": {"col_b": "x"}}, MammothValidationError),
+        ],
+    )
+    async def test_a_bad_column_selection_is_refused(self, mock_client, kwargs, error):
+        view = View(
+            mock_client,
+            {
+                "id": 2001,
+                "name": "Multi Col View",
+                "properties": {
+                    "columns": [
+                        {
+                            "display_name": "col_a",
+                            "internal_name": "column_aaa",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_b",
+                            "internal_name": "column_bbb",
+                            "type": "TEXT",
+                        },
+                        {
+                            "display_name": "col_c",
+                            "internal_name": "column_ccc",
+                            "type": "TEXT",
+                        },
+                    ],
+                },
+            },
+            501,
+        )
+        self._capture_run(view)
+        with pytest.raises(error):
+            await view.export.to_dataset("New DS", **kwargs)
 
     async def test_condition_forwarded_to_seam_untouched(self, export_view):
         captured = self._capture_run(export_view)

@@ -1380,6 +1380,8 @@ class ViewExport:
         target_project_id: int | None = None,
         trigger_type: TriggerType = TriggerType.PIPELINE,
         run_immediately: bool = True,
+        columns: list[str] | None = None,
+        drop_columns: list[str] | None = None,
     ) -> int:
         """Save this view's data as an internal Mammoth dataset (branch out).
 
@@ -1417,6 +1419,10 @@ class ViewExport:
                 and adds no step.
             run_immediately: Must stay True: an export that does not run writes no
                 dataset to return.
+            columns: Display names of the only view columns to send (in this order);
+                every run of the export sends just these. Not with ``drop_columns``.
+            drop_columns: Display names of view columns to leave out; every other
+                column is sent. Not with ``columns``.
 
         Returns:
             The id of the dataset written to (new when ``target_ds_id`` is None,
@@ -1445,7 +1451,9 @@ class ViewExport:
                 "source_project_id": getattr(self._client, "project_id", None),
                 "user_id": user.get("id") if isinstance(user, dict) else None,
             }
-        if column_mapping and target_ds_id is None:
+        if columns is not None or drop_columns is not None:
+            column_mapping = self._selected_column_mapping(columns, drop_columns, column_mapping)
+        elif column_mapping and target_ds_id is None:
             # A rename-only map (e.g. {"petal_width": "width_cm"}) must not
             # silently drop every other column: the backend treats a
             # non-empty COLUMN_MAPPING as an allow-list, so any view column
@@ -1466,6 +1474,48 @@ class ViewExport:
         return await self._view._run_internal_dataset_export(
             target_properties, timeout, condition, trigger
         )
+
+    def _selected_column_mapping(
+        self,
+        columns: list[str] | None,
+        drop_columns: list[str] | None,
+        column_mapping: dict[str, str] | None,
+    ) -> dict[str, str]:
+        """The ``COLUMN_MAPPING`` that sends only the selected view columns.
+
+        The backend treats a non-empty ``COLUMN_MAPPING`` as an allow-list, so mapping only
+        the kept columns leaves the others out on every run (mammothsdk#404).
+
+        Args:
+            columns: The columns to keep, or ``None``.
+            drop_columns: The columns to leave out, or ``None``.
+            column_mapping: Renames to apply to kept columns.
+
+        Returns:
+            A source -> destination map with one entry per kept column.
+
+        Raises:
+            MammothValidationError: Both selections given, a selection that keeps nothing,
+                or a rename of a column that is not sent.
+            MammothColumnError: A named column that is not in the view.
+        """
+        if columns is not None and drop_columns is not None:
+            raise MammothValidationError("Give 'columns' or 'drop_columns', not both.")
+        names = list(self._view.display_names)
+        named = list(columns if columns is not None else drop_columns or [])
+        missing = [name for name in named if name not in names]
+        if missing:
+            raise MammothColumnError(", ".join(missing), names)
+        kept = named if columns is not None else [n for n in names if n not in set(named)]
+        if not kept:
+            raise MammothValidationError("The column selection leaves no column to send.")
+        renames = column_mapping or {}
+        unsent = sorted(set(renames) - set(kept))
+        if unsent:
+            raise MammothValidationError(
+                f"column_mapping renames columns that are not sent: {', '.join(unsent)}."
+            )
+        return {name: renames.get(name, name) for name in kept}
 
     async def to_csv(self, output_path: str | None = None, timeout: int = 300) -> Path:
         """Download dataview data as a local CSV file.

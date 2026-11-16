@@ -1574,10 +1574,11 @@ sdk_methods:
   canonical_command: connector.connection.update
   alias_of: null
   mutation_class: external_effect
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Require --yes if validation contacts the destination; fixture required.
+  notes: Require --yes if validation contacts the destination; fixture required. An optional name
+    is sent with the credentials (the server validates both together); waits for the save job.
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   canonical_command: connector.ds-config.update
   alias_of: null
@@ -2984,6 +2985,15 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_source
+  canonical_command: null
+  alias_of: dataset.refresh
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: dataset refresh picks it for a connector (cloud), cloud-file (file) or webhook dataset, from
+    the dataset's sources; a URL dataset uses refresh_from_url.
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
   canonical_command: dataset.definition.remove
   alias_of: null
@@ -3053,7 +3063,7 @@ sdk_methods:
   canonical_command: dataset.trash
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.update
@@ -5221,7 +5231,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Secure creation uses the secret-output rule (--secret-out/--show-secret).
+  notes: A secure webhook's secret is masked (secret_redacted true); --reveal prints it.
 - sdk_symbol: mammoth.api.webhooks.WebhooksAPI.delete
   canonical_command: webhook.delete
   alias_of: null
@@ -5271,7 +5281,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Reject an empty patch; a newly issued secret uses the secret-output rule.
+  notes: Reject an empty patch; a newly issued secret is masked unless --reveal is given.
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
   canonical_command: workflow.attach-dataset
   alias_of: null
@@ -5980,8 +5990,7 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
-  notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing
-    target.'
+  notes: 'Mutation class dynamic: benign_mutation for a new target; writing into an existing target changes that target. REPLACE_IN_DS (the default) does not empty the target: it removes only the rows this same export sent on its previous run and adds the new ones, so rows from other views stay. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
 - sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
   canonical_command: view.export.elasticsearch
   alias_of: null
@@ -6551,6 +6560,15 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: "Each table's request path, records path and paging, then the whole spec; credentials are references and anything that could be a secret reads [redacted]."
+- sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
+  canonical_command: connector.draft.credentials
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: [TestAgentCredentialCard]
+  notes: Answers the draft chat's open key card ("Test and connect"). credentials come from an --input
+    file or stdin, never inline JSON; widget_id defaults to the chat's open card. Needs --yes.
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
   canonical_command: connector.version.spec.get
   alias_of: null
