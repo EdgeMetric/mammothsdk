@@ -657,3 +657,35 @@ def test_a_workbook_that_made_no_dataset_gets_no_pdf_advice(
     assert data["status"] == "no_dataset"
     assert "PDF" not in data["message"]
     assert len([call for call in fake_service.call_log if call[0] == _LIST]) == 10
+
+
+def test_the_extraction_wait_honours_timeout_and_skips_an_append(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processing"}],
+    }
+    fake_service.responses[_LIST] = {"files": []}
+    file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"], timeout=0))
+    assert len([call for call in fake_service.call_log if call[0] == _LIST]) == 1
+
+
+def test_extraction_boundary_and_duplicate_names_use_the_lowest_file_id(
+    fake_service: FakeMammothService,
+) -> None:
+    files = [
+        {"file_id": 60, "name": "a.xlsx"},
+        {"file_id": 50, "name": "a.xlsx"},
+    ]
+    fake_service.responses[_LIST] = {
+        "files": [
+            {"id": 49, "name": "a.xlsx", "additional_info": {"final_ds_id": 1}},
+            {"id": 50, "name": "a.xlsx", "additional_info": {"final_ds_id": 2}},
+            {"id": 60, "name": "a.xlsx", "additional_info": {"final_ds_id": 3}},
+        ]
+    }
+    found = file_cmd._follow_extracted_sheets(fake_service, files, 0)
+    assert found == [2, 3]

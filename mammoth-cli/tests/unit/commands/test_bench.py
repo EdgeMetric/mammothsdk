@@ -12,9 +12,9 @@ import pytest
 from mammoth import client as sdk_client
 
 from mammoth_cli.commands import bench
-from mammoth_cli.context import resolver
 from mammoth_cli.context.resolver import ExplicitLogin
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import token_scope
 from mammoth_cli.runtime.invocation import Invocation
 
 _HTTP = logging.getLogger("mammoth.http")
@@ -118,7 +118,9 @@ def test_bench_reports_the_durations_the_sdk_logs(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(
         httpx, "AsyncClient", lambda **kw: real(**{**kw, "transport": httpx.MockTransport(server)})
     )
-    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_: 4)
+    # Each embedded call asks /workspaces/current whether the token is pinned to projects;
+    # answer "not pinned" here so the server sees only the project lists under test.
+    monkeypatch.setattr(token_scope, "_live_pins", lambda _service: None)
     login = ExplicitLogin(
         api_key=None, api_secret=None, workspace_id=4, api_token="mm_x", server_prefix="box"
     )
@@ -213,7 +215,9 @@ def _bench_through(
     monkeypatch.setattr(
         httpx, "AsyncClient", lambda **kw: real(**{**kw, "transport": httpx.MockTransport(server)})
     )
-    monkeypatch.setattr(resolver, "resolve_token_workspace", lambda *_: 4)
+    # Each embedded call asks /workspaces/current whether the token is pinned to projects;
+    # answer "not pinned" here so the server sees only the project lists under test.
+    monkeypatch.setattr(token_scope, "_live_pins", lambda _service: None)
     monkeypatch.setattr(sdk_client, "_RETRY_BACKOFF_S", 0.01)
     login = ExplicitLogin(
         api_key=None, api_secret=None, workspace_id=4, api_token="mm_x", server_prefix="box"

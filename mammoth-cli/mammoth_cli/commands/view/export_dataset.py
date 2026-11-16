@@ -499,7 +499,8 @@ def _reject_append_schema_mismatch(
     warnings for mapped pairs -- both allowed, but worth a warning.
 
     ``keep``/``drop`` are the export's ``columns``/``drop_columns`` selection: only the
-    columns sent are checked against the target (mammothsdk#404).
+    columns sent are checked against the target (mammothsdk#404). With a non-empty
+    ``column_mapping``, the kept columns it omits map to themselves, as the SDK sends them.
     """
     source_names = _source_column_names(service, dataview_id, dataset_id)
     if isinstance(keep, list):
@@ -509,6 +510,9 @@ def _reject_append_schema_mismatch(
     target_schema = _target_dataset_schema(service, target_ds_id)
     target_names = set(target_schema)
     mapping = column_mapping if isinstance(column_mapping, dict) else {}
+    if mapping and (isinstance(keep, list) or isinstance(drop, list)):
+        # ``to_dataset`` fills an identity entry for every kept column the mapping omits.
+        mapping = {**{name: name for name in source_names}, **mapping}
     # View.columns (mammoth/view.py) maps display name -> internal name; these
     # dict keys are display names, matching what the backend's own schema
     # match compares by -- never the internal ids in the dict's values.

@@ -326,7 +326,7 @@ def with_known_columns(
         The document with its column references rewritten.
 
     Raises:
-        CliError: ``column_not_found`` for a column the view does not have.
+        CliError: ``unknown_column`` for a column the view does not have.
     """
     if not display_to_internal:
         return document

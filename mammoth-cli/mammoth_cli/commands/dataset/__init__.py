@@ -793,7 +793,9 @@ def dataset_rename(invocation: Invocation) -> HandlerResult:
     document = invocation.load_input()
     positional_name = invocation.positional("name")
     if positional_name is not None:
-        if document is not None and document.get("name") not in (None, positional_name):
+        # load_input() binds the positional over the document, so compare the raw document.
+        raw = invocation.prepare_input()
+        if raw is not None and raw.get("name") not in (None, positional_name):
             raise CliError(
                 code=CODE_INVALID_ARGUMENT,
                 message="The new name is given twice with different values.",

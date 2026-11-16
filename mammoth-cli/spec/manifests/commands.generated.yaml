@@ -28835,10 +28835,11 @@ commands:
   - CT-VIEW-EXPORT-DATASET-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: 'Mutation class dynamic: benign_mutation for a new target; writing into an existing
-    target changes that target. REPLACE_IN_DS (the default) does not empty the target: it removes only
-    the rows this same export sent on its previous run and adds the new ones, so rows from other views
-    stay. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
+  known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
+    an existing target. REPLACE_IN_DS (the default) does not empty the target: it drops the batches the
+    trigger of this export added on earlier runs (mvc-service shepherd.py drop_data_condition) and adds
+    the new rows, so rows from other views stay. APPEND_TO_DS adds a full copy of the rows on every run,
+    so totals grow each run.'
   reviewed_by: primary
 - command_id: view.export.delete
   command_path: view export delete

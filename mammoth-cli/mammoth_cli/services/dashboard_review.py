@@ -331,16 +331,20 @@ def _once_per_table(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         names = [str(r["column"]) for r in group]
         what = "blank (null or empty)" if issue == "blank_values" else "0"
-        folded.append(
-            {
-                "issue": issue,
-                "columns": names,
-                "detail": (
-                    f"{len(names)} columns are partly {what}: {', '.join(names)}. No figure on "
-                    "the board reads them yet; check a column's blanks once a figure uses it."
-                ),
-            }
+        detail = (
+            f"{len(names)} columns are partly {what}: {', '.join(names)}. No figure on "
+            "the board reads them yet; check a column's blanks once a figure uses it."
         )
+        # A blank record can also carry its column's zero rate; keep it in the fold.
+        zeros = [
+            part
+            for r in group
+            for part in str(r["detail"]).rstrip(".").split("; ")
+            if issue == "blank_values" and part.endswith(" is 0")
+        ]
+        if zeros:
+            detail += " Also: " + "; ".join(zeros) + "."
+        folded.append({"issue": issue, "columns": names, "detail": detail})
     return folded
 
 

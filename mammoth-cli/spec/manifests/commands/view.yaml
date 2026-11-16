@@ -768,7 +768,7 @@ commands:
       view_id: result.view_id
       project_id: result.project_id
     kind: data
-  known_restrictions: 'Mutation class dynamic: benign_mutation for a new target; writing into an existing target changes that target. REPLACE_IN_DS (the default) does not empty the target: it removes only the rows this same export sent on its previous run and adds the new ones, so rows from other views stay. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run. Omit dataset_name unless the user gave one; the product default ''Result Dataset''
+  known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing target. REPLACE_IN_DS (the default) does not empty the target: it drops the batches the trigger of this export added on earlier runs (mvc-service shepherd.py drop_data_condition) and adds the new rows, so rows from other views stay. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run. Omit dataset_name unless the user gave one; the product default ''Result Dataset''
     is used (never invent a name such as the view''s name). The export is appended to the source pipeline
     (end_of_pipeline) and re-runs with it; target_project_id sends the dataset into another project (cross-project
     branch-out, proven on release). Result: {dataset_id, project_id, source_view_id, next}. Not a plain

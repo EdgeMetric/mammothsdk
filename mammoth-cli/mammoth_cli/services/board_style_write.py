@@ -78,7 +78,8 @@ def save_board_style(service: Any, dashboard_id: int, choice: Mapping[str, str])
     """Set the chosen theme and mode on the board's canvas and save it.
 
     The canvas is read, changed and saved with the sequence that was read, so a board edited
-    in between is refused instead of overwritten. A new ``style_id`` clears the canvas's
+    in between is refused instead of overwritten. That guard needs ``meta.sequence`` in the canvas
+    read; without one the save is sent unguarded. A new ``style_id`` clears the canvas's
     ``style_tokens``: the renderer prefers inlined tokens, so they would keep the old look.
 
     Args:

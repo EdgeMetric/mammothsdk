@@ -19,6 +19,7 @@ import json
 from typing import Any
 
 import pytest
+from typer._click import exceptions as click_exceptions
 
 from mammoth_cli.app.usage import hoist_global_options
 from mammoth_cli.testing import make_runner
@@ -108,10 +109,17 @@ def test_the_same_value_on_both_sides_is_accepted() -> None:
 
 
 def test_different_values_on_both_sides_are_a_usage_error() -> None:
-    with pytest.raises(Exception, match="given before and after the command"):
+    with pytest.raises(click_exceptions.UsageError, match="given before and after the command"):
         hoist_global_options(["--profile", "a", "doctor", "--profile", "b"])
-    with pytest.raises(Exception, match="--output"):
+    with pytest.raises(click_exceptions.UsageError, match="--output"):
         hoist_global_options(["-o", "json", "doctor", "--output", "table"])
+
+
+def test_a_command_option_value_that_looks_like_a_global_one_is_not_read_as_one() -> None:
+    # `-pending` starts with the short form of --profile; it is the value of --filter.
+    tokens = ["--profile", "a", "view", "list", "--filter", "-pending", "--profile", "a"]
+    assert hoist_global_options(tokens)[:5] == ["view", "list", "--filter", "-pending", "--profile"]
+    assert hoist_global_options(["-p", "a", "view", "list", "--filter", "-pb"])
 
 
 def test_different_values_on_both_sides_fail_through_the_cli() -> None:
@@ -172,7 +180,7 @@ def test_an_unknown_option_on_a_leaf_command_is_untouched() -> None:
 
 
 @pytest.mark.parametrize(
-    "args", [[], ["file"], ["--profile", "prod", "doctor"], ["file", "--output", "json"]]
+    "args", [[], ["file"], ["--profile", "prod", "doctr"], ["file", "--output", "json"]]
 )
 def test_no_usage_error_ever_renders_an_empty_message(args: list[str]) -> None:
     """The regression guard: an agent must never get a blank explanation."""
@@ -187,6 +195,7 @@ def test_the_only_suggested_command_is_one_the_caller_can_run_verbatim() -> None
     ``--output json --no-input`` to the caller's own command would only
     distort what they asked for.
     """
-    assert _error(["--profile", "prod", "doctor"])["recovery_commands"] == [
-        "mammoth doctor --profile prod"
-    ]
+    commands = _error(["--profile", "prod", "doctr"])["recovery_commands"]
+
+    assert commands[0] == "mammoth doctor --help"
+    assert not any("--no-input" in command or "--output" in command for command in commands)

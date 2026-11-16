@@ -1085,3 +1085,57 @@ def test_drop_columns_reaches_the_sdk_and_narrows_the_append_check(
     )
     (call,) = [call for call in fake_service.view_call_log if call[1] == "to_dataset"]
     assert call[2]["drop_columns"] == ["SSN"]
+
+
+def _append_with(
+    fake_service: FakeMammothService, tmp_path: Path, selection: dict[str, object]
+) -> dict[str, object]:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region", "Sales")
+    fake_service.view_responses[(7, "columns")] = {
+        "Region": "column_1",
+        "Sales": "column_2",
+        "SSN": "column_3",
+    }
+    fake_service.view_responses[(7, "column_types")] = {
+        "Region": "TEXT",
+        "Sales": "TEXT",
+        "SSN": "TEXT",
+    }
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "orders",
+                    "target_ds_id": 9,
+                    "save_as_mode": "APPEND_TO_DS",
+                    "column_mapping": {"Region": "Sales"},
+                    **selection,
+                },
+            ),
+            yes=True,
+        )
+    )
+    (call,) = [call for call in fake_service.view_call_log if call[1] == "to_dataset"]
+    return call[2]
+
+
+def test_partial_mapping_with_columns_is_not_refused_for_the_kept_columns(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The SDK fills an identity entry for each kept column the mapping omits, so
+    # columns=[Region, Sales] with {Region: Sales} maps Sales to itself: not incomplete.
+    sent = _append_with(fake_service, tmp_path, {"columns": ["Region", "Sales"]})
+    assert sent["columns"] == ["Region", "Sales"]
+
+
+def test_partial_mapping_with_drop_columns_is_not_refused_for_the_kept_columns(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    sent = _append_with(fake_service, tmp_path, {"drop_columns": ["SSN"]})
+    assert sent["drop_columns"] == ["SSN"]

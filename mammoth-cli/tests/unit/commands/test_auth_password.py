@@ -6,7 +6,6 @@ never reaches the output. No network is touched: the token endpoint is replaced.
 
 from __future__ import annotations
 
-import io
 import json
 import os
 import stat
@@ -14,8 +13,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from typer.testing import CliRunner
 
-from mammoth_cli.commands import auth as auth_cmd
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import make_runner
@@ -44,7 +43,13 @@ def token_endpoint(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
 
 
 def _stdin(monkeypatch: pytest.MonkeyPatch, text: str) -> None:
-    monkeypatch.setattr(auth_cmd.sys, "stdin", io.StringIO(text))
+    """Feed `text` as standard input: CliRunner replaces sys.stdin, so it goes in as `input`."""
+    real = CliRunner.invoke
+
+    def invoke(self: CliRunner, *args: Any, **kwargs: Any) -> Any:
+        return real(self, *args, **{"input": text, **kwargs})
+
+    monkeypatch.setattr(CliRunner, "invoke", invoke)
 
 
 def _error(result: Any) -> dict[str, Any]:

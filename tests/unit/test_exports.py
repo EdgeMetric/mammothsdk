@@ -861,9 +861,10 @@ class TestToDataset:
             },
             501,
         )
-        self._capture_run(view)
+        captured = self._capture_run(view)
         with pytest.raises(error):
             await view.export.to_dataset("New DS", **kwargs)
+        assert captured == {}  # refused before anything reached the export seam
 
     async def test_condition_forwarded_to_seam_untouched(self, export_view):
         captured = self._capture_run(export_view)

@@ -64,19 +64,23 @@ def check_page_specs(pages: Sequence[Any]) -> None:
         label = page.get("title") or f"#{index + 1}"
         unknown = sorted(str(key) for key in page if key not in PAGE_KEYS)
         dataset = page.get("dataset")
-        bad_table = isinstance(dataset, Mapping) and (
-            not dataset or any(key not in _TABLE_KEYS for key in dataset)
+        bad_table = dataset is not None and (
+            not isinstance(dataset, Mapping)
+            or not dataset
+            or any(key not in _TABLE_KEYS for key in dataset)
         )
         if not unknown and not bad_table:
             continue
         if unknown:
             near = {key: nearest_one(key, PAGE_KEYS) for key in unknown}
             message = f"Page '{label}' has keys add-pages does not take: {', '.join(unknown)}."
-            hints = [
-                _TABLE_HINT if key in _TABLE_KEYS else f"'{key}' -> '{near[key]}'"
-                for key in unknown
-                if key in _TABLE_KEYS or near[key]
-            ]
+            hints = list(
+                dict.fromkeys(
+                    _TABLE_HINT if key in _TABLE_KEYS else f"'{key}' -> '{near[key]}'"
+                    for key in unknown
+                    if key in _TABLE_KEYS or near[key]
+                )
+            )
         else:
             message = f"Page '{label}' names its table with keys other than dataview_id."
             hints = [_TABLE_HINT]

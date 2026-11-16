@@ -245,6 +245,12 @@ def hoist_global_options(tokens: Sequence[str]) -> list[str]:
         parsed = _split_option(rest[position], canonical, valued)
         position += 1
         if parsed is None:
+            # The command's own option: its value may look like a global one (``-pending``),
+            # so skip the next token unless it is exactly a global option.
+            own = rest[position - 1]
+            if own.startswith("-") and "=" not in own and position < len(rest):
+                if rest[position] not in canonical and rest[position] != "--":
+                    position += 1
             continue
         name, value, separate = parsed
         if separate and position < len(rest):

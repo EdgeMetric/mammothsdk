@@ -232,3 +232,13 @@ def test_summed_unit_price_points_at_the_revenue_column_the_view_already_has() -
     assert "chart the sum of revenue instead" in finding["detail"]
     assert "qty * price" not in finding["detail"]
     assert "fix" not in finding
+
+
+def test_a_folded_blank_record_keeps_the_zero_rate_detail() -> None:
+    profiles = [
+        {"name": "a", "type": "measure", "nullRate": 0.01, "emptyRate": 0.03},
+        {"name": "b", "type": "measure", "nullRate": 0.02},
+    ]
+    (record,) = [w for w in review(_doc([{"id": "p1"}], profiles=profiles))]
+    assert record["columns"] == ["a", "b"]
+    assert "2% of a is 0" in record["detail"]

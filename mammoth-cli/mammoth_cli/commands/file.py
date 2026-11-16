@@ -370,8 +370,9 @@ def file_upload(invocation: Invocation) -> HandlerResult:
         # A finished upload job does not mean a usable dataset: a CSV with an
         # ambiguous date column lands in ``need_action`` with no view. Report
         # the status the platform holds for each dataset, not an assumed one.
-        if not data and not outcome.get("errors"):
-            data = _follow_extracted_sheets(service, outcome.get("files"))
+        # Not on an append: a followed dataset would be the staging one, not the target.
+        if not data and not outcome.get("errors") and target is None:
+            data = _follow_extracted_sheets(service, outcome.get("files"), invocation.timeout)
         result = _upload_result(
             data,
             lambda dataset_id: _dataset_status(service, dataset_id),
@@ -750,7 +751,7 @@ _EXTRACT_TRIES = 10
 _EXTRACT_PAUSE = 3.0
 
 
-def _follow_extracted_sheets(service: Any, files: Any) -> list[int]:
+def _follow_extracted_sheets(service: Any, files: Any, timeout: float | None = None) -> list[int]:
     """The datasets a one-sheet workbook's extraction made, followed for a short while.
 
     The upload job ends before the server extracts a one-sheet workbook's only sheet, so
@@ -760,23 +761,31 @@ def _follow_extracted_sheets(service: Any, files: Any) -> list[int]:
     Args:
         service: The session service.
         files: ``upload_result``'s ``files`` (uploads that made no dataset). An item of the
-            same name counts only when its id is at least the upload's own file id.
+            same name counts only when its id is at least the upload's own file id (the
+            lowest, when the same name was uploaded twice).
+        timeout: The invocation's ``--timeout`` in seconds; the wait never outlasts it.
+            ``None`` waits the full ``_EXTRACT_TRIES`` polls.
 
     Returns:
         The dataset ids found, or an empty list when none appeared in time.
     """
-    uploaded = {
-        str(item["name"]): int(item["file_id"])
-        for item in (files if isinstance(files, list) else [])
-        if isinstance(item, dict)
-        and isinstance(item.get("file_id"), int)
-        and not item.get("action_needed")
-        and str(item.get("name") or "").lower().endswith(_EXCEL_SUFFIXES)
-    }
+    uploaded: dict[str, int] = {}
+    for item in files if isinstance(files, list) else []:
+        if (
+            isinstance(item, dict)
+            and isinstance(item.get("file_id"), int)
+            and not item.get("action_needed")
+            and str(item.get("name") or "").lower().endswith(_EXCEL_SUFFIXES)
+        ):
+            name = str(item["name"])
+            uploaded[name] = min(item["file_id"], uploaded.get(name, item["file_id"]))
     if not uploaded:
         return []
     names = sorted(uploaded)
-    for attempt in range(_EXTRACT_TRIES):
+    tries = _EXTRACT_TRIES
+    if timeout is not None and _EXTRACT_PAUSE > 0:
+        tries = max(1, min(tries, int(timeout // _EXTRACT_PAUSE) + 1))
+    for attempt in range(tries):
         if attempt:
             time.sleep(_EXTRACT_PAUSE)
         try:
