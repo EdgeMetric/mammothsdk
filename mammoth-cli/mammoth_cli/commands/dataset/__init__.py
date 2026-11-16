@@ -874,8 +874,7 @@ def refresh_source(record: Any) -> tuple[str, int | None]:
 
     Returns:
         ``("webhook", webhook id)`` for a webhook's dataset, ``("cloud", None)`` for a
-        connector table, ``("file", None)`` for a cloud-storage file, else
-        ``("weburl", None)`` (the server says when it is an upload).
+        connector table, else ``("weburl", None)`` (the server says when it is an upload).
     """
     record = record.model_dump(mode="json") if hasattr(record, "model_dump") else record
     sources = record.get("sources") if isinstance(record, dict) else None
@@ -1023,6 +1022,8 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
             # (mammothsdk#352, #303).
             forbidden_means_gone=True,
         )
+        # A 403 read-back counts as gone above only because this list check also has to agree:
+        # a 403 with the dataset still listed raises delete_unverified here, never a success.
         # The get can say gone while ``dataset list`` still shows the dataset: verified only
         # when the list the caller reads next agrees. The list is asked for this one id, so
         # each check is one small request; a server that ignored the filter would return the

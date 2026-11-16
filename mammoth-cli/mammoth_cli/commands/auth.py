@@ -456,9 +456,38 @@ def _say_selection(profile_name: str, selected: bool, previous: str | None) -> N
     else:
         typer.echo(
             f'Profile "{profile_name}" saved; the active profile stays "{previous}". '
-            f'Pass --select to make "{profile_name}" the active one.',
+            f"To switch, run: {_select_command(profile_name)}",
             err=True,
         )
+
+
+def _select_command(profile_name: str) -> str:
+    """The command that signs a profile in again and makes it the selected one."""
+    return f"mammoth auth login --profile {profile_name} --select"
+
+
+def _selection_fields(profile_name: str, selected: bool, previous: str | None) -> dict[str, Any]:
+    """The login result fields that say which profile is active afterwards (mammothsdk#350).
+
+    Args:
+        profile_name: The profile that was signed in.
+        selected: Whether it was made the selected profile.
+        previous: The profile selected before the login (None when nothing was).
+
+    Returns:
+        ``selected`` and ``active_profile``; when the login did not select its profile, also a
+        ``hint`` naming the command that does.
+    """
+    if selected:
+        return {"selected": True, "active_profile": profile_name}
+    return {
+        "selected": False,
+        "active_profile": previous,
+        "hint": (
+            f'Profile "{profile_name}" is saved but not active; "{previous}" stays active. '
+            f"To switch, run: {_select_command(profile_name)}"
+        ),
+    }
 
 
 def _read_login_password(password_stdin: bool, password_file: str | None) -> str:
@@ -606,7 +635,7 @@ def _run_oauth_login(
         "base_url": base_url,
         "storage": storage_used,
         "credential": "oauth",
-        "selected": selected,
+        **_selection_fields(profile_name, selected, previous),
         **_expiry_fields(session.expires_at),
     }
     if names.get("workspace"):
@@ -771,7 +800,7 @@ def _run_login(
         "base_url": resolved_base_url,
         "storage": storage_used,
         "credential": "token",
-        "selected": selected,
+        **_selection_fields(profile_name, selected, previous),
     }
     return data, {"profile": profile_name, "workspace_id": effective_workspace}
 

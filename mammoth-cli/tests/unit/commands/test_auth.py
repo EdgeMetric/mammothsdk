@@ -1022,8 +1022,12 @@ def test_login_for_another_profile_keeps_the_selected_profile(
     assert result.exit_code == 0, result.stderr
     assert profiles.get_selected() == "default"
     assert profiles.get_profile("orion") is not None
-    assert json.loads(result.stdout)["data"]["selected"] is False
+    data = json.loads(result.stdout)["data"]
+    assert data["selected"] is False
+    assert data["active_profile"] == "default"
+    assert "mammoth auth login --profile orion --select" in data["hint"]
     assert 'the active profile stays "default"' in result.stderr
+    assert "mammoth auth login --profile orion --select" in result.stderr
 
 
 def test_login_with_select_makes_the_profile_active_and_says_so(
@@ -1033,7 +1037,10 @@ def test_login_with_select_makes_the_profile_active_and_says_so(
     result = make_runner().invoke(_oauth_login_args("--profile", "orion", "--select"), env={})
     assert result.exit_code == 0, result.stderr
     assert profiles.get_selected() == "orion"
-    assert json.loads(result.stdout)["data"]["selected"] is True
+    data = json.loads(result.stdout)["data"]
+    assert data["selected"] is True
+    assert data["active_profile"] == "orion"
+    assert "hint" not in data
     assert 'Active profile is now "orion" (was "default")' in result.stderr
 
 
@@ -1051,11 +1058,26 @@ def test_token_login_for_another_profile_keeps_the_selected_profile(
     _saved_login()
     doc = _write_login_doc(tmp_path, api_token=_TOKEN)
     result = make_runner().invoke(
-        ["auth", "login", "--input", str(doc), "--storage", "file", "--profile", "orion"],
+        [
+            "auth",
+            "login",
+            "--input",
+            str(doc),
+            "--storage",
+            "file",
+            "--profile",
+            "orion",
+            "--output",
+            "json",
+        ],
         env={},
     )
     assert result.exit_code == 0, result.stderr
     assert profiles.get_selected() == "default"
+    data = json.loads(result.stdout)["data"]
+    assert data["selected"] is False
+    assert data["active_profile"] == "default"
+    assert "mammoth auth login --profile orion --select" in data["hint"]
 
 
 # -- mammothsdk#303: settle the credential store before the device code is shown --------

@@ -282,7 +282,10 @@ def test_a_password_login_does_not_move_the_selected_profile_without_select(
     )
 
     assert json.loads(kept.stdout)["data"]["selected"] is False
+    assert json.loads(kept.stdout)["data"]["active_profile"] == "work"
+    assert "--profile ci --select" in json.loads(kept.stdout)["data"]["hint"]
     assert json.loads(moved.stdout)["data"]["selected"] is True
+    assert json.loads(moved.stdout)["data"]["active_profile"] == "ci"
     assert profiles.get_selected() == "ci"
 
 

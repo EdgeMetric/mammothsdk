@@ -12,7 +12,7 @@ from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands.dataset import create as create_cmd
 from mammoth_cli.commands.dataset import find as find_cmd
 from mammoth_cli.commands.dataset.create import ONE_OFF_PULL, _default_one_off_pull
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import COMMAND_FLAGS
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
@@ -1377,6 +1377,29 @@ def test_delete_that_the_get_calls_gone_but_the_list_still_shows_is_unverified(
     assert error.details["still_listed"] is True
     assert error.recovery_commands == ["mammoth dataset list"]
     assert fake_service.calls.count(_LIST_ALL) > 1
+
+
+def test_delete_with_a_403_read_back_and_a_still_listed_dataset_is_not_deleted(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+
+    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        if any(symbol == _DELETE for symbol, _ in log):
+            raise CliError(
+                code="authorization_required",
+                message="denied",
+                exit_status=EXIT_AUTH,
+                details={"status_code": 403},
+            )
+        return {"id": 7}
+
+    fake_service.responses[_GET] = get  # type: ignore[assignment]
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 7, "name": "orders"}]}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_unverified"
+    assert excinfo.value.details["still_listed"] is True
 
 
 def test_delete_that_the_list_drops_on_a_later_check_is_verified(

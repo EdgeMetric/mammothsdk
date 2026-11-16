@@ -35,7 +35,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Global options such as `--profile`, `--project`, `--output` and `--timeout` now work before the subcommand as well as after it (`mammoth --profile X project list`). Giving the same option on both sides with different values is a usage error (mammothsdk#303).
 - `dataset find` no longer lists every project first when the search results already name their projects: one request instead of a dozen on large accounts (mammothsdk#436).
-- `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350).
+- `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350). The JSON result now carries `selected`, `active_profile` and, when the profile was not selected, a `hint` naming the command to switch (`mammoth auth login --profile X --select`). This changes behaviour for scripts: a script that logs in under a new profile name and relied on it becoming active must now pass `--select`.
 - `view delete VIEW` no longer needs the dataset id: it reads the view's parent dataset itself (mammothsdk#403).
 
 ### Fixed (next mammoth-io, mammoth-cli)
