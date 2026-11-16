@@ -182,6 +182,89 @@ def test_wrong_credentials_are_an_authentication_failure(
     assert _SECRET not in result.stdout + result.stderr
 
 
+def test_invalid_grant_message_carries_the_servers_description(
+    isolated_cli_config: Path, token_endpoint: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    description = "This account uses 2FA; use device sign-in."
+    token_endpoint["reply"] = (
+        400,
+        {"error": "invalid_grant", "error_description": description},
+    )
+    _stdin(monkeypatch, _SECRET)
+    result = make_runner().invoke([*_LOGIN, "--password-stdin", "--output", "json"], env={})
+
+    error = _error(result)
+    assert error["code"] == "authentication_failed"
+    assert description in error["message"]
+    assert _SECRET not in result.stdout + result.stderr
+
+
+def test_workspace_id_is_sent_when_given_and_omitted_otherwise(
+    isolated_cli_config: Path,
+    fake_service: FakeMammothService,
+    token_endpoint: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _stdin(monkeypatch, _SECRET)
+    with_ws = make_runner().invoke(
+        [*_LOGIN, "--password-stdin", "--workspace", "42", "--output", "json"], env={}
+    )
+    _stdin(monkeypatch, _SECRET)
+    without = make_runner().invoke([*_LOGIN, "--password-stdin", "--output", "json"], env={})
+
+    assert with_ws.exit_code == 0, with_ws.stderr
+    assert without.exit_code == 0, without.stderr
+    assert token_endpoint["forms"][0][1]["workspace_id"] == "42"
+    assert "workspace_id" not in token_endpoint["forms"][1][1]
+
+
+def test_invalid_request_about_workspaces_is_a_usage_error_with_a_hint(
+    isolated_cli_config: Path, token_endpoint: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    description = "Several workspaces: 3 (Sales), 9 (Ops). Pass workspace_id."
+    token_endpoint["reply"] = (
+        400,
+        {"error": "invalid_request", "error_description": description},
+    )
+    _stdin(monkeypatch, _SECRET)
+    result = make_runner().invoke([*_LOGIN, "--password-stdin", "--output", "json"], env={})
+
+    error = _error(result)
+    assert result.exit_code == 2
+    assert error["code"] == "password_login_invalid_request"
+    assert error["message"] == description
+    assert error["hint"] == "Pass --workspace ID with one of the listed workspaces."
+    assert _SECRET not in result.stdout + result.stderr
+
+
+def test_invalid_request_without_workspaces_has_no_workspace_hint(
+    isolated_cli_config: Path, token_endpoint: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token_endpoint["reply"] = (
+        400,
+        {"error": "invalid_request", "error_description": "username is required"},
+    )
+    _stdin(monkeypatch, _SECRET)
+    result = make_runner().invoke([*_LOGIN, "--password-stdin", "--output", "json"], env={})
+
+    error = _error(result)
+    assert error["code"] == "password_login_invalid_request"
+    assert error["message"] == "username is required"
+    assert not error.get("hint")
+
+
+def test_workspace_without_the_password_method_is_refused(
+    isolated_cli_config: Path, token_endpoint: dict[str, Any]
+) -> None:
+    result = make_runner().invoke(
+        ["auth", "login", "--device", "--workspace", "5", "--output", "json"], env={}
+    )
+
+    assert result.exit_code == 2
+    assert _error(result)["code"] == "invalid_argument_combination"
+    assert token_endpoint["forms"] == []
+
+
 def test_a_password_login_does_not_move_the_selected_profile_without_select(
     isolated_cli_config: Path,
     fake_service: FakeMammothService,

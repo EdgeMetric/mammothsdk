@@ -16,7 +16,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-cli)
 
-- `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332).
+- `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332). `--workspace ID` picks the workspace for an account with several. The server's reason is shown for a refused login (`authentication_failed`), and a new `password_login_invalid_request` (exit 2) carries its description, with a hint to pass `--workspace` when workspaces are listed.
 - `view export dataset` accepts `columns` and `drop_columns` (mammothsdk#404); the append schema check compares only the columns actually sent.
 - `webhook create`, `webhook get` and `webhook update` take `--reveal` to print a secure webhook's secret. Without it the masked result carries `secret_redacted: true` and the command that reveals it (mammothsdk#373).
 

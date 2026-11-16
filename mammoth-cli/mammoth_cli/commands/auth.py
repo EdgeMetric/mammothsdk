@@ -510,10 +510,12 @@ def _run_oauth_login(
     device: bool = False,
     select: bool = False,
     password_login: tuple[str, str] | None = None,
+    workspace_id: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Sign in through the browser, a device code or a password and persist the session.
 
-    ``password_login`` is the ``(username, password)`` of a non-interactive password sign-in.
+    ``password_login`` is the ``(username, password)`` of a non-interactive password sign-in;
+    ``workspace_id`` is sent with it to pick one of the account's workspaces.
 
     The credential store is settled before the sign-in code is shown, so a machine with no
     keyring falls back to the owner-only file with a notice instead of failing after the
@@ -534,6 +536,7 @@ def _run_oauth_login(
             client_id=client_id,
             username=password_login[0],
             password=password_login[1],
+            workspace_id=workspace_id,
             profile=profile_name,
         )
     elif device:
@@ -627,6 +630,7 @@ def _run_login(
     username: str | None = None,
     password_stdin: bool = False,
     password_file: str | None = None,
+    workspace: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate, connection-check, and persist one `auth login` invocation."""
     wants_password = username is not None or password_stdin or password_file is not None
@@ -657,6 +661,13 @@ def _run_login(
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     chosen = _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
+    if workspace is not None and chosen != "password":
+        raise CliError(
+            code="invalid_argument_combination",
+            message="--workspace is for --method password.",
+            exit_status=EXIT_USAGE,
+            hint="Add --method password, or drop it.",
+        )
     if wants_password and chosen != "password":
         raise CliError(
             code="invalid_argument_combination",
@@ -680,6 +691,7 @@ def _run_login(
             interactive=False,
             select=select,
             password_login=(username, _read_login_password(password_stdin, password_file)),
+            workspace_id=workspace,
         )
     if chosen in ("oauth", "device"):
         return _run_oauth_login(
@@ -819,6 +831,14 @@ def auth_login(
         "--password-file",
         help="Read the password for --method password from this owner-only file.",
     ),
+    workspace: int | None = typer.Option(
+        None,
+        "--workspace",
+        help=(
+            "Workspace id for --method password, when the account belongs to several "
+            "(sent as workspace_id)."
+        ),
+    ),
     device: bool = typer.Option(
         False,
         "--device",
@@ -873,6 +893,7 @@ def auth_login(
             username=username,
             password_stdin=password_stdin,
             password_file=password_file,
+            workspace=workspace,
         )
 
     executor.run(
