@@ -2,7 +2,7 @@ manifest_schema_version: 1
 commands:
 - command_id: schedule.create
   output_schema: {ref: WriteResult}
-  known_restrictions: 'Retired. BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011
+  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: retired; the backend answers 5GENR011
     NOT_IMPLEMENTED; the command fails with feature_unavailable and makes no API call. Refresh a connector
     dataset with `mammoth automation create` (a run_data_retrieval task, an at_specific_time condition);
     `mammoth automation list` shows the existing ones.'

@@ -1726,7 +1726,7 @@ Total commands: 905.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.session_credential_test`
-- Agent example: `mammoth connector draft credentials 123 --input @creds.json --yes`
+- Agent example: `mammoth connector draft credentials 123 --input /private/path/request.json --yes`
 
 ### `mammoth connector draft discard`
 

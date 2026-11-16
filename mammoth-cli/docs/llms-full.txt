@@ -418,7 +418,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth connector draft create` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.create
   example: mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'
 - `mammoth connector draft credentials` [external_effect/yes_always] -> mammoth.api.agents.AgentsAPI.session_credential_test
-  example: mammoth connector draft credentials 123 --input @creds.json --yes
+  example: mammoth connector draft credentials 123 --input /private/path/request.json --yes
 - `mammoth connector draft discard` [destructive/prompt_or_yes] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
   example: mammoth connector draft discard 123 --yes
 - `mammoth connector draft fill` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.fill

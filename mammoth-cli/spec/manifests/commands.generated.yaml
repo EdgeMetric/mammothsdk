@@ -7118,18 +7118,12 @@ commands:
   operation_ids:
   - TestAgentCredentialCard
   positionals:
-  - name: session_id
-    type: str
+  - name: draft_id
+    type: int
     required: true
-    metavar: SESSION_ID
+    metavar: DRAFT_ID
     falls_back_to_field: null
-    help: ID of the session.
-  - name: widget_id
-    type: str
-    required: true
-    metavar: WIDGET_ID
-    falls_back_to_field: null
-    help: ID of the widget.
+    help: ID of the connector draft whose chat shows the key card.
   options: []
   sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
   sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_credential_test with validated request fields.
@@ -7149,9 +7143,9 @@ commands:
   contract_fixture: null
   required_fixture_guard: null
   secret_fields: []
-  human_example: mammoth connector draft credentials SESSION_ID WIDGET_ID --help
-  agent_example: 'mammoth connector draft credentials resource-123 resource-123 --input ''{"credentials":
-    {"name": "Status"}}'' --yes'
+  human_example: mammoth connector draft credentials DRAFT_ID --help
+  agent_example: 'mammoth connector draft credentials 123 --input ''{"session_id": "resource-123", "widget_id":
+    "resource-123", "credentials": {"name": "Status"}}'' --yes'
   unit_tests:
   - UT-CONNECTOR-DRAFT-CREDENTIALS
   contract_tests:

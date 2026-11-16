@@ -152,7 +152,7 @@ Example: `mammoth connector connection update postgres prod-warehouse --input /p
 
 Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
-Result: `ConnectorConnectionUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
+Result: `ConnectorConnectionUpdateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `always_wait`.
 
 Status on release: untried; no live run recorded.
 
@@ -173,6 +173,18 @@ Run: `mammoth connector draft create`. Exact input fields: `mammoth schema get c
 Example: `mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ConnectorDraftCreateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `connector.draft.credentials`
+
+Run: `mammoth connector draft credentials`. Exact input fields: `mammoth schema get connector.draft.credentials`.
+
+Example: `mammoth connector draft credentials 123 --input /private/path/request.json --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
+
+Result: `ConnectorDraftCredentialsResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

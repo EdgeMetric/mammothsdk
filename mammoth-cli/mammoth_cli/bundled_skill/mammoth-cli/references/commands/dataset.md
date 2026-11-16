@@ -276,7 +276,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth dataset rename`. Exact input fields: `mammoth schema get dataset.rename`.
 
-Example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth dataset rename 123 'Sales 2026'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `DatasetRenameResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -338,7 +338,7 @@ Run: `mammoth dataset trash`. Exact input fields: `mammoth schema get dataset.tr
 
 Example: `mammoth dataset trash 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
-Result: `DatasetTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+Result: `DatasetTrashResult`; mutation `benign_mutation`, confirmation `none`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.13 — Haiku e2e 2026-09-18: dataset trash then delete for owned datasets 44-47; final dataset list showed only the baseline ids. Single path only.
 

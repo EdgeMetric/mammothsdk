@@ -100,6 +100,8 @@ FIELD_ENUMS: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "parameter.update": {"param_type": ("NUMERIC", "TEXT", "DATE")},
     "dataset.create": {"ds_creation_type": ("clone", "cloud", "sketch", "weburl")},
+    "dashboard.create-blank": {"mode": ("light", "dark")},
+    "dashboard.update": {"mode": ("light", "dark")},
     "dashboard.own-data.accept": {"choice": ("proposal", "partial", "reshape")},
     "dashboard.context.review": {"scope": ("summary", "insights", "all")},
     "project.create": {
