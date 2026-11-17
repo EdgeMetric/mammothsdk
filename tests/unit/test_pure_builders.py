@@ -1136,6 +1136,25 @@ class TestAggregation:
         assert "DELIMITER" not in spec["PIVOT"]["SELECT"][0]
         assert "CONDITION" not in spec["PIVOT"]
 
+    def test_pivot_sends_count_distinct_as_the_server_keyword(self) -> None:
+        aggs = [AggregationSpec(column="Sales", function=AggregateFunction.COUNT_DISTINCT)]
+        spec = b.build_pivot_params(["Region"], aggs, COLS, INTERNALS)
+        assert spec["PIVOT"]["SELECT"][0]["FUNCTION"] == "DISTINCT_COUNT"
+
+    @pytest.mark.parametrize(
+        "fn",
+        [
+            AggregateFunction.VARIANCE,
+            AggregateFunction.MEDIAN,
+            AggregateFunction.FIRST,
+            AggregateFunction.LAST,
+        ],
+    )
+    def test_pivot_refuses_a_function_the_server_rejects(self, fn: AggregateFunction) -> None:
+        aggs = [AggregationSpec(column="Sales", function=fn)]
+        with pytest.raises(MammothValidationError, match=f"does not support the {fn.value}"):
+            b.build_pivot_params(["Region"], aggs, COLS, INTERNALS)
+
     def test_window_column_partition_order_new(self) -> None:
         spec = b.build_window_params(
             WindowFunction.SUM,
