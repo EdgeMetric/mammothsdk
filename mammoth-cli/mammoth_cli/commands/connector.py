@@ -444,30 +444,153 @@ def _connections_of_every_connector(
 
 
 def connector_connection_update(invocation: Invocation) -> HandlerResult:
-    """Update a connection's credentials. ``--yes`` is always required.
+    """Update a connection's credentials, optionally renaming it. ``--yes`` is always required.
 
-    ``credentials`` is a required ``--input`` field; it is never accepted as
-    a positional argument.
+    ``credentials`` is a required ``--input`` field, never a positional argument. An
+    optional ``name`` rides along in the same patch value (mammothsdk#413): the server
+    validates the whole value against the connector's model, so a rename needs the full
+    credentials. The server saves the change in a job, which this waits for.
     """
     project_id = require_project(invocation)
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")
-    document = invocation.load_input()
-    credentials = _require_field(document, "credentials")
+    document = invocation.load_input() or {}
+    name = document.get("name")
+    if name is not None and (not isinstance(name, str) or not name.strip()):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'name' must be a non-empty string.",
+            exit_status=EXIT_USAGE,
+        )
+    kwargs: dict[str, Any] = {
+        "connector_key": connector_key,
+        "connection_key": connection_key,
+        "project_id": project_id,
+    }
+    kwargs["credentials"] = _require_field(document, "credentials")
+    if name:
+        kwargs["name"] = name.strip()
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
-        action=f"update credentials for connection {connection_key} of connector {connector_key}",
+        action=f"update connection {connection_key} of connector {connector_key}",
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation),
-            connector_key=connector_key,
-            connection_key=connection_key,
-            credentials=credentials,
-            project_id=project_id,
-        )
+        data = service.call(_symbol(invocation), **kwargs)
+        data = service.wait_if_job(data)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+_DRAFT_GET_SYMBOL = "mammoth.api.connector_drafts.ConnectorDraftsAPI.get"
+_SESSION_MESSAGES_SYMBOL = "mammoth.api.agents.AgentsAPI.session_messages"
+#: The widget kind of a chat's credential card ("Test and connect").
+_CREDENTIAL_CARD_KIND = "CONNECTOR_CREDENTIAL"
+
+
+def open_credential_card(messages: Any) -> str | None:
+    """The id of the newest unanswered credential card in a chat's messages, or None.
+
+    Args:
+        messages: The session-messages read (``{"messages": [...]}`` or the list).
+
+    Returns:
+        The card's ``widget.id``, or None when the chat shows no open card.
+    """
+    items = messages.get("messages") if isinstance(messages, dict) else messages
+    for message in reversed(items if isinstance(items, list) else []):
+        widget = message.get("widget") if isinstance(message, dict) else None
+        if (
+            isinstance(widget, dict)
+            and widget.get("kind") == _CREDENTIAL_CARD_KIND
+            and not widget.get("resolved")
+            and not message.get("resolved")
+            and widget.get("id")
+        ):
+            return str(widget["id"])
+    return None
+
+
+def _refuse_inline_secrets(invocation: Invocation) -> None:
+    """Refuse ``--input '{...}'``: a key typed inline lands in shell history and ``ps``."""
+    source = (invocation.input_file or "").lstrip("@").lstrip()
+    if source.startswith(("{", "[")):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="Credentials must come from a file or stdin, not inline JSON.",
+            exit_status=EXIT_USAGE,
+            hint="Write them to a file readable only by you and pass --input @FILE, "
+            "or pipe them with --input - --input-format json.",
+        )
+
+
+def connector_draft_credentials(invocation: Invocation) -> HandlerResult:
+    """Answer a connector draft's open key card: test the key and connect.
+
+    The card is the chat's "Test and connect" form (mammothsdk#319). The draft names
+    its chat; the newest open credential card in it is answered unless the input gives
+    ``widget_id``. Credentials are read from an ``--input`` file or stdin only.
+
+    Args:
+        invocation: The parsed command; positional 0 is the draft id.
+
+    Returns:
+        The check's outcome with the draft, chat and card ids, and the command metadata.
+
+    Raises:
+        CliError: On inline credentials, a missing field, a draft with no chat, or a
+            chat with no open card.
+    """
+    draft_id = _require_string_positional_at(invocation, 0, "draft id")
+    if not draft_id.isdigit():
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"Draft id must be a number, got {draft_id!r}.",
+            exit_status=EXIT_USAGE,
+        )
+    _refuse_inline_secrets(invocation)
+    document = invocation.load_input() or {}
+    credentials = _require_field(document, "credentials")
+    if not isinstance(credentials, dict) or not credentials:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="'credentials' must be a non-empty object of the card's fields.",
+            exit_status=EXIT_USAGE,
+        )
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_YES_ALWAYS,
+        action=f"test and connect the key card of connector draft {draft_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        draft = service.call(_DRAFT_GET_SYMBOL, draft_id=int(draft_id))
+        session_id = draft.get("session_id") if isinstance(draft, dict) else None
+        if not session_id:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"Connector draft {draft_id} has no agent chat, so it has no key card.",
+                exit_status=EXIT_USAGE,
+                hint=f"Open its chat first: mammoth connector draft get {draft_id}.",
+            )
+        widget_id = document.get("widget_id") or open_credential_card(
+            service.call(_SESSION_MESSAGES_SYMBOL, session_id=session_id)
+        )
+        if not widget_id:
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message=f"The chat of connector draft {draft_id} shows no open key card.",
+                exit_status=EXIT_USAGE,
+                hint=f"Read the chat with mammoth agent session messages {session_id}; "
+                "ask the agent to connect the source to get a card.",
+            )
+        outcome = service.call(
+            _symbol(invocation),
+            session_id=session_id,
+            widget_id=widget_id,
+            credentials=credentials,
+        )
+    data = {"draft_id": int(draft_id), "session_id": session_id, "widget_id": widget_id}
+    data["outcome"] = outcome
+    return data, _meta(invocation, auth.workspace_id, None)
 
 
 def _require_read_only_sql(query: Any) -> str:

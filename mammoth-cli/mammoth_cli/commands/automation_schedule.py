@@ -82,7 +82,7 @@ def schedule_patch(
         )
     found = timing[0].get("details")
     stored: dict[str, Any] = found if isinstance(found, dict) else {}
-    details = {**stored, **changes, "start_now": False}
+    details = {**stored, **changes, **_cleared_day_rules(stored, changes), "start_now": False}
     written = [
         {
             "condition_type": c.get("condition_type"),
@@ -148,6 +148,35 @@ def _refresh_entries(automation: dict[str, Any]) -> list[dict[str, Any]]:
             if isinstance(record, dict) and record.get("ds_id") in wanted:
                 found.setdefault(record["ds_id"], dict(record))
     return [found[ds_id] for ds_id in wanted]
+
+
+#: The day-rule field each frequency reads; another frequency ignores it only in the app.
+_DAY_RULES = {"weekly": "by_week_day", "monthly": "by_month_day"}
+
+
+def _cleared_day_rules(stored: dict[str, Any], changes: dict[str, Any]) -> dict[str, Any]:
+    """Empty the stored day rules a new frequency no longer uses.
+
+    A weekly automation switched to daily kept ``by_week_day`` and so still fired on that
+    weekday only (mammothsdk#439). The server drops a null, so an explicit empty list is
+    what clears the rule.
+
+    Args:
+        stored: The timing condition's details as stored.
+        changes: The schedule fields the caller gave.
+
+    Returns:
+        ``{field: []}`` for each stored, non-empty day rule that the new frequency does
+        not read and the caller did not set; empty when the frequency is unchanged.
+    """
+    frequency = changes.get("frequency")
+    if not isinstance(frequency, str) or frequency == stored.get("frequency"):
+        return {}
+    return {
+        field: []
+        for rule_frequency, field in _DAY_RULES.items()
+        if frequency.lower() != rule_frequency and field not in changes and stored.get(field)
+    }
 
 
 def _without_start(details: Any) -> Any:

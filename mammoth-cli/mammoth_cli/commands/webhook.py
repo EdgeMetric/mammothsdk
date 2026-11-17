@@ -24,6 +24,7 @@ from mammoth_cli.errors.envelope import (
     CliError,
 )
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmation
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
@@ -169,11 +170,44 @@ def webhook_list(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
+def _with_secret(invocation: Invocation, data: Any) -> Any:
+    """Print a secure webhook's secret under ``--reveal``; otherwise say it is masked.
+
+    Masked, the secret read as a usable value and every post with it was refused with
+    ``INVALID_SECRET`` (mammothsdk#373), so a masked result says so and names the command.
+
+    Args:
+        invocation: The webhook create/get/update invocation.
+        data: The SDK result.
+
+    Returns:
+        ``data`` unredacted with ``--reveal``; else with ``secret_redacted`` and
+        ``next_command`` when it carries a secret.
+    """
+    data = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
+    if not isinstance(data, dict):
+        return data
+    if invocation.reveal_secrets:
+        return Revealed(normalize(data, redact_secrets=False))
+    inner = data.get("webhook")
+    webhook: dict[str, Any] = inner if isinstance(inner, dict) else data
+    if not webhook.get("secret"):
+        return data
+    webhook_id = webhook.get("id", "WEBHOOK_ID")
+    return {
+        **data,
+        "secret_redacted": True,
+        "next_command": f"mammoth webhook get {webhook_id} --reveal",
+    }
+
+
 def webhook_get(invocation: Invocation) -> HandlerResult:
-    """Get one webhook by id. The webhook id is a required positional."""
+    """Get one webhook by id. The webhook id is a required positional; ``--reveal`` prints
+    a secure webhook's secret."""
     webhook_id = _require_int_positional(invocation, "webhook id")
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), webhook_id=webhook_id)
+    data = _with_secret(invocation, data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -187,6 +221,7 @@ def webhook_create(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("mode", "folder_resource_id", "origins", "is_secure"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = _with_secret(invocation, data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 
@@ -205,6 +240,7 @@ def webhook_update(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("mode", "origins", "is_secure"))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
+    data = _with_secret(invocation, data)
     return data, _meta(invocation, auth.workspace_id, resolved_project(invocation))
 
 

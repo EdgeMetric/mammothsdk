@@ -417,6 +417,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector draft browse 123
 - `mammoth connector draft create` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.create
   example: mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'
+- `mammoth connector draft credentials` [external_effect/yes_always] -> mammoth.api.agents.AgentsAPI.session_credential_test
+  example: mammoth connector draft credentials 123 --input /private/path/request.json --yes
 - `mammoth connector draft discard` [destructive/prompt_or_yes] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.discard
   example: mammoth connector draft discard 123 --yes
 - `mammoth connector draft fill` [benign_mutation/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.fill
@@ -873,7 +875,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth dataset refresh` [benign_mutation/prompt_or_yes] -> mammoth.api.datasets.DatasetsAPI.refresh_from_url
   example: mammoth dataset refresh 123 --yes
 - `mammoth dataset rename` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.rename
-  example: mammoth dataset rename 123 --input '{"name": "Revenue report"}'
+  example: mammoth dataset rename 123 'Sales 2026'
 - `mammoth dataset restore` [benign_mutation/none] -> mammoth.api.datasets.DatasetsAPI.restore
   example: mammoth dataset restore 123
 - `mammoth dataset schema-diff` [read/none] -> mammoth_cli.commands.dataset.schema_diff

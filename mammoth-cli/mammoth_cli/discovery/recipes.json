@@ -93,7 +93,7 @@
           "type": "integer",
           "required": true,
           "example": 1,
-          "help": "The cloud or database dataset to refresh."
+          "help": "The connector, cloud-file, webhook or URL dataset to refresh."
         },
         "name": {
           "type": "string",
@@ -3985,7 +3985,7 @@
       "steps": [
         {
           "command_id": "dataset.get",
-          "purpose": "Check the source: only a cloud or database dataset refreshes.",
+          "purpose": "Check the source: a connector, cloud-file, webhook or URL dataset refreshes; an uploaded file cannot.",
           "example": "mammoth dataset get DATASET_ID",
           "key_flags": []
         },
@@ -4012,7 +4012,7 @@
           "type": "integer",
           "required": true,
           "example": 1,
-          "help": "The cloud or database dataset to refresh."
+          "help": "The connector, cloud-file, webhook or URL dataset to refresh."
         }
       },
       "run": [

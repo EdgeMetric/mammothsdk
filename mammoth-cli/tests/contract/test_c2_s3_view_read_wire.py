@@ -595,12 +595,13 @@ def test_true_cli_data_query_wire_and_display_name_handling(
         ]
     )
     assert result.exit_code == 0, result.output
-    # One metadata read (display -> internal names and types), then the POST
+    # One read of the view (display -> internal names and types) and one of its dataset, each
+    # once per command (mammothsdk#400), then the POST
     # with the condition compiled to the backend clause shape.  A TEXT
     # equality is sent as a single-item IN_LIST (the SDK's workaround for the
     # backend's TEXT + EQ type-mismatch rejection).
     wires = [(r.method, r.path.removeprefix("/api/v2").rsplit("/", 1)[-1]) for r in api.requests]
-    assert wires[-2:] == [("GET", "278"), ("POST", "data")]
+    assert wires[-3:] == [("GET", "278"), ("GET", "731"), ("POST", "data")]
     assert api.requests[-1].json_body == {
         "sequence": 13,
         "offset": 5,

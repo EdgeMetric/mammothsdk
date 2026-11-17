@@ -2,9 +2,10 @@ manifest_schema_version: 1
 commands:
 - command_id: schedule.create
   output_schema: {ref: WriteResult}
-  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: the backend answers 5GENR011 NOT_IMPLEMENTED;
-    the command fails with feature_unavailable and makes no API call. Use `mammoth automation create`
-    instead.'
+  known_restrictions: 'BLOCKED[SCHEDULE_CREATE_NOT_IMPLEMENTED]: retired; the backend answers 5GENR011
+    NOT_IMPLEMENTED; the command fails with feature_unavailable and makes no API call. Refresh a connector
+    dataset with `mammoth automation create` (a run_data_retrieval task, an at_specific_time condition);
+    `mammoth automation list` shows the existing ones.'
   readback:
     command: schedule.get
     ids:
@@ -22,9 +23,10 @@ commands:
 - command_id: schedule.list
   output_schema:
     ref: NeverReturns
-  known_restrictions: 'Retired: the command answers not_available and names the web app. No Mammoth server
-    can list schedules for a project (GET answers HTTP 400 NOT_IMPLEMENTED), so do not poll it. Use `schedule
-    get SCHEDULE_ID` with an id obtained elsewhere.'
+  known_restrictions: 'Retired: the command answers not_available. No Mammoth server can list schedules
+    for a project (GET answers HTTP 400 NOT_IMPLEMENTED), so do not poll it. A dataset refreshes on a clock
+    through an automation: `mammoth automation list` shows them. Use `schedule get SCHEDULE_ID` with an
+    id obtained elsewhere.'
 - command_id: schedule.update
   output_schema:
     ref: WriteResult

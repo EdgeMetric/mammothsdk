@@ -1003,3 +1003,139 @@ def test_dataset_route_on_a_view_with_pending_draft_changes_does_not_point_at_au
     assert "mammoth view data query 7 -o csv" in hint
     assert caught.value.details["draft_mode"] == "dirty"
     assert fake_service.view_call_log == []
+
+
+def test_blank_columns_on_a_new_dataset_is_refused_not_ignored(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # mammothsdk#402: blank_columns reads like a privacy control; on a new dataset it did
+    # nothing and the export reported success with the columns still filled.
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path, {"dataset_name": "Leavers", "blank_columns": ["Full Name"]}
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "unused_blank_columns"
+    assert "drop_columns" in (excinfo.value.hint or "")
+    assert not [call for call in fake_service.view_call_log if call[1] == "to_dataset"]
+
+
+def test_blank_columns_naming_a_filled_target_column_is_refused(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region", "Notes")
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1"}
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_export_specialized(
+            _inv(
+                "view.export.dataset",
+                project=180,
+                extra_args=["7", "3"],
+                input_file=_doc(
+                    tmp_path,
+                    {
+                        "dataset_name": "orders",
+                        "target_ds_id": 9,
+                        "save_as_mode": "APPEND_TO_DS",
+                        "blank_columns": ["Notes", "Region"],
+                    },
+                ),
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "unused_blank_columns"
+    assert excinfo.value.details["unused"] == ["Region"]
+
+
+def test_drop_columns_reaches_the_sdk_and_narrows_the_append_check(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # mammothsdk#404: a dropped source column is not sent, so a target without it is fine.
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region")
+    fake_service.view_responses[(7, "columns")] = {"Region": "column_1", "SSN": "column_2"}
+    fake_service.view_responses[(7, "column_types")] = {"Region": "TEXT", "SSN": "TEXT"}
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "orders",
+                    "target_ds_id": 9,
+                    "save_as_mode": "APPEND_TO_DS",
+                    "drop_columns": ["SSN"],
+                },
+            ),
+            yes=True,
+        )
+    )
+    (call,) = [call for call in fake_service.view_call_log if call[1] == "to_dataset"]
+    assert call[2]["drop_columns"] == ["SSN"]
+
+
+def _append_with(
+    fake_service: FakeMammothService, tmp_path: Path, selection: dict[str, object]
+) -> dict[str, object]:
+    fake_service.view_responses[(7, "to_dataset")] = 9
+    fake_service.responses[_DATAVIEW_LIST] = {"dataviews": [{"id": 500, "row_count": 60}]}
+    fake_service.responses[_DATASET_GET] = _dataset_schema("Region", "Sales")
+    fake_service.view_responses[(7, "columns")] = {
+        "Region": "column_1",
+        "Sales": "column_2",
+        "SSN": "column_3",
+    }
+    fake_service.view_responses[(7, "column_types")] = {
+        "Region": "TEXT",
+        "Sales": "TEXT",
+        "SSN": "TEXT",
+    }
+    view_cmd.view_export_specialized(
+        _inv(
+            "view.export.dataset",
+            project=180,
+            extra_args=["7", "3"],
+            input_file=_doc(
+                tmp_path,
+                {
+                    "dataset_name": "orders",
+                    "target_ds_id": 9,
+                    "save_as_mode": "APPEND_TO_DS",
+                    "column_mapping": {"Region": "Sales"},
+                    **selection,
+                },
+            ),
+            yes=True,
+        )
+    )
+    (call,) = [call for call in fake_service.view_call_log if call[1] == "to_dataset"]
+    return call[2]
+
+
+def test_partial_mapping_with_columns_is_not_refused_for_the_kept_columns(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The SDK fills an identity entry for each kept column the mapping omits, so
+    # columns=[Region, Sales] with {Region: Sales} maps Sales to itself: not incomplete.
+    sent = _append_with(fake_service, tmp_path, {"columns": ["Region", "Sales"]})
+    assert sent["columns"] == ["Region", "Sales"]
+
+
+def test_partial_mapping_with_drop_columns_is_not_refused_for_the_kept_columns(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    sent = _append_with(fake_service, tmp_path, {"drop_columns": ["SSN"]})
+    assert sent["drop_columns"] == ["SSN"]

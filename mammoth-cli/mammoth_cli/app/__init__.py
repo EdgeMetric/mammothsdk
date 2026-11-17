@@ -52,6 +52,7 @@ from mammoth_cli.app.usage import (
     _unknown_flag_in,
     _unknown_option_report,
     _usage_error_report,
+    hoist_global_options,
     missing_argument_hint,
 )
 from mammoth_cli.commands import BESPOKE
@@ -172,6 +173,13 @@ class _EnvelopeGroup(TyperGroup):
             self.__dict__["_listing_help"] = False
 
     def main(self, *args: Any, **kwargs: Any) -> Any:
+        try:
+            args, kwargs = _with_hoisted_options(args, kwargs)
+        except _USAGE_ERRORS as error:
+            if not kwargs.get("standalone_mode", True):
+                raise
+            self.render_usage_error(error, _argv_of(args, kwargs))
+            raise SystemExit(getattr(error, "exit_code", EXIT_USAGE)) from None
         if not kwargs.get("standalone_mode", True):
             return super().main(*args, **kwargs)
         kwargs["standalone_mode"] = False
@@ -283,6 +291,29 @@ class _EnvelopeGroup(TyperGroup):
                 typer.echo(report.hint, err=True)
             for command in report.recovery_commands:
                 typer.echo(f"  try: {command}", err=True)
+
+
+def _with_hoisted_options(
+    args: tuple[Any, ...], kwargs: dict[str, Any]
+) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    """Return the ``main`` arguments with global options moved behind the command.
+
+    Args:
+        args: The positional arguments of the ``main`` call.
+        kwargs: The keyword arguments of the ``main`` call.
+
+    Returns:
+        The ``(args, kwargs)`` to call ``main`` with; the argv is rewritten by
+        :func:`hoist_global_options`, and ``sys.argv`` is read when the call gave none.
+
+    Raises:
+        UsageError: An option is given before and after the command with different values.
+    """
+    argv = _argv_of(args, kwargs)
+    hoisted = hoist_global_options(list(argv) if argv is not None else sys.argv[1:])
+    if args:
+        return (hoisted, *args[1:]), kwargs
+    return args, {**kwargs, "args": hoisted}
 
 
 def _argv_of(args: tuple[Any, ...], kwargs: dict[str, Any]) -> Sequence[str] | None:

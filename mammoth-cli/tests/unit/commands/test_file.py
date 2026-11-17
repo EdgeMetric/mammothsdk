@@ -22,6 +22,7 @@ _EXTRACT_SHEETS = "mammoth.api.files.FilesAPI.extract_sheets"
 _BULK_DELETE = "mammoth.api.files.FilesAPI.bulk_delete"
 _UPLOAD = "mammoth.api.files.FilesAPI.upload"
 _UPLOAD_RESULT = "mammoth.api.files.FilesAPI.upload_result"
+_APPEND = "mammoth.api.appends.AppendsAPI.append"
 _DATASET_GET = "mammoth.api.datasets.DatasetsAPI.get"
 _UPLOAD_FOLDER = "mammoth.api.files.FilesAPI.upload_folder"
 
@@ -608,3 +609,106 @@ def _input_doc(tmp_path: Path, document: dict[str, Any]) -> Path:
     doc = tmp_path / "in.json"
     doc.write_text(json.dumps(document))
     return doc
+
+
+def test_a_one_sheet_workbook_follows_its_extraction_to_the_dataset(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # mammothsdk#374: the upload job ended before the server extracted the only sheet, so
+    # the result said no_dataset (with PDF advice) while the dataset appeared seconds later.
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    monkeypatch.setattr(file_cmd, "_EXTRACT_PAUSE", 0.0)
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processed"}],
+    }
+    pages = iter(
+        [
+            {"files": [{"id": 50, "name": "dates.xlsx", "additional_info": {}}]},
+            {
+                "files": [
+                    # An earlier upload of the same name is not this one's dataset.
+                    {"id": 12, "name": "dates.xlsx", "additional_info": {"final_ds_id": 3}},
+                    {"id": 50, "name": "dates.xlsx", "additional_info": {}},
+                    {"id": 51, "name": "dates.xlsx", "additional_info": {"final_ds_id": 77}},
+                ]
+            },
+        ]
+    )
+    fake_service.responses[_LIST] = lambda _log: next(pages)
+    fake_service.responses[_DATASET_GET] = {"dataset": {"id": 77, "status": "ready"}}
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"]))
+    assert data["dataset_ids"] == [77]
+    assert data["status"] == "ready"
+
+
+def test_a_workbook_that_made_no_dataset_gets_no_pdf_advice(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    monkeypatch.setattr(file_cmd, "_EXTRACT_PAUSE", 0.0)
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processing"}],
+    }
+    fake_service.responses[_LIST] = {"files": []}
+    data, _ = file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"]))
+    assert data["status"] == "no_dataset"
+    assert "PDF" not in data["message"]
+    assert len([call for call in fake_service.call_log if call[0] == _LIST]) == 10
+
+
+def test_the_extraction_wait_honours_timeout(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    fake_service.responses[_UPLOAD_RESULT] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processing"}],
+    }
+    fake_service.responses[_LIST] = {"files": []}
+    file_cmd.file_upload(_inv("file.upload", extra_args=["dates.xlsx"], timeout=0))
+    assert len([call for call in fake_service.call_log if call[0] == _LIST]) == 1
+
+
+def test_an_append_upload_does_not_follow_the_staging_dataset(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # The dataset an extraction yields on an append is the staging one the backend deletes,
+    # not the target: the file list must not be read to follow it.
+    (tmp_path / "dates.xlsx").write_bytes(b"PK")
+    fake_service.responses[_APPEND] = {
+        "dataset_ids": [],
+        "errors": {},
+        "files": [{"file_id": 50, "name": "dates.xlsx", "status": "processing"}],
+    }
+    fake_service.responses[_LIST] = {
+        "files": [{"id": 50, "name": "dates.xlsx", "additional_info": {"final_ds_id": 77}}]
+    }
+    doc = _input_doc(tmp_path, {"append_to_ds_id": 9})
+    data, _ = file_cmd.file_upload(
+        _inv("file.upload", extra_args=["dates.xlsx"], input_file=str(doc))
+    )
+    assert [call for call in fake_service.call_log if call[0] == _LIST] == []
+    assert 77 not in data["dataset_ids"]
+
+
+def test_extraction_boundary_and_duplicate_names_use_the_lowest_file_id(
+    fake_service: FakeMammothService,
+) -> None:
+    files = [
+        {"file_id": 60, "name": "a.xlsx"},
+        {"file_id": 50, "name": "a.xlsx"},
+    ]
+    fake_service.responses[_LIST] = {
+        "files": [
+            {"id": 49, "name": "a.xlsx", "additional_info": {"final_ds_id": 1}},
+            {"id": 50, "name": "a.xlsx", "additional_info": {"final_ds_id": 2}},
+            {"id": 60, "name": "a.xlsx", "additional_info": {"final_ds_id": 3}},
+        ]
+    }
+    found = file_cmd._follow_extracted_sheets(fake_service, files, 0)
+    assert found == [2, 3]

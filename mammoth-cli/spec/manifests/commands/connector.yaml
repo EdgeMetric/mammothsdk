@@ -272,3 +272,22 @@ commands:
     ids:
       draft_id: positional.0
     kind: object
+- command_id: connector.draft.credentials
+  output_schema:
+    type: object
+    required: [draft_id, session_id, widget_id, outcome]
+    properties:
+      draft_id:
+        type: integer
+      session_id:
+        type: string
+      widget_id:
+        type: string
+      outcome: {}
+  secret_fields:
+  - credentials
+  agent_example: mammoth connector draft credentials 123 --input /private/path/request.json --yes
+  known_restrictions: Answers the newest open key card in the draft's chat (or the given widget_id).
+    credentials must come from an --input file or stdin; inline JSON is refused so a key never lands
+    in shell history. The server keeps a passing key with the draft and never shows it to the agent.
+  no_readback: the outcome is the server's check of the key; nothing readable is saved for a read to show

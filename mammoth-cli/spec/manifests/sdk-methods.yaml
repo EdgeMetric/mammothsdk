@@ -1066,13 +1066,14 @@ methods:
   implementation_origin: mammoth.api.agents.AgentsAPI.session_credential_test
   signature: 'session_credential_test(self, session_id: ''str'', widget_id: ''str'', credentials: ''dict[str,
     Any]'') -> ''dict[str, Any]'''
-  openapi_operation_ids: []
-  canonical_command: null
+  openapi_operation_ids:
+  - TestAgentCredentialCard
+  canonical_command: connector.draft.credentials
   alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
+  no_command_reason: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.agents.AgentsAPI.session_delete
@@ -3178,7 +3179,7 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: external_effect
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
@@ -6053,11 +6054,11 @@ methods:
     = None, workspace_id: ''int | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: null
-  alias_of: null
-  no_command_reason: SDK-only helper; no reviewed CLI command.
-  mutation_class: null
-  wait_policy: null
-  pagination_policy: null
+  alias_of: dataset.refresh
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
@@ -6174,7 +6175,7 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary

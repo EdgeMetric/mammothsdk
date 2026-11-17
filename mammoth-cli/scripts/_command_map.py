@@ -82,7 +82,6 @@ INTERNAL_ONLY: dict[str, str] = {
     "ListAgentNeedsYou": "Web chat panel: the needs-you card list.",
     "RecordAgentChartPlacement": "Web chat panel: records where a chat chart was placed.",
     "RecordAgentChipFeedback": "Web chat panel: thumbs feedback on a suggestion chip.",
-    "TestAgentCredentialCard": "Web chat panel: tests the credentials typed into a chat card.",
     "UploadAgentChatDocument": "Web chat panel: uploads a document into a chat.",
     "UploadAgentChatImage": "Web chat panel: uploads an image into a chat.",
     # Mammoth staff tooling: not for customers.
@@ -925,6 +924,8 @@ HANDLER_SERVED: dict[str, str] = {
     "PowerbiExport": "dashboard.bi-export",
     "TableauExport": "dashboard.bi-export",
     "TableauPreflightHandler": "dashboard.bi-preflight",
+    # mammothsdk#319: answer a connector draft's key card from a file or stdin.
+    "TestAgentCredentialCard": "connector.draft.credentials",
 }
 
 

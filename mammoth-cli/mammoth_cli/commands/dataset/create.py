@@ -40,6 +40,7 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     # name check and the result's scope are that project's, not the active one's.
     landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
     _default_data_pull_file(ds_creation_type, dataset_spec)
+    adjusted = _default_one_off_pull(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -57,6 +58,8 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
         settled = service.wait_if_job(data)
         result = _created_dataset(data, settled)
         _add_final_name(service, result, dataset_spec, landing_project_id)
+    if adjusted:
+        result["input_adjusted"] = adjusted
     return result, _meta(invocation, auth.workspace_id, landing_project_id)
 
 
@@ -115,6 +118,44 @@ def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> N
             hint=f"Use one of: {allowed_values_text(_DATA_PULL_FILE_VALUES)}.",
             details={"got": pull, "allowed": list(_DATA_PULL_FILE_VALUES)},
         )
+
+
+#: A one-off pull now: what the web app sends when no refresh schedule is chosen.
+ONE_OFF_PULL = {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}
+
+
+def _default_one_off_pull(ds_creation_type: object, dataset_spec: object) -> list[str]:
+    """Fill what a cloud database import needs and the server only checks in the job.
+
+    Without ``schedule_properties`` the request was accepted and the job failed with
+    "Invalid parameters"; ``query_properties.table`` was refused as if ``table`` were
+    missing, since the server reads ``table_name`` (mammothsdk#382).
+
+    Args:
+        ds_creation_type: The ``ds_creation_type`` input.
+        dataset_spec: The ``dataset_spec`` input, changed in place.
+
+    Returns:
+        One sentence per change made, for the result's ``input_adjusted``.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return []
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or properties.get("file_path"):
+        return []
+    adjusted: list[str] = []
+    if "table" in properties and "table_name" not in properties:
+        properties["table_name"] = properties.pop("table")
+        adjusted.append(
+            "query_properties.table was sent as table_name, the field the server reads."
+        )
+    if properties.get("query") and not dataset_spec.get("schedule_properties"):
+        dataset_spec["schedule_properties"] = dict(ONE_OFF_PULL)
+        adjusted.append(
+            "No schedule_properties: sent a one-off pull now (schedule_type moment, "
+            "first_pull_at now, on_refresh_action replace)."
+        )
+    return adjusted
 
 
 def _created_dataset(handle: Any, settled: Any) -> dict[str, Any]:

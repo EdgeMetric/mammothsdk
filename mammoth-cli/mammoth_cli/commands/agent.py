@@ -162,8 +162,9 @@ def agent_chat(invocation: Invocation) -> HandlerResult:
     ``message``/``scope`` are required. The request key the server needs is made
     here, never asked of the user. ``wait`` (seconds, default 120) bounds how long
     the command waits for the reply; ``0`` returns as soon as the turn starts. The reply is
-    the one this turn wrote. When the server moves a long turn to a background run, ``reply`` is
-    null, ``background`` is true and ``next`` names the command that reads the answer once it lands.
+    the one this turn wrote. When the server moves a long turn to a background run, the wait follows
+    that run until it ends or ``wait`` runs out (mammothsdk#417); if no answer has landed by then,
+    ``reply`` is null, ``background`` is true and ``next`` names the command that reads it.
     """
     document = _bound_document(invocation)
     message = _require_field(document, "message")

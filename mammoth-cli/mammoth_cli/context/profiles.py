@@ -335,6 +335,22 @@ def get_selected() -> str:
     return str(selected) if selected else DEFAULT_PROFILE_NAME
 
 
+def has_selected_profile() -> bool:
+    """Whether a selected profile is recorded and still has a stored record.
+
+    Login uses this to tell a first sign-in (nothing selected yet, so the new profile
+    becomes the selected one) from a later one that must leave the selection alone
+    (mammothsdk#350).
+
+    Returns:
+        True when ``selected`` names a profile that exists.
+    """
+    document = _load_document()
+    selected = document.get("selected")
+    table = document.get("profiles")
+    return bool(selected) and table is not None and str(selected) in table
+
+
 def set_selected(name: str) -> None:
     """Set the selected profile pointer.
 

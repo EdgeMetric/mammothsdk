@@ -470,6 +470,8 @@ _BENCH_HELP_NOTE = (
     "keep-alive connection pool. Reports p50, p95 and max of each HTTP request's logged "
     "duration_ms and of each command, with status and error counts. Times are client-side "
     "(timing: client): each HTTP attempt's round trip; the server sends no timing. "
+    "http counts every attempt (attempts, retries, attempt_status, retry_wait_ms), so a "
+    "retried 502 shows; --no-retry sends each request once. "
     "Example: mammoth bench view list --concurrency 8 --repeat 5"
 )
 _RUN_HELP_NOTE = (

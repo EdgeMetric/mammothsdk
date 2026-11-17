@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.4.5.
+Generated from the reviewed command manifests for mammoth-cli 2.4.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 904.
+Total commands: 905.
 
 ## activity
 
@@ -1716,6 +1716,17 @@ Total commands: 904.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.create`
 - Agent example: `mammoth connector draft create --input '{"origin": "connections", "connector_key": "hubspot"}'`
+
+### `mammoth connector draft credentials`
+
+**Arguments**
+
+- `DRAFT_ID` (int, required) — ID of the connector draft whose chat shows the key card.
+
+- Mutation class: `external_effect`
+- Confirmation: `yes_always`
+- Backing SDK: `mammoth.api.agents.AgentsAPI.session_credential_test`
+- Agent example: `mammoth connector draft credentials 123 --input /private/path/request.json --yes`
 
 ### `mammoth connector draft discard`
 
@@ -4033,11 +4044,12 @@ Total commands: 904.
 **Arguments**
 
 - `DATASET_ID` (int, required) — ID of the dataset.
+- `NAME` (str, optional) — New name for the dataset; or pass --name or the 'name' input field.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.datasets.DatasetsAPI.rename`
-- Agent example: `mammoth dataset rename 123 --input '{"name": "Revenue report"}'`
+- Agent example: `mammoth dataset rename 123 'Sales 2026'`
 
 ### `mammoth dataset restore`
 

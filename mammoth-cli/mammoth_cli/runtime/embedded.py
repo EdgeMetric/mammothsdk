@@ -31,6 +31,8 @@ class EmbeddedCall:
     runtime: EmbedRuntime | None = None
     #: Refuse commands the production server does not serve yet, and hide them from discovery.
     hide_pending: bool = False
+    #: Send every request once: the SDK does not retry a 429/502/503/504 read (mammothsdk#431).
+    no_retry: bool = False
     #: Text written to ``sys.stdout`` / ``sys.stderr`` while the call ran, by stream name.
     stray: dict[str, list[str]] = field(default_factory=lambda: {"stdout": [], "stderr": []})
 

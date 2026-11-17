@@ -7007,7 +7007,7 @@ commands:
     strategy: irreversible
     reason: Overwrites the connector connection; the earlier value is not kept, so it cannot be restored.
   confirmation: yes_always
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: contract_only_high_impact
   live_test: null
@@ -7026,7 +7026,8 @@ commands:
   - CT-CONNECTOR-CONNECTION-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Require --yes if validation contacts the destination; fixture required.
+  known_restrictions: Require --yes if validation contacts the destination; fixture required. An optional
+    name is sent with the credentials (the server validates both together); waits for the save job.
   reviewed_by: primary
 - command_id: connector.draft.browse
   command_path: connector draft browse
@@ -7109,6 +7110,52 @@ commands:
   known_restrictions: Without `session_id` the server starts an agent chat for the draft. A draft with
     no `connection_key` needs the project admin role. Another live draft for the same connector or connection
     comes back as `resume_candidate`.
+  reviewed_by: primary
+- command_id: connector.draft.credentials
+  command_path: connector draft credentials
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - TestAgentCredentialCard
+  positionals:
+  - name: draft_id
+    type: int
+    required: true
+    metavar: DRAFT_ID
+    falls_back_to_field: null
+    help: ID of the connector draft whose chat shows the key card.
+  options: []
+  sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
+  sdk_conversion: Call mammoth.api.agents.AgentsAPI.session_credential_test with validated request fields.
+  request_model: ConnectorDraftCredentialsRequest
+  result_model: ConnectorDraftCredentialsResult
+  mutation_class: external_effect
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the connector draft; the earlier value is not kept, so it cannot be restored.
+  confirmation: yes_always
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: contract_only_high_impact
+  live_test: null
+  live_exemption_reason: High-impact or external-effect operation without a disposable fixture.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector draft credentials DRAFT_ID --help
+  agent_example: 'mammoth connector draft credentials 123 --input ''{"session_id": "resource-123", "widget_id":
+    "resource-123", "credentials": {"name": "Status"}}'' --yes'
+  unit_tests:
+  - UT-CONNECTOR-DRAFT-CREDENTIALS
+  contract_tests:
+  - CT-CONNECTOR-DRAFT-CREDENTIALS-HUMAN
+  - CT-CONNECTOR-DRAFT-CREDENTIALS-JSON
+  - CT-CONNECTOR-DRAFT-CREDENTIALS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Answers the draft chat's open key card ("Test and connect"). credentials come from
+    an --input file or stdin, never inline JSON; widget_id defaults to the chat's open card. Needs --yes.
   reviewed_by: primary
 - command_id: connector.draft.discard
   command_path: connector draft discard
@@ -16556,6 +16603,12 @@ commands:
     metavar: DATASET_ID
     falls_back_to_field: null
     help: ID of the dataset.
+  - name: name
+    type: str
+    required: false
+    metavar: NAME
+    falls_back_to_field: name
+    help: New name for the dataset; or pass --name or the 'name' input field.
   options: []
   sdk_symbol: mammoth.api.datasets.DatasetsAPI.rename
   sdk_conversion: Call mammoth.api.datasets.DatasetsAPI.rename with validated request fields.
@@ -16576,7 +16629,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth dataset rename DATASET_ID --help
-  agent_example: 'mammoth dataset rename 123 --input ''{"name": "Revenue report"}'''
+  agent_example: mammoth dataset rename 123 'Sales 2026'
   unit_tests:
   - UT-DATASET-RENAME
   contract_tests:
@@ -16769,7 +16822,7 @@ commands:
     strategy: inverse
     command: dataset.restore
   confirmation: none
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   acceptance_evidence: live_disposable_project
   live_test: LT-DATASET-TRASH
@@ -28777,7 +28830,11 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing
-    an existing target.'
+    an existing target. REPLACE_IN_DS (the default) is destructive on an existing target: on every run
+    the backend first drops the batches that earlier runs of this same export added to the target, then
+    adds the new rows. Rows from other sources (uploads, appends, other exports) are kept, and the first
+    run drops nothing. A run that carries no export id cannot match earlier batches, so it drops nothing
+    and only adds rows. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
   reviewed_by: primary
 - command_id: view.export.delete
   command_path: view export delete
@@ -32945,7 +33002,7 @@ commands:
   - CT-WEBHOOK-CREATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Secure creation uses the secret-output rule (--secret-out/--show-secret).
+  known_restrictions: A secure webhook's secret is masked (secret_redacted true); --reveal prints it.
   reviewed_by: primary
 - command_id: webhook.delete
   command_path: webhook delete
@@ -33186,7 +33243,7 @@ commands:
   - CT-WEBHOOK-UPDATE-ERROR
   draft_test: null
   undo_test: null
-  known_restrictions: Reject an empty patch; a newly issued secret uses the secret-output rule.
+  known_restrictions: Reject an empty patch; a newly issued secret is masked unless --reveal is given.
   reviewed_by: primary
 - command_id: workflow.after.loops
   command_path: workflow after loops

@@ -66,6 +66,7 @@ def invoke(
     hide_pending: bool = False,
     runtime: EmbedRuntime | None = None,
     schema_version: int | None = None,
+    no_retry: bool = False,
 ) -> dict[str, Any]:
     """Run ``mammoth <args>`` as ``login`` and return its envelope.
 
@@ -100,6 +101,8 @@ def invoke(
             that emits a newer version still returns this one for at least one major
             release (``docs/envelope-compatibility.md``); a version this CLI does not
             know is a ``ValueError``. Omitted, the current version.
+        no_retry: Send every request once: the SDK does not retry a read that got a
+            429/502/503/504, so a gateway error comes back as itself (mammothsdk#431).
 
     Returns:
         The success envelope (``data`` + ``meta``) or the error envelope
@@ -118,7 +121,7 @@ def invoke(
         job_timeout=job_timeout,
         return_running=return_running,
     )
-    return _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime)
+    return _invoke_one(argv, login, hide_pending=hide_pending, runtime=runtime, no_retry=no_retry)
 
 
 #: Envelope versions this CLI can return, newest last.
@@ -219,7 +222,13 @@ def invoke_step(argv: Sequence[str]) -> dict[str, Any]:
     call = embedded.current()
     if call is None:
         raise RuntimeError("invoke_step runs only inside an embedded call.")
-    return _invoke_one(list(argv), call.login, hide_pending=call.hide_pending, runtime=call.runtime)
+    return _invoke_one(
+        list(argv),
+        call.login,
+        hide_pending=call.hide_pending,
+        runtime=call.runtime,
+        no_retry=call.no_retry,
+    )
 
 
 def _invoke_one(
@@ -228,10 +237,13 @@ def _invoke_one(
     *,
     hide_pending: bool = False,
     runtime: EmbedRuntime | None = None,
+    no_retry: bool = False,
 ) -> dict[str, Any]:
     """Run ``argv`` as ``login`` in its own embedded call; its envelope, with its wall time."""
     started = time.perf_counter()
-    call = embedded.EmbeddedCall(login=login, hide_pending=hide_pending, runtime=runtime)
+    call = embedded.EmbeddedCall(
+        login=login, hide_pending=hide_pending, runtime=runtime, no_retry=no_retry
+    )
     embedded.install_stream_guards()
     token = embedded.enter(call)
     try:

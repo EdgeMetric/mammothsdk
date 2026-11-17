@@ -297,6 +297,14 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             example_value="deals_2026-10.csv",
         ),
     ),
+    "connector.draft.credentials": (
+        PositionalSpec(
+            name="draft_id",
+            type=int,
+            required=True,
+            help="ID of the connector draft whose chat shows the key card.",
+        ),
+    ),
     "connector.version.spec.get": (
         PositionalSpec(
             name="connector_slug",
@@ -386,7 +394,23 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=int,
             required=False,
             falls_back_to_field="dataset_id",
-            help="ID of the parent dataset; or pass it via the 'dataset_id' input field.",
+            help=(
+                "ID of the parent dataset; or pass it via the 'dataset_id' input field. "
+                "Resolved from the view when omitted."
+            ),
+        ),
+    ),
+    # The new name is the second positional or --name, as well as the 'name' input field
+    # (mammothsdk#322).
+    "dataset.rename": (
+        PositionalSpec(name="dataset_id", type=int, required=True, help="ID of the dataset."),
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=False,
+            help="New name for the dataset; or pass --name or the 'name' input field.",
+            falls_back_to_field="name",
+            example_value="Sales 2026",
         ),
     ),
     "view.exportable-config.get": (

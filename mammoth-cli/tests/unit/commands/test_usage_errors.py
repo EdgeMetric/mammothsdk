@@ -5,8 +5,9 @@ Two Click messages cannot be shown to a caller as-is:
 * a group invoked with no subcommand raises ``NoArgsIsHelpError`` with a
   deliberately *empty* message (Click has already printed the help text), which
   reached an agent as a ``usage_error`` envelope saying nothing at all;
-* a global option written before the command is resolved as a command name, so
-  Click reports ``No such command '--profile'`` — misleading for an option.
+* a global option with no command after it is resolved as a command name, so
+  Click reports ``No such command '--profile'`` — misleading for an option. (One written
+  before a command is hoisted behind it; see :func:`hoist_global_options`.)
 
 These pin the replacement messages, and pin that ordinary usage errors (the
 did-you-mean suggestions in particular) still pass through untouched.
@@ -18,7 +19,9 @@ import json
 from typing import Any
 
 import pytest
+from typer._click import exceptions as click_exceptions
 
+from mammoth_cli.app.usage import hoist_global_options
 from mammoth_cli.testing import make_runner
 
 
@@ -60,55 +63,84 @@ def test_group_without_a_subcommand_names_that_group(group: str) -> None:
 # --- a global option written before the command ---------------------------
 
 
-def test_global_option_before_the_command_is_named_as_an_option() -> None:
-    error = _error(["--profile", "prod", "doctor"])
-
-    assert error["message"] == (
-        "Global option '--profile' must come after the command, not before it."
-    )
-    assert error["details"]["option"] == "--profile"
-
-
-def test_global_option_before_the_command_suggests_the_corrected_order() -> None:
-    error = _error(["--profile", "prod", "doctor"])
-
-    assert error["hint"] == "Try: mammoth doctor --profile prod"
-    assert error["recovery_commands"] == ["mammoth doctor --profile prod"]
+def test_global_option_before_the_command_is_hoisted_behind_it() -> None:
+    assert hoist_global_options(["--profile", "prod", "doctor"]) == [
+        "doctor",
+        "--profile",
+        "prod",
+    ]
 
 
-def test_equals_form_reports_the_option_not_the_whole_token() -> None:
-    error = _error(["--profile=prod", "doctor"])
-
-    assert error["message"].startswith("Global option '--profile' must come after")
-    assert error["recovery_commands"] == ["mammoth doctor --profile=prod"]
-
-
-def test_an_unsupported_output_value_before_the_command_still_gets_the_envelope() -> None:
-    # ``--profile`` and ``--output`` written first must fail the same way when piped.
-    error = _error(["--output", "xml", "project", "list"])
-
-    assert error["code"] == "usage_error"
-    assert error["details"]["option"] == "--output"
-    assert error["recovery_commands"] == ["mammoth project list --output xml"]
+def test_equals_and_short_forms_are_hoisted_whole() -> None:
+    assert hoist_global_options(["--profile=prod", "-ojson", "-y", "view", "list"]) == [
+        "view",
+        "list",
+        "--profile=prod",
+        "-ojson",
+        "-y",
+    ]
 
 
 def test_a_boolean_global_flag_does_not_swallow_the_command_name() -> None:
-    # ``--no-input`` takes no value, so the command must not be consumed as one.
-    error = _error(["--no-input", "doctor"])
-
-    assert error["recovery_commands"] == ["mammoth doctor --no-input"]
+    assert hoist_global_options(["--no-input", "doctor"]) == ["doctor", "--no-input"]
 
 
-def test_several_leading_global_options_all_move_after_the_command() -> None:
-    error = _error(["--output", "json", "--profile", "prod", "view", "list"])
-
-    assert error["recovery_commands"] == ["mammoth view list --output json --profile prod"]
+def test_hoisted_options_land_before_a_double_dash_terminator() -> None:
+    assert hoist_global_options(["--yes", "run", "--", "-x"]) == ["run", "--yes", "--", "-x"]
 
 
-def test_a_leading_global_option_with_no_command_has_nothing_to_suggest() -> None:
+def test_a_command_line_without_leading_options_is_unchanged() -> None:
+    assert hoist_global_options(["view", "list", "--output", "json"]) == [
+        "view",
+        "list",
+        "--output",
+        "json",
+    ]
+
+
+def test_the_same_value_on_both_sides_is_accepted() -> None:
+    assert hoist_global_options(["--output", "json", "doctor", "-o", "json"]) == [
+        "doctor",
+        "-o",
+        "json",
+        "--output",
+        "json",
+    ]
+
+
+def test_different_values_on_both_sides_are_a_usage_error() -> None:
+    with pytest.raises(click_exceptions.UsageError, match="given before and after the command"):
+        hoist_global_options(["--profile", "a", "doctor", "--profile", "b"])
+    with pytest.raises(click_exceptions.UsageError, match="--output"):
+        hoist_global_options(["-o", "json", "doctor", "--output", "table"])
+
+
+def test_a_command_option_value_that_looks_like_a_global_one_is_not_read_as_one() -> None:
+    # `-pending` starts with the short form of --profile; it is the value of --filter.
+    tokens = ["--profile", "a", "view", "list", "--filter", "-pending", "--profile", "a"]
+    assert hoist_global_options(tokens)[:5] == ["view", "list", "--filter", "-pending", "--profile"]
+    assert hoist_global_options(["-p", "a", "view", "list", "--filter", "-pb"])
+
+
+def test_different_values_on_both_sides_fail_through_the_cli() -> None:
+    error = _error(["--profile", "a", "doctor", "--profile", "b", "--output", "json"])
+
+    assert error["code"] == "usage_error"
+    assert "'--profile' is given before and after the command" in error["message"]
+
+
+def test_a_leading_global_option_runs_the_command_as_if_it_followed() -> None:
+    before = make_runner().invoke(["--output", "json", "schema", "get", "project.list"])
+    after = make_runner().invoke(["schema", "get", "project.list", "--output", "json"])
+
+    assert before.exit_code == after.exit_code == 0, before.output
+    assert json.loads(before.output)["data"] == json.loads(after.output)["data"]
+
+
+def test_a_leading_global_option_with_no_command_has_nothing_to_run() -> None:
     error = _error(["--output", "json"])
 
-    assert error["message"].startswith("Global option '--output' must come after")
+    assert error["message"] == "Global option '--output' needs a command after it."
     assert error["recovery_commands"] == []
 
 
@@ -148,7 +180,7 @@ def test_an_unknown_option_on_a_leaf_command_is_untouched() -> None:
 
 
 @pytest.mark.parametrize(
-    "args", [[], ["file"], ["--profile", "prod", "doctor"], ["file", "--output", "json"]]
+    "args", [[], ["file"], ["--profile", "prod", "doctr"], ["file", "--output", "json"]]
 )
 def test_no_usage_error_ever_renders_an_empty_message(args: list[str]) -> None:
     """The regression guard: an agent must never get a blank explanation."""
@@ -163,6 +195,7 @@ def test_the_only_suggested_command_is_one_the_caller_can_run_verbatim() -> None
     ``--output json --no-input`` to the caller's own command would only
     distort what they asked for.
     """
-    assert _error(["--profile", "prod", "doctor"])["recovery_commands"] == [
-        "mammoth doctor --profile prod"
-    ]
+    commands = _error(["--profile", "prod", "doctr"])["recovery_commands"]
+
+    assert commands[0] == "mammoth doctor --help"
+    assert not any("--no-input" in command or "--output" in command for command in commands)

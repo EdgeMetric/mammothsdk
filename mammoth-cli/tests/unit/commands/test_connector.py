@@ -938,3 +938,79 @@ def test_connection_get_without_a_project_names_the_projects_it_could_not_read(
     assert excinfo.value.code == "project_required"
     assert "Projects [5] could not be read" in excinfo.value.message
     assert all(symbol != _CONNECTION_GET for symbol, _ in fake_service.call_log)
+
+
+def test_connection_update_sends_name_with_credentials_and_waits(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # mammothsdk#413: a connection could not be renamed from the CLI.
+    doc = _write(tmp_path, {"name": "Lincoln High", "credentials": {"api_key": "k"}})
+    connector_cmd.connector_connection_update(
+        _inv(
+            "connector.connection.update",
+            project=180,
+            extra_args=["custom_code", "conn1"],
+            input_file=doc,
+            yes=True,
+        )
+    )
+    assert fake_service.call_log == [
+        (
+            _CONNECTION_UPDATE,
+            {
+                "connector_key": "custom_code",
+                "connection_key": "conn1",
+                "project_id": 180,
+                "credentials": {"api_key": "k"},
+                "name": "Lincoln High",
+            },
+        )
+    ]
+    assert "wait_if_job" in fake_service.calls
+
+
+_DRAFT_GET = "mammoth.api.connector_drafts.ConnectorDraftsAPI.get"
+_SESSION_MESSAGES = "mammoth.api.agents.AgentsAPI.session_messages"
+_CREDENTIAL_TEST = "mammoth.api.agents.AgentsAPI.session_credential_test"
+
+
+def test_draft_credentials_answers_the_open_key_card(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    # mammothsdk#319: the draft chat's key card could be answered only in the browser.
+    fake_service.responses[_DRAFT_GET] = {"id": 9, "session_id": "s1"}
+    fake_service.responses[_SESSION_MESSAGES] = {
+        "messages": [
+            {"widget": {"id": "old", "kind": "CONNECTOR_CREDENTIAL", "resolved": True}},
+            {"widget": {"id": "w2", "kind": "CONNECTOR_CREDENTIAL"}},
+            {"text": "Paste the key above."},
+        ]
+    }
+    fake_service.responses[_CREDENTIAL_TEST] = {"outcome": "connected"}
+    doc = _write(tmp_path, {"credentials": {"client_id": "a", "secret": "b"}})
+    data, _meta = connector_cmd.connector_draft_credentials(
+        _inv("connector.draft.credentials", extra_args=["9"], input_file=doc, yes=True)
+    )
+    assert fake_service.call_log[-1] == (
+        _CREDENTIAL_TEST,
+        {"session_id": "s1", "widget_id": "w2", "credentials": {"client_id": "a", "secret": "b"}},
+    )
+    assert data["outcome"] == {"outcome": "connected"}
+
+
+def test_draft_credentials_refuses_inline_json(fake_service: FakeMammothService) -> None:
+    with pytest.raises(CliError) as excinfo:
+        connector_cmd.connector_draft_credentials(
+            _inv(
+                "connector.draft.credentials",
+                extra_args=["9"],
+                input_file='{"credentials": {"secret": "b"}}',
+                yes=True,
+            )
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []
+
+
+def test_open_credential_card_is_none_without_an_open_card() -> None:
+    assert connector_cmd.open_credential_card({"messages": [{"text": "hi"}]}) is None

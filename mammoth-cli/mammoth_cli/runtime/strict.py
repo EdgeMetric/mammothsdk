@@ -63,6 +63,9 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
     # The compacted dashboard writes: --full returns the whole response.
     **{command_id: frozenset({FULL_FLAG}) for command_id in FULL_FLAG_COMMANDS},
     "schema.find": frozenset({"--unsupported", FULL_FLAG}),
+    # The new name may be given as --name VALUE: Click binds VALUE to the second positional and
+    # leaves the flag here (mammothsdk#322).
+    "dataset.rename": frozenset({"--name"}),
     # A once-shown credential is masked unless --reveal asks for it.
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
 }

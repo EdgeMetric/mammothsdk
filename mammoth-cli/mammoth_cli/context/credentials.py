@@ -520,6 +520,36 @@ def store_credentials(
     raise keyring_unavailable_error()
 
 
+def resolve_login_storage(storage: StorageMode, *, say: Callable[[str], None]) -> StorageMode:
+    """Settle where a sign-in's credential will go before the user is asked to approve it.
+
+    A device or browser sign-in waits on a person, so a missing keyring must show up before
+    that wait, not after the approval (mammothsdk#303). With ``"auto"`` and no OS keyring the
+    sign-in uses the owner-only credential file and says so.
+
+    Args:
+        storage: The requested mode: ``"auto"``, ``"keyring"`` or ``"file"``.
+        say: Prints one notice line (stderr).
+
+    Returns:
+        The mode to pass to :func:``store_credentials``: ``"file"`` when ``"auto"`` fell back.
+
+    Raises:
+        CliError: ``keyring_unavailable`` when ``"keyring"`` was asked for and none exists.
+    """
+    if storage == "file":
+        return storage
+    if _keyring_available():
+        return storage
+    if storage == "keyring":
+        raise keyring_unavailable_error()
+    say(
+        "No OS keyring is available on this machine; the credential will be stored in "
+        f"{credentials_path()} (owner-only, mode 0600) instead."
+    )
+    return "file"
+
+
 # What this process already loaded, by (config dir, profile). Every load costs a file read
 # and, for a keyring profile, a ~50 ms D-Bus call, and one command loads the same profile
 # from the resolver and from the OAuth token source. Every write below drops the entry.
