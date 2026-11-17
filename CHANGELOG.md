@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## mammoth-io 0.8.57 (2026-11-17)
+
+### Added (mammoth-io 0.8.57)
+
+- `view.export.to_dataset` takes `columns` (send only these) or `drop_columns` (send all but these), applied through the export's column mapping, so personal columns can be left out of a send without a copied view. An unknown column, both lists at once, nothing left to send, or a rename of a column that isn't sent is refused before anything is sent (mammothsdk#404).
+- `DatasetsAPI.refresh_source` pulls a webhook or connector dataset in again from its source (mammothsdk#372).
+- `ConnectorsAPI.update_connection` takes `name`, sent with the credentials, to rename a connection whose connector model has a name (custom REST/code connectors) (mammothsdk#413).
+- `AgentsAPI.access_grant_give` and `access_grant_update` take `can_download`; `access_settings_update` takes `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `AgentsAPI.session_credential_test` answers an agent chat's credential card (mammothsdk#319).
+
+### Changed (mammoth-io 0.8.57)
+
+- The HTTP log line of a retried or failed request carries the attempt, the retry wait and the Server, Via, X-Cache, X-Amz-Cf-Id and Retry-After response headers (mammothsdk#431).
+
+### Fixed (mammoth-io 0.8.57)
+
+- Agent chat with a wait keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and returns the final message (mammothsdk#417).
+
 ## mammoth-mcp-server 0.2.15 (2026-11-13)
 
 ### Fixed (mammoth-mcp-server 0.2.15)

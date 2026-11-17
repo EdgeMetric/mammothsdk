@@ -1873,6 +1873,20 @@ class TestConnectorsAPI:
             {"patch": [{"op": "replace", "path": "connection", "value": creds}]},
         )
 
+    async def test_update_connection_sends_name_in_the_patch_value(self, client: MammothClient):
+        # mammothsdk#413: a rename is ``name`` in the connection patch value.
+        await client.connectors.update_connection(
+            connector_key="custom_code",
+            connection_key="conn1",
+            credentials={"api_key": "k"},
+            name="Lincoln High",
+        )
+        value = {"api_key": "k", "name": "Lincoln High"}
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "connection", "value": value}]},
+        )
+
     async def test_update_connection_rejects_empty_credentials(self, client: MammothClient):
         with pytest.raises(MammothValidationError, match="credentials"):
             await client.connectors.update_connection(
