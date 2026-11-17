@@ -6,14 +6,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-io)
-
-- `view.export.to_dataset` takes `columns` (send only these) or `drop_columns` (send all but these), applied through the export's column mapping, so personal columns can be left out of a send without a copied view. An unknown column, both lists at once, nothing left to send, or a rename of a column that isn't sent is refused before anything is sent (mammothsdk#404).
-- `DatasetsAPI.refresh_source` pulls a webhook or connector dataset in again from its source (mammothsdk#372).
-- `ConnectorsAPI.update_connection` takes `name`, sent with the credentials, to rename a connection whose connector model has a name (custom REST/code connectors) (mammothsdk#413).
-- `AgentsAPI.access_grant_give` and `access_grant_update` take `can_download`; `access_settings_update` takes `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
-- `AgentsAPI.session_credential_test` answers an agent chat's credential card (mammothsdk#319).
-
 ### Added (next mammoth-cli)
 
 - `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332). `--workspace ID` picks the workspace for an account with several. The server's reason is shown for a refused login (`authentication_failed`), and a new `password_login_invalid_request` (exit 2) carries its description, with a hint to pass `--workspace` when workspaces are listed.
@@ -27,10 +19,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth bench` counts every HTTP attempt (`http.attempts`, `retries`, `attempt_status`, `retry_wait_ms`), so a retried 502 no longer looks like a clean run, and `--no-retry` sends each request once (mammothsdk#431).
 - `dataset rename` takes the new name as a second argument or `--name`, as well as the `name` input field (mammothsdk#322).
 
-### Changed (next mammoth-io)
-
-- The HTTP log line of a retried or failed request carries the attempt, the retry wait and the Server, Via, X-Cache, X-Amz-Cf-Id and Retry-After response headers (mammothsdk#431).
-
 ### Changed (next mammoth-cli)
 
 - Global options such as `--profile`, `--project`, `--output` and `--timeout` now work before the subcommand as well as after it (`mammoth --profile X project list`). Giving the same option on both sides with different values is a usage error (mammothsdk#303).
@@ -38,12 +26,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350). The JSON result now carries `selected`, `active_profile` and, when the profile was not selected, a `hint` naming the command to switch (`mammoth auth login --profile X --select`). This changes behaviour for scripts: a script that logs in under a new profile name and relied on it becoming active must now pass `--select`.
 - `view delete VIEW` no longer needs the dataset id: it reads the view's parent dataset itself (mammothsdk#403).
 
-### Fixed (next mammoth-io, mammoth-cli)
-
-- `agent chat` with `wait` keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and prints the final message (mammothsdk#417).
-
 ### Fixed (next mammoth-cli)
 
+- `agent chat` with `wait` keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and prints the final message (mammothsdk#417).
 - `view data query` reads the view and its dataset once per command instead of re-reading the view (mammothsdk#400).
 - `dataset refresh` pulls a webhook or connector dataset from its own source instead of always asking for a URL refresh, which failed for anything not loaded from a URL (mammothsdk#372, mammothsdk#414).
 - `dataset create` for a cloud database with a `query` and no `schedule_properties` sends a one-off pull (`moment`, `now`, `replace`) and turns `query_properties.table` into `table_name`, and says so in `input_adjusted`; the server failed the job instead (mammothsdk#382).
@@ -63,6 +48,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `file upload` of a one-sheet workbook follows the server's sheet extraction to the dataset it makes, instead of reporting `no_dataset` with PDF advice (mammothsdk#374).
 - The values of `dashboard v3 generate` and `dashboard chat edit` name the pages they could not evaluate (`pages_not_evaluated`) instead of silently showing the first page only (mammothsdk#442).
 - The blank-board help and the dashboards recipe no longer say a board reads one table: each page can read its own (mammothsdk#440).
+
+## mammoth-io 0.8.57 (2026-11-17)
+
+### Added (mammoth-io 0.8.57)
+
+- `view.export.to_dataset` takes `columns` (send only these) or `drop_columns` (send all but these), applied through the export's column mapping, so personal columns can be left out of a send without a copied view. An unknown column, both lists at once, nothing left to send, or a rename of a column that isn't sent is refused before anything is sent (mammothsdk#404).
+- `DatasetsAPI.refresh_source` pulls a webhook or connector dataset in again from its source (mammothsdk#372).
+- `ConnectorsAPI.update_connection` takes `name`, sent with the credentials, to rename a connection whose connector model has a name (custom REST/code connectors) (mammothsdk#413).
+- `AgentsAPI.access_grant_give` and `access_grant_update` take `can_download`; `access_settings_update` takes `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `AgentsAPI.session_credential_test` answers an agent chat's credential card (mammothsdk#319).
+
+### Changed (mammoth-io 0.8.57)
+
+- The HTTP log line of a retried or failed request carries the attempt, the retry wait and the Server, Via, X-Cache, X-Amz-Cf-Id and Retry-After response headers (mammothsdk#431).
+
+### Fixed (mammoth-io 0.8.57)
+
+- Agent chat with a wait keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and returns the final message (mammothsdk#417).
 
 ## mammoth-mcp-server 0.2.15 (2026-11-13)
 
