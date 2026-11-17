@@ -6,7 +6,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-cli)
+## mammoth-cli 2.4.6 (2026-11-17)
+
+### Added (mammoth-cli 2.4.6)
 
 - `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332). `--workspace ID` picks the workspace for an account with several. The server's reason is shown for a refused login (`authentication_failed`), and a new `password_login_invalid_request` (exit 2) carries its description, with a hint to pass `--workspace` when workspaces are listed.
 - `view export dataset` accepts `columns` and `drop_columns` (mammothsdk#404); the append schema check compares only the columns actually sent.
@@ -19,14 +21,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mammoth bench` counts every HTTP attempt (`http.attempts`, `retries`, `attempt_status`, `retry_wait_ms`), so a retried 502 no longer looks like a clean run, and `--no-retry` sends each request once (mammothsdk#431).
 - `dataset rename` takes the new name as a second argument or `--name`, as well as the `name` input field (mammothsdk#322).
 
-### Changed (next mammoth-cli)
+### Changed (mammoth-cli 2.4.6)
 
 - Global options such as `--profile`, `--project`, `--output` and `--timeout` now work before the subcommand as well as after it (`mammoth --profile X project list`). Giving the same option on both sides with different values is a usage error (mammothsdk#303).
 - `dataset find` no longer lists every project first when the search results already name their projects: one request instead of a dozen on large accounts (mammothsdk#436).
 - `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350). The JSON result now carries `selected`, `active_profile` and, when the profile was not selected, a `hint` naming the command to switch (`mammoth auth login --profile X --select`). This changes behaviour for scripts: a script that logs in under a new profile name and relied on it becoming active must now pass `--select`.
 - `view delete VIEW` no longer needs the dataset id: it reads the view's parent dataset itself (mammothsdk#403).
 
-### Fixed (next mammoth-cli)
+### Fixed (mammoth-cli 2.4.6)
 
 - `agent chat` with `wait` keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and prints the final message (mammothsdk#417).
 - `view data query` reads the view and its dataset once per command instead of re-reading the view (mammothsdk#400).
