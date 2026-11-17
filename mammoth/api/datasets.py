@@ -654,6 +654,58 @@ class DatasetsAPI:
             json={"patch": patch},
         )
 
+    async def refresh_source(
+        self,
+        dataset_id: int,
+        source_type: str,
+        source_id: int | None = None,
+        workspace_id: int | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Pull a connector, cloud-file or webhook dataset's data in now.
+
+        Sends the ``data_refresh`` command patch with ``refresh_source_type`` ``cloud``
+        (a connector table), ``file`` (a cloud-storage file) or ``webhook`` (the rows a
+        webhook staged). A URL dataset uses :meth:`refresh_from_url`.
+
+        Args:
+            dataset_id: ID of the dataset.
+            source_type: ``"cloud"``, ``"file"`` or ``"webhook"``.
+            source_id: The webhook id; required for ``"webhook"``, ignored otherwise.
+            workspace_id: ID of the workspace (uses client default if not provided).
+            project_id: ID of the project (uses client default if not provided).
+
+        Returns:
+            The job handle (``job_id``); wait on it before reading the dataset.
+
+        Raises:
+            MammothValidationError: If *dataset_id* <= 0, *source_type* is not one of the
+                three, or a webhook refresh has no *source_id*.
+        """
+        if dataset_id <= 0:
+            raise MammothValidationError(ERR_DATASET_ID_POSITIVE.format(dataset_id))
+        if source_type not in ("cloud", "file", "webhook"):
+            raise MammothValidationError(
+                f"source_type must be 'cloud', 'file' or 'webhook', not {source_type!r}"
+            )
+        if source_type == "webhook" and not source_id:
+            raise MammothValidationError("A webhook refresh needs the webhook id as source_id")
+        ws = workspace_id or self._ws()
+        proj = self._proj(project_id)
+        patch = {
+            "op": "command",
+            "path": "data_refresh",
+            "value": {
+                "refresh_source_type": source_type,
+                "source_id": source_id if source_type == "webhook" else dataset_id,
+            },
+        }
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/datasets/{dataset_id}",
+            json={"patch": patch},
+        )
+
     async def follow_link(
         self,
         dataset_id: int,

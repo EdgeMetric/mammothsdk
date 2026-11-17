@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
+from mammoth.client import MammothClient
 from mammoth.condition import Condition
-from mammoth.exceptions import MammothExportError, MammothValidationError
+from mammoth.exceptions import MammothColumnError, MammothExportError, MammothValidationError
 from mammoth.models.exports import (
     BigQueryExportType,
     ExportStatus,
@@ -662,31 +665,93 @@ class TestPublishToDb:
 _RESOLVED_DS_ID = 4242
 
 
+_MULTI_COL_VIEW = {
+    "id": 2001,
+    "name": "Multi Col View",
+    "properties": {
+        "columns": [
+            {"display_name": "col_a", "internal_name": "column_aaa", "type": "TEXT"},
+            {"display_name": "col_b", "internal_name": "column_bbb", "type": "TEXT"},
+            {"display_name": "col_c", "internal_name": "column_ccc", "type": "TEXT"},
+        ],
+    },
+}
+
+
+class _ExportWire:
+    """The HTTP boundary of a real client: answers the export routes, records what was sent.
+
+    Only the network is faked. ``to_dataset`` runs its real code path: it POSTs the
+    export, lists the view's export triggers to confirm the write and resolve the new
+    dataset id, and falls back to the dataset list for a one-off copy.
+    """
+
+    def __init__(self) -> None:
+        self.requests: list[httpx.Request] = []
+        self.posts: list[dict[str, Any]] = []
+        self.client = MammothClient(api_key="k", api_secret="s", workspace_id=1)
+        self.client.set_project_id(2)
+        self.client.session = httpx.AsyncClient(
+            transport=httpx.MockTransport(self), headers=self.client.session.headers
+        )
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        path = request.url.path
+        if path.endswith("/pipeline/exports") and request.method == "POST":
+            self.posts.append(json.loads(request.content))
+            return httpx.Response(200, json={"trigger_id": len(self.posts), "status": "executed"})
+        if path.endswith("/pipeline/exports"):
+            exports = [
+                {
+                    "id": number,
+                    "status": "executed",
+                    "target_properties": {
+                        **post["target_properties"],
+                        "TARGET_DS_ID": post["target_properties"]["TARGET_DS_ID"]
+                        or _RESOLVED_DS_ID,
+                    },
+                }
+                for number, post in enumerate(self.posts, start=1)
+            ]
+            return httpx.Response(200, json={"exports": exports, "next": ""})
+        if path.endswith("/datasets"):
+            datasets = [
+                {
+                    "id": _RESOLVED_DS_ID,
+                    "name": post["target_properties"]["DS_NAME"],
+                    "additional_info": {"DATAVIEW_ID": post["DATAVIEW_ID"]},
+                }
+                for post in self.posts
+            ]
+            return httpx.Response(200, json={"datasets": datasets, "next": ""})
+        return httpx.Response(404, json={"message": f"unexpected {request.method} {path}"})
+
+    def sent(self) -> dict[str, Any]:
+        """The newest export submitted: its target properties, condition and trigger."""
+        assert self.posts, "no export reached the wire"
+        post = self.posts[-1]
+        return {
+            "target_properties": post["target_properties"],
+            "condition": post["condition"],
+            "trigger_type": post["trigger_type"],
+        }
+
+
+@pytest.fixture
+def wire() -> _ExportWire:
+    return _ExportWire()
+
+
+@pytest.fixture
+def wire_view(wire: _ExportWire) -> View:
+    return View(wire.client, SAMPLE_VIEW_DATA, 500)
+
+
 class TestToDataset:
-    @staticmethod
-    def _capture_run(view) -> dict[str, Any]:
-        """Replace the internal-dataset export seam with a recorder.
-
-        The seam returns the new dataset id (int); the recorder mimics that so
-        callers' return value can be asserted.
-        """
-        captured: dict[str, Any] = {}
-
-        async def fake_run(
-            target_properties, timeout=None, condition=None, trigger_type=TriggerType.PIPELINE
-        ) -> int:
-            captured["target_properties"] = target_properties
-            captured["timeout"] = timeout
-            captured["condition"] = condition
-            captured["trigger_type"] = trigger_type
-            return _RESOLVED_DS_ID
-
-        view._run_internal_dataset_export = fake_run  # type: ignore[assignment]
-        return captured
-
-    async def test_new_dataset_payload(self, export_view):
-        captured = self._capture_run(export_view)
-        new_id = await export_view.export.to_dataset("New DS")
+    async def test_new_dataset_payload(self, wire_view, wire):
+        new_id = await wire_view.export.to_dataset("New DS")
+        captured = wire.sent()
         assert new_id == _RESOLVED_DS_ID  # the resolved dataset id propagates out
         tp = captured["target_properties"]
         assert tp["DS_NAME"] == "New DS"
@@ -694,23 +759,22 @@ class TestToDataset:
         assert tp["SAVE_AS_DS_MODE"] == "REPLACE_IN_DS"
         assert tp["COLUMN_MAPPING"] == {}
         assert tp["TRANSFORM"] is None
-        assert captured["condition"] is None
+        assert captured["condition"] == {}
 
-    async def test_existing_dataset_append_with_mapping(self, export_view):
-        captured = self._capture_run(export_view)
+    async def test_existing_dataset_append_with_mapping(self, wire_view, wire):
         mapping = {"col_a": "mapped_col"}
-        await export_view.export.to_dataset(
+        await wire_view.export.to_dataset(
             "Existing DS",
             target_ds_id=42,
             save_as_mode=SaveAsDatasetMode.APPEND,
             column_mapping=mapping,
         )
-        tp = captured["target_properties"]
+        tp = wire.sent()["target_properties"]
         assert tp["TARGET_DS_ID"] == 42
         assert tp["SAVE_AS_DS_MODE"] == "APPEND_TO_DS"
         assert tp["COLUMN_MAPPING"] == mapping
 
-    async def test_new_dataset_partial_mapping_keeps_other_columns(self, mock_client):
+    async def test_new_dataset_partial_mapping_keeps_other_columns(self, wire):
         # Reproduces the koyal QA-smoke bug (2026-09-28, RCA cause (a)):
         # "rename petal_width, save as new dataset" sent column_mapping=
         # {"petal_width": "..."} alone. The backend treats a non-empty
@@ -718,52 +782,58 @@ class TestToDataset:
         # column NOT in the mapping was silently dropped -- a 4-column view
         # exported as a 1-column dataset. A rename-only mapping on a NEW
         # dataset (target_ds_id=None) must keep every other view column.
-        view = View(
-            mock_client,
-            {
-                "id": 2001,
-                "name": "Multi Col View",
-                "properties": {
-                    "columns": [
-                        {
-                            "display_name": "col_a",
-                            "internal_name": "column_aaa",
-                            "type": "TEXT",
-                        },
-                        {
-                            "display_name": "col_b",
-                            "internal_name": "column_bbb",
-                            "type": "TEXT",
-                        },
-                        {
-                            "display_name": "col_c",
-                            "internal_name": "column_ccc",
-                            "type": "TEXT",
-                        },
-                    ],
-                },
-            },
-            501,
-        )
-        captured = self._capture_run(view)
+        view = View(wire.client, _MULTI_COL_VIEW, 501)
         await view.export.to_dataset("New DS", column_mapping={"col_b": "renamed_b"})
-        tp = captured["target_properties"]
+        tp = wire.sent()["target_properties"]
         assert tp["COLUMN_MAPPING"] == {
             "col_a": "col_a",
             "col_b": "renamed_b",
             "col_c": "col_c",
         }
 
-    async def test_condition_forwarded_to_seam_untouched(self, export_view):
-        captured = self._capture_run(export_view)
-        cond = Condition("col_a", Operator.EQ, "x")
-        await export_view.export.to_dataset("Filtered DS", condition=cond)
-        # to_dataset forwards the TYPED condition object as-is — it does NOT
-        # pre-build it (the seam owns building) and does NOT leak it into
-        # target_properties (the filter is a top-level sibling).
-        assert captured["condition"] is cond
-        assert "CONDITION" not in captured["target_properties"]
-        assert "TRANSFORM" in captured["target_properties"]
+    async def test_drop_columns_sends_every_other_column(self, wire):
+        # mammothsdk#404: leaving personal columns out of a send needed a copied view.
+        view = View(wire.client, _MULTI_COL_VIEW, 501)
+        await view.export.to_dataset("New DS", drop_columns=["col_b"])
+        assert wire.sent()["target_properties"]["COLUMN_MAPPING"] == {
+            "col_a": "col_a",
+            "col_c": "col_c",
+        }
+
+    async def test_columns_keeps_only_those_with_renames(self, wire):
+        view = View(wire.client, _MULTI_COL_VIEW, 501)
+        await view.export.to_dataset(
+            "New DS", columns=["col_c", "col_a"], column_mapping={"col_a": "a"}
+        )
+        assert wire.sent()["target_properties"]["COLUMN_MAPPING"] == {
+            "col_c": "col_c",
+            "col_a": "a",
+        }
+
+    @pytest.mark.parametrize(
+        ("kwargs", "error"),
+        [
+            ({"columns": ["col_a"], "drop_columns": ["col_b"]}, MammothValidationError),
+            ({"drop_columns": ["nope"]}, MammothColumnError),
+            ({"drop_columns": ["col_a", "col_b", "col_c"]}, MammothValidationError),
+            ({"columns": ["col_a"], "column_mapping": {"col_b": "x"}}, MammothValidationError),
+        ],
+    )
+    async def test_a_bad_column_selection_is_refused(self, wire, kwargs, error):
+        view = View(wire.client, _MULTI_COL_VIEW, 501)
+        with pytest.raises(error):
+            await view.export.to_dataset("New DS", **kwargs)
+        assert wire.requests == []  # refused before any request was sent
+
+    async def test_condition_rides_the_export_not_the_target_properties(self, wire_view, wire):
+        await wire_view.export.to_dataset(
+            "Filtered DS", condition=Condition("col_a", Operator.EQ, "x")
+        )
+        sent = wire.sent()
+        # The filter is a top-level sibling of target_properties, keyed by the internal name.
+        assert "column_aaa" in sent["condition"]
+        assert "CONDITION" not in sent["target_properties"]
+        assert "TRANSFORM" in sent["target_properties"]
 
     async def test_seam_builds_typed_condition_into_export_spec(self, export_view):
         # Exercise the REAL seam and capture the spec it builds, proving the
@@ -810,23 +880,22 @@ class TestToDatasetOneOffCopy:
     """mammothsdk#381 item 1: a one-time copy, with no step left on the source view."""
 
     async def test_trigger_none_reaches_the_export_and_pipeline_stays_the_default(
-        self, export_view
+        self, wire_view, wire
     ):
-        captured = TestToDataset._capture_run(export_view)
-        await export_view.export.to_dataset("Copy", trigger_type="none", run_immediately=True)
-        assert captured["trigger_type"] is TriggerType.NONE
-        await export_view.export.to_dataset("Copy")
-        assert captured["trigger_type"] is TriggerType.PIPELINE
+        await wire_view.export.to_dataset("Copy", trigger_type="none", run_immediately=True)
+        assert wire.sent()["trigger_type"] == TriggerType.NONE.value
+        await wire_view.export.to_dataset("Copy")
+        assert wire.sent()["trigger_type"] == TriggerType.PIPELINE.value
 
     @pytest.mark.parametrize(
         "kwargs", [{"run_immediately": False}, {"trigger_type": "schedule"}, {"trigger_type": "x"}]
     )
     async def test_a_copy_that_would_not_run_or_has_no_dataset_trigger_is_refused(
-        self, export_view, kwargs
+        self, wire_view, wire, kwargs
     ):
-        TestToDataset._capture_run(export_view)
         with pytest.raises(MammothValidationError):
-            await export_view.export.to_dataset("Copy", **kwargs)
+            await wire_view.export.to_dataset("Copy", **kwargs)
+        assert wire.requests == []  # refused before any request was sent
 
     async def test_a_one_off_copy_is_found_in_the_target_project_without_polling_triggers(
         self, export_view

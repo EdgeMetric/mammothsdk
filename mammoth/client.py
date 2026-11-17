@@ -112,6 +112,27 @@ def safe_log_path(endpoint: str) -> str:
     )
 
 
+#: Response headers kept on the log line of a failed or retried request, to tell a gateway or
+#: CDN error (CloudFront, an ALB) from the service's own (mammothsdk#431).
+_DIAGNOSTIC_HEADERS = ("Server", "Via", "X-Cache", "X-Amz-Cf-Id", "Retry-After")
+
+
+def _diagnostic_headers(response: Any) -> dict[str, str]:
+    """The `_DIAGNOSTIC_HEADERS` a response carries, by their canonical names.
+
+    Args:
+        response: The HTTP response (any object; one without readable headers gives `{}`).
+
+    Returns:
+        Header name to value, only for the headers the response has.
+    """
+    try:
+        lowered = {str(key).lower(): str(value) for key, value in response.headers.items()}
+    except (AttributeError, TypeError):
+        return {}
+    return {name: lowered[name.lower()] for name in _DIAGNOSTIC_HEADERS if name.lower() in lowered}
+
+
 def _log_http(
     method: str,
     endpoint: str,
@@ -122,13 +143,36 @@ def _log_http(
     outcome: str,
     attempt: int | None = None,
     error: str | None = None,
+    retry_wait_ms: int | None = None,
+    headers: dict[str, str] | None = None,
 ) -> None:
+    """Log one HTTP attempt on `mammoth.http`.
+
+    Args:
+        method: The HTTP method.
+        endpoint: The path as the caller wrote it (redacted before logging).
+        started: `time.perf_counter()` when the attempt began.
+        status: The response status, or None when none came.
+        request_id: The server's request id, when it sent one.
+        outcome: `ok`, `error`, `retry`, `timeout` and so on.
+        attempt: The 1-based attempt number of a retried read.
+        error: The exception name of a transport failure.
+        retry_wait_ms: For a `retry`, the backoff slept before the next attempt (mammothsdk#431).
+        headers: Diagnostic response headers of a non-2xx response (mammothsdk#431).
+    """
     if not _HTTP_LOG.isEnabledFor(logging.INFO):
         return
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     tried = f" attempt={attempt}/{_MAX_READ_RETRIES + 1}" if attempt else ""
     failed = f" error={error}" if error else ""
     path = safe_log_path(endpoint)
+    detail: dict[str, Any] = {}
+    if attempt:
+        detail["attempt"] = attempt
+    if retry_wait_ms is not None:
+        detail["retry_wait_ms"] = retry_wait_ms
+    if headers:
+        detail["headers"] = headers
     _HTTP_LOG.info(
         "http %s %s%s outcome=%s status=%s%s elapsed_ms=%s",
         method,
@@ -147,6 +191,7 @@ def _log_http(
                 "duration_ms": elapsed_ms,
                 "request_id": request_id,
                 "outcome": outcome,
+                **detail,
             }
         },
     )
@@ -1110,6 +1155,7 @@ class MammothClient:
             except httpx.TransportError as e:
                 if last or not (replayable or isinstance(e, httpx.ConnectError)):
                     raise
+                wait = _retry_delay(attempt, None)
                 _log_http(
                     method,
                     endpoint,
@@ -1118,8 +1164,9 @@ class MammothClient:
                     outcome="retry",
                     attempt=attempt + 1,
                     error=type(e).__name__,
+                    retry_wait_ms=round(wait * 1000),
                 )
-                await asyncio.sleep(_retry_delay(attempt, None))
+                await asyncio.sleep(wait)
                 continue
             if keyed and getattr(response, "headers", {}).get(IDEMPOTENCY_KEY_HEADER):
                 mark_idempotency_keys_honoured(self.base_url)
@@ -1128,6 +1175,7 @@ class MammothClient:
             )
             if last or not again:
                 return response
+            wait = _retry_delay(attempt, response.headers.get("Retry-After"))
             _log_http(
                 method,
                 endpoint,
@@ -1135,8 +1183,10 @@ class MammothClient:
                 status=response.status_code,
                 outcome="retry",
                 attempt=attempt + 1,
+                retry_wait_ms=round(wait * 1000),
+                headers=_diagnostic_headers(response),
             )
-            await asyncio.sleep(_retry_delay(attempt, response.headers.get("Retry-After")))
+            await asyncio.sleep(wait)
         raise AssertionError("unreachable")
 
     @property
@@ -1362,6 +1412,7 @@ class MammothClient:
             status=response.status_code,
             request_id=request_id,
             outcome="ok" if 200 <= response.status_code < 300 else "error",
+            headers=None if 200 <= response.status_code < 300 else _diagnostic_headers(response),
         )
 
         body: dict[str, Any] = {}
