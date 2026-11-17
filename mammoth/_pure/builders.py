@@ -571,7 +571,9 @@ DATE_COMPONENT_TYPE: dict[str, str] = {
     c.value: (
         "DATE"
         if c.value in _DATE_COMPONENTS_DATE
-        else "NUMERIC" if c.value in _DATE_COMPONENTS_NUMERIC else "TEXT"
+        else "NUMERIC"
+        if c.value in _DATE_COMPONENTS_NUMERIC
+        else "TEXT"
     )
     for c in DateComponent
 }
