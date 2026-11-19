@@ -533,6 +533,34 @@ def _is_token_expired(exc: BaseException) -> bool:
     return isinstance(body, dict) and body.get("name") == _TOKEN_EXPIRED_NAME
 
 
+def _is_missing_route(exc: BaseException) -> bool:
+    """True for a 404 whose whole body is the framework's ``{"detail": "Not Found"}``.
+
+    A missing object comes back with the Mammoth error fields (``error_code``, ``name``,
+    ``message``); a bare ``detail`` means the server has no such route.
+    """
+    body = getattr(exc, "response_body", None)
+    if not isinstance(body, dict):
+        return False
+    detail = body.get("detail")
+    extra = set(body) - {"detail", "status_code"}
+    return isinstance(detail, str) and detail.lower() == "not found" and not extra
+
+
+def _missing_route_error(details: dict[str, Any], request_id: str | None) -> CliError:
+    """The error for an endpoint this server does not serve (not a missing object)."""
+    endpoint = str(details.get("endpoint") or "")
+    what = "agent definitions" if "/agent-definitions" in endpoint else f"the endpoint {endpoint}"
+    return CliError(
+        code=CODE_RESOURCE_NOT_FOUND,
+        message=f"This server does not have {what}.",
+        exit_status=EXIT_NOT_FOUND,
+        hint="The server is older than this command, or the feature is not deployed there.",
+        details=details,
+        request_id=request_id,
+    )
+
+
 def _stored_credential_kind(profile: str | None) -> str | None:
     """The stored credential kind of ``profile`` (the selected one when None)."""
     credential = credentials.load_credential(profile or profiles.get_selected())
@@ -821,6 +849,8 @@ def map_sdk_exception(
                 retryable=False,
                 recovery_commands=recovery,
             )
+        if status == 404 and _is_missing_route(exc):
+            return _missing_route_error(details, request_id)
         if status == 404:
             return CliError(
                 code=CODE_RESOURCE_NOT_FOUND,

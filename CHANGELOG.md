@@ -14,6 +14,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses now names the run and the chat session instead of a bare "Mammoth returned an API error." (mammothsdk#458).
 
+### Fixed (next mammoth-cli)
+
+- A 404 whose body is only `{"detail": "Not Found"}` (the server has no such route) says "This server does not have agent definitions." (or names the endpoint) instead of "Check the resource id and scope." (mammothsdk#457).
+
 ## mammoth-cli 2.4.6 (2026-11-17)
 
 ### Added (mammoth-cli 2.4.6)
