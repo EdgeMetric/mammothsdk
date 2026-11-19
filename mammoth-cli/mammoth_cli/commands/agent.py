@@ -32,6 +32,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.mapping import is_missing_route_error
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -315,12 +316,20 @@ def _refuse_embedded_run_control() -> None:
         )
 
 
+def _is_refused_run(error: CliError) -> bool:
+    """True when the server answered 4xx for the run id; a 5xx or a missing route is not that."""
+    if error.code not in (CODE_API_ERROR, CODE_RESOURCE_NOT_FOUND) or is_missing_route_error(error):
+        return False
+    status = (error.details or {}).get("status_code")
+    return isinstance(status, int) and 400 <= status < 500
+
+
 def _run_session_call(invocation: Invocation, run_id: str) -> HandlerResult:
     """Call this run command's SDK method; a refused run id names the run and the session."""
     try:
         return _session_call(invocation, run_id=run_id)
     except CliError as error:
-        if error.code not in (CODE_API_ERROR, CODE_RESOURCE_NOT_FOUND):
+        if not _is_refused_run(error):
             raise
         raise replace(
             error,

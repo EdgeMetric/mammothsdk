@@ -10,6 +10,7 @@ import pytest
 from mammoth_cli.commands import agent as agent_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.mapping import _missing_route_error
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -227,12 +228,50 @@ def test_run_stop_names_the_run_and_session_when_the_server_refuses_the_run_id(
     fake_service: FakeMammothService,
 ) -> None:
     fake_service.responses["mammoth.api.agents.AgentsAPI.run_stop"] = CliError(
-        code="api_error", message="Mammoth returned an API error."
+        code="api_error", message="Mammoth returned an API error.", details={"status_code": 404}
     )
     with pytest.raises(CliError) as excinfo:
         agent_cmd.agent_run_stop(_inv("agent.run.stop", session="sess-1", extra_args=["run-9"]))
     assert "run-9" in excinfo.value.message
     assert "sess-1" in excinfo.value.message
+    assert "agent run status --session" in (excinfo.value.hint or "")
+
+
+def test_run_stop_keeps_a_server_error_message_and_hint(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.agents.AgentsAPI.run_stop"] = CliError(
+        code="api_error",
+        message="Mammoth returned an API error.",
+        hint="Retry later.",
+        details={"status_code": 500},
+    )
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_run_stop(_inv("agent.run.stop", session="sess-1", extra_args=["run-9"]))
+    assert excinfo.value.message == "Mammoth returned an API error."
+    assert excinfo.value.hint == "Retry later."
+
+
+def test_run_stop_keeps_the_missing_route_message(fake_service: FakeMammothService) -> None:
+    missing = _missing_route_error({"status_code": 404, "endpoint": "/agents/runs/x/stop"}, None)
+    fake_service.responses["mammoth.api.agents.AgentsAPI.run_stop"] = missing
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_run_stop(_inv("agent.run.stop", session="sess-1", extra_args=["run-9"]))
+    assert excinfo.value.message == missing.message
+    assert excinfo.value.hint == missing.hint
+
+
+def test_run_stop_names_the_run_when_the_server_answers_404_for_it(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.agents.AgentsAPI.run_stop"] = CliError(
+        code="resource_not_found",
+        message="The requested Mammoth resource does not exist.",
+        details={"status_code": 404},
+    )
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_run_stop(_inv("agent.run.stop", session="sess-1", extra_args=["run-9"]))
+    assert excinfo.value.message.startswith("Run run-9 was refused in chat session sess-1: ")
     assert "agent run status --session" in (excinfo.value.hint or "")
 
 
@@ -242,6 +281,6 @@ def test_run_command_example_shows_the_session_flag(verb: str) -> None:
 
     record = command_by_id(f"agent.run.{verb}")
     assert record is not None
-    assert f"mammoth agent run {verb} resource-123 --session session-123" in (
-        record["agent_example"]
+    assert (
+        f"mammoth agent run {verb} resource-123 --session session-123" in (record["agent_example"])
     )

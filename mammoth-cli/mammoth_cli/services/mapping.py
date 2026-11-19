@@ -547,6 +547,14 @@ def _is_missing_route(exc: BaseException) -> bool:
     return isinstance(detail, str) and detail.lower() == "not found" and not extra
 
 
+_MISSING_ROUTE_HINT = "The server is older than this command, or the feature is not deployed there."
+
+
+def is_missing_route_error(error: CliError) -> bool:
+    """True for the error :func:`_missing_route_error` builds."""
+    return error.code == CODE_RESOURCE_NOT_FOUND and error.hint == _MISSING_ROUTE_HINT
+
+
 def _missing_route_error(details: dict[str, Any], request_id: str | None) -> CliError:
     """The error for an endpoint this server does not serve (not a missing object)."""
     endpoint = str(details.get("endpoint") or "")
@@ -555,7 +563,7 @@ def _missing_route_error(details: dict[str, Any], request_id: str | None) -> Cli
         code=CODE_RESOURCE_NOT_FOUND,
         message=f"This server does not have {what}.",
         exit_status=EXIT_NOT_FOUND,
-        hint="The server is older than this command, or the feature is not deployed there.",
+        hint=_MISSING_ROUTE_HINT,
         details=details,
         request_id=request_id,
     )
@@ -586,7 +594,7 @@ def _not_refreshable(message: str, details: dict[str, Any], request_id: str | No
         details=details,
         request_id=request_id,
         recovery_commands=[
-            "mammoth file upload FILE --input " "'{\"append_to_ds_id\": DATASET_ID}'",
+            "mammoth file upload FILE --input '{\"append_to_ds_id\": DATASET_ID}'",
             "mammoth connector connection list",
         ],
     )
