@@ -304,12 +304,12 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_extend`
-- Agent example: `mammoth agent run extend resource-123`
+- Agent example: `mammoth agent run extend resource-123 --session session-123`
 
 ### `mammoth agent run instance list`
 
@@ -357,34 +357,34 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_pause`
-- Agent example: `mammoth agent run pause resource-123`
+- Agent example: `mammoth agent run pause resource-123 --session session-123`
 
 ### `mammoth agent run resume`
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_resume`
-- Agent example: `mammoth agent run resume resource-123`
+- Agent example: `mammoth agent run resume resource-123 --session session-123`
 
 ### `mammoth agent run retry`
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_retry`
-- Agent example: `mammoth agent run retry resource-123 --yes`
+- Agent example: `mammoth agent run retry resource-123 --session session-123 --yes`
 
 ### `mammoth agent run status`
 
@@ -397,12 +397,12 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_stop`
-- Agent example: `mammoth agent run stop resource-123`
+- Agent example: `mammoth agent run stop resource-123 --session session-123`
 
 ### `mammoth agent run units list`
 

@@ -218,3 +218,30 @@ def test_session_set_visibility_proceeds(fake_service: FakeMammothService, tmp_p
     assert fake_service.call_log == [
         (_SESSION_SET_VISIBILITY, {"session_id": "s-1", "visibility": "shared"})
     ]
+
+
+# --- agent run stop -------------------------------------------------------------------------
+
+
+def test_run_stop_names_the_run_and_session_when_the_server_refuses_the_run_id(
+    fake_service: FakeMammothService,
+) -> None:
+    fake_service.responses["mammoth.api.agents.AgentsAPI.run_stop"] = CliError(
+        code="api_error", message="Mammoth returned an API error."
+    )
+    with pytest.raises(CliError) as excinfo:
+        agent_cmd.agent_run_stop(_inv("agent.run.stop", session="sess-1", extra_args=["run-9"]))
+    assert "run-9" in excinfo.value.message
+    assert "sess-1" in excinfo.value.message
+    assert "agent run status --session" in (excinfo.value.hint or "")
+
+
+@pytest.mark.parametrize("verb", ["pause", "resume", "stop", "extend", "retry"])
+def test_run_command_example_shows_the_session_flag(verb: str) -> None:
+    from mammoth_cli.manifest.loader import command_by_id
+
+    record = command_by_id(f"agent.run.{verb}")
+    assert record is not None
+    assert f"mammoth agent run {verb} resource-123 --session session-123" in (
+        record["agent_example"]
+    )

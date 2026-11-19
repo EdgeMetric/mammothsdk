@@ -80,7 +80,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth agent plan skip` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.plan_skip
   example: mammoth agent plan skip resource-123 123
 - `mammoth agent run extend` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_extend
-  example: mammoth agent run extend resource-123
+  example: mammoth agent run extend resource-123 --session session-123
 - `mammoth agent run instance list` [read/none] -> mammoth.api.agents.AgentsAPI.run_instances_list
   example: mammoth agent run instance list resource-123
 - `mammoth agent run instance messages` [read/none] -> mammoth.api.agents.AgentsAPI.run_instance_messages
@@ -90,15 +90,15 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth agent run list` [read/none] -> mammoth.api.agents.AgentsAPI.run_list
   example: mammoth agent run list
 - `mammoth agent run pause` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_pause
-  example: mammoth agent run pause resource-123
+  example: mammoth agent run pause resource-123 --session session-123
 - `mammoth agent run resume` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_resume
-  example: mammoth agent run resume resource-123
+  example: mammoth agent run resume resource-123 --session session-123
 - `mammoth agent run retry` [benign_mutation/prompt_or_yes] -> mammoth.api.agents.AgentsAPI.run_retry
-  example: mammoth agent run retry resource-123 --yes
+  example: mammoth agent run retry resource-123 --session session-123 --yes
 - `mammoth agent run status` [read/none] -> mammoth.api.agents.AgentsAPI.run_status
   example: mammoth agent run status
 - `mammoth agent run stop` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_stop
-  example: mammoth agent run stop resource-123
+  example: mammoth agent run stop resource-123 --session session-123
 - `mammoth agent run units list` [read/none] -> mammoth.api.agents.AgentsAPI.run_units_list
   example: mammoth agent run units list resource-123
 - `mammoth agent run units set` [benign_mutation/none] -> mammoth.api.agents.AgentsAPI.run_units_set

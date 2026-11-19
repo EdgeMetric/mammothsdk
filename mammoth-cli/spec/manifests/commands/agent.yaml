@@ -284,7 +284,7 @@ commands:
   acceptance_evidence: contract_only_no_disposable_fixture
   live_test: null
   live_exemption_reason: Write that starts paid model work; contract coverage only, no live run on koyal.
-  agent_example: mammoth agent run retry resource-123 --yes
+  agent_example: mammoth agent run retry resource-123 --session session-123 --yes
   known_restrictions: Writes. Retries a failed or stopped run as a new run, which starts paid model work.
     Session owner only. Prompt or --yes. Needs --session SESSION_ID; an embedded chat is refused.
   readback:
