@@ -171,7 +171,9 @@ def agent_chat(invocation: Invocation) -> HandlerResult:
     scope = _require_field(document, "scope")
     assert document is not None
     kwargs: dict[str, Any] = {"message": message, "scope": scope}
-    _forward_optional(document, kwargs, ("agent_key", "session_id", "client_context", "selection"))
+    _forward_optional(
+        document, kwargs, ("agent_key", "session_id", "client_context", "selection", "intelligence")
+    )
     wait = document.get("wait", CHAT_WAIT_SECONDS)
     kwargs["wait"] = wait or None
     with open_service(invocation) as (service, auth):

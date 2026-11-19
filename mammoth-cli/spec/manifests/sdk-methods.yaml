@@ -839,7 +839,7 @@ methods:
   signature: 'chat(self, message: ''str'', scope: ''dict[str, Any]'', agent_key: ''str | None'' = None,
     session_id: ''str | None'' = None, client_context: ''dict[str, Any] | None'' = None, selection: ''dict[str,
     Any] | None'' = None, request_key: ''str | None'' = None, wait: ''float | None'' = None, plan_ref:
-    ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
+    ''dict[str, Any] | None'' = None, intelligence: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.chat
   alias_of: null

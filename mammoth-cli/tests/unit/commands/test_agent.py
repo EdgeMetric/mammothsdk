@@ -92,6 +92,16 @@ def test_chat_forwards_optional_fields(fake_service: FakeMammothService, tmp_pat
     ]
 
 
+def test_chat_forwards_the_intelligence_level(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = _write(
+        tmp_path, {"message": "hi", "scope": {"type": "workspace"}, "intelligence": "expert"}
+    )
+    agent_cmd.agent_chat(_inv("agent.chat", input_file=doc))
+    assert fake_service.call_log[0][1]["intelligence"] == "expert"
+
+
 def test_chat_reports_active_project_in_meta(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
