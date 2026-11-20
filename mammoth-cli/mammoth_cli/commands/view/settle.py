@@ -11,6 +11,8 @@ from mammoth_cli.commands.view._common import (
     _WAIT_FOR_PIPELINE_SYMBOL,
 )
 from mammoth_cli.errors.envelope import (
+    CODE_API_ERROR,
+    EXIT_API,
     CliError,
 )
 from mammoth_cli.services.read_memo import prefetch
@@ -319,6 +321,92 @@ def _rows_before(
         return {"rows_before": _row_count_now(service, int(dataset_id), view_id, project_id)}
     except CliError as exc:
         return {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
+
+
+#: ``status`` words a task write's own response uses for a refusal.
+_REFUSED_STATUSES = frozenset({"error", "failed", "failure"})
+#: Backend error code for a step whose columns later steps still read.
+_DEPENDENT_STEPS_ERROR_CODE = 7010
+
+
+def reject_refused_task_write(data: Any, view_id: int, task_id: int, action: str) -> None:
+    """Raise when the server refused a ``view task update``/``delete`` outright.
+
+    The refusal comes back as HTTP 202 with ``status: "error"`` and an ``error_code``
+    (7010: later steps use this step's columns) in the body, and the step is left as it
+    was. It must decide the outcome before any pipeline wait: a pipeline still busy from
+    an earlier change would otherwise turn it into ``outcome: pending`` and exit 0.
+
+    Args:
+        data: The write's own response.
+        view_id: The view the step belongs to.
+        task_id: The step's task id.
+        action: ``"update"`` or ``"delete"``, for the message.
+
+    Raises:
+        CliError: ``api_error`` (exit 1) naming the server's message and, for 7010,
+            the steps that depend on this one.
+    """
+    if not isinstance(data, dict):
+        return
+    status = data.get("status")
+    error_code = data.get("error_code")
+    refused = isinstance(status, str) and status.lower() in _REFUSED_STATUSES
+    if not refused and error_code is None:
+        return
+    raw_info = data.get("error_info")
+    error_info: dict[str, Any] = raw_info if isinstance(raw_info, dict) else {}
+    server_message = next(
+        (
+            text
+            for text in (data.get("message"), data.get("error"), error_info.get("message"))
+            if isinstance(text, str) and text.strip()
+        ),
+        None,
+    )
+    message = f"The server refused to {action} task {task_id} of view {view_id}"
+    message += f" (error {error_code})." if error_code is not None else "."
+    if server_message:
+        message += f" Server: {server_message}"
+    hint = None
+    dependents = _dependent_steps(error_info)
+    if error_code == _DEPENDENT_STEPS_ERROR_CODE or dependents:
+        named = ", ".join(dependents) if dependents else "later steps"
+        message += f" Later steps use columns this step makes: {named}."
+        hint = (
+            f"Nothing changed. Delete or change the dependent steps first, last step first "
+            f"('mammoth view task list {view_id}' shows them), then run this again."
+        )
+    raise CliError(
+        code=CODE_API_ERROR,
+        message=message,
+        exit_status=EXIT_API,
+        hint=hint,
+        details={
+            "view_id": view_id,
+            "task_id": task_id,
+            "status": status,
+            "error_code": error_code,
+            "dependent_steps": dependents,
+        },
+    )
+
+
+def _dependent_steps(error_info: dict[str, Any]) -> list[str]:
+    """``"step N (KEY) of view V"`` for each step a 7010 refusal names, in step order."""
+    by_column = error_info.get("column_to_dependencies_dict")
+    found: dict[tuple[Any, Any], str] = {}
+    for entry in by_column.values() if isinstance(by_column, dict) else []:
+        tasks = entry.get("tasks") if isinstance(entry, dict) else None
+        for task in tasks if isinstance(tasks, list) else []:
+            if not isinstance(task, dict):
+                continue
+            raw_param = task.get("param")
+            param: dict[str, Any] = raw_param if isinstance(raw_param, dict) else {}
+            key = (task.get("dataview_id"), task.get("sequence"))
+            kind = param.get("TASK_KEY")
+            found[key] = f"step {key[1]}" + (f" ({kind})" if kind else "") + f" of view {key[0]}"
+    return [found[key] for key in sorted(found, key=lambda k: (str(k[0]), str(k[1]).zfill(6)))]
 
 
 def _settle_async_view_write(
