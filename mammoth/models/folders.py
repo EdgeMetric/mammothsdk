@@ -41,7 +41,9 @@ class CreateFolder(MammothModel):
     """Schema for creating a new folder."""
 
     name: str = Field(..., min_length=1, description="Name for the new folder")
-    parent_resource_id: str | None = Field(None, description="Parent folder resource ID")
+    parent_folder_id: int | None = Field(
+        None, description="Parent folder's id (its label id); omitted, the folder is made at the root"
+    )
 
 
 class FolderDetails(MammothModel):

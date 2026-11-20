@@ -145,7 +145,7 @@ class FoldersAPI:
     async def create(
         self,
         name: str,
-        parent_resource_id: str | None = None,
+        parent_folder_id: int | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,
     ) -> FolderSchema:
@@ -153,7 +153,9 @@ class FoldersAPI:
 
         Args:
             name: Name for the new folder.
-            parent_resource_id: Parent folder resource ID (optional).
+            parent_folder_id: The parent folder's label id (optional). The API reads
+                ``parent_folder_id``; the ``parent_resource_id`` this used to send was
+                dropped unread, so every folder landed at the root.
             workspace_id: ID of the workspace (uses client default if not provided).
             project_id: ID of the project (uses client default if not provided).
 
@@ -162,7 +164,7 @@ class FoldersAPI:
         """
         ws = workspace_id or self._ws()
         proj = self._proj(project_id)
-        folder_data = CreateFolder(name=name, parent_resource_id=parent_resource_id)
+        folder_data = CreateFolder(name=name, parent_folder_id=parent_folder_id)
         response = await self._client._request_json(
             "POST",
             f"/workspaces/{ws}/projects/{proj}/folders",

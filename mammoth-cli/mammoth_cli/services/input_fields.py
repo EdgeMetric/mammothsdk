@@ -7,6 +7,8 @@ from typing import Any
 from mammoth_cli.services.positionals import resolve_positionals
 
 _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
+    # The handler turns ``parent_resource_id`` (the id ``folder list`` shows) into this.
+    "folder.create": frozenset({"parent_folder_id"}),
     # The chat session comes from the global ``--session`` option.
     **{
         f"agent.{command}": frozenset({"session_id"})
