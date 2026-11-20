@@ -2713,6 +2713,119 @@ def test_task_update_with_dataset_id_settles_processing_to_done(
     assert data["row_check"] == {"rows_before": 12, "rows_after": 12}
 
 
+#: The real refusal body (view task delete, 19 Nov, trimmed): HTTP 202, ``status: error``,
+#: error_code 7010 naming the later step that reads this step's columns.
+_REFUSAL_7010 = {
+    "status": "error",
+    "error_code": 7010,
+    "error_info": {
+        "error_code": 7010,
+        "column_to_dependencies_dict": {
+            "c_wvtfz_1015999_4f69": {
+                "tasks": [
+                    {"dataview_id": 7, "sequence": 22, "param": {"TASK_KEY": "SQL"}},
+                ]
+            },
+            "c_wvtfz_1015999_731b": {
+                "tasks": [
+                    {"dataview_id": 7, "sequence": 22, "param": {"TASK_KEY": "SQL"}},
+                ]
+            },
+        },
+    },
+    "future_id": None,
+    "has_error": None,
+    "type_of_modification": "discard_rule",
+}
+
+
+@pytest.mark.parametrize(
+    ("command_id", "handler", "action", "symbol", "doc_body"),
+    [
+        ("view.task.delete", "view_task_delete", "delete", _TASK_DELETE, {"dataset_id": 9}),
+        (
+            "view.task.update",
+            "view_task_update",
+            "update",
+            _TASK_UPDATE,
+            {"dataset_id": 9, "task_spec": {"kind": "sort"}},
+        ),
+    ],
+)
+def test_task_write_refused_by_the_server_fails_even_with_a_busy_pipeline(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    command_id: str,
+    handler: str,
+    action: str,
+    symbol: str,
+    doc_body: dict[str, Any],
+) -> None:
+    """Famly-1 (19 Nov): a 7010 refusal with the pipeline still busy from an earlier
+    change read ``outcome: pending`` and exited 0. The refusal decides it: exit 1,
+    the server's error and the dependent step, and no pipeline wait at all.
+    """
+    fake_service.responses[symbol] = dict(_REFUSAL_7010)
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 3875}
+    fake_service.responses[_PIPE_WAIT] = CliError(
+        code="timeout", message="The view pipeline did not finish before the timeout."
+    )
+    doc = _doc(tmp_path, doc_body)
+    with pytest.raises(CliError) as excinfo:
+        getattr(view_cmd, handler)(
+            _inv(command_id, extra_args=["7", "3"], yes=True, input_file=doc)
+        )
+    error = excinfo.value
+    assert error.exit_status == 1
+    assert error.code == "api_error"
+    assert f"refused to {action} task 3 of view 7 (error 7010)" in error.message
+    assert "step 22 (SQL) of view 7" in error.message
+    assert error.hint is not None and "mammoth view task list 7" in error.hint
+    assert error.details["dependent_steps"] == ["step 22 (SQL) of view 7"]
+    assert _PIPE_WAIT not in [call[0] for call in fake_service.call_log]
+
+
+def test_task_delete_accepted_with_a_busy_pipeline_stays_pending(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An accepted delete whose pipeline is still running keeps the pending result (exit 0)."""
+    from mammoth_cli.runtime.dispatch import verify_exit_status
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_WAIT] = CliError(
+        code="timeout", message="The view pipeline did not finish before the timeout."
+    )
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["pipeline_error"]["execution_state"] == "unfinished"
+    verified = with_verify(data)
+    assert verified["verify"]["outcome"] == "pending"
+    assert verify_exit_status(verified) == 0
+
+
+def test_verify_reads_a_refused_write_as_failed_even_when_unfinished() -> None:
+    """The verify layer's own guard: status error + error_code beats an unfinished pipeline."""
+    from mammoth_cli.runtime.dispatch import verify_exit_status
+    from mammoth_cli.runtime.verify import with_verify
+
+    verified = with_verify(
+        {
+            **_REFUSAL_7010,
+            "pipeline_error": {"execution_state": "unfinished", "wait_error": "timeout"},
+            "row_check": {"rows_before": 3875, "rows_after": 3875},
+        }
+    )
+    assert verified["verify"]["outcome"] == "failed"
+    assert verify_exit_status(verified) == 1
+
+
 # ── export.* ────────────────────────────────────────────────────────────────
 
 

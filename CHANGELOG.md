@@ -16,6 +16,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-cli)
 
+- `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: later steps use this step's columns, which are named with a hint to remove them first). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
 - A 404 whose body is only `{"detail": "Not Found"}` (the server has no such route) says "This server does not have agent definitions." (or names the endpoint) instead of "Check the resource id and scope." (mammothsdk#457).
 
 ## mammoth-cli 2.4.6 (2026-11-17)

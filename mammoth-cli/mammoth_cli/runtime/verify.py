@@ -214,6 +214,15 @@ def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
     the view again before building on it. ``failed`` is any other write that is not
     verified. Everything else is ``settled`` and its ``state`` block is the read-back.
     """
+    status = data.get("status")
+    if (
+        data.get("error_code") is not None
+        and isinstance(status, str)
+        and status.lower() in _FAILURE_STATUSES
+    ):
+        # The server refused the write itself: a pipeline still busy from an earlier
+        # change must not turn that into "pending" (exit 0).
+        return OUTCOME_FAILED
     pipeline_error = data.get("pipeline_error")
     unfinished = (
         isinstance(pipeline_error, dict) and pipeline_error.get("execution_state") == "unfinished"
