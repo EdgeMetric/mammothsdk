@@ -98,6 +98,14 @@ async def test_chat_posts_the_spec_body_and_returns_the_started_turn_with_its_ke
     assert set(server.requests[0]["body"]) <= set(schema("AgentChatRequest")["properties"])
 
 
+async def test_chat_sends_the_intelligence_level_in_the_body(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers["POST /agents/chat"] = (202, STARTED)
+    await client.agents.chat("hello", SCOPE, request_key="rk-1", intelligence="expert")
+    assert server.requests[0]["body"]["intelligence"] == "expert"
+
+
 async def test_chat_minimal_body_has_a_generated_request_key(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:

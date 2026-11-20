@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io, mammoth-cli)
+
+- `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
+
+### Changed (next mammoth-cli)
+
+- `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
+
+### Fixed (next mammoth-cli)
+
+- A 404 whose body is only `{"detail": "Not Found"}` (the server has no such route) says "This server does not have agent definitions." (or names the endpoint) instead of "Check the resource id and scope." (mammothsdk#457).
+
 ## mammoth-cli 2.4.6 (2026-11-17)
 
 ### Added (mammoth-cli 2.4.6)

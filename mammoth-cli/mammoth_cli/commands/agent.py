@@ -11,13 +11,16 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
+    CODE_API_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
+    CODE_RESOURCE_NOT_FOUND,
     CODE_SDK_SYMBOL_UNRESOLVED,
     CODE_USER_CONTROL,
     EXIT_USAGE,
@@ -29,6 +32,7 @@ from mammoth_cli.runtime.confirm import POLICY_PROMPT_OR_YES, enforce_confirmati
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.command_contract import bind_command_inputs
+from mammoth_cli.services.mapping import is_missing_route_error
 
 
 def _symbol(invocation: Invocation) -> str:
@@ -171,7 +175,9 @@ def agent_chat(invocation: Invocation) -> HandlerResult:
     scope = _require_field(document, "scope")
     assert document is not None
     kwargs: dict[str, Any] = {"message": message, "scope": scope}
-    _forward_optional(document, kwargs, ("agent_key", "session_id", "client_context", "selection"))
+    _forward_optional(
+        document, kwargs, ("agent_key", "session_id", "client_context", "selection", "intelligence")
+    )
     wait = document.get("wait", CHAT_WAIT_SECONDS)
     kwargs["wait"] = wait or None
     with open_service(invocation) as (service, auth):
@@ -310,13 +316,40 @@ def _refuse_embedded_run_control() -> None:
         )
 
 
+def _is_refused_run(error: CliError) -> bool:
+    """True when the server answered 4xx for the run id; a 5xx or a missing route is not that."""
+    if error.code not in (CODE_API_ERROR, CODE_RESOURCE_NOT_FOUND) or is_missing_route_error(error):
+        return False
+    status = (error.details or {}).get("status_code")
+    return isinstance(status, int) and 400 <= status < 500
+
+
+def _run_session_call(invocation: Invocation, run_id: str) -> HandlerResult:
+    """Call this run command's SDK method; a refused run id names the run and the session."""
+    try:
+        return _session_call(invocation, run_id=run_id)
+    except CliError as error:
+        if not _is_refused_run(error):
+            raise
+        raise replace(
+            error,
+            message=(
+                f"Run {run_id} was refused in chat session {invocation.session}: {error.message}"
+            ),
+            hint=(
+                "RUN_ID comes from 'mammoth agent run status --session SESSION_ID' "
+                "(or agent run list) of the same session."
+            ),
+        ) from error
+
+
 def _run_control(invocation: Invocation) -> HandlerResult:
-    """Pause, resume, stop or extend one run; the SDK method is the manifest's.
+    """Pause, resume, stop or extend one run of a chat; needs RUN_ID and --session SESSION_ID.
 
     These are the user's run buttons: an agent session (an embedded call) is refused.
     """
     _refuse_embedded_run_control()
-    return _session_call(invocation, run_id=_require_string_positional(invocation, "run id"))
+    return _run_session_call(invocation, _require_string_positional(invocation, "run id"))
 
 
 agent_run_pause = agent_run_resume = agent_run_stop = agent_run_extend = _run_control
@@ -342,7 +375,7 @@ def agent_run_retry(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"retry agent run {run_id}"
     )
-    return _session_call(invocation, run_id=run_id)
+    return _run_session_call(invocation, run_id)
 
 
 def agent_run_units_list(invocation: Invocation) -> HandlerResult:

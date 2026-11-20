@@ -180,10 +180,13 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 name="run_id",
                 type=str,
                 required=True,
-                help="ID of the run (from agent run status or agent run list).",
+                help=(
+                    "ID of the run, from 'mammoth agent run status --session SESSION_ID' "
+                    "(or agent run list). The command also needs --session SESSION_ID."
+                ),
             ),
         )
-        for verb in ("pause", "resume", "stop", "extend")
+        for verb in ("pause", "resume", "stop", "extend", "retry")
     },
     "agent.turn.cancel": (
         PositionalSpec(
@@ -237,7 +240,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 help="ID of the run (from agent run status or agent run list).",
             ),
         )
-        for verb in ("retry", "units.list", "instance.list")
+        for verb in ("units.list", "instance.list")
     },
     **{
         f"agent.run.instance.{verb}": (

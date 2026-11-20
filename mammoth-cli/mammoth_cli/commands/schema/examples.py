@@ -329,6 +329,12 @@ _WORKSPACE_CONFIRM_EXAMPLES = frozenset(
 )
 
 
+#: Run commands that act on one run of a chat session: the example names the session too.
+_SESSION_RUN_EXAMPLES = frozenset(
+    f"agent.run.{verb}" for verb in ("pause", "resume", "stop", "extend", "retry")
+)
+
+
 def runnable_example(
     record: dict[str, Any],
     symbol: str | None,
@@ -369,6 +375,8 @@ def runnable_example(
             given[index] = value
         seen.add(value)
     rest = tokens[end:]
+    if command_id in _SESSION_RUN_EXAMPLES and "--session" not in rest:
+        rest.extend(["--session", "session-123"])
     # Whatever a command's manifest policy asks, its example must already answer, so a copied
     # example runs unattended instead of stopping at ``confirmation_required``. A
     # ``confirm_target`` command whose target is no positional (the workspace, say) keeps
