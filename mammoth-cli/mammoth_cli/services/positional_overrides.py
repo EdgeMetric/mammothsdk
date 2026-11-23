@@ -1412,16 +1412,6 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
     },
     # A workflow page is addressed by the slug of its mammoth.io page, a describe draft by the
     # id ``workflow describe start`` returned; neither name reads as an identity field.
-    # A fired link is its path or URL, as ``workflow link create`` returned it.
-    "workflow.link.fire": (
-        PositionalSpec(
-            name="link",
-            type=str,
-            required=True,
-            help="The link's path or URL, from 'workflow link create' (its 'path').",
-            example_value="/workflow-runs/41/SECRET",
-        ),
-    ),
     "workflow.page.start": (
         PositionalSpec(
             name="slug",

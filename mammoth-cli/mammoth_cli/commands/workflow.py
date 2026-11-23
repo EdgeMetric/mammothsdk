@@ -673,7 +673,7 @@ def workflow_resolve_held(invocation: Invocation) -> HandlerResult:
         "built": _require_field(document, "built"),
         "project_id": project_id,
     }
-    _forward_optional(document or {}, kwargs, ("expected_version",))
+    _forward_optional(document, kwargs, ("expected_version",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)

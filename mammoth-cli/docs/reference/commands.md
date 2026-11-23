@@ -8769,14 +8769,10 @@ Total commands: 911.
 
 ### `mammoth workflow link fire`
 
-**Arguments**
-
-- `LINK` (str, required) — The link's path or URL, from 'workflow link create' (its 'path').
-
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire`
-- Agent example: `mammoth workflow link fire /workflow-runs/41/SECRET`
+- Agent example: `mammoth workflow link fire --input /private/path/request.json`
 
 ### `mammoth workflow link remove`
 

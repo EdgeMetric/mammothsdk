@@ -276,7 +276,9 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow link fire`. Exact input fields: `mammoth schema get workflow.link.fire`.
 
-Example: `mammoth workflow link fire /workflow-runs/41/SECRET`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow link fire --input /private/path/request.json`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
 
 Result: `WorkflowLinkFireResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

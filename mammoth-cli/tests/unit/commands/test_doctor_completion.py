@@ -515,3 +515,17 @@ def test_a_matching_sdk_passes_the_check(isolated_cli_config: Path) -> None:
 
     check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
     assert check["ok"] is True
+
+
+def test_the_recommendation_comes_from_the_fix_field_not_the_detail_text(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real = doctor_cmd._check_sdk
+    monkeypatch.setattr(doctor_cmd, "_installed_sdk_version", lambda: "0.8.1")
+    monkeypatch.setattr(
+        doctor_cmd, "_check_sdk", lambda *a: {**real(*a), "detail": "reworded, no marker"}
+    )
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["fix"] in outcome.data["recommendations"]

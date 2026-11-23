@@ -17,6 +17,7 @@ from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.commands.workflow import SAVE_AWAITED, await_built_workflow
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime.runlog import redact_argv
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
@@ -58,9 +59,9 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
     (["workflow", "after", "loops", "41"], f"{_T}.after_loops", {"workflow_id": 41}),
     (["workflow", "link", "create", "41"], f"{_T}.link_create", {"workflow_id": 41}),
     (
-        ["workflow", "link", "fire", "/workflow-runs/41/s3cret"],
+        ["workflow", "link", "fire", "--input", '{"link": "/workflow-runs/41/s3cret"}'],
         f"{_T}.link_fire",
-        {"link": "/workflow-runs/41/s3cret"},
+        {"body": {"workflow_id": 41, "link": "<hidden>"}},
     ),
     (
         [
@@ -226,6 +227,36 @@ def test_every_new_command_is_registered_and_each_write_declares_its_undo() -> N
 )
 def test_taking_a_trigger_off_asks_first(command_id: str) -> None:
     assert command_by_id(command_id)["confirmation"] == "prompt_or_yes"  # type: ignore[index]
+
+
+_LINK_ARGV = [
+    "workflow",
+    "link",
+    "fire",
+    "--input",
+    '{"link": "https://x.test/workflow-runs/41/s3cret"}',
+]
+
+
+def test_a_dry_run_link_fire_does_not_print_the_secret() -> None:
+    result = make_runner().invoke(
+        [*_LINK_ARGV, "--project", "25654", "--dry-run", "--output", "json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "s3cret" not in result.output
+
+
+def test_the_run_log_keeps_the_link_out_of_argv() -> None:
+    assert "s3cret" not in " ".join(redact_argv(_LINK_ARGV))
+
+
+def test_link_fire_takes_no_positional() -> None:
+    result = make_runner().invoke(
+        ["workflow", "link", "fire", "/workflow-runs/41/s3cret", "--project", "25654", "--dry-run"]
+    )
+
+    assert result.exit_code != 0
 
 
 def test_a_dry_run_canvas_without_expected_version_does_not_send_one() -> None:

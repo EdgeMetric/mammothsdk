@@ -366,8 +366,9 @@ commands:
   undo:
     strategy: irreversible
     reason: Starts a run; its result replaces the earlier result and the emails it sends cannot be unsent.
-  known_restrictions: Starts the workflow as anyone holding the link can, with no sign-in needed. LINK is
-    the `path` (or the URL) that `workflow link create` returned. A workflow already running is not started
+  known_restrictions: Starts the workflow as anyone holding the link can, with no sign-in needed. The input field `link` is
+    the `path` (or the URL) that `workflow link create` returned; it is read from --input (a 0600 file),
+    never from the command line, so the secret stays out of shell history and the run log. A workflow already running is not started
     twice (already_running true). The server answers 404 for a wrong, paused or removed link and allows six
     calls a minute.
 - command_id: workflow.schedule.unset

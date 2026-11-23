@@ -1849,7 +1849,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow link create` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
   example: mammoth workflow link create 123
 - `mammoth workflow link fire` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
-  example: mammoth workflow link fire /workflow-runs/41/SECRET
+  example: mammoth workflow link fire --input /private/path/request.json
 - `mammoth workflow link remove` [destructive/prompt_or_yes] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
   example: mammoth workflow link remove 123 --yes
 - `mammoth workflow list` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list

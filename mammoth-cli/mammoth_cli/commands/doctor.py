@@ -109,11 +109,11 @@ def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:
     if ok:
         return _check("sdk_version", True, f"mammoth-io {installed} satisfies {requirement}")
     spec = ",".join(f"{operator}{bound}" for operator, bound in bounds)
+    fix = f'pip install --upgrade "mammoth-io{spec}"'
     detail = (
-        f"mammoth-io {installed} is outside the range this CLI needs ({requirement}); "
-        f'fix: pip install --upgrade "mammoth-io{spec}"'
+        f"mammoth-io {installed} is outside the range this CLI needs ({requirement}); fix: {fix}"
     )
-    return _check("sdk_version", False, detail)
+    return {**_check("sdk_version", False, detail), "fix": fix}
 
 
 def _check_not_applicable(name: str) -> dict[str, Any]:
@@ -524,7 +524,7 @@ def doctor(invocation: Invocation) -> Outcome:
         recommendations.append("mammoth project list")
         recommendations.append("mammoth context project use PROJECT_ID")
     if not sdk_check["ok"]:
-        recommendations.append(sdk_check["detail"].split("fix: ", 1)[1])
+        recommendations.append(sdk_check["fix"])
     if stale_skills:
         recommendations.append("mammoth skill update")
     if not connection_ok and auth_ok and not invocation.debug:

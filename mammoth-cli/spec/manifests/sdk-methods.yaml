@@ -10703,7 +10703,8 @@ methods:
   mutation_class: benign_mutation
   wait_policy: not_async
   pagination_policy: none
-  secret_fields: []
+  secret_fields:
+  - link
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
   implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove

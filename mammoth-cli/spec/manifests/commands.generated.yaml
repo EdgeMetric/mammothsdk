@@ -34588,13 +34588,7 @@ commands:
   alias_of: null
   operation_ids:
   - PostWorkflowLinkCall
-  positionals:
-  - name: link
-    type: str
-    required: true
-    metavar: LINK
-    falls_back_to_field: null
-    help: The link's path or URL, from 'workflow link create' (its 'path').
+  positionals: []
   options: []
   sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
   sdk_conversion: Call mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire with validated request
@@ -34614,9 +34608,10 @@ commands:
   live_exemption_reason: null
   contract_fixture: null
   required_fixture_guard: null
-  secret_fields: []
-  human_example: mammoth workflow link fire LINK --help
-  agent_example: mammoth workflow link fire /workflow-runs/41/SECRET
+  secret_fields:
+  - link
+  human_example: mammoth workflow link fire --help
+  agent_example: mammoth workflow link fire --input /private/path/request.json
   unit_tests:
   - UT-WORKFLOW-LINK-FIRE
   contract_tests:
