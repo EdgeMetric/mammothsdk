@@ -11,6 +11,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7956 (mammothsdk#468, #470).
 - `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
 
+### Added (next mammoth-cli)
+
+- `annotation comment edit ANNOTATION_ID COMMENT_ID --input '{"body": "..."}'`, `annotation comment delete ANNOTATION_ID COMMENT_ID` (asks first, or `--yes`) and `annotation access` (whether you may post or moderate comments in the project, and whom a comment may mention) (mammothsdk#468).
+- `mammoth doctor` has an `sdk_version` check: it compares the installed mammoth-io with the range this CLI declares, fails when it is outside it, and names the `pip install --upgrade "mammoth-io>=...,<..."` fix in the check and in `recommendations` (mammothsdk#469).
+- `workflow canvas` forwards an `expected_version` input field; the server answers 409 when the canvas moved since you read it (mammothsdk#470).
+- `workflow link fire LINK` starts a workflow from the `path` (or URL) `workflow link create` returned, so the secret need not be cut apart. `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" trigger off (ask first, or `--yes`); a second unset, or one with nothing set, is a 404 with error code 4AUTO001. The unset commands need mvc-service#7956 (mammothsdk#470).
+
 ### Changed (next mammoth-cli)
 
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).

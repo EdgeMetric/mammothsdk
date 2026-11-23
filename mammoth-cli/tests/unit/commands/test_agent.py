@@ -281,6 +281,6 @@ def test_run_command_example_shows_the_session_flag(verb: str) -> None:
 
     record = command_by_id(f"agent.run.{verb}")
     assert record is not None
-    assert (
-        f"mammoth agent run {verb} resource-123 --session session-123" in (record["agent_example"])
+    assert f"mammoth agent run {verb} resource-123 --session session-123" in (
+        record["agent_example"]
     )

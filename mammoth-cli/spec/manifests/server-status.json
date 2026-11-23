@@ -113,6 +113,12 @@
         "POST /workspaces/{}/projects/{}/workflows/{}/link"
       ]
     },
+    "workflow.link.fire": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workflow-runs/{}/{}"
+      ]
+    },
     "workflow.link.remove": {
       "server_status": "pending",
       "routes": [

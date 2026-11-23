@@ -358,6 +358,39 @@ commands:
   undo:
     strategy: irreversible
     reason: The secret is not kept; workflow link create makes a new link with a new secret.
+- command_id: workflow.link.fire
+  output_schema:
+    type: object
+    required: [run_id, already_running]
+  no_readback: the link names the workflow; read its runs with `workflow run list WORKFLOW_ID`
+  undo:
+    strategy: irreversible
+    reason: Starts a run; its result replaces the earlier result and the emails it sends cannot be unsent.
+  known_restrictions: Starts the workflow as anyone holding the link can, with no sign-in needed. LINK is
+    the `path` (or the URL) that `workflow link create` returned. A workflow already running is not started
+    twice (already_running true). The server answers 404 for a wrong, paused or removed link and allows six
+    calls a minute.
+- command_id: workflow.schedule.unset
+  output_schema:
+    type: object
+  no_readback: the server answers 204; the workflow stops starting on its clock at once
+  undo:
+    strategy: manual
+    command: workflow.schedule.set
+    note: Set the clock again with workflow schedule set WORKFLOW_ID.
+  known_restrictions: Takes the clock off the workflow. The server answers 404 (4AUTO001) when it has no
+    clock, so a second unset fails. In production, only a user who may change the workflow can.
+- command_id: workflow.after.unset
+  output_schema:
+    type: object
+  no_readback: the server answers 204; the workflow stops starting after the other one at once
+  undo:
+    strategy: manual
+    command: workflow.after.set
+    note: Set it again with workflow after set WORKFLOW_ID SOURCE_WORKFLOW_ID.
+  known_restrictions: Stops WORKFLOW_ID running after another workflow. The server answers 404 (4AUTO001)
+    when it has no such start, so a second unset fails. In production, only a user who may change the
+    workflow can.
 - command_id: workflow.describe.start
   output_schema:
     type: object

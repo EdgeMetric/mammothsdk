@@ -68,6 +68,26 @@ def _require_int_positional(invocation: Invocation, name: str) -> int:
     return value
 
 
+def _require_int_positional_at(invocation: Invocation, index: int, name: str) -> int:
+    """Parse the positional argument at ``index`` as an int, or raise usage."""
+    if len(invocation.extra_args) <= index:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message=f"This command requires a {name} argument.",
+            exit_status=EXIT_USAGE,
+            hint=f"Pass the {name} as a positional argument.",
+        )
+    raw = invocation.extra_args[index]
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=f"The {name} argument '{raw}' is not an integer.",
+            exit_status=EXIT_USAGE,
+        ) from exc
+
+
 def _require_field(document: dict[str, Any] | None, field: str) -> Any:
     """Return a required field from the ``--input`` document, or raise usage."""
     if document is None or field not in document:
@@ -108,6 +128,52 @@ def annotation_comment_add(invocation: Invocation) -> HandlerResult:
         data = service.call(
             _symbol(invocation), annotation_id=annotation_id, body=body, project_id=project_id
         )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def annotation_comment_edit(invocation: Invocation) -> HandlerResult:
+    """Edit a comment's text. Annotation id and comment id are positional; body is input."""
+    project_id = require_project(invocation)
+    annotation_id = _require_int_positional_at(invocation, 0, "annotation id")
+    comment_id = _require_int_positional_at(invocation, 1, "comment id")
+    document = invocation.load_input()
+    body = _require_field(document, "body")
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            annotation_id=annotation_id,
+            comment_id=comment_id,
+            body=body,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def annotation_comment_delete(invocation: Invocation) -> HandlerResult:
+    """Delete one comment by annotation id and comment id. Prompt or ``--yes`` required."""
+    project_id = require_project(invocation)
+    annotation_id = _require_int_positional_at(invocation, 0, "annotation id")
+    comment_id = _require_int_positional_at(invocation, 1, "comment id")
+    enforce_confirmation(
+        invocation,
+        policy=POLICY_PROMPT_OR_YES,
+        action=f"delete comment {comment_id} of annotation {annotation_id}",
+    )
+    with open_service(invocation) as (service, auth):
+        data = service.call(
+            _symbol(invocation),
+            annotation_id=annotation_id,
+            comment_id=comment_id,
+            project_id=project_id,
+        )
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def annotation_access(invocation: Invocation) -> HandlerResult:
+    """Read what the caller may do with comments in the project and whom to mention."""
+    project_id = require_project(invocation)
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), project_id=project_id)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
