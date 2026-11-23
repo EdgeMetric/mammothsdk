@@ -206,6 +206,11 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(parts)
 
 
+def version_key(version: str) -> tuple[int, ...]:
+    """Public ordering key for other CLI modules (``doctor``)."""
+    return _version_key(version)
+
+
 def is_newer(latest: str | None, current: str | None = None) -> bool:
     if not latest:
         return False

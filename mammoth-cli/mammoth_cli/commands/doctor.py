@@ -91,7 +91,7 @@ def _declared_sdk_requirement() -> str | None:
 
 
 def _within(installed: str, operator: str, bound: str) -> bool:
-    have, want = updates._version_key(installed), updates._version_key(bound)
+    have, want = updates.version_key(installed), updates.version_key(bound)
     return {
         ">=": have >= want,
         "<=": have <= want,

@@ -64,6 +64,10 @@ _UNSAMPLABLE = frozenset(
         "agent.access.today",
         # Workflow automation routes on server master, not yet in the pinned prod spec;
         # workflow.run.start's route ships with mvc-service feat/workflow-run-route.
+        # PRD-3685: annotation access and the workflow link fire route are on release/master,
+        # not in the pinned prod spec yet, so there is nothing to sample from.
+        "annotation.access",
+        "workflow.link.fire",
         "workflow.after.loops",
         "workflow.after.set",
         "workflow.describe.start",
