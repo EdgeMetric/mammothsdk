@@ -1814,6 +1814,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow create 'Revenue report'
 - `mammoth workflow delete` [destructive/prompt_or_yes] -> mammoth.api.workflows.WorkflowsAPI.delete
   example: mammoth workflow delete 123 --yes
+- `mammoth workflow delete-plan` [read/none] -> mammoth.api.workflows.WorkflowsAPI.delete_plan
+  example: mammoth workflow delete-plan 123
 - `mammoth workflow describe build` [benign_mutation/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.build
   example: mammoth workflow describe build --input '{"spec": {"name": "Status"}, "destination_name": "Revenue report"}'
 - `mammoth workflow describe check` [read/none] -> mammoth.api.workflow_describe.WorkflowDescribeAPI.check

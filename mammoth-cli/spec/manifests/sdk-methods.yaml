@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 946
+method_count: 947
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -10840,7 +10840,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.delete
-  signature: 'delete(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'delete(self, workflow_id: ''int'', project_id: ''int | None'' = None, trash: ''_list[str]
+    | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workflow.delete
   alias_of: null
@@ -10848,6 +10849,19 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  signature: 'delete_plan(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.delete-plan
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
