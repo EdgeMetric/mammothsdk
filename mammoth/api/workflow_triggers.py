@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -16,6 +17,11 @@ ERR_FREQUENCY = "`frequency` must be one of hourly, daily, weekly, monthly; got 
 ERR_INTERVAL = "`interval` must be an integer from 1 to 366, got {0!r}."
 ERR_WEEK_DAYS = "`by_week_day` must be a list of mo, tu, we, th, fr, sa, su; got {0!r}."
 ERR_MONTH_DAYS = "`by_month_day` must be a list of days 1 to 31, got {0!r}."
+ERR_LINK = (
+    "`link` must be the link's path or URL, ending in /workflow-runs/<workflow id>/<secret>; "
+    "the link itself is not echoed."
+)
+_LINK_TAIL = re.compile(r"/workflow-runs/(\d+)/([^/?#\s]+)/?(?:[?#].*)?$")
 FREQUENCIES = ("hourly", "daily", "weekly", "monthly")
 WEEK_DAYS = ("mo", "tu", "we", "th", "fr", "sa", "su")
 #: How a run ends, as Recent runs says it.
@@ -246,6 +252,62 @@ class WorkflowTriggersAPI:
         """
         return await self._client._request_json("POST", self._path(workflow_id, project_id, "link"))
 
+    async def link_fire(self, link: str) -> dict[str, Any]:
+        """Run a workflow from its secret link, as anyone holding the link can.
+
+        A workflow already running is not started twice.
+
+        Args:
+            link: The link ``link_create`` made: its ``path`` (``/workflow-runs/41/<secret>``)
+                or the full URL.
+
+        Returns:
+            ``{"run_id", "already_running"}``.
+
+        Raises:
+            MammothValidationError: If *link* does not end in ``/workflow-runs/<id>/<secret>``.
+        """
+        workflow_id, secret = parse_link(link)
+        return await self._client._request_json("POST", f"/workflow-runs/{workflow_id}/{secret}")
+
+    async def schedule_unset(
+        self, workflow_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Take the workflow's clock off; it stops starting on it at once.
+
+        Args:
+            workflow_id: ID of the workflow.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            An empty dict (the server answers 204). The server answers 404 (error code
+            4AUTO001) when the workflow has no clock, so a second call fails.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "DELETE", self._path(workflow_id, project_id, "schedule")
+        )
+
+    async def after_unset(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Stop the workflow running after another one; it stops starting at once.
+
+        Args:
+            workflow_id: ID of the workflow.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            An empty dict (the server answers 204). The server answers 404 (error code
+            4AUTO001) when the workflow has no such start, so a second call fails.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "DELETE", self._path(workflow_id, project_id, "after")
+        )
+
     async def link_remove(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
         """Turn the workflow's secret link off; it stops working at once.
 
@@ -262,6 +324,24 @@ class WorkflowTriggersAPI:
         return await self._client._request_json(
             "DELETE", self._path(workflow_id, project_id, "link")
         )
+
+
+def parse_link(link: str) -> tuple[int, str]:
+    """Cut a workflow link's path or URL into its workflow id and secret.
+
+    Args:
+        link: ``/workflow-runs/41/<secret>``, or a URL ending in it.
+
+    Returns:
+        ``(workflow_id, secret)``.
+
+    Raises:
+        MammothValidationError: If *link* does not end in ``/workflow-runs/<id>/<secret>``.
+    """
+    found = _LINK_TAIL.search(link.strip())
+    if found is None:
+        raise MammothValidationError(ERR_LINK)
+    return int(found.group(1)), found.group(2)
 
 
 def schedule_body(

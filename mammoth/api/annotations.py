@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 ERR_ANNOTATION_ID_POSITIVE = "`annotation_id` must be a positive integer, got {0}."
+ERR_COMMENT_ID_POSITIVE = "`comment_id` must be a positive integer, got {0}."
 ERR_PROJECT_ID_POSITIVE = "`project_id` must be a positive integer, got {0}."
 ERR_TARGET_ID_POSITIVE = "`target_id` must be a positive integer, got {0}."
 ERR_TARGET_TYPE_INVALID = "`target_type` must be one of {valid}, got {value!r}."
@@ -208,3 +209,84 @@ class AnnotationsAPI:
             f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}/comments",
             json={"body": body},
         )
+
+    async def comment_edit(
+        self,
+        annotation_id: int,
+        comment_id: int,
+        body: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Change the text of a comment (its author only).
+
+        Args:
+            annotation_id: ID of the annotation the comment is in (must be > 0).
+            comment_id: ID of the comment (must be > 0).
+            body: New comment text (non-empty); mentions are written ``<@user_id>``.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict with the edited comment.
+
+        Raises:
+            MammothValidationError: If an id is not positive or *body* is empty.
+        """
+        self._check_comment_ids(annotation_id, comment_id)
+        if not body:
+            raise MammothValidationError(ERR_BODY_REQUIRED)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "PATCH",
+            f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}/comments/{comment_id}",
+            json={"body": body},
+        )
+
+    async def comment_delete(
+        self,
+        annotation_id: int,
+        comment_id: int,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Delete a comment (its author or a project admin); an emptied thread goes too.
+
+        Args:
+            annotation_id: ID of the annotation the comment is in (must be > 0).
+            comment_id: ID of the comment (must be > 0).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            An empty dict (the server answers 204).
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        self._check_comment_ids(annotation_id, comment_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "DELETE",
+            f"/workspaces/{ws}/projects/{proj}/annotations/{annotation_id}/comments/{comment_id}",
+        )
+
+    async def access(self, project_id: int | None = None) -> dict[str, Any]:
+        """Read what the caller may do with comments in a project, and whom to mention.
+
+        Args:
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            ``{"can_post", "can_moderate", "people": [{"id", "name"}]}``.
+        """
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_json(
+            "GET", f"/workspaces/{ws}/projects/{proj}/annotations/access"
+        )
+
+    @staticmethod
+    def _check_comment_ids(annotation_id: int, comment_id: int) -> None:
+        if annotation_id <= 0:
+            raise MammothValidationError(ERR_ANNOTATION_ID_POSITIVE.format(annotation_id))
+        if comment_id <= 0:
+            raise MammothValidationError(ERR_COMMENT_ID_POSITIVE.format(comment_id))
