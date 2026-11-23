@@ -20,7 +20,6 @@ from typing import Any, cast
 from urllib.parse import urlsplit
 
 import mammoth
-import mammoth
 from mammoth.client import server_health
 from mammoth.exceptions import MammothAPIError
 
