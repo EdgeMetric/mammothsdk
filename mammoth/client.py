@@ -88,11 +88,14 @@ _list = list  # Alias to avoid shadowing by method name
 _HTTP_LOG = logging.getLogger("mammoth.http")
 
 REDACTED = "***"
-#: Path segments whose NEXT segment is a credential rather than an identifier.
+#: Path segments followed by a credential rather than an identifier, and how many segments
+#: after them it sits.
 #: `/workspaces/<id>/clientapps/<app_key>` carries the API token itself: the
 #: server matches that segment against `ClientApp.app_key`, which is the string
 #: a caller authenticates with.
-_SECRET_FOLLOWS = frozenset({"clientapps"})
+#: `/workflow-runs/<id>/<secret>` is a workflow link: whoever holds it can start the
+#: workflow without signing in.
+_SECRET_AFTER = {"clientapps": 1, "workflow-runs": 2}
 
 
 def safe_log_path(endpoint: str) -> str:
@@ -106,10 +109,10 @@ def safe_log_path(endpoint: str) -> str:
         segment replaced by `REDACTED`.
     """
     parts = endpoint.split("?", 1)[0].split("/")
-    return "/".join(
-        REDACTED if index and parts[index - 1] in _SECRET_FOLLOWS else part
-        for index, part in enumerate(parts)
-    )
+    for index, part in enumerate(parts):
+        if part in _SECRET_AFTER and index + _SECRET_AFTER[part] < len(parts):
+            parts[index + _SECRET_AFTER[part]] = REDACTED
+    return "/".join(parts)
 
 
 #: Response headers kept on the log line of a failed or retried request, to tell a gateway or
