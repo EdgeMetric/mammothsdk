@@ -12,6 +12,7 @@ from mammoth_cli.app.help_text import _group_description, live_command_summary
 from mammoth_cli.commands import connector as connector_cmd
 from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.runtime import shell_text
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -584,6 +585,27 @@ def test_ds_config_create_says_nothing_was_saved_and_what_imports(
         "table_name": "t1",
         "query": "select 'a' from t1",
     }
+
+
+def test_ds_config_create_quotes_the_import_for_cmd_exe_on_windows(
+    fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(shell_text, "WINDOWS", True)
+    fake_service.responses[_DS_CONFIG_CREATE] = {"valid": True}
+    result, _ = connector_cmd.connector_ds_config_create(
+        _inv(
+            "connector.ds-config.create",
+            project=180,
+            extra_args=["postgres", "conn1"],
+            input_file=_write(tmp_path, {"query": "select 1", "table": "t1"}),
+            yes=True,
+        )
+    )
+    assert isinstance(result, dict)
+    head, _, spec = result["next"].partition(" --input ")
+    assert head == "mammoth dataset create"
+    assert spec.startswith('"{\\"') and spec.endswith('}"')
+    assert json.loads(spec[1:-1].replace('\\"', '"'))["ds_creation_type"] == "cloud"
 
 
 def test_ds_config_create_of_a_file_names_no_query_import(
