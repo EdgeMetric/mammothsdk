@@ -366,7 +366,11 @@ class ConnectorsAPI:
         data_sample: bool = False,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Create a data source configuration.
+        """Check a data source configuration, or sample its rows. Saves nothing.
+
+        The server validates the config or returns sample rows; it makes no data
+        source configuration and no dataset. Create a dataset with
+        ``client.datasets.create`` (``ds_creation_type="cloud"``).
 
         Exactly one of ``query`` or ``file_source`` must be provided (mirrors the
         backend ``ValidateAndSampleDataSpec`` validator). ``validate`` and
@@ -388,7 +392,7 @@ class ConnectorsAPI:
             project_id: Project ID (uses client default if not provided).
 
         Returns:
-            Dict with created data source config.
+            Dict with the validation result, or ``data_sample`` when sampling.
 
         Raises:
             MammothValidationError: If neither ``query`` nor ``file_source`` is

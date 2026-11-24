@@ -10,7 +10,7 @@ may change in which release, so a consumer knows what it can rely on.
   `retryable`, `authorization_required`, `recovery_commands`, `exit`, `log_ref`).
 - Exit codes (the table in `references/machine-output.md`).
 - Stable `error.code` values and `details.operation_state`.
-- `schema get` records, including `output_schema` where a command declares one.
+- `schema get` (`{requested, schemas, errors}`) records, including `output_schema` where a command declares one.
 - `mammoth run` line keys and its JSON Lines output.
 
 Message text (`error.message`, `hint`, human output) is not part of the contract: branch on

@@ -619,6 +619,7 @@ class WorkflowsAPI:
         workflow_id: int,
         canvas_state: dict[str, Any],
         project_id: int | None = None,
+        expected_version: int | None = None,
     ) -> dict[str, Any]:
         """Update a workflow's canvas state.
 
@@ -627,6 +628,9 @@ class WorkflowsAPI:
             canvas_state: Canvas state JSON payload.
             project_id: Project ID (uses client default if not provided; must
                 be > 0 if given).
+            expected_version: The canvas version the client last read; the server
+                answers 409 if it has moved. Omitted, the write is refused with 409
+                while a Save runs or unsaved changes are stored.
 
         Returns:
             Dict with the updated canvas state.
@@ -638,7 +642,9 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        body = {"canvas_state": canvas_state}
+        body: dict[str, Any] = {"canvas_state": canvas_state}
+        if expected_version is not None:
+            body["expected_version"] = expected_version
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/canvas",

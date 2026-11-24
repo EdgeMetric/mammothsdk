@@ -6,6 +6,25 @@ commands:
   no_readback: AddComment's response (id/annotation_id/body/created_by/created_at) has no target_type/target_id;
     the only read command (annotation.list) filters by target, not by annotation_id, so the specific comment
     thread cannot be read back.
+- command_id: annotation.access
+  output_schema:
+    type: object
+    required: [can_post, can_moderate, people]
+- command_id: annotation.comment.delete
+  output_schema:
+    ref: WriteResult
+  no_readback: the server answers 204 with no body, and the only read command (annotation.list) lists
+    whole threads; a thread left with no comments goes too.
+  known_restrictions: Its author or a project admin may delete a comment; a thread left with no comments
+    goes too. Prompts unless --yes.
+- command_id: annotation.comment.edit
+  output_schema:
+    ref: WriteResult
+  no_readback: The edited comment (id/annotation_id/body/created_by/created_at) has no target_type/target_id;
+    the only read command (annotation.list) filters by target, not by annotation_id, so the specific comment
+    thread cannot be read back.
+  known_restrictions: 'Only the comment''s author may edit it. Input: {body}. A mention is written <@user_id>;
+    `annotation access` lists the people a comment may mention.'
 - command_id: annotation.create
   output_schema:
     ref: WriteResult

@@ -564,13 +564,14 @@ def workflow_canvas(invocation: Invocation) -> HandlerResult:
     workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
     document = invocation.load_input()
     canvas_state = _require_field(document, "canvas_state")
+    kwargs: dict[str, Any] = {
+        "workflow_id": workflow_id,
+        "canvas_state": canvas_state,
+        "project_id": project_id,
+    }
+    _forward_optional(document or {}, kwargs, ("expected_version",))
     with open_service(invocation) as (service, auth):
-        data = service.call(
-            _symbol(invocation),
-            workflow_id=workflow_id,
-            canvas_state=canvas_state,
-            project_id=project_id,
-        )
+        data = service.call(_symbol(invocation), **kwargs)
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

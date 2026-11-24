@@ -194,8 +194,9 @@ async def get_dashboard(
     Returns:
         The dashboard and its links. `values`: each KPI card and chart, in
         order, with its `label`, the `period` it counts and any `filters` its
-        author set. A card has its `value`; a chart has its `series`, each with
-        its first `rows` and its `row_count`. `values_from` says which version
+        author set. A card has its `value`, and under `series` any previous
+        period (`prev`) or sparkline (`spark`); a chart has its `series`, each
+        with its first `rows` and its `row_count`. `values_from` says which version
         they are from: `published`, the one the share link opens, or `draft`,
         the one the editor shows when the board is not published. When there
         are no numbers to report, `values_unavailable` says why. With

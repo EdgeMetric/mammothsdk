@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "C2/S5 exports-connectors",
-  "route_count": 85,
+  "route_count": 86,
   "families": {
     "view_export": 30,
-    "connector": 40,
+    "connector": 41,
     "external-key": 4,
     "webhook": 7
   },
@@ -3955,6 +3955,42 @@
           "method",
           "path",
           "body"
+        ]
+      },
+      "dropped_field_sentinel": "__s5_dropped_field__",
+      "wire_verification": {
+        "status": "unverified",
+        "executed_controls": [],
+        "planned_controls": [
+          "exact_sdk_symbol",
+          "field_consumption",
+          "wire_method_path_body",
+          "reject_dropped_field"
+        ]
+      }
+    },
+    {
+      "command_id": "connector.connection.tables",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables",
+      "field_destinations": {
+        "connection_key": {
+          "source": "positional",
+          "destination": "connection_key",
+          "wire": "query"
+        }
+      },
+      "context_destinations": {
+        "project_id": "resolved project where applicable",
+        "workspace_id": "resolved auth workspace"
+      },
+      "wire": {
+        "method": "GET",
+        "path": "/workspaces/{workspace}/projects/{project}/connector-drafts/connection-tables",
+        "body": "none",
+        "checks": [
+          "method",
+          "path",
+          "query"
         ]
       },
       "dropped_field_sentinel": "__s5_dropped_field__",

@@ -439,6 +439,8 @@ COMMAND_TARGETS: dict[str, tuple[str, str]] = {
     "workflow.delete": ("workflow", "workflow_id"),
     "workflow.save-undo": ("workflow", "workflow_id"),
     "workflow.link.remove": ("workflow", "workflow_id"),
+    "workflow.schedule.unset": ("workflow", "workflow_id"),
+    "workflow.after.unset": ("workflow", "workflow_id"),
     "dashboard.delete": ("dashboard", "dashboard_id"),
     "project.delete": ("project", "project_id"),
     "project.bulk-delete": ("project", "project_ids"),

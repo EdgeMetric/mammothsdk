@@ -22,6 +22,9 @@ from mammoth_cli.services.suggest import nearest_one
 #: Aggregations that need a numeric measure; count and count_distinct do not.
 NUMERIC_AGGS = frozenset({"sum", "avg", "mean", "average", "min", "max", "median"})
 
+#: The server's own measure for a row count; it reads no column.
+ROW_COUNT_MEASURE = "__count"
+
 _MEASURE_KEYS = ("measure", "measure2", "measure_x", "measure_y", "measure_size")
 _DIM_KEYS = ("dim", "col_dim", "row_dim", "series", "date_field")
 
@@ -68,7 +71,7 @@ def figure_problems(
     allowed = set(derived)
     problems: list[dict[str, Any]] = []
     for role, column, agg in _figure_refs(figure):
-        if column in allowed:
+        if column in allowed or (role == "measure" and column == ROW_COUNT_MEASURE):
             continue
         profile = by_name.get(column)
         if profile is None:

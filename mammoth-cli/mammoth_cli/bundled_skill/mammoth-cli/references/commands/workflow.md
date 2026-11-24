@@ -22,6 +22,16 @@ Result: `WorkflowAfterSetResult`; mutation `benign_mutation`, confirmation `none
 
 Status on release: untried; no live run recorded.
 
+### `workflow.after.unset`
+
+Run: `mammoth workflow after unset`. Exact input fields: `mammoth schema get workflow.after.unset`.
+
+Example: `mammoth workflow after unset 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkflowAfterUnsetResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.archive`
 
 Run: `mammoth workflow archive`. Exact input fields: `mammoth schema get workflow.archive`.
@@ -272,6 +282,18 @@ Result: `WorkflowLinkCreateResult`; mutation `benign_mutation`, confirmation `no
 
 Status on release: untried; no live run recorded.
 
+### `workflow.link.fire`
+
+Run: `mammoth workflow link fire`. Exact input fields: `mammoth schema get workflow.link.fire`.
+
+Example: `mammoth workflow link fire --input /private/path/request.json`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Secret fields: pass the body as `--input FILE` (mode 0600); never inline.
+
+Result: `WorkflowLinkFireResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.link.remove`
 
 Run: `mammoth workflow link remove`. Exact input fields: `mammoth schema get workflow.link.remove`.
@@ -389,6 +411,16 @@ Run: `mammoth workflow schedule set`. Exact input fields: `mammoth schema get wo
 Example: `mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowScheduleSetResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.schedule.unset`
+
+Run: `mammoth workflow schedule unset`. Exact input fields: `mammoth schema get workflow.schedule.unset`.
+
+Example: `mammoth workflow schedule unset 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `WorkflowScheduleUnsetResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

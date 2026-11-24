@@ -537,7 +537,11 @@ def test_schema_get_returns_one_schema_per_comma_joined_id_in_a_single_call() ->
     assert combined["errors"] == []
     assert [entry["command_id"] for entry in combined["schemas"]] == ids
     for entry in combined["schemas"]:
-        assert entry == _get(entry["command_id"])["data"]
+        assert _get(entry["command_id"])["data"] == {
+            "requested": 1,
+            "schemas": [entry],
+            "errors": [],
+        }
 
 
 def test_schema_get_takes_space_separated_ids_like_comma_joined_ones() -> None:
@@ -558,9 +562,20 @@ def test_schema_get_unknown_id_is_an_entry_in_errors_not_a_failed_call() -> None
     assert combined["errors"][0]["code"] == "schema_not_found"
 
 
-def test_schema_get_single_unknown_id_still_fails() -> None:
-    result = make_runner().invoke(["schema", "get", "no.such.command", "--output", "json"])
+@pytest.mark.parametrize("ids", ["no.such.command", "no.such.command,nor.this"])
+def test_schema_get_fails_when_no_id_is_found(ids: str) -> None:
+    result = make_runner().invoke(["schema", "get", ids, "--output", "json"])
     assert result.exit_code == 2
+    assert json.loads(result.output)["error"]["code"] == "schema_not_found"
+
+
+@pytest.mark.parametrize("flags", [[], ["--full"]])
+def test_schema_get_has_one_shape_whatever_the_id_count(flags: list[str]) -> None:
+    """Feedback 11 (2026-11-24): one id gave the bare entry, several gave ``schemas``."""
+    for ids in (["view.list"], ["view.list", "view.analyze"]):
+        data = _get(*ids, *flags)["data"]
+        assert set(data) == {"requested", "schemas", "errors"}
+        assert [entry["command_id"] for entry in data["schemas"]] == ids
 
 
 def test_schema_get_caps_the_ids_per_call() -> None:

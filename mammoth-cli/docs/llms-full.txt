@@ -133,8 +133,14 @@ Sensitive structured input must come from a private file or pipe; never put secr
 
 ## annotation
 
+- `mammoth annotation access` [read/none] -> mammoth.api.annotations.AnnotationsAPI.access
+  example: mammoth annotation access
 - `mammoth annotation comment add` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.comment_add
   example: mammoth annotation comment add 123 --input '{"body": "Quarterly revenue summary"}'
+- `mammoth annotation comment delete` [destructive/prompt_or_yes] -> mammoth.api.annotations.AnnotationsAPI.comment_delete
+  example: mammoth annotation comment delete 123 456 --yes
+- `mammoth annotation comment edit` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.comment_edit
+  example: mammoth annotation comment edit 123 456 --input '{"body": "Quarterly revenue summary"}'
 - `mammoth annotation create` [benign_mutation/none] -> mammoth.api.annotations.AnnotationsAPI.create
   example: mammoth annotation create --input '{"target_type": "dataview", "target_id": 1, "body": "Quarterly revenue summary"}'
 - `mammoth annotation delete` [destructive/prompt_or_yes] -> mammoth.api.annotations.AnnotationsAPI.delete
@@ -409,6 +415,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector connection list-all
 - `mammoth connector connection query` [read/none] -> mammoth.api.connectors.ConnectorsAPI.query_connection
   example: mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'
+- `mammoth connector connection tables` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  example: mammoth connector connection tables prod-warehouse
 - `mammoth connector connection test` [benign_mutation/none] -> mammoth.api.connectors.ConnectorsAPI.test_connection
   example: mammoth connector connection test prod-warehouse
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
@@ -1514,7 +1522,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
   example: mammoth view create 123
 - `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
-  example: mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
+  example: mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'
 - `mammoth view data compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'
 - `mammoth view data drivers` [read/none] -> mammoth_cli.commands.view_drivers.view_data_drivers
@@ -1792,6 +1800,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow after loops 123
 - `mammoth workflow after set` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set
   example: mammoth workflow after set 123 456
+- `mammoth workflow after unset` [destructive/prompt_or_yes] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  example: mammoth workflow after unset 123 --yes
 - `mammoth workflow archive` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.set_archived
   example: mammoth workflow archive 123 --input '{"archived": true}'
 - `mammoth workflow attach-dataset` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.attach_dataset
@@ -1842,6 +1852,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow held check 123
 - `mammoth workflow link create` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
   example: mammoth workflow link create 123
+- `mammoth workflow link fire` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  example: mammoth workflow link fire --input /private/path/request.json
 - `mammoth workflow link remove` [destructive/prompt_or_yes] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
   example: mammoth workflow link remove 123 --yes
 - `mammoth workflow list` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list
@@ -1866,6 +1878,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow save-undo 123 resource-123 --yes
 - `mammoth workflow schedule set` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set
   example: mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'
+- `mammoth workflow schedule unset` [destructive/prompt_or_yes] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  example: mammoth workflow schedule unset 123 --yes
 - `mammoth workflow sentence dismiss-ask` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss
   example: mammoth workflow sentence dismiss-ask 123
 - `mammoth workflow sentence read` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.sentence_read

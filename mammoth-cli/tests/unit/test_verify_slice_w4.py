@@ -198,6 +198,54 @@ def test_evaluated_numbers_are_attached_to_each_card_and_tile() -> None:
     assert tile["row_count"] == 14 and len(tile["rows"]) == 10
 
 
+CARD_WITH_A_COMPARISON = {
+    "canvas": {"focus": {"kpis": [{"label": "Anthropic cost"}]}},
+    "meta": {
+        "figures": {
+            "p1:kpi:0": {"descriptors": {"value": "d-now", "prev": "d-prev", "spark": "d-s"}}
+        },
+        "receipts": {
+            "p1:kpi:0": {
+                "series": {
+                    "value": {
+                        "filters": [
+                            {"term": {"field": "provider", "op": "eq", "value": "anthropic"}},
+                            {"term": {"field": "call_date", "op": "in", "value": "last 30 days"}},
+                        ]
+                    },
+                    "prev": {
+                        "filters": [
+                            {"term": {"field": "provider", "op": "eq", "value": "anthropic"}},
+                            {"term": {"field": "call_date", "op": "in", "value": "30 days before"}},
+                        ]
+                    },
+                }
+            }
+        },
+    },
+}
+
+
+def test_a_card_with_a_previous_period_keeps_its_own_value_and_filters() -> None:
+    """PRD-3699: the number sat under series and the filters joined both windows."""
+    results = {
+        "d-now": {"status": "success", "value": 421.0},
+        "d-prev": {"status": "success", "value": 75.0},
+        "d-s": {"status": "success", "data": [{"key": "2026-11-01", "value": 1.0}]},
+    }
+
+    (card,) = attach_values(figure_bindings(CARD_WITH_A_COMPARISON), results)
+
+    assert card["value"] == 421.0
+    assert card["filters"] == ["provider = anthropic", "call_date in last 30 days"]
+    assert card["series"]["prev"] == {
+        "value": 75.0,
+        "filters": ["provider = anthropic", "call_date in 30 days before"],
+    }
+    assert card["series"]["spark"]["row_count"] == 1
+    assert "value" not in card["series"] and "series_filters" not in card
+
+
 def test_a_descriptor_that_failed_is_reported_not_dropped() -> None:
     bindings = figure_bindings(CANVAS_DOC)[:1]
     values = attach_values(

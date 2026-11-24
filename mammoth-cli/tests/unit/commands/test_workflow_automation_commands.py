@@ -17,6 +17,7 @@ from mammoth_cli.commands.schema.find import find_schemas
 from mammoth_cli.commands.workflow import SAVE_AWAITED, await_built_workflow
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.manifest.loader import command_by_id
+from mammoth_cli.runtime.runlog import redact_argv
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile, make_runner
 
@@ -57,6 +58,22 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
     ),
     (["workflow", "after", "loops", "41"], f"{_T}.after_loops", {"workflow_id": 41}),
     (["workflow", "link", "create", "41"], f"{_T}.link_create", {"workflow_id": 41}),
+    (
+        [
+            "workflow",
+            "canvas",
+            "41",
+            "--input",
+            '{"canvas_state": {"a": 1}, "expected_version": 3}',
+        ],
+        f"{_W}.canvas",
+        {"workflow_id": 41, "canvas_state": {"a": 1}, "expected_version": 3},
+    ),
+    (
+        ["workflow", "canvas", "41", "--input", '{"canvas_state": {"a": 1}}'],
+        f"{_W}.canvas",
+        {"workflow_id": 41, "canvas_state": {"a": 1}},
+    ),
     (
         ["workflow", "describe", "start", "--input", '{"text": "Match payouts"}'],
         f"{_D}.start",
@@ -114,19 +131,26 @@ def test_the_dry_run_sends_the_expected_sdk_call(
     assert {k: v for k, v in call["arguments"].items() if k in arguments} == arguments
 
 
-def test_the_link_remove_dry_run_names_the_workflow_it_turns_the_link_off_for(
-    fake_service: FakeMammothService,
+@pytest.mark.parametrize(
+    ("argv", "method"),
+    [
+        (["workflow", "link", "remove"], "link_remove"),
+        (["workflow", "schedule", "unset"], "schedule_unset"),
+        (["workflow", "after", "unset"], "after_unset"),
+    ],
+)
+def test_a_trigger_removal_dry_run_names_the_workflow_it_takes_the_trigger_off(
+    argv: list[str], method: str, fake_service: FakeMammothService
 ) -> None:
     fake_service.responses["mammoth.api.workflows.WorkflowsAPI.get"] = {"id": 41, "name": "Bank"}
 
     result = make_runner().invoke(
-        [*("workflow", "link", "remove", "41", "--yes", "--project", "25654"), "--dry-run"]
-        + ["--output", "json"]
+        [*argv, "41", "--yes", "--project", "25654", "--dry-run", "--output", "json"]
     )
 
     assert result.exit_code == 0, result.output
     data = json.loads(result.output)["data"]
-    assert data["would_call"]["sdk_symbol"] == f"{_T}.link_remove"
+    assert data["would_call"]["sdk_symbol"] == f"{_T}.{method}"
     assert data["would_call"]["arguments"]["workflow_id"] == 41
     assert [(t["type"], t["id"], t["name"]) for t in data["targets"]] == [("workflow", 41, "Bank")]
 
@@ -160,6 +184,9 @@ _COMMANDS = (
     "workflow.after.loops",
     "workflow.link.create",
     "workflow.link.remove",
+    "workflow.link.fire",
+    "workflow.schedule.unset",
+    "workflow.after.unset",
     "workflow.describe.start",
     "workflow.describe.get",
     "workflow.describe.wait",
@@ -190,8 +217,88 @@ def test_every_new_command_is_registered_and_each_write_declares_its_undo() -> N
             assert record.get("undo"), command_id
 
 
-def test_the_link_removal_asks_first() -> None:
-    assert command_by_id("workflow.link.remove")["confirmation"] == "prompt_or_yes"  # type: ignore[index]
+@pytest.mark.parametrize(
+    "command_id", ["workflow.link.remove", "workflow.schedule.unset", "workflow.after.unset"]
+)
+def test_taking_a_trigger_off_asks_first(command_id: str) -> None:
+    assert command_by_id(command_id)["confirmation"] == "prompt_or_yes"  # type: ignore[index]
+
+
+_LINK_FIRE = ["workflow", "link", "fire", "--input"]
+_LINK_OPTIONS = ["--project", "25654", "--dry-run", "--output", "json"]
+_INLINE_LINK = '{"link": "https://x.test/workflow-runs/41/s3cret"}'
+
+
+def _link_file(tmp_path: Path, link: str) -> str:
+    path = tmp_path / "link.json"
+    path.write_text(json.dumps({"link": link}), encoding="utf-8")
+    path.chmod(0o600)
+    return str(path)
+
+
+@pytest.mark.parametrize("at", ["", "@"])
+@pytest.mark.parametrize(
+    "link", ["/workflow-runs/41/s3cret", "https://x.test/workflow-runs/41/s3cret"]
+)
+def test_a_dry_run_link_fire_does_not_print_the_secret(link: str, at: str, tmp_path: Path) -> None:
+    result = make_runner().invoke([*_LINK_FIRE, at + _link_file(tmp_path, link), *_LINK_OPTIONS])
+
+    assert result.exit_code == 0, result.output
+    call = json.loads(result.output)["data"]["would_call"]
+    assert call["sdk_symbol"] == f"{_T}.link_fire"
+    assert call["arguments"]["body"] == {"workflow_id": 41, "link": "<hidden>"}
+    assert "s3cret" not in result.output
+
+
+@pytest.mark.parametrize("prefix", ["", " ", "\n"])
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_link_fire_refuses_an_inline_link(
+    prefix: str, dry_run: bool, fake_service: FakeMammothService
+) -> None:
+    options = [o for o in _LINK_OPTIONS if dry_run or o != "--dry-run"]
+    result = make_runner().invoke([*_LINK_FIRE, prefix + _INLINE_LINK, *options, "--yes"])
+
+    assert result.exit_code == 2, result.output
+    assert "file or stdin" in json.loads(result.output)["error"]["message"]
+    assert "s3cret" not in result.output
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "app.mammoth.io/workflow-runs/41/s3cret",
+        "//app.mammoth.io/workflow-runs/41/s3cret",
+        "ftp://app.mammoth.io/workflow-runs/41/s3cret",
+        "https://[x/workflow-runs/41/s3cret",
+        "https://app.mammoth.io:x/workflow-runs/41/s3cret",
+    ],
+)
+def test_a_dry_run_refuses_a_link_the_real_call_refuses(link: str, tmp_path: Path) -> None:
+    result = make_runner().invoke([*_LINK_FIRE, _link_file(tmp_path, link), *_LINK_OPTIONS])
+
+    assert result.exit_code != 0
+    assert "from its https://" in json.loads(result.output)["error"]["message"]
+    assert "s3cret" not in result.output
+
+
+def test_the_run_log_keeps_the_link_out_of_argv() -> None:
+    assert "s3cret" not in " ".join(redact_argv([*_LINK_FIRE, _INLINE_LINK]))
+
+
+def test_link_fire_takes_no_positional() -> None:
+    result = make_runner().invoke(
+        ["workflow", "link", "fire", "/workflow-runs/41/s3cret", "--project", "25654", "--dry-run"]
+    )
+
+    assert result.exit_code != 0
+
+
+def test_a_dry_run_canvas_without_expected_version_does_not_send_one() -> None:
+    argv = ["workflow", "canvas", "41", "--input", '{"canvas_state": {"a": 1}}']
+    result = make_runner().invoke([*argv, "--project", "25654", "--dry-run", "--output", "json"])
+
+    assert "expected_version" not in json.loads(result.output)["data"]["would_call"]["arguments"]
 
 
 @pytest.mark.parametrize(

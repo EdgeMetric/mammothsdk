@@ -11,14 +11,18 @@ import pytest
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands.dataset import create as create_cmd
 from mammoth_cli.commands.dataset import find as find_cmd
-from mammoth_cli.commands.dataset.create import ONE_OFF_PULL, _default_one_off_pull
+from mammoth_cli.commands.dataset.create import (
+    ONE_OFF_PULL,
+    _default_one_off_pull,
+    _require_cloud_query_fields,
+)
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import COMMAND_FLAGS
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.testing import FakeMammothService
-from mammoth_cli.testing import login_default_profile
+from mammoth_cli.testing import login_default_profile, make_runner
 
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
@@ -1651,3 +1655,106 @@ def test_cloud_database_create_sends_a_one_off_pull_and_table_name() -> None:
     assert len(adjusted) == 2
     file_spec: dict[str, Any] = {"query_properties": {"file_path": "/a.csv"}}
     assert _default_one_off_pull("cloud", file_spec) == []
+
+
+@pytest.mark.parametrize(
+    ("properties", "missing"),
+    [
+        ({"query": "SELECT 1"}, ["ds_name", "table_name"]),
+        ({"query": "SELECT 1", "ds_name": "Calls"}, ["table_name"]),
+        ({"table_name": "calls", "ds_name": "Calls"}, ["query"]),
+    ],
+)
+def test_cloud_query_import_names_its_missing_fields(
+    properties: dict[str, str], missing: list[str]
+) -> None:
+    """Feedback 10 (2026-11-24): the server answered 400 4DSET043, after a clean dry run."""
+    spec = {"connector_key": "postgres", "query_properties": properties}
+    with pytest.raises(CliError) as excinfo:
+        _require_cloud_query_fields("cloud", spec)
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.details["missing"] == missing
+
+
+@pytest.mark.parametrize(
+    ("kind", "spec"),
+    [
+        ("weburl", {"url": "https://x.test/a.csv"}),
+        ("cloud", {"query_properties": {"file_path": "/a.csv"}}),
+        ("cloud", {"connector_key": "google_sheets", "query_properties": {"query": "q"}}),
+        (
+            "cloud",
+            {"query_properties": {"ds_name": "a", "table_name": "b", "query": "SELECT 1"}},
+        ),
+    ],
+)
+def test_other_creates_need_no_query_fields(kind: str, spec: dict[str, Any]) -> None:
+    _require_cloud_query_fields(kind, spec)
+
+
+def test_dataset_create_refuses_a_cloud_import_under_dry_run(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "postgres",
+            "connection_key": "conn1",
+            "query_properties": {"ds_name": "Calls", "query": "SELECT 1"},
+        },
+    }
+    with pytest.raises(CliError) as excinfo:
+        create_cmd.dataset_create(
+            _inv(
+                "dataset.create",
+                project=180,
+                input_file=_write(tmp_path, doc),
+                dry_run=True,
+            )
+        )
+    assert excinfo.value.details["missing"] == ["table_name"]
+    assert fake_service.call_log == []
+
+
+_CLOUD_IMPORT: dict[str, object] = {
+    "ds_creation_type": "cloud",
+    "dataset_spec": {
+        "connector_key": "postgres",
+        "connection_key": "conn1",
+        "query_properties": {"ds_name": "LLM calls", "table_name": "calls", "query": "SELECT 1"},
+    },
+}
+
+
+def test_a_cloud_import_dry_run_says_its_name_is_taken(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Feedback 17 (2026-11-24): "LLM calls 2" was made without a word."""
+    fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "LLM calls"}]}
+    result = make_runner().invoke(
+        [
+            *("dataset", "create", "--input", _write(tmp_path, _CLOUD_IMPORT)),
+            *("--project", "180", "--dry-run", "--output", "json"),
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["requested_name"] == "LLM calls"
+    assert impact["name_taken"] is True
+    assert impact["final_name"] == "LLM calls 2"
+    assert _CREATE not in fake_service.calls
+
+
+def test_a_cloud_import_says_it_got_another_name(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_CREATE] = {"job_id": 14}
+    fake_service.job_result = {"ds_id": 7}
+    fake_service.responses[_GET] = {"dataset": {"id": 7, "name": "LLM calls 2"}}
+    data, _ = create_cmd.dataset_create(
+        _inv("dataset.create", project=180, input_file=_write(tmp_path, _CLOUD_IMPORT))
+    )
+    assert isinstance(data, dict)
+    assert data["name"] == "LLM calls 2"
+    assert data["requested_name"] == "LLM calls"
+    assert "was taken" in data["note"]

@@ -73,7 +73,8 @@ def test_schema_get_accepts_command_id_positional() -> None:
     assert result.returncode == _EXIT_OK, result.stderr
     payload = _envelope(result)
     assert payload.get("error") is None
-    assert payload["data"]["command_id"] == "view.transform.bulk-replace"
+    (entry,) = payload["data"]["schemas"]
+    assert entry["command_id"] == "view.transform.bulk-replace"
 
 
 def test_capability_get_accepts_operation_id_positional() -> None:
