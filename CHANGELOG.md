@@ -38,6 +38,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-cli)
 
+- A row count measure (`__count`) on a dashboard figure is no longer reported as an unknown column; when the server itself refuses it, its bake error still shows.
 - `dataset create` refuses a cloud query import that lacks `ds_name`, `table_name` or `query` before sending it, and under `--dry-run`; the server answered 400 4DSET043.
 - `dataset create` from a connection says when the name was taken and the dataset got another one (`requested_name`, `note`), and `--dry-run` predicts it.
 - The `state` read-back of a dashboard write (`chat edit`, `pages add`, `canvas save`, ...) stays under its 1,500-byte cap; it carried the whole canvas (about 95 KB of a 103 KB result). Warnings in `verify` are sentences, not Python dict text.

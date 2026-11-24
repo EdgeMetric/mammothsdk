@@ -14,6 +14,7 @@ from mammoth_cli.commands.dashboard import workbook as dashboard_workbook
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.verify import with_verify
+from mammoth_cli.services.dashboard_figures import figure_problems
 from mammoth_cli.services.dashboard_pages import append_figure
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -54,6 +55,14 @@ def _canvas(pages: list[dict[str, Any]], **meta: Any) -> dict[str, Any]:
         "plan": {"hints": {"_profiles": _PROFILES}},
         "meta": {"sequence": 2, **meta},
     }
+
+
+def test_a_row_count_measure_is_not_an_unknown_column() -> None:
+    figure = {"kind": "hbar", "measure": "__count", "dim": "Region"}
+    assert figure_problems(figure, _PROFILES) == []
+
+    (problem,) = figure_problems({"kind": "hbar", "measure": "Sales", "dim": "__count"}, _PROFILES)
+    assert problem["issue"] == "unknown_column"
 
 
 def test_canvas_save_with_an_unknown_column_is_not_verified(
