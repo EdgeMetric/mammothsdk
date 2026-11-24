@@ -123,6 +123,7 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.published.drill": {
         "body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "path": [{"key": "West"}]}}
     },
+    "dashboard.figure.text-block": {"tile": "t-Eh6h-ImH", "text": "Source: billing export"},
     "dashboard.figure.rows": {"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}},
     "dashboard.published.rows": {
         "body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}

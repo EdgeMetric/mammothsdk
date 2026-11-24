@@ -526,6 +526,7 @@ _TARGETS: dict[str, str] = {
     ),
     "dashboard.restore": "mammoth_cli.commands.dashboard:dashboard_restore",
     "dashboard.figure.add": "mammoth_cli.commands.dashboard:dashboard_figure_add",
+    "dashboard.figure.text-block": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dashboard.share": "mammoth_cli.commands.dashboard:dashboard_share",
     "dashboard.source.list": "mammoth_cli.commands.dashboard:dashboard_source_list",
     "dashboard.trash": "mammoth_cli.commands.dashboard:dashboard_trash",

@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7956 (mammothsdk#468, #470).
 - `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
 - `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK (mammoth-io 0.8.59): `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
+- `dashboard figure text-block DASHBOARD_ID --input '{"tile": FIGURE_ID, "text": "..."}'` puts a source or caveat text block on a tile, with no chat turn; the same block twice writes nothing. SDK (mammoth-io 0.8.59): `DashboardsAPI.add_text_block`. Needs the server change of PRD-3700.
 
 ### Added (next mammoth-cli)
 
@@ -30,6 +31,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `connector ds-config create` says what it does: it checks or samples a config and saves nothing (`saved: false`, with the `dataset create` call as `next`). It no longer reports an undo or a read-back.
 - `workflow delete ID --yes` reads the workflow's delete plan, trashes the default-ticked items no other workflow uses (steps, result tables, and the dashboards and schedules that go with them; inputs stay), waits for the job, and reports `trashed`, `kept_steps` and `kept`. `--input` chooses: `{"trash_inputs": true}`, `{"keep_steps": true}` or `{"trash": [KEYS]}`; `--dry-run` shows the keys it would send. On a server without the delete plan it falls back to the plain delete, and a 409 `4WKFL310` says what to run instead. `workflow delete-plan ID` reads the plan; `WorkflowsAPI.delete` takes `trash=` and `WorkflowsAPI.delete_plan` is new. Needs mvc-service 48.7 (mammothsdk#476).
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
+
+### Fixed (next mammoth-cli, mammoth-mcp-server)
+
+- A KPI card with a previous period or sparkline has its number at `value` and only its own `filters`; the number sat under `series` and the filters of both windows were joined. The previous period is `series.prev`, with its own filters (PRD-3699).
 
 ### Fixed (next mammoth-cli)
 

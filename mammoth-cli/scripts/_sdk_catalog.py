@@ -149,6 +149,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.create-blank": {"operation_ids": ["CreateBlankDashboard"], "method": "POST"},
     "dashboard.pages.add": {"operation_ids": ["AddPages"], "method": "POST"},
     "dashboard.figure.add": {"operation_ids": ["AppendFigure"], "method": "POST"},
+    "dashboard.figure.text-block": {"operation_ids": ["AddTextBlock"], "method": "POST"},
     "collection.list": {"operation_ids": ["ListCollections"], "method": "GET"},
     "collection.get": {"operation_ids": ["GetCollection"], "method": "GET"},
     "collection.get-by-url": {"operation_ids": ["GetCollectionByUrl"], "method": "GET"},

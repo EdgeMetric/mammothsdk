@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 954
+method_count: 955
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -3274,6 +3274,20 @@ methods:
   no_command_reason: null
   mutation_class: high_impact
   wait_policy: returns_job
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_text_block
+  implementation_origin: mammoth.api.dashboards.DashboardsAPI.add_text_block
+  signature: 'add_text_block(self, dashboard_id: ''int'', tile: ''str'', text: ''str'', kind: ''str''
+    = ''source'', title: ''str | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - AddTextBlock
+  canonical_command: dashboard.figure.text-block
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary

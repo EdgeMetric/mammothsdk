@@ -34,6 +34,10 @@ COMMAND_DISCOVERY_PURPOSES = {
     "dashboard.figure.add": (
         "append an explore card figure tile to a dashboard from a payload, no chat turn"
     ),
+    "dashboard.figure.text-block": (
+        "attach add a data source line note caption caveat footnote text block to a chart tile, "
+        "say where the numbers come from, no chat turn"
+    ),
     "file.upload": (
         "upload import CSV spreadsheet XLSX source data append add rows union stack "
         "a file into an existing dataset excel workbook tabs sheets drop in"

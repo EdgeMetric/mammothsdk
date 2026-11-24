@@ -77,6 +77,7 @@ edits_target_commands:
 - dashboard.embed.origin.revoke
 - dashboard.embed.secret.rotate
 - dashboard.figure.add
+- dashboard.figure.text-block
 - dashboard.filter.add
 - dashboard.filter.remove
 - dashboard.own-data.accept

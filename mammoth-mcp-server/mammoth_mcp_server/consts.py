@@ -940,6 +940,9 @@ class BoardFields:
     # Figure kinds as the figure id names them, and as a read reports them.
     KINDS = {"kpi": "kpi", "add": "chart"}
     KPI = "kpi"
+    SERIES_FILTERS = "series_filters"
+    # What a figure's binding holds for the read itself, not for the caller.
+    NOT_SHOWN = (DESCRIPTORS, SERIES_FILTERS)
     # What one evaluated descriptor reports.
     STATUS = "status"
     SUCCESS = "success"

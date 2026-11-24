@@ -96,6 +96,10 @@ ERR_ATTACHMENT_ID_POSITIVE = "`attachment_id` must be a positive integer, got {0
 ERR_ATTACHMENT_VIEW_POSITIVE = "`target_dataview_id` must be a positive integer, got {0}."
 ERR_FIGURE_DATAVIEW_POSITIVE = "`dataview_id` must be a positive integer, got {0}."
 ERR_FIGURE_EMPTY = "`figure` must be a non-empty dict (an AddedFigure without its id)."
+ERR_TEXT_BLOCK_TILE = "`tile` must be a non-blank figure id."
+ERR_TEXT_BLOCK_TEXT = "`text` must be a non-blank string."
+ERR_TEXT_BLOCK_KIND = "`kind` must be one of {valid}, got {0!r}."
+TEXT_BLOCK_KINDS = ("source", "caveat")
 ERR_FIGURE_PAGE = "Give `page_id` or `page_new_title`, not both."
 ERR_STYLE_EMPTY = "`style` must be a non-empty string."
 ERR_TEMPLATE_ID_EMPTY = "`template_id` must be a non-empty template slug."
@@ -1581,6 +1585,50 @@ class DashboardsAPI:
             params["page"] = {"new_title": page_new_title}
         return await self._client._request_json(
             "POST", f"/dashboards/{dashboard_id}/figures", json={"params": params}
+        )
+
+    async def add_text_block(
+        self,
+        dashboard_id: int,
+        tile: str,
+        text: str,
+        kind: str = "source",
+        title: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a source or caveat text block to a tile, with no LLM turn.
+
+        The same block sent twice writes nothing the second time.
+
+        Args:
+            dashboard_id: ID of the dashboard (must be > 0).
+            tile: The id of an added figure (the ``figure_id`` ``append_figure`` returned);
+                the server refuses the tiles the engine drew itself.
+            text: The words, in a subset of markdown.
+            kind: ``source`` (where the data came from) or ``caveat`` (what it leaves out).
+            title: Optional short heading.
+
+        Returns:
+            Dict with ``sequence`` (the draft head), ``bake_job_id`` (the async bake, None
+            when nothing was written), ``page_id``, ``block_id`` and ``created``.
+
+        Raises:
+            MammothValidationError: If the id is not positive, ``tile`` or ``text`` is blank,
+                or ``kind`` is unknown.
+        """
+        _require_dashboard_id(dashboard_id)
+        if not isinstance(tile, str) or not tile.strip():
+            raise MammothValidationError(ERR_TEXT_BLOCK_TILE)
+        if not isinstance(text, str) or not text.strip():
+            raise MammothValidationError(ERR_TEXT_BLOCK_TEXT)
+        if kind not in TEXT_BLOCK_KINDS:
+            raise MammothValidationError(
+                ERR_TEXT_BLOCK_KIND.format(kind, valid=", ".join(TEXT_BLOCK_KINDS))
+            )
+        params: dict[str, Any] = {"tile": tile, "text": text, "kind": kind}
+        if title is not None:
+            params["title"] = title
+        return await self._client._request_json(
+            "POST", f"/dashboards/{dashboard_id}/text-blocks", json={"params": params}
         )
 
     async def attachment_intent(
