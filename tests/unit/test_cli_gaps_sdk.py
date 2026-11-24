@@ -5,9 +5,11 @@ The loopback server records each request; nothing here reaches a real server.
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 import pytest
 
-from mammoth.api.workflow_triggers import parse_link
+from mammoth.api.workflow_triggers import check_link_host, parse_link
 from mammoth.client import MammothClient
 from mammoth.exceptions import MammothValidationError
 
@@ -111,15 +113,59 @@ async def test_link_fire_takes_the_path_or_url_link_create_returns(
         "https://orion.mammoth.io/api/v2/workflow-runs/41/s3cret",
         "//orion.mammoth.io/workflow-runs/41/s3cret",
         "orion.mammoth.io/workflow-runs/41/s3cret",
+        "http://{host}.example.com/workflow-runs/41/s3cret",
+        "https://orion.mammoth.io/{host}/workflow-runs/41/s3cret",
+        "http://{host}@orion.mammoth.io/workflow-runs/41/s3cret",
+        "https://[x/workflow-runs/41/s3cret",
+        "https://orion.mammoth.io:x/workflow-runs/41/s3cret",
     ],
 )
 async def test_link_fire_never_sends_another_servers_secret(
     link: str, server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
     with pytest.raises(MammothValidationError) as error:
-        await client.workflow_triggers.link_fire(link)
+        await client.workflow_triggers.link_fire(
+            link.format(host=urlsplit(client.base_url).hostname)
+        )
     assert "s3cret" not in str(error.value)
     assert server.requests == []
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "https://app.mammoth.io/api/v2/workflow-runs/41/s3cret",
+        "https://app.mammoth.io:443/api/v2/workflow-runs/41/s3cret",
+        "HTTPS://App.Mammoth.IO/api/v2/workflow-runs/41/s3cret",
+    ],
+)
+def test_a_link_of_the_clients_server_is_accepted_however_it_is_written(link: str) -> None:
+    check_link_host(link, "https://app.mammoth.io/api/v2")
+
+
+@pytest.mark.parametrize(
+    "link",
+    ["app.mammoth.io/api/v2/workflow-runs/41/s3cret", "https://[x/workflow-runs/41/s3cret"],
+)
+def test_a_link_that_is_neither_path_nor_url_is_named_as_such(link: str) -> None:
+    with pytest.raises(MammothValidationError, match="from its https://") as error:
+        check_link_host(link, "https://app.mammoth.io/api/v2")
+    assert "s3cret" not in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "https://app.mammoth.io:8443/workflow-runs/41/s3cret",
+        "https://app.mammoth.io.example.com/workflow-runs/41/s3cret",
+        "https://orion.mammoth.io/app.mammoth.io/workflow-runs/41/s3cret",
+        "https://app.mammoth.io@orion.mammoth.io/workflow-runs/41/s3cret",
+    ],
+)
+def test_a_link_that_only_contains_the_clients_host_is_another_servers(link: str) -> None:
+    with pytest.raises(MammothValidationError, match="another server") as error:
+        check_link_host(link, "https://app.mammoth.io/api/v2")
+    assert "s3cret" not in str(error.value)
 
 
 @pytest.mark.parametrize("link", ["", "/workflow-runs/x/y", "/other/41/s3cret", "s3cret"])

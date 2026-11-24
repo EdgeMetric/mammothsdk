@@ -18,7 +18,7 @@ from mammoth_cli.commands import doctor as doctor_cmd
 from mammoth_cli.commands import upgrade
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
-from mammoth_cli.runtime import updates
+from mammoth_cli.runtime import shell_text, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.testing import FakeMammothService
@@ -487,8 +487,7 @@ def test_the_sdk_check_passes_only_inside_the_declared_range(installed: str, ok:
     assert check["ok"] is ok
     assert (installed in check["detail"]) is True
     if not ok:
-        assert "pip install" in check["detail"]
-        assert "mammoth-io>=0.8.58,<0.9" in check["detail"]
+        assert check["detail"].endswith(f"fix: {check['fix']}")
 
 
 def test_the_sdk_check_reads_the_range_this_cli_declares() -> None:
@@ -499,18 +498,25 @@ def test_the_sdk_check_reads_the_range_this_cli_declares() -> None:
 
 
 @pytest.mark.parametrize(
-    ("manager", "fix"),
+    ("manager", "windows", "fix"),
     [
-        ("uv", f"/opt/uv tool install --force mammoth-cli=={__version__}"),
-        ("pipx", f"pipx install --force mammoth-cli=={__version__}"),
-        ("pip", "/venv/bin/python -m pip install --upgrade 'mammoth-io>=0.8.58,<0.9'"),
+        ("uv", False, f"/opt/uv tool install --force mammoth-cli=={__version__}"),
+        ("pipx", False, f"pipx install --force mammoth-cli=={__version__}"),
+        ("pip", False, "/opt/py -m pip install --upgrade 'mammoth-io>=0.8.58,<0.9'"),
+        ("uv", True, f'/opt/uv tool install --force "mammoth-cli=={__version__}"'),
+        ("pip", True, '/opt/py -m pip install --upgrade "mammoth-io>=0.8.58,<0.9"'),
     ],
 )
 def test_a_mismatched_sdk_fails_doctor_and_names_the_fix(
-    manager: str, fix: str, isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+    manager: str,
+    windows: bool,
+    fix: str,
+    isolated_cli_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(doctor_cmd, "detect_manager", lambda: manager)
-    monkeypatch.setattr(doctor_cmd.sys, "executable", "/venv/bin/python")
+    monkeypatch.setattr(shell_text, "WINDOWS", windows)
+    monkeypatch.setattr(doctor_cmd.sys, "executable", "/opt/py")
     monkeypatch.setattr(upgrade, "uv_executable", lambda: "/opt/uv")
     monkeypatch.setattr(upgrade, "running_base_python", lambda: None)
     monkeypatch.setattr(

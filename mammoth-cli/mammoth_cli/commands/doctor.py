@@ -33,6 +33,7 @@ from mammoth_cli.runtime import embedded, runlog, updates
 from mammoth_cli.runtime.dispatch import Outcome
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, resolved_project
+from mammoth_cli.runtime.shell_text import shell_join
 from mammoth_cli.runtime.token_scope import Pins, as_pins, pin_details, pinned_projects, pins_label
 from mammoth_cli.services.protocol import MammothService
 
@@ -115,8 +116,8 @@ def _sdk_fix(sdk_spec: str) -> str:
     """
     manager = detect_manager()
     if manager == MANAGER_PIP:
-        return shlex.join([sys.executable, "-m", "pip", "install", "--upgrade", sdk_spec])
-    return shlex.join(build_upgrade_command(manager, __version__))
+        return shell_join([sys.executable, "-m", "pip", "install", "--upgrade", sdk_spec])
+    return shell_join(build_upgrade_command(manager, __version__))
 
 
 def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:

@@ -19,13 +19,15 @@ ERR_INTERVAL = "`interval` must be an integer from 1 to 366, got {0!r}."
 ERR_WEEK_DAYS = "`by_week_day` must be a list of mo, tu, we, th, fr, sa, su; got {0!r}."
 ERR_MONTH_DAYS = "`by_month_day` must be a list of days 1 to 31, got {0!r}."
 ERR_LINK = (
-    "`link` must be the link's path or URL, ending in /workflow-runs/<workflow id>/<secret>; "
+    "`link` must be the link's path (from its /) or full URL (from its https://), ending in "
+    "/workflow-runs/<workflow id>/<secret>; "
     "the link itself is not echoed."
 )
 ERR_LINK_HOST = (
     "`link` belongs to another server than this client's ({0}); use a client (or CLI profile) of "
     "the link's server. The link itself is not echoed."
 )
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 _LINK_TAIL = re.compile(r"/workflow-runs/(\d+)/([^/?#\s]+)/?(?:[?#].*)?$")
 FREQUENCIES = ("hourly", "daily", "weekly", "monthly")
 WEEK_DAYS = ("mo", "tu", "we", "th", "fr", "sa", "su")
@@ -355,17 +357,30 @@ def check_link_host(link: str, base_url: str) -> None:
     """Refuse a link of another server, so its secret is never sent to this one.
 
     Args:
-        link: A path starting with ``/`` (no host, always accepted), or a URL.
+        link: A path starting with ``/`` (no host, always accepted), or an http(s) URL.
         base_url: The client's API base URL.
 
     Raises:
-        MammothValidationError: If *link* names a host that is not *base_url*'s.
+        MammothValidationError: If *link* is neither, or names another host or port than
+            *base_url*'s.
     """
-    link, host = link.strip(), urlsplit(base_url).netloc
+    link = link.strip()
     if link.startswith("/") and not link.startswith("//"):
         return
-    if urlsplit(link).netloc.lower() != host.lower():
-        raise MammothValidationError(ERR_LINK_HOST.format(host))
+    try:
+        server = _host_and_port(link)
+    except ValueError:
+        raise MammothValidationError(ERR_LINK) from None
+    if server != _host_and_port(base_url):
+        raise MammothValidationError(ERR_LINK_HOST.format(urlsplit(base_url).netloc))
+
+
+def _host_and_port(url: str) -> tuple[str, int]:
+    """The host and port of an http(s) URL, the scheme's default port filled in."""
+    parts = urlsplit(url)
+    if parts.scheme not in _DEFAULT_PORTS or not parts.hostname:
+        raise ValueError("not an http(s) URL")
+    return parts.hostname, parts.port or _DEFAULT_PORTS[parts.scheme]
 
 
 def schedule_body(

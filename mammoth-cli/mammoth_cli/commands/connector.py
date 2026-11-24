@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import json
 import re
-import shlex
 from typing import Any
 
 from mammoth_cli.commands.registry import HandlerResult
@@ -51,6 +50,7 @@ from mammoth_cli.runtime.session import (
     require_project,
     resolved_project,
 )
+from mammoth_cli.runtime.shell_text import shell_join
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
 _QUERY_OPTIONAL = ("table", "profile")
@@ -692,7 +692,7 @@ def _ds_config_next(
             },
         },
     }
-    return f"mammoth dataset create --input {shlex.quote(json.dumps(spec))}"
+    return shell_join(["mammoth", "dataset", "create", "--input", json.dumps(spec)])
 
 
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
