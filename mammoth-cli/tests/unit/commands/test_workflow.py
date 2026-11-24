@@ -6,10 +6,12 @@ import json
 from pathlib import Path
 
 import pytest
+from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli.commands import workflow as workflow_cmd
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -23,6 +25,8 @@ _WS_SOURCES = "mammoth.api.workflows.WorkflowsAPI.workspace_sources"
 _CREATE = "mammoth.api.workflows.WorkflowsAPI.create"
 _UPDATE = "mammoth.api.workflows.WorkflowsAPI.update"
 _DELETE = "mammoth.api.workflows.WorkflowsAPI.delete"
+_PLAN = "mammoth.api.workflows.WorkflowsAPI.delete_plan"
+_WAIT_JOBS = "mammoth.api.jobs.JobsAPI.wait_for_jobs"
 _FROM_TEMPLATE = "mammoth.api.workflows.WorkflowsAPI.from_template"
 _CANVAS = "mammoth.api.workflows.WorkflowsAPI.canvas"
 _BLOCK_ADD = "mammoth.api.workflows.WorkflowsAPI.block_add"
@@ -229,9 +233,177 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_proceeds_with_yes(fake_service: FakeMammothService) -> None:
-    workflow_cmd.workflow_delete(_inv("workflow.delete", project=180, extra_args=["7"], yes=True))
-    assert fake_service.call_log == [(_DELETE, {"workflow_id": 7, "project_id": 180})]
+def _plan(*items: dict[str, object], blocked: object = None) -> dict[str, object]:
+    return {"workflow_id": 7, "name": "W", "blocked": blocked, "items": list(items)}
+
+
+def _item(key: str, kind: str, checked: bool = True, **extra: object) -> dict[str, object]:
+    return {
+        "key": key,
+        "kind": kind,
+        "name": key,
+        "checked": checked,
+        "locked_by": None,
+        "follows": [],
+        **extra,
+    }
+
+
+def _delete(fake_service: FakeMammothService, tmp_path: Path, doc: dict | None = None):  # type: ignore[no-untyped-def]
+    kwargs: dict[str, object] = {"project": 180, "extra_args": ["7"], "yes": True}
+    if doc is not None:
+        kwargs["input_file"] = _write(tmp_path, doc)
+    return workflow_cmd.workflow_delete(_inv("workflow.delete", **kwargs))
+
+
+def _sent(fake_service: FakeMammothService) -> list[str]:
+    return next(kw["trash"] for sym, kw in fake_service.call_log if sym == _DELETE)
+
+
+def test_delete_sends_default_ticked_keys_and_waits(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(
+        _item("view:1", "steps"),
+        _item("dataset:2", "result"),
+        _item("dashboard:3", "dashboard", checked=False, follows=["view:1"]),
+        _item("automation:4", "schedule", follows=["view:1"]),
+        _item("dataset:5", "input", checked=False),
+        _item("view:6", "steps", locked_by="Other"),
+    )
+    fake_service.responses[_DELETE] = {
+        "workflow_id": 7,
+        "trashed": 4,
+        "kept_steps": 0,
+        "job_ids": [9],
+    }
+    data, _ = _delete(fake_service, tmp_path)
+    assert _sent(fake_service) == ["view:1", "dataset:2", "dashboard:3", "automation:4"]
+    assert (_WAIT_JOBS, {"job_ids": [9], "timeout": 600}) in [
+        (s, {**kw, "timeout": 600}) for s, kw in fake_service.call_log
+    ]
+    assert data["trashed"] == 4
+    assert {k["key"]: k["reason"] for k in data["kept"]} == {
+        "dataset:5": "inputs stay unless trash_inputs is set",
+        "view:6": "used by workflow Other",
+    }
+
+
+def test_delete_trash_inputs_and_keep_steps(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(
+        _item("view:1", "steps"),
+        _item("dataset:2", "result"),
+        _item("dashboard:3", "dashboard", follows=["view:1"]),
+        _item("automation:4", "schedule", follows=["view:1"]),
+        _item("dataset:5", "input", checked=False),
+        _item("automation:8", "schedule"),
+    )
+    fake_service.responses[_DELETE] = {"job_ids": []}
+    _delete(fake_service, tmp_path, {"trash_inputs": True})
+    assert _sent(fake_service) == [
+        "view:1",
+        "dataset:2",
+        "dashboard:3",
+        "automation:4",
+        "dataset:5",
+        "automation:8",
+    ]
+    fake_service.call_log.clear()
+    _delete(fake_service, tmp_path, {"keep_steps": True})
+    # steps and result stay, so the dashboard and the schedule that follow them stay too
+    assert _sent(fake_service) == ["automation:8"]
+
+
+def test_delete_dashboard_goes_with_any_trashed_step(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(
+        _item("view:1", "steps"),
+        _item("view:2", "steps", locked_by="Other"),
+        _item("dashboard:3", "dashboard", checked=False, follows=["view:1", "view:2"]),
+        _item("dashboard:4", "dashboard", follows=["view:2"]),
+    )
+    fake_service.responses[_DELETE] = {"job_ids": []}
+    _delete(fake_service, tmp_path)
+    assert _sent(fake_service) == ["view:1", "dashboard:3"]
+
+
+def test_delete_explicit_trash_checked_against_plan(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(
+        _item("view:1", "steps"), _item("view:6", "steps", locked_by="Other")
+    )
+    fake_service.responses[_DELETE] = {"job_ids": []}
+    _delete(fake_service, tmp_path, {"trash": ["view:1"]})
+    assert _sent(fake_service) == ["view:1"]
+    for bad in (["view:6"], ["view:99"]):
+        with pytest.raises(CliError) as excinfo:
+            _delete(fake_service, tmp_path, {"trash": bad})
+        assert excinfo.value.code == "invalid_input"
+    with pytest.raises(CliError):
+        _delete(fake_service, tmp_path, {"trash": [], "keep_steps": True})
+    with pytest.raises(CliError):
+        _delete(fake_service, tmp_path, {"bogus": True})
+
+
+def test_delete_blocked_plan_is_a_conflict(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(blocked={"code": "X", "message": "A run is in progress."})
+    with pytest.raises(CliError) as excinfo:
+        _delete(fake_service, tmp_path)
+    assert excinfo.value.code == "conflict"
+    assert "run is in progress" in excinfo.value.message
+    assert all(sym != _DELETE for sym, _ in fake_service.call_log)
+
+
+def test_delete_old_server_falls_back_to_plain_delete(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = map_sdk_exception(
+        MammothAPIError("nf", status_code=404, response_body={"detail": "Not Found"})
+    )
+    fake_service.responses[_DELETE] = {"deleted": True}
+    data, _ = _delete(fake_service, tmp_path)
+    assert fake_service.call_log[-1] == (_DELETE, {"workflow_id": 7, "project_id": 180})
+    assert data["delete_plan"] == "unavailable"
+
+
+def test_delete_missing_workflow_is_not_a_fallback(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = map_sdk_exception(
+        MammothAPIError(
+            "nf", status_code=404, response_body={"detail": "Not Found", "error_code": "4WKFL404"}
+        )
+    )
+    with pytest.raises(CliError) as excinfo:
+        _delete(fake_service, tmp_path)
+    assert excinfo.value.code == "resource_not_found"
+    assert all(sym != _DELETE for sym, _ in fake_service.call_log)
+
+
+def test_delete_409_has_steps_gets_an_actionable_error(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = map_sdk_exception(
+        MammothAPIError("nf", status_code=404, response_body={"detail": "Not Found"})
+    )
+    fake_service.responses[_DELETE] = map_sdk_exception(
+        MammothAPIError(
+            "x",
+            status_code=409,
+            response_body={"error_code": "4WKFL310", "message": "WORKFLOW_HAS_STEPS"},
+        )
+    )
+    with pytest.raises(CliError) as excinfo:
+        _delete(fake_service, tmp_path)
+    assert excinfo.value.code == "conflict"
+    assert "still has steps" in excinfo.value.message
+    assert "workflow delete-plan" in (excinfo.value.hint or "")
 
 
 # -- from-template -----------------------------------------------------------

@@ -604,6 +604,7 @@ _TARGETS: dict[str, str] = {
     "workflow.cleanup": "mammoth_cli.commands.workflow:workflow_cleanup",
     "workflow.create": "mammoth_cli.commands.workflow:workflow_create",
     "workflow.delete": "mammoth_cli.commands.workflow:workflow_delete",
+    "workflow.delete-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.from-template": "mammoth_cli.commands.workflow:workflow_from_template",
     "workflow.get": "mammoth_cli.commands.workflow:workflow_get",
     "workflow.graph": "mammoth_cli.commands.workflow:workflow_graph",

@@ -74,7 +74,7 @@
 - `version` (1 commands)
 - `view` (146 commands)
 - `webhook` (7 commands)
-- `workflow` (59 commands)
+- `workflow` (60 commands)
 - `workspace` (33 commands)
 
 ## Source

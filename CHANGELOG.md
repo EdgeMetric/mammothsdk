@@ -12,6 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed (next mammoth-cli)
 
+- `workflow delete ID --yes` reads the workflow's delete plan, trashes the default-ticked items no other workflow uses (steps, result tables, and the dashboards and schedules that go with them; inputs stay), waits for the job, and reports `trashed`, `kept_steps` and `kept`. `--input` chooses: `{"trash_inputs": true}`, `{"keep_steps": true}` or `{"trash": [KEYS]}`; `--dry-run` shows the keys it would send. On a server without the delete plan it falls back to the plain delete, and a 409 `4WKFL310` says what to run instead. `workflow delete-plan ID` reads the plan; `WorkflowsAPI.delete` takes `trash=` and `WorkflowsAPI.delete_plan` is new. Needs mvc-service 48.7 (mammothsdk#476).
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
 
 ### Fixed (next mammoth-cli)

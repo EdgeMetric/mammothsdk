@@ -745,6 +745,12 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Choices over the delete plan (``workflow delete``); ``trash`` names the plan keys exactly.
+    "workflow.delete": (
+        FieldSpec("keep_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("trash_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("keep_steps", required=False, annotation=bool | None, default=None),
+    ),
     # Instead of ``patch``: the handler reads the automation and writes the changed dataset
     # list back as a ``details`` patch (``automation update`` docstring).
     "automation.update": (
