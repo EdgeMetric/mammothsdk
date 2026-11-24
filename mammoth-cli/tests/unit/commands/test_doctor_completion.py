@@ -471,3 +471,61 @@ def test_auth_rejection_keeps_the_servers_error_code_and_hint() -> None:
     mapped = map_sdk_exception(refused)
     assert "TOKEN_REVOKED" in mapped.message
     assert mapped.hint == "Create a new token in Workspace settings."
+
+
+# -- the SDK this CLI declares (PRD-3685) -----------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("installed", "ok"),
+    [("0.8.58", True), ("0.8.99", True), ("0.8.57", False), ("0.9.0", False), ("1.0.0", False)],
+)
+def test_the_sdk_check_passes_only_inside_the_declared_range(installed: str, ok: bool) -> None:
+    check = doctor_cmd._check_sdk(installed, "mammoth-io (>=0.8.58,<0.9)")
+
+    assert check["name"] == "sdk_version"
+    assert check["ok"] is ok
+    assert (installed in check["detail"]) is True
+    if not ok:
+        assert "pip install" in check["detail"]
+        assert "mammoth-io>=0.8.58,<0.9" in check["detail"]
+
+
+def test_the_sdk_check_reads_the_range_this_cli_declares() -> None:
+    declared = doctor_cmd._declared_sdk_requirement()
+
+    assert declared is not None
+    assert declared.lower().startswith("mammoth-io") and ">=" in declared
+
+
+def test_a_mismatched_sdk_fails_doctor_and_names_the_fix(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(doctor_cmd, "_installed_sdk_version", lambda: "0.8.1")
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["ok"] is False
+    assert outcome.data["ok"] is False
+    assert any("mammoth-io>=" in r for r in outcome.data["recommendations"])
+
+
+def test_a_matching_sdk_passes_the_check(isolated_cli_config: Path) -> None:
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["ok"] is True
+
+
+def test_the_recommendation_comes_from_the_fix_field_not_the_detail_text(
+    isolated_cli_config: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real = doctor_cmd._check_sdk
+    monkeypatch.setattr(doctor_cmd, "_installed_sdk_version", lambda: "0.8.1")
+    monkeypatch.setattr(
+        doctor_cmd, "_check_sdk", lambda *a: {**real(*a), "detail": "reworded, no marker"}
+    )
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["fix"] in outcome.data["recommendations"]

@@ -437,8 +437,9 @@ def view_export_specialized(invocation: Invocation) -> HandlerResult:
                 "source_view_id": dataview_id,
                 # A pipeline export re-runs (and re-writes its own rows) every
                 # time this view's pipeline runs; trigger_type "none" copies once.
-                "refreshes_on_pipeline_run": kwargs.get("trigger_type", _PIPELINE_TRIGGER)
-                != "none",
+                "refreshes_on_pipeline_run": (
+                    kwargs.get("trigger_type", _PIPELINE_TRIGGER) != "none"
+                ),
             }
             # A read immediately after the write can catch the pipeline still
             # recomputing; wait for it to settle (bounded) before trusting

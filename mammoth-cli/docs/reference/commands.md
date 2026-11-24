@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 905.
+Total commands: 911.
 
 ## activity
 
@@ -555,6 +555,13 @@ Total commands: 905.
 
 ## annotation
 
+### `mammoth annotation access`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.access`
+- Agent example: `mammoth annotation access`
+
 ### `mammoth annotation comment add`
 
 **Arguments**
@@ -565,6 +572,30 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_add`
 - Agent example: `mammoth annotation comment add 123 --input '{"body": "Quarterly revenue summary"}'`
+
+### `mammoth annotation comment delete`
+
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+- `COMMENT_ID` (int, required) — ID of the comment.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_delete`
+- Agent example: `mammoth annotation comment delete 123 456 --yes`
+
+### `mammoth annotation comment edit`
+
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+- `COMMENT_ID` (int, required) — ID of the comment.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_edit`
+- Agent example: `mammoth annotation comment edit 123 456 --input '{"body": "Quarterly revenue summary"}'`
 
 ### `mammoth annotation create`
 
@@ -8481,6 +8512,17 @@ Total commands: 905.
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set`
 - Agent example: `mammoth workflow after set 123 456`
 
+### `mammoth workflow after unset`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset`
+- Agent example: `mammoth workflow after unset 123 --yes`
+
 ### `mammoth workflow archive`
 
 **Arguments**
@@ -8725,6 +8767,13 @@ Total commands: 905.
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create`
 - Agent example: `mammoth workflow link create 123`
 
+### `mammoth workflow link fire`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire`
+- Agent example: `mammoth workflow link fire --input /private/path/request.json`
+
 ### `mammoth workflow link remove`
 
 **Arguments**
@@ -8853,6 +8902,17 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set`
 - Agent example: `mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'`
+
+### `mammoth workflow schedule unset`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset`
+- Agent example: `mammoth workflow schedule unset 123 --yes`
 
 ### `mammoth workflow sentence dismiss-ask`
 

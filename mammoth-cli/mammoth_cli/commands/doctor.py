@@ -8,6 +8,7 @@ value is ever included. The command never mutates anything and never prompts.
 
 from __future__ import annotations
 
+import importlib.metadata
 import os
 import platform
 import re
@@ -18,6 +19,7 @@ from pathlib import Path
 from typing import Any, cast
 from urllib.parse import urlsplit
 
+import mammoth
 from mammoth.client import server_health
 from mammoth.exceptions import MammothAPIError
 
@@ -69,6 +71,49 @@ def _check_server(base_url: str, timeout: float = _SERVER_TIMEOUT_SECONDS) -> di
         f"healthy in {health['latency_ms']} ms" if ok else f"HTTP {status} from {base_url}/health"
     )
     return {**_check("server", ok, detail), **health}
+
+
+_SDK_BOUND = re.compile(r"(>=|<=|==|!=|>|<)\s*([0-9][0-9A-Za-z.]*)")
+
+
+def _installed_sdk_version() -> str:
+    """The mammoth-io version this CLI actually imports."""
+    return str(mammoth.__version__)
+
+
+def _declared_sdk_requirement() -> str | None:
+    """The mammoth-io requirement the installed CLI declares, e.g. ``mammoth-io>=0.8.58,<0.9``."""
+    try:
+        requirements = importlib.metadata.requires("mammoth-cli") or []
+    except importlib.metadata.PackageNotFoundError:
+        return None
+    return next((r for r in requirements if r.lower().startswith("mammoth-io")), None)
+
+
+def _within(installed: str, operator: str, bound: str) -> bool:
+    have, want = updates.version_key(installed), updates.version_key(bound)
+    return {
+        ">=": have >= want,
+        "<=": have <= want,
+        ">": have > want,
+        "<": have < want,
+        "==": have == want,
+        "!=": have != want,
+    }[operator]
+
+
+def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:
+    """Compare the installed mammoth-io with the range this CLI declares; name the fix."""
+    bounds = sorted(_SDK_BOUND.findall(requirement), key=lambda b: b[0].startswith("<"))
+    ok = all(_within(installed, operator, bound) for operator, bound in bounds)
+    if ok:
+        return _check("sdk_version", True, f"mammoth-io {installed} satisfies {requirement}")
+    spec = ",".join(f"{operator}{bound}" for operator, bound in bounds)
+    fix = f'pip install --upgrade "mammoth-io{spec}"'
+    detail = (
+        f"mammoth-io {installed} is outside the range this CLI needs ({requirement}); fix: {fix}"
+    )
+    return {**_check("sdk_version", False, detail), "fix": fix}
 
 
 def _check_not_applicable(name: str) -> dict[str, Any]:
@@ -296,6 +341,14 @@ def doctor(invocation: Invocation) -> Outcome:
     # Informational: an older CLI still works, so the check never fails.
     checks.append(_check("cli_version", True, version_detail))
 
+    requirement = _declared_sdk_requirement()
+    sdk_check = (
+        _check_sdk(_installed_sdk_version(), requirement)
+        if requirement is not None
+        else _check("sdk_version", True, f"mammoth-io {_installed_sdk_version()} installed")
+    )
+    checks.append(sdk_check)
+
     stale_skills: list[str] = []
     try:
         from mammoth_cli.skills import installer
@@ -470,6 +523,8 @@ def doctor(invocation: Invocation) -> Outcome:
     ):
         recommendations.append("mammoth project list")
         recommendations.append("mammoth context project use PROJECT_ID")
+    if not sdk_check["ok"]:
+        recommendations.append(sdk_check["fix"])
     if stale_skills:
         recommendations.append("mammoth skill update")
     if not connection_ok and auth_ok and not invocation.debug:

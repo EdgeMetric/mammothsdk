@@ -330,6 +330,16 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "workflow.after.loops": {"operation_ids": ["GetWorkflowAfterLoops"], "method": "GET"},
     "workflow.link.create": {"operation_ids": ["PostWorkflowLink"], "method": "POST"},
     "workflow.link.remove": {"operation_ids": ["DeleteWorkflowLink"], "method": "DELETE"},
+    # PRD-3685: mvc-service #7956 (clock and "after" removal), on origin/release for the rest.
+    "workflow.link.fire": {"operation_ids": ["PostWorkflowLinkCall"], "method": "POST"},
+    "workflow.schedule.unset": {"operation_ids": ["DeleteWorkflowSchedule"], "method": "DELETE"},
+    "workflow.after.unset": {"operation_ids": ["DeleteWorkflowAfter"], "method": "DELETE"},
+    "annotation.access": {"operation_ids": ["CommentAccess"], "method": "GET"},
+    "annotation.comment.edit": {"operation_ids": ["EditComment"], "method": "PATCH"},
+    "annotation.comment.delete": {
+        "operation_ids": ["WorkflowAnnotationDeleteComment"],
+        "method": "DELETE",
+    },
     "workflow.describe.start": {"operation_ids": ["DescribeWorkflow"], "method": "POST"},
     "workflow.describe.get": {"operation_ids": ["DescribedWorkflow"], "method": "GET"},
     "workflow.describe.wait": {"operation_ids": ["DescribedWorkflow"], "method": "GET"},

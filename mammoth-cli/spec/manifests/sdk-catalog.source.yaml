@@ -732,6 +732,33 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.access
+  canonical_command: annotation.access
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CommentAccess
+  notes: "Read-only: whether the caller may post and moderate comments in the project, and the people a comment may mention."
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_delete
+  canonical_command: annotation.comment.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - WorkflowAnnotationDeleteComment
+  notes: "Deletes a comment (its author or a project admin); a thread left with no comments goes too."
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_edit
+  canonical_command: annotation.comment.edit
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - EditComment
+  notes: "Changes a comment's text; only its author may."
 - sdk_symbol: mammoth.api.annotations.AnnotationsAPI.create
   canonical_command: annotation.create
   alias_of: null
@@ -6666,6 +6693,35 @@ sdk_methods:
   openapi_operation_ids:
   - DeleteWorkflowLink
   notes: "Turns the workflow's secret link off; it stops working at once."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  canonical_command: workflow.link.fire
+  alias_of: null
+  secret_fields:
+  - link
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PostWorkflowLinkCall
+  notes: "Starts the workflow from its secret link, as anyone holding the link can; a run already in flight is named, not started twice."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  canonical_command: workflow.schedule.unset
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkflowSchedule
+  notes: "Takes the workflow's clock off; it stops starting on it at once."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  canonical_command: workflow.after.unset
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkflowAfter
+  notes: "Stops the workflow running after another one; it stops starting at once."
 - sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.start
   canonical_command: workflow.describe.start
   alias_of: null

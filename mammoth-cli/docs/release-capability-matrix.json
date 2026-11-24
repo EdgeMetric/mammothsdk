@@ -46,6 +46,42 @@
     },
     {
       "method": "GET",
+      "path": "/workspaces/{}/projects/{}/annotations/access",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.access"
+      ],
+      "commands": [
+        "annotation.access"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/projects/{}/annotations/{}/comments/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.comment_delete"
+      ],
+      "commands": [
+        "annotation.comment.delete"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/workspaces/{}/projects/{}/annotations/{}/comments/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.comment_edit"
+      ],
+      "commands": [
+        "annotation.comment.edit"
+      ]
+    },
+    {
+      "method": "GET",
       "path": "/workspaces/{}/split-segments",
       "state": "removed_on_server",
       "pending_in": null,
@@ -102,7 +138,10 @@
     "view.data.forecast",
     "view.explore-panel.get",
     "view.pipeline.items-all",
+    "workflow.after.unset",
+    "workflow.link.fire",
     "workflow.run.start",
+    "workflow.schedule.unset",
     "workspace.user.get"
   ],
   "rows": [
