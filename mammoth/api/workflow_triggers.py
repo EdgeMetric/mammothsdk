@@ -6,6 +6,7 @@ import asyncio
 import re
 import time
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlsplit
 
 from mammoth.api.workflows import check_positive_id, check_timeout, workflow_path
 from mammoth.exceptions import MammothValidationError
@@ -20,6 +21,10 @@ ERR_MONTH_DAYS = "`by_month_day` must be a list of days 1 to 31, got {0!r}."
 ERR_LINK = (
     "`link` must be the link's path or URL, ending in /workflow-runs/<workflow id>/<secret>; "
     "the link itself is not echoed."
+)
+ERR_LINK_HOST = (
+    "`link` belongs to another server than this client's ({0}); use a client (or CLI profile) of "
+    "the link's server. The link itself is not echoed."
 )
 _LINK_TAIL = re.compile(r"/workflow-runs/(\d+)/([^/?#\s]+)/?(?:[?#].*)?$")
 FREQUENCIES = ("hourly", "daily", "weekly", "monthly")
@@ -265,9 +270,11 @@ class WorkflowTriggersAPI:
             ``{"run_id", "already_running"}``.
 
         Raises:
-            MammothValidationError: If *link* does not end in ``/workflow-runs/<id>/<secret>``.
+            MammothValidationError: If *link* does not end in ``/workflow-runs/<id>/<secret>``,
+                or is a URL of another server than this client's.
         """
         workflow_id, secret = parse_link(link)
+        check_link_host(link, self._client.base_url)
         return await self._client._request_json("POST", f"/workflow-runs/{workflow_id}/{secret}")
 
     async def schedule_unset(
@@ -342,6 +349,23 @@ def parse_link(link: str) -> tuple[int, str]:
     if found is None:
         raise MammothValidationError(ERR_LINK)
     return int(found.group(1)), found.group(2)
+
+
+def check_link_host(link: str, base_url: str) -> None:
+    """Refuse a link of another server, so its secret is never sent to this one.
+
+    Args:
+        link: A path starting with ``/`` (no host, always accepted), or a URL.
+        base_url: The client's API base URL.
+
+    Raises:
+        MammothValidationError: If *link* names a host that is not *base_url*'s.
+    """
+    link, host = link.strip(), urlsplit(base_url).netloc
+    if link.startswith("/") and not link.startswith("//"):
+        return
+    if urlsplit(link).netloc.lower() != host.lower():
+        raise MammothValidationError(ERR_LINK_HOST.format(host))
 
 
 def schedule_body(

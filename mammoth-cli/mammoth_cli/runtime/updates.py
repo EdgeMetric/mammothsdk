@@ -191,7 +191,7 @@ def clear_pin() -> None:
         return
 
 
-def _version_key(version: str) -> tuple[int, ...]:
+def version_key(version: str) -> tuple[int, ...]:
     """Order release versions numerically; a non-numeric tail sorts lowest."""
     parts: list[int] = []
     for piece in version.strip().split("."):
@@ -206,16 +206,11 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(parts)
 
 
-def version_key(version: str) -> tuple[int, ...]:
-    """Public ordering key for other CLI modules (``doctor``)."""
-    return _version_key(version)
-
-
 def is_newer(latest: str | None, current: str | None = None) -> bool:
     if not latest:
         return False
     try:
-        return _version_key(latest) > _version_key(current or __version__)
+        return version_key(latest) > version_key(current or __version__)
     except ValueError:
         return False
 

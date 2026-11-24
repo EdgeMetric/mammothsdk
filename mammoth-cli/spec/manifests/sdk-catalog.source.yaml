@@ -1639,15 +1639,6 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-- sdk_symbol: mammoth.api.dashboards.DashboardsAPI.add_text_block
-  canonical_command: dashboard.figure.text-block
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: not_async
-  pagination_policy: none
-  openapi_operation_ids:
-  - AddTextBlock
-  notes: "Attach a source or caveat text block to a tile on a dashboard, with no chat turn."
 - sdk_symbol: mammoth.api.dashboards.DashboardsAPI.archive
   canonical_command: dashboard.archive
   alias_of: null

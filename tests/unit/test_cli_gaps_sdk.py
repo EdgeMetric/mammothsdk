@@ -94,15 +94,32 @@ async def test_link_fire_posts_the_link_and_returns_the_run(
     "link",
     [
         "/workflow-runs/41/s3cret",
-        "https://orion.mammoth.io/api/v2/workflow-runs/41/s3cret",
+        "{base_url}/workflow-runs/41/s3cret",
         "  /workflow-runs/41/s3cret/ ",
     ],
 )
 async def test_link_fire_takes_the_path_or_url_link_create_returns(
     link: str, server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
-    await client.workflow_triggers.link_fire(link)
+    await client.workflow_triggers.link_fire(link.format(base_url=client.base_url))
     assert _routes(server) == [("POST", "/workflow-runs/41/s3cret")]
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "https://orion.mammoth.io/api/v2/workflow-runs/41/s3cret",
+        "//orion.mammoth.io/workflow-runs/41/s3cret",
+        "orion.mammoth.io/workflow-runs/41/s3cret",
+    ],
+)
+async def test_link_fire_never_sends_another_servers_secret(
+    link: str, server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError) as error:
+        await client.workflow_triggers.link_fire(link)
+    assert "s3cret" not in str(error.value)
+    assert server.requests == []
 
 
 @pytest.mark.parametrize("link", ["", "/workflow-runs/x/y", "/other/41/s3cret", "s3cret"])

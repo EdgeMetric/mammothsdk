@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 from typing import Any
 
 from mammoth_cli.commands.registry import HandlerResult
@@ -663,17 +664,35 @@ def connector_connection_tables(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
-def _ds_config_next(connector_key: str, connection_key: str) -> str:
-    """The command that makes a dataset from a config ``ds-config create`` only checked."""
+def _ds_config_next(
+    connector_key: str, connection_key: str, document: dict[str, Any]
+) -> str | None:
+    """The command that imports the query ``ds-config create`` just checked.
+
+    Args:
+        connector_key: The connector type.
+        connection_key: The saved connection.
+        document: The checked ``--input`` document.
+
+    Returns:
+        The command, with placeholders for what the check did not name; ``None`` for a file
+        check, whose import takes other fields.
+    """
+    if document.get("file_source"):
+        return None
     spec = {
         "ds_creation_type": "cloud",
         "dataset_spec": {
             "connector_key": connector_key,
             "connection_key": connection_key,
-            "query_properties": {"ds_name": "NAME", "table_name": "TABLE", "query": "QUERY"},
+            "query_properties": {
+                "ds_name": "NAME",
+                "table_name": document.get("table") or "TABLE",
+                "query": document.get("query") or "QUERY",
+            },
         },
     }
-    return f"mammoth dataset create --input '{json.dumps(spec)}'"
+    return f"mammoth dataset create --input {shlex.quote(json.dumps(spec))}"
 
 
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
@@ -701,7 +720,10 @@ def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
         # The route answers with a job; the result to mark is the job's.
         data = service.wait_if_job(service.call(_symbol(invocation), **kwargs))
     if isinstance(data, dict):
-        data = {**data, "saved": False, "next": _ds_config_next(connector_key, connection_key)}
+        data = {**data, "saved": False}
+        next_command = _ds_config_next(connector_key, connection_key, document)
+        if next_command is not None:
+            data["next"] = next_command
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

@@ -8,21 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-io, mammoth-cli)
 
-- SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7956 (mammothsdk#468, #470).
+- SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7977 (mammothsdk#468, #470).
 - `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
 - `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK (mammoth-io 0.8.59): `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
-- `dashboard figure text-block DASHBOARD_ID --input '{"tile": FIGURE_ID, "text": "..."}'` puts a source or caveat text block on a tile, with no chat turn; the same block twice writes nothing. SDK (mammoth-io 0.8.59): `DashboardsAPI.add_text_block`. Needs the server change of PRD-3700.
 
 ### Added (next mammoth-cli)
 
 - `mammoth how` has an `import-from-database` recipe, and `append-rows` no longer answers a database import. `dataset create --help` shows a database import, and the `view data aggregate` example shows `order_by`.
 - `view data aggregate` and the other `order_by` reads accept `["label", "desc"]` pairs.
 - `annotation comment edit ANNOTATION_ID COMMENT_ID --input '{"body": "..."}'`, `annotation comment delete ANNOTATION_ID COMMENT_ID` (asks first, or `--yes`) and `annotation access` (whether you may post or moderate comments in the project, and whom a comment may mention) (mammothsdk#468).
-- `mammoth doctor` has an `sdk_version` check: it compares the installed mammoth-io with the range this CLI declares, fails when it is outside it, and names the `pip install --upgrade "mammoth-io>=...,<..."` fix in the check and in `recommendations` (mammothsdk#469).
+- `mammoth doctor` has an `sdk_version` check: it compares the installed mammoth-io with the range this CLI declares, fails when it is outside it, and names the fix for how this CLI was installed (uv tool, pipx or pip) in the check and in `recommendations` (mammothsdk#469).
 - `workflow canvas` forwards an `expected_version` input field; the server answers 409 when the canvas moved since you read it (mammothsdk#470).
-- `workflow link fire LINK` starts a workflow from the `path` (or URL) `workflow link create` returned, so the secret need not be cut apart. `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" trigger off (ask first, or `--yes`); a second unset, or one with nothing set, is a 404 with error code 4AUTO001. The unset commands need mvc-service#7956 (mammothsdk#470).
-
-- CLI (PRD-3685): `annotation comment edit ANNOTATION_ID COMMENT_ID`, `annotation comment delete ANNOTATION_ID COMMENT_ID` and `annotation access` (mammothsdk#468); `workflow link fire LINK` runs a workflow from the `path` or URL that `workflow link create` returned (mammothsdk#470); `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" start off (they need mvc-service#7956; a second unset is a 404, 4AUTO001); `workflow canvas` takes an `expected_version` input field and forwards it, so a stale canvas is a 409 (mammothsdk#470). `mammoth doctor` gains an `sdk_version` check: it fails, with the `pip install` fix, when the installed mammoth-io is outside the range this CLI declares (mammothsdk#469). mammoth-cli now needs mammoth-io>=0.8.58.
+- `workflow link fire --input '{"link": ...}'` starts a workflow from the `path` (or URL) `workflow link create` returned, so the secret stays out of shell history; a URL of another server is refused, not sent. `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" trigger off (ask first, or `--yes`); a second unset, or one with nothing set, is a 404 with error code 4AUTO001. The unset commands need mvc-service#7977 (mammothsdk#470).
 
 ### Changed (next mammoth-cli)
 

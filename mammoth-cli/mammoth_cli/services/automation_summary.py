@@ -34,10 +34,10 @@ def summary(record: dict[str, Any]) -> dict[str, Any]:
         _failure_text(d.get("last_run_result")) for d in details if d.get("last_run_result")
     ]
     result: dict[str, Any] = {
-        "runs": (
-            "; ".join(_trigger(c) for c in record.get("conditions") or [] if isinstance(c, dict))
-            or "manually"
-        ),
+        "runs": "; ".join(
+            _trigger(c) for c in record.get("conditions") or [] if isinstance(c, dict)
+        )
+        or "manually",
         "next_run": min(occurrences) if occurrences and record.get("status") == "active" else None,
         "datasets": len(_dataset_ids(details)),
         "last_run": max(runs) if runs else None,

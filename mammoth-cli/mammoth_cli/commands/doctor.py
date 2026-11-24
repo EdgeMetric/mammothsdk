@@ -24,6 +24,7 @@ from mammoth.client import server_health
 from mammoth.exceptions import MammothAPIError
 
 from mammoth_cli import __version__
+from mammoth_cli.commands.upgrade import MANAGER_PIP, build_upgrade_command, detect_manager
 from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.endpoint import resolve_base_url
 from mammoth_cli.context.resolver import SERVER_PREFIX_ENV, ResolvedAuth, resolve_auth
@@ -102,6 +103,22 @@ def _within(installed: str, operator: str, bound: str) -> bool:
     }[operator]
 
 
+def _sdk_fix(sdk_spec: str) -> str:
+    """The command that repairs mammoth-io in the environment this CLI runs from.
+
+    Args:
+        sdk_spec: The pip requirement that satisfies this CLI, e.g. ``mammoth-io>=0.8.58,<0.9``.
+
+    Returns:
+        A shell command: uv tool and pipx reinstall this CLI version with its dependencies,
+        pip installs the SDK with the running interpreter.
+    """
+    manager = detect_manager()
+    if manager == MANAGER_PIP:
+        return shlex.join([sys.executable, "-m", "pip", "install", "--upgrade", sdk_spec])
+    return shlex.join(build_upgrade_command(manager, __version__))
+
+
 def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:
     """Compare the installed mammoth-io with the range this CLI declares; name the fix."""
     bounds = sorted(_SDK_BOUND.findall(requirement), key=lambda b: b[0].startswith("<"))
@@ -109,7 +126,7 @@ def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:
     if ok:
         return _check("sdk_version", True, f"mammoth-io {installed} satisfies {requirement}")
     spec = ",".join(f"{operator}{bound}" for operator, bound in bounds)
-    fix = f'pip install --upgrade "mammoth-io{spec}"'
+    fix = _sdk_fix(f"mammoth-io{spec}")
     detail = (
         f"mammoth-io {installed} is outside the range this CLI needs ({requirement}); fix: {fix}"
     )

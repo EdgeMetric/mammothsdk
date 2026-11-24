@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 914.
+Total commands: 913.
 
 ## activity
 
@@ -2695,17 +2695,6 @@ Total commands: 914.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dashboards.DashboardsAPI.figure_rows`
 - Agent example: `mammoth dashboard figure rows 123 --input '{"body": {"params": {"figure": "p1:add:t-Eh6h-ImH", "key": "West"}}}'`
-
-### `mammoth dashboard figure text-block`
-
-**Arguments**
-
-- `DASHBOARD_ID` (int, required) — ID of the dashboard.
-
-- Mutation class: `benign_mutation`
-- Confirmation: `none`
-- Backing SDK: `mammoth.api.dashboards.DashboardsAPI.add_text_block`
-- Agent example: `mammoth dashboard figure text-block 123 --input '{"tile": "t-Eh6h-ImH", "text": "Source: billing export"}'`
 
 ### `mammoth dashboard figure-intent`
 

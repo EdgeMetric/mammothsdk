@@ -149,7 +149,6 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "dashboard.create-blank": {"operation_ids": ["CreateBlankDashboard"], "method": "POST"},
     "dashboard.pages.add": {"operation_ids": ["AddPages"], "method": "POST"},
     "dashboard.figure.add": {"operation_ids": ["AppendFigure"], "method": "POST"},
-    "dashboard.figure.text-block": {"operation_ids": ["AddTextBlock"], "method": "POST"},
     "collection.list": {"operation_ids": ["ListCollections"], "method": "GET"},
     "collection.get": {"operation_ids": ["GetCollection"], "method": "GET"},
     "collection.get-by-url": {"operation_ids": ["GetCollectionByUrl"], "method": "GET"},
@@ -332,7 +331,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "workflow.after.loops": {"operation_ids": ["GetWorkflowAfterLoops"], "method": "GET"},
     "workflow.link.create": {"operation_ids": ["PostWorkflowLink"], "method": "POST"},
     "workflow.link.remove": {"operation_ids": ["DeleteWorkflowLink"], "method": "DELETE"},
-    # PRD-3685: mvc-service #7956 (clock and "after" removal), on origin/release for the rest.
+    # PRD-3685: mvc-service #7977 (clock and "after" removal), on origin/release for the rest.
     "workflow.link.fire": {"operation_ids": ["PostWorkflowLinkCall"], "method": "POST"},
     "workflow.schedule.unset": {"operation_ids": ["DeleteWorkflowSchedule"], "method": "DELETE"},
     "workflow.after.unset": {"operation_ids": ["DeleteWorkflowAfter"], "method": "DELETE"},

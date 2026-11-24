@@ -45,18 +45,6 @@
       "commands": []
     },
     {
-      "method": "POST",
-      "path": "/dashboards/{}/text-blocks",
-      "state": "removed_on_server",
-      "pending_in": null,
-      "sdk_symbols": [
-        "mammoth.api.dashboards.DashboardsAPI.add_text_block"
-      ],
-      "commands": [
-        "dashboard.figure.text-block"
-      ]
-    },
-    {
       "method": "GET",
       "path": "/workspaces/{}/projects/{}/annotations/access",
       "state": "removed_on_server",

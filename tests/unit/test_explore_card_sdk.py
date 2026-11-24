@@ -7,7 +7,6 @@ sub-client is built over no client at all.
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -46,39 +45,6 @@ async def test_append_figure_needs_a_non_empty_figure() -> None:
 async def test_append_figure_takes_one_page_target_not_two() -> None:
     with pytest.raises(MammothValidationError, match="page_id"):
         await _dashboards().append_figure(7, 3, _FIGURE, page_id="p1", page_new_title="New")
-
-
-@pytest.mark.parametrize(
-    ("kwargs", "named"),
-    [
-        ({"tile": " ", "text": "From Stripe"}, "tile"),
-        ({"tile": "t-1", "text": " "}, "text"),
-        ({"tile": "t-1", "text": "From Stripe", "kind": "note"}, "kind"),
-    ],
-)
-async def test_add_text_block_refuses_bad_input(kwargs: dict[str, str], named: str) -> None:
-    with pytest.raises(MammothValidationError, match=named):
-        await _dashboards().add_text_block(7, **kwargs)
-
-
-async def test_add_text_block_needs_a_positive_dashboard_id() -> None:
-    with pytest.raises(MammothValidationError, match="dashboard_id"):
-        await _dashboards().add_text_block(0, "t-1", "From Stripe")
-
-
-async def test_add_text_block_posts_the_block() -> None:
-    client = AsyncMock()
-    client._request_json.return_value = {"created": True}
-
-    await DashboardsAPI(client).add_text_block(7, "t-1", "From Stripe", title="Source")
-
-    client._request_json.assert_awaited_once_with(
-        "POST",
-        "/dashboards/7/text-blocks",
-        json={
-            "params": {"tile": "t-1", "text": "From Stripe", "kind": "source", "title": "Source"}
-        },
-    )
 
 
 async def test_set_explore_panel_needs_a_dict() -> None:

@@ -647,24 +647,6 @@ commands:
     existing content page or {"new_title": "..."} for a new one; with neither the figure lands on the
     first content page. The server checks the figure against the dashboard''s source and queues the bake:
     the result carries bake_job_id; wait for it with job wait.'
-- command_id: dashboard.figure.text-block
-  output_schema:
-    ref: WriteResult
-  readback:
-    command: dashboard.canvas.get
-    ids:
-      dashboard_id: positional.0
-    kind: object
-  undo:
-    strategy: manual
-    command: dashboard.chat.edit
-    note: Ask the dashboard chat to remove the text block; block_id in the result names it.
-  known_restrictions: 'Puts one text block on a tile, with no chat turn. Input: {"tile": FIGURE_ID, "text": "...",
-    "kind": "source" or "caveat" (default source), "title": optional}. tile is the id of a figure added to
-    the dashboard (the figure_id dashboard figure add returned); the tiles the dashboard drew itself have
-    no id and are refused (4GENR001). The same block sent twice writes nothing the second time (created
-    false, no bake). bake_job_id is the bake; wait for it with job wait. Needs a server with PRD-3700; an
-    older one answers 404 Not Found.'
 - command_id: dashboard.restore
   output_schema:
     ref: WriteResult

@@ -269,7 +269,6 @@
   "dashboard.figure.drill": "Drill one mark of a draft board's figure one level down (editors).",
   "dashboard.figure.recipe": "Turn a described chart into a figure spec: a library chart, or a custom drawing.",
   "dashboard.figure.rows": "Read the records behind one chart mark or KPI card of a draft board (editors).",
-  "dashboard.figure.text-block": "Attach a source or caveat text block to a tile, with no LLM turn.",
   "dashboard.filter.add": "Add (or replace) the filter control on one column of a board.",
   "dashboard.filter.list": "List the filter controls a board declares.",
   "dashboard.filter.remove": "Remove the filter control on one column of a board.",

@@ -569,7 +569,7 @@ def test_ds_config_create_says_nothing_was_saved_and_what_imports(
             "connector.ds-config.create",
             project=180,
             extra_args=["postgres", "conn1"],
-            input_file=_write(tmp_path, {"query": "select 1", "table": "t1"}),
+            input_file=_write(tmp_path, {"query": "select 'a' from t1", "table": "t1"}),
             yes=True,
         )
     )
@@ -579,7 +579,29 @@ def test_ds_config_create_says_nothing_was_saved_and_what_imports(
     spec = json.loads(shlex.split(result["next"])[-1])
     assert spec["ds_creation_type"] == "cloud"
     assert spec["dataset_spec"]["connection_key"] == "conn1"
-    assert set(spec["dataset_spec"]["query_properties"]) == {"ds_name", "table_name", "query"}
+    assert spec["dataset_spec"]["query_properties"] == {
+        "ds_name": "NAME",
+        "table_name": "t1",
+        "query": "select 'a' from t1",
+    }
+
+
+def test_ds_config_create_of_a_file_names_no_query_import(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_DS_CONFIG_CREATE] = {"valid": True}
+    result, _ = connector_cmd.connector_ds_config_create(
+        _inv(
+            "connector.ds-config.create",
+            project=180,
+            extra_args=["sftp", "conn1"],
+            input_file=_write(tmp_path, {"file_source": "/a.csv"}),
+            yes=True,
+        )
+    )
+    assert isinstance(result, dict)
+    assert result["saved"] is False
+    assert "next" not in result
 
 
 def test_ds_config_create_marks_the_result_of_the_job_the_route_answers_with(
