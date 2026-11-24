@@ -21,6 +21,7 @@ ERR_STEP_NEGATIVE = "`step` must be an integer >= 0, got {0!r}."
 ERR_DUPLICATE_NAME = "`name` must be 1 to 255 characters."
 ERR_DUPLICATE_DATASETS = "`dataset_ids` must be a non-empty list of positive dataset ids."
 ERR_IDS = "`{0}` must be a non-empty list of at most 200 positive ids, got {1!r}."
+ERR_TRASH_KEYS = "`trash` must be a list of plan keys such as 'view:12', got {0!r}."
 ERR_TEXT_EMPTY = "`{0}` must be a non-empty string."
 ERR_ID_POSITIVE = "`{0}` must be a positive integer, got {1!r}."
 ERR_TIMEOUT = "`timeout` must be a number of seconds >= 0, got {0!r}."
@@ -268,8 +269,55 @@ class WorkflowsAPI:
             "PATCH", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}", json=body
         )
 
-    async def delete(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
-        """Delete a workflow.
+    async def delete(
+        self,
+        workflow_id: int,
+        project_id: int | None = None,
+        trash: _list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Delete a workflow, trashing the items of its delete plan you choose.
+
+        Without *trash* this is the plain ``DELETE``, which removes only the record. A server
+        that has the delete plan refuses it (409 ``4WKFL310``) while the workflow's views still
+        have steps. With *trash* it posts those plan keys (see :meth:`delete_plan`); one job
+        trashes them, then deletes the record.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+            trash: Keys from :meth:`delete_plan` to trash with the workflow (may be empty).
+                None sends the plain ``DELETE``.
+
+        Returns:
+            Dict with deletion result. With *trash*: ``{workflow_id, trashed, kept_steps,
+            job_ids}``.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0, or *trash* is
+                not a list of non-empty strings.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        if trash is not None and (
+            not isinstance(trash, (list, tuple))
+            or any(not isinstance(key, str) or not key for key in trash)
+        ):
+            raise MammothValidationError(ERR_TRASH_KEYS.format(trash))
+        ws = self._ws()
+        proj = self._proj(project_id)
+        if trash is None:
+            return await self._client._request_json(
+                "DELETE", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
+            )
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/delete",
+            json={"trash": list(trash)},
+        )
+
+    async def delete_plan(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Read what deleting a workflow would take with it.
 
         Args:
             workflow_id: ID of the workflow (must be > 0).
@@ -277,17 +325,21 @@ class WorkflowsAPI:
                 be > 0 if given).
 
         Returns:
-            Dict with deletion result.
+            ``{workflow_id, name, blocked, items}``. ``blocked`` is None or ``{code, message}``.
+            Each item has ``key`` (``view:``/``dataset:``/``dashboard:``/``automation:`` plus
+            the id), ``kind`` (steps, result, dashboard, schedule, input), ``name``, ``checked``
+            (the default), ``locked_by`` (the other workflow that uses it, or None) and
+            ``follows`` (keys of the steps it depends on).
 
         Raises:
-            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+            MammothValidationError: If *workflow_id* or *project_id* <= 0.
         """
         self._check_workflow_id(workflow_id)
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/delete-plan"
         )
 
     async def graph(self, project_id: int | None = None) -> dict[str, Any]:

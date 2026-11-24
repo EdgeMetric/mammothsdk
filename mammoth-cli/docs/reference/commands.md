@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 912.
+Total commands: 913.
 
 ## activity
 
@@ -8654,6 +8654,17 @@ Total commands: 912.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete`
 - Agent example: `mammoth workflow delete 123 --yes`
+
+### `mammoth workflow delete-plan`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete_plan`
+- Agent example: `mammoth workflow delete-plan 123`
 
 ### `mammoth workflow describe build`
 

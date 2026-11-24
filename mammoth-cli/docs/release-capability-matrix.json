@@ -81,6 +81,30 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/delete",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.delete"
+      ],
+      "commands": [
+        "workflow.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/delete-plan",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.delete_plan"
+      ],
+      "commands": [
+        "workflow.delete-plan"
+      ]
+    },
+    {
       "method": "GET",
       "path": "/workspaces/{}/split-segments",
       "state": "removed_on_server",

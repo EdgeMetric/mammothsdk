@@ -138,9 +138,19 @@ Run: `mammoth workflow delete`. Exact input fields: `mammoth schema get workflow
 
 Example: `mammoth workflow delete 123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
-Result: `WorkflowDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+Result: `WorkflowDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `always_wait`.
 
 Status on release: ran once on CLI 2.0.18 — fixture-lifecycle sweep 2026-09-19: exit 0 on release with CLI 2.0.18. Deleted workflow 1; read-back get now returns 404 WORKFLOW_NOT_FOUND, confirming deletion. Single invocation only.
+
+### `workflow.delete-plan`
+
+Run: `mammoth workflow delete-plan`. Exact input fields: `mammoth schema get workflow.delete-plan`.
+
+Example: `mammoth workflow delete-plan 123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowDeletePlanResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
 
 ### `workflow.describe.build`
 

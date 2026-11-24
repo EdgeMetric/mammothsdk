@@ -84,10 +84,21 @@ commands:
 - command_id: workflow.delete
   output_schema:
     ref: WriteResult
+  wait_policy: always_wait
   readback:
     command: workflow.list
     ids: {}
     kind: object
+  known_restrictions: 'Reads the delete plan, trashes its default-ticked items that no other workflow
+    uses (steps, result tables, dashboards and schedules that go with them; inputs stay), waits for the
+    job, and reports trashed, kept_steps and kept. Input (optional): {keep_inputs: true} is the default,
+    {trash_inputs: true} also trashes the inputs, {keep_steps: true} keeps the steps and result tables
+    (and the dashboards and schedules that follow them), or {trash: [KEYS]} names the plan keys exactly
+    (read them with workflow delete-plan). A server without the delete plan gets the plain delete, which
+    leaves the steps. --dry-run shows the keys it would send.'
+- command_id: workflow.delete-plan
+  output_schema:
+    type: object
 - command_id: workflow.from-template
   output_schema:
     ref: WriteResult

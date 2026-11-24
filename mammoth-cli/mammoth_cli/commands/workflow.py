@@ -11,18 +11,22 @@ public SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from mammoth.api.workflows import save_is_running, save_run
 
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.errors.envelope import (
+    CODE_CONFLICT,
     CODE_INVALID_ARGUMENT,
+    CODE_INVALID_INPUT,
     CODE_JOB_FAILED,
     CODE_MISSING_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_SDK_SYMBOL_UNRESOLVED,
     EXIT_API,
+    EXIT_CONFLICT,
     EXIT_RETRYABLE,
     EXIT_USAGE,
     CliError,
@@ -39,6 +43,7 @@ from mammoth_cli.runtime.session import (
     open_service,
     require_project,
 )
+from mammoth_cli.services.mapping import is_missing_route_error
 
 
 def _graph_projection(raw: Any) -> dict[str, Any]:
@@ -298,16 +303,228 @@ def workflow_update(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+_DELETE_PLAN_SYMBOL = "mammoth.api.workflows.WorkflowsAPI.delete_plan"
+_JOBS_WAIT_SYMBOL = "mammoth.api.jobs.JobsAPI.wait_for_jobs"
+_DELETE_FIELDS = frozenset({"keep_inputs", "trash_inputs", "keep_steps", "trash"})
+_STEP_KINDS = frozenset({"steps", "result"})
+_FOLLOWER_KINDS = frozenset({"dashboard", "schedule"})
+_HAS_STEPS_CODE = "4WKFL310"
+
+
+def _delete_choice(document: dict[str, Any]) -> dict[str, Any]:
+    """Validate the ``--input`` of ``workflow delete`` and return it.
+
+    Raises:
+        CliError: ``invalid_input`` for an unknown field, a non-boolean flag, a ``trash`` that is
+            not a list of keys, or ``trash`` given with another choice.
+    """
+    # The positional id is folded into the document as ``workflow_id``; it is not a choice.
+    document = {k: v for k, v in document.items() if k != "workflow_id"}
+    unknown = sorted(set(document) - _DELETE_FIELDS)
+    if unknown:
+        raise CliError(
+            code=CODE_INVALID_INPUT,
+            message=f"Unknown field(s) in the input: {', '.join(unknown)}.",
+            exit_status=EXIT_USAGE,
+            hint="Use keep_inputs, trash_inputs, keep_steps, or trash (a list of plan keys).",
+        )
+    for name in ("keep_inputs", "trash_inputs", "keep_steps"):
+        if name in document and not isinstance(document[name], bool):
+            raise CliError(
+                code=CODE_INVALID_INPUT,
+                message=f"'{name}' must be true or false.",
+                exit_status=EXIT_USAGE,
+            )
+    trash = document.get("trash")
+    if "trash" in document and (
+        not isinstance(trash, list) or any(not isinstance(k, str) or not k for k in trash)
+    ):
+        raise CliError(
+            code=CODE_INVALID_INPUT,
+            message="'trash' must be a list of plan keys such as 'view:12'.",
+            exit_status=EXIT_USAGE,
+            hint="Read the keys with 'mammoth workflow delete-plan WORKFLOW_ID'.",
+        )
+    if "trash" in document and len(document) > 1:
+        raise CliError(
+            code=CODE_INVALID_INPUT,
+            message="'trash' names the keys exactly; do not combine it with the other fields.",
+            exit_status=EXIT_USAGE,
+        )
+    if document.get("keep_inputs") and document.get("trash_inputs"):
+        raise CliError(
+            code=CODE_INVALID_INPUT,
+            message="'keep_inputs' and 'trash_inputs' contradict each other.",
+            exit_status=EXIT_USAGE,
+        )
+    return document
+
+
+def delete_selection(
+    plan: dict[str, Any], choice: dict[str, Any]
+) -> tuple[list[str], list[dict[str, Any]]]:
+    """Pick the plan keys to send, and say why each other item stays.
+
+    A default pick is every item the plan ticks that no other workflow uses (a locked key is
+    never sent). Inputs stay unless ``trash_inputs``; ``keep_steps`` unticks steps and result
+    tables. A schedule or dashboard that follows steps is kept when all of them are kept; a
+    dashboard cannot outlive trashed steps, so it goes while any step it follows goes. An
+    explicit ``trash`` list is checked against the plan and sent as given.
+
+    Args:
+        plan: The delete plan (``items`` with ``key``, ``kind``, ``checked``, ``locked_by``,
+            ``follows``).
+        choice: The validated ``--input`` document.
+
+    Returns:
+        ``(keys, kept)``: the keys to send, and for each other item ``{key, kind, name, reason}``.
+
+    Raises:
+        CliError: ``invalid_input`` when an explicit key is not in the plan or is locked.
+    """
+    items = [i for i in plan.get("items") or [] if isinstance(i, dict) and i.get("key")]
+    by_key = {str(i["key"]): i for i in items}
+    if "trash" in choice:
+        bad = [k for k in choice["trash"] if k not in by_key]
+        locked = [k for k in choice["trash"] if k in by_key and by_key[k].get("locked_by")]
+        if bad or locked:
+            parts = []
+            if bad:
+                parts.append(f"not in the plan: {', '.join(bad)}")
+            if locked:
+                names = ", ".join(f"{k} (used by {by_key[k]['locked_by']})" for k in locked)
+                parts.append(f"used by another workflow: {names}")
+            raise CliError(
+                code=CODE_INVALID_INPUT,
+                message=f"Cannot trash these keys; {'; '.join(parts)}.",
+                exit_status=EXIT_USAGE,
+                hint="Read the keys with 'mammoth workflow delete-plan WORKFLOW_ID'.",
+            )
+        chosen = set(choice["trash"])
+    else:
+        chosen = set()
+        for item in items:
+            if item.get("locked_by"):
+                continue
+            kind = item.get("kind")
+            if kind == "input":
+                ticked = bool(choice.get("trash_inputs"))
+            else:
+                ticked = bool(item.get("checked"))
+                if kind in _STEP_KINDS and choice.get("keep_steps"):
+                    ticked = False
+            if ticked:
+                chosen.add(str(item["key"]))
+        for item in items:
+            key, follows = str(item["key"]), [str(f) for f in item.get("follows") or []]
+            if item.get("kind") not in _FOLLOWER_KINDS or not follows or item.get("locked_by"):
+                continue
+            followed_goes = any(f in chosen for f in follows)
+            if item["kind"] == "dashboard" and followed_goes:
+                chosen.add(key)
+            elif not followed_goes:
+                chosen.discard(key)
+    keys = [str(i["key"]) for i in items if str(i["key"]) in chosen]
+    kept: list[dict[str, Any]] = []
+    for item in items:
+        if str(item["key"]) in chosen:
+            continue
+        if item.get("locked_by"):
+            reason = f"used by workflow {item['locked_by']}"
+        elif "trash" in choice:
+            reason = "not in the trash list"
+        elif item.get("kind") == "input":
+            reason = "inputs stay unless trash_inputs is set"
+        elif item.get("follows") and item.get("kind") in _FOLLOWER_KINDS:
+            reason = "its steps stay"
+        else:
+            reason = "not ticked" if not item.get("checked") else "kept by the input"
+        kept.append(
+            {
+                "key": item["key"],
+                "kind": item.get("kind"),
+                "name": item.get("name"),
+                "reason": reason,
+            }
+        )
+    return keys, kept
+
+
+def _has_steps_error(error: CliError, workflow_id: int) -> CliError | None:
+    """The actionable error for a 409 ``4WKFL310`` (the workflow still has steps), else None."""
+    if error.code != CODE_CONFLICT or _HAS_STEPS_CODE not in json.dumps(
+        [error.message, error.details], default=str
+    ):
+        return None
+    return CliError(
+        code=CODE_CONFLICT,
+        message=f"Workflow {workflow_id} still has steps, so the plain delete was refused.",
+        exit_status=EXIT_CONFLICT,
+        hint=(
+            "Run 'mammoth workflow delete-plan WORKFLOW_ID' to see what goes with it, then "
+            "'mammoth workflow delete WORKFLOW_ID --yes' (it sends the ticked items), or add "
+            "--input '{\"keep_steps\": true}' to keep the steps."
+        ),
+        details=error.details,
+        request_id=error.request_id,
+    )
+
+
 def workflow_delete(invocation: Invocation) -> HandlerResult:
-    """Delete one workflow by id. Prompt or ``--yes`` required."""
+    """Delete a workflow with the items of its delete plan. Prompt or ``--yes`` required.
+
+    Reads the delete plan, sends the ticked items no other workflow uses, waits for the job and
+    reports what was trashed and kept. An older server with no delete plan gets the plain delete.
+    """
     project_id = require_project(invocation)
     workflow_id = _require_int_positional_at(invocation, 0, "workflow id")
+    choice = _delete_choice(invocation.load_input() or {})
     enforce_confirmation(
         invocation, policy=POLICY_PROMPT_OR_YES, action=f"delete workflow {workflow_id}"
     )
+    symbol = _symbol(invocation)
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), workflow_id=workflow_id, project_id=project_id)
-    return data, _meta(invocation, auth.workspace_id, project_id)
+        try:
+            plan = service.call(_DELETE_PLAN_SYMBOL, workflow_id=workflow_id, project_id=project_id)
+        except CliError as error:
+            if not is_missing_route_error(error):
+                raise
+            # An older server: no plan, so the plain delete is all there is.
+            try:
+                data = service.call(symbol, workflow_id=workflow_id, project_id=project_id)
+            except CliError as plain:
+                raise _has_steps_error(plain, workflow_id) or plain from plain
+            result = dict(data) if isinstance(data, dict) else {"result": data}
+            result["delete_plan"] = "unavailable"
+            result["note"] = (
+                "This server has no delete plan: only the workflow record was deleted. "
+                "Its steps were not touched."
+            )
+            return result, _meta(invocation, auth.workspace_id, project_id)
+        blocked = plan.get("blocked") if isinstance(plan, dict) else None
+        if blocked:
+            raise CliError(
+                code=CODE_CONFLICT,
+                message=str(blocked.get("message") or "The workflow cannot be deleted now."),
+                exit_status=EXIT_CONFLICT,
+                details={"blocked": blocked},
+            )
+        keys, kept = delete_selection(plan if isinstance(plan, dict) else {}, choice)
+        try:
+            data = service.call(symbol, workflow_id=workflow_id, project_id=project_id, trash=keys)
+        except CliError as error:
+            raise _has_steps_error(error, workflow_id) or error from error
+        result = dict(data) if isinstance(data, dict) else {"result": data}
+        job_ids = [j for j in result.get("job_ids") or [] if isinstance(j, int)]
+        if job_ids:
+            result["jobs"] = service.call(
+                _JOBS_WAIT_SYMBOL,
+                job_ids=job_ids,
+                timeout=invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT,
+            )
+    result["sent"] = keys
+    result["kept"] = kept
+    return result, _meta(invocation, auth.workspace_id, project_id)
 
 
 def workflow_from_template(invocation: Invocation) -> HandlerResult:
