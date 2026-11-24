@@ -10,9 +10,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7956 (mammothsdk#468, #470).
 - `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
+- `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK (mammoth-io 0.8.59): `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
 
 ### Added (next mammoth-cli)
 
+- `mammoth how` has an `import-from-database` recipe, and `append-rows` no longer answers a database import. `dataset create --help` shows a database import, and the `view data aggregate` example shows `order_by`.
+- `view data aggregate` and the other `order_by` reads accept `["label", "desc"]` pairs.
 - `annotation comment edit ANNOTATION_ID COMMENT_ID --input '{"body": "..."}'`, `annotation comment delete ANNOTATION_ID COMMENT_ID` (asks first, or `--yes`) and `annotation access` (whether you may post or moderate comments in the project, and whom a comment may mention) (mammothsdk#468).
 - `mammoth doctor` has an `sdk_version` check: it compares the installed mammoth-io with the range this CLI declares, fails when it is outside it, and names the `pip install --upgrade "mammoth-io>=...,<..."` fix in the check and in `recommendations` (mammothsdk#469).
 - `workflow canvas` forwards an `expected_version` input field; the server answers 409 when the canvas moved since you read it (mammothsdk#470).
@@ -22,10 +25,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed (next mammoth-cli)
 
+- **Breaking (release as 2.5.0):** `schema get` always answers `{requested, schemas, errors}`, for one id or several, with or without `full`. A script that read `data.accepted_fields` of one id reads `data.schemas[0].accepted_fields`. `-o table` and `-o plain` of one id still show its fields. No id found is still `schema_not_found` (exit 2), now also when several ids all fail.
+- `dashboard chat edit` is partial (exit 3) when the server says one of the asks did not land (held back, not attempted, not on the board, declined); each such ask is in `warnings`. An ask the server did not check does not count.
+- `connector ds-config create` says what it does: it checks or samples a config and saves nothing (`saved: false`, with the `dataset create` call as `next`). It no longer reports an undo or a read-back.
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
 
 ### Fixed (next mammoth-cli)
 
+- `dataset create` refuses a cloud query import that lacks `ds_name`, `table_name` or `query` before sending it, and under `--dry-run`; the server answered 400 4DSET043.
+- `dataset create` from a connection says when the name was taken and the dataset got another one (`requested_name`, `note`), and `--dry-run` predicts it.
+- The `state` read-back of a dashboard write (`chat edit`, `pages add`, `canvas save`, ...) stays under its 1,500-byte cap; it carried the whole canvas (about 95 KB of a 103 KB result). Warnings in `verify` are sentences, not Python dict text.
+- A figure refused because the board reads another view (4DASH023) names the route that works (`dashboard page plan`, then `dashboard pages add` with the page's own `dataset`), and so does a chat edit that was not applied.
+- The skill's database import recipe uses `dataset create` and `connector connection tables`; it taught `connector ds-config create`, which saves nothing.
 - A 404 whose body is only `{"detail": "Not Found"}` (the server has no such route) says "This server does not have agent definitions." (or names the endpoint) instead of "Check the resource id and scope." (mammothsdk#457).
 
 ## mammoth-cli 2.4.6 (2026-11-17)

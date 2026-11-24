@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
+from mammoth.models.dashboard_generated import CanvasResponse
+from pydantic import BaseModel
 
 from mammoth_cli.commands import registry
 from mammoth_cli.runtime import state as state_mod
@@ -639,3 +642,66 @@ def test_4perm002_proves_nothing_outside_a_dashboard_delete(
     refused = CliError(code="permission_denied", message="no", details={"backend_code": "4PERM002"})
     result = _delete_readback(monkeypatch, refused)
     assert result["state"]["kind"] == "unreadable"
+
+
+class _Canvas(BaseModel):
+    """What ``dashboard canvas get`` returns: a model, not a dict."""
+
+    id: int
+    sequence: int
+    canvas: dict[str, Any]
+
+
+def test_a_model_read_back_is_trimmed_like_a_dict(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Feedback 12 (2026-11-24): the canvas model went whole into ``state`` (94 of 103 KB)."""
+    _patch_record(
+        monkeypatch,
+        {"readback": {"command": "view.get", "ids": {"view_id": "positional.0"}, "kind": "object"}},
+    )
+    canvas = _Canvas(id=9, sequence=3, canvas={"pages": ["x" * 50_000]})
+    _patch_handlers(monkeypatch, {"view.get": lambda invocation: (canvas, {})})
+
+    result = with_state(_invocation(), {"status": "done"})
+
+    assert result["state"]["object"] == {"id": 9, "sequence": 3}
+    assert len(json.dumps(result["state"])) <= STATE_SIZE_CAP_BYTES
+
+
+def test_a_canvas_read_back_names_its_pages_not_its_first_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Live check 2026-11-24: the canvas's empty ``unavailable_files`` read as its content."""
+    _patch_record(
+        monkeypatch,
+        {"readback": {"command": "view.get", "ids": {"view_id": "positional.0"}, "kind": "object"}},
+    )
+    document = CanvasResponse.model_validate(
+        {
+            "canvas": {"pages": [{"id": "p1", "title": "Users", "added": ["x" * 50_000]}]},
+            "meta": {"sequence": 3, "stale_bake": True, "figures": {"f": "x" * 5000}},
+            "specs": {},
+            "unavailable_files": [],
+        }
+    )
+    _patch_handlers(monkeypatch, {"view.get": lambda invocation: (document, {})})
+
+    result = with_state(_invocation(), {"status": "done"})
+
+    assert result["state"]["object"] == {
+        "sequence": 3,
+        "stale_bake": True,
+        "pages": [{"id": "p1", "title": "Users"}],
+    }
+
+
+def test_a_list_of_models_read_back_is_trimmed_per_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_record(
+        monkeypatch,
+        {"readback": {"command": "view.get", "ids": {"view_id": "positional.0"}, "kind": "object"}},
+    )
+    items = [_Canvas(id=i, sequence=1, canvas={"pages": ["x" * 5000]}) for i in range(2)]
+    _patch_handlers(monkeypatch, {"view.get": lambda invocation: (items, {})})
+
+    result = with_state(_invocation(), {"status": "done"})
+
+    assert result["state"]["object"] == [{"id": 0, "sequence": 1}, {"id": 1, "sequence": 1}]

@@ -415,6 +415,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth connector connection list-all
 - `mammoth connector connection query` [read/none] -> mammoth.api.connectors.ConnectorsAPI.query_connection
   example: mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'
+- `mammoth connector connection tables` [read/none] -> mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  example: mammoth connector connection tables prod-warehouse
 - `mammoth connector connection test` [benign_mutation/none] -> mammoth.api.connectors.ConnectorsAPI.test_connection
   example: mammoth connector connection test prod-warehouse
 - `mammoth connector connection update` [external_effect/yes_always] -> mammoth.api.connectors.ConnectorsAPI.update_connection
@@ -1520,7 +1522,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view create` [benign_mutation/none] -> mammoth.client.ViewsResource.create
   example: mammoth view create 123
 - `mammoth view data aggregate` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
-  example: mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'
+  example: mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'
 - `mammoth view data compare` [read/none] -> mammoth.api.dataviews.DataviewsAPI.aggregate
   example: mammoth view data compare 111 222 --input '{"group_by": ["Campaign"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Spend"}]}'
 - `mammoth view data drivers` [read/none] -> mammoth_cli.commands.view_drivers.view_data_drivers

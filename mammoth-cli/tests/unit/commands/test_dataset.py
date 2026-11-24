@@ -11,7 +11,12 @@ import pytest
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands.dataset import create as create_cmd
 from mammoth_cli.commands.dataset import find as find_cmd
-from mammoth_cli.commands.dataset.create import ONE_OFF_PULL, _default_one_off_pull
+from mammoth_cli.commands.dataset.create import (
+    ONE_OFF_PULL,
+    _default_one_off_pull,
+    _requested_name,
+    _require_cloud_query_fields,
+)
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.strict import COMMAND_FLAGS
@@ -1651,3 +1656,69 @@ def test_cloud_database_create_sends_a_one_off_pull_and_table_name() -> None:
     assert len(adjusted) == 2
     file_spec: dict[str, Any] = {"query_properties": {"file_path": "/a.csv"}}
     assert _default_one_off_pull("cloud", file_spec) == []
+
+
+@pytest.mark.parametrize(
+    ("properties", "missing"),
+    [
+        ({"query": "SELECT 1"}, ["ds_name", "table_name"]),
+        ({"query": "SELECT 1", "ds_name": "Calls"}, ["table_name"]),
+        ({"table_name": "calls", "ds_name": "Calls"}, ["query"]),
+    ],
+)
+def test_cloud_query_import_names_its_missing_fields(
+    properties: dict[str, str], missing: list[str]
+) -> None:
+    """Feedback 10 (2026-11-24): the server answered 400 4DSET043, after a clean dry run."""
+    spec = {"connector_key": "postgres", "query_properties": properties}
+    with pytest.raises(CliError) as excinfo:
+        _require_cloud_query_fields("cloud", spec)
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.details["missing"] == missing
+
+
+@pytest.mark.parametrize(
+    ("kind", "spec"),
+    [
+        ("weburl", {"url": "https://x.test/a.csv"}),
+        ("cloud", {"query_properties": {"file_path": "/a.csv"}}),
+        ("cloud", {"connector_key": "google_sheets", "query_properties": {"query": "q"}}),
+        (
+            "cloud",
+            {"query_properties": {"ds_name": "a", "table_name": "b", "query": "SELECT 1"}},
+        ),
+    ],
+)
+def test_other_creates_need_no_query_fields(kind: str, spec: dict[str, Any]) -> None:
+    _require_cloud_query_fields(kind, spec)
+
+
+def test_dataset_create_refuses_a_cloud_import_under_dry_run(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "postgres",
+            "connection_key": "conn1",
+            "query_properties": {"ds_name": "Calls", "query": "SELECT 1"},
+        },
+    }
+    with pytest.raises(CliError) as excinfo:
+        create_cmd.dataset_create(
+            _inv(
+                "dataset.create",
+                project=180,
+                input_file=_write(tmp_path, doc),
+                dry_run=True,
+            )
+        )
+    assert excinfo.value.details["missing"] == ["table_name"]
+    assert fake_service.call_log == []
+
+
+def test_the_requested_name_of_a_cloud_import_is_in_its_query_properties() -> None:
+    """Feedback 17 (2026-11-24): "LLM calls 2" was made without a word."""
+    assert _requested_name({"query_properties": {"ds_name": "LLM calls"}}) == "LLM calls"
+    assert _requested_name({"ds_name": "Clone", "query_properties": {}}) == "Clone"
+    assert _requested_name({"query_properties": None}) is None

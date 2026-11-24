@@ -7073,6 +7073,48 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: connector.connection.tables
+  command_path: connector connection tables
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListConnectionTables
+  positionals:
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables with validated
+    request fields.
+  request_model: ConnectorConnectionTablesRequest
+  result_model: ConnectorConnectionTablesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-TABLES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection tables CONNECTION_KEY --help
+  agent_example: mammoth connector connection tables prod-warehouse
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-TABLES
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-TABLES-HUMAN
+  - CT-CONNECTOR-CONNECTION-TABLES-JSON
+  - CT-CONNECTOR-CONNECTION-TABLES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The tables of a saved connection; shape other for a connection that lists
+    none.
+  reviewed_by: primary
 - command_id: connector.connection.test
   command_path: connector connection test
   disposition: command
@@ -27898,7 +27940,7 @@ commands:
   secret_fields: []
   human_example: mammoth view data aggregate VIEW_ID --help
   agent_example: 'mammoth view data aggregate 123 456 --input ''{"group_by": ["Channel"], "aggregations":
-    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'''
+    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'''
   unit_tests:
   - UT-VIEW-DATA-AGGREGATE
   contract_tests:

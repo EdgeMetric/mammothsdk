@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,7 @@ _CONNECTION_DELETE = "mammoth.api.connectors.ConnectorsAPI.delete_connection"
 _CONNECTION_GET = "mammoth.api.connectors.ConnectorsAPI.get_connection"
 _CONNECTION_LIST = "mammoth.api.connectors.ConnectorsAPI.list_connections"
 _CONNECTION_UPDATE = "mammoth.api.connectors.ConnectorsAPI.update_connection"
+_CONNECTION_TABLES = "mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables"
 _DS_CONFIG_CREATE = "mammoth.api.connectors.ConnectorsAPI.create_ds_config"
 _DS_CONFIG_DELETE = "mammoth.api.connectors.ConnectorsAPI.delete_ds_config"
 _DS_CONFIG_DELETE_ALL = "mammoth.api.connectors.ConnectorsAPI.ds_config_delete_all"
@@ -555,6 +557,93 @@ def test_ds_config_create_forwards_optional_fields(
             },
         )
     ]
+
+
+def test_ds_config_create_says_nothing_was_saved_and_what_imports(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Feedback 9 (2026-11-24): exit 0 and "settled" read as a saved config; none exists."""
+    fake_service.responses[_DS_CONFIG_CREATE] = {"valid": True}
+    result, _ = connector_cmd.connector_ds_config_create(
+        _inv(
+            "connector.ds-config.create",
+            project=180,
+            extra_args=["postgres", "conn1"],
+            input_file=_write(tmp_path, {"query": "select 1", "table": "t1"}),
+            yes=True,
+        )
+    )
+    assert isinstance(result, dict)
+    assert result["valid"] is True
+    assert result["saved"] is False
+    spec = json.loads(shlex.split(result["next"])[-1])
+    assert spec["ds_creation_type"] == "cloud"
+    assert spec["dataset_spec"]["connection_key"] == "conn1"
+    assert set(spec["dataset_spec"]["query_properties"]) == {"ds_name", "table_name", "query"}
+
+
+def test_ds_config_create_marks_the_result_of_the_job_the_route_answers_with(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Live check 2026-11-24: the job's result replaced the marked handle."""
+    fake_service.responses[_DS_CONFIG_CREATE] = {"job_id": 9}
+    fake_service.job_result = {"STATUS": "SUCCESS", "data_sample": {}}
+    result, _ = connector_cmd.connector_ds_config_create(
+        _inv(
+            "connector.ds-config.create",
+            project=180,
+            extra_args=["postgres", "conn1"],
+            input_file=_write(tmp_path, {"query": "select 1", "data_sample": True}),
+            yes=True,
+        )
+    )
+    assert isinstance(result, dict)
+    assert (result["STATUS"], result["saved"]) == ("SUCCESS", False)
+    assert result["next"].startswith("mammoth dataset create")
+    assert fake_service.wait_log == [{"job_id": 9}]
+
+
+# --- connection tables -------------------------------------------------------------------
+
+
+def _tables(**over: object) -> dict[str, object]:
+    base: dict[str, object] = {
+        "shape": "tables",
+        "tables": [{"name": "orders", "path": "public.orders", "group": "public"}],
+        "total": 1,
+        "needs_sign_in": False,
+        "failed": False,
+    }
+    return {**base, **over}
+
+
+def test_connection_tables_lists_the_tables(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_CONNECTION_TABLES] = _tables()
+    result, meta = connector_cmd.connector_connection_tables(
+        _inv("connector.connection.tables", project=180, extra_args=["conn1"])
+    )
+    assert fake_service.call_log == [(_CONNECTION_TABLES, {"connection_key": "conn1"})]
+    assert result == _tables()
+    assert meta["project_id"] == 180
+
+
+@pytest.mark.parametrize(
+    ("over", "words"),
+    [
+        ({"needs_sign_in": True, "tables": []}, "sign the connection in again"),
+        ({"failed": True, "tables": []}, "could not be read"),
+        ({"shape": "other", "tables": []}, "lists no tables"),
+    ],
+)
+def test_connection_tables_says_why_there_are_none(
+    fake_service: FakeMammothService, over: dict[str, object], words: str
+) -> None:
+    fake_service.responses[_CONNECTION_TABLES] = _tables(**over)
+    result, _ = connector_cmd.connector_connection_tables(
+        _inv("connector.connection.tables", project=180, extra_args=["conn1"])
+    )
+    assert isinstance(result, dict)
+    assert words in result["warning"]
 
 
 # --- ds-config delete -------------------------------------------------------------------

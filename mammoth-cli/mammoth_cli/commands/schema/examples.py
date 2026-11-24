@@ -524,6 +524,7 @@ def _runnable_example(
                         "aggregations": [
                             {"column": "Spend", "function": "SUM", "as_name": "Total Spend"}
                         ],
+                        "order_by": [["Total Spend", "desc"]],
                     }
                 ),
                 *_OUTPUT_JSON_NO_INPUT,

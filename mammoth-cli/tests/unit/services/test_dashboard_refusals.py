@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import pytest
+
 from mammoth_cli.commands.dashboard.generated import _reflect_not_applied
-from mammoth_cli.services.dashboard_pages import generate_substitutions, refused_notes
+from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.services.dashboard_pages import (
+    append_figure,
+    generate_substitutions,
+    refused_asks,
+    refused_notes,
+)
+from mammoth_cli.services.testing import FakeMammothService
 
 _MESSAGE = (
     "Cards: Total Events and Total Pageviews.\n"
@@ -41,3 +50,45 @@ def test_changed_false_is_not_applied_and_does_not_echo_the_models_claim() -> No
 def test_a_changed_edit_is_left_alone() -> None:
     data = {"changed": True, "message": "I added a card."}
     assert _reflect_not_applied("dashboard.chat.edit", data, 744) == data
+
+
+def test_an_ask_that_did_not_land_is_a_warning() -> None:
+    """Feedback 4 and 12 (2026-11-24): a refused ask must not read as a finished edit."""
+    asks = [
+        {"ask": "add a KPI", "status": "applied"},
+        {"ask": "make it nicer", "status": "not checked"},
+        {"ask": "show every bar", "status": "not done — the reply says it couldn't be"},
+        {"ask": "split by key", "status": "held back"},
+    ]
+    assert [warning["detail"] for warning in refused_asks(asks)] == [
+        "show every bar: not done — the reply says it couldn't be",
+        "split by key: held back",
+    ]
+    assert refused_asks(None) == []
+
+
+def test_an_edit_that_was_not_applied_names_the_route_of_a_second_view() -> None:
+    data = {"changed": False, "bake_ok": False, "message": "Done."}
+    out = _reflect_not_applied("dashboard.chat.edit", data, 744)
+    assert "dashboard pages add 744" in " ".join(out["next_steps"])
+
+
+def test_a_figure_of_another_source_names_the_pages_route() -> None:
+    fake_service = FakeMammothService()
+    symbol = "mammoth.api.dashboards.DashboardsAPI.append_figure"
+    fake_service.responses[symbol] = CliError(
+        code="conflict", message="no", details={"backend_code": "4DASH023"}
+    )
+    with pytest.raises(CliError) as excinfo:
+        append_figure(fake_service, symbol, {"dashboard_id": 3, "dataview_id": 7})
+    assert "dashboard pages add 3" in (excinfo.value.hint or "")
+    assert '"dataview_id": 7' in (excinfo.value.hint or "")
+
+
+def test_another_refusal_of_a_figure_keeps_its_own_hint() -> None:
+    fake_service = FakeMammothService()
+    symbol = "mammoth.api.dashboards.DashboardsAPI.append_figure"
+    fake_service.responses[symbol] = CliError(code="conflict", message="no", hint="own")
+    with pytest.raises(CliError) as excinfo:
+        append_figure(fake_service, symbol, {"dashboard_id": 3, "dataview_id": 7})
+    assert excinfo.value.hint == "own"

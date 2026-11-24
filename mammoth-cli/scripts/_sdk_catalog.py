@@ -59,6 +59,7 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
         "operation_ids": ["ListConnectorKnownSources"],
         "method": "GET",
     },
+    "connector.connection.tables": {"operation_ids": ["ListConnectionTables"], "method": "GET"},
     "connector.draft.get": {"operation_ids": ["GetConnectorDraft"], "method": "GET"},
     "connector.draft.update": {"operation_ids": ["PatchConnectorDraft"], "method": "PATCH"},
     "connector.draft.discard": {"operation_ids": ["DiscardConnectorDraft"], "method": "DELETE"},

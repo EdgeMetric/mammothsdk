@@ -12,8 +12,8 @@ appear in the command path (``connector_key``, then ``connection_key``, then
 Connection secrets always come from the strict ``--input`` document, never a
 positional argument: ``config`` on ``connection create``, ``credentials`` on
 ``connection update``, and the AI-chat ``body`` payloads. ``connection
-create``/``update`` and ``ds-config create``/``update`` cause an external
-side effect against a third-party service and always require ``--yes``;
+create``/``update`` and ``ds-config create``/``update`` reach a third-party
+service and always require ``--yes`` (``ds-config create`` saves nothing);
 ``connection delete`` and the ``ds-config`` deletes are destructive and
 accept a prompt or ``--yes``.
 
@@ -24,6 +24,7 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
 
@@ -638,8 +639,49 @@ def connector_connection_query(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _no_tables_reason(data: dict[str, Any]) -> str | None:
+    """Why a table list is not usable, or ``None`` when it is."""
+    if data.get("needs_sign_in"):
+        return "its sign-in was refused: sign the connection in again"
+    if data.get("failed"):
+        return "the tables could not be read; try again"
+    if data.get("shape") == "other":
+        return "this connection lists no tables (pick its files or data in the web app)"
+    return None
+
+
+def connector_connection_tables(invocation: Invocation) -> HandlerResult:
+    """List the tables of a saved connection. Connection key is positional."""
+    project_id = require_project(invocation)
+    connection_key = _require_string_positional_at(invocation, 0, "connection key")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), connection_key=connection_key)
+    if isinstance(data, dict):
+        reason = _no_tables_reason(data)
+        if reason is not None:
+            data = {**data, "warning": f"No usable table list: {reason}."}
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _ds_config_next(connector_key: str, connection_key: str) -> str:
+    """The command that makes a dataset from a config ``ds-config create`` only checked."""
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": connector_key,
+            "connection_key": connection_key,
+            "query_properties": {"ds_name": "NAME", "table_name": "TABLE", "query": "QUERY"},
+        },
+    }
+    return f"mammoth dataset create --input '{json.dumps(spec)}'"
+
+
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
-    """Sample a data source config; REST ``query`` is a JSON string. ``--yes`` always needed."""
+    """Check or sample a query on a connection; saves nothing. ``--yes`` always needed.
+
+    A REST ``query`` is a JSON string. The server only validates the config or returns sample
+    rows: no data source config and no dataset is made. ``dataset create`` imports the rows.
+    """
     project_id = require_project(invocation)
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")
@@ -653,10 +695,13 @@ def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
-        action=f"create a data source config for connection {connection_key}",
+        action=f"check a data source config on connection {connection_key} (saves nothing)",
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        # The route answers with a job; the result to mark is the job's.
+        data = service.wait_if_job(service.call(_symbol(invocation), **kwargs))
+    if isinstance(data, dict):
+        data = {**data, "saved": False, "next": _ds_config_next(connector_key, connection_key)}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

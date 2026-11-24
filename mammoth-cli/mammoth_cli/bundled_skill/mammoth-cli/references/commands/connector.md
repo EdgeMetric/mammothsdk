@@ -134,6 +134,16 @@ Result: `ConnectorConnectionQueryResult`; mutation `read`, confirmation `none`, 
 
 Status on release: untried; no live run recorded.
 
+### `connector.connection.tables`
+
+Run: `mammoth connector connection tables`. Exact input fields: `mammoth schema get connector.connection.tables`.
+
+Example: `mammoth connector connection tables prod-warehouse`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `ConnectorConnectionTablesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `connector.connection.test`
 
 Run: `mammoth connector connection test`. Exact input fields: `mammoth schema get connector.connection.test`.

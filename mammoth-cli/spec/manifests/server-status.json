@@ -17,6 +17,12 @@
         "GET /agents/access/today"
       ]
     },
+    "connector.connection.tables": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/connection-tables"
+      ]
+    },
     "dataset.download": {
       "server_status": "pending",
       "routes": [

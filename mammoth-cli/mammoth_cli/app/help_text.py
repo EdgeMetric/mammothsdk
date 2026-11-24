@@ -488,9 +488,17 @@ _RUN_HELP_NOTE = (
 )
 
 
+_CLOUD_IMPORT_NOTE = (
+    "A table or query of a connected database (find it with 'connector connection tables'): "
+    "mammoth dataset create --input '"
+    '{"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "postgres", '
+    '"connection_key": "CONNECTION_KEY", "query_properties": {"ds_name": "Orders", '
+    '"table_name": "orders", "query": "SELECT * FROM orders"}}}\''
+)
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,
     "bench": _BENCH_HELP_NOTE,
+    "dataset.create": _CLOUD_IMPORT_NOTE,
     "view.data.get": _RAW_NOTE,
     "view.data.query": _RAW_NOTE,
     "view.export.dataset": (

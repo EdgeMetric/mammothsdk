@@ -79,8 +79,11 @@ commands:
     (without them the job fails with Invalid parameters); on_refresh_action combine appends every refresh,
     so rows duplicate. The recipe is recipes/rest-api-import.md. To make a dataset from a database query
     (SQL Server, MySQL, Postgres, ...): connector connection create for the database, try the SELECT with
-    connector connection query (read-only, saves nothing), then connector ds-config create CONNECTOR_KEY
-    CONNECTION_KEY with {"query": SELECT, "table": NAME}; the recipe is recipes/database-import.md. Other
+    connector connection query (read-only, saves nothing), then {"ds_creation_type": "cloud", "dataset_spec":
+    {"connector_key": KEY, "connection_key": CONNECTION_KEY, "query_properties": {"ds_name": NAME, "table_name":
+    TABLE, "query": SELECT}}}; all three query_properties are required, and with no schedule_properties
+    it is a one-off pull now; the recipe is recipes/database-import.md. connector ds-config create saves
+    nothing. Other
     ds_creation_type values and dataset_spec shapes: variants beyond the documented path are not qualified.'
 - command_id: dataset.create-from-pdf
   output_schema: {ref: WriteResult}

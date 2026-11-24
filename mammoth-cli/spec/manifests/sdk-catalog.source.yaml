@@ -6309,6 +6309,15 @@ sdk_methods:
   openapi_operation_ids:
   - ListConnectorKnownSources
   notes: "Read-only. Sources with no built-in connector that a draft can still start on, deep ones first."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  canonical_command: connector.connection.tables
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectionTables
+  notes: "Read-only. The tables of a saved connection; shape other for a connection that lists none."
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.get
   canonical_command: connector.draft.get
   alias_of: null

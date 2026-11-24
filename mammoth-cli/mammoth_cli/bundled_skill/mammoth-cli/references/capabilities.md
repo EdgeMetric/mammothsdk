@@ -1,7 +1,7 @@
 # What is proven on release
 
 Generated from `docs/release-capability-matrix.json`; do not edit by hand.
-The CLI publishes 911 commands. 742 of them bind one of the 1001 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 259 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
+The CLI publishes 912 commands. 743 of them bind one of the 1001 API operations in the matrix; the remainder are local commands (`schema`, `auth`, `doctor`, `log`, ...) or typed variants that share an operation (`view transform *` commands submit through `view.task.add`, except `rename-columns` and `sort`, which set view display properties through `view.update`). 259 bound commands ran once successfully on release, 1 are not supported there, and the rest are untried. Untried is not broken: discover the contract with `mammoth schema get COMMAND_ID`, run it, and treat the structured error envelope as the answer. Use an untried command normally: confirm a write with the user first, check its result with a read afterwards, and never refuse a command only because it is untried.
 
 Status meanings:
 
@@ -10,6 +10,8 @@ Status meanings:
 - **observed blocker**: the last run hit an error; the note quotes it. Re-check before relying on the route, and do not retry the same input.
 - **CLI defect fixed, untried since**: the failure was on the CLI side and this release repairs it; nobody has re-run the route yet.
 - Commands not listed under a family are untried.
+
+What a dashboard can and cannot show (one table per page, the smallest date grain): [dashboard limits](recipes/dashboards.md#limits).
 
 The typed `view transform *` commands all submit through `view.task.add` (`rename-columns` and `sort` through `view.update`); its matrix row names the transformations that ran end to end and were read back against a known answer: `add-column`, `add-sql`, `ai`, `bulk-replace`, `combine-columns`, `convert-type`, `copy-columns`, `crosstab`, `date-diff`, `delete-columns`, `discard-duplicates`, `extract-date`, `fill-missing`, `filter`, `generate-sql`, `increment-date`, `join`, `json-extract`, `limit-rows`, `lookup`, `math`, `pivot`, `rename-columns`, `replace`, `set-values`, `small-large`, `sort`, `split`, `substring`, `text`, `unnest`, `window`. A transformation not named there has the same untried status as any other command.
 
@@ -22,7 +24,7 @@ The typed `view transform *` commands all submit through `view.task.add` (`renam
 | `view` | 71 | 58 | 0 | 13 |
 | `workflow` | 56 | 9 | 0 | 47 |
 | `agent` | 42 | 1 | 0 | 41 |
-| `connector` | 40 | 3 | 0 | 37 |
+| `connector` | 41 | 3 | 0 | 38 |
 | `dataset` | 30 | 12 | 0 | 18 |
 | `billing` | 26 | 4 | 0 | 22 |
 | `workspace` | 25 | 5 | 0 | 20 |

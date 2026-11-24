@@ -197,6 +197,22 @@ class ConnectorDraftsAPI:
         """
         return await self._client._request_json("GET", f"{self._base()}/known-sources")
 
+    async def connection_tables(self, connection_key: str) -> dict[str, Any]:
+        """List the tables of a saved connection.
+
+        Args:
+            connection_key: The connection's key.
+
+        Returns:
+            Dict with ``shape`` (``tables``, or ``other`` for a connection that lists no
+            tables), ``tables`` (``name``, ``path``, ``group``, ``row_estimate``; the first
+            500), ``total``, ``needs_sign_in`` (its sign-in was refused) and ``failed`` (the
+            tables could not be read).
+        """
+        return await self._client._request_json(
+            "GET", f"{self._base()}/connection-tables", params={"connection_key": connection_key}
+        )
+
     async def link_preview(self, url: str) -> dict[str, Any]:
         """Read the CSV, Excel or JSON file at a link and show its tables, keeping nothing.
 

@@ -216,7 +216,18 @@
         "remove",
         "revert",
         "instead",
-        "delete"
+        "delete",
+        "connector",
+        "connectors",
+        "connection",
+        "connections",
+        "database",
+        "databases",
+        "postgres",
+        "postgresql",
+        "mysql",
+        "mssql",
+        "sql"
       ],
       "doc": "references/recipes/file-import.md",
       "steps": [
@@ -265,6 +276,162 @@
           ],
           "input": {
             "append_to_ds_id": "{{inputs.dataset_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "import-from-database",
+      "version": 1,
+      "title": "Make a dataset from a table or SQL query of a connected database",
+      "goals": [
+        "import tables from an existing database connector into datasets",
+        "create a dataset from a postgres connection using a SQL query",
+        "import a table from my database",
+        "make a dataset from a SQL query on a connection"
+      ],
+      "keywords": [
+        "import",
+        "database",
+        "connector",
+        "connection",
+        "table",
+        "tables",
+        "sql",
+        "query",
+        "postgres",
+        "mysql",
+        "mssql",
+        "dataset"
+      ],
+      "intent": [
+        [
+          "database",
+          "databases",
+          "connector",
+          "connectors",
+          "connection",
+          "connections",
+          "postgres",
+          "postgresql",
+          "mysql",
+          "mssql",
+          "sql server",
+          "redshift",
+          "snowflake"
+        ],
+        [
+          "import",
+          "create",
+          "make",
+          "pull",
+          "load",
+          "bring",
+          "get",
+          "read",
+          "add"
+        ],
+        [
+          "table",
+          "tables",
+          "query",
+          "sql",
+          "dataset",
+          "datasets",
+          "rows",
+          "data"
+        ]
+      ],
+      "reject": [
+        "export",
+        "dashboard",
+        "schedule",
+        "scheduled",
+        "append",
+        "delete",
+        "remove"
+      ],
+      "doc": "references/recipes/database-import.md",
+      "steps": [
+        {
+          "command_id": "connector.connection.list",
+          "purpose": "Find the connection and its key. Without a connector key it lists every connection.",
+          "example": "mammoth connector connection list postgres",
+          "key_flags": []
+        },
+        {
+          "command_id": "connector.connection.tables",
+          "purpose": "List the tables the connection can read.",
+          "example": "mammoth connector connection tables CONNECTION_KEY",
+          "key_flags": []
+        },
+        {
+          "command_id": "connector.connection.query",
+          "purpose": "Try the SELECT. It returns sample rows and saves nothing.",
+          "example": "mammoth connector connection query postgres CONNECTION_KEY --input '{\"query\": \"SELECT * FROM orders LIMIT 5\"}'",
+          "key_flags": [
+            "--input query"
+          ]
+        },
+        {
+          "command_id": "dataset.create",
+          "purpose": "Import the rows as a dataset, one call per table. ds_name, table_name and query are all required; without schedule_properties it is one pull now.",
+          "example": "mammoth dataset create --input '{\"ds_creation_type\": \"cloud\", \"dataset_spec\": {\"connector_key\": \"postgres\", \"connection_key\": \"CONNECTION_KEY\", \"query_properties\": {\"ds_name\": \"Orders\", \"table_name\": \"orders\", \"query\": \"SELECT * FROM orders\"}}}'",
+          "key_flags": [
+            "--input ds_creation_type, dataset_spec"
+          ]
+        }
+      ],
+      "notes": [
+        "connector ds-config create only checks or samples a query: it makes no dataset."
+      ],
+      "inputs": {
+        "connector_key": {
+          "type": "string",
+          "required": true,
+          "example": "postgres",
+          "help": "The connector of the connection."
+        },
+        "connection_key": {
+          "type": "string",
+          "required": true,
+          "example": "CONNECTION_KEY",
+          "help": "The connection (connector connection list)."
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "example": "Orders",
+          "help": "The name of the new dataset."
+        },
+        "table_name": {
+          "type": "string",
+          "required": true,
+          "example": "orders",
+          "help": "The table the query reads."
+        },
+        "query": {
+          "type": "string",
+          "required": true,
+          "example": "SELECT * FROM orders",
+          "help": "One SELECT; its rows become the dataset."
+        }
+      },
+      "run": [
+        {
+          "name": "import",
+          "cmd": "dataset create",
+          "input": {
+            "ds_creation_type": "cloud",
+            "dataset_spec": {
+              "connector_key": "{{inputs.connector_key}}",
+              "connection_key": "{{inputs.connection_key}}",
+              "query_properties": {
+                "ds_name": "{{inputs.name}}",
+                "table_name": "{{inputs.table_name}}",
+                "query": "{{inputs.query}}"
+              }
+            }
           }
         }
       ]

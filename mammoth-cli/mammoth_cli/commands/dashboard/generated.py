@@ -52,7 +52,9 @@ from mammoth_cli.services.dashboard_pages import (
     check_added_pages,
     check_page_specs,
     generate_substitutions,
+    other_source_step,
     page_substitutions,
+    refused_asks,
 )
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
@@ -492,6 +494,7 @@ def _reflect_not_applied(
             f"Add the card directly: mammoth dashboard figure add {target} --input "
             '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
             '"COLUMN", "agg": "sum"}}\'',
+            other_source_step(target, "VIEW_ID"),
         ],
     }
     if isinstance(claim, str):
@@ -536,6 +539,7 @@ def _authoring_problems(
         partial = generate_substitutions(params.get("intent"), canvas_doc, data.get("message"))
     elif command_id == "dashboard.chat.edit":
         partial = generate_substitutions(None, canvas_doc, data.get("message"))
+        partial += refused_asks(data.get("asks"))
     extra: dict[str, Any] = {}
     if broken:
         extra["bake_ok"] = False

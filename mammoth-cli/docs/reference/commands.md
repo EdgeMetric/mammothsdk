@@ -4,7 +4,7 @@ Generated from the reviewed command manifests for mammoth-cli 2.4.6.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 911.
+Total commands: 912.
 
 ## activity
 
@@ -1706,6 +1706,17 @@ Total commands: 911.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
 - Agent example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
+
+### `mammoth connector connection tables`
+
+**Arguments**
+
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables`
+- Agent example: `mammoth connector connection tables prod-warehouse`
 
 ### `mammoth connector connection test`
 
@@ -6936,7 +6947,7 @@ Total commands: 911.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
-- Agent example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
+- Agent example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'`
 
 ### `mammoth view data compare`
 
