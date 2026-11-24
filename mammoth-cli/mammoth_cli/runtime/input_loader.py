@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from mammoth_cli.errors.envelope import (
     CODE_INPUT_FORMAT_REQUIRED,
+    CODE_INVALID_ARGUMENT,
     CODE_INVALID_INPUT_DOCUMENT,
     CODE_INVALID_INPUT_FORMAT,
     EXIT_USAGE,
@@ -411,6 +412,25 @@ def _require_inline_when_embedded(input_file: str) -> None:
         error.message = "Reading --input from a file or standard input is not available here."
         error.hint = "Pass the request as inline JSON in one token after --input."
         raise error
+
+
+def refuse_inline_secrets(input_file: str | None) -> None:
+    """Refuse an inline document that carries a secret; it lands in shell history and ``ps``.
+
+    Args:
+        input_file: The ``--input`` value.
+
+    Raises:
+        CliError: If *input_file* is inline JSON.
+    """
+    if (input_file or "").lstrip().lstrip("@").lstrip().startswith(("{", "[")):
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message="A secret must come from a file or stdin, not inline JSON.",
+            exit_status=EXIT_USAGE,
+            hint="Write it to a file readable only by you and pass --input @FILE, "
+            "or pipe it with --input - --input-format json.",
+        )
 
 
 def load_input_document(input_file: str | None, input_format: str | None) -> dict[str, Any] | None:

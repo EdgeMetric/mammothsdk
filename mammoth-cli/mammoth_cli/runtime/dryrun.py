@@ -261,7 +261,7 @@ def _check_automation_update(arguments: dict[str, Any]) -> None:
 
 
 def _check_link_fire(arguments: dict[str, Any]) -> None:
-    """Refuse a malformed link (``parse_link`` never echoes it).
+    """Refuse a malformed link, as the real call does (``parse_link`` never echoes it).
 
     The real call also refuses a link of another server; a dry run has no server to compare.
     """

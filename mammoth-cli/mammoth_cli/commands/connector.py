@@ -24,7 +24,6 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
-import json
 import re
 from typing import Any
 
@@ -43,6 +42,7 @@ from mammoth_cli.runtime.confirm import (
     POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.input_loader import refuse_inline_secrets
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import (
     DEFAULT_MUTATION_JOB_TIMEOUT,
@@ -50,7 +50,7 @@ from mammoth_cli.runtime.session import (
     require_project,
     resolved_project,
 )
-from mammoth_cli.runtime.shell_text import shell_join
+from mammoth_cli.runtime.shell_text import command_with_input
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
 _QUERY_OPTIONAL = ("table", "profile")
@@ -512,19 +512,6 @@ def open_credential_card(messages: Any) -> str | None:
     return None
 
 
-def _refuse_inline_secrets(invocation: Invocation) -> None:
-    """Refuse ``--input '{...}'``: a key typed inline lands in shell history and ``ps``."""
-    source = (invocation.input_file or "").lstrip("@").lstrip()
-    if source.startswith(("{", "[")):
-        raise CliError(
-            code=CODE_INVALID_ARGUMENT,
-            message="Credentials must come from a file or stdin, not inline JSON.",
-            exit_status=EXIT_USAGE,
-            hint="Write them to a file readable only by you and pass --input @FILE, "
-            "or pipe them with --input - --input-format json.",
-        )
-
-
 def connector_draft_credentials(invocation: Invocation) -> HandlerResult:
     """Answer a connector draft's open key card: test the key and connect.
 
@@ -549,7 +536,7 @@ def connector_draft_credentials(invocation: Invocation) -> HandlerResult:
             message=f"Draft id must be a number, got {draft_id!r}.",
             exit_status=EXIT_USAGE,
         )
-    _refuse_inline_secrets(invocation)
+    refuse_inline_secrets(invocation.input_file)
     document = invocation.load_input() or {}
     credentials = _require_field(document, "credentials")
     if not isinstance(credentials, dict) or not credentials:
@@ -666,8 +653,8 @@ def connector_connection_tables(invocation: Invocation) -> HandlerResult:
 
 def _ds_config_next(
     connector_key: str, connection_key: str, document: dict[str, Any]
-) -> str | None:
-    """The command that imports the query ``ds-config create`` just checked.
+) -> dict[str, Any]:
+    """The result fields naming the import of the query ``ds-config create`` just checked.
 
     Args:
         connector_key: The connector type.
@@ -675,11 +662,11 @@ def _ds_config_next(
         document: The checked ``--input`` document.
 
     Returns:
-        The command, with placeholders for what the check did not name; ``None`` for a file
-        check, whose import takes other fields.
+        The fields (``next``, and ``next_input`` on Windows), with placeholders for what the check
+        did not name; empty for a file check, whose import takes other fields.
     """
     if document.get("file_source"):
-        return None
+        return {}
     spec = {
         "ds_creation_type": "cloud",
         "dataset_spec": {
@@ -692,7 +679,7 @@ def _ds_config_next(
             },
         },
     }
-    return shell_join(["mammoth", "dataset", "create", "--input", json.dumps(spec)])
+    return command_with_input(["mammoth", "dataset", "create"], spec)
 
 
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
@@ -720,10 +707,8 @@ def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
         # The route answers with a job; the result to mark is the job's.
         data = service.wait_if_job(service.call(_symbol(invocation), **kwargs))
     if isinstance(data, dict):
-        data = {**data, "saved": False}
-        next_command = _ds_config_next(connector_key, connection_key, document)
-        if next_command is not None:
-            data["next"] = next_command
+        fields = _ds_config_next(connector_key, connection_key, document)
+        data = {**data, "saved": False, **fields}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

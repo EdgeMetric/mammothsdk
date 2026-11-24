@@ -587,25 +587,24 @@ def test_ds_config_create_says_nothing_was_saved_and_what_imports(
     }
 
 
-def test_ds_config_create_quotes_the_import_for_cmd_exe_on_windows(
+def test_ds_config_create_takes_the_import_from_a_file_on_windows(
     fake_service: FakeMammothService, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(shell_text, "WINDOWS", True)
     fake_service.responses[_DS_CONFIG_CREATE] = {"valid": True}
+    query = 'select "a" from t1 where id > 5 & x < 3 | y'
     result, _ = connector_cmd.connector_ds_config_create(
         _inv(
             "connector.ds-config.create",
             project=180,
             extra_args=["postgres", "conn1"],
-            input_file=_write(tmp_path, {"query": "select 1", "table": "t1"}),
+            input_file=_write(tmp_path, {"query": query, "table": "t1"}),
             yes=True,
         )
     )
     assert isinstance(result, dict)
-    head, _, spec = result["next"].partition(" --input ")
-    assert head == "mammoth dataset create"
-    assert spec.startswith('"{\\"') and spec.endswith('}"')
-    assert json.loads(spec[1:-1].replace('\\"', '"'))["ds_creation_type"] == "cloud"
+    assert result["next"] == "mammoth dataset create --input FILE.json"
+    assert result["next_input"]["dataset_spec"]["query_properties"]["query"] == query
 
 
 def test_ds_config_create_of_a_file_names_no_query_import(

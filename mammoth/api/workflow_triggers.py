@@ -339,14 +339,16 @@ def parse_link(link: str) -> tuple[int, str]:
     """Cut a workflow link's path or URL into its workflow id and secret.
 
     Args:
-        link: ``/workflow-runs/41/<secret>``, or a URL ending in it.
+        link: ``/workflow-runs/41/<secret>``, or an http(s) URL ending in it.
 
     Returns:
         ``(workflow_id, secret)``.
 
     Raises:
-        MammothValidationError: If *link* does not end in ``/workflow-runs/<id>/<secret>``.
+        MammothValidationError: If *link* is neither a path nor an http(s) URL, or does not end
+            in ``/workflow-runs/<id>/<secret>``.
     """
+    _link_server(link)
     found = _LINK_TAIL.search(link.strip())
     if found is None:
         raise MammothValidationError(ERR_LINK)
@@ -364,15 +366,24 @@ def check_link_host(link: str, base_url: str) -> None:
         MammothValidationError: If *link* is neither, or names another host or port than
             *base_url*'s.
     """
+    server = _link_server(link)
+    if server is not None and server != _host_and_port(base_url):
+        raise MammothValidationError(ERR_LINK_HOST.format(urlsplit(base_url).netloc))
+
+
+def _link_server(link: str) -> tuple[str, int] | None:
+    """The host and port a link names; ``None`` for a path.
+
+    Raises:
+        MammothValidationError: If *link* is neither a path nor an http(s) URL.
+    """
     link = link.strip()
     if link.startswith("/") and not link.startswith("//"):
-        return
+        return None
     try:
-        server = _host_and_port(link)
+        return _host_and_port(link)
     except ValueError:
         raise MammothValidationError(ERR_LINK) from None
-    if server != _host_and_port(base_url):
-        raise MammothValidationError(ERR_LINK_HOST.format(urlsplit(base_url).netloc))
 
 
 def _host_and_port(url: str) -> tuple[str, int]:

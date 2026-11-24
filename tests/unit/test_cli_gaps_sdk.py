@@ -168,7 +168,19 @@ def test_a_link_that_only_contains_the_clients_host_is_another_servers(link: str
     assert "s3cret" not in str(error.value)
 
 
-@pytest.mark.parametrize("link", ["", "/workflow-runs/x/y", "/other/41/s3cret", "s3cret"])
+@pytest.mark.parametrize(
+    "link",
+    [
+        "",
+        "/workflow-runs/x/y",
+        "/other/41/s3cret",
+        "s3cret",
+        "app.mammoth.io/workflow-runs/41/s3cret",
+        "//app.mammoth.io/workflow-runs/41/s3cret",
+        "https://[x/workflow-runs/41/s3cret",
+        "https://app.mammoth.io:x/workflow-runs/41/s3cret",
+    ],
+)
 def test_parse_link_refuses_what_is_not_a_link_without_echoing_it(link: str) -> None:
     with pytest.raises(MammothValidationError) as error:
         parse_link(link)

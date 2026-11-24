@@ -14,7 +14,6 @@ from mammoth_cli.commands.dataset import find as find_cmd
 from mammoth_cli.commands.dataset.create import (
     ONE_OFF_PULL,
     _default_one_off_pull,
-    _requested_name,
     _require_cloud_query_fields,
 )
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
@@ -23,7 +22,7 @@ from mammoth_cli.runtime.strict import COMMAND_FLAGS
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
 from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.testing import FakeMammothService
-from mammoth_cli.testing import login_default_profile
+from mammoth_cli.testing import login_default_profile, make_runner
 
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
@@ -1717,8 +1716,45 @@ def test_dataset_create_refuses_a_cloud_import_under_dry_run(
     assert fake_service.call_log == []
 
 
-def test_the_requested_name_of_a_cloud_import_is_in_its_query_properties() -> None:
+_CLOUD_IMPORT: dict[str, object] = {
+    "ds_creation_type": "cloud",
+    "dataset_spec": {
+        "connector_key": "postgres",
+        "connection_key": "conn1",
+        "query_properties": {"ds_name": "LLM calls", "table_name": "calls", "query": "SELECT 1"},
+    },
+}
+
+
+def test_a_cloud_import_dry_run_says_its_name_is_taken(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
     """Feedback 17 (2026-11-24): "LLM calls 2" was made without a word."""
-    assert _requested_name({"query_properties": {"ds_name": "LLM calls"}}) == "LLM calls"
-    assert _requested_name({"ds_name": "Clone", "query_properties": {}}) == "Clone"
-    assert _requested_name({"query_properties": None}) is None
+    fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "LLM calls"}]}
+    result = make_runner().invoke(
+        [
+            *("dataset", "create", "--input", _write(tmp_path, _CLOUD_IMPORT)),
+            *("--project", "180", "--dry-run", "--output", "json"),
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["requested_name"] == "LLM calls"
+    assert impact["name_taken"] is True
+    assert impact["final_name"] == "LLM calls 2"
+    assert _CREATE not in fake_service.calls
+
+
+def test_a_cloud_import_says_it_got_another_name(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_CREATE] = {"job_id": 14}
+    fake_service.job_result = {"ds_id": 7}
+    fake_service.responses[_GET] = {"dataset": {"id": 7, "name": "LLM calls 2"}}
+    data, _ = create_cmd.dataset_create(
+        _inv("dataset.create", project=180, input_file=_write(tmp_path, _CLOUD_IMPORT))
+    )
+    assert isinstance(data, dict)
+    assert data["name"] == "LLM calls 2"
+    assert data["requested_name"] == "LLM calls"
+    assert "was taken" in data["note"]

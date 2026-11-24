@@ -37,6 +37,7 @@ from mammoth_cli.runtime.confirm import (
     POLICY_NONE,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.input_loader import refuse_inline_secrets
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.reveal import REVEAL_COMMANDS
 from mammoth_cli.runtime.session import open_service, resolved_project
@@ -152,6 +153,10 @@ _HANDLE_KEPT = frozenset(
 )
 
 
+#: Commands whose input carries a secret: a file or stdin only.
+_SECRET_INPUT = frozenset({"workflow.link.fire"})
+
+
 def _check_sdk_rules(command_id: str, kwargs: dict[str, Any]) -> None:
     rule = _SDK_RULES.get(command_id)
     if rule is None:
@@ -178,6 +183,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
 
+    if invocation.command_id in _SECRET_INPUT:
+        refuse_inline_secrets(invocation.input_file)
     document = _bound_document(invocation)
     positionals = _generated_positionals(invocation)
     kwargs = bind_command_inputs(invocation.command_id, document, **positionals)

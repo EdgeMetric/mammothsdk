@@ -59,11 +59,6 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
     (["workflow", "after", "loops", "41"], f"{_T}.after_loops", {"workflow_id": 41}),
     (["workflow", "link", "create", "41"], f"{_T}.link_create", {"workflow_id": 41}),
     (
-        ["workflow", "link", "fire", "--input", '{"link": "/workflow-runs/41/s3cret"}'],
-        f"{_T}.link_fire",
-        {"body": {"workflow_id": 41, "link": "<hidden>"}},
-    ),
-    (
         [
             "workflow",
             "canvas",
@@ -229,26 +224,66 @@ def test_taking_a_trigger_off_asks_first(command_id: str) -> None:
     assert command_by_id(command_id)["confirmation"] == "prompt_or_yes"  # type: ignore[index]
 
 
-_LINK_ARGV = [
-    "workflow",
-    "link",
-    "fire",
-    "--input",
-    '{"link": "https://x.test/workflow-runs/41/s3cret"}',
-]
+_LINK_FIRE = ["workflow", "link", "fire", "--input"]
+_LINK_OPTIONS = ["--project", "25654", "--dry-run", "--output", "json"]
+_INLINE_LINK = '{"link": "https://x.test/workflow-runs/41/s3cret"}'
 
 
-def test_a_dry_run_link_fire_does_not_print_the_secret() -> None:
-    result = make_runner().invoke(
-        [*_LINK_ARGV, "--project", "25654", "--dry-run", "--output", "json"]
-    )
+def _link_file(tmp_path: Path, link: str) -> str:
+    path = tmp_path / "link.json"
+    path.write_text(json.dumps({"link": link}), encoding="utf-8")
+    path.chmod(0o600)
+    return str(path)
+
+
+@pytest.mark.parametrize("at", ["", "@"])
+@pytest.mark.parametrize(
+    "link", ["/workflow-runs/41/s3cret", "https://x.test/workflow-runs/41/s3cret"]
+)
+def test_a_dry_run_link_fire_does_not_print_the_secret(link: str, at: str, tmp_path: Path) -> None:
+    result = make_runner().invoke([*_LINK_FIRE, at + _link_file(tmp_path, link), *_LINK_OPTIONS])
 
     assert result.exit_code == 0, result.output
+    call = json.loads(result.output)["data"]["would_call"]
+    assert call["sdk_symbol"] == f"{_T}.link_fire"
+    assert call["arguments"]["body"] == {"workflow_id": 41, "link": "<hidden>"}
+    assert "s3cret" not in result.output
+
+
+@pytest.mark.parametrize("prefix", ["", " ", "\n"])
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_link_fire_refuses_an_inline_link(
+    prefix: str, dry_run: bool, fake_service: FakeMammothService
+) -> None:
+    options = [o for o in _LINK_OPTIONS if dry_run or o != "--dry-run"]
+    result = make_runner().invoke([*_LINK_FIRE, prefix + _INLINE_LINK, *options, "--yes"])
+
+    assert result.exit_code == 2, result.output
+    assert "file or stdin" in json.loads(result.output)["error"]["message"]
+    assert "s3cret" not in result.output
+    assert fake_service.call_log == []
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "app.mammoth.io/workflow-runs/41/s3cret",
+        "//app.mammoth.io/workflow-runs/41/s3cret",
+        "ftp://app.mammoth.io/workflow-runs/41/s3cret",
+        "https://[x/workflow-runs/41/s3cret",
+        "https://app.mammoth.io:x/workflow-runs/41/s3cret",
+    ],
+)
+def test_a_dry_run_refuses_a_link_the_real_call_refuses(link: str, tmp_path: Path) -> None:
+    result = make_runner().invoke([*_LINK_FIRE, _link_file(tmp_path, link), *_LINK_OPTIONS])
+
+    assert result.exit_code != 0
+    assert "from its https://" in json.loads(result.output)["error"]["message"]
     assert "s3cret" not in result.output
 
 
 def test_the_run_log_keeps_the_link_out_of_argv() -> None:
-    assert "s3cret" not in " ".join(redact_argv(_LINK_ARGV))
+    assert "s3cret" not in " ".join(redact_argv([*_LINK_FIRE, _INLINE_LINK]))
 
 
 def test_link_fire_takes_no_positional() -> None:
