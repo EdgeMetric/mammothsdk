@@ -112,12 +112,19 @@ def _sdk_fix(sdk_spec: str) -> str:
 
     Returns:
         A shell command: uv tool and pipx reinstall this CLI version with its dependencies,
-        pip installs the SDK with the running interpreter.
+        pip installs the SDK with the running interpreter. When no quoting holds in every
+        Windows shell, the program and its arguments, listed apart.
     """
     manager = detect_manager()
     if manager == MANAGER_PIP:
-        return shell_join([sys.executable, "-m", "pip", "install", "--upgrade", sdk_spec])
-    return shell_join(build_upgrade_command(manager, __version__))
+        command = [sys.executable, "-m", "pip", "install", "--upgrade", sdk_spec]
+    else:
+        command = build_upgrade_command(manager, __version__)
+    try:
+        return shell_join(command)
+    except ValueError:
+        program, *arguments = command
+        return f"run the program {program} with the arguments: {'  '.join(arguments)}"
 
 
 def _check_sdk(installed: str, requirement: str) -> dict[str, Any]:

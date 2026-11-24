@@ -498,25 +498,33 @@ def test_the_sdk_check_reads_the_range_this_cli_declares() -> None:
 
 
 @pytest.mark.parametrize(
-    ("manager", "windows", "fix"),
+    ("manager", "windows", "python", "fix"),
     [
-        ("uv", False, f"/opt/uv tool install --force mammoth-cli=={__version__}"),
-        ("pipx", False, f"pipx install --force mammoth-cli=={__version__}"),
-        ("pip", False, "/opt/py -m pip install --upgrade 'mammoth-io>=0.8.58,<0.9'"),
-        ("uv", True, f'/opt/uv tool install --force "mammoth-cli=={__version__}"'),
-        ("pip", True, '/opt/py -m pip install --upgrade "mammoth-io>=0.8.58,<0.9"'),
+        ("uv", False, "/opt/py", f"/opt/uv tool install --force mammoth-cli=={__version__}"),
+        ("pipx", False, "/opt/py", f"pipx install --force mammoth-cli=={__version__}"),
+        ("pip", False, "/opt/py", "/opt/py -m pip install --upgrade 'mammoth-io>=0.8.58,<0.9'"),
+        ("uv", True, "/opt/py", f'/opt/uv tool install --force "mammoth-cli=={__version__}"'),
+        ("pip", True, "/opt/py", '/opt/py -m pip install --upgrade "mammoth-io>=0.8.58,<0.9"'),
+        (
+            "pip",
+            True,
+            "/a b/py",
+            "run the program /a b/py with the arguments: "
+            "-m  pip  install  --upgrade  mammoth-io>=0.8.58,<0.9",
+        ),
     ],
 )
 def test_a_mismatched_sdk_fails_doctor_and_names_the_fix(
     manager: str,
     windows: bool,
+    python: str,
     fix: str,
     isolated_cli_config: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(doctor_cmd, "detect_manager", lambda: manager)
     monkeypatch.setattr(shell_text, "WINDOWS", windows)
-    monkeypatch.setattr(doctor_cmd.sys, "executable", "/opt/py")
+    monkeypatch.setattr(doctor_cmd.sys, "executable", python)
     monkeypatch.setattr(upgrade, "uv_executable", lambda: "/opt/uv")
     monkeypatch.setattr(upgrade, "running_base_python", lambda: None)
     monkeypatch.setattr(

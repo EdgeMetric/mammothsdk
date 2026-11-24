@@ -423,7 +423,7 @@ def refuse_inline_secrets(input_file: str | None) -> None:
     Raises:
         CliError: If *input_file* is inline JSON.
     """
-    if (input_file or "").lstrip().lstrip("@").lstrip().startswith(("{", "[")):
+    if (input_file or "").lstrip().startswith("{"):
         raise CliError(
             code=CODE_INVALID_ARGUMENT,
             message="A secret must come from a file or stdin, not inline JSON.",

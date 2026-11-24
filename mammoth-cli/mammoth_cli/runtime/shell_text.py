@@ -10,8 +10,10 @@ from typing import Any
 
 WINDOWS = os.name == "nt"
 #: What cmd.exe or PowerShell reads as syntax outside double quotes.
-_WINDOWS_SYNTAX = re.compile(r"[\s<>|&^(),;=@{}'`$!]|^$")
-_ERR_WINDOWS_QUOTE = "no quoting of a double quote holds in both cmd.exe and PowerShell: {0!r}"
+_WINDOWS_SYNTAX = re.compile(r"[\s<>|&^(),;=@{}'!]|^$")
+#: What one of them still expands or ends on inside double quotes.
+_WINDOWS_UNQUOTABLE = re.compile(r'["$`%“”„]')
+_ERR_WINDOWS_QUOTE = "no quoting of this holds in both cmd.exe and PowerShell: {0!r}"
 
 
 def shell_join(arguments: list[str]) -> str:
@@ -24,11 +26,16 @@ def shell_join(arguments: list[str]) -> str:
         The command line: POSIX quoting, or on Windows double quotes.
 
     Raises:
-        ValueError: On Windows, if an argument holds a double quote.
+        ValueError: On Windows, if an argument holds a character that double quotes do not
+            protect in both shells, or the command word needs quotes (PowerShell reads a quoted
+            first word as a string, not a command).
     """
     if not WINDOWS:
         return shlex.join(arguments)
-    return " ".join(_windows_quote(argument) for argument in arguments)
+    words = [_windows_quote(argument) for argument in arguments]
+    if words and words[0].startswith('"'):
+        raise ValueError(_ERR_WINDOWS_QUOTE.format(arguments[0]))
+    return " ".join(words)
 
 
 def command_with_input(command: list[str], document: dict[str, Any]) -> dict[str, Any]:
@@ -48,6 +55,6 @@ def command_with_input(command: list[str], document: dict[str, Any]) -> dict[str
 
 
 def _windows_quote(argument: str) -> str:
-    if '"' in argument:
+    if _WINDOWS_UNQUOTABLE.search(argument):
         raise ValueError(_ERR_WINDOWS_QUOTE.format(argument))
     return f'"{argument}"' if _WINDOWS_SYNTAX.search(argument) else argument

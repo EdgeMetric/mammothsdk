@@ -17,7 +17,7 @@ def test_posix_quotes_with_single_quotes(monkeypatch: pytest.MonkeyPatch) -> Non
     assert shell_text.shell_join(["a b", "x>=1"]) == "'a b' 'x>=1'"
 
 
-@pytest.mark.parametrize("character", list(" <>|&^(),;=@{}'`$!"))
+@pytest.mark.parametrize("character", list(" <>|&^(),;=@{}'!"))
 def test_windows_double_quotes_what_its_shells_read_as_syntax(
     character: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -25,10 +25,21 @@ def test_windows_double_quotes_what_its_shells_read_as_syntax(
     assert shell_text.shell_join(["plain", f"a{character}b"]) == f'plain "a{character}b"'
 
 
-def test_windows_refuses_a_double_quote_it_cannot_quote(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("character", list('"$`%“”„'))
+def test_windows_refuses_what_double_quotes_do_not_protect(
+    character: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.setattr(shell_text, "WINDOWS", True)
     with pytest.raises(ValueError, match="cmd.exe"):
-        shell_text.shell_join(['{"a": 1}'])
+        shell_text.shell_join(["plain", f"a{character}b"])
+
+
+def test_windows_refuses_a_command_word_that_needs_quotes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(shell_text, "WINDOWS", True)
+    with pytest.raises(ValueError, match="cmd.exe"):
+        shell_text.shell_join(["C:\\Program Files\\py.exe", "-m"])
 
 
 def test_posix_puts_the_document_in_the_command(monkeypatch: pytest.MonkeyPatch) -> None:
