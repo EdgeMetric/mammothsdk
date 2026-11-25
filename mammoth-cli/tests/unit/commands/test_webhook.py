@@ -9,6 +9,7 @@ import pytest
 
 from mammoth_cli.commands import webhook as webhook_cmd
 from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.output.normalize import Revealed, normalize
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -196,3 +197,26 @@ def test_send_get_rejects_explicit_empty_params_before_service_dispatch(
         webhook_cmd.webhook_send_get(_inv("webhook.send-get", input_file=str(doc)))
     assert excinfo.value.code == "invalid_argument"
     assert fake_service.call_log == []
+
+
+def test_a_masked_secret_says_so_and_names_reveal(fake_service: FakeMammothService) -> None:
+    # mammothsdk#373: the masked placeholder read as the secret; every post was refused.
+    fake_service.responses[_CREATE] = {"webhook": {"id": 31, "secret": "s3cr3t"}}
+    data, _ = webhook_cmd.webhook_create(_inv("webhook.create", extra_args=["Hook"]))
+    assert data["secret_redacted"] is True
+    assert data["next_command"] == "mammoth webhook get 31 --reveal"
+    assert normalize(data)["webhook"]["secret"] != "s3cr3t"
+
+
+def test_reveal_prints_the_secret(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_GET] = {"webhook": {"id": 31, "secret": "s3cr3t"}}
+    data, _ = webhook_cmd.webhook_get(_inv("webhook.get", extra_args=["31"], reveal_secrets=True))
+    assert isinstance(data, Revealed)
+    assert normalize(data)["webhook"]["secret"] == "s3cr3t"
+    assert "secret_redacted" not in data
+
+
+def test_an_insecure_webhook_gets_no_secret_note(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_GET] = {"webhook": {"id": 31, "secret": None}}
+    data, _ = webhook_cmd.webhook_get(_inv("webhook.get", extra_args=["31"]))
+    assert "secret_redacted" not in data

@@ -232,7 +232,7 @@ Example: `mammoth workspace segment list`. Placeholders are illustrative; resolv
 
 Result: `WorkspaceSegmentListResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 1.1.10 — Bounded release read with published CLI 1.1.10 succeeded for workspace segments; segments collection returned. No Full claim: no non-empty segment fixture or option/error matrix.
+Status on release: untried; no live run recorded.
 
 ### `workspace.segment.update`
 
@@ -242,7 +242,7 @@ Example: `mammoth workspace segment update --input '{"patch": [{"name": "Status"
 
 Result: `WorkspaceSegmentUpdateResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
-Status on release: ran once on CLI 2.0.15 — re-verification 2026-09-18: exit 0 on release with CLI 2.0.15. Fix held: 200 non-object body reported as success on both op:add and the immediate op:remove for the same segment name: {"data":{"response":null,"status_code":200}} (both calls). `workspace segmen…
+Status on release: untried; no live run recorded.
 
 ### `workspace.storage-breakdown`
 

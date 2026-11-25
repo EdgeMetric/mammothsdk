@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING, Any
 
 from mammoth.exceptions import MammothValidationError
@@ -18,8 +20,43 @@ ERR_RUN_ID_EMPTY = "`run_id` must be a non-empty string."
 ERR_STEP_NEGATIVE = "`step` must be an integer >= 0, got {0!r}."
 ERR_DUPLICATE_NAME = "`name` must be 1 to 255 characters."
 ERR_DUPLICATE_DATASETS = "`dataset_ids` must be a non-empty list of positive dataset ids."
-ERR_CALLBACK_URL_EMPTY = "`callback_url` must be a non-empty URL when given."
+ERR_IDS = "`{0}` must be a non-empty list of at most 200 positive ids, got {1!r}."
+ERR_TRASH_KEYS = "`trash` must be a list of plan keys such as 'view:12', got {0!r}."
+ERR_TEXT_EMPTY = "`{0}` must be a non-empty string."
+ERR_ID_POSITIVE = "`{0}` must be a positive integer, got {1!r}."
+ERR_TIMEOUT = "`timeout` must be a number of seconds >= 0, got {0!r}."
 _NAME_MAX = 255
+_IDS_MAX = 200
+#: The ``save_run.status`` of a Save that is still building.
+SAVE_RUNNING = "running"
+_SAVE_POLL_SECONDS = 2.0
+
+
+def save_run(workflow: Any) -> dict[str, Any] | None:
+    """Read the Save run a workflow record carries.
+
+    Args:
+        workflow: A workflow record, as ``WorkflowsAPI.get`` or a build returns it.
+
+    Returns:
+        The record's ``canvas_state.save_run``, or None when it carries none.
+    """
+    state = workflow.get("canvas_state") if isinstance(workflow, dict) else None
+    run = state.get("save_run") if isinstance(state, dict) else None
+    return run if isinstance(run, dict) else None
+
+
+def save_is_running(workflow: Any) -> bool:
+    """Tell whether a workflow record's Save run is still building.
+
+    Args:
+        workflow: A workflow record.
+
+    Returns:
+        True when its ``save_run.status`` is ``running``.
+    """
+    run = save_run(workflow)
+    return run is not None and run.get("status") == SAVE_RUNNING
 
 
 class WorkflowsAPI:
@@ -147,6 +184,48 @@ class WorkflowsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
         )
 
+    async def wait_for_save(
+        self,
+        workflow_id: int,
+        *,
+        workflow: dict[str, Any] | None = None,
+        timeout: float = 120.0,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow until its Save run ends, or *timeout* passes.
+
+        A build, ``save`` and ``undo_save`` answer at once and build in the background;
+        the Save run in ``canvas_state.save_run`` is the only proof of what was built.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            workflow: The record the build or save returned; read first when omitted.
+                A record whose Save is not running is returned without a read.
+            timeout: Seconds to wait; ``0`` returns the first record.
+            project_id: Project ID (uses the client default if not provided).
+
+        Returns:
+            The latest workflow record; its ``save_run.status`` is still ``running``
+            when the wait ended first.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *timeout*
+                is negative.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        check_timeout(timeout)
+        deadline = time.monotonic() + timeout
+        current = workflow
+        if current is None:
+            current = await self.get(workflow_id, project_id=project_id)
+        while True:
+            left = deadline - time.monotonic()
+            if not save_is_running(current) or left <= 0:
+                return current
+            await asyncio.sleep(min(_SAVE_POLL_SECONDS, left))
+            current = await self.get(workflow_id, project_id=project_id)
+
     async def update(
         self,
         workflow_id: int,
@@ -190,8 +269,55 @@ class WorkflowsAPI:
             "PATCH", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}", json=body
         )
 
-    async def delete(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
-        """Delete a workflow.
+    async def delete(
+        self,
+        workflow_id: int,
+        project_id: int | None = None,
+        trash: _list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Delete a workflow, trashing the items of its delete plan you choose.
+
+        Without *trash* this is the plain ``DELETE``, which removes only the record. A server
+        that has the delete plan refuses it (409 ``4WKFL310``) while the workflow's views still
+        have steps. With *trash* it posts those plan keys (see :meth:`delete_plan`); one job
+        trashes them, then deletes the record.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+            trash: Keys from :meth:`delete_plan` to trash with the workflow (may be empty).
+                None sends the plain ``DELETE``.
+
+        Returns:
+            Dict with deletion result. With *trash*: ``{workflow_id, trashed, kept_steps,
+            job_ids}``.
+
+        Raises:
+            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0, or *trash* is
+                not a list of non-empty strings.
+        """
+        self._check_workflow_id(workflow_id)
+        self._check_project_id(project_id)
+        if trash is not None and (
+            not isinstance(trash, (list, tuple))
+            or any(not isinstance(key, str) or not key for key in trash)
+        ):
+            raise MammothValidationError(ERR_TRASH_KEYS.format(trash))
+        ws = self._ws()
+        proj = self._proj(project_id)
+        if trash is None:
+            return await self._client._request_json(
+                "DELETE", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
+            )
+        return await self._client._request_json(
+            "POST",
+            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/delete",
+            json={"trash": list(trash)},
+        )
+
+    async def delete_plan(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Read what deleting a workflow would take with it.
 
         Args:
             workflow_id: ID of the workflow (must be > 0).
@@ -199,17 +325,21 @@ class WorkflowsAPI:
                 be > 0 if given).
 
         Returns:
-            Dict with deletion result.
+            ``{workflow_id, name, blocked, items}``. ``blocked`` is None or ``{code, message}``.
+            Each item has ``key`` (``view:``/``dataset:``/``dashboard:``/``automation:`` plus
+            the id), ``kind`` (steps, result, dashboard, schedule, input), ``name``, ``checked``
+            (the default), ``locked_by`` (the other workflow that uses it, or None) and
+            ``follows`` (keys of the steps it depends on).
 
         Raises:
-            MammothValidationError: If *workflow_id* <= 0 or *project_id* <= 0.
+            MammothValidationError: If *workflow_id* or *project_id* <= 0.
         """
         self._check_workflow_id(workflow_id)
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
         return await self._client._request_json(
-            "DELETE", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}"
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/delete-plan"
         )
 
     async def graph(self, project_id: int | None = None) -> dict[str, Any]:
@@ -489,6 +619,7 @@ class WorkflowsAPI:
         workflow_id: int,
         canvas_state: dict[str, Any],
         project_id: int | None = None,
+        expected_version: int | None = None,
     ) -> dict[str, Any]:
         """Update a workflow's canvas state.
 
@@ -497,6 +628,9 @@ class WorkflowsAPI:
             canvas_state: Canvas state JSON payload.
             project_id: Project ID (uses client default if not provided; must
                 be > 0 if given).
+            expected_version: The canvas version the client last read; the server
+                answers 409 if it has moved. Omitted, the write is refused with 409
+                while a Save runs or unsaved changes are stored.
 
         Returns:
             Dict with the updated canvas state.
@@ -508,7 +642,9 @@ class WorkflowsAPI:
         self._check_project_id(project_id)
         ws = self._ws()
         proj = self._proj(project_id)
-        body = {"canvas_state": canvas_state}
+        body: dict[str, Any] = {"canvas_state": canvas_state}
+        if expected_version is not None:
+            body["expected_version"] = expected_version
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/canvas",
@@ -785,7 +921,297 @@ class WorkflowsAPI:
             json=body,
         )
 
-    # --- Workflows API: run a workflow and read how the run went ---------------------------
+    def _path(self, workflow_id: int, project_id: int | None, tail: str) -> str:
+        return workflow_path(self._client, workflow_id, project_id, tail)
+
+    async def step_lines(
+        self,
+        workflow_id: int,
+        view_ids: _list[int],
+        *,
+        match_keys: bool = False,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow's steps in plain words, one line per step, in pipeline order.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            view_ids: The workflow's views to read (1 to 200).
+            match_keys: Answer only ``joins``: each join on an email or a name and how
+                many rows depend on it ignoring capitals and spaces.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Dict of the lines per view; ``pending`` while the model is still writing
+            them and ``repeats`` naming steps that do what an earlier step does.
+
+        Raises:
+            MammothValidationError: If an id is not positive or *view_ids* is empty.
+        """
+        _check_ids("view_ids", view_ids)
+        params: dict[str, Any] = {"view_ids": ",".join(str(v) for v in view_ids)}
+        if match_keys:
+            params["match_keys"] = "true"
+        return await self._client._request_json(
+            "GET", self._path(workflow_id, project_id, "step-lines"), params=params
+        )
+
+    async def repeat_counts(self, project_id: int | None = None) -> dict[str, Any]:
+        """Count each workflow's groups of steps that repeat an earlier step's work.
+
+        Args:
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            Workflow id -> number of repeated-step groups, for the whole project.
+
+        Raises:
+            MammothValidationError: If *project_id* <= 0.
+        """
+        self._check_project_id(project_id)
+        return await self._client._request_json(
+            "GET",
+            f"/workspaces/{self._ws()}/projects/{self._proj(project_id)}/workflows/repeat-counts",
+        )
+
+    async def before_after(
+        self, workflow_id: int, keys: _list[str], project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Show the first rows before and after drafted steps, changing nothing.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            keys: Pending change keys whose added steps to try, in order.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            ``{"views": [...]}``: per touched view, the first 5 rows and the row counts
+            before and after, the new and gone columns, and a ``noticed`` sentence when
+            the result is surprising.
+
+        Raises:
+            MammothValidationError: If *keys* is empty or an id is not positive.
+        """
+        if not isinstance(keys, list) or not keys or not all(isinstance(k, str) for k in keys):
+            raise MammothValidationError(ERR_TEXT_EMPTY.format("keys"))
+        return await self._client._request_json(
+            "GET",
+            self._path(workflow_id, project_id, "before-after"),
+            params={"keys": ",".join(keys)},
+        )
+
+    async def view_values(
+        self,
+        workflow_id: int,
+        view_id: int,
+        column: str,
+        text: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Check a filter value against a column before using it.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            view_id: ID of the view (must be > 0).
+            column: The column's display name.
+            text: The value to look for.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            ``{"exact", "near", "rows", "truncated"}``: rows with exactly *text*, up to
+            three near values with their rows, rows read (up to 20,000).
+
+        Raises:
+            MammothValidationError: If an id is not positive or *column* is empty.
+        """
+        check_positive_id("view_id", view_id)
+        if not isinstance(column, str) or not column:
+            raise MammothValidationError(ERR_TEXT_EMPTY.format("column"))
+        return await self._client._request_json(
+            "GET",
+            self._path(workflow_id, project_id, f"views/{view_id}/values"),
+            params={"column": column, "text": text},
+        )
+
+    async def holds_check(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Look in Mammoth for what each change a Save held back would make.
+
+        A change already built is settled as built, one not there is released for the
+        next Save, and one the look cannot settle stays held.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            The workflow.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "POST", self._path(workflow_id, project_id, "holds/check")
+        )
+
+    async def sentence_read(
+        self,
+        workflow_id: int,
+        text: str,
+        *,
+        answers: _list[dict[str, str]] | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read the workflow's edited sentence: what it says it does.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            text: The edited sentence (1 to 2000 characters).
+            answers: Answers to the questions asked about it so far,
+                ``{"question", "answer"}`` each.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            ``outcome``: ``same`` (kept as the sentence), ``change`` (steps proposed as
+            unsaved changes; a Save builds them), ``ask`` (``asks`` to answer) or
+            ``unclear`` (``why``); with ``steps`` and the ``workflow``.
+
+        Raises:
+            MammothValidationError: If *text* is empty or an id is not positive.
+        """
+        if not isinstance(text, str) or not text.strip():
+            raise MammothValidationError(ERR_TEXT_EMPTY.format("text"))
+        body: dict[str, Any] = {"text": text}
+        if answers:
+            body["answers"] = answers
+        return await self._client._request_json(
+            "POST", self._path(workflow_id, project_id, "sentence"), json=body
+        )
+
+    async def sentence_ask_dismiss(
+        self, workflow_id: int, project_id: int | None = None
+    ) -> dict[str, Any]:
+        """Dismiss the question the sentence's reading is waiting on.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            The workflow.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "DELETE", self._path(workflow_id, project_id, "sentence/ask")
+        )
+
+    async def swap_fit(
+        self,
+        workflow_id: int,
+        view_id: int,
+        dataset_ids: _list[int],
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Check which tables could stand in for the one a view's steps read.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            view_id: The view whose steps read the workflow's table.
+            dataset_ids: The tables to check (1 to 200).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            ``{"fits": {dataset_id: ...}}``: each table fits, is renamed (columns
+            matched under other names), has a column ``to_pick`` or is ``too_different``.
+
+        Raises:
+            MammothValidationError: If an id is not positive or *dataset_ids* is empty.
+        """
+        check_positive_id("view_id", view_id)
+        _check_ids("dataset_ids", dataset_ids)
+        return await self._client._request_json(
+            "POST",
+            self._path(workflow_id, project_id, "swap/fit"),
+            json={"view_id": view_id, "dataset_ids": dataset_ids},
+        )
+
+    async def swap(
+        self,
+        workflow_id: int,
+        view_id: int,
+        dataset_id: int,
+        *,
+        picks: dict[str, str] | None = None,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Make the workflow read another table from now on (Use another table).
+
+        Held on the workflow (``canvas_state.swap`` status ``held``) while a column is
+        still to pick; else carried out in the background (``running``, then ``done``
+        or ``failed``). ``swap_undo`` puts it back.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            view_id: The view whose steps read the workflow's table.
+            dataset_id: The table to read instead.
+            picks: For a column the steps read that the table lacks: the table's column
+                to read instead.
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            The workflow.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        check_positive_id("view_id", view_id)
+        check_positive_id("dataset_id", dataset_id)
+        body: dict[str, Any] = {"view_id": view_id, "dataset_id": dataset_id}
+        if picks:
+            body["picks"] = picks
+        return await self._client._request_json(
+            "POST", self._path(workflow_id, project_id, "swap"), json=body
+        )
+
+    async def swap_cancel(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Cancel a table swap held for a column pick.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            The workflow.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "DELETE", self._path(workflow_id, project_id, "swap")
+        )
+
+    async def swap_undo(self, workflow_id: int, project_id: int | None = None) -> dict[str, Any]:
+        """Undo the last table swap in the background.
+
+        Puts the steps back on the table read before, moves its sends back and trashes
+        the view the swap made.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            project_id: Project ID (uses client default if not provided).
+
+        Returns:
+            The workflow.
+
+        Raises:
+            MammothValidationError: If an id is not positive.
+        """
+        return await self._client._request_json(
+            "POST", self._path(workflow_id, project_id, "swap/undo")
+        )
+
+    # --- Workflows API: what can run, and how a run went ------------------------------------
 
     async def list_runnable(self, project_id: int | None = None) -> _list[dict[str, Any]]:
         """List the workflows you can run, newest first.
@@ -810,50 +1236,6 @@ class WorkflowsAPI:
             "GET", f"/workspaces/{ws}/projects/{proj}/workflows/runnable"
         )
 
-    async def start_run(
-        self,
-        workflow_id: int,
-        callback_url: str | None = None,
-        project_id: int | None = None,
-    ) -> dict[str, Any]:
-        """Start a whole workflow run, as its Run button does.
-
-        Live tables are read again, then every step runs. Answers at once (202); follow the
-        run with :meth:`run_status`, or pass *callback_url* to be told when it ends. Mammoth
-        refuses (429) more than six starts of one workflow a minute.
-
-        Args:
-            workflow_id: ID of the workflow (must be > 0).
-            callback_url: Optional public https URL. When the run ends Mammoth POSTs a small
-                signed JSON there; check it with :func:`mammoth.verify_callback` and the
-                returned ``callback_secret``.
-            project_id: Project ID (uses client default if not provided; must
-                be > 0 if given).
-
-        Returns:
-            Dict with ``run_id``, ``already_running`` (True: the workflow was running, and
-            ``run_id`` is that run, with no callback set up) and ``callback_secret`` (shown
-            only in this answer; None without *callback_url*).
-
-        Raises:
-            MammothValidationError: If *workflow_id* <= 0, *project_id* <= 0, or
-                *callback_url* is empty.
-        """
-        self._check_workflow_id(workflow_id)
-        self._check_project_id(project_id)
-        if callback_url is not None and not callback_url.strip():
-            raise MammothValidationError(ERR_CALLBACK_URL_EMPTY)
-        ws = self._ws()
-        proj = self._proj(project_id)
-        body: dict[str, Any] = {}
-        if callback_url is not None:
-            body["callback_url"] = callback_url
-        return await self._client._request_json(
-            "POST",
-            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/start",
-            json=body,
-        )
-
     async def run_status(
         self,
         workflow_id: int,
@@ -863,12 +1245,12 @@ class WorkflowsAPI:
         """Read a workflow run's status.
 
         ``status`` is ``running`` until the run settles, then ``success`` or ``failure``
-        (with ``reason`` and ``explanation``). A run id just returned by :meth:`start_run`
-        can answer 404 for a few seconds, until its run begins.
+        (with ``reason`` and ``explanation``). A run id just returned by
+        ``client.workflow_triggers.run`` can answer 404 for a few seconds, until its run begins.
 
         Args:
             workflow_id: ID of the workflow (must be > 0).
-            run_id: The run's id, from :meth:`start_run` or :meth:`list_runnable`.
+            run_id: The run's id, from ``client.workflow_triggers.run`` or :meth:`list_runnable`.
             project_id: Project ID (uses client default if not provided; must
                 be > 0 if given).
 
@@ -920,3 +1302,63 @@ class WorkflowsAPI:
             "GET",
             f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/runs/{run_id}/result",
         )
+
+
+def check_positive_id(name: str, value: int) -> None:
+    """Refuse an id that is not a positive integer (a bool is not an id).
+
+    Args:
+        name: The argument's name, for the message.
+        value: The id to check.
+
+    Raises:
+        MammothValidationError: If *value* is not a positive integer.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise MammothValidationError(ERR_ID_POSITIVE.format(name, value))
+
+
+def check_timeout(timeout: float) -> None:
+    """Refuse a wait that is not a number of seconds >= 0 (a bool is not a number).
+
+    Args:
+        timeout: The wait in seconds.
+
+    Raises:
+        MammothValidationError: If *timeout* is not a number >= 0.
+    """
+    if isinstance(timeout, bool) or not isinstance(timeout, int | float) or timeout < 0:
+        raise MammothValidationError(ERR_TIMEOUT.format(timeout))
+
+
+def workflow_path(
+    client: MammothClient, workflow_id: int, project_id: int | None, tail: str
+) -> str:
+    """Build the path of a route under one workflow.
+
+    Args:
+        client: The client whose workspace (and default project) the path uses.
+        workflow_id: ID of the workflow (must be > 0).
+        project_id: Project ID, or None for the client's default project.
+        tail: The route below the workflow, e.g. ``run`` or ``swap/fit``.
+
+    Returns:
+        ``/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/{tail}``.
+
+    Raises:
+        MammothValidationError: If *workflow_id* or *project_id* is not a positive integer.
+        ValueError: If no project is given and the client has no default project.
+    """
+    check_positive_id("workflow_id", workflow_id)
+    if project_id is not None:
+        check_positive_id("project_id", project_id)
+    proj = project_id if project_id is not None else getattr(client, "project_id", None)
+    if proj is None:
+        raise ValueError("project_id must be set on the client using client.set_project_id()")
+    return f"/workspaces/{client.workspace_id}/projects/{proj}/workflows/{workflow_id}/{tail}"
+
+
+def _check_ids(name: str, values: _list[int]) -> None:
+    bad = not isinstance(values, list) or not 1 <= len(values) <= _IDS_MAX
+    if bad or any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in values):
+        raise MammothValidationError(ERR_IDS.format(name, values))

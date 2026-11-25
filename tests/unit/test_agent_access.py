@@ -105,6 +105,16 @@ class TestAccessSettingsUpdate:
             "PATCH", "/agents/access/settings", json={"enabled": False, "downloads": True}
         )
 
+    async def test_sends_ask_mode_and_question_limit(self):
+        # mammothsdk#349: Ask mode and the monthly limit were not settable.
+        api, client = _make_api()
+        await api.access_settings_update(ask_mode=True, monthly_question_limit=50)
+        client._request_json.assert_called_once_with(
+            "PATCH",
+            "/agents/access/settings",
+            json={"ask_mode": True, "monthly_question_limit": 50},
+        )
+
     async def test_nothing_to_change_raises(self):
         api, client = _make_api()
         with pytest.raises(MammothValidationError):
@@ -142,6 +152,21 @@ class TestAccessGrants:
         client._request_json.assert_called_once_with(
             "PATCH", "/agents/access/grants/4", json={"level": "explore"}
         )
+
+    async def test_update_sends_can_download_alone(self):
+        # mammothsdk#351: the download permission was web-only.
+        api, client = _make_api()
+        await api.access_grant_update(4, can_download=True)
+        client._request_json.assert_called_once_with(
+            "PATCH", "/agents/access/grants/4", json={"can_download": True}
+        )
+
+    async def test_give_sends_can_download_when_given(self):
+        api, client = _make_api()
+        await api.access_grant_give(
+            ["a@example.com"], "ask", [{"project_id": 1}], can_download=False
+        )
+        assert client._request_json.call_args.kwargs["json"]["can_download"] is False
 
     async def test_update_with_nothing_raises(self):
         api, _ = _make_api()
@@ -221,4 +246,22 @@ class TestChartAndRating:
         api, client = _make_api()
         with pytest.raises(MammothValidationError, match="rating"):
             await api.turn_rate("sess-1", "turn-1", "meh")
+        client._request_json.assert_not_called()
+
+
+class TestCredentialCard:
+    async def test_posts_widget_and_credentials(self):
+        # mammothsdk#319: the chat's key card could be answered only in the browser.
+        api, client = _make_api()
+        await api.session_credential_test("s1", "w1", {"client_id": "a", "secret": "b"})
+        client._request_json.assert_called_once_with(
+            "POST",
+            "/agents/sessions/s1/credential-test",
+            json={"widget_id": "w1", "credentials": {"client_id": "a", "secret": "b"}},
+        )
+
+    async def test_empty_credentials_raise(self):
+        api, client = _make_api()
+        with pytest.raises(MammothValidationError):
+            await api.session_credential_test("s1", "w1", {})
         client._request_json.assert_not_called()

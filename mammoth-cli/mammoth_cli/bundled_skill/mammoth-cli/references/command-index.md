@@ -1,6 +1,6 @@
 # Published CLI command catalog
 
-This generated catalog is a lookup table for every command in the published CLI manifest, currently 880; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
+This generated catalog is a lookup table for every command in the published CLI manifest, currently 917; each entry carries its release status line. It is a command-contract index, not an assertion that every backend/OpenAPI operation has a CLI binding. For an exact local CLI contract, run `mammoth schema get COMMAND_ID`; `mammoth capability list` is an API-binding inventory and can omit typed/local CLI routes. For focused workflows, read the [recipes index](recipes/index.md). Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
 Load only the applicable domain file:
 
@@ -8,10 +8,11 @@ Load only the applicable domain file:
 - [addon](commands/addon.md) — 6 published commands
 - [agent](commands/agent.md) — 45 published commands
 - [ai](commands/ai.md) — 5 published commands
-- [annotation](commands/annotation.md) — 5 published commands
+- [annotation](commands/annotation.md) — 8 published commands
 - [auth](commands/auth.md) — 5 published commands
 - [automation](commands/automation.md) — 13 published commands
 - [batch](commands/batch.md) — 7 published commands
+- [bench](commands/bench.md) — 1 published commands
 - [billing](commands/billing.md) — 27 published commands
 - [browse](commands/browse.md) — 9 published commands
 - [calc](commands/calc.md) — 1 published commands
@@ -21,7 +22,7 @@ Load only the applicable domain file:
 - [collection](commands/collection.md) — 21 published commands
 - [completion](commands/completion.md) — 2 published commands
 - [config](commands/config.md) — 4 published commands
-- [connector](commands/connector.md) — 42 published commands
+- [connector](commands/connector.md) — 44 published commands
 - [context](commands/context.md) — 4 published commands
 - [dashboard-qa](commands/dashboard-qa.md) — 14 published commands
 - [dashboard-template](commands/dashboard-template.md) — 12 published commands
@@ -60,5 +61,5 @@ Load only the applicable domain file:
 - [view-transform](commands/view-transform.md) — 36 published commands
 - [view](commands/view.md) — 110 published commands
 - [webhook](commands/webhook.md) — 7 published commands
-- [workflow](commands/workflow.md) — 36 published commands
+- [workflow](commands/workflow.md) — 67 published commands
 - [workspace](commands/workspace.md) — 33 published commands

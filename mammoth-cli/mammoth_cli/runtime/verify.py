@@ -10,6 +10,7 @@ what it should" instead of re-deriving it per command.
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
@@ -419,15 +420,25 @@ def _state(data: dict[str, Any]) -> str:
 def _warnings(data: dict[str, Any]) -> list[str]:
     notes: list[str] = []
     if data.get("synthetic_data") is True and isinstance(data.get("warnings"), list):
-        notes.extend(str(item) for item in data["warnings"])
+        notes.extend(_note(item) for item in data["warnings"])
     for key, value in data.items():
         if not key.endswith("_check") or not isinstance(value, dict):
             continue
         for list_key in ("notes", "warnings"):
             items = value.get(list_key)
             if isinstance(items, list):
-                notes.extend(item if isinstance(item, str) else str(item) for item in items)
+                notes.extend(_note(item) for item in items)
     return notes
+
+
+def _note(item: Any) -> str:
+    """One warning as text: a structured one by its own words, else as JSON."""
+    if isinstance(item, dict):
+        for key in ("detail", "message", "text"):
+            if isinstance(item.get(key), str) and item[key]:
+                return str(item[key])
+        return json.dumps(item, default=str)
+    return str(item)
 
 
 #: Upload statuses a person must act on before anything is built on the dataset.

@@ -71,6 +71,18 @@ def _hit_record(hit: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _hits_name_their_project(hits: list[dict[str, Any]]) -> bool:
+    """Whether every search hit carries its ``project_id`` and ``project_name``.
+
+    Then the project list is not needed to say where a match lives
+    (mammothsdk#436).
+    """
+    return all(
+        isinstance(h.get("project_id"), int) and isinstance(h.get("project_name"), str)
+        for h in hits
+    )
+
+
 def _find_by_name(
     service: Any, needle: str, projects: list[dict[str, Any]]
 ) -> tuple[list[dict[str, Any]], bool]:
@@ -82,6 +94,22 @@ def _find_by_name(
     """
     names = {p.get("id"): p.get("name") for p in projects}
     hits, cut = search_hits(service, "datasource", _search_term(needle), fields="standard")
+    return _matches_in(hits, needle, names), cut
+
+
+def _matches_in(
+    hits: list[dict[str, Any]], needle: str, names: dict[Any, Any]
+) -> list[dict[str, Any]]:
+    """The search ``hits`` in a project of ``names`` whose name has every token of ``needle``.
+
+    Args:
+        hits: Workspace search hits for datasets.
+        needle: The lowercased name substring.
+        names: Project id to project name, for the projects to keep hits from.
+
+    Returns:
+        One row per matching dataset, with its project and source.
+    """
     matches = []
     for hit in hits:
         name = hit.get("name")
@@ -98,7 +126,7 @@ def _find_by_name(
                 "source": source_of(record),
             }
         )
-    return matches, cut
+    return matches
 
 
 #: Pages of resource search read for one name (100 hits each); past it the result says so.
@@ -293,12 +321,37 @@ def _find_scoped(
     needle: str,
     visible: list[dict[str, Any]],
     project_id: int,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
-    """``(matches, projects searched, cut)``: the project's own matches, then every other one's."""
+    hits: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """``(matches, projects searched)``: the project's own matches, then every other one's."""
     searched = [named_project(service, project_id, visible), *_other_projects(visible, project_id)]
-    found, cut = _find_by_name(service, needle, searched)
+    found = _matches_in(hits, needle, {p.get("id"): p.get("name") for p in searched})
     matches = sorted(_tag_scope(found, project_id), key=lambda m: not m["in_project"])
-    return matches, searched, cut
+    return matches, searched
+
+
+def _find_unlisted(
+    needle: str, hits: list[dict[str, Any]], project_id: int | None
+) -> list[dict[str, Any]]:
+    """Matches read from the hits alone, without listing the workspace's projects.
+
+    Every hit names its project, so listing every project (a dozen sequential
+    requests for 1,179 projects) only to look the names up is skipped
+    (mammothsdk#436).
+
+    Args:
+        needle: The lowercased name substring.
+        hits: Workspace search hits, each with ``project_id`` and ``project_name``.
+        project_id: The project the call runs under, or None.
+
+    Returns:
+        The matches, the project's own first and marked ``in_project`` when scoped.
+    """
+    names = {h["project_id"]: h["project_name"] for h in hits}
+    found = _matches_in(hits, needle, names)
+    if project_id is None:
+        return found
+    return sorted(_tag_scope(found, project_id), key=lambda m: not m["in_project"])
 
 
 #: Trashed datasets read for one name when nothing live matched it.
@@ -375,15 +428,19 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
         return str(m.get("name", "")).lower() == needle
 
     with open_service(invocation) as (service, auth):
-        visible = _visible_projects(service)
-        cut = False
-        if invocation.project is not None:
-            matches, projects, cut = _find_scoped(service, needle, visible, invocation.project)
-            if not all_projects_requested(invocation):
-                matches, dropped = narrow_to_project(matches, is_exact)
+        hits, cut = search_hits(service, "datasource", _search_term(needle), fields="standard")
+        projects: list[dict[str, Any]] | None = None
+        if _hits_name_their_project(hits):
+            matches = _find_unlisted(needle, hits, invocation.project)
         else:
-            projects = visible
-            matches, cut = _find_by_name(service, needle, visible)
+            visible = _visible_projects(service)
+            if invocation.project is not None:
+                matches, projects = _find_scoped(service, needle, visible, invocation.project, hits)
+            else:
+                projects = visible
+                matches = _matches_in(hits, needle, {p.get("id"): p.get("name") for p in visible})
+        if invocation.project is not None and not all_projects_requested(invocation):
+            matches, dropped = narrow_to_project(matches, is_exact)
         trashed = (
             _trashed_matches(service, needle, invocation.project)
             if not matches and invocation.project is not None
@@ -394,10 +451,9 @@ def dataset_find(invocation: Invocation) -> HandlerResult:
             "workspace_id": auth.workspace_id,
             "project_id": invocation.project,
         }
-    result: dict[str, Any] = {
-        "matches": matches,
-        "projects_searched": len(projects),
-    }
+    result: dict[str, Any] = {"matches": matches}
+    if projects is not None:  # absent when the project list was never read (mammothsdk#436)
+        result["projects_searched"] = len(projects)
     notes = [_find_note(matches, is_exact, name_substring)]
     if trashed:
         result["trashed_matches"] = trashed

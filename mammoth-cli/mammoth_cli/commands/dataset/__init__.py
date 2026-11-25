@@ -36,6 +36,7 @@ from mammoth_cli.errors.envelope import (
     CODE_RESOURCE_NOT_FOUND,
     CODE_UNSUPPORTED_CONTRACT,
     EXIT_API,
+    EXIT_CONFLICT,
     EXIT_NOT_FOUND,
     EXIT_USAGE,
     CliError,
@@ -48,7 +49,12 @@ from mammoth_cli.runtime.confirm import (
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.new_data import with_file_upload_path
 from mammoth_cli.runtime.session import open_service, require_project, resolved_project
-from mammoth_cli.services.delete_check import ensure_deleted, ensure_unlisted, find_dependents
+from mammoth_cli.services.delete_check import (
+    CODE_HAS_DEPENDENTS,
+    ensure_deleted,
+    ensure_unlisted,
+    find_dependents,
+)
 from mammoth_cli.services.listing import (
     DATASET_ROW_FIELDS,
     NAMES_DATA_BUDGET,
@@ -775,8 +781,9 @@ def _confirmed_shape(service: Any, dataset_id: int, project_id: int) -> dict[str
 
 
 def dataset_rename(invocation: Invocation) -> HandlerResult:
-    """Rename a dataset. Dataset id is positional; new name comes from ``--input``.
+    """Rename a dataset. Dataset id is positional; so is the new name (mammothsdk#322).
 
+    The new name is the second positional, ``--name NAME``, or the ``name`` input field.
     A name another dataset of the project already has gets a number added (``name 2``)
     instead of failing; ``{"unique": false}`` asks for the exact name or an error. The
     result's ``name`` is the name applied.
@@ -784,7 +791,20 @@ def dataset_rename(invocation: Invocation) -> HandlerResult:
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     document = invocation.load_input()
-    name = _require_field(document, "name")
+    positional_name = invocation.positional("name")
+    if positional_name is not None:
+        # load_input() binds the positional over the document, so compare the raw document.
+        raw = invocation.prepare_input()
+        if raw is not None and raw.get("name") not in (None, positional_name):
+            raise CliError(
+                code=CODE_INVALID_ARGUMENT,
+                message="The new name is given twice with different values.",
+                exit_status=EXIT_USAGE,
+                hint="Pass the new name once: as NAME, --name or the 'name' input field.",
+            )
+        name = str(positional_name)
+    else:
+        name = _require_field(document, "name")
     kwargs: dict[str, Any] = {"dataset_id": dataset_id, "name": name, "project_id": project_id}
     if document is None or document.get("unique") is not False:
         kwargs["unique"] = True
@@ -821,23 +841,69 @@ def dataset_refresh(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation,
         policy=POLICY_PROMPT_OR_YES,
-        action=f"fetch the link of dataset {dataset_id} again and update its data",
+        action=f"pull the data of dataset {dataset_id} in again from its source",
     )
     with open_service(invocation) as (service, auth):
-        handle = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        record = service.call(_DATASET_GET_SYMBOL, dataset_id=dataset_id, project_id=project_id)
+        source_type, source_id = refresh_source(record)
+        if source_type == "weburl":
+            handle = service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id)
+        else:
+            handle = service.call(
+                _REFRESH_SOURCE_SYMBOL,
+                dataset_id=dataset_id,
+                source_type=source_type,
+                source_id=source_id,
+                project_id=project_id,
+            )
         service.wait_if_job(handle)
-    return {"dataset_id": dataset_id, "refreshed": True}, _meta(
+    return {"dataset_id": dataset_id, "refreshed": True, "source": source_type}, _meta(
         invocation, auth.workspace_id, project_id
     )
 
 
+_REFRESH_SOURCE_SYMBOL = "mammoth.api.datasets.DatasetsAPI.refresh_source"
+
+
+def refresh_source(record: Any) -> tuple[str, int | None]:
+    """How to pull a dataset in again, from the ``sources`` its ``dataset get`` lists.
+
+    ``dataset refresh`` always sent the URL refresh, so a webhook or connector dataset was
+    refused as if it were an upload (mammothsdk#372, #414).
+
+    Args:
+        record: The ``DatasetsAPI.get`` result.
+
+    Returns:
+        ``("webhook", webhook id)`` for a webhook's dataset, ``("cloud", None)`` for a
+        connector table, else ``("weburl", None)`` (the server says when it is an upload).
+    """
+    record = record.model_dump(mode="json") if hasattr(record, "model_dump") else record
+    sources = record.get("sources") if isinstance(record, dict) else None
+    for source in sources if isinstance(sources, list) else []:
+        if not isinstance(source, dict):
+            continue
+        raw = source.get("details")
+        details: dict[str, Any] = raw if isinstance(raw, dict) else {}
+        if source.get("type") == "cloud" or details.get("connector_key"):
+            return "cloud", None
+        if details.get("id") and "origins" in details and "key" in details:
+            return "webhook", int(details["id"])
+    return "weburl", None
+
+
 def dataset_trash(invocation: Invocation) -> HandlerResult:
-    """Move one dataset to the project trash (reversible)."""
+    """Move one dataset to the project trash (reversible), waiting for the trash job.
+
+    The server answers with a job and can refuse in it, for instance when an automation
+    still refreshes the dataset (``TRASH_DEPENDENT_BLOCK``): that refusal is an error
+    naming the automations, not a success with a job still processing (mammothsdk#365).
+    """
     project_id = require_project(invocation)
     dataset_id = _require_int_positional(invocation, "dataset id")
     with open_service(invocation) as (service, auth):
         # Trashing twice is harmless, so a lost reply is settled by one read of the dataset.
-        data = settle_unknown_outcome(
+        ack = settle_unknown_outcome(
             service,
             lambda: service.call(_symbol(invocation), dataset_id=dataset_id, project_id=project_id),
             noun="dataset",
@@ -847,7 +913,70 @@ def dataset_trash(invocation: Invocation) -> HandlerResult:
             applied=lambda record: trashed_or_gone(record, dataset_id),
             done_status="trashed",
         )
+        try:
+            settled = service.wait_if_job(ack)
+        except CliError as error:
+            raise _trash_refusal(error, dataset_id) from error
+        data = _with_job(ack, settled)
     return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+#: The trash job's failure code when something still uses the dataset.
+_TRASH_BLOCK_CODE = "TRASH_DEPENDENT_BLOCK"
+
+
+def _blocking_automations(found: Any) -> list[dict[str, Any]]:
+    """The ``automations`` list nested anywhere in a refused trash job's details."""
+    if isinstance(found, dict):
+        listed = found.get("automations")
+        if isinstance(listed, list):
+            return [item for item in listed if isinstance(item, dict)]
+        for value in found.values():
+            nested = _blocking_automations(value)
+            if nested:
+                return nested
+    elif isinstance(found, list):
+        for value in found:
+            nested = _blocking_automations(value)
+            if nested:
+                return nested
+    return []
+
+
+def _trash_refusal(error: CliError, dataset_id: int) -> CliError:
+    """Turn a trash job refused for dependents into ``has_dependents`` naming them.
+
+    Args:
+        error: The error the job wait raised.
+        dataset_id: The dataset being trashed.
+
+    Returns:
+        A ``has_dependents`` error with each blocking automation and the command that
+        reads it, or ``error`` unchanged for any other failure.
+    """
+    if _TRASH_BLOCK_CODE not in f"{error.message} {error.details}":
+        return error
+    automations = _blocking_automations(error.details)
+    names = ", ".join(
+        f"{item.get('automation_name') or 'automation'} ({item.get('automation_id')})"
+        for item in automations
+    )
+    which = f": {names}" if names else ""
+    return CliError(
+        code=CODE_HAS_DEPENDENTS,
+        message=f"Dataset {dataset_id} was not trashed: an automation still uses it{which}.",
+        exit_status=EXIT_CONFLICT,
+        hint=(
+            "Remove the dataset from the automation (automation update ID --input "
+            "'{\"remove_datasets\": [ID]}') or trash the automation, then trash the dataset again."
+        ),
+        details={"dataset_id": dataset_id, "trashed": False, "automations": automations},
+        recovery_commands=[
+            f"mammoth automation get {item.get('automation_id')}"
+            for item in automations
+            if item.get("automation_id") is not None
+        ],
+    )
 
 
 def dataset_restore(invocation: Invocation) -> HandlerResult:
@@ -890,7 +1019,13 @@ def dataset_delete(invocation: Invocation) -> HandlerResult:
             read_kwargs={"dataset_id": dataset_id, "project_id": project_id},
             responses=(ack, settled),
             recovery_commands=_dependent_view_recovery(ack, settled, dataset_id),
+            # The read above succeeded with these credentials, so a 403 on the read-back
+            # (4RESO001: the auth layer no longer knows the dataset) means it is gone
+            # (mammothsdk#352, #303).
+            forbidden_means_gone=True,
         )
+        # A 403 read-back counts as gone above only because this list check also has to agree:
+        # a 403 with the dataset still listed raises delete_unverified here, never a success.
         # The get can say gone while ``dataset list`` still shows the dataset: verified only
         # when the list the caller reads next agrees. The list is asked for this one id, so
         # each check is one small request; a server that ignored the filter would return the

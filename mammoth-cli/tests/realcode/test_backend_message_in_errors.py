@@ -74,3 +74,25 @@ def test_a_generic_backend_message_shows_the_reason_beneath_it() -> None:
     assert mapped.message == (
         "Invalid arguments passed: There is no version of your data waiting here. [4GENR001]"
     )
+
+
+def test_a_bare_not_found_on_agent_definitions_says_the_server_lacks_them() -> None:
+    error = MammothAPIError(
+        "x",
+        status_code=404,
+        method="GET",
+        endpoint="/workspaces/7/agent-definitions",
+        response_body={"detail": "Not Found", "status_code": 404},
+    )
+    mapped = map_sdk_exception(error)
+    assert mapped.message == "This server does not have agent definitions."
+    assert mapped.exit_status == 5
+
+
+def test_a_missing_object_keeps_the_resource_id_hint() -> None:
+    mapped = map_sdk_exception(
+        _api_error(
+            404, {"message": "No such dataset", "name": "NOT_FOUND", "error_code": "4DSET001"}
+        )
+    )
+    assert mapped.hint == "Check the resource id and scope."

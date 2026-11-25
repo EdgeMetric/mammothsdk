@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from typing import Any
 
 from mammoth.api import agents as agents_api
 from mammoth.api import dashboards as dashboards_api
+from mammoth.api import workflow_describe, workflow_triggers
 from mammoth.exceptions import MammothValidationError
 from pydantic import ValidationError
 
@@ -19,6 +21,7 @@ from mammoth_cli.commands.dashboard._common import (
 )
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view.upload import view_profiles
+from mammoth_cli.commands.workflow import SAVE_AWAITED, await_built_workflow
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -34,10 +37,12 @@ from mammoth_cli.runtime.confirm import (
     POLICY_NONE,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.input_loader import refuse_inline_secrets
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.reveal import REVEAL_COMMANDS
 from mammoth_cli.runtime.session import open_service, resolved_project
 from mammoth_cli.services.argspec import arg_spec
+from mammoth_cli.services.board_style_write import pop_style_choice, save_board_style
 from mammoth_cli.services.board_values import board_values, dashboard_link
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.dashboard_figures import (
@@ -46,8 +51,11 @@ from mammoth_cli.services.dashboard_figures import (
 )
 from mammoth_cli.services.dashboard_pages import (
     check_added_pages,
+    check_page_specs,
     generate_substitutions,
+    other_source_step,
     page_substitutions,
+    refused_asks,
 )
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
@@ -68,14 +76,25 @@ from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.read_memo import forget, remember
 from mammoth_cli.services.unknown_outcome import settle_unknown_outcome
 
+#: The fields of a workflow clock (``workflow schedule set`` input, ``schedule`` of a build).
+_SCHEDULE_FIELDS = (
+    "frequency",
+    "interval",
+    "by_week_day",
+    "by_month_day",
+    "start_at",
+    "start_now",
+    "until",
+)
+
 #: Rules the SDK method enforces before sending, run by the handler too: a dry run stops
 #: at the SDK symbol, so without this it would accept input the real run refuses.
-_SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
+_SDK_RULES: dict[str, Callable[[dict[str, Any]], object]] = {
     "agent.access.grant.give": lambda k: agents_api.check_grant_give(
         k.get("emails") or [], str(k.get("level") or ""), k.get("items") or []
     ),
     "agent.access.grant.update": lambda k: agents_api.check_grant_update(
-        k.get("level"), k.get("items")
+        k.get("level"), k.get("items"), k.get("can_download")
     ),
     "agent.access.request.create": lambda k: agents_api.check_request_create(
         str(k.get("kind") or ""), str(k.get("text") or "")
@@ -88,6 +107,16 @@ _SDK_RULES: dict[str, Callable[[dict[str, Any]], None]] = {
         str(k.get("rating") or ""), k.get("comment")
     ),
     "dashboard.embed.lifetime.set": lambda k: dashboards_api.check_token_ttl(k.get("token_ttl")),
+    "workflow.run.start": lambda k: workflow_triggers.check_callback_url(k.get("callback_url")),
+    "workflow.schedule.set": lambda k: workflow_triggers.schedule_body(
+        **{f: k[f] for f in _SCHEDULE_FIELDS if f in k}
+    ),
+    "workflow.describe.start": lambda k: workflow_describe.describe_body(
+        str(k.get("text") or ""), dataset_ids=k.get("dataset_ids")
+    ),
+    "workflow.describe.build": lambda k: workflow_describe.build_body(
+        k.get("spec"), str(k.get("destination_name") or ""), schedule=k.get("schedule")
+    ),
 }
 
 
@@ -125,6 +154,10 @@ _HANDLE_KEPT = frozenset(
 )
 
 
+#: Commands whose input carries a secret: a file or stdin only.
+_SECRET_INPUT = frozenset({"workflow.link.fire"})
+
+
 def _check_sdk_rules(command_id: str, kwargs: dict[str, Any]) -> None:
     rule = _SDK_RULES.get(command_id)
     if rule is None:
@@ -151,9 +184,15 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
 
+    if invocation.command_id in _SECRET_INPUT:
+        refuse_inline_secrets(invocation.input_file)
     document = _bound_document(invocation)
     positionals = _generated_positionals(invocation)
     kwargs = bind_command_inputs(invocation.command_id, document, **positionals)
+
+    # ``style_id`` / ``mode`` set the new board's look after it is created (mammothsdk#419);
+    # they are not arguments of the SDK call.
+    style = pop_style_choice(kwargs) if invocation.command_id == "dashboard.create-blank" else {}
 
     # The generated contract treats named request bodies as opaque mappings;
     # AddPages has a release-level minItems constraint that must be enforced
@@ -171,6 +210,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
                 message=f"Invalid add-pages request: {exc}",
                 exit_status=EXIT_USAGE,
             ) from exc
+        check_page_specs(kwargs["body"].get("params", {}).get("pages", []))
 
     spec = arg_spec(_symbol(invocation))
     if spec is not None:
@@ -226,13 +266,18 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             data = service.call(_symbol(invocation), **kwargs)
         handle = data.model_dump(mode="json") if hasattr(data, "model_dump") else data
         data = _resolve_job(service, invocation, data)
+        if style:
+            data = _with_style_saved(service, data, _created_id(data), style)
         if invocation.command_id in _HANDLE_KEPT and isinstance(handle, dict):
             # The job's results are keyed by descriptor id; the handle says which
             # descriptor is the rows, the count or the drilled level, so keep both.
             data = {**handle, **data} if isinstance(data, dict) else data
+        if invocation.command_id in SAVE_AWAITED:
+            data = await_built_workflow(invocation, service, data)
         if invocation.command_id == "dashboard.pages.add" and "body" in kwargs:
             requested = kwargs["body"].get("params", {}).get("pages", [])
             data = check_added_pages(service, positionals["dashboard_id"], requested, data)
+            data = _await_bake(service, data)
         data = _with_draft_reports(invocation.command_id, service, positionals, kwargs, data)
         if invocation.command_id in _REVIEWED_COMMANDS:
             data = _with_deliverable_check(invocation, service, auth, positionals, data, kwargs)
@@ -242,6 +287,71 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
     if invocation.reveal_secrets and invocation.command_id in REVEAL_COMMANDS:
         data = Revealed(normalize(data, redact_secrets=False))
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _created_id(data: Any) -> Any:
+    """The id of the board a create answered with, or None."""
+    data = _dump_model(data)
+    return data.get("id") if isinstance(data, dict) else None
+
+
+def _with_style_saved(
+    service: Any, data: Any, dashboard_id: Any, choice: dict[str, str]
+) -> dict[str, Any]:
+    """Set the board's theme and mode, wait for the bake and say what it now wears.
+
+    The write that came before already happened, so a style that cannot be set is reported
+    in ``style_error`` with the command that retries it, not raised (mammothsdk#419).
+
+    Args:
+        service: The session service.
+        data: The result of the write before it.
+        dashboard_id: The board to restyle.
+        choice: ``style_id`` and/or ``mode`` from :func:``pop_style_choice``.
+
+    Returns:
+        ``data`` with ``style``, the saved ``sequence`` and ``bake`` added.
+    """
+    data = _dump_model(data)
+    out: dict[str, Any] = dict(data) if isinstance(data, dict) else {}
+    if not isinstance(dashboard_id, int):
+        out["style_error"] = "the result names no dashboard id, so the style was not set."
+        return out
+    try:
+        saved = save_board_style(service, dashboard_id, choice)
+    except CliError as error:
+        out["style_error"] = error.message
+        out["style_fix"] = f"mammoth dashboard update {dashboard_id} --input '{json.dumps(choice)}'"
+        return out
+    baked: dict[str, Any] = _await_bake(service, {**out, **saved})
+    return baked
+
+
+def _await_bake(service: Any, data: Any) -> Any:
+    """Wait for the bake an add-pages answer started, and say how it went in ``bake``.
+
+    The canvas read that checks the new pages ran while the bake was still going, so a
+    healthy add read as ``bake_ok: false`` (mammothsdk#406). ``bake`` is ``done``,
+    ``failed`` (the bake job's error follows in ``bake_error``) or ``pending`` when
+    the wait ran out.
+
+    Args:
+        service: The session service.
+        data: The add-pages result.
+
+    Returns:
+        ``data`` with ``bake`` set, unchanged when it names no bake job.
+    """
+    data = _dump_model(data)
+    if not isinstance(data, dict) or not isinstance(data.get("bake_job_id"), int):
+        return data
+    try:
+        service.wait_if_job({"job_id": data["bake_job_id"]})
+    except CliError as error:
+        if error.code == "timeout":
+            return {**data, "bake": "pending"}
+        return {**data, "bake": "failed", "bake_error": error.message}
+    return {**data, "bake": "done"}
 
 
 def _with_draft_reports(
@@ -283,11 +393,16 @@ def _with_board_values(service: Any, auth: Any, positionals: dict[str, Any], dat
     dashboard_id = positionals.get("dashboard_id") or data.get("id")
     if not isinstance(dashboard_id, int):
         return {**data, "values": {"unavailable": "the result names no dashboard id"}}
-    return {
+    values = board_values(service, dashboard_id)
+    style = values.pop("style", None)
+    out = {
         **data,
         "dashboard_link": dashboard_link(auth.base_url, auth.workspace_id, dashboard_id),
-        "values": board_values(service, dashboard_id),
+        "values": values,
     }
+    if style:
+        out["style"] = style
+    return out
 
 
 def _dump_model(value: Any) -> Any:
@@ -387,6 +502,7 @@ def _reflect_not_applied(
             f"Add the card directly: mammoth dashboard figure add {target} --input "
             '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
             '"COLUMN", "agg": "sum"}}\'',
+            other_source_step(target, "VIEW_ID"),
         ],
     }
     if isinstance(claim, str):
@@ -404,9 +520,14 @@ def _authoring_problems(
     partial: list[dict[str, Any]] = []
     if command_id in {"dashboard.canvas.save", "dashboard.pages.add"}:
         broken = canvas_figure_problems(canvas_doc)
-        bake = bake_error_problem(canvas_doc)
+        # A bake still running has not failed; its last error may be the previous bake's.
+        bake = bake_error_problem(canvas_doc) if data.get("bake") != "pending" else None
         if bake is not None:
             broken.append(bake)
+        if data.get("bake") == "failed":
+            broken.append(
+                {"issue": "bake_error", "detail": f"the bake failed: {data.get('bake_error')}"}
+            )
     if command_id == "dashboard.pages.add":
         profiles = [p["name"] for p in _canvas_profiles(canvas_doc)]
         refused = (data.get("chart_check") or {}).get("refused") or []
@@ -426,6 +547,7 @@ def _authoring_problems(
         partial = generate_substitutions(params.get("intent"), canvas_doc, data.get("message"))
     elif command_id == "dashboard.chat.edit":
         partial = generate_substitutions(None, canvas_doc, data.get("message"))
+        partial += refused_asks(data.get("asks"))
     extra: dict[str, Any] = {}
     if broken:
         extra["bake_ok"] = False

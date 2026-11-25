@@ -31,6 +31,7 @@ from mammoth.api.automations import (
     build_automation_create_body,
     build_automation_patch_ops,
 )
+from mammoth.api.workflow_triggers import parse_link
 from mammoth.condition import CompoundCondition, Condition, NotCondition
 from mammoth.exceptions import MammothValidationError
 
@@ -259,6 +260,20 @@ def _check_automation_update(arguments: dict[str, Any]) -> None:
     build_automation_patch_ops(arguments.get("patch") or [])
 
 
+def _check_link_fire(arguments: dict[str, Any]) -> None:
+    """Refuse a malformed link, as the real call does (``parse_link`` never echoes it).
+
+    The real call also refuses a link of another server; a dry run has no server to compare.
+    """
+    parse_link(str(arguments.get("link", "")))
+
+
+def _link_fire_body(arguments: dict[str, Any]) -> dict[str, Any]:
+    """The link is the credential: a report names the workflow, never the secret."""
+    workflow_id, _secret = parse_link(str(arguments.get("link", "")))
+    return {"workflow_id": workflow_id, "link": "<hidden>"}
+
+
 #: SDK symbol -> its dry-run preview. Register a symbol here to have its SDK-side
 #: validation run, and its real request body shown, on a dry run; one entry covers
 #: every command backed by that symbol.
@@ -267,6 +282,9 @@ SDK_PREVIEWS: dict[str, SdkPreview] = {
         _check_automation_create, _automation_create_body
     ),
     "mammoth.api.automations.AutomationsAPI.update": SdkPreview(_check_automation_update),
+    "mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire": SdkPreview(
+        _check_link_fire, _link_fire_body
+    ),
 }
 
 

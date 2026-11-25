@@ -33,34 +33,29 @@ async def test_list_runnable_reads_the_runnable_route(
     assert server.requests[-1]["path"] == f"{WF}/runnable"
 
 
-async def test_start_run_posts_an_empty_body_without_a_callback(
+async def test_run_without_a_callback_uses_the_run_route(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
-    started = {"run_id": RUN, "already_running": False, "callback_secret": None}
-    server.answers[f"POST {WF}/42/start"] = (202, started)
-    assert await client.workflows.start_run(42) == started
-    assert server.requests[-1] == {
-        "method": "POST",
-        "path": f"{WF}/42/start",
-        "query": {},
-        "body": {},
-    }
+    started = {"run_id": RUN, "already_running": False}
+    server.answers[f"POST {WF}/42/run"] = started
+    assert await client.workflow_triggers.run(42) == started
+    assert [r["path"] for r in server.requests] == [f"{WF}/42/run"]
 
 
-async def test_start_run_sends_the_callback_url_and_honours_the_project(
+async def test_run_sends_the_callback_url_and_honours_the_project(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
-    await client.workflows.start_run(42, callback_url="https://hooks.example.com/r", project_id=7)
+    await client.workflow_triggers.run(42, callback_url="https://hooks.example.com/r", project_id=7)
     assert server.requests[-1]["path"] == "/workspaces/1/projects/7/workflows/42/start"
     assert server.requests[-1]["body"] == {"callback_url": "https://hooks.example.com/r"}
 
 
-async def test_start_run_surfaces_the_rate_limit(
+async def test_run_surfaces_the_rate_limit(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
     server.answers[f"POST {WF}/42/start"] = (429, {"detail": "Too many starts"})
     with pytest.raises(MammothAPIError) as caught:
-        await client.workflows.start_run(42)
+        await client.workflow_triggers.run(42, callback_url="https://hooks.example.com/r")
     assert caught.value.status_code == 429
 
 
@@ -81,8 +76,6 @@ async def test_run_status_and_result_read_the_run_routes(
     ("method", "args", "kwargs"),
     [
         ("list_runnable", (), {"project_id": 0}),
-        ("start_run", (0,), {}),
-        ("start_run", (42,), {"callback_url": "  "}),
         ("run_status", (42, ""), {}),
         ("run_status", (42, "a/b"), {}),
         ("run_status", (0, RUN), {}),
@@ -99,6 +92,15 @@ async def test_bad_ids_are_refused_before_any_request(
 ) -> None:
     with pytest.raises(MammothValidationError):
         await getattr(client.workflows, method)(*args, **kwargs)
+    assert server.requests == []
+
+
+@pytest.mark.parametrize("callback_url", ["", "  ", 5])
+async def test_an_empty_callback_url_is_refused_before_any_request(
+    server: RecordingServer, client: MammothClient, callback_url: object  # noqa: F811
+) -> None:
+    with pytest.raises(MammothValidationError):
+        await client.workflow_triggers.run(42, callback_url=callback_url)  # type: ignore[arg-type]
     assert server.requests == []
 
 

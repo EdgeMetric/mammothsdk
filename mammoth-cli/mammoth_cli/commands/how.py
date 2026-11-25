@@ -215,6 +215,7 @@ _Key = tuple[float, int, int]
 #: Where each recipe sits in a pipeline; a composed goal runs them in this order.
 _STAGE = {
     "append-rows": 0,
+    "import-from-database": 0,
     "replace-data": 0,
     "undo-append": 0,
     "pick-sheet": 0,
@@ -244,6 +245,8 @@ _STAGE = {
     "export-csv": 4,
     "filter-export-csv": 4,
     "export-xlsx": 4,
+    "workflow-from-template": 4,
+    "workflow-from-description": 4,
     "export-to-s3": 4,
     "email-view": 4,
     "export-powerbi": 4,

@@ -87,7 +87,7 @@ def test_a_group_invoked_with_no_subcommand_explains_itself(path: list[str]) -> 
     [
         ["definitely-not-a-command"],
         ["view", "definitely-not-a-subcommand"],
-        ["--profile", "prod", "doctor"],
+        ["--profile", "prod", "not-a-command"],
         ["--output", "json"],
         ["view", "--profile", "prod"],
         ["project", "list", "--not-an-option"],
@@ -95,7 +95,7 @@ def test_a_group_invoked_with_no_subcommand_explains_itself(path: list[str]) -> 
     ids=[
         "unknown-command",
         "unknown-subcommand",
-        "global-option-before-command",
+        "global-option-before-unknown-command",
         "global-option-with-no-command",
         "global-option-after-a-group",
         "unknown-option-on-a-leaf",

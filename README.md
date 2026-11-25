@@ -774,8 +774,8 @@ conn = await client.connectors.create_connection(
     },
 )
 
-# Create a data source config (query-based for DB connectors)
-ds_config = await client.connectors.create_ds_config(
+# Check a query on the connection (saves nothing; datasets.create imports the rows)
+checked = await client.connectors.create_ds_config(
     connector_key="postgres",
     connection_key=conn["connection_key"],
     query="SELECT * FROM sales WHERE year = 2024",

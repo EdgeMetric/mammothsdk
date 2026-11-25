@@ -162,6 +162,14 @@ CASES: list[tuple[str, Call, str, str, dict[str, str], object]] = [
         {},
         None,
     ),
+    (
+        "connection-tables",
+        lambda c: c.connector_drafts.connection_tables("conn-1"),
+        "GET",
+        f"{DRAFTS}/connection-tables",
+        {"connection_key": "conn-1"},
+        None,
+    ),
     ("draft-get", lambda c: c.connector_drafts.get(9), "GET", f"{DRAFTS}/9", {}, None),
     (
         "draft-update",

@@ -146,8 +146,12 @@ that equals a row count, is a wrong binding, not a data fact.
 
 ## Limits
 
-- `v3 generate` takes one `dataview_id`; `chat edit` cannot add a tile from
-  another view. Join the data into one view first.
+- A board starts on one table (`v3 generate` takes one `dataview_id`), and
+  each page can read its own. To show another table, add a page on it:
+  `dashboard page plan`, then `dashboard pages add` with
+  `"dataset": {"dataview_id": V}` (and `date_field`) on the page. `chat edit`
+  cannot add a tile from another view. Join the tables only when one chart
+  needs columns from both.
 - The smallest date grain is day (day/week/month/quarter/year): hourly data
   shows as daily points.
 - Currently a view with no numeric column gets no table or bar chart. Add a

@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from ..client import MammothClient
 
 ERR_SESSION_ID_REQUIRED = "`session_id` must be a non-empty string, got {0!r}."
+ERR_CREDENTIAL_CARD_INPUT = (
+    "A credential card answer needs the card's `widget_id` and non-empty `credentials`."
+)
 ERR_ID_REQUIRED = "`{0}` must be a non-empty string, got {1!r}."
 ERR_NO_PLAN = "Session {0!r} has no plan to act on."
 ERR_SESSION_NOT_LISTED = (
@@ -49,6 +52,12 @@ REQUEST_TEXT_MAX = 2000
 CHAT_RETRY_STATUSES = frozenset({502, 503, 504})
 CHAT_MAX_ATTEMPTS = 3
 CHAT_POLL_SECONDS = 2.0
+#: Statuses of a background run that is still working by itself (waiting for a person,
+#: paused and capped runs need someone, so a wait does not follow them).
+#: Run states that still progress on their own (mvc-service ``api/agents/runs/states.py``).
+RUN_IN_FLIGHT_STATUSES = frozenset(
+    {"running", "queued", "waiting_job", "waiting_time", "pending", "starting"}
+)
 #: How many of the caller's newest sessions are searched for a plan decision's chat.
 SESSION_LOOKUP_LIMIT = 100
 
@@ -81,6 +90,7 @@ class AgentsAPI:
         request_key: str | None = None,
         wait: float | None = None,
         plan_ref: dict[str, Any] | None = None,
+        intelligence: str | None = None,
     ) -> dict[str, Any]:
         """Send a chat message to a Mammoth AI agent.
 
@@ -106,14 +116,19 @@ class AgentsAPI:
             plan_ref: The step of the chat's current plan this message points at,
                 e.g. ``{"plan_id": "..."}`` (the whole plan: Run it). Prefer
                 :meth:`plan_approve`, :meth:`plan_skip` and :meth:`plan_discard`.
+            intelligence: Model level for this turn, one of the ``intelligence_levels``
+                that ``GET /agents/access/me`` lists (``fast``, ``balanced``, ``expert``,
+                ``auto``). Leave unset for the server's default.
 
         Returns:
             Dict with ``session_id``, ``turn_id`` and ``request_key``. With
             *wait*, also ``working`` (still writing when the wait ran out) and
             ``reply`` (the assistant message this turn wrote, or ``None``). When the
-            server moved the turn to a background run, ``reply`` is ``None`` and
-            ``background`` is true with ``next``, the command that reads the answer
-            once it lands; an earlier turn's reply is never returned in its place.
+            server moved the turn to a background run, the wait follows the run until it
+            ends or *wait* runs out (``run`` is the last run record read); if no answer
+            has landed by then, ``reply`` is ``None`` and ``background`` is true with
+            ``next``, the command that reads it later. An earlier turn's reply is never
+            returned in its place.
         """
         key = request_key or uuid.uuid4().hex
         body: dict[str, Any] = {"request_key": key, "message": message, "scope": scope}
@@ -127,6 +142,8 @@ class AgentsAPI:
             body["selection"] = selection
         if plan_ref is not None:
             body["plan_ref"] = plan_ref
+        if intelligence is not None:
+            body["intelligence"] = intelligence
         started = await self._submit_chat(body)
         started["request_key"] = key
         if wait is None:
@@ -279,10 +296,60 @@ class AgentsAPI:
         result = {**started, "working": working, "reply": reply}
         if reply is None and not working:
             # The server moved the turn to a background run: its answer lands in the session
-            # later, and no earlier reply may stand in for it.
-            result["background"] = True
-            result["next"] = f"mammoth agent session messages {started['session_id']}"
+            # later, and no earlier reply may stand in for it. Follow the run until it ends
+            # or the wait runs out (mammothsdk#417).
+            reply, run = await self._follow_background_run(started, deadline)
+            result["reply"] = reply
+            if run is not None:
+                result["run"] = run
+            if reply is None:
+                result["background"] = True
+                result["next"] = f"mammoth agent session messages {started['session_id']}"
         return result
+
+    async def _follow_background_run(
+        self, started: dict[str, Any], deadline: float
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """Poll a handed-off turn's run until it ends or *deadline* passes, then read its answer.
+
+        The server hands a long turn to a background run; the run stays readable, so a wait
+        keeps following it instead of returning at the hand-off (mammothsdk#417). A run that is
+        waiting for a person, paused or capped does not progress by itself and is not followed.
+
+        Args:
+            started: The send's ids (``session_id``, ``turn_id``).
+            deadline: ``time.monotonic()`` value at which the wait ends.
+
+        Returns:
+            The final assistant message after the turn's user message (``None`` when none has
+            landed) and the last run record read (``None`` when the server gave none).
+        """
+        session_id = started["session_id"]
+        run: dict[str, Any] | None = None
+        while True:
+            try:
+                body = await self.run_status(session_id)
+            except MammothAPIError:
+                # No run is left to follow: it ended, or the server keeps none for this chat.
+                run = None
+                break
+            found = body.get("run")
+            run = found if isinstance(found, dict) else None
+            status = str(run.get("status") or "").lower() if run else ""
+            if status not in RUN_IN_FLIGHT_STATUSES or time.monotonic() >= deadline:
+                break
+            await asyncio.sleep(CHAT_POLL_SECONDS)
+        page = await self.session_messages(session_id)
+        messages = page.get("messages", [])
+        reply = self._reply_of_turn(messages, started["turn_id"])
+        if reply is None:
+            # The run writes its answer under its own turn, so take what follows the user's message.
+            last_user = max(
+                (i for i, m in enumerate(messages) if m.get("role") == "user"), default=-1
+            )
+            after = [m for m in messages[last_user + 1 :] if m.get("role") == "assistant"]
+            reply = after[-1] if after else None
+        return reply, run
 
     @staticmethod
     def _reply_of_turn(messages: list[dict[str, Any]], turn_id: str) -> dict[str, Any] | None:
@@ -372,6 +439,37 @@ class AgentsAPI:
         if not session_id:
             raise MammothValidationError(ERR_SESSION_ID_REQUIRED.format(session_id))
         return await self._client._request_json("GET", f"/agents/sessions/{session_id}/messages")
+
+    async def session_credential_test(
+        self, session_id: str, widget_id: str, credentials: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Answer an open credential card in an agent chat: test the key and connect.
+
+        This is the card's "Test and connect" button (mammothsdk#319). The server uses
+        the values for one check and keeps them only when the check passes on an AI
+        connector draft; the chat learns the outcome, never the values.
+
+        Args:
+            session_id: ID of the chat that shows the card.
+            widget_id: The card's id (the ``widget.id`` of its message).
+            credentials: The card's fields and their values.
+
+        Returns:
+            Dict with the outcome of the check.
+
+        Raises:
+            MammothValidationError: If *session_id* or *widget_id* is empty, or
+                *credentials* is empty.
+        """
+        if not session_id:
+            raise MammothValidationError(ERR_SESSION_ID_REQUIRED.format(session_id))
+        if not widget_id or not credentials:
+            raise MammothValidationError(ERR_CREDENTIAL_CARD_INPUT)
+        return await self._client._request_json(
+            "POST",
+            f"/agents/sessions/{session_id}/credential-test",
+            json={"widget_id": widget_id, "credentials": credentials},
+        )
 
     async def session_set_visibility(self, session_id: str, visibility: str) -> dict[str, Any]:
         """Set the visibility of an agent chat session.
@@ -813,6 +911,8 @@ class AgentsAPI:
         viewers_explore: bool | None = None,
         managers: list[str] | None = None,
         role_exceptions: list[dict[str, Any]] | None = None,
+        ask_mode: bool | None = None,
+        monthly_question_limit: int | None = None,
     ) -> dict[str, Any]:
         """Change the workspace's AI Agent controls. Managers only.
 
@@ -826,6 +926,8 @@ class AgentsAPI:
             managers: The people or roles that manage these settings.
             role_exceptions: Per-role overrides, each ``{"role", "has_agent",
                 "can_make_changes"}``.
+            ask_mode: Whether Ask mode (people ask about data they cannot open) is on.
+            monthly_question_limit: Questions each person may ask a month, 1 to 100000.
 
         Returns:
             Dict with the settings after the change.
@@ -840,6 +942,8 @@ class AgentsAPI:
             "viewers_explore": viewers_explore,
             "managers": managers,
             "role_exceptions": role_exceptions,
+            "ask_mode": ask_mode,
+            "monthly_question_limit": monthly_question_limit,
         }
         body = {key: value for key, value in fields.items() if value is not None}
         check_settings_update(body)
@@ -855,7 +959,11 @@ class AgentsAPI:
         return await self._client._request_list("GET", "/agents/access/grants")
 
     async def access_grant_give(
-        self, emails: list[str], level: str, items: list[dict[str, Any]]
+        self,
+        emails: list[str],
+        level: str,
+        items: list[dict[str, Any]],
+        can_download: bool | None = None,
     ) -> dict[str, Any]:
         """Give people access to ask about projects. Managers only.
 
@@ -867,6 +975,7 @@ class AgentsAPI:
             level: ``"ask"`` or ``"explore"``.
             items: What to cover (at least one), each ``{"project_id": 1}`` for the whole
                 project or ``{"project_id": 1, "file_ids": [2, 3]}`` for those files only.
+            can_download: Whether they may download answer tables (server default if left out).
 
         Returns:
             Dict with ``grants`` (new grant ids), ``invited`` and ``already_had_access``.
@@ -876,17 +985,17 @@ class AgentsAPI:
                 ``"ask"`` or ``"explore"``.
         """
         check_grant_give(emails, level, items)
-        return await self._client._request_json(
-            "POST",
-            "/agents/access/grants",
-            json={"emails": emails, "level": level, "items": items},
-        )
+        body: dict[str, Any] = {"emails": emails, "level": level, "items": items}
+        if can_download is not None:
+            body["can_download"] = can_download
+        return await self._client._request_json("POST", "/agents/access/grants", json=body)
 
     async def access_grant_update(
         self,
         grant_id: int,
         level: str | None = None,
         items: list[dict[str, Any]] | None = None,
+        can_download: bool | None = None,
     ) -> dict[str, Any]:
         """Change a person's access. Managers only.
 
@@ -894,6 +1003,7 @@ class AgentsAPI:
             grant_id: ID of the grant (from :meth:`access_grants_list`).
             level: New level, ``"ask"`` or ``"explore"``.
             items: New coverage, replacing the old: ``{"project_id", "file_ids"}`` entries.
+            can_download: Whether they may download answer tables (mammothsdk#351).
 
         Returns:
             Empty dict (the server answers 204).
@@ -902,12 +1012,14 @@ class AgentsAPI:
             MammothValidationError: If nothing to change was given, *level* is invalid, or
                 *items* is empty (leave it out to keep the coverage).
         """
-        check_grant_update(level, items)
+        check_grant_update(level, items, can_download)
         body: dict[str, Any] = {}
         if level is not None:
             body["level"] = level
         if items is not None:
             body["items"] = items
+        if can_download is not None:
+            body["can_download"] = can_download
         return await self._client._request_json(
             "PATCH", f"/agents/access/grants/{grant_id}", json=body
         )
@@ -1203,9 +1315,20 @@ def check_grant_give(emails: list[str], level: str, items: list[dict[str, Any]])
         raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))
 
 
-def check_grant_update(level: str | None, items: list[dict[str, Any]] | None) -> None:
-    """Refuse a grant change the server would refuse (nothing given, bad level, no items)."""
-    if level is None and items is None:
+def check_grant_update(
+    level: str | None, items: list[dict[str, Any]] | None, can_download: bool | None = None
+) -> None:
+    """Refuse a grant change the server would refuse (nothing given, bad level, no items).
+
+    Args:
+        level: New level, or None to keep it.
+        items: New coverage, or None to keep it.
+        can_download: New download permission, or None to keep it.
+
+    Raises:
+        MammothValidationError: If nothing is given, the level is invalid or items is empty.
+    """
+    if level is None and items is None and can_download is None:
         raise MammothValidationError(ERR_ACCESS_NOTHING_TO_CHANGE.format("grant"))
     if level is not None and level not in VALID_GRANT_LEVELS:
         raise MammothValidationError(ERR_GRANT_LEVEL_INVALID.format(level))

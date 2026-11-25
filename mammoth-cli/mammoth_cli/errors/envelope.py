@@ -145,6 +145,9 @@ ERROR_SUMMARIES: dict[str, str] = {
         "A line used a result from an earlier line that wasn't there, so it wasn't run."
     ),
     "run_command_refused": "That command can't be run from a list of commands.",
+    "invalid_bench": "The benchmark settings couldn't be used, so nothing was run.",
+    "bench_command_refused": "Only a command that reads can be benchmarked.",
+    "bench_call_failed": "One benchmarked call failed before it returned a result.",
     "history_not_found": "No recorded change has that id.",
     "journal_off": "Change history is switched off, so there is nothing to show or undo.",
     "nothing_to_resume": "Every line of that run finished.",
@@ -247,11 +250,14 @@ ERROR_SUMMARIES: dict[str, str] = {
     "too_many_ids": _S_BAD_REQUEST,
     "unexpected_argument": _S_BAD_REQUEST,
     "unknown_agent": _S_SETUP,
+    "password_grant_not_allowed": "This sign-in doesn't allow a password login.",
+    "password_login_invalid_request": "The password login request was incomplete.",
     "unknown_column": "A column that was referred to doesn't exist.",
     "unknown_config_key": _S_SETUP,
     "unknown_input_field": _S_BAD_REQUEST,
     "unknown_option": _S_BAD_REQUEST,
     "unknown_scope": _S_SETUP,
+    "unused_blank_columns": "A column named as blank is not one this append leaves empty.",
     "unsupported_by_server": "This Mammoth does not support that yet, so it was not applied.",
     "unsupported_contract": _S_UNAVAILABLE,
     "unsupported_profile_base_url": _S_SETUP,
@@ -421,11 +427,22 @@ REFRESH_FILE_DATASET_HINT = (
     "recompute); or connect a cloud source (`mammoth connector connection create`) and "
     "automate that dataset's data retrieval with `mammoth automation create`."
 )
+#: ``schedule create``: a connector dataset is the usual case, so it comes first; the upload
+#: advice read as if every dataset were a file (mammothsdk#323).
+SCHEDULE_CREATE_HINT = (
+    "Schedules are retired: refresh a connector dataset with an automation, a "
+    "run_data_retrieval task and an at_specific_time condition: `mammoth automation create "
+    'NAME --input \'{"tasks": [{"task_type": "run_data_retrieval", "details": '
+    '{"ds_details": [{"ds_id": DATASET_ID}]}}], "conditions": [{"condition_type": '
+    '"at_specific_time", "details": {"frequency": "daily", "interval": 1, '
+    '"start_at": "2027-01-01T02:00:00Z"}}]}\'`; `mammoth automation list` shows the ones '
+    "that exist. " + REFRESH_FILE_DATASET_HINT
+)
 FEATURE_UNAVAILABLE_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "schedule.create": (
         "Creating a schedule is not implemented by the Mammoth backend (5GENR011 NOT_IMPLEMENTED).",
-        REFRESH_FILE_DATASET_HINT,
-        ["mammoth schema get file.upload", "mammoth schema get automation.create"],
+        SCHEDULE_CREATE_HINT,
+        ["mammoth schema get automation.create", "mammoth automation list"],
     ),
 }
 

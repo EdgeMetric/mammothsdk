@@ -70,7 +70,11 @@ pipeline-step behavior seen from the UI: it is the CLI's `trigger_type`
 there is no separate Auto-Sync endpoint or field to find.
 
 `target_ds_id` writes into an existing dataset instead of creating one
-(`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). Read the delivery back in
+(`save_as_mode` `REPLACE_IN_DS` or `APPEND_TO_DS`). `REPLACE_IN_DS` (the
+default) is destructive on an existing target: on every run the backend first
+drops the batches that earlier runs of this same export added to the target, then adds the new rows. Rows from other sources
+(uploads, appends, other exports) are kept, and the first run drops nothing. `APPEND_TO_DS` adds
+a full copy of the rows on every run, so totals grow each run. Read the delivery back in
 the target project (`view list N --project P`, `view data get`) before
 reporting it. An append that leaves target columns unfilled (a partial
 `column_mapping`, or a source with fewer columns) is refused with

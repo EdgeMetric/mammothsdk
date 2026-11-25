@@ -63,11 +63,15 @@ COMMAND_FLAGS: dict[str, frozenset[str]] = {
     # The compacted dashboard writes: --full returns the whole response.
     **{command_id: frozenset({FULL_FLAG}) for command_id in FULL_FLAG_COMMANDS},
     "schema.find": frozenset({"--unsupported", FULL_FLAG}),
+    # The new name may be given as --name VALUE: Click binds VALUE to the second positional and
+    # leaves the flag here (mammothsdk#322).
+    "dataset.rename": frozenset({"--name"}),
     # A once-shown credential is masked unless --reveal asks for it.
     **{command_id: frozenset({REVEAL_FLAG}) for command_id in REVEAL_COMMANDS},
-    # Return once the run starts instead of waiting for it to end.
-    "workflow.run": frozenset({"--no-wait", REVEAL_FLAG}),
 }
+
+#: Commands whose trailing tokens are another command line, checked when that command runs.
+PASSTHROUGH_COMMANDS = frozenset({"bench"})
 
 CODE_UNKNOWN_OPTION = "unknown_option"
 CODE_UNEXPECTED_ARGUMENT = "unexpected_argument"
@@ -148,6 +152,8 @@ def validate_extra_args(command_id: str, extra_args: Iterable[str]) -> None:
             :func:`mammoth_cli.services.positionals.resolve_positionals`), so a
             surplus id is refused instead of silently ignored.
     """
+    if command_id in PASSTHROUGH_COMMANDS:
+        return
     flags = COMMAND_FLAGS.get(command_id, frozenset())
     tokens = [token for token in extra_args if token not in flags]
     for token in tokens:

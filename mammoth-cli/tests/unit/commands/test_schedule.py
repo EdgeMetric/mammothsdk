@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from mammoth_cli.commands import schedule as schedule_cmd
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.errors.envelope import CliError, feature_unavailable_error
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
@@ -184,3 +184,14 @@ def test_delete_requires_schedule_id(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         schedule_cmd.schedule_delete(_inv("schedule.delete", project=180, yes=True))
     assert excinfo.value.code == "missing_argument"
+
+
+def test_retired_schedule_hints_point_to_automations() -> None:
+    # mammothsdk#323/#437: the hints named uploads and the web app, not automations.
+    with pytest.raises(CliError) as excinfo:
+        schedule_cmd.schedule_list(_inv("schedule.list", project=180))
+    assert "mammoth automation list" in (excinfo.value.hint or "")
+    created = feature_unavailable_error("schedule.create")
+    assert (created.hint or "").startswith("Schedules are retired")
+    assert "run_data_retrieval" in (created.hint or "")
+    assert "at_specific_time" in (created.hint or "")

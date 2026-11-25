@@ -103,7 +103,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "ai retention": "Generate a data-retention condition from a description.",
     "ai sql": "Generate SQL from a description.",
     "ai suggestion": "List AI suggestions for a view.",
-    "annotation comment": "Add comments to annotations.",
+    "annotation comment": "Add, edit and delete comments on annotations.",
     "auth connected-apps": "List and revoke the apps you have authorised.",
     "billing invoice": "List and charge invoices.",
     "billing stripe": "Manage the Stripe subscription: checkout, trial, payment methods, invoices.",
@@ -249,6 +249,15 @@ _SUBGROUP_DESCRIPTIONS = {
     "view variants": "Create view variants.",
     "view version": "List, read, apply and delete view versions.",
     "workflow block": "Add and configure workflow blocks.",
+    "workflow after": "Run a workflow each time another one finishes.",
+    "workflow describe": "Describe a workflow in words, read it back as steps, then build it.",
+    "workflow held": "Check the rows a workflow held back.",
+    "workflow link": "Turn on, fire or turn off a secret link that starts a workflow.",
+    "workflow page": "Try a workflow page's workflow on its sample tables.",
+    "workflow run": "Run a workflow on the server now and follow its runs.",
+    "workflow schedule": "Run a workflow on a clock.",
+    "workflow sentence": "Change a workflow by editing the sentence that describes it.",
+    "workflow swap": "Point a workflow step at another table, or undo that.",
     "workflow template": (
         "Browse the workflow template catalog, match it to your tables, preview and build it."
     ),
@@ -454,6 +463,17 @@ def _sdk_backed(command_id: str) -> bool:
 _RAW_NOTE = "Input field raw: true returns DATE values with their time, not the date alone."
 
 
+_BENCH_HELP_NOTE = (
+    "COMMAND is any read command, as words or one quoted string; the flags go after it. "
+    "--concurrency N calls start together on a barrier, for --repeat R measured rounds, "
+    "after --warmup W unmeasured rounds (default 1). One process, one login and one "
+    "keep-alive connection pool. Reports p50, p95 and max of each HTTP request's logged "
+    "duration_ms and of each command, with status and error counts. Times are client-side "
+    "(timing: client): each HTTP attempt's round trip; the server sends no timing. "
+    "http counts every attempt (attempts, retries, attempt_status, retry_wait_ms), so a "
+    "retried 502 shows; --no-retry sends each request once. "
+    "Example: mammoth bench view list --concurrency 8 --repeat 5"
+)
 _RUN_HELP_NOTE = (
     'One command per line: {"cmd": "view task list", "args": ["290"], "input": {}, '
     '"flags": {"project": 1}, "id": "a"}. cmd is the command path, args its positionals, '
@@ -468,8 +488,17 @@ _RUN_HELP_NOTE = (
 )
 
 
+_CLOUD_IMPORT_NOTE = (
+    "A table or query of a connected database (find it with 'connector connection tables'): "
+    "mammoth dataset create --input '"
+    '{"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "postgres", '
+    '"connection_key": "CONNECTION_KEY", "query_properties": {"ds_name": "Orders", '
+    '"table_name": "orders", "query": "SELECT * FROM orders"}}}\''
+)
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,
+    "bench": _BENCH_HELP_NOTE,
+    "dataset.create": _CLOUD_IMPORT_NOTE,
     "view.data.get": _RAW_NOTE,
     "view.data.query": _RAW_NOTE,
     "view.export.dataset": (
@@ -620,6 +649,11 @@ _ROOT_LEAF_HELP: dict[str, str] = {
         "Run many commands in one process: JSON Lines of cmd, args, input and flags."
         f"\n\n{_RUN_HELP_NOTE}"
         "\n\nExample: mammoth run commands.jsonl"
+    ),
+    "bench": (
+        "Run one read command N at a time for R rounds and report its latency."
+        f"\n\n{_BENCH_HELP_NOTE}"
+        "\n\nExample: mammoth bench 'project list'"
     ),
     "upgrade": (
         "Upgrade the mammoth CLI to the latest (or a specified) version from PyPI."

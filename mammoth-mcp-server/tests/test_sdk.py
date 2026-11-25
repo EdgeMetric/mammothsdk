@@ -117,6 +117,34 @@ class TestWhatAModelIsToldWhenTheApiRefuses:
         assert "uploaded file has no source to pull from" in message
         assert "add_dataset_from_connection" in message
 
+    def test_a_refusal_that_says_see_details_carries_the_reason_from_its_details(self) -> None:
+        # A step change Mammoth cannot use: the headline points at `details`.
+        headline = "A step change was refused; see details for why and how to write it."
+        body = {
+            "error_code": "4WKFL028",
+            "message": headline,
+            "details": {"key": "step:dataview_9:new", "message": "Unknown transform 'explode'"},
+        }
+
+        async def refused() -> None:
+            raise MammothAPIError(f"API request failed: {headline}", 422, body)
+
+        with pytest.raises(ToolError) as error:
+            run(read_sdk_errors(refused()))
+
+        assert str(error.value).endswith(f"{headline} Unknown transform 'explode'")
+
+    def test_a_reason_the_headline_already_gives_is_not_repeated(self) -> None:
+        body = {"message": "Invalid source", "details": {"message": "Invalid source"}}
+
+        async def refused() -> None:
+            raise MammothAPIError("API request failed: Invalid source", 400, body)
+
+        with pytest.raises(ToolError) as error:
+            run(read_sdk_errors(refused()))
+
+        assert str(error.value).count("Invalid source") == 1
+
     def test_a_refusal_with_another_code_gets_no_hint(self) -> None:
         async def refused() -> None:
             raise MammothAPIError("Dataset name already exists", 400, {"error_code": "4DSET001"})

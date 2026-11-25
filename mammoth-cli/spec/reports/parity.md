@@ -15,10 +15,10 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 | Disposition | Count |
 |---|---:|
-| command | 705 |
+| command | 706 |
 | alias | 2 |
 | protocol_only | 11 |
-| internal_only | 38 |
+| internal_only | 37 |
 | deprecated | 0 |
 | server_unavailable | 0 |
 | unmapped | 0 |
@@ -26,34 +26,34 @@ Generated from the reviewed manifests. Do not edit by hand.
 
 ## Public SDK method parity
 
-- Total public methods: `918`
-- With canonical command: `812`
-- Alias of another command: `38`
-- Reviewed SDK-only exemptions: `68`
+- Total public methods: `957`
+- With canonical command: `848`
+- Alias of another command: `40`
+- Reviewed SDK-only exemptions: `69`
 
 ## Command surface
 
-- Canonical + convenience commands: `880`
+- Canonical + convenience commands: `917`
 
 ### Mutation classes
 
 | Mutation class | Count |
 |---|---:|
-| read | 366 |
-| benign_mutation | 237 |
+| read | 384 |
+| benign_mutation | 251 |
 | reversible_pipeline | 41 |
-| destructive | 68 |
+| destructive | 72 |
 | high_impact | 126 |
-| external_effect | 42 |
+| external_effect | 43 |
 
 ### Acceptance evidence
 
 | Evidence class | Count |
 |---|---:|
-| contract_only_high_impact | 223 |
-| contract_only_no_disposable_fixture | 152 |
-| live_disposable_project | 209 |
-| live_read_only | 296 |
+| contract_only_high_impact | 224 |
+| contract_only_no_disposable_fixture | 151 |
+| live_disposable_project | 228 |
+| live_read_only | 314 |
 
 ## Protocol-only operations
 

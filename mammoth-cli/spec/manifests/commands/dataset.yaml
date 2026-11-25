@@ -79,8 +79,11 @@ commands:
     (without them the job fails with Invalid parameters); on_refresh_action combine appends every refresh,
     so rows duplicate. The recipe is recipes/rest-api-import.md. To make a dataset from a database query
     (SQL Server, MySQL, Postgres, ...): connector connection create for the database, try the SELECT with
-    connector connection query (read-only, saves nothing), then connector ds-config create CONNECTOR_KEY
-    CONNECTION_KEY with {"query": SELECT, "table": NAME}; the recipe is recipes/database-import.md. Other
+    connector connection query (read-only, saves nothing), then {"ds_creation_type": "cloud", "dataset_spec":
+    {"connector_key": KEY, "connection_key": CONNECTION_KEY, "query_properties": {"ds_name": NAME, "table_name":
+    TABLE, "query": SELECT}}}; all three query_properties are required, and with no schedule_properties
+    it is a one-off pull now; the recipe is recipes/database-import.md. connector ds-config create saves
+    nothing. Other
     ds_creation_type values and dataset_spec shapes: variants beyond the documented path are not qualified.'
 - command_id: dataset.create-from-pdf
   output_schema: {ref: WriteResult}
@@ -275,12 +278,14 @@ commands:
   live_test: null
   live_exemption_reason: No automated disposable-project fixture wired into tests/live yet for this command.
   agent_example: mammoth dataset refresh 123 --yes
-  known_restrictions: Fetches the link of a dataset made from a URL (dataset create with ds_creation_type
-    weburl; dataset list shows it as source url with the link host) again into the same dataset, and waits
-    for the job. Whether the new data replaces or adds to the old follows the dataset's own data addition
-    setting. A dataset not made from a URL is refused, and so is a URL that serves JSON; the server's
-    reason is shown. A single CSV only. It never refreshes on a schedule, and automation run_data_retrieval
-    cannot refresh it; for a scheduled pull from a URL use the REST API connector.
+  known_restrictions: Pulls the dataset's data in again from its source and waits for the job; the result
+    names the source. It reads the dataset's sources first. A connector table pulls now (cloud), a webhook's
+    dataset loads the rows the webhook staged (webhook), and a dataset made from a URL fetches its link again
+    (dataset create with ds_creation_type weburl). Whether the new data replaces or adds to the old follows
+    the dataset's own data addition setting. An uploaded file has no source and is refused, and so is a URL
+    that serves JSON; the server's reason is shown. A URL dataset is a single CSV only and never refreshes
+    on a schedule (automation run_data_retrieval cannot refresh it); for a scheduled pull from a URL use
+    the REST API connector.
 - command_id: dataset.rename
   output_schema:
     ref: WriteResult

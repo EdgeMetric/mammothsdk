@@ -1,11 +1,11 @@
 """Check the signature on a workflow run's callback.
 
-A run started with ``WorkflowsAPI.start_run(..., callback_url=...)`` makes Mammoth POST a small
+A run started with ``WorkflowTriggersAPI.run(..., callback_url=...)`` makes Mammoth POST a small
 JSON to that URL when the run ends. The request carries::
 
     X-Mammoth-Signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<body>">
 
-keyed with the run's ``callback_secret``, which ``start_run`` returns once. Verify the raw body
+keyed with the run's ``callback_secret``, which it returns once. Verify the raw body
 bytes as received, before parsing them::
 
     from mammoth import verify_callback
@@ -97,7 +97,7 @@ def verify_callback(
     """Return True when a workflow run callback's signature is valid and fresh.
 
     Args:
-        secret: The run's ``callback_secret`` (from ``WorkflowsAPI.start_run``).
+        secret: The run's ``callback_secret`` (from ``WorkflowTriggersAPI.run``).
         header: The ``X-Mammoth-Signature`` header value.
         body: The raw request body, as bytes or UTF-8 text, before any JSON parsing.
         tolerance: Most seconds the header's timestamp may be from now (default 300); None

@@ -747,7 +747,8 @@ def test_data_get_trims_rows_to_the_limit(fake_service: FakeMammothService, tmp_
 def test_data_query_passes_ids(fake_service: FakeMammothService) -> None:
     view_cmd.view_data_query(_inv("view.data.query", project=180, extra_args=["7", "9"]))
     assert _without_meta(fake_service.call_log) == [
-        (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180})
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
+        (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
     ]
 
 
@@ -911,6 +912,7 @@ def test_data_query_dataset_from_input_field_skips_resolution(
     doc = _doc(tmp_path, {"dataset_id": 9, "limit": 5})
     view_cmd.view_data_query(_inv("view.data.query", project=180, extra_args=["7"], input_file=doc))
     assert _without_meta(fake_service.call_log) == [
+        (_DATAVIEW_GET, {"dataset_id": 9, "dataview_id": 7, "project_id": 180}),
         (_DATA_QUERY, {"dataset_id": 9, "dataview_id": 7, "project_id": 180, "limit": 5}),
     ]
 

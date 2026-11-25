@@ -13,7 +13,6 @@ from mammoth_cli.commands.view._common import (
     _forward_optional,
     _int_field,
     _page_offset,
-    _read_meta,
     _read_meta_and_info,
     _require_int_positional_at,
     _resolve_dataset_id,
@@ -265,13 +264,22 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
 
     The dataset is resolved from the view unless given as a trailing positional
     or a ``dataset_id`` --input field. ``raw: true`` returns DATE values with their time.
+    The view is read once (with its dataset, side by side) and that record serves the
+    metadata, the filter compile and the relabelling (mammothsdk#400).
     """
     project_id = require_project(invocation)
     view_id = _require_int_positional_at(invocation, 0, "view id")
     document = invocation.load_input() or {}
     with open_service(invocation) as (service, auth):
         dataset_id = _resolve_dataset_id(service, invocation, view_id, document)
-        meta = _read_meta(service, invocation, auth.workspace_id, dataset_id, view_id, project_id)
+        try:
+            meta, info = _read_meta_and_info(
+                service, invocation, auth.workspace_id, dataset_id, view_id, project_id
+            )
+        except CliError as exc:
+            _explain_swapped_ids(service, exc, invocation, view_id, dataset_id)
+            raise
+        profile, profile_types, _currencies = _profile_of_info(info)
         kwargs: dict[str, Any] = {
             "dataset_id": dataset_id,
             "dataview_id": view_id,
@@ -289,10 +297,18 @@ def view_data_query(invocation: Invocation) -> HandlerResult:
             document.get("text_date_format"),
         )
         mapping, types = _compile_query_filters(
-            service, dataset_id, view_id, project_id, document, kwargs, reads
+            service, dataset_id, view_id, project_id, document, kwargs, reads, info
         )
         data = service.call(_symbol(invocation), **kwargs)
-        data = _relabel_and_check(service, dataset_id, view_id, project_id, data, mapping, types)
+        data = _relabel_and_check(
+            service,
+            dataset_id,
+            view_id,
+            project_id,
+            data,
+            mapping or profile or None,
+            types or profile_types or None,
+        )
         columns = read_queries.condition_columns(document.get(CONDITION_KWARG))
         data = read_queries.with_observed_range(reads, data, columns)
         data = read_queries.with_assumptions(reads, data)

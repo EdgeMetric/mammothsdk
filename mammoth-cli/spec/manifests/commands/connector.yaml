@@ -74,6 +74,12 @@ commands:
     a single SELECT or WITH ... SELECT, and the connection's database user decides what the database allows.
     The sample is limited to the first rows of the result, so add your own LIMIT or aggregate for a large
     table. To turn a query into a dataset use dataset create.
+- command_id: connector.connection.tables
+  output_schema: {ref: ConnectionTables}
+  known_restrictions: 'The first 500 tables (total counts all); path is the name to query. shape other means
+    this connection lists no tables (files, AI-built connectors); needs_sign_in means its sign-in was refused
+    and failed that the tables could not be read, and then an empty tables list says nothing. warning says
+    which. Import one with dataset create (ds_creation_type cloud).'
 - command_id: connector.connection.update
   output_schema: {ref: WriteResult}
   secret_fields:
@@ -90,15 +96,15 @@ commands:
 - command_id: connector.ds-config.create
   output_schema: {ref: WriteResult}
   undo:
-    strategy: manual
-    command: connector.ds-config.delete
-  known_restrictions: Needs exactly one source; validate and data_sample cannot be combined.
-  readback:
-    command: connector.ds-config.list
-    ids:
-      connector_key: positional.0
-      connection_key: positional.1
-    kind: object
+    strategy: irreversible
+    reason: Only checks or samples a query on a connection and stores nothing in the workspace, so there
+      is nothing to undo.
+  known_restrictions: 'Saves nothing: the server validates the config (validate, the default) or returns
+    sample rows (data_sample), and the result says saved false. No data source config and no dataset is
+    made; dataset create (ds_creation_type cloud) imports the rows. Needs exactly one of query and file_source;
+    validate and data_sample cannot be combined.'
+  no_readback: the server only validates the config or returns sample rows in the result; nothing is
+    saved to read back
 - command_id: connector.ds-config.delete
   output_schema:
     ref: WriteResult
@@ -272,3 +278,22 @@ commands:
     ids:
       draft_id: positional.0
     kind: object
+- command_id: connector.draft.credentials
+  output_schema:
+    type: object
+    required: [draft_id, session_id, widget_id, outcome]
+    properties:
+      draft_id:
+        type: integer
+      session_id:
+        type: string
+      widget_id:
+        type: string
+      outcome: {}
+  secret_fields:
+  - credentials
+  agent_example: mammoth connector draft credentials 123 --input /private/path/request.json --yes
+  known_restrictions: Answers the newest open key card in the draft's chat (or the given widget_id).
+    credentials must come from an --input file or stdin; inline JSON is refused so a key never lands
+    in shell history. The server keeps a passing key with the draft and never shows it to the agent.
+  no_readback: the outcome is the server's check of the key; nothing readable is saved for a read to show

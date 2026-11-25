@@ -732,6 +732,33 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.access
+  canonical_command: annotation.access
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CommentAccess
+  notes: "Read-only: whether the caller may post and moderate comments in the project, and the people a comment may mention."
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_delete
+  canonical_command: annotation.comment.delete
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - WorkflowAnnotationDeleteComment
+  notes: "Deletes a comment (its author or a project admin); a thread left with no comments goes too."
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_edit
+  canonical_command: annotation.comment.edit
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - EditComment
+  notes: "Changes a comment's text; only its author may."
 - sdk_symbol: mammoth.api.annotations.AnnotationsAPI.create
   canonical_command: annotation.create
   alias_of: null
@@ -1574,10 +1601,11 @@ sdk_methods:
   canonical_command: connector.connection.update
   alias_of: null
   mutation_class: external_effect
-  wait_policy: not_async
+  wait_policy: always_wait
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Require --yes if validation contacts the destination; fixture required.
+  notes: Require --yes if validation contacts the destination; fixture required. An optional name
+    is sent with the credentials (the server validates both together); waits for the save job.
 - sdk_symbol: mammoth.api.connectors.ConnectorsAPI.update_ds_config
   canonical_command: connector.ds-config.update
   alias_of: null
@@ -2984,6 +3012,15 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: none
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.datasets.DatasetsAPI.refresh_source
+  canonical_command: null
+  alias_of: dataset.refresh
+  mutation_class: benign_mutation
+  wait_policy: always_wait
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: dataset refresh picks it for a connector (cloud), cloud-file (file) or webhook dataset, from
+    the dataset's sources; a URL dataset uses refresh_from_url.
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.remove_definition
   canonical_command: dataset.definition.remove
   alias_of: null
@@ -3053,7 +3090,7 @@ sdk_methods:
   canonical_command: dataset.trash
   alias_of: null
   mutation_class: null
-  wait_policy: null
+  wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
 - sdk_symbol: mammoth.api.datasets.DatasetsAPI.update
@@ -5221,7 +5258,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Secure creation uses the secret-output rule (--secret-out/--show-secret).
+  notes: A secure webhook's secret is masked (secret_redacted true); --reveal prints it.
 - sdk_symbol: mammoth.api.webhooks.WebhooksAPI.delete
   canonical_command: webhook.delete
   alias_of: null
@@ -5271,7 +5308,7 @@ sdk_methods:
   wait_policy: not_async
   pagination_policy: none
   openapi_operation_ids: []
-  notes: Reject an empty patch; a newly issued secret uses the secret-output rule.
+  notes: Reject an empty patch; a newly issued secret is masked unless --reveal is given.
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.attach_dataset
   canonical_command: workflow.attach-dataset
   alias_of: null
@@ -5379,6 +5416,14 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  canonical_command: workflow.delete-plan
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Read-only: what deleting the workflow would take with it (steps, result tables, dashboards, schedules, inputs), each item with its default tick and whether another workflow locks it; workflow delete sends the ticked, unlocked keys."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate
   canonical_command: workflow.duplicate
   alias_of: null
@@ -5400,6 +5445,14 @@ sdk_methods:
   wait_policy: null
   pagination_policy: null
   openapi_operation_ids: []
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.wait_for_save
+  canonical_command: null
+  alias_of: workflow.get
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Read-only: repeats workflow get until canvas_state.save_run ends or the wait runs out; the CLI's builds, save and save-undo wait through it."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.graph
   canonical_command: workflow.graph
   alias_of: null
@@ -5972,8 +6025,7 @@ sdk_methods:
   wait_policy: always_wait
   pagination_policy: null
   openapi_operation_ids: []
-  notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing
-    target.'
+  notes: 'Mutation class dynamic: benign_mutation for a new target, destructive when replacing an existing target. REPLACE_IN_DS (the default) is destructive on an existing target: on every run the backend first drops the batches that earlier runs of this same export added to the target, then adds the new rows. Rows from other sources (uploads, appends, other exports) are kept, and the first run drops nothing. A run that carries no export id cannot match earlier batches, so it drops nothing and only adds rows. APPEND_TO_DS adds a full copy of the rows on every run, so totals grow each run.'
 - sdk_symbol: mammoth.view.ViewExport.to_elasticsearch
   canonical_command: view.export.elasticsearch
   alias_of: null
@@ -6265,6 +6317,15 @@ sdk_methods:
   openapi_operation_ids:
   - ListConnectorKnownSources
   notes: "Read-only. Sources with no built-in connector that a draft can still start on, deep ones first."
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  canonical_command: connector.connection.tables
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ListConnectionTables
+  notes: "Read-only. The tables of a saved connection; shape other for a connection that lists none."
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.get
   canonical_command: connector.draft.get
   alias_of: null
@@ -6543,6 +6604,15 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: "Each table's request path, records path and paging, then the whole spec; credentials are references and anything that could be a secret reads [redacted]."
+- sdk_symbol: mammoth.api.agents.AgentsAPI.session_credential_test
+  canonical_command: connector.draft.credentials
+  alias_of: null
+  mutation_class: external_effect
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: [TestAgentCredentialCard]
+  notes: Answers the draft chat's open key card ("Test and connect"). credentials come from an --input
+    file or stdin, never inline JSON; widget_id defaults to the chat's open card. Needs --yes.
 - sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.version_spec
   canonical_command: connector.version.spec.get
   alias_of: null
@@ -6551,6 +6621,286 @@ sdk_methods:
   pagination_policy: none
   openapi_operation_ids: []
   notes: "One stored version of the workspace's AI-built connector, by slug and version number."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.fits
+  canonical_command: workflow.template.fits
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - FitsCatalogTemplates
+  notes: "Read-only: the templates the project's tables already fit, by column names and types."
+- sdk_symbol: mammoth.api.workflow_templates.WorkflowTemplatesAPI.start_page
+  canonical_command: workflow.page.start
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - StartWorkflowPage
+  notes: "Imports a workflow page's sample tables once and reads its workflow back on them; nothing is built."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
+  canonical_command: workflow.run.start
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids: []
+  notes: "Starts the workflow on the server now (a run already in flight is named, not started twice); with wait, follows Recent runs."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run
+  canonical_command: workflow.run.wait
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWorkflowRuns
+  notes: "Read-only: polls Recent runs until the run ends or the wait runs out."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs
+  canonical_command: workflow.run.list
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWorkflowRuns
+  notes: "Read-only: the workflow's recent runs of every kind, newest first."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set
+  canonical_command: workflow.schedule.set
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PutWorkflowSchedule
+  notes: "Sets the workflow's clock (replaces one it has); pause or remove it with automation commands."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set
+  canonical_command: workflow.after.set
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PutWorkflowAfter
+  notes: "Runs the workflow each time another one finishes; the server refuses a loop."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_loops
+  canonical_command: workflow.after.loops
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWorkflowAfterLoops
+  notes: "Read-only: the workflows this one cannot be set to start after."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
+  canonical_command: workflow.link.create
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PostWorkflowLink
+  notes: "Makes the workflow's secret run link (a new one replaces the old); the secret shows only once."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
+  canonical_command: workflow.link.remove
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkflowLink
+  notes: "Turns the workflow's secret link off; it stops working at once."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  canonical_command: workflow.link.fire
+  alias_of: null
+  secret_fields:
+  - link
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - PostWorkflowLinkCall
+  notes: "Starts the workflow from its secret link, as anyone holding the link can; a run already in flight is named, not started twice."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  canonical_command: workflow.schedule.unset
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkflowSchedule
+  notes: "Takes the workflow's clock off; it stops starting on it at once."
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  canonical_command: workflow.after.unset
+  alias_of: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DeleteWorkflowAfter
+  notes: "Stops the workflow running after another one; it stops starting at once."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.start
+  canonical_command: workflow.describe.start
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DescribeWorkflow
+  notes: "Starts reading a description back as a workflow; returns a draft id at once. Nothing is built."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.draft
+  canonical_command: workflow.describe.get
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DescribedWorkflow
+  notes: "Read-only: a draft's state and, when done, its read-back."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.wait
+  canonical_command: workflow.describe.wait
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DescribedWorkflow
+  notes: "Read-only: polls a draft until it is done or failed, or the wait runs out."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.check
+  canonical_command: workflow.describe.check
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CheckDescribedSpec
+  notes: "Read-only: reads an edited spec back again, with no model call."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.build
+  canonical_command: workflow.describe.build
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - BuildDescribedWorkflow
+  notes: "Adds the read-back's steps to a new workflow and waits for the Save that builds them."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.keep_sample
+  canonical_command: workflow.describe.sample
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - KeepDescribeSample
+  notes: "Keeps a file to try a draft of files that arrive on."
+- sdk_symbol: mammoth.api.workflow_describe.WorkflowDescribeAPI.fed_by
+  canonical_command: workflow.describe.fed-by
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - WorkflowFeedingBoard
+  notes: "Read-only: the workflow that feeds a board on a view."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.step_lines
+  canonical_command: workflow.step-lines
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWorkflowStepLines
+  notes: "Read-only: each step of the workflow's views in one plain line."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.repeat_counts
+  canonical_command: workflow.repeat-counts
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - GetWorkflowRepeatCounts
+  notes: "Read-only: per workflow, the groups of steps that repeat earlier work."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.before_after
+  canonical_command: workflow.before-after
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - WorkflowBeforeAfter
+  notes: "Read-only: the first rows before and after drafted steps; changes nothing."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.view_values
+  canonical_command: workflow.values
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ViewColumnValues
+  notes: "Read-only: how many rows have a filter value exactly, and near values."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.holds_check
+  canonical_command: workflow.held.check
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CheckHeldChanges
+  notes: "Settles each change a Save held back by looking in Mammoth for it."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.sentence_read
+  canonical_command: workflow.sentence.read
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - ReadSentence
+  notes: "Reads the workflow's edited sentence: kept, proposed as unsaved steps, a question or unclear."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.sentence_ask_dismiss
+  canonical_command: workflow.sentence.dismiss-ask
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - DismissSentenceAsk
+  notes: "Dismisses the question the sentence's reading waits on."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_fit
+  canonical_command: workflow.swap.fit
+  alias_of: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - WorkflowSwapFit
+  notes: "Read-only: which tables could stand in for the one a view's steps read."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap
+  canonical_command: workflow.swap.apply
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - SwapTable
+  notes: "Makes the workflow read another table from now on; workflow swap undo puts it back."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_cancel
+  canonical_command: workflow.swap.cancel
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - CancelSwap
+  notes: "Cancels a table swap held for a column pick."
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.swap_undo
+  canonical_command: workflow.swap.undo
+  alias_of: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  openapi_operation_ids:
+  - UndoSwap
+  notes: "Undoes the last table swap in the background."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.list_runnable
   canonical_command: workflow.runnable
   alias_of: null
@@ -6560,17 +6910,8 @@ sdk_methods:
   openapi_operation_ids:
   - ListRunnableWorkflows
   notes: "The workflows you can run (every table visible to you), newest first, each with `running` and its latest run."
-- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.start_run
-  canonical_command: workflow.run
-  alias_of: null
-  mutation_class: benign_mutation
-  wait_policy: start_or_wait
-  pagination_policy: none
-  openapi_operation_ids:
-  - PostWorkflowStart
-  notes: "Starts the whole workflow (202) and, in the CLI, waits for the run; 429 past six starts of one workflow a minute."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_status
-  canonical_command: workflow.status
+  canonical_command: workflow.run.status
   alias_of: null
   mutation_class: read
   wait_policy: not_async
@@ -6579,7 +6920,7 @@ sdk_methods:
   - GetWorkflowRunStatus
   notes: "running until the run settles, then success or failure with why. A just-started run can read 404 for a few seconds."
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_result
-  canonical_command: workflow.result
+  canonical_command: workflow.run.result
   alias_of: null
   mutation_class: read
   wait_policy: not_async

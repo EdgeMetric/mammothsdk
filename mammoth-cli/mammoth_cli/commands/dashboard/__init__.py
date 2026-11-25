@@ -11,6 +11,8 @@ SDK method named by the command's reviewed manifest ``sdk_symbol``.
 
 from __future__ import annotations
 
+import json
+import shlex
 from collections.abc import Callable
 from typing import Any
 
@@ -30,11 +32,13 @@ from mammoth_cli.commands.dashboard.generated import (
     _deliverable_warnings,
     _dump_model,
     _with_board_values,
+    _with_style_saved,
 )
 from mammoth_cli.commands.registry import HandlerResult
 from mammoth_cli.commands.view._common import _FIND_DATASET_SYMBOL
 from mammoth_cli.context import profiles
 from mammoth_cli.errors.envelope import (
+    CODE_API_ERROR,
     CODE_INVALID_ARGUMENT,
     CODE_MISSING_FIELD,
     CODE_UNSUPPORTED_BY_SERVER,
@@ -51,6 +55,7 @@ from mammoth_cli.runtime.confirm import (
 )
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service
+from mammoth_cli.services.board_style_write import pop_style_choice
 from mammoth_cli.services.command_contract import bind_command_inputs
 from mammoth_cli.services.dashboard_figures import (
     figure_problems,
@@ -61,6 +66,7 @@ from mammoth_cli.services.dashboard_filters import (
     with_filter,
     without_filter,
 )
+from mammoth_cli.services.dashboard_pages import append_figure
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
 )
@@ -381,12 +387,29 @@ def dashboard_source_list(invocation: Invocation) -> HandlerResult:
 
 
 def dashboard_update(invocation: Invocation) -> HandlerResult:
-    """Apply a JSON Patch to one dashboard. Dashboard id is positional."""
+    """Apply a JSON Patch to one dashboard, and/or set its theme and mode.
+
+    Dashboard id is positional. ``--input`` carries a ``patch`` list, ``style_id`` (the theme)
+    and/or ``mode`` (``light`` or ``dark``); the style is set on the board's canvas after the
+    patch (mammothsdk#419). At least one is required.
+    """
     dashboard_id = _require_int_positional(invocation, "dashboard id")
     document = _bound_document(invocation)
-    patch = _require_field(document, "patch")
+    style = pop_style_choice(document)
+    patch = document.get("patch") if style else _require_field(document, "patch")
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), dashboard_id=dashboard_id, patch=patch)
+        data: Any = {"dashboard_id": dashboard_id}
+        if patch is not None:
+            data = service.call(_symbol(invocation), dashboard_id=dashboard_id, patch=patch)
+        if style:
+            data = _with_style_saved(service, data, dashboard_id, style)
+            if patch is None and "style_error" in data:
+                raise CliError(
+                    code=CODE_API_ERROR,
+                    message=data["style_error"],
+                    exit_status=EXIT_API,
+                    hint="Nothing was changed.",
+                )
     return data, _meta(invocation, auth.workspace_id)
 
 
@@ -656,8 +679,15 @@ def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
             params["kind"] = document["kind"]
         with open_service(invocation) as (service, auth):
             data = service.call(_FIGURE_INTENT, dashboard_id=dashboard_id, body={"params": params})
-        result = _dump_model(data)
-        result = {**result, "route": "figure-intent"} if isinstance(result, dict) else result
+            result = _dump_model(data)
+            if isinstance(result, dict):
+                result = _land_intent_figure(
+                    service,
+                    invocation,
+                    dashboard_id,
+                    document,
+                    {**result, "route": "figure-intent"},
+                )
         return result, _meta(invocation, auth.workspace_id)
     kwargs: dict[str, Any] = {
         "dashboard_id": dashboard_id,
@@ -669,8 +699,69 @@ def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
         kwargs.update(_figure_page_kwargs(document["page"]))
     with open_service(invocation) as (service, auth):
         _refuse_bad_figure(service, dashboard_id, kwargs)
-        data = service.call(_symbol(invocation), **kwargs)
+        data = append_figure(service, _symbol(invocation), kwargs)
     return data, _meta(invocation, auth.workspace_id)
+
+
+def _land_intent_figure(
+    service: Any,
+    invocation: Invocation,
+    dashboard_id: int,
+    document: dict[str, Any],
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Save the figure an intent resolved; the figure-intent route only resolves it.
+
+    The route answered ``added`` and ``intent_applied: true`` while the canvas stayed as
+    it was (mammothsdk#406), so the resolved figure is appended to the board's own view.
+    ``saved`` says whether it landed; when it did not, ``next_steps`` names the command.
+
+    Args:
+        service: The session service.
+        invocation: The figure add invocation (its SDK symbol is the append).
+        dashboard_id: The board.
+        document: The command input (its optional ``page``).
+        result: The figure-intent answer.
+
+    Returns:
+        ``result`` with ``saved`` and, once saved, the append's ``sequence``,
+        ``bake_job_id``, ``page_id`` and ``figure_id``.
+    """
+    added = result.get("added")
+    figure = (
+        {key: value for key, value in added.items() if key != "id"}
+        if isinstance(added, dict)
+        else {}
+    )
+    if result.get("refused") or result.get("empty") or not figure:
+        return {
+            **result,
+            "saved": False,
+            "note": "The intent resolved no figure; nothing was saved.",
+        }
+    kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "figure": figure}
+    if document.get("page") is not None:
+        kwargs.update(_figure_page_kwargs(document["page"]))
+    try:
+        canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
+        kwargs["dataview_id"] = canvas_doc["canvas"]["dataset"]["dataview_id"]
+        saved = _dump_model(service.call(_symbol(invocation), **kwargs))
+    except Exception as exc:  # noqa: BLE001 -- the figure resolved; say it did not land
+        spec = json.dumps({"dataview_id": "VIEW_ID", "figure": figure})
+        return {
+            **result,
+            "saved": False,
+            "error": f"{type(exc).__name__}: {exc}",
+            "next_steps": [
+                f"mammoth dashboard figure add {dashboard_id} --input {shlex.quote(spec)}"
+            ],
+        }
+    landed = {
+        key: saved[key]
+        for key in ("sequence", "bake_job_id", "page_id", "figure_id")
+        if isinstance(saved, dict) and key in saved
+    }
+    return {**result, "saved": True, **landed}
 
 
 def _refuse_bad_figure(service: Any, dashboard_id: int, kwargs: dict[str, Any]) -> None:

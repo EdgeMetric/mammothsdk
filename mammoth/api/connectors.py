@@ -26,7 +26,8 @@ ERR_CONNECTION_CONFIG_EMPTY = (
 )
 ERR_UPDATE_CONNECTION_CREDS_EMPTY = (
     "`credentials` must be a non-empty dict containing the updated connection "
-    "credentials. Shape varies by connector_key (same as create_connection)."
+    "credentials (a rename sends `name` with them). Shape varies by connector_key (same "
+    "as create_connection)."
 )
 ERR_DS_CONFIG_SOURCE_REQUIRED = (
     "Either `query` or `file_source` must be provided. "
@@ -272,8 +273,9 @@ class ConnectorsAPI:
         connection_key: str,
         credentials: dict[str, Any],
         project_id: int | None = None,
+        name: str | None = None,
     ) -> dict[str, Any]:
-        """Update a connection's credentials.
+        """Update a connection's credentials, optionally renaming it.
 
         The backend expects a JSON-patch envelope:
         ``{"patch": [{"op": "replace", "path": "connection", "value": <credentials>}]}``.
@@ -285,6 +287,10 @@ class ConnectorsAPI:
             credentials: Non-empty dict of updated connection credentials. Shape
                 is the same as for ``create_connection`` (varies by connector_key).
             project_id: Project ID (uses client default if not provided).
+            name: New name, sent as ``name`` beside the credentials (mammothsdk#413). The
+                server validates the whole value against the connector's connection model, so
+                a name needs the full credentials too, and only connectors whose model has a
+                ``name`` field (custom REST/code connectors) keep it.
 
         Returns:
             Dict with updated connection info.
@@ -296,7 +302,8 @@ class ConnectorsAPI:
             raise MammothValidationError(ERR_UPDATE_CONNECTION_CREDS_EMPTY)
         ws = self._ws()
         proj = self._proj(project_id)
-        body = {"patch": [{"op": "replace", "path": "connection", "value": credentials}]}
+        value: dict[str, Any] = {**credentials, **({"name": name} if name else {})}
+        body = {"patch": [{"op": "replace", "path": "connection", "value": value}]}
         return await self._client._request_json(
             "PATCH",
             f"/workspaces/{ws}/projects/{proj}/connectors/{_encode_connector_key(connector_key)}/connections/{connection_key}",
@@ -359,7 +366,11 @@ class ConnectorsAPI:
         data_sample: bool = False,
         project_id: int | None = None,
     ) -> dict[str, Any]:
-        """Create a data source configuration.
+        """Check a data source configuration, or sample its rows. Saves nothing.
+
+        The server validates the config or returns sample rows; it makes no data
+        source configuration and no dataset. Create a dataset with
+        ``client.datasets.create`` (``ds_creation_type="cloud"``).
 
         Exactly one of ``query`` or ``file_source`` must be provided (mirrors the
         backend ``ValidateAndSampleDataSpec`` validator). ``validate`` and
@@ -381,7 +392,7 @@ class ConnectorsAPI:
             project_id: Project ID (uses client default if not provided).
 
         Returns:
-            Dict with created data source config.
+            Dict with the validation result, or ``data_sample`` when sampling.
 
         Raises:
             MammothValidationError: If neither ``query`` nor ``file_source`` is

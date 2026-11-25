@@ -53,9 +53,11 @@ RESULTS = {
 }
 
 
-def a_board_that_evaluates(api: FakeApi, results: dict[str, Any] = RESULTS) -> None:
+def a_board_that_evaluates(
+    api: FakeApi, results: dict[str, Any] = RESULTS, canvas: dict[str, Any] = CANVAS
+) -> None:
     api.answer("GET", BOARD_PATH, CURRENT_BOARD)
-    api.answer("GET", f"{BOARD_PATH}/canvas", CANVAS)
+    api.answer("GET", f"{BOARD_PATH}/canvas", canvas)
     api.answer("POST", DESCRIPTOR_DATA, {"job_id": JOB})
     api.answer(
         "GET",
@@ -81,6 +83,41 @@ class TestTheNumbersOnABoard:
             "period": "Q1 2026",
             "value": 10998.05,
         }
+
+    def test_a_card_with_a_previous_period_keeps_its_own_value_and_filters(self) -> None:
+        now = {"term": {"field": "call_date", "op": "in", "value": "last 30 days"}}
+        before = {"term": {"field": "call_date", "op": "in", "value": "30 days before"}}
+        canvas = {
+            "canvas": {"focus": {"kpis": [{"label": "Cost"}]}},
+            "meta": {
+                "sequence": 4,
+                "figures": {
+                    "p1:kpi:0": {"descriptors": {"value": "d1", "prev": "d3", "spark": "d4"}}
+                },
+                "receipts": {
+                    "p1:kpi:0": {
+                        "series": {"value": {"filters": [now]}, "prev": {"filters": [before]}}
+                    }
+                },
+            },
+        }
+        results = {
+            "d1": {"status": "success", "value": 421.0},
+            "d3": {"status": "success", "value": 75.0},
+            "d4": {"status": "success", "data": [{"key": "2026-11-01", "value": 1.0}]},
+        }
+        with a_fake_api() as api, as_caller():
+            a_board_that_evaluates(api, results, canvas)
+            (card,) = get_dashboard()["values"]
+
+        assert card["value"] == 421.0
+        assert card["filters"] == ["call_date in last 30 days"]
+        assert card["series"]["prev"] == {
+            "value": 75.0,
+            "filters": ["call_date in 30 days before"],
+        }
+        assert card["series"]["spark"]["row_count"] == 1
+        assert set(card) == {"figure", "kind", "label", "filters", "value", "series"}
 
     def test_a_chart_reports_its_first_rows_and_how_many_there_are(self) -> None:
         with a_fake_api() as api, as_caller():

@@ -15,11 +15,15 @@ import shlex
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from mammoth_cli.services.dashboard_pages import own_table
 from mammoth_cli.services.dashboard_review import _profiles
 from mammoth_cli.services.suggest import nearest_one
 
 #: Aggregations that need a numeric measure; count and count_distinct do not.
 NUMERIC_AGGS = frozenset({"sum", "avg", "mean", "average", "min", "max", "median"})
+
+#: The server's own measure for a row count; it reads no column.
+ROW_COUNT_MEASURE = "__count"
 
 _MEASURE_KEYS = ("measure", "measure2", "measure_x", "measure_y", "measure_size")
 _DIM_KEYS = ("dim", "col_dim", "row_dim", "series", "date_field")
@@ -67,7 +71,7 @@ def figure_problems(
     allowed = set(derived)
     problems: list[dict[str, Any]] = []
     for role, column, agg in _figure_refs(figure):
-        if column in allowed:
+        if column in allowed or (role == "measure" and column == ROW_COUNT_MEASURE):
             continue
         profile = by_name.get(column)
         if profile is None:
@@ -121,7 +125,17 @@ def canvas_figure_problems(canvas_doc: Any) -> list[dict[str, Any]]:
     source = canvas.get("dataset")
     view_id = source.get("dataview_id") if isinstance(source, Mapping) else None
     problems: list[dict[str, Any]] = []
-    containers = [canvas, *[p for p in canvas.get("pages") or [] if isinstance(p, Mapping)]]
+    root = source if isinstance(source, Mapping) else {}
+    # The profile is the board's own table; a page reading another table
+    # (``pages[].dataset``) cannot be checked against it (mammothsdk#406).
+    containers = [
+        canvas,
+        *[
+            p
+            for p in canvas.get("pages") or []
+            if isinstance(p, Mapping) and not own_table(p, root)
+        ],
+    ]
     for container in containers:
         label = container.get("title") or container.get("id")
         figures = [*(container.get("added") or [])]

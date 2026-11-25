@@ -82,6 +82,18 @@ def _shared_option_params() -> list[inspect.Parameter]:
             ],
         ),
         opt(
+            "workspace",
+            None,
+            Annotated[
+                int | None,
+                typer.Option(
+                    "--workspace",
+                    help="Workspace id override (instead of the profile's workspace).",
+                    rich_help_panel="Context and timeouts",
+                ),
+            ],
+        ),
+        opt(
             "session",
             None,
             Annotated[

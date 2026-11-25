@@ -462,6 +462,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.logout",
         "auth.status",
         "calc",
+        "bench",
         "capabilities",
         "capability.find",
         "capability.get",
@@ -744,6 +745,12 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # Choices over the delete plan (``workflow delete``); ``trash`` names the plan keys exactly.
+    "workflow.delete": (
+        FieldSpec("keep_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("trash_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("keep_steps", required=False, annotation=bool | None, default=None),
+    ),
     # Instead of ``patch``: the handler reads the automation and writes the changed dataset
     # list back as a ``details`` patch (``automation update`` docstring).
     "automation.update": (
@@ -772,6 +779,15 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
     # The share password is read from this file by the handler (the SDK's own ``password``
     # is never an input: a password on the command line lands in shell history).
+    # The board's look, set on its canvas after the create / patch (``board_style_write``).
+    "dashboard.create-blank": (
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+    ),
+    "dashboard.update": (
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+    ),
     "dashboard.share": (
         FieldSpec("password_file", required=False, annotation=str | None, default=None),
     ),

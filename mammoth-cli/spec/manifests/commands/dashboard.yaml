@@ -161,7 +161,9 @@ commands:
   known_restrictions: 'To build a board from a description, use dashboard v3 generate instead. Input is
     {"params": {"dataview_id": VIEW_ID, "title": ...}} with --yes; returns {id, sequence}. The blank canvas
     has one page (p1) and no figures: author it with dashboard chat edit, or by hand with dashboard canvas
-    get -> edit -> dashboard canvas save or dashboard pages add. One dataview per dashboard.'
+    get -> edit -> dashboard canvas save or dashboard pages add. The board starts on one dataview; each
+    page added with dashboard pages add can read its own ("dataset": {"dataview_id": V}, see dashboard
+    page plan). Join tables only when one chart needs columns from both.'
 - command_id: dashboard.data.draft
   output_schema: openapi
 - command_id: dashboard.data.published
@@ -461,8 +463,10 @@ commands:
     kind: object
   known_restrictions: 'To add or change content by description, use dashboard chat edit instead. Requires
     --yes --confirm DASHBOARD_ID. body.params.pages is a list of PageAdd objects: {title, focus: {measure,
-    dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}]}; the schema example''''s {} entry is
-    not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped
+    dim, kpis: [...]}, charts: [{kind, title, dim, measure, agg}], dataset: {dataview_id: V}, date_field};
+    dataset and date_field put the page on its own table (the board''s when left out). Any other page
+    key (a page-level dataview_id) is refused, since the server would drop it. The schema example''''s
+    {} entry is not a usable page. The route runs through the LLM control guard: in the ILG simulation it dropped
     unit.prefix on a money card ("nothing in this data says which currency") that dashboard canvas save
     had kept, and reports that in data.message.'
 - command_id: dashboard.pdf-artifact
