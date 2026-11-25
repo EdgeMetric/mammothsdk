@@ -28,8 +28,9 @@ _MAX_VARIANT_GROUPS = 5
 _MAX_LABELS_COMPARED = 200
 
 _NUMBER = re.compile(r"^[-+]?[$€£]?\s*\d[\d,]*(\.\d+)?\s*%?$|^[-+]?[$€£]?\s*\.\d+\s*%?$")
-#: A zero before another digit: "00123", "0042". A lone "0" or "0.5" is not one.
-_LEADING_ZERO = re.compile(r"^[-+]?[$€£]?\s*0\d")
+#: A code: digits only, starting with a zero ("00123", "0042"). A lone "0", "0.5",
+#: "$05.50", "05%" or a date like "01/02/2026" is not one.
+_LEADING_ZERO = re.compile(r"^0\d+$")
 #: Punctuation is normalised to a space, not dropped, so "Pepsi,Cola" and
 #: "Pepsi Cola" collapse the same way as "Pepsi Cola" itself.
 _PUNCTUATION = re.compile(r"[^\w\s]", re.UNICODE)

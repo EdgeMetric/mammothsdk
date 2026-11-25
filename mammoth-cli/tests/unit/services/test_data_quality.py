@@ -57,6 +57,21 @@ def test_codes_with_leading_zeros_are_not_numbers_stored_as_text() -> None:
         assert not [w for w in warnings if w["issue"] == "numbers_stored_as_text"]
 
 
+def test_only_a_digits_only_code_silences_the_warning() -> None:
+    """Dates, times, amounts and percentages that start with a zero are not codes."""
+    for values in (
+        ["100", "250", "75", "90", "01/02/2026"],
+        ["100", "250", "75", "90", "00:15"],
+        ["100", "250", "75", "90", "05 boxes"],
+        ["-0012", "250", "75", "90"],
+        ["$05.50", "$12.00", "$7.25"],
+        ["01.50", "12.00", "7.25"],
+        ["05%", "12%", "7%"],
+    ):
+        issues = [w["issue"] for w in column_warnings(_rows(values), {"price": "TEXT"})]
+        assert "numbers_stored_as_text" in issues, values
+
+
 def test_a_lone_zero_and_zero_point_decimals_still_count_as_numbers() -> None:
     rows = _rows(["0", "0.5", "-0.25", "12", "0%"])
     issues = [w["issue"] for w in column_warnings(rows, {"price": "TEXT"})]

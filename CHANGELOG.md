@@ -20,6 +20,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-cli)
 
+- `numbers_stored_as_text` no longer suggests converting a column of codes with leading zeros (`00123`, `0042`) to NUMERIC, which would drop the zeros. Only a digits-only value starting with `0` counts as a code; dates, times, amounts and percentages that start with `0` still warn (PRD-3721).
 - `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: steps or derivatives still read this step's columns; they are named, with where to change them). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
 - `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
 - `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
