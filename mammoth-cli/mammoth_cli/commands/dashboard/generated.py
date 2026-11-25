@@ -235,7 +235,7 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
         # Masked, the only copy of the secret is lost and the run's callback cannot be checked.
         raise CliError(
             code=CODE_MISSING_FIELD,
-            message="A start with a callback_url needs --reveal: its callback_secret is shown once.",
+            message="A callback_url needs --reveal: the run's callback_secret is shown only once.",
             exit_status=EXIT_USAGE,
             hint="Nothing was started. Run it again with --reveal and save the callback_secret.",
         )
