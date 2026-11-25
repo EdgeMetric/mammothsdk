@@ -61,6 +61,18 @@ class TestFolders:
         (sent,) = api.sent("POST", FOLDERS)
         assert api.body(sent) == {"name": "Monthly", "parent_folder_id": 4}
 
+    def test_a_parent_on_the_second_page_is_found(self) -> None:
+        first = [{"id": n, "resource_id": 1000 + n} for n in range(100)]
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", FOLDERS, {"folders": first})
+            api.answer("GET", FOLDERS, {"folders": [{"id": 200, "resource_id": 70}]})
+            api.answer("POST", FOLDERS, {"folder": {**MONTHLY, "parent_id": 200}})
+            call("create_folder", name="Monthly", parent_folder_resource_id=70, **IDS)
+
+        assert [read.url.params["offset"] for read in api.sent("GET", FOLDERS)] == ["0", "100"]
+        (sent,) = api.sent("POST", FOLDERS)
+        assert api.body(sent) == {"name": "Monthly", "parent_folder_id": 200}
+
     def test_a_parent_the_project_does_not_have_is_refused(self) -> None:
         with (
             a_fake_api() as api,

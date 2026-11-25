@@ -177,6 +177,18 @@ def test_create_at_the_root_names_no_parent(
     assert fake_service.call_log[0] == (_CREATE, {"name": "Docs", "project_id": 180})
 
 
+def test_create_inside_a_folder_the_project_does_not_have_is_refused(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = tmp_path / "in.json"
+    doc.write_text(json.dumps({"name": "Docs", "parent_resource_id": 999}), encoding="utf-8")
+    fake_service.responses[_LIST] = _PROJECT_FOLDERS
+    with pytest.raises(CliError) as excinfo:
+        folder_cmd.folder_create(_inv("folder.create", project=180, input_file=str(doc)))
+    assert "999" in excinfo.value.message
+    assert _CREATE not in [symbol for symbol, _ in fake_service.call_log]
+
+
 def test_update_requires_name(fake_service: FakeMammothService) -> None:
     with pytest.raises(CliError) as excinfo:
         folder_cmd.folder_update(_inv("folder.update", project=180, extra_args=["7"]))

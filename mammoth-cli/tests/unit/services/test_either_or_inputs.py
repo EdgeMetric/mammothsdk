@@ -4,7 +4,9 @@ beside ``add_datasets``, which the handler then refuses)."""
 
 from __future__ import annotations
 
+import json
 import shlex
+from typing import Any
 
 import pytest
 
@@ -35,7 +37,23 @@ def test_folder_create_takes_the_parent_as_folder_list_shows_it() -> None:
     assert "parent_folder_id" not in names
 
 
-@pytest.mark.parametrize("command_id", ["automation.update", "view.export.update"])
-def test_the_agent_example_still_sends_a_change(command_id: str) -> None:
+@pytest.mark.parametrize(
+    ("command_id", "document"),
+    [
+        (
+            "automation.update",
+            {
+                "patch": [
+                    {"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}
+                ]
+            },
+        ),
+        ("view.export.update", {"save_as_mode": "APPEND_TO_DS"}),
+    ],
+)
+def test_the_agent_example_sends_a_change_the_handler_takes(
+    command_id: str, document: dict[str, Any]
+) -> None:
     record = next(item for item in load_commands() if item["command_id"] == command_id)
-    assert "--input" in shlex.split(record["agent_example"])
+    tokens = shlex.split(record["agent_example"])
+    assert json.loads(tokens[tokens.index("--input") + 1]) == document
