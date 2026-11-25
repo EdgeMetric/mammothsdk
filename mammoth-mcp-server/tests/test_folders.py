@@ -52,12 +52,39 @@ class TestFolders:
         assert made == {"folder_id": 5, "folder_resource_id": 77, "name": "Monthly"}
 
     def test_a_folder_inside_another_names_its_parent(self) -> None:
+        # The API reads the parent's own id, not its resource id.
         with a_fake_api() as api, as_caller():
+            api.answer("GET", FOLDERS, {"folders": [MONTHLY, {"id": 4, "resource_id": 70}]})
             api.answer("POST", FOLDERS, {"folder": {**MONTHLY, "parent_id": 4}})
             call("create_folder", name="Monthly", parent_folder_resource_id=70, **IDS)
 
         (sent,) = api.sent("POST", FOLDERS)
-        assert api.body(sent) == {"name": "Monthly", "parent_resource_id": "70"}
+        assert api.body(sent) == {"name": "Monthly", "parent_folder_id": 4}
+
+    def test_a_parent_on_the_second_page_is_found(self) -> None:
+        first = [{"id": n, "resource_id": 1000 + n} for n in range(100)]
+        with a_fake_api() as api, as_caller():
+            api.answer("GET", FOLDERS, {"folders": first})
+            api.answer("GET", FOLDERS, {"folders": [{"id": 200, "resource_id": 70}]})
+            api.answer("POST", FOLDERS, {"folder": {**MONTHLY, "parent_id": 200}})
+            call("create_folder", name="Monthly", parent_folder_resource_id=70, **IDS)
+
+        # The SDK leaves an offset of 0 out of the request.
+        offsets = [read.url.params.get("offset") for read in api.sent("GET", FOLDERS)]
+        assert offsets == [None, "100"]
+        (sent,) = api.sent("POST", FOLDERS)
+        assert api.body(sent) == {"name": "Monthly", "parent_folder_id": 200}
+
+    def test_a_parent_the_project_does_not_have_is_refused(self) -> None:
+        with (
+            a_fake_api() as api,
+            as_caller(),
+            pytest.raises(ToolError, match="No folder with folder_resource_id 5 "),
+        ):
+            api.answer("GET", FOLDERS, {"folders": [MONTHLY]})
+            call("create_folder", name="Monthly", parent_folder_resource_id=5, **IDS)
+
+        assert not api.sent("POST", FOLDERS)
 
     def test_the_projects_folders_are_listed_with_its_files(self) -> None:
         with a_fake_api() as api, as_caller():

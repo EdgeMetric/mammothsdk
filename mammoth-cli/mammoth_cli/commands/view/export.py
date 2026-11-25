@@ -29,6 +29,7 @@ from mammoth_cli.commands.view.pipeline import (
 )
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
+    CODE_MISSING_FIELD,
     CODE_UNSUPPORTED_CONTRACT,
     EXIT_USAGE,
     CliError,
@@ -396,11 +397,21 @@ def view_export_update(invocation: Invocation) -> HandlerResult:
     export_id = _require_int_positional_at(invocation, 1, "export id")
     document = invocation.load_input()
     export_update.reject_patches_with_fields(document)
-    if "patches" not in (document or {}) and export_update.has_shorthand(document):
-        assert document is not None
+    if document is not None and "patches" in document:
+        patches = document["patches"]
+    elif document is not None and export_update.has_shorthand(document):
         patches = export_update.shorthand_patches(document)
     else:
-        patches = _require_field(document, "patches")
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message=(
+                "Nothing to change was given: pass 'patches' or the fields to change "
+                f"({', '.join(export_update.SHORTHAND_FIELDS)})."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Pass it via --input, for example: "
+            '--input \'{"save_as_mode": "APPEND_TO_DS"}\'.',
+        )
     if not isinstance(patches, list):
         raise CliError(
             code=CODE_INVALID_ARGUMENT,

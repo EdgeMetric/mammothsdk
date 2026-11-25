@@ -692,7 +692,7 @@ Total commands: 917.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.create`
-- Agent example: `mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes`
+- Agent example: `mammoth automation create 'Revenue report' --input '{"tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}], "description": "Quarterly revenue summary"}' --yes`
 
 ### `mammoth automation delete`
 
@@ -4355,7 +4355,7 @@ Total commands: 917.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.bulk_delete`
-- Agent example: `mammoth folder bulk-delete --yes`
+- Agent example: `mammoth folder bulk-delete --input '{"folder_ids": [1]}' --yes`
 
 ### `mammoth folder create`
 
@@ -7640,7 +7640,7 @@ Total commands: 917.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.update`
-- Agent example: `mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes`
+- Agent example: `mammoth view export update 123 456 --input '{"save_as_mode": "APPEND_TO_DS"}' --yes`
 
 ### `mammoth view exportable-config apply`
 

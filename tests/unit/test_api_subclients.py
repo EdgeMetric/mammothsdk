@@ -1548,6 +1548,15 @@ class TestFoldersAPI:
         await client.folders.create(name="Test Folder")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/folders")
 
+    async def test_create_inside_a_folder(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={"id": 1, "name": "Test"})
+        await client.folders.create(name="Test Folder", parent_folder_id=7)
+        assert_json_body(client._request_json, {"name": "Test Folder", "parent_folder_id": 7})
+
+    async def test_create_refuses_a_positional_parent(self, client: MammothClient):
+        with pytest.raises(TypeError):
+            await client.folders.create("Test Folder", "70")  # type: ignore[misc]
+
     async def test_delete(self, client: MammothClient):
         await client.folders.delete(folder_ids=[1, 2])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/folders")

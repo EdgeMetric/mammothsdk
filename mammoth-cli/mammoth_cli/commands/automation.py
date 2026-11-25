@@ -367,7 +367,17 @@ def automation_update(invocation: Invocation) -> HandlerResult:
     if automation_schedule.wants_schedule_change(raw):
         return _automation_update_schedule(invocation, automation_id, raw)
     document = _bound_document(invocation)
-    patch = _require_field(document, "patch")
+    if "patch" not in document:
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message=(
+                "Nothing to change was given: pass 'patch', "
+                "'add_datasets'/'remove_datasets', or 'schedule'."
+            ),
+            exit_status=EXIT_USAGE,
+            hint="Pass one via --input, for example: --input '{\"add_datasets\": [42]}'.",
+        )
+    patch = document["patch"]
     automation_schedule.reject_conditions_without_tasks(patch)
     enforce_confirmation(
         invocation,

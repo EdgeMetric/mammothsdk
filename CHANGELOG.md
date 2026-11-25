@@ -18,9 +18,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
 
+### Changed (next mammoth-io)
+
+- **Breaking:** `FoldersAPI.create` takes `parent_folder_id` (the parent's `id`) instead of `parent_resource_id`, and everything after `name` by keyword. The server never read `parent_resource_id`, so every folder was made at the root.
+
+### Fixed (next mammoth-cli, mammoth-mcp-server)
+
+- `folder create` and the MCP `create_folder` make the folder inside the parent they are given; it was always made at the root. The CLI's `parent_resource_id` is a folder id as `folder list` shows it, or `root`.
+
 ### Fixed (next mammoth-cli)
 
 - `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: steps or derivatives still read this step's columns; they are named, with where to change them). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
+- `automation update` no longer lists `patch` as required, nor `view export update` `patches`: other inputs can carry the change, and an empty input is answered with every choice. So are `view conditional-format create` and `replace`.
+- `dashboard figure add` no longer lists `dataview_id` and `figure` as required (`intent` stands in for them), nor `automation create` `description`.
+- The schema marks as required the fields `ai suggestion list`, `batch`/`dataset`/`folder bulk-delete`, `project user add`, `view conditional-format delete-all` and `view task update` refuse to run without.
 - `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
 - `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
 

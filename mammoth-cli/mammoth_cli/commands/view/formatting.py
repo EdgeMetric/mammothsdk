@@ -172,7 +172,13 @@ def _cf_check_document(document: dict[str, Any]) -> bool:
             exit_status=EXIT_USAGE,
         )
     if "rule" not in document and not has_typed:
-        _require_field(document, "rule")
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="Pass 'rule' or the typed fields (columns, operator, value, color).",
+            exit_status=EXIT_USAGE,
+            hint="Pass them via --input, for example: --input "
+            '\'{"columns": ["Q1"], "operator": "<", "value": 55, "color": "red"}\'.',
+        )
     return has_typed
 
 

@@ -168,7 +168,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth automation capabilities` [read/none] -> mammoth.api.automations.AutomationsAPI.capabilities
   example: mammoth automation capabilities
 - `mammoth automation create` [external_effect/yes_always] -> mammoth.api.automations.AutomationsAPI.create
-  example: mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes
+  example: mammoth automation create 'Revenue report' --input '{"tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}], "description": "Quarterly revenue summary"}' --yes
 - `mammoth automation delete` [destructive/prompt_or_yes] -> mammoth.api.automations.AutomationsAPI.delete
   example: mammoth automation delete 123 --yes
 - `mammoth automation folders` [read/none] -> mammoth.api.automations.AutomationsAPI.watched_folders
@@ -948,7 +948,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## folder
 
 - `mammoth folder bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.bulk_delete
-  example: mammoth folder bulk-delete --yes
+  example: mammoth folder bulk-delete --input '{"folder_ids": [1]}' --yes
 - `mammoth folder create` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.create
   example: mammoth folder create 'Revenue report'
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete
@@ -1638,7 +1638,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth view export tableau` [external_effect/yes_always] -> mammoth.view.ViewExport.to_tableau
   example: mammoth view export tableau 123 456 --input /private/path/request.json --yes
 - `mammoth view export update` [external_effect/yes_always] -> mammoth.api.exports.ExportsAPI.update
-  example: mammoth view export update 123 456 --input '{"patches": [{"name": "Status"}]}' --yes
+  example: mammoth view export update 123 456 --input '{"save_as_mode": "APPEND_TO_DS"}' --yes
 - `mammoth view exportable-config apply` [reversible_pipeline/confirm_target] -> mammoth.api.dataviews.DataviewsAPI.apply_exportable_config
   example: mammoth view exportable-config apply 123 456 --input-format json --input '{"config": {"tasks": []}}' --yes --confirm 123
 - `mammoth view exportable-config get` [read/none] -> mammoth.api.dataviews.DataviewsAPI.get_exportable_config

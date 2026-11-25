@@ -7,6 +7,8 @@ from typing import Any
 from mammoth_cli.services.positionals import resolve_positionals
 
 _HANDLER_OWNED_FIELDS: dict[str, frozenset[str]] = {
+    # The handler turns ``parent_resource_id`` (the id ``folder list`` shows) into this.
+    "folder.create": frozenset({"parent_folder_id"}),
     # The chat session comes from the global ``--session`` option.
     **{
         f"agent.{command}": frozenset({"session_id"})
@@ -194,6 +196,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "description": "Quarterly revenue summary",
         "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}],
     },
+    # ``patches`` is optional beside the fields to change, so the signature alone names no input.
+    "view.export.update": {"save_as_mode": "APPEND_TO_DS"},
     # The body and secret fields are optional or generic in the signature; a check needs both.
     "workflow.verify-callback": {
         "body_file": "./callback.json",

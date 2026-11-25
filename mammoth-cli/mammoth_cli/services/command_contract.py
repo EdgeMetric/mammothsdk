@@ -11,7 +11,7 @@ condition and expanding upload positionals.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from types import MappingProxyType
 from typing import Any, Literal, cast
@@ -738,6 +738,27 @@ S7_COMMANDS = frozenset(
     and str(record["command_id"]) != "ai.retention.condition"
 )
 
+#: Fields the SDK method requires but the handler does not: another input stands in for them
+#: or the handler has a default. Listed as required, they told callers to send ``patch`` beside
+#: ``add_datasets``, which the handler then refuses.
+_OPTIONAL_IN_HANDLER: dict[str, frozenset[str]] = {
+    "automation.create": frozenset({"description"}),
+    "automation.update": frozenset({"patch"}),
+    "dashboard.figure.add": frozenset({"dataview_id", "figure"}),
+    "view.export.update": frozenset({"patches"}),
+}
+
+#: Fields the SDK method defaults but the handler refuses to run without: shown as required.
+_REQUIRED_BY_HANDLER: dict[str, frozenset[str]] = {
+    "ai.suggestion.list": frozenset({"suggestion_type", "params"}),
+    "batch.bulk-delete": frozenset({"ids"}),
+    "dataset.bulk-delete": frozenset({"dataset_ids"}),
+    "folder.bulk-delete": frozenset({"folder_ids"}),
+    "project.user.add": frozenset({"role"}),
+    "view.conditional-format.delete-all": frozenset({"rule_id"}),
+    "view.task.update": frozenset({"task_spec"}),
+}
+
 # A small number of S7 SDK methods intentionally expose a ``**kwargs``
 # extension point.  The CLI still keeps their input boundary closed: these
 # are the reviewed filter/profile fields that the corresponding public API
@@ -745,6 +766,10 @@ S7_COMMANDS = frozenset(
 # admission, and handler binding agree instead of treating every arbitrary
 # keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
+    # The parent as ``folder list`` shows it; the handler turns it into the label id.
+    "folder.create": (
+        FieldSpec("parent_resource_id", required=False, annotation=int | str | None, default=None),
+    ),
     # Choices over the delete plan (``workflow delete``); ``trash`` names the plan keys exactly.
     "workflow.delete": (
         FieldSpec("keep_inputs", required=False, annotation=bool | None, default=None),
@@ -1019,6 +1044,17 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     additional_fields = _S7_ADDITIONAL_INPUT_FIELDS.get(command_id, ())
     declared_names = {field.name for field in fields}
     fields += tuple(field for field in additional_fields if field.name not in declared_names)
+    optional = _OPTIONAL_IN_HANDLER.get(command_id, frozenset())
+    needed = _REQUIRED_BY_HANDLER.get(command_id, frozenset())
+    if optional or needed:
+        fields = tuple(
+            (
+                replace(field, required=field.name in needed)
+                if field.name in optional | needed
+                else field
+            )
+            for field in fields
+        )
     bindings = MappingProxyType({field.name: field.name for field in fields})
     # Positionals fill SDK parameters only when they are not dual-sourced.  A
     # fallback positional stays an input binding and is overlaid by ``bind``
