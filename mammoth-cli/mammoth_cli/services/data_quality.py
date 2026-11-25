@@ -28,6 +28,8 @@ _MAX_VARIANT_GROUPS = 5
 _MAX_LABELS_COMPARED = 200
 
 _NUMBER = re.compile(r"^[-+]?[$€£]?\s*\d[\d,]*(\.\d+)?\s*%?$|^[-+]?[$€£]?\s*\.\d+\s*%?$")
+#: A zero before another digit: "00123", "0042". A lone "0" or "0.5" is not one.
+_LEADING_ZERO = re.compile(r"^[-+]?[$€£]?\s*0\d")
 #: Punctuation is normalised to a space, not dropped, so "Pepsi,Cola" and
 #: "Pepsi Cola" collapse the same way as "Pepsi Cola" itself.
 _PUNCTUATION = re.compile(r"[^\w\s]", re.UNICODE)
@@ -62,6 +64,14 @@ def _placeholder(text: str) -> bool:
 
 def _is_number(text: str) -> bool:
     return bool(_NUMBER.match(text.strip()))
+
+
+def _numbers_in(texts: list[str]) -> list[str]:
+    """The values that read as numbers, or none when any value has a leading zero:
+    such a column is codes ("00123"), and converting it to NUMERIC drops the zeros."""
+    if any(_LEADING_ZERO.match(t.strip()) for t in texts):
+        return []
+    return [t for t in texts if _is_number(t)]
 
 
 def _is_date(text: str) -> bool:
@@ -509,7 +519,7 @@ def column_warnings(
         blanks = len(values) - len(present)
         if str(col_type).upper() == "TEXT" and len(present) >= _MIN_VALUES:
             texts = [str(v) for v in present]
-            numbers = [t for t in texts if _is_number(t)]
+            numbers = _numbers_in(texts)
             dates = [t for t in texts if _is_date(t)]
             for matched, issue, to, kind in (
                 (numbers, "numbers_stored_as_text", "NUMERIC", "numbers"),

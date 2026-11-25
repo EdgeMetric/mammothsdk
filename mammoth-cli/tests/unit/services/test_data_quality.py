@@ -50,6 +50,19 @@ def test_mostly_placeholders_is_too_few_values_to_call() -> None:
     assert not [w for w in warnings if w["issue"] == "numbers_stored_as_text"]
 
 
+def test_codes_with_leading_zeros_are_not_numbers_stored_as_text() -> None:
+    """Converting ``00123`` to NUMERIC strips its zeros: a code column is left alone."""
+    for codes in (["00123", "00456", "00789"], ["123", "456", "0789", "42"]):
+        warnings = column_warnings(_rows(codes, column="code"), {"code": "TEXT"})
+        assert not [w for w in warnings if w["issue"] == "numbers_stored_as_text"]
+
+
+def test_a_lone_zero_and_zero_point_decimals_still_count_as_numbers() -> None:
+    rows = _rows(["0", "0.5", "-0.25", "12", "0%"])
+    issues = [w["issue"] for w in column_warnings(rows, {"price": "TEXT"})]
+    assert "numbers_stored_as_text" in issues
+
+
 def test_money_and_percent_text_counts_as_numbers() -> None:
     rows = _rows(["$1,200.50", "15%", "-3", ".5"])
     assert column_warnings(rows, {"price": "TEXT"})[0]["issue"] == "numbers_stored_as_text"
