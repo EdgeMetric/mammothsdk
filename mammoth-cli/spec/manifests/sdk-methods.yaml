@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 954
+method_count: 957
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -10735,8 +10735,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
   implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
-  signature: 'run(self, workflow_id: ''int'', *, wait: ''bool'' = False, timeout: ''float'' = 600.0, project_id:
-    ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'run(self, workflow_id: ''int'', *, wait: ''bool'' = False, timeout: ''float'' = 600.0, callback_url:
+    ''str | None'' = None, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workflow.run.start
   alias_of: null
@@ -11037,6 +11037,19 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.list_runnable
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.list_runnable
+  signature: 'list_runnable(self, project_id: ''int | None'' = None) -> ''_list[dict[str, Any]]'''
+  openapi_operation_ids:
+  - ListRunnableWorkflows
+  canonical_command: workflow.runnable
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.repeat_counts
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.repeat_counts
   signature: 'repeat_counts(self, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
@@ -11059,6 +11072,34 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_result
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.run_result
+  signature: 'run_result(self, workflow_id: ''int'', run_id: ''str'', project_id: ''int | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetWorkflowRunResult
+  canonical_command: workflow.run.result
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.run_status
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.run_status
+  signature: 'run_status(self, workflow_id: ''int'', run_id: ''str'', project_id: ''int | None'' = None)
+    -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - GetWorkflowRunStatus
+  canonical_command: workflow.run.status
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []

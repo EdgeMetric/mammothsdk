@@ -947,9 +947,24 @@ COMMAND_DISCOVERY_PURPOSES = {
         "open a workflow page from mammoth.io on its sample data, try a workflow page"
     ),
     "workflow.run.start": (
-        "run a workflow now, start a workflow on the server, trigger a workflow run, run it " "once"
+        "run a workflow now, start a workflow on the server, trigger a workflow run, run it "
+        "once, callback webhook url when the run ends"
     ),
     "workflow.run.wait": ("wait for a workflow run to finish, did the workflow run succeed"),
+    "workflow.runnable": (
+        "which workflows can I run, list runnable workflows with whether each is running "
+        "and its last run status"
+    ),
+    "workflow.run.status": (
+        "status of one workflow run, is the run still running, succeeded or failed, failure reason"
+    ),
+    "workflow.run.result": (
+        "result of a workflow run, run report output tables links rows produced by the run"
+    ),
+    "workflow.verify-callback": (
+        "verify check validate the signature of a workflow run callback webhook, "
+        "X-Mammoth-Signature HMAC callback_secret"
+    ),
     "workflow.run.list": (
         "workflow run history, recent runs of a workflow, last run result, did it fail"
     ),

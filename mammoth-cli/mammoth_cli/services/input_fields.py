@@ -198,6 +198,11 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
     },
     # ``patches`` is optional beside the fields to change, so the signature alone names no input.
     "view.export.update": {"save_as_mode": "APPEND_TO_DS"},
+    # The body and secret fields are optional or generic in the signature; a check needs both.
+    "workflow.verify-callback": {
+        "body_file": "./callback.json",
+        "secret_file": "./callback-secret.txt",
+    },
     "automation.update": {
         "patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]
     },

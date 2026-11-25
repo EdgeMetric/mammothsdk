@@ -81,6 +81,18 @@
       ]
     },
     {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/runnable",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.list_runnable"
+      ],
+      "commands": [
+        "workflow.runnable"
+      ]
+    },
+    {
       "method": "POST",
       "path": "/workspaces/{}/projects/{}/workflows/{}/delete",
       "state": "removed_on_server",
@@ -102,6 +114,30 @@
       ],
       "commands": [
         "workflow.delete-plan"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/runs/{}",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.run_status"
+      ],
+      "commands": [
+        "workflow.run.status"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/runs/{}/result",
+      "state": "pending_server_release",
+      "pending_in": "origin/release",
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.run_result"
+      ],
+      "commands": [
+        "workflow.run.result"
       ]
     },
     {
@@ -166,6 +202,7 @@
     "workflow.link.fire",
     "workflow.run.start",
     "workflow.schedule.unset",
+    "workflow.verify-callback",
     "workspace.user.get"
   ],
   "rows": [

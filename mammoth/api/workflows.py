@@ -1211,6 +1211,89 @@ class WorkflowsAPI:
             "POST", self._path(workflow_id, project_id, "swap/undo")
         )
 
+    # --- Workflows API: what can run, and how a run went ------------------------------------
+
+    async def list_runnable(self, project_id: int | None = None) -> _list[dict[str, Any]]:
+        """List the workflows you can run, newest first.
+
+        Only workflows whose every table you can see are listed.
+
+        Args:
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            List of dicts with ``workflow_id``, ``name``, ``purpose``, ``running`` and
+            ``last_run`` (a run status, or None if it never ran).
+
+        Raises:
+            MammothValidationError: If *project_id* <= 0.
+        """
+        self._check_project_id(project_id)
+        ws = self._ws()
+        proj = self._proj(project_id)
+        return await self._client._request_list(
+            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/runnable"
+        )
+
+    async def run_status(
+        self,
+        workflow_id: int,
+        run_id: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow run's status.
+
+        ``status`` is ``running`` until the run settles, then ``success`` or ``failure``
+        (with ``reason`` and ``explanation``). A run id just returned by
+        ``client.workflow_triggers.run`` can answer 404 for a few seconds, until its run begins.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: The run's id, from ``client.workflow_triggers.run`` or :meth:`list_runnable`.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            Dict with ``run_id``, ``workflow_id``, ``trigger``, ``status``, ``started_at``,
+            ``finished_at``, ``seconds``, ``reason``, ``explanation``, ``rows_out`` and
+            ``summary``.
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
+        """
+        self._check_run_id(run_id)
+        return await self._client._request_json(
+            "GET", self._path(workflow_id, project_id, f"runs/{run_id}")
+        )
+
+    async def run_result(
+        self,
+        workflow_id: int,
+        run_id: str,
+        project_id: int | None = None,
+    ) -> dict[str, Any]:
+        """Read a workflow run's result: its status, its report and the tables it ends in.
+
+        Args:
+            workflow_id: ID of the workflow (must be > 0).
+            run_id: The run's id.
+            project_id: Project ID (uses client default if not provided; must
+                be > 0 if given).
+
+        Returns:
+            The :meth:`run_status` fields plus ``report_lines`` (what the run read, changed and
+            produced), ``report`` (its counts) and ``outputs`` (each with ``view_id``,
+            ``dataset_id``, ``name``, ``app_url`` and ``data_path``).
+
+        Raises:
+            MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
+        """
+        self._check_run_id(run_id)
+        return await self._client._request_json(
+            "GET", self._path(workflow_id, project_id, f"runs/{run_id}/result")
+        )
+
 
 def check_positive_id(name: str, value: int) -> None:
     """Refuse an id that is not a positive integer (a bool is not an id).
