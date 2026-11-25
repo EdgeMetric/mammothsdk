@@ -1,6 +1,6 @@
 ---
 name: mammoth-cli
-version: 2.4.6
+version: 2.5.0
 description: "Use Mammoth Analytics from a terminal: install or authenticate the CLI, discover its live command contract, and safely manage projects, data, views, pipelines (join, merge, pivot, filter, clean), dashboards, exports, and handoffs."
 ---
 
@@ -100,7 +100,7 @@ with the command tried.
 
 ## Several files, one deliverable
 
-Users often upload related files without saying how they relate. Work it out from the data before building:
+Users rarely say how their files relate. Work it out from the data first:
 
 1. Upload every file, or find the ones already uploaded. An upload result
    carries a `view` preview of what Mammoth made of it (`view_id`, column
@@ -118,7 +118,7 @@ Users often upload related files without saying how they relate. Work it out fro
    decide each `blank_values` entry: fill, filter, or keep, and report one
    line per entry (column, count, what and why). A blank seen but unmentioned
    is a miss.
-5. `view transform join` the lookup view into the main view (`LEFT`). The
+5. `view transform join` the lookup view into the main view (`LEFT`), at one grain. The
    result's `join_check` gives `match_rate`, `unmatched_rows` and
    `unmatched_keys`; put them in your report. When the result's
    `verify.needs_user` is set, stop and tell the user before building on it.

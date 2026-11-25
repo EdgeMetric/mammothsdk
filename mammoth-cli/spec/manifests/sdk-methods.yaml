@@ -1,5 +1,5 @@
 manifest_schema_version: 1
-method_count: 946
+method_count: 954
 generator_version: '1'
 methods:
 - sdk_symbol: mammoth._mixins._advanced_ops.AdvancedOpsMixin.add_sql
@@ -839,7 +839,7 @@ methods:
   signature: 'chat(self, message: ''str'', scope: ''dict[str, Any]'', agent_key: ''str | None'' = None,
     session_id: ''str | None'' = None, client_context: ''dict[str, Any] | None'' = None, selection: ''dict[str,
     Any] | None'' = None, request_key: ''str | None'' = None, wait: ''float | None'' = None, plan_ref:
-    ''dict[str, Any] | None'' = None) -> ''dict[str, Any]'''
+    ''dict[str, Any] | None'' = None, intelligence: ''str | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: agent.chat
   alias_of: null
@@ -1297,6 +1297,19 @@ methods:
   pagination_policy: null
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.access
+  implementation_origin: mammoth.api.annotations.AnnotationsAPI.access
+  signature: 'access(self, project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - CommentAccess
+  canonical_command: annotation.access
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_add
   implementation_origin: mammoth.api.annotations.AnnotationsAPI.comment_add
   signature: 'comment_add(self, annotation_id: ''int'', body: ''str'', project_id: ''int | None'' = None)
@@ -1308,6 +1321,34 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_delete
+  implementation_origin: mammoth.api.annotations.AnnotationsAPI.comment_delete
+  signature: 'comment_delete(self, annotation_id: ''int'', comment_id: ''int'', project_id: ''int | None''
+    = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - WorkflowAnnotationDeleteComment
+  canonical_command: annotation.comment.delete
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_edit
+  implementation_origin: mammoth.api.annotations.AnnotationsAPI.comment_edit
+  signature: 'comment_edit(self, annotation_id: ''int'', comment_id: ''int'', body: ''str'', project_id:
+    ''int | None'' = None) -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - EditComment
+  canonical_command: annotation.comment.edit
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.annotations.AnnotationsAPI.create
@@ -2740,6 +2781,19 @@ methods:
   openapi_operation_ids:
   - BrowseConnectorDraftFolderConnectorDrafts
   canonical_command: connector.draft.browse
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  implementation_origin: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  signature: 'connection_tables(self, connection_key: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - ListConnectionTables
+  canonical_command: connector.connection.tables
   alias_of: null
   no_command_reason: null
   mutation_class: read
@@ -10623,6 +10677,20 @@ methods:
   pagination_policy: none
   secret_fields: []
   reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  signature: 'after_unset(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - DeleteWorkflowAfter
+  canonical_command: workflow.after.unset
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
   implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create
   signature: 'link_create(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
@@ -10636,6 +10704,20 @@ methods:
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  signature: 'link_fire(self, link: ''str'') -> ''dict[str, Any]'''
+  openapi_operation_ids:
+  - PostWorkflowLinkCall
+  canonical_command: workflow.link.fire
+  alias_of: null
+  no_command_reason: null
+  mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields:
+  - link
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
   implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_remove
@@ -10689,6 +10771,20 @@ methods:
   alias_of: null
   no_command_reason: null
   mutation_class: benign_mutation
+  wait_policy: not_async
+  pagination_policy: none
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  implementation_origin: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  signature: 'schedule_unset(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids:
+  - DeleteWorkflowSchedule
+  canonical_command: workflow.schedule.unset
+  alias_of: null
+  no_command_reason: null
+  mutation_class: destructive
   wait_policy: not_async
   pagination_policy: none
   secret_fields: []
@@ -10803,7 +10899,7 @@ methods:
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.canvas
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.canvas
   signature: 'canvas(self, workflow_id: ''int'', canvas_state: ''dict[str, Any]'', project_id: ''int |
-    None'' = None) -> ''dict[str, Any]'''
+    None'' = None, expected_version: ''int | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workflow.canvas
   alias_of: null
@@ -10840,7 +10936,8 @@ methods:
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete
   implementation_origin: mammoth.api.workflows.WorkflowsAPI.delete
-  signature: 'delete(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str, Any]'''
+  signature: 'delete(self, workflow_id: ''int'', project_id: ''int | None'' = None, trash: ''_list[str]
+    | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: workflow.delete
   alias_of: null
@@ -10848,6 +10945,19 @@ methods:
   mutation_class: null
   wait_policy: null
   pagination_policy: null
+  secret_fields: []
+  reviewed_by: primary
+- sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  implementation_origin: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  signature: 'delete_plan(self, workflow_id: ''int'', project_id: ''int | None'' = None) -> ''dict[str,
+    Any]'''
+  openapi_operation_ids: []
+  canonical_command: workflow.delete-plan
+  alias_of: null
+  no_command_reason: null
+  mutation_class: read
+  wait_policy: not_async
+  pagination_policy: none
   secret_fields: []
   reviewed_by: primary
 - sdk_symbol: mammoth.api.workflows.WorkflowsAPI.duplicate

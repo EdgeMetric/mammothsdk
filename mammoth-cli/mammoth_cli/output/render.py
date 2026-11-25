@@ -64,11 +64,11 @@ def render(
     elif output in ("plain", "table") and (text := _document_text(envelope)) is not None:
         stream.write(text if text.endswith("\n") else text + "\n")
     elif output == "plain":
-        _render_plain(envelope.get("data"), stream)
+        _render_plain(_human_data(envelope), stream)
     elif output == "csv":
         _render_csv(envelope.get("data"), stream)
     elif output == "table":
-        _render_table(envelope.get("data"), stream)
+        _render_table(_human_data(envelope), stream)
     else:  # pragma: no cover - guarded by option validation
         raise ValueError(f"unknown output mode: {output}")
 
@@ -86,6 +86,26 @@ def _document_text(envelope: dict[str, Any]) -> str | None:
     key = _DOCUMENT_COMMANDS.get(str(meta.get("command") or ""))
     value = data.get(key) if key else None
     return value if isinstance(value, str) else None
+
+
+def _human_data(envelope: dict[str, Any]) -> Any:
+    """The data a person reads: the one entry of a ``schema get``, else the result itself.
+
+    Args:
+        envelope: The normalized result envelope.
+
+    Returns:
+        The single schema when ``schema get`` found exactly one and nothing failed, else
+        the envelope's ``data``.
+    """
+    data = envelope.get("data")
+    meta = envelope.get("meta")
+    if not isinstance(meta, dict) or meta.get("command") != "schema get":
+        return data
+    if not isinstance(data, dict) or data.get("errors"):
+        return data
+    schemas = data.get("schemas")
+    return schemas[0] if isinstance(schemas, list) and len(schemas) == 1 else data
 
 
 def _json_pretty(stream: TextIO) -> bool:

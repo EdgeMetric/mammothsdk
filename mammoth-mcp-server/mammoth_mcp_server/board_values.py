@@ -89,7 +89,9 @@ class BoardSource:
 def figure_bindings(canvas: Json) -> list[Json]:
     """Every KPI card and chart, in board order, with the descriptors behind its number.
 
-    Filter controls and detail tables carry no number, so they are left out.
+    Filter controls and detail tables carry no number, so they are left out. A
+    card's period and filters are its value's own; its other series (the
+    previous period, the sparkline) keep theirs under `series_filters`.
     """
     meta = _object(canvas.get(BoardFields.META))
     labels = _labels(_object(canvas.get(BoardFields.CANVAS)))
@@ -102,28 +104,37 @@ def figure_bindings(canvas: Json) -> list[Json]:
         if kind is None or not descriptors:
             continue
         receipt = _object(receipts.get(figure))
+        shown = _shown_receipt(kind, receipt)
         bound: Json = {BoardFields.FIGURE: figure, BoardFields.KIND: kind}
         bound[BoardFields.LABEL] = labels.get(figure)
-        bound[BoardFields.PERIOD] = _period_of(receipt)
-        bound[BoardFields.FILTERS] = list[JsonValue](_filters_of(receipt))
+        bound[BoardFields.PERIOD] = _period_of(shown)
+        bound[BoardFields.FILTERS] = list[JsonValue](_filters_of(shown))
+        bound[BoardFields.SERIES_FILTERS] = _series_filters(kind, receipt)
         bound[BoardFields.DESCRIPTORS] = {name: str(did) for name, did in descriptors.items()}
         figures.append(bound)
     return figures
 
 
 def attach_values(figures: list[Json], results: Json) -> list[JsonValue]:
-    """Each figure with what its descriptors evaluated to, and nothing left empty."""
+    """Each figure with what its descriptors evaluated to, and nothing left empty.
+
+    A card always has its number at the top level; its previous period and
+    sparkline, when it has them, are under `series` with their own filters.
+    """
     values: list[JsonValue] = []
     for figure in figures:
         series = {name: _evaluated(results.get(did)) for name, did in _descriptors(figure).items()}
         shown: Json = {
             key: value
             for key, value in figure.items()
-            if key != BoardFields.DESCRIPTORS and value not in (None, [])
+            if key not in BoardFields.NOT_SHOWN and value not in (None, [])
         }
-        if figure[BoardFields.KIND] == BoardFields.KPI and set(series) == {BoardFields.VALUE}:
-            shown.update(_object(series[BoardFields.VALUE]))
-        else:
+        if figure[BoardFields.KIND] == BoardFields.KPI:
+            shown.update(series.pop(BoardFields.VALUE, {}))
+            for name, filters in _object(figure[BoardFields.SERIES_FILTERS]).items():
+                if filters and name in series:
+                    series[name][BoardFields.FILTERS] = filters
+        if series:
             shown[BoardFields.SERIES] = dict[str, JsonValue](series)
         values.append(shown)
     return values
@@ -174,6 +185,25 @@ def _pages(canvas: Json) -> list[tuple[str, Json]]:
         if isinstance(page_id, str):
             pages.append((page_id, _object(page)))
     return pages
+
+
+def _shown_receipt(kind: str, receipt: Json) -> Json:
+    """The part of a receipt that scopes the number shown: a card's value series alone."""
+    series = _object(receipt.get(BoardFields.SERIES))
+    if kind != BoardFields.KPI or BoardFields.VALUE not in series:
+        return receipt
+    return {BoardFields.SERIES: {BoardFields.VALUE: series[BoardFields.VALUE]}}
+
+
+def _series_filters(kind: str, receipt: Json) -> Json:
+    """The filters of a card's other series, such as the previous period's."""
+    if kind != BoardFields.KPI:
+        return {}
+    return {
+        name: list[JsonValue](_filters_of({BoardFields.SERIES: {name: series}}))
+        for name, series in _object(receipt.get(BoardFields.SERIES)).items()
+        if name != BoardFields.VALUE
+    }
 
 
 def _receipt_filters(receipt: Json) -> list[Json]:

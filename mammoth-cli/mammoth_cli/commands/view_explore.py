@@ -28,6 +28,7 @@ from mammoth_cli.commands.view.lifecycle import _read_explore_panel
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import open_service, require_project
+from mammoth_cli.services.dashboard_pages import append_figure
 from mammoth_cli.services.explore_card_edit import (
     DATE,
     NUMERIC,
@@ -307,6 +308,6 @@ def view_explore_panel_add_to_dashboard(invocation: Invocation) -> HandlerResult
             kwargs.update(
                 {"page_id": page["id"]} if "id" in page else {"page_new_title": page["new_title"]}
             )
-        added = service.call(_APPEND_FIGURE_SYMBOL, **kwargs)
+        added = append_figure(service, _APPEND_FIGURE_SYMBOL, kwargs)
     result = {**tile, "dashboard_id": board, "created_dashboard": created, "added": added}
     return result, _meta(invocation, auth.workspace_id, project_id)

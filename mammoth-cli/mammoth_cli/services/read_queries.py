@@ -419,8 +419,13 @@ def _sort_entry(item: Any, labels: dict[str, str]) -> tuple[str, str]:
             item = {"column": column, "direction": direction}
         else:
             item = {"column": item}
+    elif isinstance(item, (list, tuple)) and len(item) == 2:
+        item = {"column": item[0], "direction": item[1]}
     if not isinstance(item, dict) or "column" not in item:
-        raise _fail('Each order_by entry is a column label or {"column": ..., "direction": ...}.')
+        raise _fail(
+            'Each order_by entry is a column label, ["label", "desc"] or '
+            '{"column": ..., "direction": ...}.'
+        )
     label = str(item["column"])
     direction = str(item.get("direction", "desc")).upper()
     if label not in labels:

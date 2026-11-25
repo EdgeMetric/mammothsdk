@@ -29,6 +29,13 @@ def test_order_by_accepts_the_short_string_form_and_defaults_to_descending() -> 
     ]
 
 
+def test_order_by_accepts_label_direction_pairs() -> None:
+    """Feedback 18 (2026-11-24): ``[["cost", "desc"]]`` was rejected."""
+    assert read_queries.parse_order({"order_by": [["Total Sales", "desc"]]}, _AS_MAP)[0] == [
+        ["agg_0", "DESC"]
+    ]
+
+
 def test_order_by_a_column_the_result_does_not_have_fails_loud_with_the_choices() -> None:
     with pytest.raises(CliError) as caught:
         read_queries.parse_order({"order_by": ["Profit"]}, _AS_MAP)

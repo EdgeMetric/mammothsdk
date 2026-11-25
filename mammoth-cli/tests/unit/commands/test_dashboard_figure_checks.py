@@ -14,6 +14,8 @@ from mammoth_cli.commands.dashboard import workbook as dashboard_workbook
 from mammoth_cli.errors.envelope import CliError
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.verify import with_verify
+from mammoth_cli.services.dashboard_figures import figure_problems
+from mammoth_cli.services.dashboard_pages import append_figure
 from mammoth_cli.services.testing import FakeMammothService
 from mammoth_cli.testing import login_default_profile
 
@@ -23,6 +25,7 @@ _CANVAS_SAVE = _API + "canvas_save"
 _ADD_PAGES = _API + "add_pages"
 _GENERATE = _API + "v3_generate"
 _FIGURE_ADD = _API + "append_figure"
+_CHAT_EDIT = _API + "chat_edit"
 
 _PROFILES = [
     {"name": "Region", "type": "dimension"},
@@ -52,6 +55,14 @@ def _canvas(pages: list[dict[str, Any]], **meta: Any) -> dict[str, Any]:
         "plan": {"hints": {"_profiles": _PROFILES}},
         "meta": {"sequence": 2, **meta},
     }
+
+
+def test_a_row_count_measure_is_not_an_unknown_column() -> None:
+    figure = {"kind": "hbar", "measure": "__count", "dim": "Region"}
+    assert figure_problems(figure, _PROFILES) == []
+
+    (problem,) = figure_problems({"kind": "hbar", "measure": "Sales", "dim": "__count"}, _PROFILES)
+    assert problem["issue"] == "unknown_column"
 
 
 def test_canvas_save_with_an_unknown_column_is_not_verified(
@@ -436,3 +447,49 @@ def test_pages_add_waits_for_its_bake_and_reports_pending_when_it_runs_on(
     assert waited == [{"job_id": 55}]
     assert data["bake"] == "pending"
     assert "bake_ok" not in data
+
+
+def test_a_chat_edit_with_a_refused_ask_is_partial(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Feedback 4 and 12 (2026-11-24): the board changed, yet one ask was held back."""
+    fake_service.responses[_CHAT_EDIT] = {
+        "changed": True,
+        "message": "Added the split you asked for.",
+        "asks": [
+            {"ask": "add a KPI", "status": "applied"},
+            {"ask": "split by key", "status": "held back"},
+        ],
+    }
+    fake_service.responses[_CANVAS_GET] = _canvas([{"id": "p1", "added": []}])
+    body = {"body": {"params": {"prompt": "add a KPI and split by key"}}}
+    data, _ = dashboard_generated.generated_dashboard(
+        _inv("dashboard.chat.edit", extra_args=["7"], input_file=_doc(tmp_path, body), yes=True)
+    )
+    assert data["partial"] is True
+    assert [w["detail"] for w in data["warnings"]] == ["split by key: held back"]
+    assert with_verify(data)["verify"]["outcome"] == "partial"
+
+
+def test_a_figure_of_another_source_names_the_pages_route_on_the_wire(
+    real_service: Any,
+) -> None:
+    """Feedback 1 (2026-11-24): the server's own 409 body reaches the hint."""
+    service, api = real_service()
+    api.on(
+        "POST",
+        r"/dashboards/3/figures$",
+        409,
+        {
+            "error_code": "4DASH023",
+            "name": "DASHBOARD_SOURCE_MISMATCH",
+            "message": "This dashboard reads a different dataset",
+            "details": "dataview 7 is not this dashboard's source (it reads dataview 42)",
+        },
+    )
+    with pytest.raises(CliError) as excinfo:
+        append_figure(
+            service, _FIGURE_ADD, {"dashboard_id": 3, "dataview_id": 7, "figure": {"kind": "hbar"}}
+        )
+    assert "dashboard pages add 3" in (excinfo.value.hint or "")
+    assert '"dataview_id": 7' in (excinfo.value.hint or "")

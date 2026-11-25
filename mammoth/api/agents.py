@@ -90,6 +90,7 @@ class AgentsAPI:
         request_key: str | None = None,
         wait: float | None = None,
         plan_ref: dict[str, Any] | None = None,
+        intelligence: str | None = None,
     ) -> dict[str, Any]:
         """Send a chat message to a Mammoth AI agent.
 
@@ -115,6 +116,9 @@ class AgentsAPI:
             plan_ref: The step of the chat's current plan this message points at,
                 e.g. ``{"plan_id": "..."}`` (the whole plan: Run it). Prefer
                 :meth:`plan_approve`, :meth:`plan_skip` and :meth:`plan_discard`.
+            intelligence: Model level for this turn, one of the ``intelligence_levels``
+                that ``GET /agents/access/me`` lists (``fast``, ``balanced``, ``expert``,
+                ``auto``). Leave unset for the server's default.
 
         Returns:
             Dict with ``session_id``, ``turn_id`` and ``request_key``. With
@@ -138,6 +142,8 @@ class AgentsAPI:
             body["selection"] = selection
         if plan_ref is not None:
             body["plan_ref"] = plan_ref
+        if intelligence is not None:
+            body["intelligence"] = intelligence
         started = await self._submit_chat(body)
         started["request_key"] = key
         if wait is None:

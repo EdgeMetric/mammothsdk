@@ -17,6 +17,12 @@
         "GET /agents/access/today"
       ]
     },
+    "connector.connection.tables": {
+      "server_status": "pending",
+      "routes": [
+        "GET /workspaces/{}/projects/{}/connector-drafts/connection-tables"
+      ]
+    },
     "dataset.download": {
       "server_status": "pending",
       "routes": [
@@ -111,6 +117,12 @@
       "server_status": "pending",
       "routes": [
         "POST /workspaces/{}/projects/{}/workflows/{}/link"
+      ]
+    },
+    "workflow.link.fire": {
+      "server_status": "pending",
+      "routes": [
+        "POST /workflow-runs/{}/{}"
       ]
     },
     "workflow.link.remove": {

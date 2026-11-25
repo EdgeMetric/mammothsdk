@@ -76,6 +76,19 @@ def test_an_embedded_call_refuses_host_and_local_path_commands() -> None:
     assert not hidden_embedded(None)
 
 
+@pytest.mark.parametrize("command_id", ["connector.draft.credentials", "workflow.link.fire"])
+def test_a_command_that_takes_a_secret_from_a_file_is_refused_embedded_only(
+    command_id: str,
+) -> None:
+    assert not refused_embedded(command_id)
+    token = embedded.enter(embedded.EmbeddedCall(login=_login()))
+    try:
+        assert refused_embedded(command_id)
+        assert hidden_embedded(command_id)
+    finally:
+        embedded.leave(token)
+
+
 @pytest.mark.usefixtures("in_call")
 def test_recipes_with_a_refused_run_line_are_not_offered() -> None:
     hidden = {recipe["id"] for recipe in runnable_recipes()} - {

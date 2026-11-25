@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.4.6.
+Generated from the reviewed command manifests for mammoth-cli 2.5.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 905.
+Total commands: 913.
 
 ## activity
 
@@ -304,12 +304,12 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_extend`
-- Agent example: `mammoth agent run extend resource-123`
+- Agent example: `mammoth agent run extend resource-123 --session session-123`
 
 ### `mammoth agent run instance list`
 
@@ -357,34 +357,34 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_pause`
-- Agent example: `mammoth agent run pause resource-123`
+- Agent example: `mammoth agent run pause resource-123 --session session-123`
 
 ### `mammoth agent run resume`
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_resume`
-- Agent example: `mammoth agent run resume resource-123`
+- Agent example: `mammoth agent run resume resource-123 --session session-123`
 
 ### `mammoth agent run retry`
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_retry`
-- Agent example: `mammoth agent run retry resource-123 --yes`
+- Agent example: `mammoth agent run retry resource-123 --session session-123 --yes`
 
 ### `mammoth agent run status`
 
@@ -397,12 +397,12 @@ Total commands: 905.
 
 **Arguments**
 
-- `RUN_ID` (str, required) — ID of the run (from agent run status or agent run list).
+- `RUN_ID` (str, required) — ID of the run, from 'mammoth agent run status --session SESSION_ID' (or agent run list). The command also needs --session SESSION_ID.
 
 - Mutation class: `benign_mutation`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.agents.AgentsAPI.run_stop`
-- Agent example: `mammoth agent run stop resource-123`
+- Agent example: `mammoth agent run stop resource-123 --session session-123`
 
 ### `mammoth agent run units list`
 
@@ -555,6 +555,13 @@ Total commands: 905.
 
 ## annotation
 
+### `mammoth annotation access`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.access`
+- Agent example: `mammoth annotation access`
+
 ### `mammoth annotation comment add`
 
 **Arguments**
@@ -565,6 +572,30 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_add`
 - Agent example: `mammoth annotation comment add 123 --input '{"body": "Quarterly revenue summary"}'`
+
+### `mammoth annotation comment delete`
+
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+- `COMMENT_ID` (int, required) — ID of the comment.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_delete`
+- Agent example: `mammoth annotation comment delete 123 456 --yes`
+
+### `mammoth annotation comment edit`
+
+**Arguments**
+
+- `ANNOTATION_ID` (int, required) — ID of the annotation.
+- `COMMENT_ID` (int, required) — ID of the comment.
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.annotations.AnnotationsAPI.comment_edit`
+- Agent example: `mammoth annotation comment edit 123 456 --input '{"body": "Quarterly revenue summary"}'`
 
 ### `mammoth annotation create`
 
@@ -1675,6 +1706,17 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.connectors.ConnectorsAPI.query_connection`
 - Agent example: `mammoth connector connection query postgres prod-warehouse --input '{"query": "SELECT region, SUM(revenue) FROM data GROUP BY region"}'`
+
+### `mammoth connector connection tables`
+
+**Arguments**
+
+- `CONNECTION_KEY` (str, required) — Key identifying the connection.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables`
+- Agent example: `mammoth connector connection tables prod-warehouse`
 
 ### `mammoth connector connection test`
 
@@ -6905,7 +6947,7 @@ Total commands: 905.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.dataviews.DataviewsAPI.aggregate`
-- Agent example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`
+- Agent example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'`
 
 ### `mammoth view data compare`
 
@@ -8481,6 +8523,17 @@ Total commands: 905.
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_set`
 - Agent example: `mammoth workflow after set 123 456`
 
+### `mammoth workflow after unset`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset`
+- Agent example: `mammoth workflow after unset 123 --yes`
+
 ### `mammoth workflow archive`
 
 **Arguments**
@@ -8601,6 +8654,17 @@ Total commands: 905.
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete`
 - Agent example: `mammoth workflow delete 123 --yes`
+
+### `mammoth workflow delete-plan`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.delete_plan`
+- Agent example: `mammoth workflow delete-plan 123`
 
 ### `mammoth workflow describe build`
 
@@ -8724,6 +8788,13 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_create`
 - Agent example: `mammoth workflow link create 123`
+
+### `mammoth workflow link fire`
+
+- Mutation class: `benign_mutation`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire`
+- Agent example: `mammoth workflow link fire --input /private/path/request.json`
 
 ### `mammoth workflow link remove`
 
@@ -8853,6 +8924,17 @@ Total commands: 905.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_set`
 - Agent example: `mammoth workflow schedule set 123 --input '{"frequency": "weekly", "by_week_day": ["mo"]}'`
+
+### `mammoth workflow schedule unset`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+
+- Mutation class: `destructive`
+- Confirmation: `prompt_or_yes`
+- Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset`
+- Agent example: `mammoth workflow schedule unset 123 --yes`
 
 ### `mammoth workflow sentence dismiss-ask`
 

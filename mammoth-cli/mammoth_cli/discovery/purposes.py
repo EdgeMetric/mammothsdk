@@ -394,8 +394,8 @@ COMMAND_DISCOVERY_PURPOSES = {
     "auth.status": "who am i signed in logged in as current user session status check",
     "doctor": "check my setup health diagnose environment install doctor",
     # "Import a table from SQL Server / MySQL / Postgres into a dataset" is a
-    # connector flow -- list connectors, create a connection, then a ds-config
-    # (a table or query pulled in as a new dataset) -- but none of these
+    # connector flow -- list connectors, create a connection, list its tables,
+    # then create the dataset -- but none of these
     # commands said "database", "table", "SQL Server" or "import", so every
     # phrasing missed them and only the unrelated view.export.* commands
     # (which push data OUT to a database) matched.
@@ -423,9 +423,8 @@ COMMAND_DISCOVERY_PURPOSES = {
         "file into a dataset, or a REST API or Elasticsearch generic_rest_api base_url"
     ),
     "connector.ds-config.create": (
-        "import pull load read retrieve a table or SQL query from a connected database such "
-        "as SQL Server MSSQL MySQL Postgres connector connection as a new dataset rows data "
-        "REST API Elasticsearch sample validate"
+        "check validate sample a table or SQL query config on a connected database connection "
+        "REST API Elasticsearch data_sample saves nothing makes no dataset"
     ),
     "connector.ds-config.list": (
         "datasets imported from a connected database SQL Server MSSQL MySQL Postgres "
@@ -966,6 +965,15 @@ COMMAND_DISCOVERY_PURPOSES = {
         "run a workflow from another system, webhook url to trigger a workflow, secret run " "link"
     ),
     "workflow.link.remove": ("turn off a workflow's run link, revoke the webhook url"),
+    "workflow.link.fire": (
+        "run a workflow from its secret link, call the webhook url, fire a workflow link"
+    ),
+    "workflow.schedule.unset": (
+        "stop a workflow running on a schedule, take the clock off a workflow, unschedule"
+    ),
+    "workflow.after.unset": (
+        "stop a workflow running after another workflow, remove the chain, unchain a workflow"
+    ),
     "workflow.describe.start": (
         "describe a workflow in words, build a workflow from a description, tell mammoth what "
         "to automate, ask build mode"

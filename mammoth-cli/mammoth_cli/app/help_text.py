@@ -103,7 +103,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "ai retention": "Generate a data-retention condition from a description.",
     "ai sql": "Generate SQL from a description.",
     "ai suggestion": "List AI suggestions for a view.",
-    "annotation comment": "Add comments to annotations.",
+    "annotation comment": "Add, edit and delete comments on annotations.",
     "auth connected-apps": "List and revoke the apps you have authorised.",
     "billing invoice": "List and charge invoices.",
     "billing stripe": "Manage the Stripe subscription: checkout, trial, payment methods, invoices.",
@@ -252,7 +252,7 @@ _SUBGROUP_DESCRIPTIONS = {
     "workflow after": "Run a workflow each time another one finishes.",
     "workflow describe": "Describe a workflow in words, read it back as steps, then build it.",
     "workflow held": "Check the rows a workflow held back.",
-    "workflow link": "Turn on or off a secret link that starts a workflow.",
+    "workflow link": "Turn on, fire or turn off a secret link that starts a workflow.",
     "workflow page": "Try a workflow page's workflow on its sample tables.",
     "workflow run": "Run a workflow on the server now and follow its runs.",
     "workflow schedule": "Run a workflow on a clock.",
@@ -488,9 +488,17 @@ _RUN_HELP_NOTE = (
 )
 
 
+_CLOUD_IMPORT_NOTE = (
+    "A table or query of a connected database (find it with 'connector connection tables'): "
+    "mammoth dataset create --input '"
+    '{"ds_creation_type": "cloud", "dataset_spec": {"connector_key": "postgres", '
+    '"connection_key": "CONNECTION_KEY", "query_properties": {"ds_name": "Orders", '
+    '"table_name": "orders", "query": "SELECT * FROM orders"}}}\''
+)
 _HELP_NOTES = {
     "run": _RUN_HELP_NOTE,
     "bench": _BENCH_HELP_NOTE,
+    "dataset.create": _CLOUD_IMPORT_NOTE,
     "view.data.get": _RAW_NOTE,
     "view.data.query": _RAW_NOTE,
     "view.export.dataset": (
