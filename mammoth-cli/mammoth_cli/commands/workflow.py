@@ -493,9 +493,15 @@ def _trash_failures(jobs: Any) -> list[dict[str, Any]]:
     return failures
 
 
+def _failed_key(entry: dict[str, Any]) -> str:
+    """The plan key of an item the delete job could not trash."""
+    item_type = str(entry.get("type"))
+    return f"{_PLAN_KEY_PREFIX.get(item_type, item_type)}:{entry.get('id')}"
+
+
 def _trash_failure_warning(entry: dict[str, Any]) -> str:
     """One sentence saying which item was not trashed and why."""
-    item = f"{entry.get('type') or 'item'} {entry.get('id')}"
+    item = _failed_key(entry)
     if entry.get("name"):
         item += f" ({entry['name']})"
     information = entry.get("information")
@@ -518,10 +524,7 @@ def _report_what_stayed(result: dict[str, Any]) -> None:
     if failures:
         result["partial"] = True
         result["failed"] = failures
-        gone_wrong = {
-            f"{_PLAN_KEY_PREFIX.get(str(f.get('type')), f.get('type'))}:{f.get('id')}"
-            for f in failures
-        }
+        gone_wrong = {_failed_key(entry) for entry in failures}
         if isinstance(result.get("trashed"), list):
             result["trashed"] = [key for key in result["trashed"] if key not in gone_wrong]
         warnings.extend(_trash_failure_warning(entry) for entry in failures)
@@ -534,7 +537,7 @@ def _report_what_stayed(result: dict[str, Any]) -> None:
         names = ", ".join(str(name) for name in kept_steps)
         warnings.append(f"Kept steps show as their own workflow after the delete: {names}.")
     if warnings:
-        result["warnings"] = [*(result.get("warnings") or []), *warnings]
+        result["warnings"] = warnings
 
 
 def workflow_delete(invocation: Invocation) -> HandlerResult:

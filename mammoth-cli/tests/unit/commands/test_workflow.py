@@ -289,18 +289,27 @@ def test_delete_sends_default_ticked_keys_and_waits(
     }
 
 
+@pytest.mark.parametrize(
+    ("item_type", "key", "kind"),
+    [
+        ("dataview", "view:1", "steps"),
+        ("dataset", "dataset:1", "result"),
+        ("dashboard", "dashboard:1", "dashboard"),
+        ("automation", "automation:1", "schedule"),
+    ],
+)
 def test_delete_reports_items_the_job_could_not_trash(
-    fake_service: FakeMammothService, tmp_path: Path
+    fake_service: FakeMammothService, tmp_path: Path, item_type: str, key: str, kind: str
 ) -> None:
-    fake_service.responses[_PLAN] = _plan(_item("view:1", "steps"), _item("dataset:2", "result"))
+    fake_service.responses[_PLAN] = _plan(_item(key, kind), _item("dataset:2", "result"))
     fake_service.responses[_DELETE] = {
-        "trashed": ["view:1", "dataset:2"],
+        "trashed": [key, "dataset:2"],
         "kept_steps": [],
         "job_ids": [9],
     }
     failed = {
         "id": 1,
-        "type": "dataview",
+        "type": item_type,
         "name": "Sales",
         "error_code": "TRASH_DEPENDENT_BLOCK",
         "information": "Another view uses it.",
@@ -312,10 +321,7 @@ def test_delete_reports_items_the_job_could_not_trash(
     assert data["partial"] is True
     assert data["failed"] == [failed]
     assert data["trashed"] == ["dataset:2"]
-    assert (
-        data["warnings"][0]
-        == "dataview 1 (Sales) was not moved to the Trash: Another view uses it."
-    )
+    assert data["warnings"][0] == f"{key} (Sales) was not moved to the Trash: Another view uses it."
     assert "may show as their own workflow" in data["warnings"][1]
 
 
@@ -327,7 +333,7 @@ def test_delete_failure_without_text_names_its_code(
     failed = {"id": 1, "type": "dataview", "error_code": "BLOCKED", "information": {"a": 1}}
     fake_service.responses[_WAIT_JOBS] = {"jobs": [{"id": 9, "response": {"failed": [failed]}}]}
     data, _ = _delete(fake_service, tmp_path)
-    assert data["warnings"][0] == "dataview 1 was not moved to the Trash: BLOCKED."
+    assert data["warnings"][0] == "view:1 was not moved to the Trash: BLOCKED."
 
 
 def test_delete_kept_steps_are_explained_and_clean_delete_is_quiet(
