@@ -24,6 +24,8 @@ from mammoth_cli.services.command_contract import resolve_command_contract
     [
         ("automation.update", "patch", "add_datasets"),
         ("view.export.update", "patches", "save_as_mode"),
+        ("dashboard.figure.add", "figure", "intent"),
+        ("dashboard.figure.add", "dataview_id", "intent"),
     ],
 )
 def test_a_replaced_field_is_optional(command_id: str, replaced: str, alternative: str) -> None:
@@ -32,6 +34,13 @@ def test_a_replaced_field_is_optional(command_id: str, replaced: str, alternativ
     fields = {field.name: field for field in contract.fields}
     assert alternative in fields
     assert fields[replaced].required is False
+
+
+def test_a_field_the_handler_defaults_is_optional() -> None:
+    contract = resolve_command_contract("automation.create")
+    assert contract is not None
+    optional = {field.name for field in contract.fields if not field.required}
+    assert "description" in optional
 
 
 def test_folder_create_takes_the_parent_as_folder_list_shows_it() -> None:

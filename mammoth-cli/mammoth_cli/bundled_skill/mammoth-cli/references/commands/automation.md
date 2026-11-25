@@ -16,7 +16,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth automation create`. Exact input fields: `mammoth schema get automation.create`.
 
-Example: `mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth automation create 'Revenue report' --input '{"tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}], "description": "Quarterly revenue summary"}' --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AutomationCreateResult`; mutation `external_effect`, confirmation `yes_always`, wait policy `not_async`.
 

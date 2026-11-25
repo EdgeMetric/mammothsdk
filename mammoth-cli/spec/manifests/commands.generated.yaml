@@ -2946,9 +2946,8 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth automation create --help
-  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"description": "Quarterly revenue
-    summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}''
-    --yes'
+  agent_example: 'mammoth automation create ''Revenue report'' --input ''{"tasks": [{"task_type": "run_data_retrieval",
+    "details": {"ds_details": [{"ds_id": 42}]}}], "description": "Quarterly revenue summary"}'' --yes'
   unit_tests:
   - UT-AUTOMATION-CREATE
   contract_tests:

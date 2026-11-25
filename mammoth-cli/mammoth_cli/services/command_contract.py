@@ -738,12 +738,14 @@ S7_COMMANDS = frozenset(
     and str(record["command_id"]) != "ai.retention.condition"
 )
 
-#: The SDK field the additional input fields below stand in for. Listed as required, it told
-#: callers to send ``patch`` beside ``add_datasets`` — which the handler then refuses —
-#: so it is shown as optional wherever an alternative exists.
-_REPLACED_BY_ADDITIONAL: dict[str, str] = {
-    "automation.update": "patch",
-    "view.export.update": "patches",
+#: Fields the SDK method requires but the handler does not: another input stands in for them
+#: or the handler has a default. Listed as required, they told callers to send ``patch`` beside
+#: ``add_datasets``, which the handler then refuses.
+_OPTIONAL_IN_HANDLER: dict[str, frozenset[str]] = {
+    "automation.create": frozenset({"description"}),
+    "automation.update": frozenset({"patch"}),
+    "dashboard.figure.add": frozenset({"dataview_id", "figure"}),
+    "view.export.update": frozenset({"patches"}),
 }
 
 #: Fields the SDK method defaults but the handler refuses to run without: shown as required.
@@ -1042,15 +1044,16 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     additional_fields = _S7_ADDITIONAL_INPUT_FIELDS.get(command_id, ())
     declared_names = {field.name for field in fields}
     fields += tuple(field for field in additional_fields if field.name not in declared_names)
-    replaced = _REPLACED_BY_ADDITIONAL.get(command_id)
-    if replaced is not None:
-        fields = tuple(
-            replace(field, required=False) if field.name == replaced else field for field in fields
-        )
+    optional = _OPTIONAL_IN_HANDLER.get(command_id, frozenset())
     needed = _REQUIRED_BY_HANDLER.get(command_id, frozenset())
-    if needed:
+    if optional or needed:
         fields = tuple(
-            replace(field, required=True) if field.name in needed else field for field in fields
+            (
+                replace(field, required=field.name in needed)
+                if field.name in optional | needed
+                else field
+            )
+            for field in fields
         )
     bindings = MappingProxyType({field.name: field.name for field in fields})
     # Positionals fill SDK parameters only when they are not dual-sourced.  A

@@ -692,7 +692,7 @@ Total commands: 917.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.automations.AutomationsAPI.create`
-- Agent example: `mammoth automation create 'Revenue report' --input '{"description": "Quarterly revenue summary", "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}]}' --yes`
+- Agent example: `mammoth automation create 'Revenue report' --input '{"tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}], "description": "Quarterly revenue summary"}' --yes`
 
 ### `mammoth automation delete`
 
