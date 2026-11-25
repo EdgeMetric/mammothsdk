@@ -190,7 +190,7 @@ All enums extend `str, Enum` — they work as both enum values AND plain strings
 | `DateDiffUnit` | YEAR, MONTH, DAY, HOUR, MINUTE, SECOND, WEEK, QUARTER | date_diff() |
 | `WindowFunction` | ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, SUM, AVG, MIN, MAX, COUNT, FIRST_VALUE, LAST_VALUE, STDDEV, VARIANCE, PERCENT_RANK, NTILE | window() |
 | `WindowRange` | UNBOUNDED, RUNNING | window() |
-| `AggregateFunction` | SUM, AVG, MIN, MAX, COUNT, COUNT_DISTINCT, STDDEV, VARIANCE, MEDIAN, FIRST, LAST, CONCAT | pivot(), crosstab() |
+| `AggregateFunction` | SUM, AVG, MIN, MAX, COUNT, COUNT_DISTINCT, STDDEV, VARIANCE, MEDIAN, FIRST, LAST, CONCAT | pivot(), crosstab(). VARIANCE: crosstab() only; CONCAT: pivot() only; MEDIAN, FIRST, LAST: neither |
 | `FillDirection` | FIRST_VALUE, LAST_VALUE | fill_missing() |
 | `FilterType` | SHOW, REMOVE | filter_rows() |
 | `SortDirection` | ASC, DESC | order_by in window, pivot, limit_rows |

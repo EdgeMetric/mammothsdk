@@ -65,7 +65,7 @@ OUTCOME_FAILED = "failed"
 OUTCOME_PARTIAL = "partial"
 _PENDING_STATES = frozenset({"staged", "processing"})
 
-_FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
+FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
 
 #: HTTP status codes that mean "accepted, not finished" when a write's own
@@ -372,7 +372,7 @@ def _verify_and_reason(
     if data.get("refused_files"):
         return False, "the server refused some of the files"
     for status in (data.get("status"), _job_status(data)):
-        if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
+        if isinstance(status, str) and status.lower() in FAILURE_STATUSES:
             return False, "the operation failed"
         if isinstance(status, str) and status.lower() == "processing":
             return False, _UNSETTLED_REASON
