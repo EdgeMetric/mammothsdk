@@ -196,6 +196,8 @@ _EXAMPLE_INPUT_HINTS: dict[str, dict[str, Any]] = {
         "description": "Quarterly revenue summary",
         "tasks": [{"task_type": "run_data_retrieval", "details": {"ds_details": [{"ds_id": 42}]}}],
     },
+    # ``patches`` is optional beside the fields to change, so the signature alone names no input.
+    "view.export.update": {"save_as_mode": "APPEND_TO_DS"},
     "automation.update": {
         "patch": [{"op": "replace", "path": "details", "value": {"name": "Daily revenue export"}}]
     },

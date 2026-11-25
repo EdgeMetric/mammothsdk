@@ -7640,7 +7640,7 @@ Total commands: 913.
 - Mutation class: `external_effect`
 - Confirmation: `yes_always`
 - Backing SDK: `mammoth.api.exports.ExportsAPI.update`
-- Agent example: `mammoth view export update 123 456 --yes`
+- Agent example: `mammoth view export update 123 456 --input '{"save_as_mode": "APPEND_TO_DS"}' --yes`
 
 ### `mammoth view exportable-config apply`
 

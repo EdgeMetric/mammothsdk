@@ -4,8 +4,11 @@ beside ``add_datasets``, which the handler then refuses)."""
 
 from __future__ import annotations
 
+import shlex
+
 import pytest
 
+from mammoth_cli.manifest.loader import load_commands
 from mammoth_cli.services.command_contract import resolve_command_contract
 
 
@@ -30,3 +33,9 @@ def test_folder_create_takes_the_parent_as_folder_list_shows_it() -> None:
     names = {field.name for field in contract.fields}
     assert "parent_resource_id" in names
     assert "parent_folder_id" not in names
+
+
+@pytest.mark.parametrize("command_id", ["automation.update", "view.export.update"])
+def test_the_agent_example_still_sends_a_change(command_id: str) -> None:
+    record = next(item for item in load_commands() if item["command_id"] == command_id)
+    assert "--input" in shlex.split(record["agent_example"])
