@@ -85,8 +85,12 @@ def callback_problem(
         if abs(clock - timestamp) > tolerance:
             return f"the timestamp is more than {tolerance} seconds from now"
     expected = sign_callback(secret, timestamp, body).partition(",v1=")[2]
-    # Bytes: compare_digest refuses non-ASCII text, which a forged header may hold.
-    if any(hmac.compare_digest(expected.encode(), v1.lower().encode()) for v1 in fields["v1"]):
+    # Bytes: compare_digest refuses non-ASCII text, which a forged header may hold, lone
+    # surrogates included (a server decodes a non-UTF-8 header byte to one).
+    if any(
+        hmac.compare_digest(expected.encode(), v1.lower().encode("utf-8", "surrogatepass"))
+        for v1 in fields["v1"]
+    ):
         return None
     return "the signature does not match the body and secret"
 

@@ -152,6 +152,7 @@ def test_any_matching_v1_is_accepted() -> None:
         (_header(), BODY, "", NOW, "secret is empty"),
         (f"t={NOW},{_header()}", BODY, SECRET, NOW, "no t="),
         (f"t={NOW},v1=é", BODY, SECRET, NOW, "does not match"),
+        (f"t={NOW},v1=\udce9", BODY, SECRET, NOW, "does not match"),
         ("t=²,v1=00", BODY, SECRET, NOW, "no t="),
         (f"t={'1' * 5000},v1=00", BODY, SECRET, NOW, "no t="),
     ],
