@@ -1,0 +1,44 @@
+manifest_schema_version: 1
+commands:
+- command_id: bench
+  output_schema:
+    ref: Bench
+  command_path: bench
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: command
+    type: str
+    required: true
+    metavar: COMMAND
+    falls_back_to_field: null
+    help: The read command to bench, as words or one quoted string; the bench flags
+      go after it.
+  options: []
+  sdk_symbol: mammoth_cli.commands.bench.bench
+  sdk_conversion: Call mammoth_cli.commands.bench.bench with validated request fields.
+  request_model: BenchRequest
+  result_model: BenchResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Runs a read command many times; refuses any command whose manifest
+    mutation_class is not read.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth bench COMMAND --help
+  agent_example: mammoth bench 'project list'
+  unit_tests:
+  - UT-BENCH
+  contract_tests:
+  - CT-BENCH-S1-LOCAL
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read commands only. Not available embedded. The bench flags are read
+    from anywhere on the line, so the benched command cannot take a flag of the same name.
+  reviewed_by: primary

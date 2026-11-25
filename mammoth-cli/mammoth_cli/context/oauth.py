@@ -36,7 +36,12 @@ from mammoth_cli.context import credentials, profiles
 from mammoth_cli.context.credentials import OAuthSession
 from mammoth_cli.context.endpoint import DEFAULT_SERVER_PREFIX, resolve_base_url
 from mammoth_cli.context.profiles import config_dir
-from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
+from mammoth_cli.errors.envelope import (
+    CODE_AUTHENTICATION_FAILED,
+    EXIT_AUTH,
+    EXIT_USAGE,
+    CliError,
+)
 
 if TYPE_CHECKING:
     from mammoth_cli.context.oauth_loopback import CallbackServer as _CallbackServer
@@ -58,7 +63,11 @@ _LOCK_WAIT_SECONDS = 60.0
 CODE_LOGIN_EXPIRED = "login_expired"
 CODE_OAUTH_LOGIN_FAILED = "oauth_login_failed"
 CODE_DEVICE_LOGIN_EXPIRED = "device_login_expired"
+CODE_PASSWORD_INVALID_REQUEST = "password_login_invalid_request"  # noqa: S105 - an error code
+CODE_PASSWORD_GRANT_REFUSED = "password_grant_not_allowed"  # noqa: S105 - an error code
 
+#: RFC 6749 §4.3: the grant type of a username and password sign-in.
+PASSWORD_GRANT_TYPE = "password"  # noqa: S105 - an OAuth grant type
 #: RFC 8628 §3.4: the grant type the device sign-in polls with.
 DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 #: RFC 8628 §3.5: a slow_down answer adds this many seconds to the interval.
@@ -457,6 +466,100 @@ def device_login(
             return session_from_grant(step, client_id)
         interval = step
     raise device_login_expired_error(profile)
+
+
+# --- username and password (RFC 6749 section 4.3) --------------------------------------
+
+
+def password_login(
+    base_url: str,
+    *,
+    client_id: str,
+    username: str,
+    password: str,
+    workspace_id: int | None = None,
+    profile: str | None = None,
+) -> OAuthSession:
+    """Sign in with a username and password and return the resulting session.
+
+    This is the resource-owner password grant, for automation with no browser. The password
+    goes only into the request body; it is never logged, echoed or put in an error.
+
+    Args:
+        base_url: The server's base URL.
+        client_id: The CLI's OAuth client id.
+        username: The account's username.
+        password: The account's password.
+        workspace_id: The workspace to sign in to, for an account with several; sent as
+            ``workspace_id`` when given.
+        profile: The profile being signed in, for the error's recovery command.
+
+    Returns:
+        The refreshable session, stored exactly like a browser sign-in's.
+
+    Raises:
+        CliError: ``password_grant_not_allowed`` when the server or client does not allow the
+            password grant; ``authentication_failed`` when the credentials are refused
+            (the server's description is in the message);
+            ``password_login_invalid_request`` when the request is incomplete or names no
+            workspace of the account; ``oauth_login_failed`` for any other refusal.
+    """
+    form = {
+        "grant_type": PASSWORD_GRANT_TYPE,
+        "username": username,
+        "password": password,
+        "client_id": client_id,
+    }
+    if workspace_id is not None:
+        form["workspace_id"] = str(workspace_id)
+    status, body = _post_token(base_url, form)
+    if status == 200:
+        return session_from_grant(_parse_grant(body), client_id)
+    error = str(body.get("error", ""))
+    description = str(body.get("error_description") or "").strip()
+    if error in ("unsupported_grant_type", "unauthorized_client") or status in (404, 405):
+        raise CliError(
+            code=CODE_PASSWORD_GRANT_REFUSED,
+            message=(
+                f"{base_url} does not allow the password grant for the CLI client "
+                f"({error or f'HTTP {status}'})."
+            ),
+            exit_status=EXIT_AUTH,
+            hint=(
+                "Direct password sign-in is switched off for this server or client. Use "
+                "'mammoth auth login --device' (approve on another device) or an API token "
+                "('mammoth auth login --method token --input FILE')."
+            ),
+            details={"error": error or None, "http_status": status},
+        )
+    if error == "invalid_grant":
+        raise CliError(
+            code=CODE_AUTHENTICATION_FAILED,
+            message=(
+                f"{base_url} rejected the username or password"
+                + (f": {description}" if description else ".")
+            ),
+            exit_status=EXIT_AUTH,
+            hint=(
+                "Check the username and password, and that --server-prefix matches the server "
+                "the account is on. An account that needs a second factor or a single sign-on "
+                "login cannot use a password grant; use --device instead."
+            ),
+            details={"username": username, "error": error},
+        )
+    if error == "invalid_request":
+        raise CliError(
+            code=CODE_PASSWORD_INVALID_REQUEST,
+            message=description or f"{base_url} refused the password sign-in request.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "Pass --workspace ID with one of the listed workspaces."
+                if "workspace" in description.lower()
+                else None
+            ),
+            details={"error": error, "workspace_id": workspace_id},
+        )
+    raise _login_failed(f"Mammoth refused the sign-in ({error or f'HTTP {status}'}).", profile)
 
 
 # --- refresh under a file lock ----------------------------------------------------

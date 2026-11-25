@@ -24,8 +24,14 @@ mammoth connector connection create mssql --input /private/path/request.json --y
 mammoth connector connection get mssql CONNECTION_KEY     # read it back; config is redacted
 ```
 
-There is no table-browse command. Ask the user for the table (and schema), or
-draft the SQL with `connector query generate`. Try the SELECT first: it shows
+List the connection's tables, then pick one (a `shape` of `other` means the
+connection has no table list; `needs_sign_in` means it must be signed in again):
+
+```bash
+mammoth connector connection tables CONNECTION_KEY
+```
+
+Or draft the SQL with `connector query generate`. Try the SELECT first: it shows
 sample rows and saves nothing (no dataset, no data source), so it needs no
 `--yes`. The CLI accepts only one SELECT (or WITH ... SELECT); the connection's
 database user decides what the database allows, and the sample is limited to
@@ -36,16 +42,19 @@ mammoth connector connection query mssql CONNECTION_KEY \
   --input '{"query": "SELECT TOP 5 * FROM dbo.Orders"}'
 ```
 
-Then import it as a dataset (a write: confirm first). `query` is required;
-`validate` is on by default:
+Then import it as a dataset (a write: confirm first). `ds_name`, `table_name`
+and `query` are all required; without `schedule_properties` it is one pull now:
 
 ```bash
-mammoth connector ds-config create mssql CONNECTION_KEY \
-  --input '{"query": "SELECT * FROM dbo.Orders", "table": "Orders"}' --yes
-mammoth connector ds-config list mssql CONNECTION_KEY
-mammoth dataset list --project PROJECT_ID                 # the new dataset must appear
+mammoth dataset create --input '{"ds_creation_type": "cloud", "dataset_spec":
+  {"connector_key": "mssql", "connection_key": "CONNECTION_KEY", "query_properties":
+  {"ds_name": "Orders", "table_name": "Orders", "query": "SELECT * FROM dbo.Orders"}}}'
 ```
 
-Report the dataset name and id. If it does not appear, or the call returns an
+`connector ds-config create` is not the import: it checks or samples a query and
+saves nothing.
+
+Report the dataset `name` and id from the result (a taken name gets a suffix;
+`note` says so). If the call returns an
 error envelope, report that envelope as is and stop; do not retry the create
 blindly. A bad host, login, or table shows up as the validation error.

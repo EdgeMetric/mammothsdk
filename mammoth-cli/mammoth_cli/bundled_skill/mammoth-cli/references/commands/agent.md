@@ -266,7 +266,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run extend`. Exact input fields: `mammoth schema get agent.run.extend`.
 
-Example: `mammoth agent run extend resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent run extend resource-123 --session session-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunExtendResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -316,7 +316,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run pause`. Exact input fields: `mammoth schema get agent.run.pause`.
 
-Example: `mammoth agent run pause resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent run pause resource-123 --session session-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunPauseResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -326,7 +326,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run resume`. Exact input fields: `mammoth schema get agent.run.resume`.
 
-Example: `mammoth agent run resume resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent run resume resource-123 --session session-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunResumeResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
@@ -336,7 +336,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run retry`. Exact input fields: `mammoth schema get agent.run.retry`.
 
-Example: `mammoth agent run retry resource-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
+Example: `mammoth agent run retry resource-123 --session session-123 --yes`. Illustrative only: append `--yes` after observing an owned target.
 
 Result: `AgentRunRetryResult`; mutation `benign_mutation`, confirmation `prompt_or_yes`, wait policy `not_async`.
 
@@ -356,7 +356,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth agent run stop`. Exact input fields: `mammoth schema get agent.run.stop`.
 
-Example: `mammoth agent run stop resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth agent run stop resource-123 --session session-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AgentRunStopResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 

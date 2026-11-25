@@ -112,6 +112,11 @@ _DRY_RUNS: list[tuple[list[str], str, dict[str, Any]]] = [
         {"connector_key": "hubspot"},
     ),
     (["connector", "draft", "known-sources"], f"{_DRAFTS}.known_sources", {}),
+    (
+        ["connector", "connection", "tables", "conn-1"],
+        f"{_DRAFTS}.connection_tables",
+        {"connection_key": "conn-1"},
+    ),
     (["connector", "draft", "get", "9"], f"{_DRAFTS}.get", {"draft_id": 9}),
     (
         ["connector", "draft", "update", "9", "--input", '{"title": "Deals"}'],
@@ -169,8 +174,8 @@ def _offline(fake_service: FakeMammothService, block_real_network: None) -> Fake
     return fake_service
 
 
-def test_every_one_of_the_28_routes_has_a_command() -> None:
-    assert len(_DRY_RUNS) == 28
+def test_every_one_of_the_29_routes_has_a_command() -> None:
+    assert len(_DRY_RUNS) == 29
 
 
 @pytest.mark.parametrize(("argv", "symbol", "arguments"), _DRY_RUNS, ids=lambda v: str(v)[:48])

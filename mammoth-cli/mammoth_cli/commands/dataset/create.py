@@ -40,6 +40,8 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
     # name check and the result's scope are that project's, not the active one's.
     landing_project_id = _clone_target_project(ds_creation_type, dataset_spec) or project_id
     _default_data_pull_file(ds_creation_type, dataset_spec)
+    adjusted = _default_one_off_pull(ds_creation_type, dataset_spec)
+    _require_cloud_query_fields(ds_creation_type, dataset_spec)
     kwargs: dict[str, Any] = {
         "dataset_spec": dataset_spec,
         "ds_creation_type": ds_creation_type,
@@ -57,6 +59,8 @@ def dataset_create(invocation: Invocation) -> HandlerResult:
         settled = service.wait_if_job(data)
         result = _created_dataset(data, settled)
         _add_final_name(service, result, dataset_spec, landing_project_id)
+    if adjusted:
+        result["input_adjusted"] = adjusted
     return result, _meta(invocation, auth.workspace_id, landing_project_id)
 
 
@@ -114,6 +118,96 @@ def _default_data_pull_file(ds_creation_type: object, dataset_spec: object) -> N
             exit_status=EXIT_USAGE,
             hint=f"Use one of: {allowed_values_text(_DATA_PULL_FILE_VALUES)}.",
             details={"got": pull, "allowed": list(_DATA_PULL_FILE_VALUES)},
+        )
+
+
+#: A one-off pull now: what the web app sends when no refresh schedule is chosen.
+ONE_OFF_PULL = {"schedule_type": "moment", "first_pull_at": "now", "on_refresh_action": "replace"}
+
+
+def _default_one_off_pull(ds_creation_type: object, dataset_spec: object) -> list[str]:
+    """Fill what a cloud database import needs and the server only checks in the job.
+
+    Without ``schedule_properties`` the request was accepted and the job failed with
+    "Invalid parameters"; ``query_properties.table`` was refused as if ``table`` were
+    missing, since the server reads ``table_name`` (mammothsdk#382).
+
+    Args:
+        ds_creation_type: The ``ds_creation_type`` input.
+        dataset_spec: The ``dataset_spec`` input, changed in place.
+
+    Returns:
+        One sentence per change made, for the result's ``input_adjusted``.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return []
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or properties.get("file_path"):
+        return []
+    adjusted: list[str] = []
+    if "table" in properties and "table_name" not in properties:
+        properties["table_name"] = properties.pop("table")
+        adjusted.append(
+            "query_properties.table was sent as table_name, the field the server reads."
+        )
+    if properties.get("query") and not dataset_spec.get("schedule_properties"):
+        dataset_spec["schedule_properties"] = dict(ONE_OFF_PULL)
+        adjusted.append(
+            "No schedule_properties: sent a one-off pull now (schedule_type moment, "
+            "first_pull_at now, on_refresh_action replace)."
+        )
+    return adjusted
+
+
+#: Connectors whose imports the server reads without ``table_name`` and ``query`` (each has its
+#: own fields); every other cloud import needs all of ``_CLOUD_QUERY_FIELDS``.
+_NO_QUERY_CONNECTORS = frozenset(
+    {
+        "sftp",
+        "google_bucket",
+        "google_drive",
+        "dropbox",
+        "google_sheets",
+        "mqtt",
+        "email_imap",
+        "sharepoint",
+        "onedrive",
+        "azure_blob",
+    }
+)
+_CLOUD_QUERY_FIELDS = ("ds_name", "table_name", "query")
+
+
+def _require_cloud_query_fields(ds_creation_type: object, dataset_spec: object) -> None:
+    """Refuse a cloud query import with a field missing that the server answers 4DSET043 for.
+
+    Args:
+        ds_creation_type: The ``ds_creation_type`` input.
+        dataset_spec: The ``dataset_spec`` input, after ``_default_one_off_pull``.
+
+    Raises:
+        CliError: ``missing_argument`` naming the missing ``query_properties`` fields.
+    """
+    if ds_creation_type != "cloud" or not isinstance(dataset_spec, dict):
+        return
+    if dataset_spec.get("connector_key") in _NO_QUERY_CONNECTORS:
+        return
+    properties = dataset_spec.get("query_properties")
+    if not isinstance(properties, dict) or properties.get("file_path"):
+        return
+    if not (properties.get("query") or properties.get("table_name")):
+        return
+    missing = [name for name in _CLOUD_QUERY_FIELDS if not properties.get(name)]
+    if missing:
+        raise CliError(
+            code=CODE_MISSING_ARGUMENT,
+            message="A query import needs query_properties ds_name, table_name and query; "
+            f"missing: {', '.join(missing)}.",
+            exit_status=EXIT_USAGE,
+            hint="ds_name is the new dataset's name, table_name the table read, query one SELECT: "
+            '"query_properties": {"ds_name": "Orders", "table_name": "orders", '
+            '"query": "SELECT * FROM orders"}.',
+            details={"missing": missing, "required": list(_CLOUD_QUERY_FIELDS)},
         )
 
 
@@ -185,12 +279,15 @@ _NAME_PROBE_PAGES = 20
 
 
 def _requested_name(dataset_spec: object) -> str | None:
-    """The name the caller asked for: ``ds_name`` (clone, cloud) or ``name`` (sketch)."""
+    """The name the caller asked for: ``ds_name`` (clone, or a cloud import's
+    ``query_properties``) or ``name`` (sketch)."""
     if not isinstance(dataset_spec, dict):
         return None
-    for key in ("ds_name", "name"):
-        if isinstance(dataset_spec.get(key), str) and dataset_spec[key]:
-            return str(dataset_spec[key])
+    properties = dataset_spec.get("query_properties")
+    named = properties.get("ds_name") if isinstance(properties, dict) else None
+    for name in (dataset_spec.get("ds_name"), named, dataset_spec.get("name")):
+        if isinstance(name, str) and name:
+            return name
     return None
 
 

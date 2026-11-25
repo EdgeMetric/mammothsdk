@@ -112,6 +112,29 @@ class TestWorkflowsAPIGetUpdateDelete:
             "DELETE", "/workspaces/2/projects/100/workflows/5"
         )
 
+    async def test_delete_with_trash_posts_the_keys(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={"job_ids": [1]})
+        await api.delete(5, trash=["view:1", "dashboard:2"])
+        mock_client._request_json.assert_called_once_with(
+            "POST",
+            "/workspaces/2/projects/100/workflows/5/delete",
+            json={"trash": ["view:1", "dashboard:2"]},
+        )
+
+    async def test_delete_rejects_bad_trash(self):
+        api, _ = _make_api()
+        with pytest.raises(MammothValidationError):
+            await api.delete(5, trash=[1])  # type: ignore[list-item]
+
+    async def test_delete_plan(self):
+        api, mock_client = _make_api()
+        mock_client._request_json = AsyncMock(return_value={"items": []})
+        await api.delete_plan(5)
+        mock_client._request_json.assert_called_once_with(
+            "GET", "/workspaces/2/projects/100/workflows/5/delete-plan"
+        )
+
 
 class TestWorkflowsAPIGraphCleanup:
     async def test_graph(self):

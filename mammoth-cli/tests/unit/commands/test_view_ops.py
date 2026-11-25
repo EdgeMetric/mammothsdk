@@ -140,13 +140,15 @@ def test_delete_blocked_without_confirmation(fake_service: FakeMammothService) -
     assert fake_service.call_log == []
 
 
-def test_delete_refuses_parent_discovery(fake_service: FakeMammothService) -> None:
-    # A destructive call never falls back to the project-wide parent probe:
-    # with no exact parent it fails closed before any SDK call.
-    with pytest.raises(CliError) as excinfo:
-        view_crud.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
-    assert excinfo.value.code == "resource_identity_required"
-    assert fake_service.call_log == []
+def test_delete_resolves_the_parent_from_the_view(fake_service: FakeMammothService) -> None:
+    # mammothsdk#403: no DATASET_ID given, so the parent is read from the view's own record.
+    fake_service.responses["mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"] = 122
+    view_crud.view_delete(_inv("view.delete", extra_args=["7"], yes=True))
+    symbols = [symbol for symbol, _ in fake_service.call_log]
+    assert symbols[0] == "mammoth.api.pipeline.PipelineAPI.find_dataset_for_dataview"
+    assert _DELETE in symbols
+    delete_kwargs = next(kw for symbol, kw in fake_service.call_log if symbol == _DELETE)
+    assert delete_kwargs == {"view_id": 7, "dataset_id": 122}
 
 
 def test_delete_forwards_exact_parent_positional(fake_service: FakeMammothService) -> None:

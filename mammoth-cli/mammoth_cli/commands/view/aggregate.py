@@ -305,6 +305,67 @@ def open_aggregate_source(
     return AggregateSource(reads, currencies, meta)
 
 
+def _loose(name: str) -> str:
+    return " ".join(name.replace("_", " ").replace("-", " ").casefold().split())
+
+
+def with_known_columns(
+    document: dict[str, Any], display_to_internal: dict[str, str]
+) -> dict[str, Any]:
+    """*document* with every aggregated or grouped column named by its display name.
+
+    A column named by its internal name, or with spaces where the view has underscores (as
+    ``view list`` and ``view data get`` differ), failed as a bare "Job failed"
+    (mammothsdk#438). A name that matches nothing is refused, naming the valid columns.
+
+    Args:
+        document: The aggregate input.
+        display_to_internal: The view's display name -> internal name map.
+
+    Returns:
+        The document with its column references rewritten.
+
+    Raises:
+        CliError: ``unknown_column`` for a column the view does not have.
+    """
+    if not display_to_internal:
+        return document
+    by_internal = {internal: display for display, internal in display_to_internal.items()}
+    loose: dict[str, list[str]] = {}
+    for display in display_to_internal:
+        loose.setdefault(_loose(display), []).append(display)
+
+    def known(name: Any) -> Any:
+        if not isinstance(name, str) or name == "*" or name in display_to_internal:
+            return name
+        if name in by_internal:
+            return by_internal[name]
+        matches = loose.get(_loose(name), [])
+        if len(matches) == 1:
+            return matches[0]
+        raise CliError(
+            code="unknown_column",
+            message=f"The view has no column named {name!r}.",
+            exit_status=EXIT_USAGE,
+            hint="Use one of the view's columns: " + ", ".join(sorted(display_to_internal)),
+            details={"column": name, "valid_columns": sorted(display_to_internal)},
+        )
+
+    def item(entry: Any) -> Any:
+        if isinstance(entry, dict) and "column" in entry:
+            return {**entry, "column": known(entry["column"])}
+        return known(entry)
+
+    out = dict(document)
+    if isinstance(document.get("aggregations"), list):
+        out["aggregations"] = [item(entry) for entry in document["aggregations"]]
+    if isinstance(document.get("group_by"), list):
+        out["group_by"] = [item(entry) for entry in document["group_by"]]
+    if isinstance(document.get("metric"), dict):
+        out["metric"] = item(document["metric"])
+    return out
+
+
 def aggregate_on(
     source: AggregateSource, symbol: str, document: dict[str, Any], coverage: bool = True
 ) -> Any:
@@ -314,6 +375,7 @@ def aggregate_on(
     that already has it from an earlier aggregate over the same view).
     """
     document = with_normalized_functions(document)
+    document = with_known_columns(document, source.reads.display_to_internal)
     reads = source.reads
     column_types = reads.column_types
     display_to_internal = reads.display_to_internal

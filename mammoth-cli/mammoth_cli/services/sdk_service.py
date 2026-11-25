@@ -240,6 +240,9 @@ class SdkMammothService:
         # SDK keeps per-client headers off a shared client; else this call has its own.
         call = embedded.current()
         self._runtime = call.runtime if call is not None and _shares(call.runtime) else None
+        if call is not None and call.no_retry:
+            # A benchmark counts a gateway error as what it is (mammothsdk#431).
+            kwargs["retry_gateway_errors"] = False
         extra_headers: dict[str, str] = dict(auth.headers or {})
         # An embedded call takes the run from ``ExplicitLogin.headers``: this
         # process's environment is shared by every user the host serves.

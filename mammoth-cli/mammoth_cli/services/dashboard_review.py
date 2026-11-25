@@ -285,6 +285,7 @@ def review(
             record["fix"] = _math_fix(view_ref, dataset_id, quantities[0], summed[0])
         warnings.append(record)
     shown = measures | dims
+    quiet: list[dict[str, Any]] = []
     for profile in profiles:
         name = profile["name"]
         nulls = _rate(profile.get("nullRate"))
@@ -300,14 +301,51 @@ def review(
             parts.append(f"{_percent(nulls)} of {name} is blank (null or empty)")
         if zeros > 0:
             parts.append(f"{_percent(zeros)} of {name} is 0")
-        warnings.append(
-            {
-                "issue": "blank_values" if nulls > 0 else "zero_values",
-                "column": name,
-                "detail": "; ".join(parts) + ".",
-            }
+        record = {
+            "issue": "blank_values" if nulls > 0 else "zero_values",
+            "column": name,
+            "detail": "; ".join(parts) + ".",
+        }
+        (warnings if shown else quiet).append(record)
+    return warnings + _once_per_table(quiet) + rates
+
+
+def _once_per_table(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Fold the sparse-column records of a board that reads no known column into one per issue.
+
+    A wide table where each source fills different columns has many sparse columns, and a board
+    whose figures name none of them cannot say which matter: one record per issue lists them
+    all instead of one warning each (mammothsdk#405). A single record stays as it is.
+
+    Args:
+        records: Per-column ``blank_values``/``zero_values`` records, in profile order.
+
+    Returns:
+        The records, with two or more of one issue folded into a record that has ``columns``.
+    """
+    folded: list[dict[str, Any]] = []
+    for issue in dict.fromkeys(str(r["issue"]) for r in records):
+        group = [r for r in records if r["issue"] == issue]
+        if len(group) == 1:
+            folded.extend(group)
+            continue
+        names = [str(r["column"]) for r in group]
+        what = "blank (null or empty)" if issue == "blank_values" else "0"
+        detail = (
+            f"{len(names)} columns are partly {what}: {', '.join(names)}. No figure on "
+            "the board reads them yet; check a column's blanks once a figure uses it."
         )
-    return warnings + rates
+        # A blank record can also carry its column's zero rate; keep it in the fold.
+        zeros = [
+            part
+            for r in group
+            for part in str(r["detail"]).rstrip(".").split("; ")
+            if issue == "blank_values" and part.endswith(" is 0")
+        ]
+        if zeros:
+            detail += " Also: " + "; ".join(zeros) + "."
+        folded.append({"issue": issue, "columns": names, "detail": detail})
+    return folded
 
 
 def upload_hints(

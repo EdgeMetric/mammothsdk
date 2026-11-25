@@ -28,6 +28,8 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "completion.install",
         # Reads a JSON Lines file or the host's stdin.
         "run",
+        # Runs many calls at once in the host's process, as one login.
+        "bench",
         # Read or write the host's profile, run log or install state.
         "auth.status",
         "config.get",
@@ -41,6 +43,9 @@ EMBEDDED_UNAVAILABLE = frozenset(
         "history.resume",
         "skill.list",
         "skill.path",
+        # Take a secret from a file or stdin only; an embedded call reads neither.
+        "connector.draft.credentials",
+        "workflow.link.fire",
         # Write a path on the host's filesystem. The commands that read one are not
         # listed: ``local_path_commands`` derives them from the manifest.
         "view.explore-panel.export-image",

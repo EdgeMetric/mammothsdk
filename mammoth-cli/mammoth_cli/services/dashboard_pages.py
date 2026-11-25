@@ -14,6 +14,9 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
+from mammoth_cli.services.suggest import nearest_one
+
 CANVAS_GET = "mammoth.api.dashboards.DashboardsAPI.canvas_get"
 CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
 
@@ -21,6 +24,92 @@ CANVAS_SAVE = "mammoth.api.dashboards.DashboardsAPI.canvas_save"
 #: "On the board: ..." summary, which is not a refusal.
 _REFUSED = re.compile(r"Couldn[’']t do:\s*(?P<notes>.+?)[._\s]*(?:\n\s*\n|$)", re.DOTALL)
 _NOT_A_MEASURE = re.compile(r"(?P<col>[\w.-]+) (?:isn[’']t|is not) a measure", re.IGNORECASE)
+
+
+#: The keys an add-pages page spec may carry (the server's ``PageAdd`` plus the table door:
+#: ``dataset``, ``date_field``, ``blank``). The server drops any other key without a word.
+PAGE_KEYS = frozenset(
+    {
+        "title",
+        "type",
+        "focus",
+        "why",
+        "charts",
+        "layout_rows",
+        "insights",
+        "dataset",
+        "date_field",
+        "blank",
+    }
+)
+_TABLE_KEYS = frozenset({"dataview_id", "dataset_id"})
+_TABLE_HINT = 'name a page\'s own table as "dataset": {"dataview_id": VIEW_ID}'
+
+
+def check_page_specs(pages: Sequence[Any]) -> None:
+    """Refuse an add-pages page spec with a key the server would drop.
+
+    A top-level ``dataview_id`` on a page was dropped and the page drew the board's
+    table instead (mammothsdk#441), so the dry run and the real run refuse it alike.
+
+    Args:
+        pages: ``body.params.pages`` as given.
+
+    Raises:
+        CliError: ``invalid_argument`` naming the page and the keys it does not take.
+    """
+    for index, page in enumerate(pages):
+        if not isinstance(page, Mapping):
+            continue
+        label = page.get("title") or f"#{index + 1}"
+        unknown = sorted(str(key) for key in page if key not in PAGE_KEYS)
+        dataset = page.get("dataset")
+        bad_table = dataset is not None and (
+            not isinstance(dataset, Mapping)
+            or not dataset
+            or any(key not in _TABLE_KEYS for key in dataset)
+        )
+        if not unknown and not bad_table:
+            continue
+        if unknown:
+            near = {key: nearest_one(key, PAGE_KEYS) for key in unknown}
+            message = f"Page '{label}' has keys add-pages does not take: {', '.join(unknown)}."
+            hints = list(
+                dict.fromkeys(
+                    _TABLE_HINT if key in _TABLE_KEYS else f"'{key}' -> '{near[key]}'"
+                    for key in unknown
+                    if key in _TABLE_KEYS or near[key]
+                )
+            )
+        else:
+            message = f"Page '{label}' names its table with keys other than dataview_id."
+            hints = [_TABLE_HINT]
+        raise CliError(
+            code=CODE_INVALID_ARGUMENT,
+            message=message,
+            exit_status=EXIT_USAGE,
+            hint="; ".join([*hints, f"a page takes: {', '.join(sorted(PAGE_KEYS))}"]),
+            details={"page": label, "unknown_keys": unknown, "allowed_keys": sorted(PAGE_KEYS)},
+        )
+
+
+def own_table(page: Mapping[str, Any], root: Any) -> bool:
+    """Whether a page reads a table other than the board's own (``pages[].dataset``).
+
+    Args:
+        page: A canvas page or an add-pages page spec.
+        root: The canvas's own ``dataset`` mapping.
+
+    Returns:
+        True when the page names a table and it is not the board's.
+    """
+    dataset = page.get("dataset")
+    if not isinstance(dataset, Mapping) or not dataset:
+        return False
+    if not isinstance(root, Mapping):
+        return True
+    view = dataset.get("dataview_id")
+    return view is None or view != root.get("dataview_id")
 
 
 def refused_notes(message: Any) -> list[str]:
@@ -45,6 +134,63 @@ def refused_warning(note: str) -> dict[str, Any]:
             f'"agg": "sum", "title": "Total {column}"}}}}\''
         )
     return {"issue": "refused", "detail": detail}
+
+
+#: The status of an ask that landed, and of one with nothing on the board to check.
+_LANDED_ASKS = frozenset({"applied", "not checked"})
+
+
+def refused_asks(asks: Any) -> list[dict[str, Any]]:
+    """One warning per ask of a chat edit the server says did not land.
+
+    Args:
+        asks: The result's ``asks``, a list of ``{ask, status}``.
+
+    Returns:
+        A warning for each ask whose status is neither ``applied`` nor ``not checked``.
+    """
+    return [
+        {"issue": "ask_not_applied", "detail": f"{ask.get('ask')}: {ask['status']}"}
+        for ask in (asks if isinstance(asks, list) else [])
+        if isinstance(ask, Mapping)
+        and isinstance(ask.get("status"), str)
+        and ask["status"] not in _LANDED_ASKS
+    ]
+
+
+def other_source_step(dashboard_id: Any, dataview_id: Any) -> str:
+    """How a board shows a view it is not built on: a page of its own."""
+    return (
+        "A board shows another view on its own page: mammoth dashboard page plan "
+        f"{dashboard_id}, then mammoth dashboard pages add {dashboard_id} with "
+        f'"dataset": {{"dataview_id": {dataview_id}}} on the page'
+    )
+
+
+#: The server's refusal of a figure built on another source than the board reads.
+_SOURCE_MISMATCH_CODE = "4DASH023"
+
+
+def append_figure(service: Any, symbol: str, kwargs: dict[str, Any]) -> Any:
+    """Append one figure; a refused source names the route that shows it.
+
+    Args:
+        service: The session service.
+        symbol: The SDK symbol of the append.
+        kwargs: Its keyword arguments (``dashboard_id`` and ``dataview_id`` included).
+
+    Returns:
+        The append's response.
+
+    Raises:
+        CliError: The refusal, with the pages route as its hint for 4DASH023.
+    """
+    try:
+        return service.call(symbol, **kwargs)
+    except CliError as error:
+        if (error.details or {}).get("backend_code") == _SOURCE_MISMATCH_CODE:
+            error.hint = other_source_step(kwargs["dashboard_id"], kwargs["dataview_id"])
+        raise
 
 
 def _as_list(added_ids: Any) -> list[Any]:
@@ -181,7 +327,8 @@ def page_substitutions(
     canvas = canvas_doc.get("canvas") if isinstance(canvas_doc, Mapping) else None
     pages = canvas.get("pages") if isinstance(canvas, Mapping) else None
     built_by_id = {page.get("id"): page for page in pages or [] if isinstance(page, Mapping)}
-    known = set(profile_names)
+    root = canvas.get("dataset") if isinstance(canvas, Mapping) else None
+    board_columns = set(profile_names)
     warnings: list[dict[str, Any]] = []
     for page_id, page in zip(_as_list(added_ids), requested, strict=False):
         if not isinstance(page, Mapping):
@@ -190,6 +337,9 @@ def page_substitutions(
         if built is None:
             continue
         figures = _figures(built)
+        # The board's profile names the board's own table; a page on another table
+        # (mammothsdk#406) is judged only by what was swapped, not by those names.
+        known = set() if own_table(page, root) or own_table(built, root) else board_columns
         for index, chart in enumerate(
             c for c in page.get("charts") or [] if isinstance(c, Mapping)
         ):

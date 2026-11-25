@@ -64,6 +64,12 @@ take), `dashboard create-blank` `dashboard_id`. A write that made a dataset, vie
 the whole reply. A result that carries no id (a job still running) has no such key: wait on its
 `job_id`, then read the id from `job wait`.
 
+## `schema get`
+
+`schema get` answers `{requested, schemas, errors}` for one id or several, with or without `full`:
+read one command's contract at `data.schemas[0]`. An id not found is an entry in `errors`; when no
+id is found the call fails (`schema_not_found`, exit 2).
+
 ## Representative result keys
 
 These are compact shapes, not substitutes for `schema get`. IDs and field
@@ -143,7 +149,7 @@ echoed `id`. The last line is the summary, which has no `line`: `data` holds `li
 | 0 | success |
 | 1 | API, job, or local artifact error; also a write that did not verify (`status: failed`) |
 | 2 | usage / input / confirmation failure |
-| 3 | partial: a write whose read-back shows only part of it (`status: partial`) |
+| 3 | partial: a write whose read-back shows only part of it (`status: partial`). Also a dashboard build or `chat edit` the server saved with some asks refused or not applied: the object exists, `warnings` names what is missing |
 | 4 | authentication failure |
 | 5 | not found |
 | 6 | conflict, or `file_exists` (pass `--overwrite` to replace a local file) |

@@ -43,6 +43,11 @@ def service(monkeypatch: pytest.MonkeyPatch) -> FakeMammothService:
         "metadata": (
             [{"display_name": "Order ID", "internal_name": "c1"}]
             + [{"display_name": "Other", "internal_name": "c2"}]
+            # The columns the aggregate recipes group and sum by: aggregate checks its columns
+            # against the view before the request (mammothsdk#438).
+            + [{"display_name": "Revenue", "internal_name": "c3", "type": "NUMERIC"}]
+            + [{"display_name": "day", "internal_name": "c4"}]
+            + [{"display_name": "Region", "internal_name": "c5"}]
         )
     }
     store = journal.FileJournal(journal.journal_dir())

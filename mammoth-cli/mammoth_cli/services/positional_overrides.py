@@ -180,10 +180,13 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 name="run_id",
                 type=str,
                 required=True,
-                help="ID of the run (from agent run status or agent run list).",
+                help=(
+                    "ID of the run, from 'mammoth agent run status --session SESSION_ID' "
+                    "(or agent run list). The command also needs --session SESSION_ID."
+                ),
             ),
         )
-        for verb in ("pause", "resume", "stop", "extend")
+        for verb in ("pause", "resume", "stop", "extend", "retry")
     },
     "agent.turn.cancel": (
         PositionalSpec(
@@ -237,7 +240,7 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
                 help="ID of the run (from agent run status or agent run list).",
             ),
         )
-        for verb in ("retry", "units.list", "instance.list")
+        for verb in ("units.list", "instance.list")
     },
     **{
         f"agent.run.instance.{verb}": (
@@ -295,6 +298,14 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             help="Path to a local CSV, TSV or Excel file shaped like the table wanted.",
             kind=LOCAL_PATH,
             example_value="deals_2026-10.csv",
+        ),
+    ),
+    "connector.draft.credentials": (
+        PositionalSpec(
+            name="draft_id",
+            type=int,
+            required=True,
+            help="ID of the connector draft whose chat shows the key card.",
         ),
     ),
     "connector.version.spec.get": (
@@ -386,7 +397,23 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             type=int,
             required=False,
             falls_back_to_field="dataset_id",
-            help="ID of the parent dataset; or pass it via the 'dataset_id' input field.",
+            help=(
+                "ID of the parent dataset; or pass it via the 'dataset_id' input field. "
+                "Resolved from the view when omitted."
+            ),
+        ),
+    ),
+    # The new name is the second positional or --name, as well as the 'name' input field
+    # (mammothsdk#322).
+    "dataset.rename": (
+        PositionalSpec(name="dataset_id", type=int, required=True, help="ID of the dataset."),
+        PositionalSpec(
+            name="name",
+            type=str,
+            required=False,
+            help="New name for the dataset; or pass --name or the 'name' input field.",
+            falls_back_to_field="name",
+            example_value="Sales 2026",
         ),
     ),
     "view.exportable-config.get": (
@@ -774,6 +801,18 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             required=False,
             help="JSON Lines file with one command per line, or '-' (the default) for stdin.",
             example_value="commands.jsonl",
+        ),
+    ),
+    "bench": (
+        PositionalSpec(
+            name="command",
+            type=str,
+            required=True,
+            help=(
+                "The read command to bench, as words or one quoted string;"
+                " the bench flags go after it."
+            ),
+            example_value="project list",
         ),
     ),
     "calc": (
@@ -1370,5 +1409,28 @@ POSITIONAL_OVERRIDES: dict[str, tuple[PositionalSpec, ...]] = {
             ),
         )
         for verb in ("get", "sample-result", "rank", "fit", "preview", "samples", "build")
+    },
+    # A workflow page is addressed by the slug of its mammoth.io page, a describe draft by the
+    # id ``workflow describe start`` returned; neither name reads as an identity field.
+    "workflow.page.start": (
+        PositionalSpec(
+            name="slug",
+            type=str,
+            required=True,
+            help="Workflow page slug, from its mammoth.io/workflows URL.",
+            example_value="stripe-payout-reconciliation",
+        ),
+    ),
+    **{
+        f"workflow.describe.{verb}": (
+            PositionalSpec(
+                name="draft",
+                type=str,
+                required=True,
+                help="Draft id, from 'workflow describe start'.",
+                example_value="d-3f2a",
+            ),
+        )
+        for verb in ("get", "wait")
     },
 }

@@ -105,10 +105,19 @@ _LOCAL_COMMAND_ALLOWLIST: dict[str, str] = {
     "upgrade": "no HTTP call to the Mammoth API: runs the package installer",
 }
 
+#: Writes whose route is not in the pinned OpenAPI snapshot yet, so they cannot name an
+#: operation id. Each entry goes once the pin carries the route (see
+#: ``PENDING_SERVER_RELEASE`` in ``scripts/_command_map.py``).
+_PENDING_ROUTE_ALLOWLIST: dict[str, str] = {
+    "workflow.run.start": (
+        "POST .../workflows/{id}/run ships with mvc-service feat/workflow-run-route"
+    ),
+}
+
 
 def test_every_remote_write_command_names_its_operation_ids() -> None:
     """A non-read command that calls the API must say which operations it calls."""
-    allowed = _LOCAL_COMMAND_ALLOWLIST.keys()
+    allowed = _LOCAL_COMMAND_ALLOWLIST.keys() | _PENDING_ROUTE_ALLOWLIST.keys()
     missing = [
         record["command_id"]
         for record in load_commands()

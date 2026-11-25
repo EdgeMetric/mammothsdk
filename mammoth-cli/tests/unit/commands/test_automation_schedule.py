@@ -158,3 +158,54 @@ def test_a_patch_with_conditions_and_no_tasks_is_refused(
     assert "conditions but no tasks" in caught.value.message
     assert '"schedule"' in caught.value.hint
     assert _UPDATE not in fake_service.calls
+
+
+def _sent_schedule(fake_service: FakeMammothService) -> dict[str, Any]:
+    (sent,) = [kwargs for symbol, kwargs in fake_service.call_log if symbol == _UPDATE]
+    (condition,) = sent["patch"][0]["value"]["conditions"]
+    details: dict[str, Any] = condition["details"]
+    return details
+
+
+def test_weekly_to_daily_clears_the_weekday(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#439: the merged by_week_day kept a "daily" schedule on Tuesdays only."""
+    fake_service.responses[_GET] = _automation()
+    fake_service.responses[_UPDATE] = {"id": 574}
+    _update(tmp_path, {"schedule": {"frequency": "daily", "start_at": "2026-11-16T06:00:00"}})
+    details = _sent_schedule(fake_service)
+    assert details["frequency"] == "daily"
+    assert details["by_week_day"] == []
+
+
+def test_a_weekday_given_with_the_new_frequency_is_kept(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_GET] = _automation()
+    fake_service.responses[_UPDATE] = {"id": 574}
+    _update(tmp_path, {"schedule": {"frequency": "daily", "by_week_day": ["mo", "we"]}})
+    assert _sent_schedule(fake_service)["by_week_day"] == ["mo", "we"]
+
+
+def test_an_unchanged_frequency_keeps_the_weekday(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_GET] = _automation()
+    fake_service.responses[_UPDATE] = {"id": 574}
+    _update(tmp_path, {"schedule": {"frequency": "weekly", "start_at": "2026-11-17T07:00:00"}})
+    assert _sent_schedule(fake_service)["by_week_day"] == ["tu"]
+
+
+def test_monthly_to_weekly_clears_the_month_day(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    monthly = {"frequency": "monthly", "interval": 1, "by_month_day": [1], "start_at": "x"}
+    fake_service.responses[_GET] = _automation(
+        {"condition_type": "at_specific_time", "condition_mode": "and", "details": monthly}
+    )
+    fake_service.responses[_UPDATE] = {"id": 574}
+    _update(tmp_path, {"schedule": {"frequency": "weekly", "by_week_day": ["fr"]}})
+    details = _sent_schedule(fake_service)
+    assert details["by_month_day"] == []
+    assert details["by_week_day"] == ["fr"]

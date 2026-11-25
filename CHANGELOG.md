@@ -6,15 +6,193 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-mcp-server)
+### Changed (next mammoth-io)
 
+- **Breaking:** `FoldersAPI.create` takes `parent_folder_id` (the parent's `id`) instead of `parent_resource_id`, and everything after `name` by keyword. The server never read `parent_resource_id`, so every folder was made at the root.
+
+### Fixed (next mammoth-cli, mammoth-mcp-server)
+
+- `folder create` and the MCP `create_folder` make the folder inside the parent they are given; it was always made at the root. The CLI's `parent_resource_id` is a folder id as `folder list` shows it, or `root`.
+
+### Fixed (next mammoth-cli)
+
+- `automation update` no longer lists `patch` as required, nor `view export update` `patches`: other inputs can carry the change.
+
+- `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
+- `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
+
+## mammoth-io 0.8.59, mammoth-cli 2.5.0, mammoth-mcp-server 0.2.16 (2026-11-24)
+
+### Added (mammoth-io 0.8.59, mammoth-cli 2.5.0)
+
+- SDK (mammoth-io 0.8.59, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7977 (mammothsdk#468, #470).
+- `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
+- `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK: `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
+
+### Added (mammoth-cli 2.5.0)
+
+- `mammoth how` has an `import-from-database` recipe, and `append-rows` no longer answers a database import. `dataset create --help` shows a database import, and the `view data aggregate` example shows `order_by`.
+- `view data aggregate` and the other `order_by` reads accept `["label", "desc"]` pairs.
+- `annotation comment edit ANNOTATION_ID COMMENT_ID --input '{"body": "..."}'`, `annotation comment delete ANNOTATION_ID COMMENT_ID` (asks first, or `--yes`) and `annotation access` (whether you may post or moderate comments in the project, and whom a comment may mention) (mammothsdk#468).
+- `mammoth doctor` has an `sdk_version` check: it compares the installed mammoth-io with the range this CLI declares, fails when it is outside it, and names the fix for how this CLI was installed (uv tool, pipx or pip) in the check and in `recommendations` (mammothsdk#469).
+- `workflow canvas` forwards an `expected_version` input field; the server answers 409 when the canvas moved since you read it (mammothsdk#470).
+- `workflow link fire --input FILE` (`{"link": ...}`, or stdin) starts a workflow from the `path` (or URL) `workflow link create` returned; inline JSON is refused, so the secret stays out of shell history; a URL of another server is refused, not sent. `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" trigger off (ask first, or `--yes`); a second unset, or one with nothing set, is a 404 with error code 4AUTO001. The unset commands need mvc-service#7977 (mammothsdk#470).
+
+### Changed (mammoth-cli 2.5.0)
+
+- **Breaking:** `schema get` always answers `{requested, schemas, errors}`, for one id or several, with or without `full`. A script that read `data.accepted_fields` of one id reads `data.schemas[0].accepted_fields`. `-o table` and `-o plain` of one id still show its fields. No id found is still `schema_not_found` (exit 2), now also when several ids all fail.
+- `dashboard chat edit` is partial (exit 3) when the server says one of the asks did not land (held back, not attempted, not on the board, declined); each such ask is in `warnings`. An ask the server did not check does not count.
+- `connector ds-config create` says what it does: it checks or samples a config and saves nothing (`saved: false`, with the `dataset create` call as `next`). It no longer reports an undo or a read-back.
+- `workflow delete ID --yes` reads the workflow's delete plan, trashes the default-ticked items no other workflow uses (steps, result tables, and the dashboards and schedules that go with them; inputs stay), waits for the job, and reports `trashed`, `kept_steps` and `kept`. `--input` chooses: `{"trash_inputs": true}`, `{"keep_steps": true}` or `{"trash": [KEYS]}`; `--dry-run` shows the keys it would send. On a server without the delete plan it falls back to the plain delete, and a 409 `4WKFL310` says what to run instead. `workflow delete-plan ID` reads the plan; `WorkflowsAPI.delete` takes `trash=` and `WorkflowsAPI.delete_plan` is new. Needs mvc-service 48.7 (mammothsdk#476).
+- `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
+
+### Fixed (mammoth-cli 2.5.0, mammoth-mcp-server 0.2.16)
+
+- A KPI card with a previous period or sparkline has its number at `value` and only its own `filters`; the number sat under `series` and the filters of both windows were joined. The previous period is `series.prev`, with its own filters (PRD-3699).
+
+### Fixed (mammoth-cli 2.5.0)
+
+- A row count measure (`__count`) on a dashboard figure is no longer reported as an unknown column; when the server itself refuses it, its bake error still shows.
+- `dataset create` refuses a cloud query import that lacks `ds_name`, `table_name` or `query` before sending it, and under `--dry-run`; the server answered 400 4DSET043.
+- `dataset create` from a connection says when the name was taken and the dataset got another one (`requested_name`, `note`), and `--dry-run` predicts it.
+- The `state` read-back of a dashboard write (`chat edit`, `pages add`, `canvas save`, ...) stays under its 1,500-byte cap; it carried the whole canvas (about 95 KB of a 103 KB result). Warnings in `verify` are sentences, not Python dict text.
+- A figure refused because the board reads another view (4DASH023) names the route that works (`dashboard page plan`, then `dashboard pages add` with the page's own `dataset`), and so does a chat edit that was not applied.
+- The skill's database import recipe uses `dataset create` and `connector connection tables`; it taught `connector ds-config create`, which saves nothing.
+- A 404 whose body is only `{"detail": "Not Found"}` (the server has no such route) says "This server does not have agent definitions." (or names the endpoint) instead of "Check the resource id and scope." (mammothsdk#457).
+
+## mammoth-cli 2.4.6 (2026-11-17)
+
+### Added (mammoth-cli 2.4.6)
+
+- `mammoth auth login --method password --username U` signs in without a browser, for scripts and CI. The password is read only from `--password-stdin` or `--password-file`, never from an argument, and the login is stored as a refreshable credential like the browser and device logins. It needs a server that allows the password grant (mammothsdk#332). `--workspace ID` picks the workspace for an account with several. The server's reason is shown for a refused login (`authentication_failed`), and a new `password_login_invalid_request` (exit 2) carries its description, with a hint to pass `--workspace` when workspaces are listed.
+- `view export dataset` accepts `columns` and `drop_columns` (mammothsdk#404); the append schema check compares only the columns actually sent.
+- `webhook create`, `webhook get` and `webhook update` take `--reveal` to print a secure webhook's secret. Without it the masked result carries `secret_redacted: true` and the command that reveals it (mammothsdk#373).
+
+- `connector connection update` takes `name` beside `credentials` to rename a connection (custom REST/code connectors), and waits for the save job (mammothsdk#413).
+- `agent access grant give` and `grant update` accept `can_download`; `agent access settings update` accepts `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `dashboard get` shows the board's theme and light/dark mode as `style: {style_id, mode}`, and `dashboard create-blank` and `dashboard update` take `style_id` and `mode` (`light`/`dark`) input fields to set them (mammothsdk#419).
+- `connector draft credentials DRAFT_ID --input @FILE --yes` answers the draft chat's open key card ("Test and connect"), so many accounts of one source can be connected from a script. Credentials come from a file or stdin; inline JSON is refused (mammothsdk#319).
+- `mammoth bench` counts every HTTP attempt (`http.attempts`, `retries`, `attempt_status`, `retry_wait_ms`), so a retried 502 no longer looks like a clean run, and `--no-retry` sends each request once (mammothsdk#431).
+- `dataset rename` takes the new name as a second argument or `--name`, as well as the `name` input field (mammothsdk#322).
+
+### Changed (mammoth-cli 2.4.6)
+
+- Global options such as `--profile`, `--project`, `--output` and `--timeout` now work before the subcommand as well as after it (`mammoth --profile X project list`). Giving the same option on both sides with different values is a usage error (mammothsdk#303).
+- `dataset find` no longer lists every project first when the search results already name their projects: one request instead of a dozen on large accounts (mammothsdk#436).
+- `auth login --profile X` no longer changes the active profile unless you pass `--select` or none is selected yet, and it says when the active profile changes (mammothsdk#350). The JSON result now carries `selected`, `active_profile` and, when the profile was not selected, a `hint` naming the command to switch (`mammoth auth login --profile X --select`). This changes behaviour for scripts: a script that logs in under a new profile name and relied on it becoming active must now pass `--select`.
+- `view delete VIEW` no longer needs the dataset id: it reads the view's parent dataset itself (mammothsdk#403).
+
+### Fixed (mammoth-cli 2.4.6)
+
+- `agent chat` with `wait` keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and prints the final message (mammothsdk#417).
+- `view data query` reads the view and its dataset once per command instead of re-reading the view (mammothsdk#400).
+- `dataset refresh` pulls a webhook or connector dataset from its own source instead of always asking for a URL refresh, which failed for anything not loaded from a URL (mammothsdk#372, mammothsdk#414).
+- `dataset create` for a cloud database with a `query` and no `schedule_properties` sends a one-off pull (`moment`, `now`, `replace`) and turns `query_properties.table` into `table_name`, and says so in `input_adjusted`; the server failed the job instead (mammothsdk#382).
+- `view data aggregate` accepts display names, internal names and loosely spelled names alike; an unknown column is named with the valid ones instead of failing as "Job failed" (mammothsdk#438).
+- The `view export dataset` help no longer says the default mode empties the target first: it replaces its rows, and `APPEND_TO_DS` adds a full copy on every run (mammothsdk#329).
+- `schedule create` and `schedule list` are marked retired and point to `automation create` and `automation list`, not the web app (mammothsdk#323, mammothsdk#437).
+- `auth login --device` and `--method oauth` check the credential store before showing the sign-in code, and use the owner-only file with a notice when there is no OS keyring, so an approval is no longer lost (mammothsdk#303).
+- `dashboard edit` and the other dashboard authoring commands give one blank-column warning per table, listing the columns, when the board's figures read none of the sparse columns, instead of one warning per column (mammothsdk#405).
+
+- `automation schedule set` clears the weekday (or month day) of the old frequency when the frequency changes, so weekly to daily no longer keeps running on one weekday (mammothsdk#439).
+- `dataset delete` reports success when the read-back after the delete answers 403, as dashboard delete already did (mammothsdk#352).
+- `dataset trash` waits for its job instead of exiting 0 with `processing`. A trash refused because an automation uses the dataset exits with `has_dependents` and names the automation (mammothsdk#365).
+- `view export dataset` refuses `blank_columns` that name no column the append leaves blank, instead of ignoring them; to leave columns out, use `drop_columns` (mammothsdk#402).
+- `dashboard pages add` refuses page keys the server would drop (a page-level `dataview_id` among them) in the dry run as in the real run. Its help shows `"dataset": {"dataview_id": V}` and `date_field` (mammothsdk#441).
+- `dashboard pages add` no longer checks a page on its own table against the board's table, so its columns no longer read as unknown. It also waits for the bake, and a bake still running reads as `bake: pending`, not `bake_ok: false` (mammothsdk#406).
+- `dashboard figure add` with an `intent` saves the figure the intent resolved; the server route only resolved it. When it can't save, the result says `saved: false` and names the command (mammothsdk#406).
+- `file upload` of a one-sheet workbook follows the server's sheet extraction to the dataset it makes, instead of reporting `no_dataset` with PDF advice (mammothsdk#374).
+- The values of `dashboard v3 generate` and `dashboard chat edit` name the pages they could not evaluate (`pages_not_evaluated`) instead of silently showing the first page only (mammothsdk#442).
+- The blank-board help and the dashboards recipe no longer say a board reads one table: each page can read its own (mammothsdk#440).
+
+## mammoth-io 0.8.57 (2026-11-17)
+
+### Added (mammoth-io 0.8.57)
+
+- `view.export.to_dataset` takes `columns` (send only these) or `drop_columns` (send all but these), applied through the export's column mapping, so personal columns can be left out of a send without a copied view. An unknown column, both lists at once, nothing left to send, or a rename of a column that isn't sent is refused before anything is sent (mammothsdk#404).
+- `DatasetsAPI.refresh_source` pulls a webhook or connector dataset in again from its source (mammothsdk#372).
+- `ConnectorsAPI.update_connection` takes `name`, sent with the credentials, to rename a connection whose connector model has a name (custom REST/code connectors) (mammothsdk#413).
+- `AgentsAPI.access_grant_give` and `access_grant_update` take `can_download`; `access_settings_update` takes `ask_mode` and `monthly_question_limit` (mammothsdk#351, mammothsdk#349).
+- `AgentsAPI.session_credential_test` answers an agent chat's credential card (mammothsdk#319).
+
+### Changed (mammoth-io 0.8.57)
+
+- The HTTP log line of a retried or failed request carries the attempt, the retry wait and the Server, Via, X-Cache, X-Amz-Cf-Id and Retry-After response headers (mammothsdk#431).
+
+### Fixed (mammoth-io 0.8.57)
+
+- Agent chat with a wait keeps following a turn the server hands off to a background run, until the run ends or the wait runs out, and returns the final message (mammothsdk#417).
+
+## mammoth-mcp-server 0.2.15 (2026-11-13)
+
+### Fixed (mammoth-mcp-server 0.2.15)
+
+- A refusal whose message says "see details" (a step change `propose_workflow_changes` sends that Mammoth cannot use, for one) now carries the reason from the response's `details`, so the model can correct the change instead of guessing.
+
+## mammoth-cli 2.4.5, mammoth-mcp-server 0.2.14 (2026-11-13)
+
+### Added (mammoth-cli 2.4.5)
+
+- `mammoth bench COMMAND... --concurrency N --repeat R [--warmup W]` runs one read command N at a time for R rounds in one process, with one login and one keep-alive connection pool. Each round's calls start together on a barrier. It reports the p50, p95 and max of every HTTP request's logged `duration_ms` and of every command, with status and error counts. Write commands are refused.
+- A global `--workspace ID` replaces the profile's workspace for one command (and for `mammoth run` lines). A workspace other than the profile's drops the profile's saved project, so pass `--project` with it.
+
+### Added (mammoth-mcp-server 0.2.14)
+
+- Workflow tools that change a workflow as its canvas does:
+  - `create_workflow` starts a workflow from a table, or copies one onto other tables and waits a bounded time for the copy.
+  - `delete_workflow` deletes one (ask the user first).
+  - `propose_workflow_changes` stages canvas changes (add, update or remove a step, a view, a join, an export, ...). It returns the keys it `added` and everything unsaved.
+  - `save_workflow` builds the unsaved changes named by `keys`, undoes the Save named by `run_id` (which a save returns), or cancels a Save step. It waits a bounded time for the Save run (ask the user first). It never builds other people's proposals or undoes their Save unless they are named.
+
+## mammoth-io 0.8.56, mammoth-cli 2.4.4, mammoth-mcp-server 0.2.13 (2026-11-12)
+
+### Added (mammoth-io 0.8.56)
+
+- `client.workflow_triggers` controls what starts a workflow:
+  - `run` runs it now on the server, with an optional bounded `wait`. A workflow already running is not started twice. Needs the mvc-service `POST .../workflows/{id}/run` route.
+  - `wait_for_run` and `runs` follow its runs.
+  - `schedule_set` puts it on a clock, and `after_set` runs it after another workflow. `after_loops` names the workflows that would make a loop.
+  - `link_create` and `link_remove` manage its secret link.
+  - A clock or an `after` is stored as an automation, by the `automation_id` returned.
+- `client.workflow_describe` turns a description into a workflow:
+  - `start`, `draft`, `wait` and `describe` produce the read-back.
+  - `check` and `build` build it, optionally with a clock.
+  - `keep_sample` keeps a sample file, and `fed_by` shows what feeds a view.
+  - `describe_body` and `build_body` check a request before anything is sent.
+- `workflow_templates.fits` finds the templates the project's tables already fit. `workflow_templates.start_page` opens a workflow page on its sample tables.
+- New `workflows` methods:
+  - `step_lines`, `repeat_counts`, `before_after`, `view_values`, `holds_check`.
+  - `sentence_read` and `sentence_ask_dismiss`.
+  - `swap_fit`, `swap`, `swap_cancel` and `swap_undo` change a step's table.
+  - `wait_for_save` reads a workflow until its Save run ends, with a bounded `timeout`. `save_run()` and `save_is_running()` read the Save from a workflow record. The CLI and MCP server wait through it.
+
+### Added (mammoth-cli 2.4.4)
+
+- 28 workflow commands, each taking `--input` JSON and supporting `--dry-run`:
+  - `workflow template fits` and `workflow page start`.
+  - `workflow run start|wait|list`, `workflow schedule set`, `workflow after set|loops` and `workflow link create|remove`.
+  - `workflow describe start|get|wait|check|build|sample|fed-by`.
+  - `workflow step-lines`, `repeat-counts`, `before-after`, `values`, `held check`, `sentence read|dismiss-ask` and `swap fit|apply|cancel|undo`.
+- `workflow template build` and `workflow describe build` wait for the build's Save and fail when it fails. Before this, they returned while the Save was still running.
+- Two recipes in the bundled skill, `workflow-from-template` and `workflow-from-description` (`references/recipes/workflows.md`).
+
+### Added (mammoth-mcp-server 0.2.13)
+
+- Seven workflow tools present Mammoth as a workflow automation tool, as well as a place to work on data:
+  - `find_workflow_template` finds a catalog template for what the user wants done, and names the user's tables it fits.
+  - `draft_workflow` drafts one from a template (matches and a preview) or from a description (the read-back). It builds nothing.
+  - `build_workflow` builds the draft and waits for its Save within the call.
+  - `run_workflow` runs it now.
+  - `set_workflow_trigger` runs it on a clock, after another workflow, or by a secret link.
+  - `list_workflows` and `get_workflow` show workflows, with the build state and the latest runs.
+- The registry description and server instructions now name workflows.
 - `/.well-known/openai-apps-challenge` answers the token set in `MCP_OPENAI_APPS_CHALLENGE`, for OpenAI's domain check.
 
-### Changed (next mammoth-mcp-server)
+### Changed (mammoth-mcp-server 0.2.13)
 
 - Every tool now sets `readOnlyHint`, `destructiveHint` and `openWorldHint` explicitly. `openWorldHint` is true for the 15 tools that can reach a system outside the workspace.
 
-### Fixed (next mammoth-mcp-server)
+### Fixed (mammoth-mcp-server 0.2.13)
 
 - `https://mcp.mammoth.io/mcp/` with a trailing slash now serves the MCP endpoint. It used to redirect to `http://`, which could send a client's token in the clear or lose it. No path on the server redirects any more.
 

@@ -172,6 +172,7 @@ def _compile_query_filters(
     document: dict[str, Any],
     kwargs: dict[str, Any],
     reads: ReadContext | None = None,
+    info: dict[str, Any] | None = None,
 ) -> tuple[dict[str, str] | None, dict[str, str] | None]:
     """Translate a data query's ``condition`` and ``columns`` to the wire format.
 
@@ -182,11 +183,17 @@ def _compile_query_filters(
     service and built against the view's display -> internal name and type
     maps, and ``columns`` given as display names are mapped the same way.
     Returns the internal -> display map and the display -> type map when
-    metadata was fetched, so the row relabelling and checks can reuse them.
+    metadata was fetched, so the row relabelling and checks can reuse them. ``info`` is the
+    view's record when the caller already read it, so the view is not read again
+    (mammothsdk#400).
     """
     if CONDITION_KWARG not in document and "columns" not in document:
         return None, None
-    metadata = _dataview_metadata(service, dataset_id, dataview_id, project_id)
+    metadata = (
+        _metadata_of(info)
+        if info is not None
+        else _dataview_metadata(service, dataset_id, dataview_id, project_id)
+    )
     column_map: dict[str, str] = {}
     column_types: dict[str, str] = {}
     for column in metadata:

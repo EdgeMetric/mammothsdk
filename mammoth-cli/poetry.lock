@@ -839,14 +839,14 @@ files = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.55"
+version = "0.8.59"
 description = "Python SDK for Mammoth Analytics platform"
 optional = false
 python-versions = "<3.15,>=3.12"
 groups = ["main"]
 files = [
-    {file = "mammoth_io-0.8.55-py3-none-any.whl", hash = "sha256:1dc5ed506dc31d61a134d5ad62a88be546b43828d1aeddf48d75aa4673e2ac01"},
-    {file = "mammoth_io-0.8.55.tar.gz", hash = "sha256:c7b92675311e280793ae5527c27b9d4e32977f85b0fa48832db86384074d0f91"},
+    {file = "mammoth_io-0.8.59-py3-none-any.whl", hash = "sha256:c9b141db9f1f012c708cb59e53b170060aa04266765dca5cdda1c687377d2006"},
+    {file = "mammoth_io-0.8.59.tar.gz", hash = "sha256:f7e16c0493166688a10c4030a1eb7132206f7b9a5fa537ce599013dcc1695ca4"},
 ]
 
 [package.dependencies]
@@ -1849,4 +1849,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "08b780a207f84c991fdcc170fef91cbce5a126792a382d09fb8f45b16c81fd24"
+content-hash = "5c09003d600a43ca5346a0e5090792c177afffd1939d1b0fe2722f350ee36d20"

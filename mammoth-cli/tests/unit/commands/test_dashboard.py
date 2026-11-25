@@ -209,16 +209,29 @@ def test_pages_add_rejects_empty_pages_before_confirmation_or_transport(
     assert fake_service.call_log == []
 
 
-def test_pages_add_returns_async_bake_without_waiting(
+def test_pages_add_waits_for_the_bake_it_started(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    """Pages add waits for the bake and says how it went in ``bake`` (mammothsdk#406)."""
     fake_service.responses[_ADD_PAGES] = {"sequence": 4, "bake_job_id": 99}
     doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{"title": "Revenue"}]}}})
     data, _ = dashboard_generated.generated_dashboard(
         _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
     )
     assert data.pop("deliverable_check")["checked"] is True
-    assert data == {"sequence": 4, "bake_job_id": 99}
+    assert data == {"sequence": 4, "bake_job_id": 99, "bake": "done"}
+    assert fake_service.wait_log == [{"job_id": 99}]
+
+
+def test_pages_add_without_a_bake_job_waits_for_nothing(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_ADD_PAGES] = {"sequence": 4}
+    doc = _write_doc(tmp_path, {"body": {"params": {"pages": [{"title": "Revenue"}]}}})
+    data, _ = dashboard_generated.generated_dashboard(
+        _inv("dashboard.pages.add", extra_args=["7"], input_file=doc, yes=True, confirm="7")
+    )
+    assert "bake" not in data
     assert fake_service.wait_log == []
 
 

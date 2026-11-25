@@ -62,6 +62,20 @@ _UNSAMPLABLE = frozenset(
         "connector.draft.spec.get",
         "connector.version.spec.get",
         "agent.access.today",
+        # Workflow automation routes on server master, not yet in the pinned prod spec;
+        # workflow.run.start's route ships with mvc-service feat/workflow-run-route.
+        # PRD-3685: annotation access and the workflow link fire route are on release/master,
+        # not in the pinned prod spec yet, so there is nothing to sample from.
+        "annotation.access",
+        "workflow.link.fire",
+        "workflow.after.loops",
+        "workflow.after.set",
+        "workflow.describe.start",
+        "workflow.run.start",
+        "workflow.run.wait",
+        "workflow.schedule.set",
+        "workflow.swap.fit",
+        "workflow.values",
     }
 )
 
@@ -79,10 +93,14 @@ _EXEMPT: dict[str, str] = {
     "dataset.update-method.set": (
         "the sample server keeps no schema_settings, so the read-back sees no change"
     ),
+    "connector.draft.credentials": (
+        "reads the credentials from a private file the sample run does not have"
+    ),
 }
 
-#: Commands left out of the dry-run check: they wait on a background job the sample never ends.
-_DRY_RUN_SKIPPED = frozenset({"view.export.dataset"})
+#: Commands left out of the dry-run check: they wait on a background job the sample never ends,
+#: or (workflow.run.start) name no operation until their route reaches the pinned spec.
+_DRY_RUN_SKIPPED = frozenset({"view.export.dataset", "workflow.run.start"})
 
 _AGENT_SCOPE = '{"scope": {"type": "workspace", "workspace_id": 4}}'
 
@@ -853,6 +871,12 @@ _VERIFY = {
     "outcome": "settled",
 }
 _EXEMPT_RESULTS: dict[str, dict[str, Any]] = {
+    "connector.draft.credentials": {
+        "draft_id": 12,
+        "session_id": "s-1",
+        "widget_id": "w-1",
+        "outcome": "saved",
+    },
     "dataset.download": {"output_path": "orders.csv"},
     "dataset.update": {"verify": _VERIFY},
     "dataset.update-method.set": {"mode": "replace", "previous_mode": "add", "verify": _VERIFY},

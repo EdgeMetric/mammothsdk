@@ -8,10 +8,15 @@ OPENAI_CHALLENGE_PATH = "/.well-known/openai-apps-challenge"
 # server card both carry; a test holds `server.json` to these.
 REGISTRY_NAME = "io.mammoth/mcp"
 REGISTRY_DESCRIPTION = (
-    "Explore, clean, transform and export your Mammoth Analytics data from an AI client."
+    "Explore, clean and transform your data in Mammoth Analytics, and automate it as workflows."
 )
 MCP_INSTRUCTIONS = (
-    "Mammoth Analytics lets you explore, clean, transform and export data. "
+    "Mammoth Analytics lets you explore, clean, transform and export data, and "
+    "automate that work as workflows: find a ready-made one with "
+    "`find_workflow_template` or describe one to `draft_workflow`, then "
+    "`build_workflow`, `run_workflow` and `set_workflow_trigger` to run it on a "
+    "clock, after another workflow, or by link; change one as on its canvas with "
+    "`propose_workflow_changes` and `save_workflow`. "
     "Data is organised as workspace > project > dataset > view; a view is a "
     "pipeline of transformation tasks over a dataset. Every tool acts as the "
     "signed-in user, with that user's permissions. "
@@ -935,6 +940,9 @@ class BoardFields:
     # Figure kinds as the figure id names them, and as a read reports them.
     KINDS = {"kpi": "kpi", "add": "chart"}
     KPI = "kpi"
+    SERIES_FILTERS = "series_filters"
+    # What a figure's binding holds for the read itself, not for the caller.
+    NOT_SHOWN = (DESCRIPTORS, SERIES_FILTERS)
     # What one evaluated descriptor reports.
     STATUS = "status"
     SUCCESS = "success"

@@ -12,6 +12,7 @@ schema get COMMAND.ID`.
 | `--output`, `-o` | Output format: `auto`, `table`, `json`, `yaml`, `ndjson`, or `plain`. Default `auto`. |
 | `--profile` | Credential profile name to use; record it in a handoff. |
 | `--project` | Explicit project id scope for this operation. Prefer it for automation. |
+| `--workspace` | Workspace id for this operation instead of the profile's. A workspace other than the profile's ignores the profile's saved project, so pass `--project` too. |
 | `--timeout` | Per-request timeout in seconds. |
 | `--job-timeout` | Job-wait timeout in seconds. |
 | `--pipeline-timeout` | Pipeline-wait timeout in seconds. |

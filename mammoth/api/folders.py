@@ -145,6 +145,7 @@ class FoldersAPI:
     async def create(
         self,
         name: str,
+        *,
         parent_folder_id: int | None = None,
         workspace_id: int | None = None,
         project_id: int | None = None,

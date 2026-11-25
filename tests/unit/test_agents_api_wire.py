@@ -98,6 +98,14 @@ async def test_chat_posts_the_spec_body_and_returns_the_started_turn_with_its_ke
     assert set(server.requests[0]["body"]) <= set(schema("AgentChatRequest")["properties"])
 
 
+async def test_chat_sends_the_intelligence_level_in_the_body(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    server.answers["POST /agents/chat"] = (202, STARTED)
+    await client.agents.chat("hello", SCOPE, request_key="rk-1", intelligence="expert")
+    assert server.requests[0]["body"]["intelligence"] == "expert"
+
+
 async def test_chat_minimal_body_has_a_generated_request_key(
     server: RecordingServer, client: MammothClient  # noqa: F811
 ) -> None:
@@ -225,6 +233,78 @@ async def test_chat_wait_never_returns_an_earlier_turns_reply_after_a_hand_off(
     assert result["reply"] is None
     assert result["background"] is True
     assert result["next"] == "mammoth agent session messages s1"
+
+
+async def test_chat_wait_follows_a_handed_off_run_to_its_final_message(
+    server: RecordingServer, client: MammothClient, _no_real_sleep: list[float]  # noqa: F811
+) -> None:
+    # mammothsdk#417: the hand-off at 2 minutes must not end a wait:600.
+    messages = "GET /agents/sessions/s1/messages"
+    handed_off = {
+        "session_id": "s1",
+        "working": False,
+        "messages": [{"role": "user", "text": "long question"}],
+    }
+    finished = {
+        "session_id": "s1",
+        "working": False,
+        "messages": [
+            {"role": "user", "text": "long question"},
+            {"role": "assistant", "text": "the end", "turn_id": "run-turn"},
+        ],
+    }
+    _script(
+        server,
+        {
+            "POST /agents/chat": [(202, STARTED)],
+            messages: [handed_off, finished],
+            "GET /agents/sessions/s1/run": [
+                {"run": {"id": 5, "status": "running"}},
+                {"run": {"id": 5, "status": "running"}},
+                (404, {"detail": "no run"}),
+            ],
+        },
+    )
+    result = await client.agents.chat("long question", SCOPE, wait=600)
+    assert result["reply"] == {"role": "assistant", "text": "the end", "turn_id": "run-turn"}
+    assert "background" not in result
+    assert _no_real_sleep == [2.0, 2.0]  # one pause per read of a run that was still going
+
+
+async def test_chat_wait_reports_the_run_when_the_wait_runs_out_first(
+    server: RecordingServer, client: MammothClient  # noqa: F811
+) -> None:
+    _script(
+        server,
+        {
+            "POST /agents/chat": [(202, STARTED)],
+            "GET /agents/sessions/s1/messages": [
+                {"session_id": "s1", "working": False, "messages": [{"role": "user", "text": "q"}]}
+            ],
+            "GET /agents/sessions/s1/run": [{"run": {"id": 5, "status": "running"}}],
+        },
+    )
+    result = await client.agents.chat("q", SCOPE, wait=0)
+    assert result["reply"] is None and result["background"] is True
+    assert result["run"]["status"] == "running"
+
+
+async def test_chat_wait_does_not_follow_a_run_that_waits_for_a_person(
+    server: RecordingServer, client: MammothClient, _no_real_sleep: list[float]  # noqa: F811
+) -> None:
+    _script(
+        server,
+        {
+            "POST /agents/chat": [(202, STARTED)],
+            "GET /agents/sessions/s1/messages": [
+                {"session_id": "s1", "working": False, "messages": [{"role": "user", "text": "q"}]}
+            ],
+            "GET /agents/sessions/s1/run": [{"run": {"id": 5, "status": "waiting"}}],
+        },
+    )
+    result = await client.agents.chat("q", SCOPE, wait=600)
+    assert result["background"] is True and result["run"]["status"] == "waiting"
+    assert _no_real_sleep == []
 
 
 async def test_chat_wait_picks_the_reply_written_by_its_own_turn(

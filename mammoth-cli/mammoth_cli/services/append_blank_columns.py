@@ -52,6 +52,49 @@ def acknowledged_blank_columns(
     return [f"appended rows leave column(s) {', '.join(expected)} blank (NULL), as confirmed"]
 
 
+def reject_unused_blank_columns(
+    destination_id: int | None, blank: list[str], acknowledged: Any, *, drop_hint: str
+) -> None:
+    """Refuse a ``blank_columns`` that would acknowledge nothing.
+
+    ``blank_columns`` only confirms destination columns an append leaves empty. Sent with
+    no existing destination, or naming more than the columns left empty, it changed
+    nothing while the export reported success, and read like a privacy control that had
+    blanked the named columns (mammothsdk#402).
+
+    Args:
+        destination_id: The existing dataset written into, or ``None`` for a new one.
+        blank: The destination columns the append leaves empty.
+        acknowledged: The input's ``blank_columns`` value.
+        drop_hint: How to leave source columns out instead, for the hint.
+
+    Raises:
+        CliError: ``unused_blank_columns`` when a named column is not one the append
+            leaves empty.
+    """
+    if not isinstance(acknowledged, list) or not acknowledged:
+        return
+    stray = sorted({str(name) for name in acknowledged} - set(blank))
+    if not stray:
+        return
+    where = (
+        "this export makes a new dataset"
+        if destination_id is None
+        else f"dataset {destination_id} gets a value in each of them"
+    )
+    raise CliError(
+        code="unused_blank_columns",
+        message=(
+            f"'{BLANK_COLUMNS_FIELD}' names {', '.join(stray)}, but {where}. "
+            f"'{BLANK_COLUMNS_FIELD}' only confirms destination columns an append leaves "
+            "empty; it does not blank or remove source columns."
+        ),
+        exit_status=EXIT_USAGE,
+        hint=drop_hint,
+        details={"unused": stray, "left_blank": sorted(blank)},
+    )
+
+
 def _json_list(names: list[str]) -> str:
     """The names as a JSON array literal, for the hint."""
     return json.dumps(names)

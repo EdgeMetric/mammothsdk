@@ -1,7 +1,8 @@
 """``dashboard figure add`` accepts ``{"intent": "..."}``, as the bundled skill says.
 
-An intent goes through the figure-intent route (the server picks the chart);
-an exact ``figure`` spec still goes through the append route. Both at once, or
+An intent goes through the figure-intent route (the server picks the chart), and
+the figure it resolves is then saved with the append route; an exact
+``figure`` spec still goes through the append route. Both at once, or
 neither, is a usage error that names both shapes and ``figure-intent``.
 """
 
@@ -23,6 +24,7 @@ from mammoth_cli.testing import login_default_profile
 _API = "mammoth.api.dashboards.DashboardsAPI."
 _FIGURE_INTENT = _API + "figure_intent"
 _FIGURE_ADD = _API + "append_figure"
+_CANVAS_GET = _API + "canvas_get"
 
 
 @pytest.fixture(autouse=True)
@@ -46,14 +48,17 @@ def test_the_contract_admits_intent_and_kind() -> None:
 def test_an_intent_goes_through_the_figure_intent_route(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    resolved = {"kind": "hbar", "measure": "Revenue", "dim": "Region", "agg": "sum"}
     fake_service.responses[_FIGURE_INTENT] = {
         "kind": "hbar",
-        "added": {"id": "f1"},
+        "added": {"id": "f1", **resolved},
         "intent_applied": True,
     }
+    fake_service.responses[_CANVAS_GET] = {"canvas": {"dataset": {"dataview_id": 42}}}
+    fake_service.responses[_FIGURE_ADD] = {"sequence": 4, "bake_job_id": 9, "figure_id": "f9"}
     data, _ = _add(tmp_path, {"intent": "Revenue by region", "kind": "hbar"})
     symbols = [symbol for symbol, _ in fake_service.call_log]
-    assert _FIGURE_INTENT in symbols and _FIGURE_ADD not in symbols
+    assert symbols == [_FIGURE_INTENT, _CANVAS_GET, _FIGURE_ADD]
     kwargs = dict(fake_service.call_log)[_FIGURE_INTENT]
     assert kwargs == {
         "dashboard_id": 7,
@@ -61,6 +66,42 @@ def test_an_intent_goes_through_the_figure_intent_route(
     }
     assert data["intent_applied"] is True
     assert data["route"] == "figure-intent"
+    # mammothsdk#406: the route only resolves; the resolved figure is saved on the board's view.
+    assert dict(fake_service.call_log)[_FIGURE_ADD] == {
+        "dashboard_id": 7,
+        "dataview_id": 42,
+        "figure": resolved,
+    }
+    assert (data["saved"], data["figure_id"], data["bake_job_id"]) == (True, "f9", 9)
+
+
+def test_an_intent_that_resolves_nothing_says_nothing_was_saved(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIGURE_INTENT] = {
+        "kind": "pie",
+        "refused": "Region has too many values for a pie.",
+        "intent_applied": False,
+    }
+    data, _ = _add(tmp_path, {"intent": "Region mix as a pie"})
+    assert data["saved"] is False
+    assert [symbol for symbol, _ in fake_service.call_log] == [_FIGURE_INTENT]
+
+
+def test_an_intent_figure_that_fails_to_save_names_the_command(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_FIGURE_INTENT] = {
+        "kind": "hbar",
+        "added": {"kind": "hbar", "measure": "Revenue"},
+        "intent_applied": True,
+    }
+    fake_service.responses[_CANVAS_GET] = {"canvas": {"dataset": {"dataview_id": 42}}}
+    fake_service.responses[_FIGURE_ADD] = RuntimeError("sequence conflict")
+    data, _ = _add(tmp_path, {"intent": "Revenue by region"})
+    assert data["saved"] is False
+    assert "sequence conflict" in data["error"]
+    assert data["next_steps"][0].startswith("mammoth dashboard figure add 7 --input ")
 
 
 def test_an_exact_figure_still_goes_through_the_append_route(

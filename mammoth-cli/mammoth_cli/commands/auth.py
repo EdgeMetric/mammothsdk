@@ -41,7 +41,7 @@ from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.token_scope import forget_pins, pin_names, pinned_projects, pins_label
 from mammoth_cli.runtime.view_dataset_cache import forget_view_datasets
 from mammoth_cli.services import factory as service_factory
-from mammoth_cli.services.secret_files import refuse_shared_file
+from mammoth_cli.services.secret_files import read_secret_file, refuse_shared_file
 
 _STORAGE_MODES = ("auto", "keyring", "file")
 
@@ -281,13 +281,13 @@ def _verify_login(
     return workspace_id
 
 
-_LOGIN_METHODS = ("oauth", "device", "token")
+_LOGIN_METHODS = ("oauth", "device", "token", "password")
 
 
 def _choose_method(
     method: str | None, invocation: Invocation, *, server_prefix: str | None, blockers: list[str]
 ) -> str:
-    """Pick ``oauth``, ``device`` or ``token``: explicit, implied by ``--input``, or asked.
+    """Pick ``oauth``, ``device``, ``password`` or ``token``: explicit, implied, or asked.
 
     A server with no CLI OAuth client, a non-interactive run, and ``--input``
     all keep the token login that existed before browser sign-in.
@@ -422,6 +422,113 @@ def _warn_signed_out_profiles(
         )
 
 
+def _selection_before() -> str | None:
+    """The profile selected before this login, or None when nothing is selected yet."""
+    return profiles.get_selected() if profiles.has_selected_profile() else None
+
+
+def _should_select(profile_name: str, select: bool, previous: str | None) -> bool:
+    """Whether this login makes its profile the selected one (mammothsdk#350).
+
+    Args:
+        profile_name: The profile being signed in.
+        select: Whether ``--select`` was passed.
+        previous: The profile selected before the login (None when nothing was).
+
+    Returns:
+        True with ``--select``, when nothing is selected yet, or when the profile already is
+        the selected one; False otherwise, so a login never moves another session's profile.
+    """
+    return select or previous is None or previous == profile_name
+
+
+def _say_selection(profile_name: str, selected: bool, previous: str | None) -> None:
+    """Tell the user whether this login changed the selected profile.
+
+    Args:
+        profile_name: The profile that was signed in.
+        selected: Whether it was made the selected profile.
+        previous: The profile selected before the login (None when nothing was).
+    """
+    if selected:
+        if previous is not None and previous != profile_name:
+            typer.echo(f'Active profile is now "{profile_name}" (was "{previous}").', err=True)
+    else:
+        typer.echo(
+            f'Profile "{profile_name}" saved; the active profile stays "{previous}". '
+            f"To switch, run: {_select_command(profile_name)}",
+            err=True,
+        )
+
+
+def _select_command(profile_name: str) -> str:
+    """The command that signs a profile in again and makes it the selected one."""
+    return f"mammoth auth login --profile {profile_name} --select"
+
+
+def _selection_fields(profile_name: str, selected: bool, previous: str | None) -> dict[str, Any]:
+    """The login result fields that say which profile is active afterwards (mammothsdk#350).
+
+    Args:
+        profile_name: The profile that was signed in.
+        selected: Whether it was made the selected profile.
+        previous: The profile selected before the login (None when nothing was).
+
+    Returns:
+        ``selected`` and ``active_profile``; when the login did not select its profile, also a
+        ``hint`` naming the command that does.
+    """
+    if selected:
+        return {"selected": True, "active_profile": profile_name}
+    return {
+        "selected": False,
+        "active_profile": previous,
+        "hint": (
+            f'Profile "{profile_name}" is saved but not active; "{previous}" stays active. '
+            f"To switch, run: {_select_command(profile_name)}"
+        ),
+    }
+
+
+def _read_login_password(password_stdin: bool, password_file: str | None) -> str:
+    """Read the password for ``--method password`` from stdin or a file, never from argv.
+
+    Args:
+        password_stdin: Whether ``--password-stdin`` was passed.
+        password_file: The ``--password-file`` path, or None.
+
+    Returns:
+        The password, without its trailing newline.
+
+    Raises:
+        CliError: When neither or both sources are given, the file is unreadable or readable by
+            others, or the password is empty.
+    """
+    if password_stdin == (password_file is not None):
+        raise CliError(
+            code="login_input_required",
+            message="--method password needs the password from --password-stdin or "
+            "--password-file, and not both.",
+            exit_status=EXIT_USAGE,
+            hint=(
+                "The password is never taken as a command-line value. Pipe it in: "
+                "printf '%s' \"$PASSWORD\" | mammoth auth login --method password "
+                "--username USER --password-stdin"
+            ),
+        )
+    if password_file is not None:
+        return read_secret_file(password_file, field="--password-file")
+    password = sys.stdin.read().rstrip("\r\n")
+    if not password:
+        raise CliError(
+            code="login_input_required",
+            message="--password-stdin read no password: standard input was empty.",
+            exit_status=EXIT_USAGE,
+            hint="Pipe the password into the command, for example: printf '%s' \"$PW\" | ...",
+        )
+    return password
+
+
 def _run_oauth_login(
     invocation: Invocation,
     *,
@@ -430,14 +537,38 @@ def _run_oauth_login(
     open_browser: bool,
     interactive: bool,
     device: bool = False,
+    select: bool = False,
+    password_login: tuple[str, str] | None = None,
+    workspace_id: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Sign in through the browser (or a device code) and persist the refreshable session."""
+    """Sign in through the browser, a device code or a password and persist the session.
+
+    ``password_login`` is the ``(username, password)`` of a non-interactive password sign-in;
+    ``workspace_id`` is sent with it to pick one of the account's workspaces.
+
+    The credential store is settled before the sign-in code is shown, so a machine with no
+    keyring falls back to the owner-only file with a notice instead of failing after the
+    user approved (mammothsdk#303). The selected profile changes only as
+    :func:`_should_select` allows (mammothsdk#350).
+    """
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     server_prefix = _login_server_prefix(profile_name, server_prefix)
+    storage = credentials.resolve_login_storage(
+        cast(credentials.StorageMode, storage), say=lambda line: typer.echo(line, err=True)
+    )
     base_url = resolve_base_url(server_prefix)
     client_id = oauth.client_id_for(server_prefix)
     say = lambda line: typer.echo(line, err=True)  # noqa: E731
-    if device:
+    if password_login is not None:
+        session = oauth.password_login(
+            base_url,
+            client_id=client_id,
+            username=password_login[0],
+            password=password_login[1],
+            workspace_id=workspace_id,
+            profile=profile_name,
+        )
+    elif device:
         session = oauth.device_login(base_url, client_id=client_id, say=say, profile=profile_name)
     else:
         session = oauth.browser_login(
@@ -468,6 +599,8 @@ def _run_oauth_login(
         project_id=project_id,
         project_ids=pins,
     )
+    previous = _selection_before()
+    selected = _should_select(profile_name, select, previous)
     profiles.save_profile(
         profiles.ProfileRecord(
             name=profile_name,
@@ -475,12 +608,13 @@ def _run_oauth_login(
             server_prefix=server_prefix,
             project_id=project_id,
         ),
-        select=True,
+        select=selected,
     )
+    _say_selection(profile_name, selected, previous)
     _forget_credential_caches()
     storage_used = credentials.store_credentials(
         profile_name,
-        storage=cast(credentials.StorageMode, storage),
+        storage=storage,
         interactive=interactive,
         oauth=session,
     )
@@ -501,6 +635,7 @@ def _run_oauth_login(
         "base_url": base_url,
         "storage": storage_used,
         "credential": "oauth",
+        **_selection_fields(profile_name, selected, previous),
         **_expiry_fields(session.expires_at),
     }
     if names.get("workspace"):
@@ -520,8 +655,16 @@ def _run_login(
     method: str | None = None,
     no_browser: bool = False,
     device: bool = False,
+    select: bool = False,
+    username: str | None = None,
+    password_stdin: bool = False,
+    password_file: str | None = None,
+    workspace: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Validate, connection-check, and persist one `auth login` invocation."""
+    wants_password = username is not None or password_stdin or password_file is not None
+    if wants_password and method is None and not device:
+        method = "password"
     if device:
         if method not in (None, "device"):
             raise CliError(
@@ -547,6 +690,38 @@ def _run_login(
 
     profile_name = invocation.profile or profiles.DEFAULT_PROFILE_NAME
     chosen = _choose_method(method, invocation, server_prefix=server_prefix, blockers=blockers)
+    if workspace is not None and chosen != "password":
+        raise CliError(
+            code="invalid_argument_combination",
+            message="--workspace is for --method password.",
+            exit_status=EXIT_USAGE,
+            hint="Add --method password, or drop it.",
+        )
+    if wants_password and chosen != "password":
+        raise CliError(
+            code="invalid_argument_combination",
+            message="--username, --password-stdin and --password-file are for --method password.",
+            exit_status=EXIT_USAGE,
+            hint="Add --method password, or drop them.",
+        )
+    if chosen == "password":
+        if not username:
+            raise CliError(
+                code="login_input_required",
+                message="--method password needs --username.",
+                exit_status=EXIT_USAGE,
+                hint="Pass --username USER and pipe the password with --password-stdin.",
+            )
+        return _run_oauth_login(
+            invocation,
+            server_prefix=server_prefix,
+            storage=storage,
+            open_browser=False,
+            interactive=False,
+            select=select,
+            password_login=(username, _read_login_password(password_stdin, password_file)),
+            workspace_id=workspace,
+        )
     if chosen in ("oauth", "device"):
         return _run_oauth_login(
             invocation,
@@ -555,6 +730,7 @@ def _run_login(
             open_browser=not no_browser,
             interactive=not blockers,
             device=chosen == "device",
+            select=select,
         )
 
     if invocation.input_file is not None:
@@ -606,7 +782,10 @@ def _run_login(
     # Persist the record and the selection pointer in one write, before the
     # secret goes to its store: a stored secret with no readable record is the
     # "credentials present / no profile" state that strands a later doctor run.
-    profiles.save_profile(record, select=True)
+    previous = _selection_before()
+    selected = _should_select(profile_name, select, previous)
+    profiles.save_profile(record, select=selected)
+    _say_selection(profile_name, selected, previous)
     _forget_credential_caches()
     storage_used = credentials.store_credentials(
         profile_name,
@@ -621,6 +800,7 @@ def _run_login(
         "base_url": resolved_base_url,
         "storage": storage_used,
         "credential": "token",
+        **_selection_fields(profile_name, selected, previous),
     }
     return data, {"profile": profile_name, "workspace_id": effective_workspace}
 
@@ -648,13 +828,45 @@ def auth_login(
         None,
         "--method",
         help=(
-            "How to sign in: a browser (oauth), a code typed on another device (device) "
-            "or a pasted API token (token)."
+            "How to sign in: a browser (oauth), a code typed on another device (device), "
+            "a pasted API token (token) or a username and password read from stdin or a "
+            "file (password)."
         ),
-        metavar="oauth|device|token",
+        metavar="oauth|device|token|password",
     ),
     no_browser: bool = typer.Option(
         False, "--no-browser", help="Print the sign-in URL instead of opening a browser."
+    ),
+    select: bool = typer.Option(
+        False,
+        "--select",
+        help=(
+            "Make this profile the active one. Without it, a login keeps the active profile "
+            "unless none is selected yet."
+        ),
+    ),
+    username: str | None = typer.Option(
+        None,
+        "--username",
+        help="Username for --method password (a non-interactive sign-in for automation).",
+    ),
+    password_stdin: bool = typer.Option(
+        False,
+        "--password-stdin",
+        help="Read the password for --method password from standard input.",
+    ),
+    password_file: str | None = typer.Option(
+        None,
+        "--password-file",
+        help="Read the password for --method password from this owner-only file.",
+    ),
+    workspace: int | None = typer.Option(
+        None,
+        "--workspace",
+        help=(
+            "Workspace id for --method password, when the account belongs to several "
+            "(sent as workspace_id)."
+        ),
     ),
     device: bool = typer.Option(
         False,
@@ -673,7 +885,8 @@ def auth_login(
     browser, you type a short code on any other device) or paste an API token
     (mm_..., from Workspace settings -> API Tokens). The token names its
     workspace. For non-interactive use (agents, CI), pass ``--input FILE`` with
-    {"api_token": ...} instead.
+    {"api_token": ...} instead, or ``--method password --username U --password-stdin`` (the
+    password is read from stdin or ``--password-file``, never from an argument).
     Performs a lightweight connection check before saving anything; a failed
     check leaves existing profile state unchanged.
     """
@@ -705,6 +918,11 @@ def auth_login(
             method=method,
             no_browser=no_browser,
             device=device,
+            select=select,
+            username=username,
+            password_stdin=password_stdin,
+            password_file=password_file,
+            workspace=workspace,
         )
 
     executor.run(

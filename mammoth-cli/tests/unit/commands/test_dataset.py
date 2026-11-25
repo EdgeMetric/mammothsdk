@@ -4,17 +4,25 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from mammoth_cli.commands import dataset as dataset_cmd
 from mammoth_cli.commands.dataset import create as create_cmd
 from mammoth_cli.commands.dataset import find as find_cmd
-from mammoth_cli.errors.envelope import CliError
+from mammoth_cli.commands.dataset.create import (
+    ONE_OFF_PULL,
+    _default_one_off_pull,
+    _require_cloud_query_fields,
+)
+from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
 from mammoth_cli.runtime.invocation import Invocation
+from mammoth_cli.runtime.strict import COMMAND_FLAGS
 from mammoth_cli.services.listing import DATASET_ROW_FIELDS
+from mammoth_cli.services.positionals import resolve_positionals
 from mammoth_cli.services.testing import FakeMammothService
-from mammoth_cli.testing import login_default_profile
+from mammoth_cli.testing import login_default_profile, make_runner
 
 _LIST = "mammoth.api.datasets.DatasetsAPI.list"
 _LIST_ALL = "mammoth.api.datasets.DatasetsAPI.list_all"
@@ -451,6 +459,7 @@ def test_definition_remove_requires_the_definition_id(fake_service: FakeMammothS
 
 
 _REFRESH = "mammoth.api.datasets.DatasetsAPI.refresh_from_url"
+_REFRESH_SOURCE = "mammoth.api.datasets.DatasetsAPI.refresh_source"
 
 
 def test_refresh_sends_the_dataset_and_waits_for_the_job(
@@ -463,9 +472,9 @@ def test_refresh_sends_the_dataset_and_waits_for_the_job(
         _inv("dataset.refresh", project=180, extra_args=["7"], yes=True)
     )
 
-    assert fake_service.call_log == [(_REFRESH, {"dataset_id": 7, "project_id": 180})]
+    assert fake_service.call_log[-1] == (_REFRESH, {"dataset_id": 7, "project_id": 180})
     assert "wait_if_job" in fake_service.calls
-    assert result == {"dataset_id": 7, "refreshed": True}
+    assert result == {"dataset_id": 7, "refreshed": True, "source": "weburl"}
     assert meta["project_id"] == 180
 
 
@@ -483,6 +492,33 @@ def test_refresh_shows_the_servers_reason_for_a_dataset_not_made_from_a_url(
 
     assert "cannot be refreshed" in excinfo.value.message
     assert "wait_if_job" not in fake_service.calls
+
+
+@pytest.mark.parametrize(
+    ("source", "kind", "source_id"),
+    [
+        (
+            {"type": "append", "details": {"id": 12, "key": "k", "origins": "*", "url": "u"}},
+            "webhook",
+            12,
+        ),
+        ({"type": "cloud", "details": {"connector_key": "netsuite"}}, "cloud", None),
+    ],
+)
+def test_refresh_pulls_a_webhook_or_connector_dataset_from_its_source(
+    fake_service: FakeMammothService, source: dict[str, Any], kind: str, source_id: int | None
+) -> None:
+    # mammothsdk#372/#414: every dataset got the URL refresh, refused as an upload.
+    fake_service.responses[_GET] = {"id": 7, "sources": [source]}
+    fake_service.responses[_REFRESH_SOURCE] = {"job_id": 9}
+    result, _ = dataset_cmd.dataset_refresh(
+        _inv("dataset.refresh", project=180, extra_args=["7"], yes=True)
+    )
+    assert fake_service.call_log[-1] == (
+        _REFRESH_SOURCE,
+        {"dataset_id": 7, "source_type": kind, "source_id": source_id, "project_id": 180},
+    )
+    assert result["source"] == kind
 
 
 # -- list -----------------------------------------------------------------
@@ -860,6 +896,45 @@ def test_rename_forwards_name(fake_service: FakeMammothService, tmp_path: Path) 
     assert fake_service.call_log == [
         (_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180, "unique": True})
     ]
+
+
+def test_rename_takes_the_name_as_a_second_positional(
+    fake_service: FakeMammothService,
+) -> None:
+    # mammothsdk#322: `dataset rename ID NAME` (and `--name NAME`, which binds the same slot).
+    dataset_cmd.dataset_rename(_inv("dataset.rename", project=180, extra_args=["7", "New name"]))
+    assert fake_service.call_log == [
+        (_RENAME, {"dataset_id": 7, "name": "New name", "project_id": 180, "unique": True})
+    ]
+
+
+def test_rename_refuses_two_different_names(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write(tmp_path, {"name": "Other"})
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_rename(
+            _inv("dataset.rename", project=180, extra_args=["7", "New"], input_file=input_file)
+        )
+    assert excinfo.value.code == "invalid_argument"
+    assert fake_service.call_log == []
+
+
+def test_rename_accepts_the_same_name_given_twice(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    input_file = _write(tmp_path, {"name": "New"})
+    dataset_cmd.dataset_rename(
+        _inv("dataset.rename", project=180, extra_args=["7", "New"], input_file=input_file)
+    )
+    assert fake_service.call_log == [
+        (_RENAME, {"dataset_id": 7, "name": "New", "project_id": 180, "unique": True})
+    ]
+
+
+def test_rename_name_flag_is_a_declared_flag_of_the_command() -> None:
+    assert "--name" in COMMAND_FLAGS["dataset.rename"]
+    assert [spec.name for spec in resolve_positionals("dataset.rename")] == ["dataset_id", "name"]
 
 
 def test_rename_to_the_name_it_already_has_is_a_no_op_success(
@@ -1320,6 +1395,29 @@ def test_delete_that_the_get_calls_gone_but_the_list_still_shows_is_unverified(
     assert fake_service.calls.count(_LIST_ALL) > 1
 
 
+def test_delete_with_a_403_read_back_and_a_still_listed_dataset_is_not_deleted(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("mammoth_cli.services.delete_check.time.sleep", lambda _s: None)
+
+    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        if any(symbol == _DELETE for symbol, _ in log):
+            raise CliError(
+                code="authorization_required",
+                message="denied",
+                exit_status=EXIT_AUTH,
+                details={"status_code": 403},
+            )
+        return {"id": 7}
+
+    fake_service.responses[_GET] = get  # type: ignore[assignment]
+    fake_service.responses[_LIST_ALL] = {"datasets": [{"id": 7, "name": "orders"}]}
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_delete(_inv("dataset.delete", project=180, extra_args=["7"], yes=True))
+    assert excinfo.value.code == "delete_unverified"
+    assert excinfo.value.details["still_listed"] is True
+
+
 def test_delete_that_the_list_drops_on_a_later_check_is_verified(
     fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1461,3 +1559,202 @@ def test_trash_reads_nothing_back_when_the_write_succeeds(
     dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
 
     assert [name for name, _ in fake_service.call_log] == [_TRASH]
+
+
+def test_trash_waits_for_its_job(fake_service: FakeMammothService) -> None:
+    fake_service.responses[_TRASH] = {"job_id": 31}
+    fake_service.job_result = {"status": "success"}
+
+    data, _ = dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert fake_service.wait_log == [{"job_id": 31}]
+    assert data == {"status": "success", "job": {"id": 31}}
+
+
+def test_trash_refused_by_an_automation_is_has_dependents_naming_it(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # mammothsdk#365: the trash job is refused with TRASH_DEPENDENT_BLOCK; exit 0 with the
+    # job still processing made a caller believe the dataset was trashed.
+    fake_service.responses[_TRASH] = {"job_id": 31}
+    refused = CliError(
+        code="job_failed",
+        message="The Mammoth job failed: Cannot move to Trash",
+        exit_status=1,
+        details={
+            "response": {
+                "error_code": "TRASH_DEPENDENT_BLOCK",
+                "automations": [{"automation_id": 616, "automation_name": "Nightly pull"}],
+            }
+        },
+    )
+
+    def wait(_response: object, **_kwargs: object) -> object:
+        raise refused
+
+    monkeypatch.setattr(fake_service, "wait_if_job", wait)
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    error = excinfo.value
+    assert error.code == "has_dependents"
+    assert "Nightly pull (616)" in error.message
+    assert error.details["automations"] == [
+        {"automation_id": 616, "automation_name": "Nightly pull"}
+    ]
+    assert error.recovery_commands == ["mammoth automation get 616"]
+
+
+def test_trash_job_failing_for_another_reason_keeps_its_error(
+    fake_service: FakeMammothService, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_service.responses[_TRASH] = {"job_id": 31}
+    failed = CliError(code="job_failed", message="The Mammoth job failed: boom", exit_status=1)
+
+    def wait(_response: object, **_kwargs: object) -> object:
+        raise failed
+
+    monkeypatch.setattr(fake_service, "wait_if_job", wait)
+
+    with pytest.raises(CliError) as excinfo:
+        dataset_cmd.dataset_trash(_inv("dataset.trash", project=180, extra_args=["7"]))
+
+    assert excinfo.value is failed
+
+
+def test_delete_succeeds_when_the_read_back_answers_403(
+    fake_service: FakeMammothService,
+) -> None:
+    # mammothsdk#352/#303: after a delete job succeeds, the auth layer answers the read-back
+    # with 403 4RESO001 (it no longer knows the dataset). The read before the delete had
+    # access, so that 403 means gone, not delete_unverified.
+    def get(log: list[tuple[str, dict[str, object]]]) -> dict[str, object]:
+        if any(symbol == _DELETE for symbol, _ in log):
+            raise CliError(
+                code="authorization_required",
+                message="You are not authorized to perform this action",
+                exit_status=4,
+                details={"status_code": 403, "backend_code": "4RESO001"},
+            )
+        return {"id": 7}
+
+    fake_service.responses[_GET] = get  # type: ignore[assignment]
+    data, _meta = dataset_cmd.dataset_delete(
+        _inv("dataset.delete", project=180, extra_args=["7"], yes=True)
+    )
+    assert data["deleted"] == [7]
+
+
+def test_cloud_database_create_sends_a_one_off_pull_and_table_name() -> None:
+    # mammothsdk#382: no schedule_properties failed in the job; table read as missing.
+    spec: dict[str, Any] = {"query_properties": {"table": "transaction", "query": "SELECT 1"}}
+    adjusted = _default_one_off_pull("cloud", spec)
+    assert spec["query_properties"] == {"table_name": "transaction", "query": "SELECT 1"}
+    assert spec["schedule_properties"] == ONE_OFF_PULL
+    assert len(adjusted) == 2
+    file_spec: dict[str, Any] = {"query_properties": {"file_path": "/a.csv"}}
+    assert _default_one_off_pull("cloud", file_spec) == []
+
+
+@pytest.mark.parametrize(
+    ("properties", "missing"),
+    [
+        ({"query": "SELECT 1"}, ["ds_name", "table_name"]),
+        ({"query": "SELECT 1", "ds_name": "Calls"}, ["table_name"]),
+        ({"table_name": "calls", "ds_name": "Calls"}, ["query"]),
+    ],
+)
+def test_cloud_query_import_names_its_missing_fields(
+    properties: dict[str, str], missing: list[str]
+) -> None:
+    """Feedback 10 (2026-11-24): the server answered 400 4DSET043, after a clean dry run."""
+    spec = {"connector_key": "postgres", "query_properties": properties}
+    with pytest.raises(CliError) as excinfo:
+        _require_cloud_query_fields("cloud", spec)
+    assert excinfo.value.code == "missing_argument"
+    assert excinfo.value.details["missing"] == missing
+
+
+@pytest.mark.parametrize(
+    ("kind", "spec"),
+    [
+        ("weburl", {"url": "https://x.test/a.csv"}),
+        ("cloud", {"query_properties": {"file_path": "/a.csv"}}),
+        ("cloud", {"connector_key": "google_sheets", "query_properties": {"query": "q"}}),
+        (
+            "cloud",
+            {"query_properties": {"ds_name": "a", "table_name": "b", "query": "SELECT 1"}},
+        ),
+    ],
+)
+def test_other_creates_need_no_query_fields(kind: str, spec: dict[str, Any]) -> None:
+    _require_cloud_query_fields(kind, spec)
+
+
+def test_dataset_create_refuses_a_cloud_import_under_dry_run(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    doc = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": "postgres",
+            "connection_key": "conn1",
+            "query_properties": {"ds_name": "Calls", "query": "SELECT 1"},
+        },
+    }
+    with pytest.raises(CliError) as excinfo:
+        create_cmd.dataset_create(
+            _inv(
+                "dataset.create",
+                project=180,
+                input_file=_write(tmp_path, doc),
+                dry_run=True,
+            )
+        )
+    assert excinfo.value.details["missing"] == ["table_name"]
+    assert fake_service.call_log == []
+
+
+_CLOUD_IMPORT: dict[str, object] = {
+    "ds_creation_type": "cloud",
+    "dataset_spec": {
+        "connector_key": "postgres",
+        "connection_key": "conn1",
+        "query_properties": {"ds_name": "LLM calls", "table_name": "calls", "query": "SELECT 1"},
+    },
+}
+
+
+def test_a_cloud_import_dry_run_says_its_name_is_taken(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """Feedback 17 (2026-11-24): "LLM calls 2" was made without a word."""
+    fake_service.responses[_LIST] = {"datasets": [{"id": 1, "name": "LLM calls"}]}
+    result = make_runner().invoke(
+        [
+            *("dataset", "create", "--input", _write(tmp_path, _CLOUD_IMPORT)),
+            *("--project", "180", "--dry-run", "--output", "json"),
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    impact = json.loads(result.output)["data"]["predicted_impact"]
+    assert impact["requested_name"] == "LLM calls"
+    assert impact["name_taken"] is True
+    assert impact["final_name"] == "LLM calls 2"
+    assert _CREATE not in fake_service.calls
+
+
+def test_a_cloud_import_says_it_got_another_name(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_CREATE] = {"job_id": 14}
+    fake_service.job_result = {"ds_id": 7}
+    fake_service.responses[_GET] = {"dataset": {"id": 7, "name": "LLM calls 2"}}
+    data, _ = create_cmd.dataset_create(
+        _inv("dataset.create", project=180, input_file=_write(tmp_path, _CLOUD_IMPORT))
+    )
+    assert isinstance(data, dict)
+    assert data["name"] == "LLM calls 2"
+    assert data["requested_name"] == "LLM calls"
+    assert "was taken" in data["note"]

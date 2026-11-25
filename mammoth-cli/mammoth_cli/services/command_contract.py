@@ -462,6 +462,7 @@ _LOCAL_COMMANDS = frozenset(
         "auth.logout",
         "auth.status",
         "calc",
+        "bench",
         "capabilities",
         "capability.find",
         "capability.get",
@@ -737,13 +738,7 @@ S7_COMMANDS = frozenset(
     and str(record["command_id"]) != "ai.retention.condition"
 )
 
-# A small number of S7 SDK methods intentionally expose a ``**kwargs``
-# extension point.  The CLI still keeps their input boundary closed: these
-# are the reviewed filter/profile fields that the corresponding public API
-# accepts.  Keeping the declarations here makes schema generation, strict
-# admission, and handler binding agree instead of treating every arbitrary
-# keyword as valid.
-#: The SDK field the additional fields above stand in for. Listed as required, it told
+#: The SDK field the additional input fields below stand in for. Listed as required, it told
 #: callers to send ``patch`` beside ``add_datasets`` — which the handler then refuses —
 #: so it is shown as optional wherever an alternative exists.
 _REPLACED_BY_ADDITIONAL: dict[str, str] = {
@@ -751,10 +746,22 @@ _REPLACED_BY_ADDITIONAL: dict[str, str] = {
     "view.export.update": "patches",
 }
 
+# A small number of S7 SDK methods intentionally expose a ``**kwargs``
+# extension point.  The CLI still keeps their input boundary closed: these
+# are the reviewed filter/profile fields that the corresponding public API
+# accepts.  Keeping the declarations here makes schema generation, strict
+# admission, and handler binding agree instead of treating every arbitrary
+# keyword as valid.
 _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     # The parent as ``folder list`` shows it; the handler turns it into the label id.
     "folder.create": (
         FieldSpec("parent_resource_id", required=False, annotation=int | str | None, default=None),
+    ),
+    # Choices over the delete plan (``workflow delete``); ``trash`` names the plan keys exactly.
+    "workflow.delete": (
+        FieldSpec("keep_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("trash_inputs", required=False, annotation=bool | None, default=None),
+        FieldSpec("keep_steps", required=False, annotation=bool | None, default=None),
     ),
     # Instead of ``patch``: the handler reads the automation and writes the changed dataset
     # list back as a ``details`` patch (``automation update`` docstring).
@@ -784,6 +791,15 @@ _S7_ADDITIONAL_INPUT_FIELDS: dict[str, tuple[FieldSpec, ...]] = {
     ),
     # The share password is read from this file by the handler (the SDK's own ``password``
     # is never an input: a password on the command line lands in shell history).
+    # The board's look, set on its canvas after the create / patch (``board_style_write``).
+    "dashboard.create-blank": (
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+    ),
+    "dashboard.update": (
+        FieldSpec("style_id", required=False, annotation=str | None, default=None),
+        FieldSpec("mode", required=False, annotation=str | None, default=None),
+    ),
     "dashboard.share": (
         FieldSpec("password_file", required=False, annotation=str | None, default=None),
     ),
@@ -1018,8 +1034,7 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     replaced = _REPLACED_BY_ADDITIONAL.get(command_id)
     if replaced is not None:
         fields = tuple(
-            replace(field, required=False) if field.name == replaced else field
-            for field in fields
+            replace(field, required=False) if field.name == replaced else field for field in fields
         )
     bindings = MappingProxyType({field.name: field.name for field in fields})
     # Positionals fill SDK parameters only when they are not dual-sourced.  A

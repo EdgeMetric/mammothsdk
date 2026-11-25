@@ -5,7 +5,8 @@
 redaction masks both (``secret``, ``token``), which leaves a rotation with no
 usable secret. They stay masked by default, so a log or a shared transcript
 never holds them; ``--reveal`` prints them, the way ``client-app create`` shows
-its token.
+its token. A secure webhook's ``secret`` (``webhook create``/``get``/``update``) is the
+same: masked, it read as a usable value and every post with it failed (mammothsdk#373).
 """
 
 from __future__ import annotations
@@ -17,5 +18,8 @@ REVEAL_COMMANDS = frozenset(
     {
         "dashboard.embed.secret.rotate",
         "dashboard.embed.preview-token.create",
+        "webhook.create",
+        "webhook.get",
+        "webhook.update",
     }
 )

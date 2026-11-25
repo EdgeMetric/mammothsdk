@@ -18,7 +18,7 @@ import pytest
 
 from mammoth.api.automations import SchedulePatchItem
 from mammoth.client import MammothClient
-from mammoth.exceptions import MammothAPIError, MammothValidationError
+from mammoth.exceptions import MammothValidationError
 from mammoth.models.automations import (
     AlertType,
     AutomationConditionSpec,
@@ -1548,6 +1548,15 @@ class TestFoldersAPI:
         await client.folders.create(name="Test Folder")
         assert_called_with_method_and_endpoint(client._request_json, "POST", "/folders")
 
+    async def test_create_inside_a_folder(self, client: MammothClient):
+        client._request_json = AsyncMock(return_value={"id": 1, "name": "Test"})
+        await client.folders.create(name="Test Folder", parent_folder_id=7)
+        assert_json_body(client._request_json, {"name": "Test Folder", "parent_folder_id": 7})
+
+    async def test_create_refuses_a_positional_parent(self, client: MammothClient):
+        with pytest.raises(TypeError):
+            await client.folders.create("Test Folder", "70")  # type: ignore[misc]
+
     async def test_delete(self, client: MammothClient):
         await client.folders.delete(folder_ids=[1, 2])
         assert_called_with_method_and_endpoint(client._request_json, "DELETE", "/folders")
@@ -1871,6 +1880,20 @@ class TestConnectorsAPI:
         assert_json_body(
             client._request_json,
             {"patch": [{"op": "replace", "path": "connection", "value": creds}]},
+        )
+
+    async def test_update_connection_sends_name_in_the_patch_value(self, client: MammothClient):
+        # mammothsdk#413: a rename is ``name`` in the connection patch value.
+        await client.connectors.update_connection(
+            connector_key="custom_code",
+            connection_key="conn1",
+            credentials={"api_key": "k"},
+            name="Lincoln High",
+        )
+        value = {"api_key": "k", "name": "Lincoln High"}
+        assert_json_body(
+            client._request_json,
+            {"patch": [{"op": "replace", "path": "connection", "value": value}]},
         )
 
     async def test_update_connection_rejects_empty_credentials(self, client: MammothClient):
