@@ -948,7 +948,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 ## folder
 
 - `mammoth folder bulk-delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.bulk_delete
-  example: mammoth folder bulk-delete --yes
+  example: mammoth folder bulk-delete --input '{"folder_ids": [1]}' --yes
 - `mammoth folder create` [benign_mutation/none] -> mammoth.api.folders.FoldersAPI.create
   example: mammoth folder create 'Revenue report'
 - `mammoth folder delete` [destructive/prompt_or_yes] -> mammoth.api.folders.FoldersAPI.delete

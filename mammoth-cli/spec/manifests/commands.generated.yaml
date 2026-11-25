@@ -17843,7 +17843,7 @@ commands:
   required_fixture_guard: null
   secret_fields: []
   human_example: mammoth folder bulk-delete --help
-  agent_example: mammoth folder bulk-delete --yes
+  agent_example: 'mammoth folder bulk-delete --input ''{"folder_ids": [1]}'' --yes'
   unit_tests:
   - UT-FOLDER-BULK-DELETE
   contract_tests:

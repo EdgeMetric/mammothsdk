@@ -746,6 +746,17 @@ _REPLACED_BY_ADDITIONAL: dict[str, str] = {
     "view.export.update": "patches",
 }
 
+#: Fields the SDK method defaults but the handler refuses to run without: shown as required.
+_REQUIRED_BY_HANDLER: dict[str, frozenset[str]] = {
+    "ai.suggestion.list": frozenset({"suggestion_type", "params"}),
+    "batch.bulk-delete": frozenset({"ids"}),
+    "dataset.bulk-delete": frozenset({"dataset_ids"}),
+    "folder.bulk-delete": frozenset({"folder_ids"}),
+    "project.user.add": frozenset({"role"}),
+    "view.conditional-format.delete-all": frozenset({"rule_id"}),
+    "view.task.update": frozenset({"task_spec"}),
+}
+
 # A small number of S7 SDK methods intentionally expose a ``**kwargs``
 # extension point.  The CLI still keeps their input boundary closed: these
 # are the reviewed filter/profile fields that the corresponding public API
@@ -1035,6 +1046,11 @@ def resolve_command_contract(command_id: str) -> ResolvedCommandContract | None:
     if replaced is not None:
         fields = tuple(
             replace(field, required=False) if field.name == replaced else field for field in fields
+        )
+    needed = _REQUIRED_BY_HANDLER.get(command_id, frozenset())
+    if needed:
+        fields = tuple(
+            replace(field, required=True) if field.name in needed else field for field in fields
         )
     bindings = MappingProxyType({field.name: field.name for field in fields})
     # Positionals fill SDK parameters only when they are not dual-sourced.  A

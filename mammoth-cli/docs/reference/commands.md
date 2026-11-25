@@ -4355,7 +4355,7 @@ Total commands: 917.
 - Mutation class: `destructive`
 - Confirmation: `prompt_or_yes`
 - Backing SDK: `mammoth.api.folders.FoldersAPI.bulk_delete`
-- Agent example: `mammoth folder bulk-delete --yes`
+- Agent example: `mammoth folder bulk-delete --input '{"folder_ids": [1]}' --yes`
 
 ### `mammoth folder create`
 
