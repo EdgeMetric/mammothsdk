@@ -66,6 +66,7 @@ from mammoth_cli.services.dashboard_filters import (
     with_filter,
     without_filter,
 )
+from mammoth_cli.services.dashboard_pages import append_figure
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
 )
@@ -698,7 +699,7 @@ def dashboard_figure_add(invocation: Invocation) -> HandlerResult:
         kwargs.update(_figure_page_kwargs(document["page"]))
     with open_service(invocation) as (service, auth):
         _refuse_bad_figure(service, dashboard_id, kwargs)
-        data = service.call(_symbol(invocation), **kwargs)
+        data = append_figure(service, _symbol(invocation), kwargs)
     return data, _meta(invocation, auth.workspace_id)
 
 

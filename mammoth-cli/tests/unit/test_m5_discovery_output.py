@@ -293,6 +293,27 @@ def test_ndjson_legacy_mode_retains_item_only_compatibility() -> None:
     assert [json.loads(line) for line in stream.getvalue().splitlines()] == [{"id": 1}]
 
 
+def _schema_get_text(output: str, schemas: list[dict[str, object]]) -> str:
+    stream = io.StringIO()
+    data = {"requested": len(schemas), "schemas": schemas, "errors": []}
+    render(
+        {"schema_version": 1, "data": data, "meta": {"command": "schema get"}},
+        output=output,
+        stream=stream,
+    )
+    return stream.getvalue()
+
+
+def test_human_schema_get_of_one_id_shows_the_entry_not_the_wrapper() -> None:
+    entry: dict[str, object] = {"command_id": "view.list", "confirmation": "none"}
+    plain = _schema_get_text("plain", [entry])
+    assert plain == "command_id\tview.list\nconfirmation\tnone\n"
+    assert "schemas" not in _schema_get_text("table", [entry])
+    # Machine output keeps its one shape, and several entries keep the list.
+    assert json.loads(_schema_get_text("json", [entry]))["data"]["schemas"] == [entry]
+    assert "requested\t2\n" in _schema_get_text("plain", [entry, entry])
+
+
 def test_table_keeps_fields_from_heterogeneous_rows() -> None:
     stream = io.StringIO()
     render(
@@ -525,7 +546,8 @@ def test_schema_get_accepts_the_command_as_typed(typed: str) -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert json.loads(result.stdout)["data"]["command_id"] == "view.transform.math"
+    (entry,) = json.loads(result.stdout)["data"]["schemas"]
+    assert entry["command_id"] == "view.transform.math"
 
 
 def test_normalize_keeps_dashboard_style_tokens_but_redacts_credential_tokens() -> None:

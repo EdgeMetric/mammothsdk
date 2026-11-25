@@ -106,18 +106,18 @@ def _schema_list(invocation: Invocation) -> HandlerResult:
 _MAX_GET_IDS = 12
 
 
-def _resolve_schema(command_id: str, rest: list[str]) -> tuple[str, dict[str, Any] | None]:
+def _resolve_schema(command_id: str, rest: list[str]) -> dict[str, Any] | None:
     """Look up one schema, also accepting the command as typed.
 
     ``view transform math`` (quoted or not) and ``mammoth view transform math``
-    both mean ``view.transform.math``. Returns the id that resolved, and the
-    entry (``None`` when nothing matched).
+    both mean ``view.transform.math``. Returns the entry (``None`` when nothing
+    matched).
     """
     from mammoth_cli.commands import schema as schema_cmd
 
     entry = schema_cmd.get_schema(command_id)
     if entry is not None:
-        return command_id, entry
+        return entry
     if rest and rest[0] == command_id:
         rest = rest[1:]
     words = [*command_id.split(), *rest]
@@ -125,10 +125,8 @@ def _resolve_schema(command_id: str, rest: list[str]) -> tuple[str, dict[str, An
         words = words[1:]
     dotted = ".".join(words)
     if dotted and dotted != command_id:
-        entry = schema_cmd.get_schema(dotted)
-        if entry is not None:
-            return dotted, entry
-    return command_id, None
+        return schema_cmd.get_schema(dotted)
+    return None
 
 
 def _schema_not_found(command_id: str) -> CliError:
@@ -140,30 +138,19 @@ def _schema_not_found(command_id: str) -> CliError:
     )
 
 
-def _schema_get_many(ids: list[str], full: bool) -> dict[str, Any]:
-    """One result for several ids: the schemas found, and one error per id not found."""
-    from mammoth_cli.commands import schema as schema_cmd
-
-    if len(ids) > _MAX_GET_IDS:
-        raise CliError(
-            code="too_many_ids",
-            message=f"schema get accepts at most {_MAX_GET_IDS} ids per call; got {len(ids)}.",
-            exit_status=EXIT_USAGE,
-            hint="Split the ids across more than one 'schema get' call.",
-        )
-    schemas: list[dict[str, Any]] = []
-    errors: list[dict[str, Any]] = []
-    for command_id in ids:
-        _, entry = _resolve_schema(command_id, [])
-        if entry is None:
-            error = _schema_not_found(command_id)
-            errors.append({"command_id": command_id, "code": error.code, "message": error.message})
-        else:
-            schemas.append(entry if full else schema_cmd.brief_schema(entry))
-    return {"requested": len(ids), "schemas": schemas, "errors": errors}
-
-
 def _schema_get(invocation: Invocation) -> HandlerResult:
+    """The schemas of one or more command ids, in one shape whatever the count.
+
+    Args:
+        invocation: ``schema get A,B``, ``schema get A B`` or ``schema get A``, with ``--full``
+            or not.
+
+    Returns:
+        ``{requested, schemas, errors}``: the schemas found, and one error per id not found.
+
+    Raises:
+        CliError: ``schema_not_found`` when no id resolved; ``too_many_ids`` past the cap.
+    """
     from mammoth_cli.commands import schema as schema_cmd
     from mammoth_cli.runtime.strict import COMMAND_FLAGS
 
@@ -186,12 +173,27 @@ def _schema_get(invocation: Invocation) -> HandlerResult:
             part.strip() for token in spaced for part in re.split(r"[,;]", token) if part.strip()
         )
     )
-    if len(ids) > 1:
-        return _schema_get_many(ids, full), {}
-    command_id, entry = _resolve_schema(ids[0] if ids else command_id, rest)
-    if entry is None:
-        raise _schema_not_found(command_id)
-    return (entry if full else schema_cmd.brief_schema(entry)), {}
+    if len(ids) > _MAX_GET_IDS:
+        raise CliError(
+            code="too_many_ids",
+            message=f"schema get accepts at most {_MAX_GET_IDS} ids per call; got {len(ids)}.",
+            exit_status=EXIT_USAGE,
+            hint="Split the ids across more than one 'schema get' call.",
+        )
+    # Only a lone id may be the first word of a command typed with spaces.
+    words = rest if len(ids) <= 1 else []
+    schemas: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+    for wanted in ids or [command_id]:
+        entry = _resolve_schema(wanted, words)
+        if entry is None:
+            error = _schema_not_found(wanted)
+            errors.append({"command_id": wanted, "code": error.code, "message": error.message})
+        else:
+            schemas.append(entry if full else schema_cmd.brief_schema(entry))
+    if not schemas:
+        raise _schema_not_found("', '".join(error["command_id"] for error in errors))
+    return {"requested": len(ids) or 1, "schemas": schemas, "errors": errors}, {}
 
 
 #: Above this many ';'-separated goals in one 'schema find' call, an agent is
@@ -467,6 +469,9 @@ _TARGETS: dict[str, str] = {
     "annotation.update": "mammoth_cli.commands.annotation:annotation_update",
     "annotation.delete": "mammoth_cli.commands.annotation:annotation_delete",
     "annotation.comment.add": "mammoth_cli.commands.annotation:annotation_comment_add",
+    "annotation.comment.edit": "mammoth_cli.commands.annotation:annotation_comment_edit",
+    "annotation.comment.delete": "mammoth_cli.commands.annotation:annotation_comment_delete",
+    "annotation.access": "mammoth_cli.commands.annotation:annotation_access",
     "connector.active": "mammoth_cli.commands.connector:connector_active",
     "connector.ai.chat": "mammoth_cli.commands.connector:connector_ai_chat",
     "connector.ai.history": "mammoth_cli.commands.connector:connector_ai_history",
@@ -604,6 +609,7 @@ _TARGETS: dict[str, str] = {
     "workflow.cleanup": "mammoth_cli.commands.workflow:workflow_cleanup",
     "workflow.create": "mammoth_cli.commands.workflow:workflow_create",
     "workflow.delete": "mammoth_cli.commands.workflow:workflow_delete",
+    "workflow.delete-plan": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.from-template": "mammoth_cli.commands.workflow:workflow_from_template",
     "workflow.get": "mammoth_cli.commands.workflow:workflow_get",
     "workflow.graph": "mammoth_cli.commands.workflow:workflow_graph",
@@ -1215,6 +1221,7 @@ _TARGETS: dict[str, str] = {
     "connector.draft.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "connector.draft.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "connector.draft.known-sources": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "connector.connection.tables": "mammoth_cli.commands.connector:connector_connection_tables",
     "connector.draft.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "connector.draft.update": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "connector.draft.discard": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
@@ -1276,6 +1283,9 @@ _TARGETS: dict[str, str] = {
     "workflow.after.loops": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.link.create": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.link.remove": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.link.fire": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.schedule.unset": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.after.unset": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.describe.start": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.describe.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "workflow.describe.wait": "mammoth_cli.commands.dashboard.generated:generated_dashboard",

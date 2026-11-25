@@ -128,6 +128,9 @@ def build_all() -> dict[Path, str]:
         "and this release repairs it; nobody has re-run the route yet.",
         "- Commands not listed under a family are untried.",
         "",
+        "What a dashboard can and cannot show (one table per page, the smallest date "
+        "grain): [dashboard limits](recipes/dashboards.md#limits).",
+        "",
         "The typed `view transform *` commands all submit through `view.task.add` "
         "(`rename-columns` and `sort` through `view.update`); its matrix row names the "
         "transformations that ran end to end and were read back against a known "

@@ -18,7 +18,7 @@ from mammoth_cli.commands import doctor as doctor_cmd
 from mammoth_cli.commands import upgrade
 from mammoth_cli.context import credentials, oauth, profiles
 from mammoth_cli.errors.envelope import EXIT_AUTH, CliError
-from mammoth_cli.runtime import updates
+from mammoth_cli.runtime import shell_text, updates
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.services.mapping import map_sdk_exception
 from mammoth_cli.services.testing import FakeMammothService
@@ -471,3 +471,77 @@ def test_auth_rejection_keeps_the_servers_error_code_and_hint() -> None:
     mapped = map_sdk_exception(refused)
     assert "TOKEN_REVOKED" in mapped.message
     assert mapped.hint == "Create a new token in Workspace settings."
+
+
+# -- the SDK this CLI declares (PRD-3685) -----------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("installed", "ok"),
+    [("0.8.58", True), ("0.8.99", True), ("0.8.57", False), ("0.9.0", False), ("1.0.0", False)],
+)
+def test_the_sdk_check_passes_only_inside_the_declared_range(installed: str, ok: bool) -> None:
+    check = doctor_cmd._check_sdk(installed, "mammoth-io (>=0.8.58,<0.9)")
+
+    assert check["name"] == "sdk_version"
+    assert check["ok"] is ok
+    assert (installed in check["detail"]) is True
+    if not ok:
+        assert check["detail"].endswith(f"fix: {check['fix']}")
+
+
+def test_the_sdk_check_reads_the_range_this_cli_declares() -> None:
+    declared = doctor_cmd._declared_sdk_requirement()
+
+    assert declared is not None
+    assert declared.lower().startswith("mammoth-io") and ">=" in declared
+
+
+@pytest.mark.parametrize(
+    ("manager", "windows", "python", "fix"),
+    [
+        ("uv", False, "/opt/py", f"/opt/uv tool install --force mammoth-cli=={__version__}"),
+        ("pipx", False, "/opt/py", f"pipx install --force mammoth-cli=={__version__}"),
+        ("pip", False, "/opt/py", "/opt/py -m pip install --upgrade 'mammoth-io>=0.8.58,<0.9'"),
+        ("uv", True, "/opt/py", f'/opt/uv tool install --force "mammoth-cli=={__version__}"'),
+        ("pip", True, "/opt/py", '/opt/py -m pip install --upgrade "mammoth-io>=0.8.58,<0.9"'),
+        (
+            "pip",
+            True,
+            "/a b/py",
+            "run the program /a b/py with the arguments: "
+            "-m  pip  install  --upgrade  mammoth-io>=0.8.58,<0.9",
+        ),
+    ],
+)
+def test_a_mismatched_sdk_fails_doctor_and_names_the_fix(
+    manager: str,
+    windows: bool,
+    python: str,
+    fix: str,
+    isolated_cli_config: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(doctor_cmd, "detect_manager", lambda: manager)
+    monkeypatch.setattr(shell_text, "WINDOWS", windows)
+    monkeypatch.setattr(doctor_cmd.sys, "executable", python)
+    monkeypatch.setattr(upgrade, "uv_executable", lambda: "/opt/uv")
+    monkeypatch.setattr(upgrade, "running_base_python", lambda: None)
+    monkeypatch.setattr(
+        doctor_cmd, "_declared_sdk_requirement", lambda: "mammoth-io (>=0.8.58,<0.9)"
+    )
+    monkeypatch.setattr(doctor_cmd, "_installed_sdk_version", lambda: "0.8.1")
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["ok"] is False
+    assert outcome.data["ok"] is False
+    assert check["fix"] == fix
+    assert fix in outcome.data["recommendations"]
+
+
+def test_a_matching_sdk_passes_the_check(isolated_cli_config: Path) -> None:
+    outcome = doctor_cmd.doctor(_inv("doctor"))
+
+    check = next(c for c in outcome.data["checks"] if c["name"] == "sdk_version")
+    assert check["ok"] is True

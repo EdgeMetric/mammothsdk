@@ -13,6 +13,7 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 |------|:------:|-----------------:|-------------:|-------------:|------------:|-------------:|
 | `refresh-daily` | yes | 3 | 4 | 8 | 1 | 2 |
 | `append-rows` | yes | 1 | 3 | 6 | 1 | 2 |
+| `import-from-database` | yes | 1 | 4 | 8 | 1 | 2 |
 | `blend-by-key` | yes | 4 | 7 | 14 | 1 | 2 |
 | `upload-dashboard` | yes | 2 | 6 | 12 | 1 | 2 |
 | `stuck-upload` | no | 2 | 6 | 12 | 1 | 1 |
@@ -50,6 +51,6 @@ Whether an agent finishes the task correctly is measured by the live eval (`pyte
 | `fix-heading-row` | yes | 1 | 3 | 6 | 1 | 2 |
 | `workflow-from-template` | yes | 3 | 8 | 16 | 1 | 2 |
 | `workflow-from-description` | yes | 4 | 5 | 10 | 1 | 2 |
-| **39 tasks** | | 90 | **144** | **283** | **39** | **74** |
+| **40 tasks** | | 91 | **148** | **291** | **40** | **76** |
 
-With the recipe and a preview the 39 tasks take 74 calls. Step by step they take 144 (283 with lookups). 34 tasks need fewer calls and 5 the same.
+With the recipe and a preview the 40 tasks take 76 calls. Step by step they take 148 (291 with lookups). 35 tasks need fewer calls and 5 the same.

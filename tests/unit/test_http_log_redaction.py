@@ -97,3 +97,16 @@ class TestTheRequestLog:
 
         [structured] = [r for r in caplog.records if hasattr(r, "mammoth")]
         assert structured.mammoth["path"] == "/workspaces/4/projects"
+
+
+class TestAWorkflowLinkSecret:
+    def test_the_secret_after_the_workflow_id_is_hidden(self) -> None:
+        assert safe_log_path("/workflow-runs/41/s3cret") == f"/workflow-runs/41/{REDACTED}"
+
+    def test_a_full_path_with_a_prefix_is_hidden_too(self) -> None:
+        assert safe_log_path("/api/v2/workflow-runs/41/s3cret?x=1") == (
+            f"/api/v2/workflow-runs/41/{REDACTED}"
+        )
+
+    def test_a_path_that_ends_before_the_secret_is_left_alone(self) -> None:
+        assert safe_log_path("/workflow-runs/41") == "/workflow-runs/41"

@@ -2810,20 +2810,72 @@ def test_task_delete_accepted_with_a_busy_pipeline_stays_pending(
     assert verify_exit_status(verified) == 0
 
 
-def test_verify_reads_a_refused_write_as_failed_even_when_unfinished() -> None:
-    """The verify layer's own guard: status error + error_code beats an unfinished pipeline."""
-    from mammoth_cli.runtime.dispatch import verify_exit_status
-    from mammoth_cli.runtime.verify import with_verify
+def _refused_delete(
+    fake_service: FakeMammothService, tmp_path: Path, response: dict[str, Any]
+) -> CliError:
+    """The error of a ``view task delete`` on view 7 that the server answers with *response*."""
+    fake_service.responses[_TASK_DELETE] = response
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 3875}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_delete(
+            _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+        )
+    return excinfo.value
 
-    verified = with_verify(
-        {
-            **_REFUSAL_7010,
-            "pipeline_error": {"execution_state": "unfinished", "wait_error": "timeout"},
-            "row_check": {"rows_before": 3875, "rows_after": 3875},
-        }
+
+def _refusal(**by_kind: list[dict[str, Any]]) -> dict[str, Any]:
+    """A 7010 refusal whose one column is read by *by_kind* (tasks, derivatives)."""
+    info = {"error_code": 7010, "column_to_dependencies_dict": {"c_1": by_kind}}
+    return {**_REFUSAL_7010, "error_info": info}
+
+
+def test_a_refusal_for_a_derivative_names_it_and_no_steps(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    metric = {"category": "metric", "id": 41, "internal_name": "m_1", "display_name": "Total"}
+    card = {"category": "group", "id": 42, "display_properties": {"info": {"title": "By region"}}}
+    unnamed = {"category": "group", "id": 43, "display_properties": None}
+    error = _refused_delete(
+        fake_service, tmp_path, _refusal(derivatives=[metric, card, unnamed, metric])
     )
-    assert verified["verify"]["outcome"] == "failed"
-    assert verify_exit_status(verified) == 1
+    named = ['derivative 41 ("Total")', 'derivative 42 ("By region")', "derivative 43"]
+    assert error.details["dependent_derivatives"] == named
+    assert error.details["dependent_steps"] == []
+    assert all(name in error.message for name in named)
+    assert error.hint is not None and "view derivative list 7" in error.hint
+    assert "task list" not in error.hint and "steps" not in error.hint
+
+
+def test_a_refusal_for_steps_of_another_view_points_at_that_view(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    tasks = [{"dataview_id": 99, "sequence": 4, "param": {"TASK_KEY": "JOIN"}}]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks))
+    assert error.details["dependent_steps"] == ["step 4 (JOIN) of view 99"]
+    assert error.hint is not None and "'mammoth view task list 99'" in error.hint
+    assert "task list 7" not in error.hint and "derivative" not in error.hint
+
+
+def test_a_refusal_for_both_names_both(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    tasks = [{"dataview_id": 7, "sequence": 4, "param": {}}]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks, derivatives=[{"id": 41}]))
+    assert "step 4 of view 7, derivative 41." in error.message
+    assert error.hint is not None and "task list 7" in error.hint
+    assert "derivative list 7" in error.hint
+
+
+def test_an_error_code_without_a_failure_status_is_not_a_refusal(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_DELETE] = {"status": "processing", "error_code": 7010}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_WAIT] = CliError(code="timeout", message="Not finished.")
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["pipeline_error"]["execution_state"] == "unfinished"
 
 
 # ── export.* ────────────────────────────────────────────────────────────────

@@ -2351,6 +2351,41 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: annotation.access
+  command_path: annotation access
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - CommentAccess
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.access
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.access with validated request fields.
+  request_model: AnnotationAccessRequest
+  result_model: AnnotationAccessResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-ANNOTATION-ACCESS
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation access --help
+  agent_example: mammoth annotation access
+  unit_tests:
+  - UT-ANNOTATION-ACCESS
+  contract_tests:
+  - CT-ANNOTATION-ACCESS-HUMAN
+  - CT-ANNOTATION-ACCESS-JSON
+  - CT-ANNOTATION-ACCESS-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: whether the caller may post and moderate comments in the project, and
+    the people a comment may mention.'
+  reviewed_by: primary
 - command_id: annotation.comment.add
   command_path: annotation comment add
   disposition: command
@@ -2395,6 +2430,107 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: annotation.comment.delete
+  command_path: annotation comment delete
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - WorkflowAnnotationDeleteComment
+  positionals:
+  - name: annotation_id
+    type: int
+    required: true
+    metavar: ANNOTATION_ID
+    falls_back_to_field: null
+    help: ID of the annotation.
+  - name: comment_id
+    type: int
+    required: true
+    metavar: COMMENT_ID
+    falls_back_to_field: null
+    help: ID of the comment.
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_delete
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.comment_delete with validated request fields.
+  request_model: AnnotationCommentDeleteRequest
+  result_model: AnnotationCommentDeleteResult
+  mutation_class: destructive
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Deletes the annotation comment permanently; Mammoth keeps no copy to restore.
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-COMMENT-DELETE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation comment delete ANNOTATION_ID COMMENT_ID --help
+  agent_example: mammoth annotation comment delete 123 456 --yes
+  unit_tests:
+  - UT-ANNOTATION-COMMENT-DELETE
+  contract_tests:
+  - CT-ANNOTATION-COMMENT-DELETE-HUMAN
+  - CT-ANNOTATION-COMMENT-DELETE-JSON
+  - CT-ANNOTATION-COMMENT-DELETE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Deletes a comment (its author or a project admin); a thread left with no comments
+    goes too.
+  reviewed_by: primary
+- command_id: annotation.comment.edit
+  command_path: annotation comment edit
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - EditComment
+  positionals:
+  - name: annotation_id
+    type: int
+    required: true
+    metavar: ANNOTATION_ID
+    falls_back_to_field: null
+    help: ID of the annotation.
+  - name: comment_id
+    type: int
+    required: true
+    metavar: COMMENT_ID
+    falls_back_to_field: null
+    help: ID of the comment.
+  options: []
+  sdk_symbol: mammoth.api.annotations.AnnotationsAPI.comment_edit
+  sdk_conversion: Call mammoth.api.annotations.AnnotationsAPI.comment_edit with validated request fields.
+  request_model: AnnotationCommentEditRequest
+  result_model: AnnotationCommentEditResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the annotation comment; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-ANNOTATION-COMMENT-EDIT
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth annotation comment edit ANNOTATION_ID COMMENT_ID --help
+  agent_example: 'mammoth annotation comment edit 123 456 --input ''{"body": "Quarterly revenue summary"}'''
+  unit_tests:
+  - UT-ANNOTATION-COMMENT-EDIT
+  contract_tests:
+  - CT-ANNOTATION-COMMENT-EDIT-HUMAN
+  - CT-ANNOTATION-COMMENT-EDIT-JSON
+  - CT-ANNOTATION-COMMENT-EDIT-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Changes a comment's text; only its author may.
   reviewed_by: primary
 - command_id: annotation.create
   command_path: annotation create
@@ -6936,6 +7072,48 @@ commands:
   draft_test: null
   undo_test: null
   known_restrictions: null
+  reviewed_by: primary
+- command_id: connector.connection.tables
+  command_path: connector connection tables
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - ListConnectionTables
+  positionals:
+  - name: connection_key
+    type: str
+    required: true
+    metavar: CONNECTION_KEY
+    falls_back_to_field: null
+    help: Key identifying the connection.
+  options: []
+  sdk_symbol: mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables
+  sdk_conversion: Call mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables with validated
+    request fields.
+  request_model: ConnectorConnectionTablesRequest
+  result_model: ConnectorConnectionTablesResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-CONNECTOR-CONNECTION-TABLES
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth connector connection tables CONNECTION_KEY --help
+  agent_example: mammoth connector connection tables prod-warehouse
+  unit_tests:
+  - UT-CONNECTOR-CONNECTION-TABLES
+  contract_tests:
+  - CT-CONNECTOR-CONNECTION-TABLES-HUMAN
+  - CT-CONNECTOR-CONNECTION-TABLES-JSON
+  - CT-CONNECTOR-CONNECTION-TABLES-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Read-only. The tables of a saved connection; shape other for a connection that lists
+    none.
   reviewed_by: primary
 - command_id: connector.connection.test
   command_path: connector connection test
@@ -27762,7 +27940,7 @@ commands:
   secret_fields: []
   human_example: mammoth view data aggregate VIEW_ID --help
   agent_example: 'mammoth view data aggregate 123 456 --input ''{"group_by": ["Channel"], "aggregations":
-    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'''
+    [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'''
   unit_tests:
   - UT-VIEW-DATA-AGGREGATE
   contract_tests:
@@ -33341,6 +33519,51 @@ commands:
   undo_test: null
   known_restrictions: Runs the workflow each time another one finishes; the server refuses a loop.
   reviewed_by: primary
+- command_id: workflow.after.unset
+  command_path: workflow after unset
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteWorkflowAfter
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset
+  sdk_conversion: Call mammoth.api.workflow_triggers.WorkflowTriggersAPI.after_unset with validated request
+    fields.
+  request_model: WorkflowAfterUnsetRequest
+  result_model: WorkflowAfterUnsetResult
+  mutation_class: destructive
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Deletes the workflow after permanently; Mammoth keeps no copy to restore.
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-AFTER-UNSET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow after unset WORKFLOW_ID --help
+  agent_example: mammoth workflow after unset 123 --yes
+  unit_tests:
+  - UT-WORKFLOW-AFTER-UNSET
+  contract_tests:
+  - CT-WORKFLOW-AFTER-UNSET-HUMAN
+  - CT-WORKFLOW-AFTER-UNSET-JSON
+  - CT-WORKFLOW-AFTER-UNSET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Stops the workflow running after another one; it stops starting at once.
+  reviewed_by: primary
 - command_id: workflow.archive
   command_path: workflow archive
   disposition: command
@@ -33875,6 +34098,47 @@ commands:
   undo_test: null
   known_restrictions: null
   reviewed_by: primary
+- command_id: workflow.delete-plan
+  command_path: workflow delete-plan
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflows.WorkflowsAPI.delete_plan
+  sdk_conversion: Call mammoth.api.workflows.WorkflowsAPI.delete_plan with validated request fields.
+  request_model: WorkflowDeletePlanRequest
+  result_model: WorkflowDeletePlanResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: LT-WORKFLOW-DELETE-PLAN
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow delete-plan WORKFLOW_ID --help
+  agent_example: mammoth workflow delete-plan 123
+  unit_tests:
+  - UT-WORKFLOW-DELETE-PLAN
+  contract_tests:
+  - CT-WORKFLOW-DELETE-PLAN-HUMAN
+  - CT-WORKFLOW-DELETE-PLAN-JSON
+  - CT-WORKFLOW-DELETE-PLAN-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Read-only: what deleting the workflow would take with it (steps, result tables,
+    dashboards, schedules, inputs), each item with its default tick and whether another workflow locks
+    it; workflow delete sends the ticked, unlocked keys.'
+  reviewed_by: primary
 - command_id: workflow.describe.build
   command_path: workflow describe build
   disposition: command
@@ -34400,6 +34664,47 @@ commands:
   undo_test: null
   known_restrictions: Makes the workflow's secret run link (a new one replaces the old); the secret shows
     only once.
+  reviewed_by: primary
+- command_id: workflow.link.fire
+  command_path: workflow link fire
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - PostWorkflowLinkCall
+  positionals: []
+  options: []
+  sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire
+  sdk_conversion: Call mammoth.api.workflow_triggers.WorkflowTriggersAPI.link_fire with validated request
+    fields.
+  request_model: WorkflowLinkFireRequest
+  result_model: WorkflowLinkFireResult
+  mutation_class: benign_mutation
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Overwrites the workflow link; the earlier value is not kept, so it cannot be restored.
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-LINK-FIRE
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields:
+  - link
+  human_example: mammoth workflow link fire --help
+  agent_example: mammoth workflow link fire --input /private/path/request.json
+  unit_tests:
+  - UT-WORKFLOW-LINK-FIRE
+  contract_tests:
+  - CT-WORKFLOW-LINK-FIRE-HUMAN
+  - CT-WORKFLOW-LINK-FIRE-JSON
+  - CT-WORKFLOW-LINK-FIRE-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Starts the workflow from its secret link, as anyone holding the link can; a run
+    already in flight is named, not started twice.
   reviewed_by: primary
 - command_id: workflow.link.remove
   command_path: workflow link remove
@@ -34939,6 +35244,51 @@ commands:
   undo_test: null
   known_restrictions: Sets the workflow's clock (replaces one it has); pause or remove it with automation
     commands.
+  reviewed_by: primary
+- command_id: workflow.schedule.unset
+  command_path: workflow schedule unset
+  disposition: command
+  alias_of: null
+  operation_ids:
+  - DeleteWorkflowSchedule
+  positionals:
+  - name: workflow_id
+    type: int
+    required: true
+    metavar: WORKFLOW_ID
+    falls_back_to_field: null
+    help: ID of the workflow.
+  options: []
+  sdk_symbol: mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset
+  sdk_conversion: Call mammoth.api.workflow_triggers.WorkflowTriggersAPI.schedule_unset with validated
+    request fields.
+  request_model: WorkflowScheduleUnsetRequest
+  result_model: WorkflowScheduleUnsetResult
+  mutation_class: destructive
+  edits_target: false
+  undo:
+    strategy: irreversible
+    reason: Deletes the workflow schedule permanently; Mammoth keeps no copy to restore.
+  confirmation: prompt_or_yes
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_disposable_project
+  live_test: LT-WORKFLOW-SCHEDULE-UNSET
+  live_exemption_reason: null
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: []
+  human_example: mammoth workflow schedule unset WORKFLOW_ID --help
+  agent_example: mammoth workflow schedule unset 123 --yes
+  unit_tests:
+  - UT-WORKFLOW-SCHEDULE-UNSET
+  contract_tests:
+  - CT-WORKFLOW-SCHEDULE-UNSET-HUMAN
+  - CT-WORKFLOW-SCHEDULE-UNSET-JSON
+  - CT-WORKFLOW-SCHEDULE-UNSET-ERROR
+  draft_test: null
+  undo_test: null
+  known_restrictions: Takes the workflow's clock off; it stops starting on it at once.
   reviewed_by: primary
 - command_id: workflow.sentence.dismiss-ask
   command_path: workflow sentence dismiss-ask

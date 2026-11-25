@@ -127,6 +127,10 @@ as defaults, and let the user's request override them:
   place), never both. Overwriting is as common as adding. If the user said
   "fix", "clean" or "change" a column, use `existing_column`. If they said
   "add", "calculate" or "flag", use `new_column`. If it is not clear, ask.
+- Join tables at one grain. A table with one row per day and one with one row
+  per order: `pivot` the finer one to the coarser key first, or the join repeats
+  and double-counts rows. With no shared grain, put each table on its own page
+  of one board ([dashboards](dashboards.md#limits)) instead of joining.
 - Joins are nearly always `LEFT` on one key column. Use `INNER`, `RIGHT`,
   `OUTER` or a key of two or more columns only when the user asks for it or
   the data needs it, and say why in your report.

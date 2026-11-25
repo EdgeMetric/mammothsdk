@@ -350,9 +350,24 @@ def _object_state(read_by: str, read_data: Any) -> dict[str, Any]:
     return {"kind": "object", "read_by": read_by, "object": _extract_object(read_data)}
 
 
+def _as_plain(value: Any) -> Any:
+    """A read's SDK model as the dict it prints as; any other value unchanged.
+
+    Some reads (``dashboard canvas get``) return a pydantic model, which every trim below
+    would pass over as "not a dict" and print whole.
+    """
+    dump = getattr(value, "model_dump", None)
+    return dump(mode="json") if callable(dump) else value
+
+
 def _extract_object(read_data: Any) -> Any:
+    read_data = _as_plain(read_data)
+    if isinstance(read_data, list):
+        return [_scalar_fields(item) for item in read_data]
     if not isinstance(read_data, dict):
         return read_data
+    if "id" not in read_data and isinstance(read_data.get("canvas"), dict):
+        return _canvas_summary(read_data)
     # A single-record read (``view.get``, ``dataset.get``, ...) carries its own
     # ``id`` at the top level; a listing read (``view.list``, ...) wraps its
     # items under a plural key instead. Checking for ``id`` first keeps a
@@ -365,16 +380,47 @@ def _extract_object(read_data: Any) -> Any:
     return _scalar_fields(read_data)
 
 
+def _canvas_summary(document: dict[str, Any]) -> dict[str, Any]:
+    """The saved state of a dashboard canvas: its version, its bake and its pages.
+
+    A canvas document has no ``id`` and no top-level scalars, and its first list
+    (``unavailable_files``) is not its content.
+
+    Args:
+        document: The ``dashboard canvas get`` result.
+
+    Returns:
+        ``sequence``, ``stale_bake``, ``bake_error`` (each when the server set it) and
+        ``pages`` (``id``, ``title``, ``kind`` of each).
+    """
+    meta = document.get("meta")
+    facts = meta if isinstance(meta, dict) else {}
+    pages = document["canvas"].get("pages")
+    return {
+        **{
+            key: facts[key]
+            for key in ("sequence", "stale_bake", "bake_error")
+            if facts.get(key) is not None
+        },
+        "pages": [
+            {key: page.get(key) for key in ("id", "title", "kind") if key in page}
+            for page in (pages if isinstance(pages, list) else [])
+            if isinstance(page, dict)
+        ],
+    }
+
+
 def _first_list(record: dict[str, Any]) -> list[Any] | None:
-    """The first list-of-dicts value in a ``*.list`` read's result, if any."""
+    """The first list-of-records value in a ``*.list`` read's result, if any."""
     for value in record.values():
-        if isinstance(value, list) and (not value or isinstance(value[0], dict)):
+        if isinstance(value, list) and (not value or isinstance(_as_plain(value[0]), dict)):
             return value
     return None
 
 
 def _scalar_fields(item: Any) -> Any:
     """Keep only an object's top-level scalar fields (every id is one)."""
+    item = _as_plain(item)
     if not isinstance(item, dict):
         return item
     return {

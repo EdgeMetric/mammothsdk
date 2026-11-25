@@ -2,6 +2,16 @@
 
 Every command returns the standard JSON envelope. On nonzero exit, read the error envelope and its `recovery_commands`; do not guess request fields. "Status on release" is joined from `docs/release-capability-matrix.json`: *ran once* means one bounded live run succeeded on the named CLI release, *untried* means nobody has run it (use it normally: confirm writes with the user, check the result afterwards), *not supported* means the backend refuses it. When this file disagrees with [capabilities](../capabilities.md) or a recipe, they win. Envelope shapes: [machine output](../machine-output.md).
 
+### `annotation.access`
+
+Run: `mammoth annotation access`. Exact input fields: `mammoth schema get annotation.access`.
+
+Example: `mammoth annotation access`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AnnotationAccessResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `annotation.comment.add`
 
 Run: `mammoth annotation comment add`. Exact input fields: `mammoth schema get annotation.comment.add`.
@@ -9,6 +19,26 @@ Run: `mammoth annotation comment add`. Exact input fields: `mammoth schema get a
 Example: `mammoth annotation comment add 123 --input '{"body": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `AnnotationCommentAddResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `annotation.comment.delete`
+
+Run: `mammoth annotation comment delete`. Exact input fields: `mammoth schema get annotation.comment.delete`.
+
+Example: `mammoth annotation comment delete 123 456 --yes`. Illustrative only: append `--yes` after observing an owned target.
+
+Result: `AnnotationCommentDeleteResult`; mutation `destructive`, confirmation `prompt_or_yes`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `annotation.comment.edit`
+
+Run: `mammoth annotation comment edit`. Exact input fields: `mammoth schema get annotation.comment.edit`.
+
+Example: `mammoth annotation comment edit 123 456 --input '{"body": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `AnnotationCommentEditResult`; mutation `benign_mutation`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

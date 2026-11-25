@@ -12,8 +12,8 @@ appear in the command path (``connector_key``, then ``connection_key``, then
 Connection secrets always come from the strict ``--input`` document, never a
 positional argument: ``config`` on ``connection create``, ``credentials`` on
 ``connection update``, and the AI-chat ``body`` payloads. ``connection
-create``/``update`` and ``ds-config create``/``update`` cause an external
-side effect against a third-party service and always require ``--yes``;
+create``/``update`` and ``ds-config create``/``update`` reach a third-party
+service and always require ``--yes`` (``ds-config create`` saves nothing);
 ``connection delete`` and the ``ds-config`` deletes are destructive and
 accept a prompt or ``--yes``.
 
@@ -42,6 +42,7 @@ from mammoth_cli.runtime.confirm import (
     POLICY_YES_ALWAYS,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.input_loader import refuse_inline_secrets
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.session import (
     DEFAULT_MUTATION_JOB_TIMEOUT,
@@ -49,6 +50,7 @@ from mammoth_cli.runtime.session import (
     require_project,
     resolved_project,
 )
+from mammoth_cli.runtime.shell_text import command_with_input
 
 _DS_CONFIG_CREATE_OPTIONAL = ("query", "file_source", "table", "profile", "validate", "data_sample")
 _QUERY_OPTIONAL = ("table", "profile")
@@ -510,19 +512,6 @@ def open_credential_card(messages: Any) -> str | None:
     return None
 
 
-def _refuse_inline_secrets(invocation: Invocation) -> None:
-    """Refuse ``--input '{...}'``: a key typed inline lands in shell history and ``ps``."""
-    source = (invocation.input_file or "").lstrip("@").lstrip()
-    if source.startswith(("{", "[")):
-        raise CliError(
-            code=CODE_INVALID_ARGUMENT,
-            message="Credentials must come from a file or stdin, not inline JSON.",
-            exit_status=EXIT_USAGE,
-            hint="Write them to a file readable only by you and pass --input @FILE, "
-            "or pipe them with --input - --input-format json.",
-        )
-
-
 def connector_draft_credentials(invocation: Invocation) -> HandlerResult:
     """Answer a connector draft's open key card: test the key and connect.
 
@@ -547,7 +536,7 @@ def connector_draft_credentials(invocation: Invocation) -> HandlerResult:
             message=f"Draft id must be a number, got {draft_id!r}.",
             exit_status=EXIT_USAGE,
         )
-    _refuse_inline_secrets(invocation)
+    refuse_inline_secrets(invocation.input_file)
     document = invocation.load_input() or {}
     credentials = _require_field(document, "credentials")
     if not isinstance(credentials, dict) or not credentials:
@@ -638,8 +627,67 @@ def connector_connection_query(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 
+def _no_tables_reason(data: dict[str, Any]) -> str | None:
+    """Why a table list is not usable, or ``None`` when it is."""
+    if data.get("needs_sign_in"):
+        return "its sign-in was refused: sign the connection in again"
+    if data.get("failed"):
+        return "the tables could not be read; try again"
+    if data.get("shape") == "other":
+        return "this connection lists no tables (pick its files or data in the web app)"
+    return None
+
+
+def connector_connection_tables(invocation: Invocation) -> HandlerResult:
+    """List the tables of a saved connection. Connection key is positional."""
+    project_id = require_project(invocation)
+    connection_key = _require_string_positional_at(invocation, 0, "connection key")
+    with open_service(invocation) as (service, auth):
+        data = service.call(_symbol(invocation), connection_key=connection_key)
+    if isinstance(data, dict):
+        reason = _no_tables_reason(data)
+        if reason is not None:
+            data = {**data, "warning": f"No usable table list: {reason}."}
+    return data, _meta(invocation, auth.workspace_id, project_id)
+
+
+def _ds_config_next(
+    connector_key: str, connection_key: str, document: dict[str, Any]
+) -> dict[str, Any]:
+    """The result fields naming the import of the query ``ds-config create`` just checked.
+
+    Args:
+        connector_key: The connector type.
+        connection_key: The saved connection.
+        document: The checked ``--input`` document.
+
+    Returns:
+        The fields (``next``, and ``next_input`` on Windows), with placeholders for what the check
+        did not name; empty for a file check, whose import takes other fields.
+    """
+    if document.get("file_source"):
+        return {}
+    spec = {
+        "ds_creation_type": "cloud",
+        "dataset_spec": {
+            "connector_key": connector_key,
+            "connection_key": connection_key,
+            "query_properties": {
+                "ds_name": "NAME",
+                "table_name": document.get("table") or "TABLE",
+                "query": document.get("query") or "QUERY",
+            },
+        },
+    }
+    return command_with_input(["mammoth", "dataset", "create"], spec)
+
+
 def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
-    """Sample a data source config; REST ``query`` is a JSON string. ``--yes`` always needed."""
+    """Check or sample a query on a connection; saves nothing. ``--yes`` always needed.
+
+    A REST ``query`` is a JSON string. The server only validates the config or returns sample
+    rows: no data source config and no dataset is made. ``dataset create`` imports the rows.
+    """
     project_id = require_project(invocation)
     connector_key = _require_string_positional_at(invocation, 0, "connector key")
     connection_key = _require_string_positional_at(invocation, 1, "connection key")
@@ -653,10 +701,14 @@ def connector_ds_config_create(invocation: Invocation) -> HandlerResult:
     enforce_confirmation(
         invocation,
         policy=POLICY_YES_ALWAYS,
-        action=f"create a data source config for connection {connection_key}",
+        action=f"check a data source config on connection {connection_key} (saves nothing)",
     )
     with open_service(invocation) as (service, auth):
-        data = service.call(_symbol(invocation), **kwargs)
+        # The route answers with a job; the result to mark is the job's.
+        data = service.wait_if_job(service.call(_symbol(invocation), **kwargs))
+    if isinstance(data, dict):
+        fields = _ds_config_next(connector_key, connection_key, document)
+        data = {**data, "saved": False, **fields}
     return data, _meta(invocation, auth.workspace_id, project_id)
 
 

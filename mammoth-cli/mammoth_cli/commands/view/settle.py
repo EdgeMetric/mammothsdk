@@ -15,6 +15,7 @@ from mammoth_cli.errors.envelope import (
     EXIT_API,
     CliError,
 )
+from mammoth_cli.runtime.verify import FAILURE_STATUSES
 from mammoth_cli.services.read_memo import prefetch
 
 
@@ -323,9 +324,8 @@ def _rows_before(
         return {"rows_before": None, "rows_before_error": f"{type(exc).__name__}: {exc}"}
 
 
-#: ``status`` words a task write's own response uses for a refusal.
-_REFUSED_STATUSES = frozenset({"error", "failed", "failure"})
-#: Backend error code for a step whose columns later steps still read.
+#: Backend error code for a step whose columns are still read elsewhere: by steps (of
+#: this view or another) or by derivatives (metrics, explore cards).
 _DEPENDENT_STEPS_ERROR_CODE = 7010
 
 
@@ -333,7 +333,7 @@ def reject_refused_task_write(data: Any, view_id: int, task_id: int, action: str
     """Raise when the server refused a ``view task update``/``delete`` outright.
 
     The refusal comes back as HTTP 202 with ``status: "error"`` and an ``error_code``
-    (7010: later steps use this step's columns) in the body, and the step is left as it
+    (7010: something still reads this step's columns) in the body, and the step is left as it
     was. It must decide the outcome before any pipeline wait: a pipeline still busy from
     an earlier change would otherwise turn it into ``outcome: pending`` and exit 0.
 
@@ -345,14 +345,13 @@ def reject_refused_task_write(data: Any, view_id: int, task_id: int, action: str
 
     Raises:
         CliError: ``api_error`` (exit 1) naming the server's message and, for 7010,
-            the steps that depend on this one.
+            the steps and derivatives that read this step's columns.
     """
     if not isinstance(data, dict):
         return
     status = data.get("status")
     error_code = data.get("error_code")
-    refused = isinstance(status, str) and status.lower() in _REFUSED_STATUSES
-    if not refused and error_code is None:
+    if not isinstance(status, str) or status.lower() not in FAILURE_STATUSES:
         return
     raw_info = data.get("error_info")
     error_info: dict[str, Any] = raw_info if isinstance(raw_info, dict) else {}
@@ -369,14 +368,12 @@ def reject_refused_task_write(data: Any, view_id: int, task_id: int, action: str
     if server_message:
         message += f" Server: {server_message}"
     hint = None
-    dependents = _dependent_steps(error_info)
-    if error_code == _DEPENDENT_STEPS_ERROR_CODE or dependents:
-        named = ", ".join(dependents) if dependents else "later steps"
-        message += f" Later steps use columns this step makes: {named}."
-        hint = (
-            f"Nothing changed. Delete or change the dependent steps first, last step first "
-            f"('mammoth view task list {view_id}' shows them), then run this again."
-        )
+    steps, views = _dependent_steps(error_info)
+    derivatives = _dependent_derivatives(error_info)
+    if error_code == _DEPENDENT_STEPS_ERROR_CODE or steps or derivatives:
+        message += " Something still reads the columns this step makes: "
+        message += f"{', '.join(steps + derivatives) or 'the server names nothing'}."
+        hint = _dependents_hint(view_id, views, bool(derivatives))
     raise CliError(
         code=CODE_API_ERROR,
         message=message,
@@ -387,26 +384,90 @@ def reject_refused_task_write(data: Any, view_id: int, task_id: int, action: str
             "task_id": task_id,
             "status": status,
             "error_code": error_code,
-            "dependent_steps": dependents,
+            "dependent_steps": steps,
+            "dependent_derivatives": derivatives,
         },
     )
 
 
-def _dependent_steps(error_info: dict[str, Any]) -> list[str]:
-    """``"step N (KEY) of view V"`` for each step a 7010 refusal names, in step order."""
+def _dependents(error_info: dict[str, Any], kind: str) -> list[dict[str, Any]]:
+    """The entries of one kind a 7010 refusal names, over all columns.
+
+    Args:
+        error_info: The refusal's ``error_info``.
+        kind: ``"tasks"`` or ``"derivatives"``.
+
+    Returns:
+        The entries, with repeats when several columns name the same one.
+    """
     by_column = error_info.get("column_to_dependencies_dict")
-    found: dict[tuple[Any, Any], str] = {}
+    found: list[dict[str, Any]] = []
     for entry in by_column.values() if isinstance(by_column, dict) else []:
-        tasks = entry.get("tasks") if isinstance(entry, dict) else None
-        for task in tasks if isinstance(tasks, list) else []:
-            if not isinstance(task, dict):
-                continue
-            raw_param = task.get("param")
-            param: dict[str, Any] = raw_param if isinstance(raw_param, dict) else {}
-            key = (task.get("dataview_id"), task.get("sequence"))
-            kind = param.get("TASK_KEY")
-            found[key] = f"step {key[1]}" + (f" ({kind})" if kind else "") + f" of view {key[0]}"
-    return [found[key] for key in sorted(found, key=lambda k: (str(k[0]), str(k[1]).zfill(6)))]
+        listed = entry.get(kind) if isinstance(entry, dict) else None
+        found += [item for item in listed if isinstance(item, dict)] if listed else []
+    return found
+
+
+def _dependent_steps(error_info: dict[str, Any]) -> tuple[list[str], list[Any]]:
+    """The steps a 7010 refusal names.
+
+    Args:
+        error_info: The refusal's ``error_info``.
+
+    Returns:
+        ``"step N (KEY) of view V"`` per step, and the views they are in, both in order.
+    """
+    found: dict[tuple[Any, Any], str] = {}
+    for task in _dependents(error_info, "tasks"):
+        raw_param = task.get("param")
+        param: dict[str, Any] = raw_param if isinstance(raw_param, dict) else {}
+        key = (task.get("dataview_id"), task.get("sequence"))
+        kind = param.get("TASK_KEY")
+        found[key] = f"step {key[1]}" + (f" ({kind})" if kind else "") + f" of view {key[0]}"
+    keys = sorted(found, key=lambda k: (str(k[0]), str(k[1]).zfill(6)))
+    return [found[key] for key in keys], list(dict.fromkeys(key[0] for key in keys))
+
+
+def _dependent_derivatives(error_info: dict[str, Any]) -> list[str]:
+    """The derivatives (metrics, explore cards) a 7010 refusal names.
+
+    Args:
+        error_info: The refusal's ``error_info``.
+
+    Returns:
+        ``'derivative ID ("name")'`` per derivative, the name only when the server gives one.
+    """
+    found: dict[Any, str] = {}
+    for item in _dependents(error_info, "derivatives"):
+        raw_shown = item.get("display_properties")
+        shown: dict[str, Any] = raw_shown if isinstance(raw_shown, dict) else {}
+        raw_info = shown.get("info")
+        info: dict[str, Any] = raw_info if isinstance(raw_info, dict) else {}
+        name = item.get("display_name") or info.get("title")
+        found[item.get("id")] = f"derivative {item.get('id')}" + (f' ("{name}")' if name else "")
+    return list(found.values())
+
+
+def _dependents_hint(view_id: int, views: list[Any], has_derivatives: bool) -> str:
+    """What to do about a 7010 refusal, naming only what the refusal names.
+
+    Args:
+        view_id: The view the refused write was on.
+        views: The views whose steps read the columns.
+        has_derivatives: Whether derivatives of the view read them.
+
+    Returns:
+        The hint.
+    """
+    hint = "Nothing changed."
+    if views:
+        lists = ", ".join(f"'mammoth view task list {view}'" for view in views)
+        hint += f" Delete or change the steps named first, last step first ({lists})."
+    if has_derivatives:
+        hint += (
+            f" Delete or change the derivatives named ('mammoth view derivative list {view_id}')."
+        )
+    return hint + " Then run this again."
 
 
 def _settle_async_view_write(

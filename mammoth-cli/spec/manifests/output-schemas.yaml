@@ -661,6 +661,33 @@ schemas:
     properties:
       row_count: {type: integer}
       unstructured_rows: {type: array, items: {type: object}}
+  # The API's 200 body plus the CLI's `warning`; the pinned prod spec has no such route yet.
+  ConnectionTables:
+    type: object
+    properties:
+      shape:
+        enum: [tables, other]
+      tables:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            path:
+              type: string
+            group:
+              type: [string, "null"]
+            row_estimate:
+              type: [integer, "null"]
+      total:
+        type: integer
+      needs_sign_in:
+        type: boolean
+      failed:
+        type: boolean
+      warning:
+        type: string
   DatasetColumnStats:
     type: object
     required: [datasets, dataset_count, note]
@@ -831,11 +858,19 @@ schemas:
       browse: {type: object}
   SchemaGet:
     type: object
-    required: [command_id, command_path]
+    required: [requested, schemas, errors]
     properties:
-      command_id: {type: string}
-      command_path: {type: string}
-      output_schema: {type: object}
+      requested: {type: integer}
+      schemas:
+        type: array
+        items:
+          type: object
+          required: [command_id, command_path]
+          properties:
+            command_id: {type: string}
+            command_path: {type: string}
+            output_schema: {type: object}
+      errors: {type: array, items: {type: object}}
   SchemaList:
     type: object
     required: [commands, total]

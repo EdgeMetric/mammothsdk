@@ -45,7 +45,8 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
 
     Returns ``{"figure", "kind", "label", "descriptors": {series: id}}`` in
     figure order. Detail tables and filter controls are not numbers and are
-    left out.
+    left out. A card's ``period`` and ``filters`` are its value's own; its other
+    series (the previous period, the sparkline) keep theirs in ``series_filters``.
     """
     meta = canvas_doc.get("meta")
     figures = meta.get("figures") if isinstance(meta, Mapping) else None
@@ -55,6 +56,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
     axes = _tile_axes(canvas_doc)
     periods = _periods(meta)
     filters = _tile_filters(meta)
+    series_filters = _card_series_filters(meta)
     bindings: list[dict[str, Any]] = []
     for figure, entry in figures.items():
         parts = str(figure).split(":")
@@ -71,6 +73,7 @@ def figure_bindings(canvas_doc: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "axis": axes.get(str(figure)),
                 "period": periods.get(str(figure)),
                 "filters": filters.get(str(figure)),
+                "series_filters": series_filters.get(str(figure), {}),
             }
         )
     return bindings
@@ -82,7 +85,10 @@ def _periods(meta: Any) -> dict[str, str]:
     receipts = meta.get("receipts") if isinstance(meta, Mapping) else None
     if not isinstance(receipts, Mapping):
         return {}
-    periods = {str(figure): _period_of(receipt) for figure, receipt in receipts.items()}
+    periods = {
+        str(figure): _period_of(_shown_receipt(str(figure), receipt))
+        for figure, receipt in receipts.items()
+    }
     return {figure: period for figure, period in periods.items() if period}
 
 
@@ -97,8 +103,44 @@ def _tile_filters(meta: Any) -> dict[str, list[str]]:
     receipts = meta.get("receipts") if isinstance(meta, Mapping) else None
     if not isinstance(receipts, Mapping):
         return {}
-    filters = {str(figure): _filters_of(receipt) for figure, receipt in receipts.items()}
+    filters = {
+        str(figure): _filters_of(_shown_receipt(str(figure), receipt))
+        for figure, receipt in receipts.items()
+    }
     return {figure: texts for figure, texts in filters.items() if texts}
+
+
+def _is_card(figure: str) -> bool:
+    parts = figure.split(":")
+    return len(parts) == 3 and _KINDS.get(parts[1]) == "kpi"
+
+
+def _shown_receipt(figure: str, receipt: Any) -> Any:
+    """The part of a receipt that scopes the number shown: a card's value series alone.
+
+    A card with a comparison bakes ``value``, ``prev`` and ``spark``; joining their filters
+    made the card look filtered to two windows at once (PRD-3699).
+    """
+    series = receipt.get("series") if isinstance(receipt, Mapping) else None
+    if not _is_card(figure) or not isinstance(series, Mapping) or "value" not in series:
+        return receipt
+    return {"series": {"value": series["value"]}}
+
+
+def _card_series_filters(meta: Any) -> dict[str, dict[str, list[str]]]:
+    """The filters of each card's other series: ``{figure: {"prev": ["..."]}}``."""
+    receipts = meta.get("receipts") if isinstance(meta, Mapping) else None
+    found: dict[str, dict[str, list[str]]] = {}
+    for figure, receipt in receipts.items() if isinstance(receipts, Mapping) else ():
+        series = receipt.get("series") if isinstance(receipt, Mapping) else None
+        if not _is_card(str(figure)) or not isinstance(series, Mapping):
+            continue
+        found[str(figure)] = {
+            str(name): _filters_of({"series": {name: entry}})
+            for name, entry in series.items()
+            if name != "value"
+        }
+    return found
 
 
 def _filters_of(receipt: Any) -> list[str]:
@@ -263,7 +305,18 @@ def _drawable(entry: dict[str, Any], axis: tuple[str, frozenset[str]] | None) ->
 def attach_values(
     bindings: list[dict[str, Any]], results: Mapping[str, Any]
 ) -> list[dict[str, Any]]:
-    """Fill each figure with the evaluated numbers of its descriptors."""
+    """Fill each figure with the evaluated numbers of its descriptors.
+
+    A card always has its number at the top level; its previous period and sparkline, when
+    it has them, are under ``series`` with the filters they count under.
+
+    Args:
+        bindings: :func:`figure_bindings` of the canvas.
+        results: The evaluated descriptors by id.
+
+    Returns:
+        One entry per figure, in the order of ``bindings``.
+    """
     values: list[dict[str, Any]] = []
     for binding in bindings:
         series = {
@@ -275,9 +328,12 @@ def attach_values(
             for key in ("figure", "kind", "label", "period", "filters")
             if binding[key]
         }
-        if binding["kind"] == "kpi" and set(series) == {"value"}:
-            item.update(series["value"])
-        else:
+        if binding["kind"] == "kpi":
+            item.update(series.pop("value", {}))
+            for name, texts in binding["series_filters"].items():
+                if texts and name in series:
+                    series[name]["filters"] = texts
+        if series:
             item["series"] = series
         values.append(item)
     return values

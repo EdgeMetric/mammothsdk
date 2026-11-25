@@ -27,11 +27,11 @@
   },
   "mapping_counts": {
     "alias": 2,
-    "cli_and_sdk_mapped": 742,
+    "cli_and_sdk_mapped": 743,
     "internal_only": 38,
     "protocol_only": 12,
     "removed_on_server": 15,
-    "unmapped": 192
+    "unmapped": 191
   },
   "unrouted_sdk_calls": [
     {
@@ -43,6 +43,66 @@
         "mammoth.api.agents.AgentsAPI._run_action"
       ],
       "commands": []
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/annotations/access",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.access"
+      ],
+      "commands": [
+        "annotation.access"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/workspaces/{}/projects/{}/annotations/{}/comments/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.comment_delete"
+      ],
+      "commands": [
+        "annotation.comment.delete"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/workspaces/{}/projects/{}/annotations/{}/comments/{}",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.annotations.AnnotationsAPI.comment_edit"
+      ],
+      "commands": [
+        "annotation.comment.edit"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/delete",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.delete"
+      ],
+      "commands": [
+        "workflow.delete"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/workspaces/{}/projects/{}/workflows/{}/delete-plan",
+      "state": "removed_on_server",
+      "pending_in": null,
+      "sdk_symbols": [
+        "mammoth.api.workflows.WorkflowsAPI.delete_plan"
+      ],
+      "commands": [
+        "workflow.delete-plan"
+      ]
     },
     {
       "method": "GET",
@@ -102,7 +162,10 @@
     "view.data.forecast",
     "view.explore-panel.get",
     "view.pipeline.items-all",
+    "workflow.after.unset",
+    "workflow.link.fire",
     "workflow.run.start",
+    "workflow.schedule.unset",
     "workspace.user.get"
   ],
   "rows": [
@@ -20959,12 +21022,14 @@
       "operation_id": "ListConnectionTables",
       "method": "GET",
       "path": "/workspaces/{workspace_id}/projects/{project_id}/connector-drafts/connection-tables",
-      "canonical_command": null,
-      "schema_id": null,
-      "sdk_symbol": null,
-      "bound_commands": [],
-      "mapping_state": "unmapped",
-      "mapping_gap_reason": "No reviewed CLI command or SDK symbol recorded.",
+      "canonical_command": "connector.connection.tables",
+      "schema_id": "connector.connection.tables",
+      "sdk_symbol": "mammoth.api.connector_drafts.ConnectorDraftsAPI.connection_tables",
+      "bound_commands": [
+        "connector.connection.tables"
+      ],
+      "mapping_state": "cli_and_sdk_mapped",
+      "mapping_gap_reason": null,
       "evidence": null,
       "evidence_version": null
     },

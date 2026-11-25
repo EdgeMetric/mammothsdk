@@ -37,6 +37,7 @@ from mammoth_cli.runtime.confirm import (
     POLICY_NONE,
     enforce_confirmation,
 )
+from mammoth_cli.runtime.input_loader import refuse_inline_secrets
 from mammoth_cli.runtime.invocation import Invocation
 from mammoth_cli.runtime.reveal import REVEAL_COMMANDS
 from mammoth_cli.runtime.session import open_service, resolved_project
@@ -52,7 +53,9 @@ from mammoth_cli.services.dashboard_pages import (
     check_added_pages,
     check_page_specs,
     generate_substitutions,
+    other_source_step,
     page_substitutions,
+    refused_asks,
 )
 from mammoth_cli.services.dashboard_review import (
     CANVAS_GET,
@@ -150,6 +153,10 @@ _HANDLE_KEPT = frozenset(
 )
 
 
+#: Commands whose input carries a secret: a file or stdin only.
+_SECRET_INPUT = frozenset({"workflow.link.fire"})
+
+
 def _check_sdk_rules(command_id: str, kwargs: dict[str, Any]) -> None:
     rule = _SDK_RULES.get(command_id)
     if rule is None:
@@ -176,6 +183,8 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             exit_status=EXIT_USAGE,
         )
 
+    if invocation.command_id in _SECRET_INPUT:
+        refuse_inline_secrets(invocation.input_file)
     document = _bound_document(invocation)
     positionals = _generated_positionals(invocation)
     kwargs = bind_command_inputs(invocation.command_id, document, **positionals)
@@ -492,6 +501,7 @@ def _reflect_not_applied(
             f"Add the card directly: mammoth dashboard figure add {target} --input "
             '\'{"dataview_id": VIEW_ID, "figure": {"kind": "kpi", "measure": '
             '"COLUMN", "agg": "sum"}}\'',
+            other_source_step(target, "VIEW_ID"),
         ],
     }
     if isinstance(claim, str):
@@ -536,6 +546,7 @@ def _authoring_problems(
         partial = generate_substitutions(params.get("intent"), canvas_doc, data.get("message"))
     elif command_id == "dashboard.chat.edit":
         partial = generate_substitutions(None, canvas_doc, data.get("message"))
+        partial += refused_asks(data.get("asks"))
     extra: dict[str, Any] = {}
     if broken:
         extra["bake_ok"] = False

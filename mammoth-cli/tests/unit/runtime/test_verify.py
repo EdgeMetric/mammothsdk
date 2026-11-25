@@ -199,12 +199,18 @@ def test_warnings_collected_from_every_check_dict() -> None:
         {
             "status": "done",
             "join_check": {"notes": ["a key repeats"], "match_rate": 0.95},
-            "deliverable_check": {"warnings": [{"issue": "money_not_shown"}]},
+            "deliverable_check": {
+                "warnings": [
+                    {"issue": "money_not_shown"},
+                    {"issue": "refused", "detail": "SUM_events is not a measure"},
+                ]
+            },
         }
     )
     assert result["verify"]["warnings"] == [
         "a key repeats",
-        "{'issue': 'money_not_shown'}",
+        '{"issue": "money_not_shown"}',
+        "SUM_events is not a measure",
     ]
 
 

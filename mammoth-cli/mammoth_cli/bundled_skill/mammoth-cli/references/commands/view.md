@@ -256,7 +256,7 @@ Status on release: observed blocker — backend_error: PATCH with the schema's d
 
 Run: `mammoth view data aggregate`. Exact input fields: `mammoth schema get view.data.aggregate`.
 
-Example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth view data aggregate 123 456 --input '{"group_by": ["Channel"], "aggregations": [{"column": "Spend", "function": "SUM", "as_name": "Total Spend"}], "order_by": [["Total Spend", "desc"]]}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `ViewDataAggregateResult`; mutation `read`, confirmation `none`, wait policy `always_wait`.
 

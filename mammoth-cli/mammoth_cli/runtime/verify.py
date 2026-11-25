@@ -10,6 +10,7 @@ what it should" instead of re-deriving it per command.
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
@@ -64,7 +65,7 @@ OUTCOME_FAILED = "failed"
 OUTCOME_PARTIAL = "partial"
 _PENDING_STATES = frozenset({"staged", "processing"})
 
-_FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
+FAILURE_STATUSES = frozenset({"error", "failed", "failure"})
 _FAILURE_PIPELINE_STATES = frozenset({"error", "ref_error"})
 
 #: HTTP status codes that mean "accepted, not finished" when a write's own
@@ -214,15 +215,6 @@ def _outcome(data: dict[str, Any], verify: dict[str, Any]) -> str:
     the view again before building on it. ``failed`` is any other write that is not
     verified. Everything else is ``settled`` and its ``state`` block is the read-back.
     """
-    status = data.get("status")
-    if (
-        data.get("error_code") is not None
-        and isinstance(status, str)
-        and status.lower() in _FAILURE_STATUSES
-    ):
-        # The server refused the write itself: a pipeline still busy from an earlier
-        # change must not turn that into "pending" (exit 0).
-        return OUTCOME_FAILED
     pipeline_error = data.get("pipeline_error")
     unfinished = (
         isinstance(pipeline_error, dict) and pipeline_error.get("execution_state") == "unfinished"
@@ -380,7 +372,7 @@ def _verify_and_reason(
     if data.get("refused_files"):
         return False, "the server refused some of the files"
     for status in (data.get("status"), _job_status(data)):
-        if isinstance(status, str) and status.lower() in _FAILURE_STATUSES:
+        if isinstance(status, str) and status.lower() in FAILURE_STATUSES:
             return False, "the operation failed"
         if isinstance(status, str) and status.lower() == "processing":
             return False, _UNSETTLED_REASON
@@ -428,15 +420,25 @@ def _state(data: dict[str, Any]) -> str:
 def _warnings(data: dict[str, Any]) -> list[str]:
     notes: list[str] = []
     if data.get("synthetic_data") is True and isinstance(data.get("warnings"), list):
-        notes.extend(str(item) for item in data["warnings"])
+        notes.extend(_note(item) for item in data["warnings"])
     for key, value in data.items():
         if not key.endswith("_check") or not isinstance(value, dict):
             continue
         for list_key in ("notes", "warnings"):
             items = value.get(list_key)
             if isinstance(items, list):
-                notes.extend(item if isinstance(item, str) else str(item) for item in items)
+                notes.extend(_note(item) for item in items)
     return notes
+
+
+def _note(item: Any) -> str:
+    """One warning as text: a structured one by its own words, else as JSON."""
+    if isinstance(item, dict):
+        for key in ("detail", "message", "text"):
+            if isinstance(item.get(key), str) and item[key]:
+                return str(item[key])
+        return json.dumps(item, default=str)
+    return str(item)
 
 
 #: Upload statuses a person must act on before anything is built on the dataset.

@@ -46,6 +46,11 @@ def _how(goal: str, **invocation: object) -> dict[str, object]:
         ("join two datasets on customer id", "blend-by-key"),
         ("download my view as csv", "export-csv"),
         ("remove duplicate rows", "remove-duplicates"),
+        (
+            "import tables from an existing database connector into datasets",
+            "import-from-database",
+        ),
+        ("create a dataset from a postgres connection using a SQL query", "import-from-database"),
     ],
 )
 def test_a_goal_finds_its_recipe(goal: str, recipe: str) -> None:

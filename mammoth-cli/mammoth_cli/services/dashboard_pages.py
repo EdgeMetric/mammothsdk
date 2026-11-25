@@ -136,6 +136,63 @@ def refused_warning(note: str) -> dict[str, Any]:
     return {"issue": "refused", "detail": detail}
 
 
+#: The status of an ask that landed, and of one with nothing on the board to check.
+_LANDED_ASKS = frozenset({"applied", "not checked"})
+
+
+def refused_asks(asks: Any) -> list[dict[str, Any]]:
+    """One warning per ask of a chat edit the server says did not land.
+
+    Args:
+        asks: The result's ``asks``, a list of ``{ask, status}``.
+
+    Returns:
+        A warning for each ask whose status is neither ``applied`` nor ``not checked``.
+    """
+    return [
+        {"issue": "ask_not_applied", "detail": f"{ask.get('ask')}: {ask['status']}"}
+        for ask in (asks if isinstance(asks, list) else [])
+        if isinstance(ask, Mapping)
+        and isinstance(ask.get("status"), str)
+        and ask["status"] not in _LANDED_ASKS
+    ]
+
+
+def other_source_step(dashboard_id: Any, dataview_id: Any) -> str:
+    """How a board shows a view it is not built on: a page of its own."""
+    return (
+        "A board shows another view on its own page: mammoth dashboard page plan "
+        f"{dashboard_id}, then mammoth dashboard pages add {dashboard_id} with "
+        f'"dataset": {{"dataview_id": {dataview_id}}} on the page'
+    )
+
+
+#: The server's refusal of a figure built on another source than the board reads.
+_SOURCE_MISMATCH_CODE = "4DASH023"
+
+
+def append_figure(service: Any, symbol: str, kwargs: dict[str, Any]) -> Any:
+    """Append one figure; a refused source names the route that shows it.
+
+    Args:
+        service: The session service.
+        symbol: The SDK symbol of the append.
+        kwargs: Its keyword arguments (``dashboard_id`` and ``dataview_id`` included).
+
+    Returns:
+        The append's response.
+
+    Raises:
+        CliError: The refusal, with the pages route as its hint for 4DASH023.
+    """
+    try:
+        return service.call(symbol, **kwargs)
+    except CliError as error:
+        if (error.details or {}).get("backend_code") == _SOURCE_MISMATCH_CODE:
+            error.hint = other_source_step(kwargs["dashboard_id"], kwargs["dataview_id"])
+        raise
+
+
 def _as_list(added_ids: Any) -> list[Any]:
     """Return ``added_page_ids`` as a list (empty when the server sent none)."""
     return list(added_ids) if isinstance(added_ids, list) else []
