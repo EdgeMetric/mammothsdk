@@ -13,7 +13,6 @@ from ..sdk import JsonValue, build_client, read_sdk_errors
 from ..server import mcp_server
 from ..tool_kinds import CHANGES
 
-
 _FOLDER_PAGE = 100
 NO_SUCH_FOLDER = "No folder with folder_resource_id {0} in this project. list_files names them."
 

@@ -42,7 +42,7 @@ class CreateFolder(MammothModel):
 
     name: str = Field(..., min_length=1, description="Name for the new folder")
     parent_folder_id: int | None = Field(
-        None, description="Parent folder's id (its label id); omitted, the folder is made at the root"
+        None, description="Parent folder's id (its label id); omitted, it is made at the root"
     )
 
 
