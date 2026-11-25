@@ -14,8 +14,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`, with `--reveal` (the `callback_secret` is shown only once). `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
 
+### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
+
+- Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
+
 ### Fixed (next mammoth-cli)
 
+- `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: steps or derivatives still read this step's columns; they are named, with where to change them). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
 - `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
 - `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
 

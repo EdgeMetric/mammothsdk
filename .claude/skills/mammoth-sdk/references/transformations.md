@@ -416,7 +416,7 @@ await view.pivot(
 )
 ```
 
-Aggregate functions: `SUM`, `AVG`, `MIN`, `MAX`, `COUNT`, `COUNT_DISTINCT`, `STDDEV`, `VARIANCE`, `MEDIAN`, `FIRST`, `LAST`, `CONCAT`
+Aggregate functions: `SUM`, `AVG`, `MIN`, `MAX`, `COUNT`, `COUNT_DISTINCT`, `STDDEV`, `CONCAT`. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST` are refused with `MammothValidationError`: the server's pivot does not run them.
 
 **Payload**: GROUP_BY uses `COLUMN`/`ORDER` keys. SELECT uses `FUNCTION`/`COLUMN`/`AS`/`ORDER` keys.
 

@@ -28,6 +28,7 @@ from mammoth_cli.commands.view.export_dataset import (
 from mammoth_cli.commands.view.settle import (
     _rows_before,
     _settle_async_view_write,
+    reject_refused_task_write,
 )
 from mammoth_cli.errors.envelope import (
     CODE_INVALID_ARGUMENT,
@@ -478,6 +479,7 @@ def view_task_delete(invocation: Invocation) -> HandlerResult:
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
         data = service.call(_symbol(invocation), **kwargs)
+        reject_refused_task_write(data, dataview_id, task_id, "delete")
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )
@@ -546,6 +548,7 @@ def view_task_update(invocation: Invocation) -> HandlerResult:
             )
         before = _rows_before(service, dataset_id, dataview_id, invocation.project)
         data = service.call(_symbol(invocation), **kwargs)
+        reject_refused_task_write(data, dataview_id, task_id, "update")
         data = _settle_async_view_write(
             service, dataset_id, dataview_id, invocation.project, data, before
         )

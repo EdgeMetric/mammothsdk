@@ -1036,6 +1036,46 @@ def build_unnest_params(
 # ---------------------------------------------------------------------------
 
 
+# PIVOT functions the server runs (dataview validators/utils.py
+# check_if_function_is_valid, and the pivot op's AGG_FUNC_MAP). It refuses any
+# other name with 400 "Invalid function used in parameter" (5GENR010), so
+# VARIANCE, MEDIAN, FIRST and LAST are refused here, before the call.
+_PIVOT_FUNCTIONS = frozenset(
+    {
+        AggregateFunction.COUNT,
+        AggregateFunction.COUNT_DISTINCT,
+        AggregateFunction.SUM,
+        AggregateFunction.AVG,
+        AggregateFunction.MIN,
+        AggregateFunction.MAX,
+        AggregateFunction.STDDEV,
+        AggregateFunction.CONCAT,
+    }
+)
+# Pivot and crosstab spell COUNT_DISTINCT as DISTINCT_COUNT on the server
+# (check_if_function_is_valid for pivot; dba_const.py for the crosstab op).
+_AGGREGATE_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
+ERR_PIVOT_UNSUPPORTED_FN = (
+    "Pivot does not support the {fn} function. Supported functions: {supported}."
+)
+
+
+def _validate_pivot_functions(aggregations: list[AggregationSpec]) -> None:
+    """Refuse a pivot function the server cannot run.
+
+    Raises:
+        MammothValidationError: If an aggregation names a function outside
+            ``_PIVOT_FUNCTIONS``.
+    """
+    for agg in aggregations:
+        if agg.function not in _PIVOT_FUNCTIONS:
+            supported = sorted(f.value for f in _PIVOT_FUNCTIONS)
+            raise MammothValidationError(
+                ERR_PIVOT_UNSUPPORTED_FN.format(fn=agg.function.value, supported=supported),
+                {"function": agg.function.value, "supported": supported},
+            )
+
+
 def build_pivot_params(
     group_by: list[str],
     aggregations: list[AggregationSpec],
@@ -1045,6 +1085,7 @@ def build_pivot_params(
     column_types: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Build a PIVOT (group/aggregate) task payload."""
+    _validate_pivot_functions(aggregations)
     group_specs = [
         {"COLUMN": resolve_column(g, col_map, internal_names), "ORDER": idx}
         for idx, g in enumerate(group_by)
@@ -1055,7 +1096,7 @@ def build_pivot_params(
         func_str = agg.function.value
         sel: dict[str, Any] = {
             "ORDER": base_order + idx,
-            "FUNCTION": func_str,
+            "FUNCTION": _AGGREGATE_FUNCTION_KEYWORD.get(agg.function, func_str),
             "COLUMN": resolve_column(agg.column, col_map, internal_names),
             "AS": agg.as_name or f"{func_str}_{agg.column}",
         }
@@ -1106,11 +1147,6 @@ def build_window_params(
         window_spec["LIMIT"] = limit
     return {"WINDOW": window_spec}
 
-
-# CROSSTAB SELECT functions whose backend keyword differs from the SDK enum
-# value. The crosstab DuckDB op checks ``"DISTINCT_COUNT"`` (dba_const.py),
-# whereas the shared :class:`AggregateFunction` enum spells it COUNT_DISTINCT.
-_CROSSTAB_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
 
 # Aggregations the CROSSTAB DuckDB op can execute. Functions outside this set
 # (MEDIAN, FIRST, LAST, CONCAT) are rejected by the SDK before any API call
@@ -1210,7 +1246,7 @@ def build_crosstab_params(
     select_items: list[dict[str, Any]] = []
     for s in specs:
         item: dict[str, Any] = {
-            "FUNCTION": _CROSSTAB_FUNCTION_KEYWORD.get(s.function, s.function.value)
+            "FUNCTION": _AGGREGATE_FUNCTION_KEYWORD.get(s.function, s.function.value)
         }
         if s.column is not None:
             item["COLUMN"] = resolve_column(s.column, col_map, internal_names)
