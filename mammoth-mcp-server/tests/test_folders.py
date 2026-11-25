@@ -69,7 +69,9 @@ class TestFolders:
             api.answer("POST", FOLDERS, {"folder": {**MONTHLY, "parent_id": 200}})
             call("create_folder", name="Monthly", parent_folder_resource_id=70, **IDS)
 
-        assert [read.url.params["offset"] for read in api.sent("GET", FOLDERS)] == ["0", "100"]
+        # The SDK leaves an offset of 0 out of the request.
+        offsets = [read.url.params.get("offset") for read in api.sent("GET", FOLDERS)]
+        assert offsets == [None, "100"]
         (sent,) = api.sent("POST", FOLDERS)
         assert api.body(sent) == {"name": "Monthly", "parent_folder_id": 200}
 
