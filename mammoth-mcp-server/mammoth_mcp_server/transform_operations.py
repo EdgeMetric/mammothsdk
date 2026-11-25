@@ -1062,7 +1062,7 @@ class AggregationSpecInput(BaseModel):
     column: str = Field(min_length=1, description="Display name of the column to aggregate.")
     function: AggregateFunction = Field(
         description="Aggregation function: SUM, AVG, MIN, MAX, COUNT, COUNT_DISTINCT, "
-        "STDDEV, VARIANCE, MEDIAN, FIRST, LAST, CONCAT.",
+        "STDDEV, CONCAT.",
     )
     as_name: str | None = Field(
         default=None,
