@@ -764,6 +764,19 @@ def _land_intent_figure(
     return {**result, "saved": True, **landed}
 
 
+def _names_another_table(canvas: Any, dataview_id: Any) -> bool:
+    """Whether the figure reads a table other than the board's own.
+
+    The board's profile only knows the board's table, so its columns are no test of
+    such a figure: the server checks it against the table it names (and says how to
+    add a page on that table). Checked here, a page on a second table was refused
+    with "the dashboard has no such column" (ILG board, 25 Nov).
+    """
+    board = canvas.get("dataset") if isinstance(canvas, dict) else None
+    own = board.get("dataview_id") if isinstance(board, dict) else None
+    return dataview_id is not None and own is not None and str(dataview_id) != str(own)
+
+
 def _refuse_bad_figure(service: Any, dashboard_id: int, kwargs: dict[str, Any]) -> None:
     """Fail before the call when the figure names a missing column or sums text.
 
@@ -777,8 +790,10 @@ def _refuse_bad_figure(service: Any, dashboard_id: int, kwargs: dict[str, Any]) 
         canvas_doc = _dump_model(service.call(CANVAS_GET, dashboard_id=dashboard_id))
     except Exception:  # noqa: BLE001 -- the check is advice; the server still validates
         return
-    profiles = _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
     canvas = canvas_doc.get("canvas") if isinstance(canvas_doc, dict) else None
+    if _names_another_table(canvas, kwargs.get("dataview_id")):
+        return
+    profiles = _review_profiles(canvas_doc) if isinstance(canvas_doc, dict) else []
     derived = [
         str(d.get("id"))
         for d in (canvas.get("derived") or [] if isinstance(canvas, dict) else [])

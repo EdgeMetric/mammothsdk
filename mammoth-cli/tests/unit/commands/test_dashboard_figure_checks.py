@@ -252,6 +252,23 @@ def test_figure_add_refuses_an_unknown_column(
         )
 
 
+def test_figure_add_on_another_table_is_left_to_the_server(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """A page on a second table reads columns the board's table does not have."""
+    fake_service.responses[_CANVAS_GET] = _canvas([])
+    fake_service.responses[_FIGURE_ADD] = {"bake_job_id": 4}
+    figure = {"kind": "table", "dim": "Site", "columns": ["Site", "Room left"]}
+    doc = _doc(tmp_path, {"dataview_id": 99, "page": {"new_title": "Capacity"}, "figure": figure})
+
+    data, _ = dashboard_cmd.dashboard_figure_add(
+        _inv("dashboard.figure.add", extra_args=["7"], input_file=doc)
+    )
+
+    assert data == {"bake_job_id": 4}
+    assert _FIGURE_ADD in [symbol for symbol, _ in fake_service.call_log]
+
+
 # -- workbook import and assess wait for their job -----------------------------
 
 _IMPORT = _API + "import_workbook"
