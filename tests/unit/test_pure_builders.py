@@ -1136,10 +1136,25 @@ class TestAggregation:
         assert "DELIMITER" not in spec["PIVOT"]["SELECT"][0]
         assert "CONDITION" not in spec["PIVOT"]
 
-    def test_pivot_sends_count_distinct_as_the_server_keyword(self) -> None:
-        aggs = [AggregationSpec(column="Sales", function=AggregateFunction.COUNT_DISTINCT)]
+    @pytest.mark.parametrize(
+        ("fn", "keyword"),
+        [
+            (AggregateFunction.COUNT, "COUNT"),
+            (AggregateFunction.COUNT_DISTINCT, "DISTINCT_COUNT"),
+            (AggregateFunction.SUM, "SUM"),
+            (AggregateFunction.AVG, "AVG"),
+            (AggregateFunction.MIN, "MIN"),
+            (AggregateFunction.MAX, "MAX"),
+            (AggregateFunction.STDDEV, "STDDEV"),
+            (AggregateFunction.CONCAT, "CONCAT"),
+        ],
+    )
+    def test_pivot_sends_each_accepted_function_as_the_server_keyword(
+        self, fn: AggregateFunction, keyword: str
+    ) -> None:
+        aggs = [AggregationSpec(column="Sales", function=fn)]
         spec = b.build_pivot_params(["Region"], aggs, COLS, INTERNALS)
-        assert spec["PIVOT"]["SELECT"][0]["FUNCTION"] == "DISTINCT_COUNT"
+        assert spec["PIVOT"]["SELECT"][0]["FUNCTION"] == keyword
 
     @pytest.mark.parametrize(
         "fn",
@@ -1151,7 +1166,10 @@ class TestAggregation:
         ],
     )
     def test_pivot_refuses_a_function_the_server_rejects(self, fn: AggregateFunction) -> None:
-        aggs = [AggregationSpec(column="Sales", function=fn)]
+        aggs = [
+            AggregationSpec(column="Sales", function=AggregateFunction.SUM),
+            AggregationSpec(column="Sales", function=fn),
+        ]
         with pytest.raises(MammothValidationError, match=f"does not support the {fn.value}"):
             b.build_pivot_params(["Region"], aggs, COLS, INTERNALS)
 

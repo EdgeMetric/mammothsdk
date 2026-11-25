@@ -571,9 +571,7 @@ DATE_COMPONENT_TYPE: dict[str, str] = {
     c.value: (
         "DATE"
         if c.value in _DATE_COMPONENTS_DATE
-        else "NUMERIC"
-        if c.value in _DATE_COMPONENTS_NUMERIC
-        else "TEXT"
+        else "NUMERIC" if c.value in _DATE_COMPONENTS_NUMERIC else "TEXT"
     )
     for c in DateComponent
 }
@@ -1054,8 +1052,9 @@ _PIVOT_FUNCTIONS = frozenset(
         AggregateFunction.CONCAT,
     }
 )
-# The server spells COUNT_DISTINCT as DISTINCT_COUNT.
-_PIVOT_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
+# Pivot and crosstab spell COUNT_DISTINCT as DISTINCT_COUNT on the server
+# (check_if_function_is_valid for pivot; dba_const.py for the crosstab op).
+_AGGREGATE_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
 ERR_PIVOT_UNSUPPORTED_FN = (
     "Pivot does not support the {fn} function. Supported functions: {supported}."
 )
@@ -1097,7 +1096,7 @@ def build_pivot_params(
         func_str = agg.function.value
         sel: dict[str, Any] = {
             "ORDER": base_order + idx,
-            "FUNCTION": _PIVOT_FUNCTION_KEYWORD.get(agg.function, func_str),
+            "FUNCTION": _AGGREGATE_FUNCTION_KEYWORD.get(agg.function, func_str),
             "COLUMN": resolve_column(agg.column, col_map, internal_names),
             "AS": agg.as_name or f"{func_str}_{agg.column}",
         }
@@ -1148,11 +1147,6 @@ def build_window_params(
         window_spec["LIMIT"] = limit
     return {"WINDOW": window_spec}
 
-
-# CROSSTAB SELECT functions whose backend keyword differs from the SDK enum
-# value. The crosstab DuckDB op checks ``"DISTINCT_COUNT"`` (dba_const.py),
-# whereas the shared :class:`AggregateFunction` enum spells it COUNT_DISTINCT.
-_CROSSTAB_FUNCTION_KEYWORD = {AggregateFunction.COUNT_DISTINCT: "DISTINCT_COUNT"}
 
 # Aggregations the CROSSTAB DuckDB op can execute. Functions outside this set
 # (MEDIAN, FIRST, LAST, CONCAT) are rejected by the SDK before any API call
@@ -1252,7 +1246,7 @@ def build_crosstab_params(
     select_items: list[dict[str, Any]] = []
     for s in specs:
         item: dict[str, Any] = {
-            "FUNCTION": _CROSSTAB_FUNCTION_KEYWORD.get(s.function, s.function.value)
+            "FUNCTION": _AGGREGATE_FUNCTION_KEYWORD.get(s.function, s.function.value)
         }
         if s.column is not None:
             item["COLUMN"] = resolve_column(s.column, col_map, internal_names)

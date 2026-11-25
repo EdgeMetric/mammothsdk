@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
+
+- Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
+
 ### Fixed (next mammoth-cli)
 
 - `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
