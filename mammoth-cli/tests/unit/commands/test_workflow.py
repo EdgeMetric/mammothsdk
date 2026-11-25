@@ -325,6 +325,31 @@ def test_delete_reports_items_the_job_could_not_trash(
     assert "may show as their own workflow" in data["warnings"][1]
 
 
+def test_delete_reports_every_failed_item_of_every_job(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    keys = ["view:1", "dataset:2", "dashboard:3", "view:4"]
+    fake_service.responses[_PLAN] = _plan(*(_item(key, "steps") for key in keys))
+    fake_service.responses[_DELETE] = {"trashed": keys, "kept_steps": [], "job_ids": [9, 10]}
+    first = {"id": 1, "type": "dataview", "information": "A."}
+    second = {"id": 2, "type": "dataset", "information": "B."}
+    third = {"id": 3, "type": "dashboard", "information": "C."}
+    fake_service.responses[_WAIT_JOBS] = {
+        "jobs": [
+            {"id": 9, "response": {"failed": [first, second]}},
+            {"id": 10, "response": {"failed": [third]}},
+        ]
+    }
+    data, _ = _delete(fake_service, tmp_path)
+    assert data["failed"] == [first, second, third]
+    assert data["trashed"] == ["view:4"]
+    assert data["warnings"][:-1] == [
+        "view:1 was not moved to the Trash: A.",
+        "dataset:2 was not moved to the Trash: B.",
+        "dashboard:3 was not moved to the Trash: C.",
+    ]
+
+
 def test_delete_failure_without_text_names_its_code(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
