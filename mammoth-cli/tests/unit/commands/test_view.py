@@ -2865,6 +2865,40 @@ def test_a_refusal_for_both_names_both(fake_service: FakeMammothService, tmp_pat
     assert "derivative list 7" in error.hint
 
 
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"message": "Step in use."},
+        {"error": "Step in use."},
+        {"error_info": {"message": "Step in use."}},
+    ],
+)
+def test_a_refusal_prints_the_server_s_own_message(
+    fake_service: FakeMammothService, tmp_path: Path, where: dict[str, Any]
+) -> None:
+    error = _refused_delete(fake_service, tmp_path, {"status": "error", "error_code": 5, **where})
+    assert error.message == (
+        "The server refused to delete task 3 of view 7 (error 5). Server: Step in use."
+    )
+
+
+def test_a_refusal_lists_steps_in_order_and_every_view(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    tasks = [
+        {"dataview_id": view, "sequence": sequence, "param": {}}
+        for view, sequence in [(99, 4), (7, 10), (7, 2)]
+    ]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks))
+    assert error.details["dependent_steps"] == [
+        "step 2 of view 7",
+        "step 10 of view 7",
+        "step 4 of view 99",
+    ]
+    assert error.hint is not None
+    assert "'mammoth view task list 7', 'mammoth view task list 99'" in error.hint
+
+
 def test_an_error_code_without_a_failure_status_is_not_a_refusal(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
