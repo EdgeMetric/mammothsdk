@@ -20,12 +20,15 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import time
 
 #: The request header that carries the signature.
 SIGNATURE_HEADER = "X-Mammoth-Signature"
 #: Seconds a signature's timestamp may differ from now (either way) by default.
 DEFAULT_TOLERANCE = 300
+#: A timestamp: ASCII digits, short enough for ``int`` to take.
+_STAMP = re.compile(r"[0-9]{1,20}")
 
 
 def sign_callback(secret: str, timestamp: int, body: bytes | str) -> str:
@@ -72,7 +75,7 @@ def callback_problem(
         if sep and value:
             fields.setdefault(key.strip(), []).append(value.strip())
     stamps = fields.get("t")
-    if not stamps or len(stamps) != 1 or not stamps[0].isdigit():
+    if not stamps or len(stamps) != 1 or not _STAMP.fullmatch(stamps[0]):
         return "the header has no t=<unix seconds> timestamp"
     if not fields.get("v1"):
         return "the header has no v1 signature"
@@ -82,7 +85,8 @@ def callback_problem(
         if abs(clock - timestamp) > tolerance:
             return f"the timestamp is more than {tolerance} seconds from now"
     expected = sign_callback(secret, timestamp, body).partition(",v1=")[2]
-    if any(hmac.compare_digest(expected, given.lower()) for given in fields["v1"]):
+    # Bytes: compare_digest refuses non-ASCII text, which a forged header may hold.
+    if any(hmac.compare_digest(expected.encode(), v1.lower().encode()) for v1 in fields["v1"]):
         return None
     return "the signature does not match the body and secret"
 

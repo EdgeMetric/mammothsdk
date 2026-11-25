@@ -638,7 +638,7 @@ Status on release: untried; no live run recorded.
 
 Run: `mammoth workflow verify-callback`. Exact input fields: `mammoth schema get workflow.verify-callback`.
 
-Example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+Example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowVerifyCallbackResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 

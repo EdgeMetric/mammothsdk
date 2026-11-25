@@ -12,7 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added (next mammoth-cli)
 
-- `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`; the `callback_secret` is masked unless `--reveal`. `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
+- `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`, with `--reveal` (the `callback_secret` is shown only once). `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
 
 ### Fixed (next mammoth-cli)
 

@@ -1262,13 +1262,9 @@ class WorkflowsAPI:
         Raises:
             MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
         """
-        self._check_workflow_id(workflow_id)
         self._check_run_id(run_id)
-        self._check_project_id(project_id)
-        ws = self._ws()
-        proj = self._proj(project_id)
         return await self._client._request_json(
-            "GET", f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/runs/{run_id}"
+            "GET", self._path(workflow_id, project_id, f"runs/{run_id}")
         )
 
     async def run_result(
@@ -1293,14 +1289,9 @@ class WorkflowsAPI:
         Raises:
             MammothValidationError: If *workflow_id* or *project_id* <= 0, or *run_id* is empty.
         """
-        self._check_workflow_id(workflow_id)
         self._check_run_id(run_id)
-        self._check_project_id(project_id)
-        ws = self._ws()
-        proj = self._proj(project_id)
         return await self._client._request_json(
-            "GET",
-            f"/workspaces/{ws}/projects/{proj}/workflows/{workflow_id}/runs/{run_id}/result",
+            "GET", self._path(workflow_id, project_id, f"runs/{run_id}/result")
         )
 
 

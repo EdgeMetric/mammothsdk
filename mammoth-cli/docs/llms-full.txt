@@ -1923,7 +1923,7 @@ Sensitive structured input must come from a private file or pipe; never put secr
 - `mammoth workflow values` [read/none] -> mammoth.api.workflows.WorkflowsAPI.view_values
   example: mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'
 - `mammoth workflow verify-callback` [read/none] -> mammoth_cli.commands.workflow_callback.verify_callback_file
-  example: mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'
+  example: mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
   example: mammoth workflow workspace-datasets
 - `mammoth workflow workspace-exports` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_exports

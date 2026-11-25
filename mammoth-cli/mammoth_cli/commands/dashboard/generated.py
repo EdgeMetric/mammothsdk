@@ -228,6 +228,18 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
 
     _check_sdk_rules(invocation.command_id, kwargs)
     if (
+        invocation.command_id == "workflow.run.start"
+        and kwargs.get("callback_url") is not None
+        and not invocation.reveal_secrets
+    ):
+        # Masked, the only copy of the secret is lost and the run's callback cannot be checked.
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="A start with a callback_url needs --reveal: its callback_secret is shown once.",
+            exit_status=EXIT_USAGE,
+            hint="Nothing was started. Run it again with --reveal and save the callback_secret.",
+        )
+    if (
         invocation.project is not None
         and spec is not None
         and "project_id" not in kwargs

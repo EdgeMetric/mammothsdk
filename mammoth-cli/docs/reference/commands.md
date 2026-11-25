@@ -9166,7 +9166,7 @@ Total commands: 917.
 - Mutation class: `read`
 - Confirmation: `none`
 - Backing SDK: `mammoth_cli.commands.workflow_callback.verify_callback_file`
-- Agent example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'`
+- Agent example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'`
 
 ### `mammoth workflow workspace-datasets`
 

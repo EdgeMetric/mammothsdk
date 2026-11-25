@@ -121,18 +121,20 @@ def _started(fake_service: FakeMammothService) -> None:
     }
 
 
-def test_run_start_sends_the_callback_url_and_masks_the_secret(
-    fake_service: FakeMammothService,
+@pytest.mark.parametrize("extra", [[], ["--dry-run"]])
+def test_run_start_with_a_callback_needs_reveal_and_starts_nothing(
+    fake_service: FakeMammothService, extra: list[str]
 ) -> None:
-    _started(fake_service)
-    result = _invoke("workflow", "run", "start", "42", "--input", _CALLBACK)
+    result = _invoke("workflow", "run", "start", "42", "--input", _CALLBACK, *extra)
+    assert result.exit_code == 2, result.output
+    assert "--reveal" in json.loads(result.output)["error"]["message"]
+    assert fake_service.call_log == []
+
+
+def test_run_start_without_a_callback_needs_no_reveal(fake_service: FakeMammothService) -> None:
+    fake_service.responses[f"{_TRIGGERS}.run"] = {"run_id": _RUN, "already_running": False}
+    result = _invoke("workflow", "run", "start", "42")
     assert result.exit_code == 0, result.output
-    assert json.loads(result.output)["data"]["run_id"] == _RUN
-    assert _SECRET not in result.output, "the callback secret is masked without --reveal"
-    sent = [kwargs for symbol, kwargs in fake_service.call_log if symbol == f"{_TRIGGERS}.run"]
-    assert sent == [
-        {"workflow_id": 42, "project_id": 25654, "callback_url": "https://hooks.example.com/r"}
-    ]
 
 
 def test_run_start_reveal_prints_the_callback_secret(fake_service: FakeMammothService) -> None:
@@ -140,6 +142,10 @@ def test_run_start_reveal_prints_the_callback_secret(fake_service: FakeMammothSe
     result = _invoke("workflow", "run", "start", "42", "--input", _CALLBACK, "--reveal")
     assert result.exit_code == 0, result.output
     assert json.loads(result.output)["data"]["callback_secret"] == _SECRET
+    sent = [kwargs for symbol, kwargs in fake_service.call_log if symbol == f"{_TRIGGERS}.run"]
+    assert sent == [
+        {"workflow_id": 42, "project_id": 25654, "callback_url": "https://hooks.example.com/r"}
+    ]
 
 
 def test_run_start_dry_run_refuses_an_empty_callback_url(

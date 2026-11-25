@@ -308,8 +308,8 @@ commands:
   known_restrictions: 'Runs the workflow on the server now, as its clock would; a workflow already running
     is not started twice (already_running: true names the run in flight). Input (optional): {wait: true,
     timeout: SECONDS} follows Recent runs until the run ends; result is running when the wait ran out. With {callback_url: public https URL},
-    Mammoth POSTs a signed JSON there when the run ends; callback_secret is masked unless --reveal (shown
-    only once) and workflow verify-callback checks the signature.'
+    Mammoth POSTs a signed JSON there when the run ends; --reveal is required
+    with it (callback_secret is shown only once) and workflow verify-callback checks the signature.'
 - command_id: workflow.run.wait
   output_schema:
     type: object
@@ -570,7 +570,7 @@ commands:
   required_fixture_guard: null
   secret_fields: [secret]
   human_example: mammoth workflow verify-callback --help
-  agent_example: 'mammoth workflow verify-callback --input ''{"header": "t=1731230000,v1=ab12", "body_file": "./sales.csv"}'''
+  agent_example: 'mammoth workflow verify-callback --input ''{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'''
   unit_tests:
   - UT-WORKFLOW-VERIFY-CALLBACK
   contract_tests:

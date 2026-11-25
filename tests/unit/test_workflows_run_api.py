@@ -128,6 +128,11 @@ def test_a_valid_signature_verifies() -> None:
     assert verify_callback(SECRET, " " + _header().replace(",", " , "), BODY, now=NOW) is True
 
 
+def test_an_upper_case_signature_verifies() -> None:
+    stamp, v1 = _header().split(",v1=")
+    assert verify_callback(SECRET, f"{stamp},v1={v1.upper()}", BODY, now=NOW) is True
+
+
 def test_any_matching_v1_is_accepted() -> None:
     header = f"t={NOW},v1={'0' * 64},{_header().split(',')[1]}"
     assert verify_callback(SECRET, header, BODY, now=NOW) is True
@@ -145,6 +150,10 @@ def test_any_matching_v1_is_accepted() -> None:
         (f"t={NOW}", BODY, SECRET, NOW, "no v1"),
         ("", BODY, SECRET, NOW, "no t="),
         (_header(), BODY, "", NOW, "secret is empty"),
+        (f"t={NOW},{_header()}", BODY, SECRET, NOW, "no t="),
+        (f"t={NOW},v1=é", BODY, SECRET, NOW, "does not match"),
+        ("t=²,v1=00", BODY, SECRET, NOW, "no t="),
+        (f"t={'1' * 5000},v1=00", BODY, SECRET, NOW, "no t="),
     ],
 )
 def test_a_bad_signature_is_refused_and_says_why(
