@@ -2713,6 +2713,205 @@ def test_task_update_with_dataset_id_settles_processing_to_done(
     assert data["row_check"] == {"rows_before": 12, "rows_after": 12}
 
 
+#: The real refusal body (view task delete, 19 Nov, trimmed): HTTP 202, ``status: error``,
+#: error_code 7010 naming the later step that reads this step's columns.
+_REFUSAL_7010 = {
+    "status": "error",
+    "error_code": 7010,
+    "error_info": {
+        "error_code": 7010,
+        "column_to_dependencies_dict": {
+            "c_wvtfz_1015999_4f69": {
+                "tasks": [
+                    {"dataview_id": 7, "sequence": 22, "param": {"TASK_KEY": "SQL"}},
+                ]
+            },
+            "c_wvtfz_1015999_731b": {
+                "tasks": [
+                    {"dataview_id": 7, "sequence": 22, "param": {"TASK_KEY": "SQL"}},
+                ]
+            },
+        },
+    },
+    "future_id": None,
+    "has_error": None,
+    "type_of_modification": "discard_rule",
+}
+
+
+@pytest.mark.parametrize(
+    ("command_id", "handler", "action", "symbol", "doc_body"),
+    [
+        ("view.task.delete", "view_task_delete", "delete", _TASK_DELETE, {"dataset_id": 9}),
+        (
+            "view.task.update",
+            "view_task_update",
+            "update",
+            _TASK_UPDATE,
+            {"dataset_id": 9, "task_spec": {"kind": "sort"}},
+        ),
+    ],
+)
+def test_task_write_refused_by_the_server_fails_even_with_a_busy_pipeline(
+    fake_service: FakeMammothService,
+    tmp_path: Path,
+    command_id: str,
+    handler: str,
+    action: str,
+    symbol: str,
+    doc_body: dict[str, Any],
+) -> None:
+    """Famly-1 (19 Nov): a 7010 refusal with the pipeline still busy from an earlier
+    change read ``outcome: pending`` and exited 0. The refusal decides it: exit 1,
+    the server's error and the dependent step, and no pipeline wait at all.
+    """
+    fake_service.responses[symbol] = dict(_REFUSAL_7010)
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 3875}
+    fake_service.responses[_PIPE_WAIT] = CliError(
+        code="timeout", message="The view pipeline did not finish before the timeout."
+    )
+    doc = _doc(tmp_path, doc_body)
+    with pytest.raises(CliError) as excinfo:
+        getattr(view_cmd, handler)(
+            _inv(command_id, extra_args=["7", "3"], yes=True, input_file=doc)
+        )
+    error = excinfo.value
+    assert error.exit_status == 1
+    assert error.code == "api_error"
+    assert f"refused to {action} task 3 of view 7 (error 7010)" in error.message
+    assert "step 22 (SQL) of view 7" in error.message
+    assert error.hint is not None and "mammoth view task list 7" in error.hint
+    assert error.details["dependent_steps"] == ["step 22 (SQL) of view 7"]
+    assert _PIPE_WAIT not in [call[0] for call in fake_service.call_log]
+
+
+def test_task_delete_accepted_with_a_busy_pipeline_stays_pending(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """An accepted delete whose pipeline is still running keeps the pending result (exit 0)."""
+    from mammoth_cli.runtime.dispatch import verify_exit_status
+    from mammoth_cli.runtime.verify import with_verify
+
+    fake_service.responses[_TASK_DELETE] = {
+        "status": "processing",
+        "type_of_modification": "discard_rule",
+    }
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_WAIT] = CliError(
+        code="timeout", message="The view pipeline did not finish before the timeout."
+    )
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["pipeline_error"]["execution_state"] == "unfinished"
+    verified = with_verify(data)
+    assert verified["verify"]["outcome"] == "pending"
+    assert verify_exit_status(verified) == 0
+
+
+def _refused_delete(
+    fake_service: FakeMammothService, tmp_path: Path, response: dict[str, Any]
+) -> CliError:
+    """The error of a ``view task delete`` on view 7 that the server answers with *response*."""
+    fake_service.responses[_TASK_DELETE] = response
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 3875}
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    with pytest.raises(CliError) as excinfo:
+        view_cmd.view_task_delete(
+            _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+        )
+    return excinfo.value
+
+
+def _refusal(**by_kind: list[dict[str, Any]]) -> dict[str, Any]:
+    """A 7010 refusal whose one column is read by *by_kind* (tasks, derivatives)."""
+    info = {"error_code": 7010, "column_to_dependencies_dict": {"c_1": by_kind}}
+    return {**_REFUSAL_7010, "error_info": info}
+
+
+def test_a_refusal_for_a_derivative_names_it_and_no_steps(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    metric = {"category": "metric", "id": 41, "internal_name": "m_1", "display_name": "Total"}
+    card = {"category": "group", "id": 42, "display_properties": {"info": {"title": "By region"}}}
+    unnamed = {"category": "group", "id": 43, "display_properties": None}
+    error = _refused_delete(
+        fake_service, tmp_path, _refusal(derivatives=[metric, card, unnamed, metric])
+    )
+    named = ['derivative 41 ("Total")', 'derivative 42 ("By region")', "derivative 43"]
+    assert error.details["dependent_derivatives"] == named
+    assert error.details["dependent_steps"] == []
+    assert all(name in error.message for name in named)
+    assert error.hint is not None and "view derivative list 7" in error.hint
+    assert "task list" not in error.hint and "steps" not in error.hint
+
+
+def test_a_refusal_for_steps_of_another_view_points_at_that_view(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    tasks = [{"dataview_id": 99, "sequence": 4, "param": {"TASK_KEY": "JOIN"}}]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks))
+    assert error.details["dependent_steps"] == ["step 4 (JOIN) of view 99"]
+    assert error.hint is not None and "'mammoth view task list 99'" in error.hint
+    assert "task list 7" not in error.hint and "derivative" not in error.hint
+
+
+def test_a_refusal_for_both_names_both(fake_service: FakeMammothService, tmp_path: Path) -> None:
+    tasks = [{"dataview_id": 7, "sequence": 4, "param": {}}]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks, derivatives=[{"id": 41}]))
+    assert "step 4 of view 7, derivative 41." in error.message
+    assert error.hint is not None and "task list 7" in error.hint
+    assert "derivative list 7" in error.hint
+
+
+@pytest.mark.parametrize(
+    "where",
+    [
+        {"message": "Step in use."},
+        {"error": "Step in use."},
+        {"error_info": {"message": "Step in use."}},
+    ],
+)
+def test_a_refusal_prints_the_server_s_own_message(
+    fake_service: FakeMammothService, tmp_path: Path, where: dict[str, Any]
+) -> None:
+    error = _refused_delete(fake_service, tmp_path, {"status": "error", "error_code": 5, **where})
+    assert error.message == (
+        "The server refused to delete task 3 of view 7 (error 5). Server: Step in use."
+    )
+
+
+def test_a_refusal_lists_steps_in_order_and_every_view(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    tasks = [
+        {"dataview_id": view, "sequence": sequence, "param": {}}
+        for view, sequence in [(99, 4), (7, 10), (7, 2)]
+    ]
+    error = _refused_delete(fake_service, tmp_path, _refusal(tasks=tasks))
+    assert error.details["dependent_steps"] == [
+        "step 2 of view 7",
+        "step 10 of view 7",
+        "step 4 of view 99",
+    ]
+    assert error.hint is not None
+    assert "'mammoth view task list 7', 'mammoth view task list 99'" in error.hint
+
+
+def test_an_error_code_without_a_failure_status_is_not_a_refusal(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_TASK_DELETE] = {"status": "processing", "error_code": 7010}
+    fake_service.responses[_DATAVIEW_GET] = {"row_count": 20}
+    fake_service.responses[_PIPE_WAIT] = CliError(code="timeout", message="Not finished.")
+    doc = _doc(tmp_path, {"dataset_id": 9})
+    data, _meta = view_cmd.view_task_delete(
+        _inv("view.task.delete", extra_args=["7", "3"], yes=True, input_file=doc)
+    )
+    assert data["pipeline_error"]["execution_state"] == "unfinished"
+
+
 # ── export.* ────────────────────────────────────────────────────────────────
 
 

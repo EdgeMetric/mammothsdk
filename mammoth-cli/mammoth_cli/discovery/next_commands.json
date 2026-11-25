@@ -39,6 +39,9 @@
       "mammoth workflow run start {workflow.id}",
       "mammoth workflow get {workflow.id}"
     ],
+    "workflow.run.start": [
+      "mammoth workflow run status {arg.workflow_id|workflow_id} {run_id}"
+    ],
     "workflow.template.fits": [
       "mammoth workflow template get {fits.0.key}"
     ],

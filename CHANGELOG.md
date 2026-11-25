@@ -6,13 +6,33 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-io, mammoth-cli)
+### Added (next mammoth-io)
 
-- SDK (mammoth-io 0.8.58, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7977 (mammothsdk#468, #470).
-- `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
-- `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK (mammoth-io 0.8.59): `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
+- SDK: the Workflows API. `workflows.list_runnable`, `workflows.run_status` and `workflows.run_result`; `workflow_triggers.run(callback_url=...)` has Mammoth POST a signed JSON when the run ends and returns its `callback_secret` once. `mammoth.verify_callback(secret, header, body, tolerance=300)` checks the callback's `X-Mammoth-Signature`.
 
 ### Added (next mammoth-cli)
+
+- `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`, with `--reveal` (the `callback_secret` is shown only once). `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
+
+### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
+
+- Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
+
+### Fixed (next mammoth-cli)
+
+- `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: steps or derivatives still read this step's columns; they are named, with where to change them). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
+- `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
+- `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
+
+## mammoth-io 0.8.59, mammoth-cli 2.5.0, mammoth-mcp-server 0.2.16 (2026-11-24)
+
+### Added (mammoth-io 0.8.59, mammoth-cli 2.5.0)
+
+- SDK (mammoth-io 0.8.59, PRD-3685): `AnnotationsAPI.comment_edit`, `comment_delete` and `access`; `WorkflowsAPI.canvas(expected_version=)`, which the server refuses with 409 when the canvas moved; `WorkflowTriggersAPI.link_fire` (takes the `path` or URL `link_create` returned), `schedule_unset` and `after_unset`, with `parse_link`. The unset calls answer 404 (error code 4AUTO001) when nothing is set, and need the server change in mvc-service#7977 (mammothsdk#468, #470).
+- `agent chat` accepts an `intelligence` input field (`fast`, `balanced`, `expert` or `auto`, the levels `agent access me` lists) and sends it to the server; `AgentsAPI.chat` takes `intelligence=` (mammothsdk#459).
+- `connector connection tables CONNECTION_KEY` lists the tables of a saved connection; a `warning` says when the connection lists none, needs its sign-in again or could not be read. SDK: `ConnectorDraftsAPI.connection_tables`. mammoth-cli now needs mammoth-io>=0.8.59.
+
+### Added (mammoth-cli 2.5.0)
 
 - `mammoth how` has an `import-from-database` recipe, and `append-rows` no longer answers a database import. `dataset create --help` shows a database import, and the `view data aggregate` example shows `order_by`.
 - `view data aggregate` and the other `order_by` reads accept `["label", "desc"]` pairs.
@@ -21,19 +41,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `workflow canvas` forwards an `expected_version` input field; the server answers 409 when the canvas moved since you read it (mammothsdk#470).
 - `workflow link fire --input FILE` (`{"link": ...}`, or stdin) starts a workflow from the `path` (or URL) `workflow link create` returned; inline JSON is refused, so the secret stays out of shell history; a URL of another server is refused, not sent. `workflow schedule unset WORKFLOW_ID` and `workflow after unset WORKFLOW_ID` take the clock or the "after" trigger off (ask first, or `--yes`); a second unset, or one with nothing set, is a 404 with error code 4AUTO001. The unset commands need mvc-service#7977 (mammothsdk#470).
 
-### Changed (next mammoth-cli)
+### Changed (mammoth-cli 2.5.0)
 
-- **Breaking (release as 2.5.0):** `schema get` always answers `{requested, schemas, errors}`, for one id or several, with or without `full`. A script that read `data.accepted_fields` of one id reads `data.schemas[0].accepted_fields`. `-o table` and `-o plain` of one id still show its fields. No id found is still `schema_not_found` (exit 2), now also when several ids all fail.
+- **Breaking:** `schema get` always answers `{requested, schemas, errors}`, for one id or several, with or without `full`. A script that read `data.accepted_fields` of one id reads `data.schemas[0].accepted_fields`. `-o table` and `-o plain` of one id still show its fields. No id found is still `schema_not_found` (exit 2), now also when several ids all fail.
 - `dashboard chat edit` is partial (exit 3) when the server says one of the asks did not land (held back, not attempted, not on the board, declined); each such ask is in `warnings`. An ask the server did not check does not count.
 - `connector ds-config create` says what it does: it checks or samples a config and saves nothing (`saved: false`, with the `dataset create` call as `next`). It no longer reports an undo or a read-back.
 - `workflow delete ID --yes` reads the workflow's delete plan, trashes the default-ticked items no other workflow uses (steps, result tables, and the dashboards and schedules that go with them; inputs stay), waits for the job, and reports `trashed`, `kept_steps` and `kept`. `--input` chooses: `{"trash_inputs": true}`, `{"keep_steps": true}` or `{"trash": [KEYS]}`; `--dry-run` shows the keys it would send. On a server without the delete plan it falls back to the plain delete, and a 409 `4WKFL310` says what to run instead. `workflow delete-plan ID` reads the plan; `WorkflowsAPI.delete` takes `trash=` and `WorkflowsAPI.delete_plan` is new. Needs mvc-service 48.7 (mammothsdk#476).
 - `agent run stop`, `pause`, `resume`, `extend` and `retry` show the working form in `--help` (`mammoth agent run stop RUN_ID --session SESSION_ID`) and say that RUN_ID comes from `agent run status --session SESSION_ID`. A run id the server refuses (a 4xx) now names the run and the chat session instead of a bare "Mammoth returned an API error."; a server error or a missing route keeps its own message and hint (mammothsdk#458).
 
-### Fixed (next mammoth-cli, mammoth-mcp-server)
+### Fixed (mammoth-cli 2.5.0, mammoth-mcp-server 0.2.16)
 
 - A KPI card with a previous period or sparkline has its number at `value` and only its own `filters`; the number sat under `series` and the filters of both windows were joined. The previous period is `series.prev`, with its own filters (PRD-3699).
 
-### Fixed (next mammoth-cli)
+### Fixed (mammoth-cli 2.5.0)
 
 - A row count measure (`__count`) on a dashboard figure is no longer reported as an unknown column; when the server itself refuses it, its bake error still shows.
 - `dataset create` refuses a cloud query import that lacks `ds_name`, `table_name` or `query` before sending it, and under `--dry-run`; the server answered 400 4DSET043.

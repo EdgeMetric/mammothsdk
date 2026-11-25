@@ -1,10 +1,10 @@
 # Command reference
 
-Generated from the reviewed command manifests for mammoth-cli 2.4.6.
+Generated from the reviewed command manifests for mammoth-cli 2.5.0.
 Do not edit by hand; run `python scripts/gen_docs.py`.
 Sensitive structured input must come from a private file or pipe; never put secrets in literal argv.
 
-Total commands: 913.
+Total commands: 917.
 
 ## activity
 
@@ -8855,6 +8855,18 @@ Total commands: 913.
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs`
 - Agent example: `mammoth workflow run list 123`
 
+### `mammoth workflow run result`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `RUN_ID` (str, required) — ID of the run.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.run_result`
+- Agent example: `mammoth workflow run result 123 resource-123`
+
 ### `mammoth workflow run start`
 
 **Arguments**
@@ -8865,6 +8877,18 @@ Total commands: 913.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.run`
 - Agent example: `mammoth workflow run start 123`
+
+### `mammoth workflow run status`
+
+**Arguments**
+
+- `WORKFLOW_ID` (int, required) — ID of the workflow.
+- `RUN_ID` (str, required) — ID of the run.
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.run_status`
+- Agent example: `mammoth workflow run status 123 resource-123`
 
 ### `mammoth workflow run wait`
 
@@ -8877,6 +8901,13 @@ Total commands: 913.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run`
 - Agent example: `mammoth workflow run wait 123 resource-123`
+
+### `mammoth workflow runnable`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth.api.workflows.WorkflowsAPI.list_runnable`
+- Agent example: `mammoth workflow runnable`
 
 ### `mammoth workflow save`
 
@@ -9129,6 +9160,13 @@ Total commands: 913.
 - Confirmation: `none`
 - Backing SDK: `mammoth.api.workflows.WorkflowsAPI.view_values`
 - Agent example: `mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'`
+
+### `mammoth workflow verify-callback`
+
+- Mutation class: `read`
+- Confirmation: `none`
+- Backing SDK: `mammoth_cli.commands.workflow_callback.verify_callback_file`
+- Agent example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'`
 
 ### `mammoth workflow workspace-datasets`
 

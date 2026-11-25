@@ -91,7 +91,9 @@ commands:
     kind: object
   known_restrictions: 'Reads the delete plan, trashes its default-ticked items that no other workflow
     uses (steps, result tables, dashboards and schedules that go with them; inputs stay), waits for the
-    job, and reports trashed, kept_steps and kept. Input (optional): {keep_inputs: true} is the default,
+    job, and reports trashed, kept_steps and kept. Kept steps show as their own workflow afterwards (a
+    warning names them); an item the job could not trash is under failed, and the delete is partial (exit
+    3). Input (optional): {keep_inputs: true} is the default,
     {trash_inputs: true} also trashes the inputs, {keep_steps: true} keeps the steps and result tables
     (and the dashboards and schedules that follow them), or {trash: [KEYS]} names the plan keys exactly
     (read them with workflow delete-plan). A server without the delete plan gets the plain delete, which
@@ -302,9 +304,12 @@ commands:
     ids:
       workflow_id: positional.0
     kind: object
+  secret_fields: [callback_secret]
   known_restrictions: 'Runs the workflow on the server now, as its clock would; a workflow already running
     is not started twice (already_running: true names the run in flight). Input (optional): {wait: true,
-    timeout: SECONDS} follows Recent runs until the run ends; result is running when the wait ran out.'
+    timeout: SECONDS} follows Recent runs until the run ends; result is running when the wait ran out. With {callback_url: public https URL},
+    Mammoth POSTs a signed JSON there when the run ends; --reveal is required
+    with it (callback_secret is shown only once) and workflow verify-callback checks the signature.'
 - command_id: workflow.run.wait
   output_schema:
     type: object
@@ -521,3 +526,58 @@ commands:
   undo:
     strategy: irreversible
     reason: Puts the steps back on the earlier table and trashes the view the swap made; swap again to redo.
+- command_id: workflow.runnable
+  output_schema:
+    type: array
+    items:
+      type: object
+  known_restrictions: Lists only the workflows whose every table you can see, newest first, each with
+    running and last_run. 'workflow list' lists every workflow of the project instead.
+- command_id: workflow.run.status
+  output_schema:
+    type: object
+  agent_example: mammoth workflow run status 123 resource-123
+  known_restrictions: status is running until the run settles, then success or failure (reason,
+    explanation). A run just started can answer 404 for a few seconds.
+- command_id: workflow.run.result
+  output_schema:
+    type: object
+  agent_example: mammoth workflow run result 123 resource-123
+  known_restrictions: Each output table has app_url (opens it in Mammoth) and data_path (read its rows
+    through the API).
+- command_id: workflow.verify-callback
+  output_schema:
+    type: object
+    required: [valid, reason]
+  command_path: workflow verify-callback
+  disposition: command
+  alias_of: null
+  operation_ids: []
+  positionals: []
+  options: []
+  sdk_symbol: mammoth_cli.commands.workflow_callback.verify_callback_file
+  sdk_conversion: Call mammoth_cli.commands.workflow_callback.verify_callback_file with validated request fields.
+  request_model: WorkflowVerifyCallbackRequest
+  result_model: WorkflowVerifyCallbackResult
+  mutation_class: read
+  confirmation: none
+  wait_policy: not_async
+  pagination_policy: none
+  acceptance_evidence: live_read_only
+  live_test: null
+  live_exemption_reason: Local signature check of a saved request; no network call.
+  contract_fixture: null
+  required_fixture_guard: null
+  secret_fields: [secret]
+  human_example: mammoth workflow verify-callback --help
+  agent_example: 'mammoth workflow verify-callback --input ''{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'''
+  unit_tests:
+  - UT-WORKFLOW-VERIFY-CALLBACK
+  contract_tests:
+  - CT-WORKFLOW-VERIFY-CALLBACK-LOCAL
+  draft_test: null
+  undo_test: null
+  known_restrictions: 'Input: {header: X-Mammoth-Signature value, body_file: the raw body as received,
+    secret_file or secret: the run''s callback_secret, tolerance?: seconds (default 300, 0 skips)}. Exits
+    1 with invalid_signature when the signature does not hold.'
+  reviewed_by: primary

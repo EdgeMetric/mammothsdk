@@ -1028,6 +1028,11 @@ _TARGETS: dict[str, str] = {
     "workflow.duplicate": "mammoth_cli.commands.workflow:workflow_duplicate",
     "workflow.save-undo": "mammoth_cli.commands.workflow:workflow_save_undo",
     "workflow.save-cancel-step": "mammoth_cli.commands.workflow:workflow_save_cancel_step",
+    # The Workflows API: what can run, and how a run went.
+    "workflow.runnable": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.run.status": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.run.result": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
+    "workflow.verify-callback": ("mammoth_cli.commands.workflow_callback:workflow_verify_callback"),
     "dashboard.email-updates.list": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dashboard.email-updates.get": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
     "dashboard.email-updates.set": "mammoth_cli.commands.dashboard.generated:generated_dashboard",
