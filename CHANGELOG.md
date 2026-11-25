@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed (next mammoth-cli)
+
+- `workflow delete` says when an item could not be moved to the Trash: it is listed under `failed` with the server's reason in `warnings`, left out of `trashed`, and the delete is partial (exit 3). It was reported as done.
+- `workflow delete` with kept steps warns that they show as their own workflow afterwards, and names them.
+
 ## mammoth-io 0.8.59, mammoth-cli 2.5.0, mammoth-mcp-server 0.2.16 (2026-11-24)
 
 ### Added (mammoth-io 0.8.59, mammoth-cli 2.5.0)

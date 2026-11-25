@@ -289,6 +289,95 @@ def test_delete_sends_default_ticked_keys_and_waits(
     }
 
 
+@pytest.mark.parametrize(
+    ("item_type", "key", "kind"),
+    [
+        ("dataview", "view:1", "steps"),
+        ("dataset", "dataset:1", "result"),
+        ("dashboard", "dashboard:1", "dashboard"),
+        ("automation", "automation:1", "schedule"),
+    ],
+)
+def test_delete_reports_items_the_job_could_not_trash(
+    fake_service: FakeMammothService, tmp_path: Path, item_type: str, key: str, kind: str
+) -> None:
+    fake_service.responses[_PLAN] = _plan(_item(key, kind), _item("dataset:2", "result"))
+    fake_service.responses[_DELETE] = {
+        "trashed": [key, "dataset:2"],
+        "kept_steps": [],
+        "job_ids": [9],
+    }
+    failed = {
+        "id": 1,
+        "type": item_type,
+        "name": "Sales",
+        "error_code": "TRASH_DEPENDENT_BLOCK",
+        "information": "Another view uses it.",
+    }
+    fake_service.responses[_WAIT_JOBS] = {
+        "jobs": [{"id": 9, "status": "success", "response": {"failed": [failed]}}]
+    }
+    data, _ = _delete(fake_service, tmp_path)
+    assert data["partial"] is True
+    assert data["failed"] == [failed]
+    assert data["trashed"] == ["dataset:2"]
+    assert data["warnings"][0] == f"{key} (Sales) was not moved to the Trash: Another view uses it."
+    assert "may show as their own workflow" in data["warnings"][1]
+
+
+def test_delete_reports_every_failed_item_of_every_job(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    keys = ["view:1", "dataset:2", "dashboard:3", "view:4"]
+    fake_service.responses[_PLAN] = _plan(*(_item(key, "steps") for key in keys))
+    fake_service.responses[_DELETE] = {"trashed": keys, "kept_steps": [], "job_ids": [9, 10]}
+    first = {"id": 1, "type": "dataview", "information": "A."}
+    second = {"id": 2, "type": "dataset", "information": "B."}
+    third = {"id": 3, "type": "dashboard", "information": "C."}
+    fake_service.responses[_WAIT_JOBS] = {
+        "jobs": [
+            {"id": 9, "response": {"failed": [first, second]}},
+            {"id": 10, "response": {"failed": [third]}},
+        ]
+    }
+    data, _ = _delete(fake_service, tmp_path)
+    assert data["failed"] == [first, second, third]
+    assert data["trashed"] == ["view:4"]
+    assert data["warnings"][:-1] == [
+        "view:1 was not moved to the Trash: A.",
+        "dataset:2 was not moved to the Trash: B.",
+        "dashboard:3 was not moved to the Trash: C.",
+    ]
+
+
+def test_delete_failure_without_text_names_its_code(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(_item("view:1", "steps"))
+    fake_service.responses[_DELETE] = {"trashed": ["view:1"], "job_ids": [9]}
+    failed = {"id": 1, "type": "dataview", "error_code": "BLOCKED", "information": {"a": 1}}
+    fake_service.responses[_WAIT_JOBS] = {"jobs": [{"id": 9, "response": {"failed": [failed]}}]}
+    data, _ = _delete(fake_service, tmp_path)
+    assert data["warnings"][0] == "view:1 was not moved to the Trash: BLOCKED."
+
+
+def test_delete_kept_steps_are_explained_and_clean_delete_is_quiet(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_PLAN] = _plan(_item("view:1", "steps"))
+    fake_service.responses[_DELETE] = {"trashed": [], "kept_steps": ["Sales"], "job_ids": []}
+    data, _ = _delete(fake_service, tmp_path, {"keep_steps": True})
+    assert data["warnings"] == ["Kept steps show as their own workflow after the delete: Sales."]
+    assert "partial" not in data
+    fake_service.responses[_DELETE] = {"trashed": ["view:1"], "kept_steps": [], "job_ids": [9]}
+    fake_service.responses[_WAIT_JOBS] = {
+        "jobs": [{"id": 9, "response": {"succeeded": [{"id": 1}], "failed": []}}]
+    }
+    data, _ = _delete(fake_service, tmp_path)
+    assert "warnings" not in data
+    assert "partial" not in data
+
+
 def test_delete_trash_inputs_and_keep_steps(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
