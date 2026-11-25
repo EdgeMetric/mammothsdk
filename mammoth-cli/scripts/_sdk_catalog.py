@@ -326,6 +326,10 @@ EXTRA_OP_HINTS: dict[str, dict[str, Any]] = {
     "workflow.run.start": {"operation_ids": [], "method": "POST"},
     "workflow.run.wait": {"operation_ids": ["GetWorkflowRuns"], "method": "GET"},
     "workflow.run.list": {"operation_ids": ["GetWorkflowRuns"], "method": "GET"},
+    # The Workflows API: on origin/release and master, in no pinned snapshot yet.
+    "workflow.runnable": {"operation_ids": ["ListRunnableWorkflows"], "method": "GET"},
+    "workflow.run.status": {"operation_ids": ["GetWorkflowRunStatus"], "method": "GET"},
+    "workflow.run.result": {"operation_ids": ["GetWorkflowRunResult"], "method": "GET"},
     "workflow.schedule.set": {"operation_ids": ["PutWorkflowSchedule"], "method": "PUT"},
     "workflow.after.set": {"operation_ids": ["PutWorkflowAfter"], "method": "PUT"},
     "workflow.after.loops": {"operation_ids": ["GetWorkflowAfterLoops"], "method": "GET"},

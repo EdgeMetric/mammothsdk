@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io)
+
+- SDK: the Workflows API. `workflows.list_runnable`, `workflows.run_status` and `workflows.run_result`; `workflow_triggers.run(callback_url=...)` has Mammoth POST a signed JSON when the run ends and returns its `callback_secret` once. `mammoth.verify_callback(secret, header, body, tolerance=300)` checks the callback's `X-Mammoth-Signature`.
+
+### Added (next mammoth-cli)
+
+- `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`, with `--reveal` (the `callback_secret` is shown only once). `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
+
 ### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
 
 - Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.

@@ -398,7 +398,7 @@ Every public method of the sub-clients not described above, by name. All are cor
 - `client.templates` (TemplatesAPI): `list`, `get`, `create`, `update`, `delete`
 - `client.trash` (TrashAPI): `list`, `add`, `restore`
 - `client.users` (UsersAPI): `avatar_delete`, `avatar_upload`, `delete_account`
-- `client.workflows` (WorkflowsAPI): `list`, `create`, `get`, `update`, `delete`, `graph`, `cleanup`, `from_template`, `workspace_datasets`, `workspace_exports`, `workspace_sources`, `block_add`, `block_auth`, `block_type`, `block_config`, `canvas`
+- `client.workflows` (WorkflowsAPI): `list`, `create`, `get`, `update`, `delete`, `graph`, `cleanup`, `from_template`, `workspace_datasets`, `workspace_exports`, `workspace_sources`, `block_add`, `block_auth`, `block_type`, `block_config`, `canvas`; Workflows API: `list_runnable`, `start_run`, `run_status`, `run_result` (check a run callback with `mammoth.verify_callback`)
 - `client.workspace` (WorkspacesAPI): `accept_invite`, `create`, `check_expression`, `llm_task`, `app_usage`, `home_summary`, `storage_breakdown`, `segment_list`, `segment_update`, `user_add`, `user_remove`, `user_remove_batch`, `user_update_batch`, `invite_list`, `invite_resend`, `invite_revoke`, `invite_role_update`, `invite_delete`
 
 ### Added in v0.8.44

@@ -354,6 +354,16 @@ Result: `WorkflowRunListResult`; mutation `read`, confirmation `none`, wait poli
 
 Status on release: untried; no live run recorded.
 
+### `workflow.run.result`
+
+Run: `mammoth workflow run result`. Exact input fields: `mammoth schema get workflow.run.result`.
+
+Example: `mammoth workflow run result 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowRunResultResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.run.start`
 
 Run: `mammoth workflow run start`. Exact input fields: `mammoth schema get workflow.run.start`.
@@ -364,6 +374,16 @@ Result: `WorkflowRunStartResult`; mutation `benign_mutation`, confirmation `none
 
 Status on release: untried; no live run recorded.
 
+### `workflow.run.status`
+
+Run: `mammoth workflow run status`. Exact input fields: `mammoth schema get workflow.run.status`.
+
+Example: `mammoth workflow run status 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowRunStatusResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
 ### `workflow.run.wait`
 
 Run: `mammoth workflow run wait`. Exact input fields: `mammoth schema get workflow.run.wait`.
@@ -371,6 +391,16 @@ Run: `mammoth workflow run wait`. Exact input fields: `mammoth schema get workfl
 Example: `mammoth workflow run wait 123 resource-123`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowRunWaitResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.runnable`
+
+Run: `mammoth workflow runnable`. Exact input fields: `mammoth schema get workflow.runnable`.
+
+Example: `mammoth workflow runnable`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowRunnableResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 
@@ -601,6 +631,16 @@ Run: `mammoth workflow values`. Exact input fields: `mammoth schema get workflow
 Example: `mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
 
 Result: `WorkflowValuesResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
+
+Status on release: untried; no live run recorded.
+
+### `workflow.verify-callback`
+
+Run: `mammoth workflow verify-callback`. Exact input fields: `mammoth schema get workflow.verify-callback`.
+
+Example: `mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'`. Placeholders are illustrative; resolve IDs and input from observed reads.
+
+Result: `WorkflowVerifyCallbackResult`; mutation `read`, confirmation `none`, wait policy `not_async`.
 
 Status on release: untried; no live run recorded.
 

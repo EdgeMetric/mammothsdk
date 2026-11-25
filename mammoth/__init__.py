@@ -164,6 +164,7 @@ if TYPE_CHECKING:
         WorkspaceRoleType,
     )
     from mammoth.view import View, ViewExport
+    from mammoth.workflow_callbacks import verify_callback
 
 _LAZY: dict[str, tuple[str, str]] = {
     "SchedulePatchItem": ("mammoth.api.automations", "SchedulePatchItem"),
@@ -281,6 +282,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "WorkspaceRoleType": ("mammoth.models.workspaces", "WorkspaceRoleType"),
     "View": ("mammoth.view", "View"),
     "ViewExport": ("mammoth.view", "ViewExport"),
+    "verify_callback": ("mammoth.workflow_callbacks", "verify_callback"),
 }
 
 
@@ -430,6 +432,8 @@ __all__ = [
     "MammothExportError",
     # Webhooks
     "WebhookMode",
+    # Workflow run callbacks
+    "verify_callback",
     # Helpers
     "parse_path",
 ]

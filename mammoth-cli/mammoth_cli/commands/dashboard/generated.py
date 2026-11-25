@@ -107,6 +107,7 @@ _SDK_RULES: dict[str, Callable[[dict[str, Any]], object]] = {
         str(k.get("rating") or ""), k.get("comment")
     ),
     "dashboard.embed.lifetime.set": lambda k: dashboards_api.check_token_ttl(k.get("token_ttl")),
+    "workflow.run.start": lambda k: workflow_triggers.check_callback_url(k.get("callback_url")),
     "workflow.schedule.set": lambda k: workflow_triggers.schedule_body(
         **{f: k[f] for f in _SCHEDULE_FIELDS if f in k}
     ),
@@ -226,6 +227,18 @@ def generated_dashboard(invocation: Invocation) -> HandlerResult:
             )
 
     _check_sdk_rules(invocation.command_id, kwargs)
+    if (
+        invocation.command_id == "workflow.run.start"
+        and kwargs.get("callback_url") is not None
+        and not invocation.reveal_secrets
+    ):
+        # Masked, the only copy of the secret is lost and the run's callback cannot be checked.
+        raise CliError(
+            code=CODE_MISSING_FIELD,
+            message="A callback_url needs --reveal: the run's callback_secret is shown only once.",
+            exit_status=EXIT_USAGE,
+            hint="Nothing was started. Run it again with --reveal and save the callback_secret.",
+        )
     if (
         invocation.project is not None
         and spec is not None

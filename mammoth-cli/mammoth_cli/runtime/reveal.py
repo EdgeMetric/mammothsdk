@@ -7,6 +7,8 @@ usable secret. They stay masked by default, so a log or a shared transcript
 never holds them; ``--reveal`` prints them, the way ``client-app create`` shows
 its token. A secure webhook's ``secret`` (``webhook create``/``get``/``update``) is the
 same: masked, it read as a usable value and every post with it failed (mammothsdk#373).
+``workflow run start`` with a ``callback_url`` returns the run's ``callback_secret`` once,
+and is refused without ``--reveal``: masked, the only copy would be lost.
 """
 
 from __future__ import annotations
@@ -21,5 +23,7 @@ REVEAL_COMMANDS = frozenset(
         "webhook.create",
         "webhook.get",
         "webhook.update",
+        # The run's callback_secret, shown only in the answer that started the run.
+        "workflow.run.start",
     }
 )

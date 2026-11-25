@@ -116,6 +116,11 @@ PENDING_SERVER_RELEASE: dict[str, str] = {
     # variable; each concrete verb (extend, pause, resume, retry, stop) is on master.
     "POST /agents/sessions/{}/runs/{}/{}": "origin/master@154ddb559a",
     "POST /workspaces/{}/projects/{}/workflows/{}/run": "mvc-service feat/workflow-run-route",
+    # The Workflows API: on mvc-service release and master, in no pinned snapshot yet.
+    "GET /workspaces/{}/projects/{}/workflows/runnable": "origin/release",
+    "POST /workspaces/{}/projects/{}/workflows/{}/start": "origin/release",
+    "GET /workspaces/{}/projects/{}/workflows/{}/runs/{}": "origin/release",
+    "GET /workspaces/{}/projects/{}/workflows/{}/runs/{}/result": "origin/release",
 }
 
 # --- Operations that alias another command (identical behavior) ------------

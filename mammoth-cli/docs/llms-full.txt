@@ -1866,10 +1866,16 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow resolve-held 123 Status --input '{"built": true}'
 - `mammoth workflow run list` [read/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.runs
   example: mammoth workflow run list 123
+- `mammoth workflow run result` [read/none] -> mammoth.api.workflows.WorkflowsAPI.run_result
+  example: mammoth workflow run result 123 resource-123
 - `mammoth workflow run start` [benign_mutation/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.run
   example: mammoth workflow run start 123
+- `mammoth workflow run status` [read/none] -> mammoth.api.workflows.WorkflowsAPI.run_status
+  example: mammoth workflow run status 123 resource-123
 - `mammoth workflow run wait` [read/none] -> mammoth.api.workflow_triggers.WorkflowTriggersAPI.wait_for_run
   example: mammoth workflow run wait 123 resource-123
+- `mammoth workflow runnable` [read/none] -> mammoth.api.workflows.WorkflowsAPI.list_runnable
+  example: mammoth workflow runnable
 - `mammoth workflow save` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.save
   example: mammoth workflow save 123
 - `mammoth workflow save-cancel-step` [benign_mutation/none] -> mammoth.api.workflows.WorkflowsAPI.cancel_save_step
@@ -1916,6 +1922,8 @@ Sensitive structured input must come from a private file or pipe; never put secr
   example: mammoth workflow update 123
 - `mammoth workflow values` [read/none] -> mammoth.api.workflows.WorkflowsAPI.view_values
   example: mammoth workflow values 123 456 --input '{"column": "Status", "text": "Quarterly revenue summary"}'
+- `mammoth workflow verify-callback` [read/none] -> mammoth_cli.commands.workflow_callback.verify_callback_file
+  example: mammoth workflow verify-callback --input '{"header": "t=1731230000,v1=ab12", "body_file": "./callback.json", "secret_file": "./callback-secret.txt"}'
 - `mammoth workflow workspace-datasets` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_datasets
   example: mammoth workflow workspace-datasets
 - `mammoth workflow workspace-exports` [read/none] -> mammoth.api.workflows.WorkflowsAPI.workspace_exports

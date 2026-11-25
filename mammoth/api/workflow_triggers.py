@@ -18,6 +18,7 @@ ERR_FREQUENCY = "`frequency` must be one of hourly, daily, weekly, monthly; got 
 ERR_INTERVAL = "`interval` must be an integer from 1 to 366, got {0!r}."
 ERR_WEEK_DAYS = "`by_week_day` must be a list of mo, tu, we, th, fr, sa, su; got {0!r}."
 ERR_MONTH_DAYS = "`by_month_day` must be a list of days 1 to 31, got {0!r}."
+ERR_CALLBACK_URL = "`callback_url` must be a non-empty URL when given."
 ERR_LINK = (
     "`link` must be the link's path (from its /) or full URL (from its https://), ending in "
     "/workflow-runs/<workflow id>/<secret>; "
@@ -34,6 +35,21 @@ WEEK_DAYS = ("mo", "tu", "we", "th", "fr", "sa", "su")
 #: How a run ends, as Recent runs says it.
 RUN_RUNNING = "running"
 _POLL_SECONDS = 3.0
+
+
+def check_callback_url(callback_url: object) -> None:
+    """Refuse a run's callback URL that is not a non-empty string.
+
+    Args:
+        callback_url: The URL to check; None means no callback.
+
+    Raises:
+        MammothValidationError: If *callback_url* is given and empty or not a string.
+    """
+    if callback_url is None:
+        return
+    if not isinstance(callback_url, str) or not callback_url.strip():
+        raise MammothValidationError(ERR_CALLBACK_URL)
 
 
 class WorkflowTriggersAPI:
@@ -62,6 +78,7 @@ class WorkflowTriggersAPI:
         *,
         wait: bool = False,
         timeout: float = 600.0,
+        callback_url: str | None = None,
         project_id: int | None = None,
     ) -> dict[str, Any]:
         """Run a workflow on the server now, as its clock would.
@@ -73,22 +90,36 @@ class WorkflowTriggersAPI:
             workflow_id: ID of the workflow.
             wait: Poll Recent runs until the run ends or *timeout* passes.
             timeout: Seconds to wait when *wait* is true.
+            callback_url: Public https URL Mammoth POSTs a small signed JSON to when the run
+                ends; check it with :func:`mammoth.verify_callback`. Starts the run through
+                the Workflows API, which refuses (429) more than six starts of one workflow
+                a minute. Nothing is set up when the workflow was already running.
             project_id: Project ID (uses the client default if not provided).
 
         Returns:
-            ``{"run_id", "already_running"}``; with *wait*, also ``run`` (the Recent runs
+            ``{"run_id", "already_running"}``; with *callback_url*, also ``callback_secret``
+            (shown only here); with *wait*, also ``run`` (the Recent runs
             row, or ``None`` before it shows) and ``result``: ``running`` (still running
             when the wait ended), ``success`` or ``failure``.
 
         Raises:
-            MammothValidationError: If an id is not positive or *timeout* is negative.
+            MammothValidationError: If an id is not positive, *timeout* is negative or
+                *callback_url* is empty.
         """
         # Checked before the POST: a refused wait must not leave a run started.
         if wait:
             check_timeout(timeout)
-        started = await self._client._request_json(
-            "POST", self._path(workflow_id, project_id, "run")
-        )
+        if callback_url is None:
+            started = await self._client._request_json(
+                "POST", self._path(workflow_id, project_id, "run")
+            )
+        else:
+            check_callback_url(callback_url)
+            started = await self._client._request_json(
+                "POST",
+                self._path(workflow_id, project_id, "start"),
+                json={"callback_url": callback_url},
+            )
         if not wait:
             return started
         row = await self.wait_for_run(
