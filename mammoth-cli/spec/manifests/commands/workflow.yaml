@@ -91,7 +91,9 @@ commands:
     kind: object
   known_restrictions: 'Reads the delete plan, trashes its default-ticked items that no other workflow
     uses (steps, result tables, dashboards and schedules that go with them; inputs stay), waits for the
-    job, and reports trashed, kept_steps and kept. Input (optional): {keep_inputs: true} is the default,
+    job, and reports trashed, kept_steps and kept. Kept steps show as their own workflow afterwards (a
+    warning names them); an item the job could not trash is under failed, and the delete is partial (exit
+    3). Input (optional): {keep_inputs: true} is the default,
     {trash_inputs: true} also trashes the inputs, {keep_steps: true} keeps the steps and result tables
     (and the dashboards and schedules that follow them), or {trash: [KEYS]} names the plan keys exactly
     (read them with workflow delete-plan). A server without the delete plan gets the plain delete, which

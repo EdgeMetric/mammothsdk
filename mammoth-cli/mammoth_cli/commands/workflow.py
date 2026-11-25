@@ -309,6 +309,8 @@ _DELETE_FIELDS = frozenset({"keep_inputs", "trash_inputs", "keep_steps", "trash"
 _STEP_KINDS = frozenset({"steps", "result"})
 _FOLLOWER_KINDS = frozenset({"dashboard", "schedule"})
 _HAS_STEPS_CODE = "4WKFL310"
+#: The plan-key prefix of a trash job's item type, where the two differ.
+_PLAN_KEY_PREFIX = {"dataview": "view"}
 
 
 def _delete_choice(document: dict[str, Any]) -> dict[str, Any]:
@@ -470,6 +472,71 @@ def _has_steps_error(error: CliError, workflow_id: int) -> CliError | None:
     )
 
 
+def _trash_failures(jobs: Any) -> list[dict[str, Any]]:
+    """The items a delete job could not trash.
+
+    The server resolves the job as a success and lists them under ``response.failed``.
+
+    Args:
+        jobs: The waited jobs, ``{"jobs": [...]}``.
+
+    Returns:
+        The ``failed`` entries of every job, in order.
+    """
+    listed = jobs.get("jobs") if isinstance(jobs, dict) else None
+    failures: list[dict[str, Any]] = []
+    for job in listed if isinstance(listed, list) else []:
+        response = job.get("response") if isinstance(job, dict) else None
+        failed = response.get("failed") if isinstance(response, dict) else None
+        if isinstance(failed, list):
+            failures.extend(entry for entry in failed if isinstance(entry, dict))
+    return failures
+
+
+def _trash_failure_warning(entry: dict[str, Any]) -> str:
+    """One sentence saying which item was not trashed and why."""
+    item = f"{entry.get('type') or 'item'} {entry.get('id')}"
+    if entry.get("name"):
+        item += f" ({entry['name']})"
+    information = entry.get("information")
+    reason = information if isinstance(information, str) and information else None
+    reason = reason or entry.get("error_code") or "the server gave no reason"
+    return f"{item} was not moved to the Trash: {str(reason).rstrip('.')}."
+
+
+def _report_what_stayed(result: dict[str, Any]) -> None:
+    """Add what a settled delete left behind to its result, in place.
+
+    Items the job could not trash go under ``failed``, leave ``trashed`` and make the result
+    partial (exit 3). Kept steps get a warning that they show as their own workflow.
+
+    Args:
+        result: The delete result, with the waited ``jobs`` when there were any.
+    """
+    warnings: list[str] = []
+    failures = _trash_failures(result.get("jobs"))
+    if failures:
+        result["partial"] = True
+        result["failed"] = failures
+        gone_wrong = {
+            f"{_PLAN_KEY_PREFIX.get(str(f.get('type')), f.get('type'))}:{f.get('id')}"
+            for f in failures
+        }
+        if isinstance(result.get("trashed"), list):
+            result["trashed"] = [key for key in result["trashed"] if key not in gone_wrong]
+        warnings.extend(_trash_failure_warning(entry) for entry in failures)
+        warnings.append(
+            "The workflow itself was deleted; steps that were not trashed may show as their own "
+            "workflow."
+        )
+    kept_steps = result.get("kept_steps")
+    if isinstance(kept_steps, list) and kept_steps:
+        names = ", ".join(str(name) for name in kept_steps)
+        warnings.append(f"Kept steps show as their own workflow after the delete: {names}.")
+    if warnings:
+        result["warnings"] = [*(result.get("warnings") or []), *warnings]
+
+
 def workflow_delete(invocation: Invocation) -> HandlerResult:
     """Delete a workflow with the items of its delete plan. Prompt or ``--yes`` required.
 
@@ -522,6 +589,7 @@ def workflow_delete(invocation: Invocation) -> HandlerResult:
                 job_ids=job_ids,
                 timeout=invocation.job_timeout or DEFAULT_MUTATION_JOB_TIMEOUT,
             )
+    _report_what_stayed(result)
     result["sent"] = keys
     result["kept"] = kept
     return result, _meta(invocation, auth.workspace_id, project_id)
