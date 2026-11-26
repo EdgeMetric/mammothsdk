@@ -6,28 +6,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added (next mammoth-io)
+## mammoth-io 0.8.60, mammoth-cli 2.5.1, mammoth-mcp-server 0.2.17 (2026-11-26)
+
+### Added (mammoth-io 0.8.60)
 
 - SDK: the Workflows API. `workflows.list_runnable`, `workflows.run_status` and `workflows.run_result`; `workflow_triggers.run(callback_url=...)` has Mammoth POST a signed JSON when the run ends and returns its `callback_secret` once. `mammoth.verify_callback(secret, header, body, tolerance=300)` checks the callback's `X-Mammoth-Signature`.
 
-### Added (next mammoth-cli)
+### Added (mammoth-cli 2.5.1)
 
 - `workflow runnable` lists the workflows you can run, each with its latest run. `workflow run status` and `workflow run result WORKFLOW_ID RUN_ID` read one run. `workflow run start` takes `callback_url`, with `--reveal` (the `callback_secret` is shown only once). `workflow verify-callback --input '{"header", "body_file", "secret_file"}'` checks a saved callback's signature locally.
 
-### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
+### Fixed (mammoth-io 0.8.60, mammoth-cli 2.5.1, mammoth-mcp-server 0.2.17)
 
 - An export to a new dataset (`View.export.to_dataset`, `view export dataset`) reports the dataset that run wrote. A second export under the same name, which the server names "Sales 2", used to report the first run's dataset. A read that fails after the export was accepted (a timeout, say) now comes back as a pending export that says not to export again (`export_pending`, with the failed read in `readback_error`); it used to read as a read to retry that changed nothing, and the retry made a second dataset (#488).
 - Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
 
-### Changed (next mammoth-io)
+### Changed (mammoth-io 0.8.60)
 
 - **Breaking:** `FoldersAPI.create` takes `parent_folder_id` (the parent's `id`) instead of `parent_resource_id`, and everything after `name` by keyword. The server never read `parent_resource_id`, so every folder was made at the root.
 
-### Fixed (next mammoth-cli, mammoth-mcp-server)
+### Changed (mammoth-mcp-server 0.2.17)
+
+- Requires mammoth-io 0.8.60 or later (`FoldersAPI.create` takes `parent_folder_id` by keyword). mammoth-mcp-server 0.2.16 with mammoth-io 0.8.60 fails on every `create_folder`, so upgrade both together.
+
+### Fixed (mammoth-cli 2.5.1, mammoth-mcp-server 0.2.17)
 
 - `folder create` and the MCP `create_folder` make the folder inside the parent they are given; it was always made at the root. The CLI's `parent_resource_id` is a folder id as `folder list` shows it, or `root`.
 
-### Fixed (next mammoth-cli)
+### Fixed (mammoth-cli 2.5.1)
 
 - `dashboard figure add` with a `dataview_id` other than the board's own table is no longer refused before the call with "the dashboard has no such column": the board's columns are no test of another table's figure, so the server checks it (and says how to add a page on that table). A page on a second table could not be added from the CLI.
 - `view task update` and `view task delete` exit 1 with the server's error when the server refuses the change (`status: error`, e.g. error 7010: steps or derivatives still read this step's columns; they are named, with where to change them). Before, a refusal while the pipeline was still busy read `outcome: pending` and exited 0.
