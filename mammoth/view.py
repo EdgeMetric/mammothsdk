@@ -603,11 +603,12 @@ class View(
         # a repeat dataset ("Sales 2") and rewrites the new trigger's DS_NAME
         # to match, so a name-only match finds the EARLIER run's dataset.
         floor = None if one_off else await self._highest_export_id()
-        # A one-off copy leaves no trigger to tell runs apart, so the datasets
-        # an earlier copy made are snapshotted instead.
+        # The datasets earlier exports of this view under this name made, for
+        # the dataset-list fallback: an earlier one-off copy saved no trigger,
+        # so only a snapshot taken before this submit can rule it out.
         known: set[int] = (
             await self._exported_dataset_ids(target_properties["DS_NAME"], project_id)
-            if one_off and existing_id is None
+            if existing_id is None
             else set()
         )
 
@@ -623,7 +624,7 @@ class View(
                 await self._wait_for_dataset_export_write(int(existing_id), timeout, floor)
                 return int(existing_id)
             return await self._resolve_exported_dataset_id(
-                target_properties["DS_NAME"], timeout, project_id, floor
+                target_properties["DS_NAME"], timeout, project_id, floor, known
             )
         except MammothAPIError as exc:
             raise self._export_readback_error(target_properties, exc) from exc
@@ -725,6 +726,7 @@ class View(
         timeout: int | None = None,
         project_id: int | None = None,
         floor: int | None = None,
+        known: set[int] | None = None,
     ) -> int:
         """Resolve the id of the dataset a new internal-dataset export created.
 
@@ -739,6 +741,9 @@ class View(
             floor: The highest export id before this export was submitted. Only a
                 later export is this call's, and its name may be the server's
                 numbered form of *dataset_name* ("Sales 2").
+            known: Datasets earlier exports of this view under *dataset_name* made,
+                read before this export was submitted; the fallback lookup never
+                returns one of them.
 
         Returns:
             The new dataset's id.
@@ -759,7 +764,6 @@ class View(
             target_id = (export.target_properties or {}).get("TARGET_DS_ID")
             if target_id is not None:
                 return int(target_id)
-        known = await self._earlier_export_targets(floor) if floor is not None else set()
         landed = await self._find_exported_dataset(dataset_name, project_id, known)
         if landed is not None:
             return landed
@@ -855,25 +859,6 @@ class View(
             and isinstance(ds.get("additional_info"), dict)
             and str(ds["additional_info"].get("DATAVIEW_ID")) == str(self.id)
         }
-
-    async def _earlier_export_targets(self, floor: int) -> set[int]:
-        """Datasets written by this view's exports up to export id *floor*.
-
-        Args:
-            floor: The highest export id before this call submitted its export.
-
-        Returns:
-            The ``TARGET_DS_ID`` of every export at or below *floor*.
-        """
-        targets: set[int] = set()
-        for export in await self._list_internal_dataset_exports():
-            target = (export.target_properties or {}).get("TARGET_DS_ID")
-            if (export.id or 0) <= floor and target is not None:
-                try:
-                    targets.add(int(target))
-                except (TypeError, ValueError):
-                    continue
-        return targets
 
     async def _wait_for_dataset_export_write(
         self, target_ds_id: int, timeout: int | None = None, floor: int | None = None

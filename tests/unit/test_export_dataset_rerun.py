@@ -42,6 +42,7 @@ class _ExportServer:
         self.exports: list[dict[str, Any]] = []
         self.datasets: list[dict[str, Any]] = []
         self.timeout_reads_after_post = False
+        self.write_still_running = False
         self._posted = False
         self.client = MammothClient(api_key="k", api_secret="s", workspace_id=1)
         self.client.set_project_id(PROJECT_ID)
@@ -73,6 +74,17 @@ class _ExportServer:
         path = request.url.path
         if request.method == "POST" and path.endswith("/pipeline/exports"):
             body = json.loads(request.content)
+            if self.write_still_running:
+                # The trigger is saved, but its dataset is not written yet.
+                self.exports.append(
+                    {
+                        "id": len(self.exports) + 1,
+                        "status": "executing",
+                        "target_properties": dict(body["target_properties"]),
+                    }
+                )
+                self._posted = True
+                return httpx.Response(200, json={"trigger_id": len(self.exports)})
             self.run_export(
                 body["target_properties"]["DS_NAME"], trigger=body["trigger_type"] != "none"
             )
@@ -118,6 +130,18 @@ async def test_a_rerun_one_off_copy_reports_the_dataset_it_wrote(
 
     assert written != first
     assert {ds["id"]: ds["name"] for ds in server.datasets}[written] == "Copy 2"
+
+
+async def test_an_export_still_writing_never_reports_an_earlier_copy_s_dataset(
+    server: _ExportServer, view: View
+) -> None:
+    server.run_export("Sales", trigger=False)  # an earlier one-off copy: no trigger
+    server.write_still_running = True
+
+    with pytest.raises(MammothExportError) as raised:
+        await view.export.to_dataset("Sales", timeout=1)
+
+    assert raised.value.details["export_pending"] is True
 
 
 async def test_a_read_that_fails_after_the_export_is_accepted_says_do_not_export_again(
