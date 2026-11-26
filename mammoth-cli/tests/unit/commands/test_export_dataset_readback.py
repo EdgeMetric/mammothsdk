@@ -7,6 +7,7 @@ runs here against a server faked at the HTTP boundary only.
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 import httpx
@@ -50,9 +51,9 @@ def view() -> View:
     return View(client, {"id": VIEW_ID, "name": "v", "properties": {"columns": columns}}, 500)
 
 
-async def test_a_timed_out_read_after_the_export_never_says_retry(view: View) -> None:
+def test_a_timed_out_read_after_the_export_never_says_retry(view: View) -> None:
     with pytest.raises(MammothError) as raised:
-        await view.export.to_dataset("Sales", timeout=5)
+        asyncio.run(view.export.to_dataset("Sales", timeout=5))
 
     mapped = map_sdk_exception(raised.value, project_id=PROJECT_ID)
 
