@@ -546,7 +546,7 @@ wheels = [
 
 [[package]]
 name = "mammoth-cli"
-version = "2.5.0"
+version = "2.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
@@ -580,7 +580,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1,<9" },
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "keyring", specifier = ">=25.7,<26" },
-    { name = "mammoth-io", specifier = ">=0.8.59,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.60,<0.9" },
     { name = "platformdirs", specifier = ">=4.10,<5" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "pyyaml", specifier = ">=6,<7" },
@@ -603,16 +603,16 @@ dev = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.59"
+version = "0.8.60"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/8d/fadcd6e975fac559fe1ec64c84800a655c278228efc75fcb74ff77956972/mammoth_io-0.8.59.tar.gz", hash = "sha256:f7e16c0493166688a10c4030a1eb7132206f7b9a5fa537ce599013dcc1695ca4", size = 820442, upload-time = "2026-11-24T17:21:19.866Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/94/aee2389ad76170b9944f69e52cf33864e7750a67a706067a25f0ff1cde35/mammoth_io-0.8.60.tar.gz", hash = "sha256:b1f96c34fc4420462278a705375568ed5df1298a2b01ff1074ccb4ae3a694000", size = 826310, upload-time = "2026-11-26T06:41:35.766Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3c/cd/e9cc969e711ac6b02d737b90779764a77072d106a70b4ca2c8e44733c1c9/mammoth_io-0.8.59-py3-none-any.whl", hash = "sha256:c9b141db9f1f012c708cb59e53b170060aa04266765dca5cdda1c687377d2006", size = 421481, upload-time = "2026-11-24T17:21:17.376Z" },
+    { url = "https://files.pythonhosted.org/packages/50/b2/5ca4f035fd469318a34e725914b45ab8fd29067e96a7e309ede765a4824e/mammoth_io-0.8.60-py3-none-any.whl", hash = "sha256:38f73fe899fc8d349f7debd9a65ceca8af4297a307d1bd5e011c956e92c9f90f", size = 426196, upload-time = "2026-11-26T06:41:33.184Z" },
 ]
 
 [[package]]

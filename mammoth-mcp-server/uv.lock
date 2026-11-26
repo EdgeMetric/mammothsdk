@@ -472,16 +472,16 @@ wheels = [
 
 [[package]]
 name = "mammoth-io"
-version = "0.8.56"
+version = "0.8.60"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/04/c35db032747a4b2d8ae846f91b05a82428fd3389eca4f0889ccfe3f012b7/mammoth_io-0.8.56.tar.gz", hash = "sha256:7754521de3b77be6aaf2c34ec561cdaa83aed69e682b1d6328c344576fcbdec7", size = 808993, upload-time = "2026-11-12T07:45:24.032Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/94/aee2389ad76170b9944f69e52cf33864e7750a67a706067a25f0ff1cde35/mammoth_io-0.8.60.tar.gz", hash = "sha256:b1f96c34fc4420462278a705375568ed5df1298a2b01ff1074ccb4ae3a694000", size = 826310, upload-time = "2026-11-26T06:41:35.766Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/de/ed23a15653549c327e07b5bc27b059eaec1315b3fd6aa26d1b2202ec64e1/mammoth_io-0.8.56-py3-none-any.whl", hash = "sha256:0bd742dfd455e6d57558014a523ebe8b897da3a2f730634dff7af4f38c68f6c9", size = 415597, upload-time = "2026-11-12T07:45:21.59Z" },
+    { url = "https://files.pythonhosted.org/packages/50/b2/5ca4f035fd469318a34e725914b45ab8fd29067e96a7e309ede765a4824e/mammoth_io-0.8.60-py3-none-any.whl", hash = "sha256:38f73fe899fc8d349f7debd9a65ceca8af4297a307d1bd5e011c956e92c9f90f", size = 426196, upload-time = "2026-11-26T06:41:33.184Z" },
 ]
 
 [[package]]
@@ -511,7 +511,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=48.0.1,<50" },
-    { name = "mammoth-io", specifier = ">=0.8.56,<0.9" },
+    { name = "mammoth-io", specifier = ">=0.8.60,<0.9" },
     { name = "mcp", specifier = ">=2.2.0,<3" },
     { name = "pydantic", specifier = ">=2.12.5,<3" },
     { name = "python-multipart", specifier = ">=0.0.18" },
