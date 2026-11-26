@@ -40,6 +40,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import random
+import re
 import string
 import time
 from collections.abc import Callable, Iterator
@@ -96,6 +97,13 @@ ERR_EXPORT_DATASET_UNRESOLVED = (
     "before the timeout; the materialisation may still be in progress."
 )
 
+# Raised when a read after an accepted internal-dataset export fails: the
+# export was written (or is being written), so it must never read as a retry.
+ERR_EXPORT_DATASET_READBACK = (
+    "Export to dataset {name!r} was submitted, but reading back its result failed; "
+    "the dataset may already exist. Do not export again."
+)
+
 # Raised when a write into an EXISTING dataset (APPEND_TO_DS/REPLACE_IN_DS)
 # never reaches EXECUTED in time.
 ERR_EXPORT_DATASET_WRITE_UNRESOLVED = (
@@ -126,6 +134,29 @@ _EXPORT_PAGE_LIMIT = 100  # server cap on /exports page size
 _EXPORT_POLL_MAX_SECONDS = 10.0  # export-trigger polls back off from 2s to this
 _REST_TIMEOUT_MIN = 5
 _REST_TIMEOUT_MAX = 300
+
+
+def _is_export_dataset_name(name: Any, requested: str) -> bool:
+    """Whether *name* is the dataset name an export asked for, as the server gives it.
+
+    The server numbers a repeat name ("Sales", "Sales 2", "Sales 3":
+    ``Datasource.get_unique_name`` in mvc-service) and writes the numbered name back
+    to the export trigger's ``DS_NAME``.
+
+    Args:
+        name: A dataset's or export trigger's name.
+        requested: The name the export asked for.
+
+    Returns:
+        True for *requested* itself or *requested* followed by a space and a number of
+        2 or more.
+    """
+    if not isinstance(name, str):
+        return False
+    if name == requested:
+        return True
+    numbered = re.fullmatch(re.escape(requested) + r" ([0-9]+)", name)
+    return numbered is not None and int(numbered.group(1)) >= 2
 
 
 class _DraftContext:
@@ -563,23 +594,75 @@ class View(
         )
         existing_id = target_properties.get("TARGET_DS_ID")
         one_off = trigger_type == TriggerType.NONE
+        project_id = target_properties.get("project_id")
         # Snapshot the highest export id that already exists for this
         # dataview BEFORE submitting, so the write-confirmation poll below
         # can tell this call's own export apart from an earlier one already
-        # sitting at EXECUTED against the same target.
-        floor = await self._highest_export_id() if existing_id is not None and not one_off else None
+        # sitting at EXECUTED against the same target -- or, for a new
+        # dataset, an earlier export under the same name: the server renames
+        # a repeat dataset ("Sales 2") and rewrites the new trigger's DS_NAME
+        # to match, so a name-only match finds the EARLIER run's dataset.
+        floor = None if one_off else await self._highest_export_id()
+        # A one-off copy leaves no trigger to tell runs apart, so the datasets
+        # an earlier copy made are snapshotted instead.
+        known: set[int] = (
+            await self._exported_dataset_ids(target_properties["DS_NAME"], project_id)
+            if one_off and existing_id is None
+            else set()
+        )
 
         result = await self._client.exports.create(self.id, spec, self.dataset_id)
         if isinstance(result, JobResponse):
             await self._client.jobs.wait_for_job(result.job.id, timeout)
 
-        if one_off:
-            return await self._resolve_one_off_dataset_id(target_properties, timeout)
+        # From here the export is accepted: a failed read says nothing about it.
+        try:
+            if one_off:
+                return await self._resolve_one_off_dataset_id(target_properties, timeout, known)
+            if existing_id is not None:
+                await self._wait_for_dataset_export_write(int(existing_id), timeout, floor)
+                return int(existing_id)
+            return await self._resolve_exported_dataset_id(
+                target_properties["DS_NAME"], timeout, project_id, floor
+            )
+        except MammothAPIError as exc:
+            raise self._export_readback_error(target_properties, exc) from exc
+
+    def _export_readback_error(
+        self, target_properties: dict[str, Any], exc: MammothAPIError
+    ) -> MammothExportError:
+        """The error for an accepted internal-dataset export whose read-back failed.
+
+        The request layer labels a failed GET ``not_started``, which the CLI reports as a
+        read to retry that changed nothing. The export was already accepted, so a retry
+        writes a second dataset (mammothsdk#488). The error is marked ``export_pending``,
+        like a read-back that ran out of time.
+
+        Args:
+            target_properties: The export's target properties, as submitted.
+            exc: The failed read.
+
+        Returns:
+            The error to raise in place of *exc*.
+        """
+        name = target_properties.get("DS_NAME")
+        existing_id = target_properties.get("TARGET_DS_ID")
+        details: dict[str, Any] = {
+            "dataset_name": name,
+            "source_view_id": self.id,
+            "export_pending": True,
+            "readback_error": {
+                **dict(exc.details or {}),
+                "message": str(exc),
+                "status_code": exc.status_code,
+                "method": exc.method,
+                "operation_state": exc.operation_state,
+            },
+        }
         if existing_id is not None:
-            await self._wait_for_dataset_export_write(int(existing_id), timeout, floor)
-            return int(existing_id)
-        return await self._resolve_exported_dataset_id(
-            target_properties["DS_NAME"], timeout, target_properties.get("project_id")
+            details["dataset_id"] = int(existing_id)
+        return MammothExportError(
+            ERR_EXPORT_DATASET_READBACK.format(name=name if name else existing_id), details
         )
 
     async def _highest_export_id(self) -> int:
@@ -637,22 +720,47 @@ class View(
         return None
 
     async def _resolve_exported_dataset_id(
-        self, dataset_name: str, timeout: int | None = None, project_id: int | None = None
+        self,
+        dataset_name: str,
+        timeout: int | None = None,
+        project_id: int | None = None,
+        floor: int | None = None,
     ) -> int:
         """Resolve the id of the dataset a new internal-dataset export created.
 
         Polls this dataview's ``internal_dataset`` export triggers for the one
         named *dataset_name* (the most recent, by id) until it reaches
         ``EXECUTED`` and exposes ``TARGET_DS_ID``.
+
+        Args:
+            dataset_name: The name the export asked for.
+            timeout: Seconds to poll; the client's job timeout when None.
+            project_id: The project the dataset lands in, for the fallback lookup.
+            floor: The highest export id before this export was submitted. Only a
+                later export is this call's, and its name may be the server's
+                numbered form of *dataset_name* ("Sales 2").
+
+        Returns:
+            The new dataset's id.
+
+        Raises:
+            MammothExportError: If no dataset id resolves within the timeout.
         """
-        export = await self._poll_internal_dataset_exports(
-            lambda e: (e.target_properties or {}).get("DS_NAME") == dataset_name, timeout
-        )
+
+        def match(export: Any) -> bool:
+            if floor is not None and (export.id or 0) <= floor:
+                return False
+            return _is_export_dataset_name(
+                (export.target_properties or {}).get("DS_NAME"), dataset_name
+            )
+
+        export = await self._poll_internal_dataset_exports(match, timeout)
         if export is not None:
             target_id = (export.target_properties or {}).get("TARGET_DS_ID")
             if target_id is not None:
                 return int(target_id)
-        landed = await self._find_exported_dataset(dataset_name, project_id)
+        known = await self._earlier_export_targets(floor) if floor is not None else set()
+        landed = await self._find_exported_dataset(dataset_name, project_id, known)
         if landed is not None:
             return landed
         raise MammothExportError(
@@ -666,14 +774,32 @@ class View(
         )
 
     async def _resolve_one_off_dataset_id(
-        self, target_properties: dict[str, Any], timeout: int | None
+        self,
+        target_properties: dict[str, Any],
+        timeout: int | None,
+        known: set[int] | None = None,
     ) -> int:
-        """The dataset a one-off (``trigger_type`` NONE) copy wrote to."""
+        """The dataset a one-off (``trigger_type`` NONE) copy wrote to.
+
+        Args:
+            target_properties: The export's target properties, as submitted.
+            timeout: The caller's timeout, reported if the dataset is not found.
+            known: Datasets an earlier copy of this view under the same name made,
+                read before this copy was submitted; never this copy's.
+
+        Returns:
+            The id of the dataset the copy wrote to.
+
+        Raises:
+            MammothExportError: If the new dataset is not found.
+        """
         existing_id = target_properties.get("TARGET_DS_ID")
         if existing_id is not None:
             return int(existing_id)
         name = target_properties["DS_NAME"]
-        landed = await self._find_exported_dataset(name, target_properties.get("project_id"))
+        landed = await self._find_exported_dataset(
+            name, target_properties.get("project_id"), known or set()
+        )
         if landed is not None:
             return landed
         raise MammothExportError(
@@ -687,26 +813,67 @@ class View(
         )
 
     async def _find_exported_dataset(
-        self, dataset_name: str, project_id: int | None = None
+        self, dataset_name: str, project_id: int | None = None, known: set[int] | None = None
     ) -> int | None:
         """The dataset an export of this view created, found by name and source view.
 
         An export's dataset records the view it came from (``additional_info
         .DATAVIEW_ID``), so a dataset that landed while the export trigger was
         still not listed as ``EXECUTED`` is found here. The newest match wins.
+
+        Args:
+            dataset_name: The name the export asked for; the server's numbered
+                form of it ("Sales 2") matches too.
+            project_id: The project to list; the client's project when None.
+            known: Datasets an earlier export made, which are never this one's.
+
+        Returns:
+            The dataset's id, or None if none matches.
+        """
+        found = await self._exported_dataset_ids(dataset_name, project_id)
+        return max(found - (known or set()), default=None)
+
+    async def _exported_dataset_ids(self, dataset_name: str, project_id: int | None) -> set[int]:
+        """Ids of the datasets exported from this view under *dataset_name*.
+
+        Args:
+            dataset_name: The name the export asked for; the server's numbered
+                form of it ("Sales 2") matches too.
+            project_id: The project to list; the client's project when None.
+
+        Returns:
+            The matching dataset ids.
         """
         listing = await self._client.datasets.list_all(
             project_id=project_id, fields="id,name,additional_info"
         )
-        found = [
+        return {
             int(ds["id"])
             for ds in listing.get("datasets", [])
             if isinstance(ds, dict)
-            and ds.get("name") == dataset_name
+            and _is_export_dataset_name(ds.get("name"), dataset_name)
             and isinstance(ds.get("additional_info"), dict)
             and str(ds["additional_info"].get("DATAVIEW_ID")) == str(self.id)
-        ]
-        return max(found, default=None)
+        }
+
+    async def _earlier_export_targets(self, floor: int) -> set[int]:
+        """Datasets written by this view's exports up to export id *floor*.
+
+        Args:
+            floor: The highest export id before this call submitted its export.
+
+        Returns:
+            The ``TARGET_DS_ID`` of every export at or below *floor*.
+        """
+        targets: set[int] = set()
+        for export in await self._list_internal_dataset_exports():
+            target = (export.target_properties or {}).get("TARGET_DS_ID")
+            if (export.id or 0) <= floor and target is not None:
+                try:
+                    targets.add(int(target))
+                except (TypeError, ValueError):
+                    continue
+        return targets
 
     async def _wait_for_dataset_export_write(
         self, target_ds_id: int, timeout: int | None = None, floor: int | None = None

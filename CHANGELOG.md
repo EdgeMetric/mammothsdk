@@ -16,6 +16,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed (next mammoth-io, mammoth-cli, mammoth-mcp-server)
 
+- An export to a new dataset (`View.export.to_dataset`, `view export dataset`) reports the dataset that run wrote. A second export under the same name, which the server names "Sales 2", used to report the first run's dataset. A read that fails after the export was accepted (a timeout, say) now comes back as a pending export that says not to export again (`export_pending`, with the failed read in `readback_error`); it used to read as a read to retry that changed nothing, and the retry made a second dataset (#488).
 - Pivot sends `COUNT_DISTINCT` as `DISTINCT_COUNT`, the name the server takes; it was refused with 400 5GENR010. `VARIANCE`, `MEDIAN`, `FIRST` and `LAST`, which the server's pivot does not run, are refused before the call with the list of supported functions.
 
 ### Changed (next mammoth-io)
