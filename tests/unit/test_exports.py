@@ -909,12 +909,12 @@ class TestToDatasetOneOffCopy:
         export_view._client.exports = AsyncMock()
         export_view._client.exports.create = fake_create
         export_view._client.datasets = AsyncMock()
-        export_view._client.datasets.list_all.return_value = {
-            "datasets": [
-                {"id": 90, "name": "Copy", "additional_info": {"DATAVIEW_ID": 1}},
-                {"id": 91, "name": "Copy", "additional_info": {"DATAVIEW_ID": export_view.id}},
-            ]
-        }
+        other_view_copy = {"id": 90, "name": "Copy", "additional_info": {"DATAVIEW_ID": 1}}
+        this_copy = {"id": 91, "name": "Copy", "additional_info": {"DATAVIEW_ID": export_view.id}}
+        export_view._client.datasets.list_all.side_effect = [
+            {"datasets": [other_view_copy]},  # before the copy: what earlier copies made
+            {"datasets": [other_view_copy, this_copy]},
+        ]
 
         new_id = await export_view._run_internal_dataset_export(
             {"DS_NAME": "Copy", "TARGET_DS_ID": None, "project_id": 57},
