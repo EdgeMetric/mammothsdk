@@ -481,14 +481,14 @@ def _call_action(service: Any, symbol: str, kwargs: dict[str, Any]) -> Any:
         return service.call(symbol, **kwargs)
     except CliError as error:
         details = error.details if isinstance(error.details, dict) else {}
-        code = _ROOMS_REFUSALS.get(str(details.get("backend_code")))
-        if code is not None:
+        refusal = _ROOMS_REFUSALS.get(str(details.get("backend_code")))
+        if refusal is not None:
             body = details.get("response_body")
             server = body.get("details") if isinstance(body, dict) else None
             rooms = server.get("rooms") if isinstance(server, dict) else None
             if rooms is not None:
                 error.details = {**details, "rooms": rooms}
-            error.hint = _rooms_hint(kwargs["dashboard_id"], code)
+            error.hint = _rooms_hint(kwargs["dashboard_id"], refusal)
         raise
 
 
