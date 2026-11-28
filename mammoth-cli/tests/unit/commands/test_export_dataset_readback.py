@@ -37,6 +37,9 @@ class _AcceptThenTimeOut:
             raise httpx.ReadTimeout("read timed out", request=request)
         if request.url.path.endswith("/pipeline/exports"):
             return httpx.Response(200, json={"exports": [], "next": ""})
+        if request.url.path.endswith("/datasets"):
+            # The datasets earlier exports of this view made, read before this one is sent.
+            return httpx.Response(200, json={"datasets": [], "total": 0})
         return httpx.Response(404, json={"message": json.dumps(request.url.path)})
 
 
