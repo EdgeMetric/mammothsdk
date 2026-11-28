@@ -218,10 +218,10 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DsConfigPatchPath": ("mammoth.models.connectors", "DsConfigPatchPath"),
     "DashboardActionType": ("mammoth.models.dashboards", "DashboardActionType"),
     "DashboardAuthType": ("mammoth.models.dashboards", "DashboardAuthType"),
-    "DashboardPublishRooms": ("mammoth.models.dashboards", "DashboardPublishRooms"),
     "DashboardPatchItem": ("mammoth.models.dashboards", "DashboardPatchItem"),
     "DashboardPatchOp": ("mammoth.models.dashboards", "DashboardPatchOp"),
     "DashboardPatchPath": ("mammoth.models.dashboards", "DashboardPatchPath"),
+    "DashboardPublishRooms": ("mammoth.models.dashboards", "DashboardPublishRooms"),
     "DashboardShareRole": ("mammoth.models.dashboards", "DashboardShareRole"),
     "DashboardShareUser": ("mammoth.models.dashboards", "DashboardShareUser"),
     "BigQueryExportType": ("mammoth.models.exports", "BigQueryExportType"),
@@ -374,10 +374,10 @@ __all__ = [
     # Dashboard enums / models
     "DashboardActionType",
     "DashboardAuthType",
-    "DashboardPublishRooms",
     "DashboardPatchItem",
     "DashboardPatchOp",
     "DashboardPatchPath",
+    "DashboardPublishRooms",
     "DashboardShareRole",
     "DashboardShareUser",
     # Automation enums / models

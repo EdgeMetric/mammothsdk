@@ -632,7 +632,11 @@ def test_action_forwards_every_params_field_it_accepts(
 
 @pytest.mark.parametrize(
     ("code", "named"),
-    [("4DASH030", ['"params_rooms": "add"', '"params_rooms": "hide"']), ("4DASH031", ['"hide"'])],
+    [
+        ("4DASH030", ['"params_rooms": "add"', '"params_rooms": "hide"']),
+        ("DASHBOARD_PUBLISH_HIDES_IN_ROOMS", ['"params_rooms": "add"']),
+        ("4DASH031", ['"hide"']),
+    ],
 )
 def test_a_publish_refused_over_ask_rooms_names_params_rooms(
     fake_service: FakeMammothService, tmp_path: Path, code: str, named: list[str]

@@ -677,9 +677,13 @@ def dataset_update_method_set(invocation: Invocation) -> HandlerResult:
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
     shaped = describe_update_method(data, dataset_id)
-    if shaped.get("changed") is False and "schema_mapping" not in kwargs:
-        # Already the mode asked for: the state holds, so a recipe step goes on (#499).
-        shaped["status"] = NO_CHANGE_STATUS
+    if shaped.get("changed") is False:
+        if "schema_mapping" in kwargs:
+            # The mode stayed, but the mapping sent was written: not a write that did not take.
+            del shaped["changed"]
+        else:
+            # Already the mode asked for: the state holds, so a recipe step goes on (#499).
+            shaped["status"] = NO_CHANGE_STATUS
         shaped["note"] = f"The dataset's update method was already '{shaped['mode']}'."
     return shaped, _meta(invocation, auth.workspace_id, project_id)
 

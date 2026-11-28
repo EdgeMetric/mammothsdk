@@ -1809,16 +1809,20 @@ def test_a_mode_change_is_not_reported_as_no_change(
     assert "status" not in data
 
 
-def test_a_new_schema_mapping_on_the_same_mode_is_not_no_change(
+def test_a_new_schema_mapping_on_the_same_mode_is_a_settled_write(
     fake_service: FakeMammothService, tmp_path: Path
 ) -> None:
+    """The mapping was written though the mode stayed, so the write is not 'nothing changed'."""
     fake_service.responses[_SET_METHOD] = _method_set("replace")
-    data, _ = dataset_cmd.dataset_update_method_set(
-        _inv(
-            "dataset.update-method.set",
-            project=180,
-            extra_args=["7"],
-            input_file=_write(tmp_path, {"mode": "replace", "schema_mapping": {"a": "b"}}),
-        )
+    document = {"mode": "replace", "schema_mapping": {"Amount": ["amount"]}}
+    result = make_runner().invoke(
+        [
+            *("dataset", "update-method", "set", "7"),
+            *("--input", _write(tmp_path, document)),
+            *("--project", "180", "--output", "json"),
+        ]
     )
-    assert "status" not in data
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert "status" not in data and "changed" not in data
+    assert data["verify"]["outcome"] == "settled"

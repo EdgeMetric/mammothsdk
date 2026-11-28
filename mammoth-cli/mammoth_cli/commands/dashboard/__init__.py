@@ -424,6 +424,13 @@ _ACTION_PARAMS = (
 #: The server's refusals of a publish that would hide the board in an Ask room.
 _HIDES_IN_ROOMS_CODE = "4DASH030"
 _CANT_ADD_IN_ROOMS_CODE = "4DASH031"
+#: Each refusal by code and by name (a body may carry either as ``code``).
+_ROOMS_REFUSALS = {
+    _HIDES_IN_ROOMS_CODE: _HIDES_IN_ROOMS_CODE,
+    "DASHBOARD_PUBLISH_HIDES_IN_ROOMS": _HIDES_IN_ROOMS_CODE,
+    _CANT_ADD_IN_ROOMS_CODE: _CANT_ADD_IN_ROOMS_CODE,
+    "DASHBOARD_PUBLISH_CANT_ADD_IN_ROOMS": _CANT_ADD_IN_ROOMS_CODE,
+}
 
 
 def _rooms_hint(dashboard_id: Any, code: str) -> str:
@@ -474,8 +481,8 @@ def _call_action(service: Any, symbol: str, kwargs: dict[str, Any]) -> Any:
         return service.call(symbol, **kwargs)
     except CliError as error:
         details = error.details if isinstance(error.details, dict) else {}
-        code = details.get("backend_code")
-        if code in (_HIDES_IN_ROOMS_CODE, _CANT_ADD_IN_ROOMS_CODE):
+        code = _ROOMS_REFUSALS.get(str(details.get("backend_code")))
+        if code is not None:
             body = details.get("response_body")
             server = body.get("details") if isinstance(body, dict) else None
             rooms = server.get("rooms") if isinstance(server, dict) else None
