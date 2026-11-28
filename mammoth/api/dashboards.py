@@ -28,6 +28,7 @@ from mammoth.models.dashboards import (
     DashboardPatchItem,
     DashboardPatchOp,
     DashboardPatchPath,
+    DashboardPublishRooms,
     DashboardShareUser,
     DashboardTagsParams,
     EmbedConfigParams,
@@ -137,6 +138,10 @@ ERR_AUTO_SYNC_NEEDS_ENABLED = "`auto-sync` action requires `params_enabled` (boo
 ERR_AUTO_PUBLISH_NEEDS_ENABLED = "`auto-publish` action requires `params_enabled` (bool)."
 ERR_DELETE_SOURCE_NEEDS_VIEW_ID = "`delete-source` action requires `params_view_id` (int > 0)."
 ERR_VIEW_ID_POSITIVE = "`params_view_id` must be a positive integer, got {0}."
+ERR_ROOMS_CHOICE = "`params_rooms` must be 'add' or 'hide', got {0!r}."
+ERR_ROOMS_NEEDS_PUBLISH_PRESENTATION = (
+    "`params_rooms` goes with the `publish-presentation` action only, not `{0}`."
+)
 ERR_JOB_ID_POSITIVE = "`job_id` must be a positive integer, got {0}."
 ERR_WORKSPACE_ID_POSITIVE = "`workspace_id` must be a positive integer, got {0}."
 ERR_EMBED_ORIGIN_EMPTY = "`origin` must be a non-empty string."
@@ -833,6 +838,7 @@ class DashboardsAPI:
         params_view_id: int | None = None,
         params_sequence: int | None = None,
         params_filter_column: str | None = None,
+        params_rooms: DashboardPublishRooms | None = None,
     ) -> dict[str, Any]:
         """Perform an action on a dashboard.
 
@@ -846,14 +852,20 @@ class DashboardsAPI:
             params_sequence: The version to rewind to; required for ``restore``.
             params_filter_column: The column rows are filtered on; required
                 when ``set-rls-config`` turns row-level security on.
+            params_rooms: ``publish-presentation`` only: what to do about the Ask rooms
+                the new version would hide the board in, after the server refused with
+                409 4DASH030. ``add`` adds the tables to each room; ``hide`` publishes
+                and leaves the board hidden there. Ask the person which one.
 
         Returns:
-            Dict with action result.
+            Dict with action result (with ``rooms`` when *params_rooms* was sent).
 
         Raises:
             MammothValidationError: If *dashboard_id* ≤ 0, ``auto-sync`` /
                 ``auto-publish`` are called without *params_enabled*, or
-                ``delete-source`` is called without a positive *params_view_id*.
+                ``delete-source`` is called without a positive *params_view_id*,
+                or *params_rooms* is not ``add`` / ``hide`` or is sent with an
+                action other than ``publish-presentation``.
         """
         if dashboard_id <= 0:
             raise MammothValidationError(ERR_DASHBOARD_ID_POSITIVE.format(dashboard_id))
@@ -868,6 +880,8 @@ class DashboardsAPI:
                 raise MammothValidationError(ERR_VIEW_ID_POSITIVE.format(params_view_id))
         if params_view_id is not None and params_view_id <= 0:
             raise MammothValidationError(ERR_VIEW_ID_POSITIVE.format(params_view_id))
+        if params_rooms is not None and action is not DashboardActionType.PUBLISH_PRESENTATION:
+            raise MammothValidationError(ERR_ROOMS_NEEDS_PUBLISH_PRESENTATION.format(action.value))
 
         body: dict[str, Any] = {"action": action.value}
         params: dict[str, Any] = {}
@@ -879,6 +893,11 @@ class DashboardsAPI:
             params["sequence"] = params_sequence
         if params_filter_column is not None:
             params["filter_column"] = params_filter_column
+        if params_rooms is not None:
+            try:
+                params["rooms"] = DashboardPublishRooms(params_rooms).value
+            except ValueError as exc:
+                raise MammothValidationError(ERR_ROOMS_CHOICE.format(params_rooms)) from exc
         if params:
             body["params"] = params
 

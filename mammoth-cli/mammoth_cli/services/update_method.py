@@ -22,6 +22,8 @@ from mammoth.appends import (
 from mammoth_cli.errors.envelope import CODE_INVALID_ARGUMENT, EXIT_USAGE, CliError
 
 SET_SYMBOL = "mammoth.api.datasets.DatasetsAPI.set_update_method"
+#: The status of a set to the mode the dataset already has: done, nothing to change.
+NO_CHANGE_STATUS = "no_change"
 
 
 def parse_mode(value: Any) -> str:

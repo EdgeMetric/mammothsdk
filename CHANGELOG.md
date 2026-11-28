@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added (next mammoth-io, mammoth-cli)
+
+- `DashboardsAPI.action(..., params_rooms=DashboardPublishRooms.ADD | HIDE)` and `dashboard action --input '{"action": "publish-presentation", "params_rooms": "add"}'` answer a publish the server refused because the new version would hide the board in an Ask room (409 4DASH030). `add` adds the tables to those rooms; `hide` publishes and leaves the board hidden there. The 4DASH030 and 4DASH031 errors from `dashboard action` now say to ask the person and give both commands, with the rooms in `details.rooms` (#499).
+
+### Fixed (next mammoth-cli)
+
+- `dashboard action` sends `params_sequence` and `params_filter_column`. It accepted both and then dropped them.
+- `dataset update-method set` to the mode the dataset already has reports `status: no_change` and succeeds. It exited 1 ("nothing changed"), which stopped the `replace-data` recipe on a dataset already in replace mode. `recipe run` takes an integer input given as a string of digits (`"dataset_id": "7"`), as an id typed over the quoted `"<dataset_id>"` placeholder from `mammoth how` comes back (#499).
+
 ## mammoth-io 0.8.60, mammoth-cli 2.5.1, mammoth-mcp-server 0.2.17 (2026-11-26)
 
 ### Added (mammoth-io 0.8.60)

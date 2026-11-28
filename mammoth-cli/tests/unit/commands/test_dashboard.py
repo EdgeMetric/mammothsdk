@@ -601,6 +601,62 @@ def test_action_proceeds_with_yes_and_forwards_optional_params(
     )
 
 
+def test_action_forwards_every_params_field_it_accepts(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#499: params_rooms was missing; params_sequence/filter_column were dropped."""
+    fake_service.responses[_GET] = {"id": 7, "was_published": True}
+    doc = _write_doc(
+        tmp_path,
+        {
+            "action": "publish-presentation",
+            "params_rooms": "add",
+            "params_sequence": 4,
+            "params_filter_column": "region",
+        },
+    )
+    dashboard_cmd.dashboard_action(
+        _inv("dashboard.action", extra_args=["7"], input_file=doc, yes=True)
+    )
+    assert fake_service.call_log[-1] == (
+        _ACTION,
+        {
+            "dashboard_id": 7,
+            "action": "publish-presentation",
+            "params_rooms": "add",
+            "params_sequence": 4,
+            "params_filter_column": "region",
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("code", "named"),
+    [("4DASH030", ['"params_rooms": "add"', '"params_rooms": "hide"']), ("4DASH031", ['"hide"'])],
+)
+def test_a_publish_refused_over_ask_rooms_names_params_rooms(
+    fake_service: FakeMammothService, tmp_path: Path, code: str, named: list[str]
+) -> None:
+    rooms = [{"room_id": 12, "name": "Sales"}]
+    fake_service.responses[_GET] = {"id": 7, "was_published": True}
+    fake_service.responses[_ACTION] = CliError(
+        code="api_error",
+        message="Publishing this version would hide the dashboard in an Ask room.",
+        exit_status=1,
+        details={"backend_code": code, "response_body": {"details": {"rooms": rooms}}},
+    )
+    doc = _write_doc(tmp_path, {"action": "publish-presentation"})
+    with pytest.raises(CliError) as excinfo:
+        dashboard_cmd.dashboard_action(
+            _inv("dashboard.action", extra_args=["7"], input_file=doc, yes=True)
+        )
+    hint = excinfo.value.hint or ""
+    assert "Ask the person" in hint and "mammoth dashboard action 7" in hint
+    for text in named:
+        assert text in hint
+    assert excinfo.value.details["rooms"] == rooms
+
+
 # --- dashboard share ------------------------------------------------------------
 
 

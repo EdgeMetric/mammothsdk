@@ -243,6 +243,10 @@ def _inputs(recipe: dict[str, Any], given: Any) -> dict[str, Any]:
         value = given[name]
         if spec.get("also_string") and isinstance(value, str):
             value = [value]  # version 1 took one name
+        if spec["type"] == "integer" and isinstance(value, str) and value.isdecimal():
+            # 'how' prints the placeholder quoted ("<dataset_id>"); an id typed over it
+            # keeps the quotes, so a string of digits is that integer (#499).
+            value = int(value)
         allowed = _INPUT_TYPES[spec["type"]]
         # A boolean is an int in Python, but only an 'any' input means it as a value.
         if not isinstance(value, allowed) or (isinstance(value, bool) and spec["type"] != "any"):

@@ -97,6 +97,7 @@ if TYPE_CHECKING:
         DashboardPatchItem,
         DashboardPatchOp,
         DashboardPatchPath,
+        DashboardPublishRooms,
         DashboardShareRole,
         DashboardShareUser,
     )
@@ -217,6 +218,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DsConfigPatchPath": ("mammoth.models.connectors", "DsConfigPatchPath"),
     "DashboardActionType": ("mammoth.models.dashboards", "DashboardActionType"),
     "DashboardAuthType": ("mammoth.models.dashboards", "DashboardAuthType"),
+    "DashboardPublishRooms": ("mammoth.models.dashboards", "DashboardPublishRooms"),
     "DashboardPatchItem": ("mammoth.models.dashboards", "DashboardPatchItem"),
     "DashboardPatchOp": ("mammoth.models.dashboards", "DashboardPatchOp"),
     "DashboardPatchPath": ("mammoth.models.dashboards", "DashboardPatchPath"),
@@ -372,6 +374,7 @@ __all__ = [
     # Dashboard enums / models
     "DashboardActionType",
     "DashboardAuthType",
+    "DashboardPublishRooms",
     "DashboardPatchItem",
     "DashboardPatchOp",
     "DashboardPatchPath",

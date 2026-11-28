@@ -3254,7 +3254,7 @@ methods:
   implementation_origin: mammoth.api.dashboards.DashboardsAPI.action
   signature: 'action(self, dashboard_id: ''int'', action: ''DashboardActionType'', params_enabled: ''bool
     | None'' = None, params_view_id: ''int | None'' = None, params_sequence: ''int | None'' = None, params_filter_column:
-    ''str | None'' = None) -> ''dict[str, Any]'''
+    ''str | None'' = None, params_rooms: ''DashboardPublishRooms | None'' = None) -> ''dict[str, Any]'''
   openapi_operation_ids: []
   canonical_command: dashboard.action
   alias_of: null

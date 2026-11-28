@@ -413,6 +413,78 @@ def dashboard_update(invocation: Invocation) -> HandlerResult:
     return data, _meta(invocation, auth.workspace_id)
 
 
+#: The ``params_*`` fields of ``dashboard action``, each sent on to the SDK when given.
+_ACTION_PARAMS = (
+    "params_enabled",
+    "params_view_id",
+    "params_sequence",
+    "params_filter_column",
+    "params_rooms",
+)
+#: The server's refusals of a publish that would hide the board in an Ask room.
+_HIDES_IN_ROOMS_CODE = "4DASH030"
+_CANT_ADD_IN_ROOMS_CODE = "4DASH031"
+
+
+def _rooms_hint(dashboard_id: Any, code: str) -> str:
+    """What to do after a publish the server refused over the Ask rooms holding the board.
+
+    Args:
+        dashboard_id: The board being published.
+        code: ``4DASH030`` (the version would hide the board) or ``4DASH031`` (its tables
+            can't be added to every room).
+
+    Returns:
+        The recovery step, naming ``params_rooms``.
+    """
+    again = (
+        f"mammoth dashboard action {dashboard_id} --input "
+        '\'{"action": "publish-presentation", "params_rooms": "%s"}\' --yes'
+    )
+    if code == _CANT_ADD_IN_ROOMS_CODE:
+        return (
+            "Nothing was published. details.rooms says why each room can't take the tables. "
+            "Ask the person whether to publish and keep the board hidden there, then run "
+            + again % "hide"
+            + ", or have the room's owner add the tables first."
+        )
+    return (
+        "Nothing was published. The rooms in details.rooms don't use a table this version "
+        "reads. Ask the person: add the tables to those rooms (" + again % "add" + "), or "
+        "publish and keep the board hidden there (" + again % "hide" + ")."
+    )
+
+
+def _call_action(service: Any, symbol: str, kwargs: dict[str, Any]) -> Any:
+    """Send one dashboard action; a publish refused over Ask rooms names ``params_rooms``.
+
+    Args:
+        service: The session service.
+        symbol: The SDK symbol of the action.
+        kwargs: Its keyword arguments.
+
+    Returns:
+        The action's response.
+
+    Raises:
+        CliError: The refusal, with the ``params_rooms`` step as its hint for 4DASH030
+            and 4DASH031.
+    """
+    try:
+        return service.call(symbol, **kwargs)
+    except CliError as error:
+        details = error.details if isinstance(error.details, dict) else {}
+        code = details.get("backend_code")
+        if code in (_HIDES_IN_ROOMS_CODE, _CANT_ADD_IN_ROOMS_CODE):
+            body = details.get("response_body")
+            server = body.get("details") if isinstance(body, dict) else None
+            rooms = server.get("rooms") if isinstance(server, dict) else None
+            if rooms is not None:
+                error.details = {**details, "rooms": rooms}
+            error.hint = _rooms_hint(kwargs["dashboard_id"], code)
+        raise
+
+
 def dashboard_action(invocation: Invocation) -> HandlerResult:
     """Apply a lifecycle action to a dashboard. Always requires ``--yes``."""
     dashboard_id = _require_int_positional(invocation, "dashboard id")
@@ -420,7 +492,7 @@ def dashboard_action(invocation: Invocation) -> HandlerResult:
     action = _require_field(document, "action")
     kwargs: dict[str, Any] = {"dashboard_id": dashboard_id, "action": action}
     assert document is not None
-    _forward_optional(document, kwargs, ("params_enabled", "params_view_id"))
+    _forward_optional(document, kwargs, _ACTION_PARAMS)
     with open_service(invocation) as (service, auth):
         published = _was_published(service, dashboard_id)
         enforce_confirmation(
@@ -432,7 +504,7 @@ def dashboard_action(invocation: Invocation) -> HandlerResult:
         first_publish = action == "publish-data" and not published
         if first_publish:
             kwargs["action"] = "publish-presentation"
-        data = service.call(_symbol(invocation), **kwargs)
+        data = _call_action(service, _symbol(invocation), kwargs)
     if first_publish:
         data = {
             "action": "publish-presentation",

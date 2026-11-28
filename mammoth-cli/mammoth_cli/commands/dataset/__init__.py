@@ -65,8 +65,8 @@ from mammoth_cli.services.listing import (
 )
 from mammoth_cli.services.schema_diff import column_samples, schema_diff
 from mammoth_cli.services.unknown_outcome import settle_unknown_outcome, trashed_or_gone
+from mammoth_cli.services.update_method import NO_CHANGE_STATUS, parse_mode
 from mammoth_cli.services.update_method import describe as describe_update_method
-from mammoth_cli.services.update_method import parse_mode
 
 #: The server's limits on a dataset definition (``DefinitionSpec`` in mvc-service).
 _DEFINITION_LIMITS = {"term": 60, "definition": 300}
@@ -676,9 +676,12 @@ def dataset_update_method_set(invocation: Invocation) -> HandlerResult:
     _forward_optional(document, kwargs, ("schema_mapping",))
     with open_service(invocation) as (service, auth):
         data = service.call(_symbol(invocation), **kwargs)
-    return describe_update_method(data, dataset_id), _meta(
-        invocation, auth.workspace_id, project_id
-    )
+    shaped = describe_update_method(data, dataset_id)
+    if shaped.get("changed") is False and "schema_mapping" not in kwargs:
+        # Already the mode asked for: the state holds, so a recipe step goes on (#499).
+        shaped["status"] = NO_CHANGE_STATUS
+        shaped["note"] = f"The dataset's update method was already '{shaped['mode']}'."
+    return shaped, _meta(invocation, auth.workspace_id, project_id)
 
 
 def _with_dataset_name(

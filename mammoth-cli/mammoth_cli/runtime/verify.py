@@ -360,7 +360,9 @@ def _verify_and_reason(
     A failure never sets ``needs_user`` -- see :func:`_needs_user`, which
     covers only the outcomes serious enough to interrupt the caller.
     """
-    if data.get("changed") is False:
+    # ``status: no_change`` is a write the CLI found already in place: the state asked for
+    # holds, so it settles; any other ``changed: false`` is a write that did not take.
+    if data.get("changed") is False and data.get("status") != _NO_CHANGE_STATUS:
         message = data.get("message")
         text = message if isinstance(message, str) else ""
         return False, f"nothing changed: {text[:200]}"
