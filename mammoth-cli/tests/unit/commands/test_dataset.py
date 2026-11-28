@@ -1758,3 +1758,71 @@ def test_a_cloud_import_says_it_got_another_name(
     assert data["name"] == "LLM calls 2"
     assert data["requested_name"] == "LLM calls"
     assert "was taken" in data["note"]
+
+
+# -- update method set to the mode the dataset already has (#499) -------------
+
+_SET_METHOD = "mammoth.api.datasets.DatasetsAPI.set_update_method"
+
+
+def _method_set(previous: str) -> dict[str, Any]:
+    return {
+        "dataset_id": 7,
+        "data_addition_mode": "replace",
+        "previous_data_addition_mode": previous,
+        "schema_settings": {"data_addition_mode": "replace"},
+    }
+
+
+def test_setting_the_mode_a_dataset_already_has_is_done_not_failed(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """mammothsdk#499: the replace-data recipe stopped on a dataset already in replace."""
+    fake_service.responses[_SET_METHOD] = _method_set("replace")
+    result = make_runner().invoke(
+        [
+            *("dataset", "update-method", "set", "7"),
+            *("--input", _write(tmp_path, {"mode": "replace"})),
+            *("--project", "180", "--output", "json"),
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert (data["mode"], data["changed"], data["status"]) == ("replace", False, "no_change")
+    assert "already 'replace'" in data["note"]
+    assert data["verify"]["outcome"] == "settled"
+
+
+def test_a_mode_change_is_not_reported_as_no_change(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    fake_service.responses[_SET_METHOD] = _method_set("combine")
+    data, _ = dataset_cmd.dataset_update_method_set(
+        _inv(
+            "dataset.update-method.set",
+            project=180,
+            extra_args=["7"],
+            input_file=_write(tmp_path, {"mode": "replace"}),
+        )
+    )
+    assert data["changed"] is True
+    assert "status" not in data
+
+
+def test_a_new_schema_mapping_on_the_same_mode_is_a_settled_write(
+    fake_service: FakeMammothService, tmp_path: Path
+) -> None:
+    """The mapping was written though the mode stayed, so the write is not 'nothing changed'."""
+    fake_service.responses[_SET_METHOD] = _method_set("replace")
+    document = {"mode": "replace", "schema_mapping": {"Amount": ["amount"]}}
+    result = make_runner().invoke(
+        [
+            *("dataset", "update-method", "set", "7"),
+            *("--input", _write(tmp_path, document)),
+            *("--project", "180", "--output", "json"),
+        ]
+    )
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)["data"]
+    assert "status" not in data and "changed" not in data
+    assert data["verify"]["outcome"] == "settled"

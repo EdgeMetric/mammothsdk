@@ -97,6 +97,7 @@ if TYPE_CHECKING:
         DashboardPatchItem,
         DashboardPatchOp,
         DashboardPatchPath,
+        DashboardPublishRooms,
         DashboardShareRole,
         DashboardShareUser,
     )
@@ -220,6 +221,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "DashboardPatchItem": ("mammoth.models.dashboards", "DashboardPatchItem"),
     "DashboardPatchOp": ("mammoth.models.dashboards", "DashboardPatchOp"),
     "DashboardPatchPath": ("mammoth.models.dashboards", "DashboardPatchPath"),
+    "DashboardPublishRooms": ("mammoth.models.dashboards", "DashboardPublishRooms"),
     "DashboardShareRole": ("mammoth.models.dashboards", "DashboardShareRole"),
     "DashboardShareUser": ("mammoth.models.dashboards", "DashboardShareUser"),
     "BigQueryExportType": ("mammoth.models.exports", "BigQueryExportType"),
@@ -375,6 +377,7 @@ __all__ = [
     "DashboardPatchItem",
     "DashboardPatchOp",
     "DashboardPatchPath",
+    "DashboardPublishRooms",
     "DashboardShareRole",
     "DashboardShareUser",
     # Automation enums / models

@@ -400,6 +400,20 @@ class DashboardActionType(str, Enum):
     SET_RLS_CONFIG = "set-rls-config"
 
 
+class DashboardPublishRooms(str, Enum):
+    """What ``publish-presentation`` does about the Ask rooms its version would hide a board in.
+
+    The server refuses a publish whose new version reads a table an Ask room holding the
+    board does not use (409 ``DASHBOARD_PUBLISH_HIDES_IN_ROOMS``, 4DASH030). The person
+    picks one of these, and the publish is sent again with it.
+    """
+
+    #: Add the tables the version reads to each room the publisher may add them to.
+    ADD = "add"
+    #: Publish anyway; the board stays hidden in those rooms until their owner adds the tables.
+    HIDE = "hide"
+
+
 # ── embed: config / key / usage / preview-token / workspace secret ──────────
 
 

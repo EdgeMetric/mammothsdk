@@ -90,7 +90,8 @@ def test_run_fills_inputs_and_chains_steps(service: FakeMammothService) -> None:
     ("document", "message"),
     [
         ({}, "needs 'dataset_id'"),
-        ({"dataset_id": "7"}, "must be integer"),
+        ({"dataset_id": "seven"}, "must be integer"),
+        ({"dataset_id": "-7"}, "must be integer"),
         ({"dataset_id": True}, "must be integer"),
         ({"dataset_id": 7, "colour": "red"}, "no input called colour"),
     ],
@@ -105,6 +106,17 @@ def test_run_refuses_bad_inputs(
     assert message in error["message"]
     assert "mammoth recipe run two-reads" in error["hint"]
     assert service.call_log == []
+
+
+def test_an_integer_typed_over_the_quoted_placeholder_is_that_integer(
+    service: FakeMammothService,
+) -> None:
+    """mammothsdk#499: 'how' prints "<dataset_id>" quoted, so the id comes back as "7"."""
+    code, lines = _recipe("run", "two-reads", *_inputs({"dataset_id": "7"}))
+    assert code == 0, lines
+    assert lines[-1]["data"]["inputs"]["dataset_id"] == 7
+    reads = [kw["dataset_id"] for sym, kw in service.call_log if sym == _DATASET_GET]
+    assert reads == [7, 7]
 
 
 def test_run_names_the_recipes_it_knows(service: FakeMammothService) -> None:

@@ -123,6 +123,14 @@ def test_changed_false_message_is_truncated_to_200_chars() -> None:
     assert result["verify"]["reason"] == f"nothing changed: {'x' * 200}"
 
 
+def test_changed_false_with_no_change_status_is_a_state_already_in_place() -> None:
+    """mammothsdk#499: an update method set to the mode the dataset already has."""
+    result = with_verify({"mode": "replace", "changed": False, "status": "no_change"})
+    assert result["verify"]["verified"] is True
+    assert result["verify"]["outcome"] == "settled"
+    assert result["status"] == "no_change"
+
+
 def test_staged_status_is_verified_with_no_rows_and_a_reason() -> None:
     result = with_verify({"status": "staged"})
     assert result["verify"] == {
